@@ -17,6 +17,29 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-03] – Claude (disclosure AI Act multi-provider — correction audit I3)
+### Files modified
+- src/compliance/disclosures.ts (AI_DISCLOSURE constante → getAiDisclosure(system?) ;
+  défaut nomme les deux providers ; source unique conservée)
+- src/ai/providers/index.ts (getActiveSystemLabel() : libellé serveur du modèle actif)
+- app/index.tsx, app/(auth)/sign-in.tsx (utilisent getAiDisclosure())
+- docs/01_REGULATION.md §6 (v1.2.0 : disclosure reflète le modèle servi ; deux providers
+  Anthropic + OpenAI ; note juridique deux DPA/SCC à couvrir)
+- tests/unit/disclosure.test.ts (nouveau)
+### Purpose
+Corriger l'incohérence audit I3 : la disclosure annonçait « GPT-5.x, OpenAI » alors que le
+stack par défaut est Anthropic (claude-sonnet-4-6). Décision Hugo : les DEUX providers seront
+utilisés → la disclosure doit refléter le système réellement servi. Forme UI statique = nomme
+les deux ; forme serveur = injecte le libellé du modèle actif (getActiveSystemLabel). Source
+unique conservée (pas de variante concurrente).
+### Regulatory impact
+Confirmed (positif) : disclosure art. 50 exacte vis-à-vis du modèle réellement servi.
+Point ouvert signalé pour Hugo : couvrir DEUX DPA/SCC + résidence EU (Anthropic ET OpenAI, §5).
+### Rollback plan
+git revert du commit ; restaurer la constante AI_DISCLOSURE et les imports d'origine.
+
+---
+
 ## [2026-06-03] – Claude (étape 4 — chat streaming + prompt public.v2 + 4 outils)
 ### Files modified
 - src/ai/prompts/_schema.ts (update : align spec 04_CHATBOT §3 — RegulatoryScope, contract, eval_threshold multi-champs, template, model_default)
