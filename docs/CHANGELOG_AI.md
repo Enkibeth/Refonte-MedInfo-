@@ -86,3 +86,16 @@ Implémenter la couche 1 du safe-box (07_CLASSIFIER) en TDD : couche regex déte
 Confirmed (positif) : matérialise dans le code la barrière déterministe non-MDSW. « j'ai mal au ventre » → refus canonique, LLM principal non appelé. Aucune logique de triage/diagnostic/CAT introduite.
 ### Rollback plan
 git revert du commit de l'étape 2 ou suppression du dossier src/ai/classifier/ et des tests associés ; orchestrator.ts revient au stub.
+
+## [2026-06-03] – GPT-5.3-Codex (golden set classifieur FR)
+### Files modified
+- tests/classifier/golden/golden-set.fr.jsonl
+- scripts/eval/classifier-goldenset.mjs
+- package.json
+- docs/CHANGELOG_AI.md
+### Purpose
+Ajouter un golden set synthétique français de calibration du classifieur d'intention et un harnais d'évaluation regex/fail-safe sans appel LLM réel.
+### Regulatory impact
+Confirmed (positif) : support de calibration pour réduire les faux négatifs `personal_symptoms`/`emergency` sans introduire de logique de triage ou diagnostic.
+### Rollback plan
+git revert du commit d'ajout du golden set et du script `eval:classifier`.
