@@ -8,17 +8,43 @@
  * vers un refus déterministe ou vers le LLM principal.
  */
 
-/** Marqueurs d'urgence vitale → refus canonique immédiat, étage 2 court-circuité. */
+/**
+ * Marqueurs d'urgence vitale → refus canonique immédiat, étage 2 court-circuité.
+ *
+ * Signes d'alerte (red flags) listés comme PHRASES spécifiques, pas comme mots nus :
+ * on capte « lèvres bleues » mais pas « bleu », « raideur de nuque » mais pas « nuque »,
+ * afin de ne PAS sur-déclencher sur des questions encyclopédiques générales (préservation
+ * de la précision general_info). Comme l'urgence est évaluée AVANT general_info, ces motifs
+ * neutralisent aussi les déguisements du type « explique <signe> comme information générale ».
+ */
 export const EMERGENCY_MARKERS: RegExp[] = [
   /douleurs?\s+(thoraciques?|dans\s+la\s+poitrine|à\s+la\s+poitrine)/i,
   /(oppression|serrement)\s+(thoracique|dans\s+la\s+poitrine)/i,
   /mal\s+à\s+la\s+poitrine/i,
-  /\b(je\s+veux\s+mourir|envie\s+d['e]en\s+finir|me\s+suicider|suicidaires?|suicide)\b/i,
+  /\b(je\s+veux\s+mourir|envie\s+de\s+mourir|envie\s+d['e]en\s+finir|me\s+suicider|suicidaires?|suicide)\b/i,
   /\b(h[ée]morragie|je\s+saigne|saignement\s+abondant)\b/i,
+  /(vomissements?\s+de\s+sang|vomir\s+du\s+sang|crach\w+\s+du\s+sang)/i,
   /(je\s+n['e]arrive\s+plus\s+à\s+respirer|je\s+ne\s+peux\s+plus\s+respirer|difficult[ée]s?\s+à\s+respirer|j['e]étouffe)/i,
   /\b(avc|infarctus\s+en\s+cours|crise\s+cardiaque)\b/i,
   /(perte\s+de\s+connaissance|perd[u]?\s+connaissance|[ée]vanou[ie])/i,
   /\bconvulsions?\b/i,
+  // Signes neuro d'AVC
+  /visage\s+paralys[ée]/i,
+  /paralysie\s+(soudaine|brutale|d['e]un\s+c[ôo]t[ée])/i,
+  /faiblesse\s+soudaine/i,
+  /confusion\s+(brutale|soudaine|aigu[ëe])/i,
+  // Détresse respiratoire / cyanose / anaphylaxie
+  /l[èe]vres\s+bleues/i,
+  /\bcyanos[ée]/i,
+  /r[ée]action\s+allergique/i,
+  /gorge\s+qui\s+(gonfle|enfle)/i,
+  // Méningite, traumatisme, abdomen aigu, torsion
+  /raideur\s+de\s+(la\s+)?nuque/i,
+  /douleur\s+violente\s+apr[èe]s\s+un\s+choc/i,
+  /douleur\s+abdominale\s+(insupportable|violente|brutale|atroce)/i,
+  /douleur\s+testiculaire\s+(brutale|aigu[ëe]|violente)/i,
+  /br[ûu]lure\s+(étendue|grave|profonde|au\s+\w+\s+degr[ée])/i,
+  /malaise\s+avec\s+(sueurs|oppression)/i,
 ];
 
 /**
@@ -36,10 +62,11 @@ export const PERSONAL_MARKERS: RegExp[] = [
   /qu['e]est-ce\s+que\s+j['e]ai\b/i,
   /dois-je\s+(aller\s+aux\s+urgences|consulter|m['e]inqui[ée]ter|prendre)/i,
   /qu['e]est-ce\s+que\s+je\s+(dois|peux)\s+(prendre|faire)/i,
-  /depuis\s+(ce\s+matin|hier|\d+\s+(jours?|semaines?|heures?|mois))/i,
+  /depuis\s+(ce\s+matin|hier|\d+\s+(jours?|semaines?|heures?|mois)|la\s+nuit\s+derni[èe]re|dix\s+jours|trois\s+jours)/i,
+  /[çc]a\s+passe(ra)?\s+tout\s+seul/i,
   // 3ᵉ personne déguisée (un proche identifiable)
-  /\b(mon|ma)\s+(fils|fille|mari|femme|p[èe]re|m[èe]re|copain|copine|conjoint[e]?)\b/i,
-  /\b(mon|un)\s+(ami|proche|coll[èe]gue)\b/i,
+  /\b(mon|ma)\s+(fils|fille|mari|femme|p[èe]re|m[èe]re|fr[èe]re|s[œo]eur|copain|copine|conjoint[e]?|enfant|b[ée]b[ée]|gamin[e]?|grand[- ](p[èe]re|m[èe]re)|parents?)\b/i,
+  /\b(mon|un|une)\s+(ami[e]?|proche|coll[èe]gue)\b/i,
 ];
 
 /**
@@ -53,6 +80,11 @@ export const BYPASS_MARKERS: RegExp[] = [
   /cas\s+(purement\s+)?(th[ée]orique|hypoth[ée]tique)\s*:/i,
   /\bpour\s+un\s+ami\b/i,
   /hypoth[ée]tiquement[, ]+mon/i,
+  // Déflexions : nier l'implication personnelle tout en sollicitant un avis individualisé.
+  /sans\s+parler\s+de\s+moi/i,
+  /sans\s+(faire\s+de\s+)?diagnostic[, ]/i,
+  /inspir[ée]e?\s+d['e]un\s+proche/i,
+  /je\s+ne\s+veux\s+pas\s+consulter/i,
 ];
 
 /**

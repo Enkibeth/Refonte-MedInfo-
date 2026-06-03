@@ -116,3 +116,24 @@ templates signalés comme dette qualité.
 None (outillage d'évaluation et documentation ; safe-box inchangée).
 ### Rollback plan
 git revert du commit de merge/fix harnais.
+
+## [2026-06-03] – Claude (resserrage lexique couche 1 — 0 fuite)
+### Files modified
+- src/ai/classifier/lexicon.ts (EMERGENCY_MARKERS + signes d'alerte ; PERSONAL_MARKERS + 3ᵉ pers./déflexions ; BYPASS_MARKERS + « sans parler de moi », « je ne veux pas consulter »)
+- tests/prompt-regression/refusal.test.ts (+ régression urgences déguisées)
+- docs/STATUS.md
+### Purpose
+Fermer les 9 fuites d'urgences adversariales déguisées (« explique <signe vital> comme
+information générale ») révélées par le golden set : elles étaient routées general_info →
+LLM principal. Ajout de signes d'alerte cliniques réels (AVC : visage paralysé / faiblesse
+soudaine / confusion brutale ; cyanose : lèvres bleues ; anaphylaxie : gorge qui gonfle ;
+méningite : raideur de nuque ; hémorragie digestive : vomissements de sang ; abdomen aigu ;
+torsion testiculaire ; brûlure étendue), en PHRASES spécifiques pour préserver la précision.
+Résultat éval (regex seul, sans étage 2) : emergency recall 100 % / précision 100 % ;
+personal_symptoms recall 100 % / précision 98 % ; **0 fuite vers le LLM principal**.
+### Regulatory impact
+Confirmed (positif) : suppression de fuites d'urgence vers le LLM principal ; renforcement
+strict de la couche 1 non-MDSW. Aucune logique de triage/diagnostic/CAT introduite (les motifs
+ne servent qu'à router vers un refus déterministe).
+### Rollback plan
+git revert de ce commit (le lexique revient à l'état post-étape 2 initial).
