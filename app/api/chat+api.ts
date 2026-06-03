@@ -28,6 +28,7 @@ import { getActivePrompt } from '@/ai/prompts/index';
 import { validateOutput } from '@/ai/guardrails/outputValidator';
 import { buildRefusalChunks } from '@/ai/guardrails/refusalStream';
 import { logInteraction } from '@/ai/logging/logInteraction';
+import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
 import { proposeFollowupsTool } from '@/ai/skills/propose_followups';
 import { showSourcesTool } from '@/ai/skills/show_sources';
 import { refuseAndRedirectTool } from '@/ai/skills/refuse_and_redirect';
@@ -61,6 +62,30 @@ export async function POST(request: Request): Promise<Response> {
       : 'public';
 
   const uiMessages = Array.isArray(body.messages) ? body.messages : [];
+
+  // 03_SECURITY §3 / 02_ARCHITECTURE §3 [1] : rate-limit AVANT la couche 1.
+  // Compteur technique uniquement (user/persona ou IP hash/persona), aucune donnée santé.
+  const rateLimit = await checkChatRateLimit(request, persona);
+  if (!rateLimit.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: 'Rate limit exceeded',
+        daily_limit: rateLimit.dailyLimit,
+        remaining: rateLimit.remaining,
+        reset_at: rateLimit.resetAt,
+      }),
+      {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'Retry-After': Math.max(
+            1,
+            Math.ceil((new Date(rateLimit.resetAt).getTime() - Date.now()) / 1000),
+          ).toString(),
+        },
+      },
+    );
+  }
 
   // ── Couche 1 : classifieur d'intention sur TOUTE la conversation (pré-LLM) ─────
   const screen = await screenConversation(uiMessages);

@@ -106,3 +106,65 @@ describe('ai_interactions — service_role only (jamais accessible au client)', 
     expect(rowCount).toBe(1);
   });
 });
+
+
+describe('usage_counters — service_role only + isolation compteur', () => {
+  it('le service_role PEUT incrémenter un compteur journalier user/persona sans donnée santé', async () => {
+    const { rows } = await db.asService((q) =>
+      q(
+        `SELECT * FROM increment_usage_counter(
+          'user:11111111-1111-1111-1111-111111111111',
+          'user',
+          $1,
+          NULL,
+          'public',
+          CURRENT_DATE,
+          10
+        )`,
+        [USER_A],
+      ),
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].allowed).toBe(true);
+    expect(rows[0].daily_count).toBe(1);
+    expect(rows[0].daily_limit).toBe(10);
+  });
+
+  it('un client authentifié NE PEUT PAS lire usage_counters', async () => {
+    await expect(
+      db.asUser(USER_A, (q) => q('SELECT * FROM usage_counters')),
+    ).rejects.toThrow();
+  });
+
+  it('un client authentifié NE PEUT PAS écrire usage_counters', async () => {
+    await expect(
+      db.asUser(USER_A, (q) =>
+        q(
+          `INSERT INTO usage_counters (counter_key, identity_type, user_id, persona, window_date, daily_count)
+           VALUES ('user:11111111-1111-1111-1111-111111111111', 'user', $1, 'public', CURRENT_DATE, 1)`,
+          [USER_A],
+        ),
+      ),
+    ).rejects.toThrow();
+  });
+
+  it('un client authentifié NE PEUT PAS appeler le RPC compteur', async () => {
+    await expect(
+      db.asUser(USER_A, (q) =>
+        q(
+          `SELECT * FROM increment_usage_counter(
+            'user:11111111-1111-1111-1111-111111111111',
+            'user',
+            $1,
+            NULL,
+            'public',
+            CURRENT_DATE,
+            10
+          )`,
+          [USER_A],
+        ),
+      ),
+    ).rejects.toThrow();
+  });
+});
