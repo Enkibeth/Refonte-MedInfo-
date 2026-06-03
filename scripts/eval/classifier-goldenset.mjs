@@ -57,8 +57,15 @@ function loadTsAsCommonJs(entryPath) {
   const cache = new Map();
 
   function resolveLocal(request, parentFile) {
-    if (!request.startsWith('.')) return request;
-    const base = resolve(dirname(parentFile), request);
+    // Honore l'alias `@/` du projet (tsconfig.json + vitest.config.ts → `src/`).
+    let base;
+    if (request === '@' || request.startsWith('@/')) {
+      base = resolve(repoRoot, 'src', request.slice(request.indexOf('/') + 1));
+    } else if (request.startsWith('.')) {
+      base = resolve(dirname(parentFile), request);
+    } else {
+      return request;
+    }
     const candidates = [base, `${base}.ts`, `${base}.tsx`, `${base}.js`, `${base}.mjs`, join(base, 'index.ts'), join(base, 'index.tsx'), join(base, 'index.js'), join(base, 'index.mjs')];
     const found = candidates.find((candidate) => existsSync(candidate));
     if (!found) throw new Error(`Module local introuvable: ${request} depuis ${parentFile}`);

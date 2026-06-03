@@ -99,3 +99,20 @@ Ajouter un golden set synthétique français de calibration du classifieur d'int
 Confirmed (positif) : support de calibration pour réduire les faux négatifs `personal_symptoms`/`emergency` sans introduire de logique de triage ou diagnostic.
 ### Rollback plan
 git revert du commit d'ajout du golden set et du script `eval:classifier`.
+
+## [2026-06-03] – Claude (merge golden set + audit + fix harnais)
+### Files modified
+- docs/CHANGELOG_AI.md (résolution de conflit, conserve les deux entrées)
+- scripts/eval/classifier-goldenset.mjs (résolution de l'alias `@/` → `src/`)
+### Purpose
+Réunir sur la branche de l'étape 2 la couche 1 (src/ai/classifier/) et le golden set
+de Codex pour rendre le harnais exécutable. Corriger le loader TS du harnais qui ne
+résolvait pas l'alias `@/` du projet (tsconfig + vitest) : `classifier-goldenset.mjs`
+échouait sur `@/compliance/disclosures`. Aucune modification du classifieur ni du refus
+canonique. Audit du golden set : 500 ex., distribution 35/30/20/10/5 % conforme §5,
+30 % adversariaux, 0 PII, schéma valide ; 56 doublons exacts et forte répétition de
+templates signalés comme dette qualité.
+### Regulatory impact
+None (outillage d'évaluation et documentation ; safe-box inchangée).
+### Rollback plan
+git revert du commit de merge/fix harnais.
