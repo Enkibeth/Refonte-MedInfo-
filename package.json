@@ -18,7 +18,9 @@
     "validate:rag": "node scripts/embeddings/validate-rag-metadata.mjs",
     "eval:classifier": "node scripts/eval/classifier-goldenset.mjs",
     "compliance:grep": "node scripts/eval/compliance-grep.mjs",
-    "compliance": "npm run compliance:grep && npm run test:prompt-regression && npm run test:rls && npm run validate:prompts && npm run validate:rag"
+    "compliance": "npm run compliance:grep && npm run test:prompt-regression && npm run test:rls && npm run validate:prompts && npm run validate:rag",
+    "build:web": "expo export -p web && node scripts/vercel/copy-server-html-to-client.mjs",
+    "vercel-build": "npm run build:web"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.81",
@@ -30,6 +32,7 @@
     "expo-constants": "~56.0.16",
     "expo-linking": "~56.0.13",
     "expo-router": "~56.2.8",
+    "expo-server": "~56.0.4",
     "expo-splash-screen": "~56.0.10",
     "expo-status-bar": "~56.0.4",
     "react": "19.2.3",

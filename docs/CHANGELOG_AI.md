@@ -303,3 +303,39 @@ défense 3 couches (classifieur + prompt + validation sortie) reste intacte.
 None (réconciliation de branches ; persona toujours adossée à la RLS ; safe-box inchangée).
 ### Rollback plan
 git revert du commit de merge de réintégration.
+
+## [2026-06-03] – GPT-5.3-Codex (préparation Vercel + Supabase dédié)
+### Files modified
+- app.json (export Expo Router server)
+- api/index.js, vercel.json (adapter Vercel + rewrites)
+- package.json, package-lock.json (scripts build web + dépendance expo-server)
+- src/db/serverSupabase.ts, src/ai/logging/logInteraction.ts, app/api/health+api.ts (helper Supabase serveur + smoke-test)
+- tests/unit/server-supabase.test.ts (couverture config Supabase serveur)
+- docs/09_DEPLOYMENT.md, docs/README.md, docs/STATUS.md, README.md, .env.example
+### Purpose
+Adapter le projet au déploiement Vercel avec API routes Expo Router : build `expo export -p web`,
+publication `dist/client`, Function Vercel déléguant au bundle `dist/server`. Centraliser la
+connexion Supabase serveur pour le projet dédié MedInfo et documenter toutes les variables Vercel
+nécessaires, y compris `EXPO_PUBLIC_SUPABASE_ANON_KEY` côté client et `SUPABASE_SERVICE_ROLE_KEY`
+côté serveur. Ajouter `/api/health` pour vérifier la configuration sans exposer de secrets.
+### Regulatory impact
+None (déploiement, secrets et observabilité technique ; aucune logique médicale, aucun stockage de
+contenu de santé identifiable, safe-box inchangée).
+### Rollback plan
+git revert de ce commit puis suppression des variables Vercel ajoutées si besoin.
+
+## [2026-06-03] – GPT-5.3-Codex (correctif Vercel 404 racine)
+### Files modified
+- package.json (build web post-export + vercel-build)
+- scripts/vercel/copy-server-html-to-client.mjs (nouveau fallback HTML statique)
+- docs/09_DEPLOYMENT.md, docs/STATUS.md, README.md
+### Purpose
+Corriger le `404: NOT_FOUND` observé sur `refonte-med-info.vercel.app` à la racine : après
+`expo export -p web` en `web.output=server`, les HTML pré-rendus sont dans `dist/server` alors
+que Vercel publie `dist/client`. Le build copie désormais les shells HTML stables dans
+`dist/client` pour garantir un `index.html` statique même si la rewrite Function n'est pas
+appliquée à `/`. Les API routes restent servies par l'adapter Vercel.
+### Regulatory impact
+None (déploiement web uniquement ; aucune logique médicale, aucun changement safe-box ou RLS).
+### Rollback plan
+git revert de ce commit pour revenir au build Vercel server-only précédent.
