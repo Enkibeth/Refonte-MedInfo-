@@ -59,3 +59,16 @@ Harmoniser les contradictions documentaires repérées : message de refus unique
 Confirmed (positif) : réduction des contradictions autour de la safe-box et verrouillage explicite du Pro hors MVP.
 ### Rollback plan
 git revert de la PR/branche `ai/gpt-5.5/etape-1-scaffold` ou restauration de l'archive fondatrice.
+
+## [2026-06-03] – GPT-5.5 Thinking (statut projet + branches)
+### Files modified
+- docs/STATUS.md
+- docs/README.md
+- docs/CHANGELOG_AI.md
+- branches GitHub `dev` et `staging` créées depuis le commit de l'étape 1
+### Purpose
+Documenter la limite réelle de vérification distante : aucun run GitHub Actions exploitable observé au moment du contrôle initial. Corriger le statut des branches : `main`, `dev` et `staging` existent désormais.
+### Regulatory impact
+None (documentation et hygiène repo uniquement).
+### Rollback plan
+git revert des commits documentaires et suppression manuelle éventuelle des branches si nécessaire.
