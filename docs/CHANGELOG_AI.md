@@ -137,3 +137,21 @@ strict de la couche 1 non-MDSW. Aucune logique de triage/diagnostic/CAT introdui
 ne servent qu'à router vers un refus déterministe).
 ### Rollback plan
 git revert de ce commit (le lexique revient à l'état post-étape 2 initial).
+
+## [2026-06-03] – GPT-5.3-Codex (polissage auth/account Expo)
+### Files modified
+- app/_layout.tsx
+- app/(auth)/sign-in.tsx
+- app/(account)/account.tsx
+- src/auth/AuthProvider.tsx
+- docs/CHANGELOG_AI.md
+### Purpose
+Remplacer les placeholders Auth/Compte par des écrans Expo Router polis : magic link email Supabase,
+éclairage des états chargement/succès/erreur, affichage email/persona, déconnexion, disclosures
+réglementaires, et provider d'auth conforme à l'API attendue par la branche.
+### Regulatory impact
+Confirmed (positif) : aucun ajout de logique médicale, aucune fonctionnalité professionnelle active,
+affichage des disclosures prévues et maintien du module professionnel en état neutre différé.
+### Rollback plan
+git revert du commit de polissage auth/account ; les écrans reviennent aux placeholders et le provider
+d'auth ajouté est retiré.
