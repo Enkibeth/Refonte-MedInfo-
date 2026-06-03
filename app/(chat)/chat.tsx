@@ -97,7 +97,9 @@ function MessagePart({
 
   if (isToolUIPart(part)) {
     const dynPart = part as any;
-    if (dynPart.state !== 'output') return null;
+    // L'état d'un tool-call terminé en AI SDK v6 est 'output-available' (pas 'output').
+    // Sans ce correctif, AUCUN tool-call ne s'affichait (sources, refus, suggestions).
+    if (typeof dynPart.state !== 'string' || !dynPart.state.startsWith('output')) return null;
 
     const toolName: string = dynPart.toolName ?? dynPart.type?.replace('tool-', '') ?? '';
     const output = dynPart.output;
