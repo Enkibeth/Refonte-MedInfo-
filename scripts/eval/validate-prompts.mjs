@@ -2,7 +2,10 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const dir = 'src/ai/prompts';
-const files = readdirSync(dir).filter((file) => file.endsWith('.ts') && !file.startsWith('_'));
+// Inspecte uniquement les artefacts de prompt (ex: public.v2.ts) ; exclut _schema.ts et index.ts.
+const files = readdirSync(dir).filter(
+  (file) => file.endsWith('.ts') && !file.startsWith('_') && file !== 'index.ts',
+);
 
 for (const file of files) {
   const content = readFileSync(join(dir, file), 'utf8');

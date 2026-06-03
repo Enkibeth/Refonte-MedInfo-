@@ -21,6 +21,8 @@
     "compliance": "npm run compliance:grep && npm run test:prompt-regression && npm run test:rls && npm run validate:prompts && npm run validate:rag"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.81",
+    "@ai-sdk/react": "^3.0.197",
     "@supabase/supabase-js": "^2.107.0",
     "ai": "^6.0.195",
     "expo": "~56.0.8",
