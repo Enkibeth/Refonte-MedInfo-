@@ -182,3 +182,17 @@ None (UI et plomberie auth ; aucune logique médicale, persona toujours adossée
 professionnel inchangé/désactivé).
 ### Rollback plan
 git revert de ce commit (les écrans reviennent à la version minimale fonctionnelle de l'étape 3).
+
+## [2026-06-03] – Claude (durcissement handle_new_user + déploiement Supabase)
+### Files modified
+- supabase/migrations/0003_harden_handle_new_user.sql (nouveau)
+### Purpose
+Déploiement du schéma étape 3 sur le projet Supabase dédié `medinfo-ai-v4` (eu-west-3) :
+migrations profiles + ai_interactions + policies RLS appliquées et vérifiées (RLS active sur
+les deux tables). L'advisor sécurité Supabase a signalé que `handle_new_user()` (SECURITY
+DEFINER) était appelable via PostgREST RPC par anon/authenticated → REVOKE EXECUTE ajouté
+(le trigger continue de fonctionner). Migration capturée dans le repo pour parité repo ↔ prod.
+### Regulatory impact
+None (durcissement sécurité ; aucune logique métier/médicale ; aucune donnée santé).
+### Rollback plan
+git revert de ce commit + GRANT EXECUTE ... TO authenticated si réactivation RPC souhaitée.
