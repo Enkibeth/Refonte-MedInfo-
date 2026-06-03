@@ -1,0 +1,31 @@
+# MedInfo AI — Gates CI de conformité (executable compliance)
+name: compliance
+
+on:
+  pull_request:
+    branches: [dev, staging, main]
+  push:
+    branches: [dev, staging, main]
+
+jobs:
+  compliance:
+    name: "5 gates — safe-box"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install
+      - run: npm run typecheck
+      - name: "Gate 1 — compliance-grep"
+        run: npm run compliance:grep
+      - name: "Gate 2 — refusal-regression"
+        run: npm run test:prompt-regression
+      - name: "Gate 3 — rls-isolation"
+        run: npm run test:rls
+      - name: "Gate 4 — prompt-contract"
+        run: npm run validate:prompts
+      - name: "Gate 5 — rag-license"
+        run: npm run validate:rag

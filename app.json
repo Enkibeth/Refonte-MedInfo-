@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "MedInfo AI",
+    "slug": "medinfo-ai",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "medinfoai",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "com.medinfoai.app"
+    },
+    "android": {
+      "package": "com.medinfoai.app",
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0B3B3C"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

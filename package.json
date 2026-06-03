@@ -1,0 +1,44 @@
+{
+  "name": "medinfo-ai",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "dev": "expo start --web",
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:prompt-regression": "vitest run tests/prompt-regression",
+    "test:rls": "vitest run tests/rls",
+    "validate:prompts": "node scripts/eval/validate-prompts.mjs",
+    "validate:rag": "node scripts/embeddings/validate-rag-metadata.mjs",
+    "compliance:grep": "node scripts/eval/compliance-grep.mjs",
+    "compliance": "npm run compliance:grep && npm run test:prompt-regression && npm run test:rls && npm run validate:prompts && npm run validate:rag"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.107.0",
+    "ai": "^6.0.195",
+    "expo": "~56.0.8",
+    "expo-constants": "~56.0.16",
+    "expo-linking": "~56.0.13",
+    "expo-router": "~56.2.8",
+    "expo-splash-screen": "~56.0.10",
+    "expo-status-bar": "~56.0.4",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.85.3",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "4.25.2",
+    "react-native-web": "~0.21.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "typescript": "~6.0.3",
+    "vitest": "^4.1.8"
+  }
+}
