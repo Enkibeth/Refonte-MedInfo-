@@ -83,8 +83,40 @@ de « explique la différence entre angine et pharyngite » (médical) relève d
 sémantique)**, reporté. `eval:classifier` sort donc en exit 1 sur la cible `general_info`
 précision — informatif, non bloquant (hors `compliance`).
 
+## Étape 3 — Auth Supabase + routing persona + RLS testées : **implémentée (TDD)**
+
+Tests d'isolation RLS écrits AVANT les policies (rouge → vert).
+
+Critères de validation START.md — **atteints** :
+
+```txt
+Login Supabase (magic link OTP, ADR-0007)                                  ✅ câblé
+Routing par persona : public + student actifs                              ✅
+  professional routable mais enabledInMvp=false (ADR-0006), 0 surface UI    ✅
+RLS cross-user : user A lit/écrit la ligne de user B → ÉCHOUE              ✅ (gate rls-isolation)
+ai_interactions service_role only, jamais accessible au client            ✅ testé
+```
+
+Périmètre livré :
+
+- `supabase/migrations/` : `profiles` (RLS own-row, trigger handle_new_user, zéro donnée santé)
+  et `ai_interactions` (audit §6, RLS activée SANS policy → client refusé).
+- `supabase/policies/` : `profiles.sql` (4 policies auth.uid()=id) + `ai_interactions.sql`
+  (REVOKE client, service_role only).
+- `tests/rls/isolation.test.ts` (9 tests) sur **vrai Postgres** via harness éphémère
+  (`tests/rls/helpers/`, ADR-0009) — le gate `rls-isolation` est désormais RÉELLEMENT actif.
+- `src/ai/routing/persona.ts` + test unitaire ; `src/auth/AuthProvider.tsx` ; garde de
+  navigation par persona dans `app/_layout.tsx` ; écrans `sign-in` / `account` minimaux
+  fonctionnels (UI polie déléguée à Codex).
+
+Validations locales : `npm run typecheck`, `npm run test` (67 tests), `npm run compliance`
+(5 gates, dont `rls-isolation` réel) → **OK**.
+
+Hors périmètre conservé (étapes ultérieures) : chat streaming, RAG, Stripe, historique/dossiers,
+étage 2 du classifieur. Le classifieur couche 1 n'a pas été modifié.
+
 ## Étape suivante
 
-Étape 3 — Auth Supabase + routing par persona + RLS testées (`02_ARCHITECTURE §4`, `03_SECURITY §2`).
-Pré-requis classifieur restants (post-MVP / étape ultérieure) : câblage étage 2 (Gemini Flash-Lite /
-Haiku 4.5), persistance `classifier_decisions`, diversification du golden set, lexique `out_of_scope`.
+Étape 4 — Chat streaming + prompt `public.v2` + tool-calling (`04_CHATBOT §5,§8`).
+Pré-requis classifieur restants (post-MVP) : câblage étage 2 (Gemini Flash-Lite / Haiku 4.5),
+persistance `classifier_decisions`, diversification du golden set, lexique `out_of_scope`.

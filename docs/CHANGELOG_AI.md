@@ -137,3 +137,30 @@ strict de la couche 1 non-MDSW. Aucune logique de triage/diagnostic/CAT introdui
 ne servent qu'à router vers un refus déterministe).
 ### Rollback plan
 git revert de ce commit (le lexique revient à l'état post-étape 2 initial).
+
+## [2026-06-03] – Claude (étape 3 — auth Supabase + routing persona + RLS testées)
+### Files modified
+- supabase/migrations/0001_profiles.sql, 0002_ai_interactions.sql (nouveaux)
+- supabase/policies/profiles.sql, ai_interactions.sql (nouveaux)
+- tests/rls/isolation.test.ts (nouveau — gate rls-isolation RÉELLEMENT actif)
+- tests/rls/helpers/pgHarness.ts, tests/rls/helpers/auth-shim.sql (nouveaux ; suppr. placeholder.test.ts)
+- src/ai/routing/persona.ts (nouveau) + tests/unit/routing-persona.test.ts (nouveau)
+- src/auth/AuthProvider.tsx (nouveau), src/db/supabase.ts (singleton client anon)
+- app/_layout.tsx (garde de navigation par persona), app/(auth)/sign-in.tsx, app/(account)/account.tsx
+- .github/workflows/compliance.yml (binaires Postgres pour le gate rls-isolation)
+- docs/DECISIONS/0009-rls-test-harness-postgres-ephemere.md (nouveau), docs/STATUS.md, package.json (devDep pg)
+### Purpose
+Étape 3 (START.md) en TDD : tests d'isolation RLS écrits AVANT les policies (rouge → vert).
+Tables user `profiles` (RLS own-row) et `ai_interactions` (service_role only, RLS sans policy,
+jamais accessible au client) versionnées + policies testées sur vrai Postgres (harness éphémère,
+ADR-0009). Login Supabase par magic link OTP (ADR-0007). Routing par persona : public + student
+activés ; professional routable mais enabledInMvp=false (ADR-0006), aucune surface UI pro.
+Aucune donnée de santé persistée, aucun wizard/triage : le routing ne déclenche aucune logique
+médicale (01_REGULATION §5). Hors périmètre conservé : chat, RAG, Stripe, historique, étage 2.
+### Regulatory impact
+Confirmed (positif) : isolation cross-user prouvée par test (A ne lit/écrit pas la ligne de B) ;
+audit `ai_interactions` inaccessible au client ; pas de donnée santé identifiable ; module pro
+maintenu désactivé. Secrets hors repo (anon côté client protégée RLS, service_role serveur only).
+### Rollback plan
+git revert du commit de l'étape 3 (supprime migrations/policies/auth/routing ; le scaffold
+revient à l'état post-étape 2, le gate rls-isolation redevient un placeholder).
