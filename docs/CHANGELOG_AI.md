@@ -247,3 +247,18 @@ défense 3 couches (classifieur + prompt + validation sortie) reste intacte.
 None (réconciliation de branches ; persona toujours adossée à la RLS ; safe-box inchangée).
 ### Rollback plan
 git revert du commit de merge de réintégration.
+
+## [2026-06-03] – GPT-5.3-Codex (audit M2 — rate limiting 03_SECURITY §3)
+### Files modified
+- supabase/migrations/0004_usage_counters.sql, supabase/migrations/README.md (table compteurs journaliers + RPC atomique)
+- supabase/policies/usage_counters.sql, supabase/policies/README.md (service_role only)
+- src/ai/rateLimit/chatRateLimit.ts (nouveau — limites free MVP public/student + cap IP non-auth)
+- app/api/chat+api.ts (check rate-limit avant la couche 1, sans modifier le classifieur ni la défense 3 couches)
+- tests/rls/isolation.test.ts (couverture RLS usage_counters)
+- tests/chat/rate-limit.test.ts, tests/chat/chat-api-rate-limit.test.ts (11e message public free → 429, ordre avant classifieur)
+### Purpose
+Corriger l'audit M2 rate limiting : compteur journalier technique par identité/persona, reset quotidien, limites MVP Public free 10/j et Étudiant free 20/j, module Pro non activé, cap dur par IP hashée pour les non-authentifiés anti-scraping. Le contrôle est exécuté au début de `POST /api/chat`, après parsing JSON/persona mais AVANT le classifieur couche 1 conformément à 02_ARCHITECTURE §3 [1].
+### Regulatory impact
+Confirmed (positif) : réduction du risque d'abus/coûts et scraping sans stockage de donnée santé ni contenu de message. La safe-box non-MDSW reste inchangée : aucun changement du classifieur couche 1, des prompts, des outils ou de la validation de sortie.
+### Rollback plan
+git revert de ce commit (supprime la migration/policy usage_counters, le helper rate-limit, les tests associés et retire le check 429 de la route chat).
