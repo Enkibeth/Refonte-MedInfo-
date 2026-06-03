@@ -16,10 +16,14 @@
     "test:rls": "vitest run tests/rls",
     "validate:prompts": "node scripts/eval/validate-prompts.mjs",
     "validate:rag": "node scripts/embeddings/validate-rag-metadata.mjs",
+    "eval:classifier": "node scripts/eval/classifier-goldenset.mjs",
     "compliance:grep": "node scripts/eval/compliance-grep.mjs",
     "compliance": "npm run compliance:grep && npm run test:prompt-regression && npm run test:rls && npm run validate:prompts && npm run validate:rag"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.81",
+    "@ai-sdk/openai": "^3.0.67",
+    "@ai-sdk/react": "^3.0.197",
     "@supabase/supabase-js": "^2.107.0",
     "ai": "^6.0.195",
     "expo": "~56.0.8",
@@ -37,7 +41,9 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/pg": "^8.20.0",
     "@types/react": "~19.2.2",
+    "pg": "^8.21.0",
     "typescript": "~6.0.3",
     "vitest": "^4.1.8"
   }
