@@ -36,16 +36,35 @@ Conséquence : l'étape 1 est validée par les contrôles locaux et par la prés
 
 Cette limite ne bloque pas l'étape 2, mais elle doit être levée avant de considérer la chaîne CI distante comme prouvée.
 
-## Étape suivante
+## Étape 2 — classifieur d'intention : **implémentée (couche 1)**
 
-Étape 2 — classifieur d'intention : **non implémentée**.
+Réalisée en TDD (tests de refus écrits avant la logique).
 
-Critère minimal de validation attendu :
+Critère minimal de validation — **atteint** :
 
 ```txt
-"j'ai mal au ventre" → refus canonique `01_REGULATION.md §4`
-LLM principal non appelé
-Tests de refus verts
+"j'ai mal au ventre" → refus canonique `01_REGULATION.md §4`   ✅
+LLM principal non appelé (garanti par runClassifierGate)       ✅
+Tests de refus verts                                           ✅
 ```
 
-L'étape 2 doit commencer par les tests de refus en TDD avant toute logique de classification.
+Périmètre livré :
+
+- Étage 1 regex déterministe local (`src/ai/classifier/`) : 5 catégories
+  `general_info` / `personal_symptoms` / `emergency` / `out_of_scope` / `ambiguous`.
+- Refus canonique (source unique `src/compliance/disclosures.ts`) pour
+  `personal_symptoms` / `emergency` / `ambiguous`. `general_info` seul → LLM principal.
+- Étage 2 (LLM léger) : interface injectable **non câblée** à cette étape (fail-safe `ambiguous`).
+- Ceinture + bretelles : un verdict `general_info` de l'étage 2 est rétrogradé si un
+  marqueur personnel regex subsiste.
+
+Validations locales : `npm run typecheck`, `npm run test` (51 tests), `npm run compliance`
+(5 gates) → **OK**.
+
+Hors périmètre (reporté) : chat complet, RAG, auth, persistance Supabase
+(`classifier_decisions`), étage 2 LLM réel, golden set 500 cas (07_CLASSIFIER §5).
+
+## Étape suivante
+
+Étape 3 — Auth Supabase + routing par persona + RLS testées (`02_ARCHITECTURE §4`, `03_SECURITY §2`).
+Avant cela : expansion du golden set FR (calibration étage 2) déléguée à Codex.

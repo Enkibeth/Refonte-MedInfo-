@@ -72,3 +72,17 @@ Documenter la limite réelle de vérification distante : aucun run GitHub Action
 None (documentation et hygiène repo uniquement).
 ### Rollback plan
 git revert des commits documentaires et suppression manuelle éventuelle des branches si nécessaire.
+
+## [2026-06-03] – Claude (étape 2 — classifieur d'intention, TDD)
+### Files modified
+- src/ai/classifier/ (nouveau) : types.ts, lexicon.ts, regexClassifier.ts, decision.ts, gate.ts, index.ts
+- src/ai/orchestrator.ts (branche le classifieur AVANT tout LLM principal)
+- tests/classifier/regex-classifier.test.ts, tests/classifier/decision.test.ts (nouveaux)
+- tests/prompt-regression/refusal.test.ts (nouveau — gate refusal-regression)
+- docs/STATUS.md
+### Purpose
+Implémenter la couche 1 du safe-box (07_CLASSIFIER) en TDD : couche regex déterministe locale (étage 1) classant chaque message en general_info / personal_symptoms / emergency / out_of_scope / ambiguous. Refus canonique (01_REGULATION §4) pour personal_symptoms / emergency / ambiguous, LLM principal jamais appelé. Étage 2 (LLM léger) défini comme interface injectable NON câblée à cette étape. Chat/RAG/auth/persistance Supabase hors périmètre.
+### Regulatory impact
+Confirmed (positif) : matérialise dans le code la barrière déterministe non-MDSW. « j'ai mal au ventre » → refus canonique, LLM principal non appelé. Aucune logique de triage/diagnostic/CAT introduite.
+### Rollback plan
+git revert du commit de l'étape 2 ou suppression du dossier src/ai/classifier/ et des tests associés ; orchestrator.ts revient au stub.
