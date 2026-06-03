@@ -18,6 +18,7 @@ Base documentaire du projet MedInfo AI v4. **À lire avant toute contribution** 
 | `06_BILLING.md` | Stripe web-first, tiers, TVA, coûts/abonnements, vérif statut (RPPS) |
 | `07_CLASSIFIER.md` | Classifieur d'intention (couche 1 safe-box) — composant critique |
 | `08_RAG.md` | Pipeline RAG, qualité réponses, corpus FR, citation grounding |
+| `09_DEPLOYMENT.md` | Runbook Vercel + Supabase dédié, variables, smoke-test |
 | `DECISIONS/` | ADRs (1 fichier = 1 décision) — 8 décisions actées |
 
 ## Règle pour les agents IA
