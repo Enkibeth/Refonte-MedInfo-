@@ -115,8 +115,26 @@ Validations locales : `npm run typecheck`, `npm run test` (67 tests), `npm run c
 Hors périmètre conservé (étapes ultérieures) : chat streaming, RAG, Stripe, historique/dossiers,
 étage 2 du classifieur. Le classifieur couche 1 n'a pas été modifié.
 
+## Étape 4 — Chat streaming + prompt public.v2 + 4 outils : **implémentée + réintégrée sur dev**
+
+Chat streaming (Vercel AI SDK v6), prompt `public.v2` (versionné sous contrat, gate
+`prompt-contract` vert), 4 skills (`propose_followups`, `show_sources`, `refuse_and_redirect`,
+`render_qcm` student-only), couche 3 `outputValidator` (marqueurs diagnostiques bloqués).
+
+**Note topologie** : l'étape 4 avait d'abord été mergée dans `main` sur une base antérieure à
+l'étape 3 (recréant un `useSession` parallèle via `user_metadata`). Réintégrée sur `dev`
+par-dessus l'étape 3 : le chat lit la persona via l'`AuthProvider` adossé à la RLS (`profiles`),
+doublon `src/hooks/useSession.ts` supprimé. `dev` porte désormais les étapes 2 + 3 + 4.
+`main` reste à réaligner via `dev → staging → main`.
+
+Validations : `npm run typecheck` ✅ · `npm run test` (88) ✅ · `npm run compliance` (5 gates) ✅.
+
 ## Étape suivante
 
-Étape 4 — Chat streaming + prompt `public.v2` + tool-calling (`04_CHATBOT §5,§8`).
+Étape 5 — RAG pgvector sur petit corpus test HAS/ANSM (`08_RAG`).
 Pré-requis classifieur restants (post-MVP) : câblage étage 2 (Gemini Flash-Lite / Haiku 4.5),
 persistance `classifier_decisions`, diversification du golden set, lexique `out_of_scope`.
+
+⚠️ **Hygiène branches** : faire brancher les prochaines sessions (Claude/Codex) depuis `dev`,
+jamais `main`. Envisager de définir `dev` comme branche par défaut du repo pour éviter les
+réintégrations (cf incidents étape 4 mergée sur main, Codex #4 ciblant main).
