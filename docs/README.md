@@ -8,6 +8,7 @@ Base documentaire du projet MedInfo AI v4. **À lire avant toute contribution** 
 ## Index
 | Doc | Rôle |
 |---|---|
+| `STATUS.md` | Statut courant du projet, validation des étapes, limites connues |
 | `00_CHARTER.md` | Constitution, doctrine, critères de succès |
 | `01_REGULATION.md` | **SOURCE DE VÉRITÉ** : safe-box non-MDSW, intended purpose, HDS, AI Act, refus |
 | `02_ARCHITECTURE.md` | Stack, repo, flux, coûts, app stores, DNS |
