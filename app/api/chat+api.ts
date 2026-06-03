@@ -7,7 +7,8 @@
  * Logging ai_interactions (service_role, aucune donnée santé identifiable).
  */
 import { streamText, convertToModelMessages } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
+
+import { getActiveModel, getActiveModelId } from '@/ai/providers/index';
 
 import { runClassifierGate } from '@/ai/classifier/gate';
 import { getActivePrompt } from '@/ai/prompts/index';
@@ -86,7 +87,7 @@ export async function POST(request: Request): Promise<Response> {
   const modelMessages = await convertToModelMessages(uiMessages as any);
 
   const result = streamText({
-    model: anthropic('claude-sonnet-4-6'),
+    model: getActiveModel(),
     system: prompt.template,
     messages: modelMessages,
     tools: getToolsForPersona(persona),
@@ -96,7 +97,7 @@ export async function POST(request: Request): Promise<Response> {
 
       await logInteraction({
         persona,
-        model_used: prompt.model_default,
+        model_used: getActiveModelId(),
         tokens_in: usage?.inputTokens,
         tokens_out: usage?.outputTokens,
         latency_ms: Date.now() - startMs,
