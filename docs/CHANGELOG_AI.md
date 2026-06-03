@@ -72,3 +72,16 @@ Documenter la limite réelle de vérification distante : aucun run GitHub Action
 None (documentation et hygiène repo uniquement).
 ### Rollback plan
 git revert des commits documentaires et suppression manuelle éventuelle des branches si nécessaire.
+
+## [2026-06-03] – GPT-5.3-Codex (golden set classifieur FR)
+### Files modified
+- tests/classifier/golden/golden-set.fr.jsonl
+- scripts/eval/classifier-goldenset.mjs
+- package.json
+- docs/CHANGELOG_AI.md
+### Purpose
+Ajouter un golden set synthétique français de calibration du classifieur d'intention et un harnais d'évaluation regex/fail-safe sans appel LLM réel.
+### Regulatory impact
+Confirmed (positif) : support de calibration pour réduire les faux négatifs `personal_symptoms`/`emergency` sans introduire de logique de triage ou diagnostic.
+### Rollback plan
+git revert du commit d'ajout du golden set et du script `eval:classifier`.
