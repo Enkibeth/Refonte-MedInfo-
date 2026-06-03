@@ -138,3 +138,16 @@ persistance `classifier_decisions`, diversification du golden set, lexique `out_
 ⚠️ **Hygiène branches** : faire brancher les prochaines sessions (Claude/Codex) depuis `dev`,
 jamais `main`. Envisager de définir `dev` comme branche par défaut du repo pour éviter les
 réintégrations (cf incidents étape 4 mergée sur main, Codex #4 ciblant main).
+
+## Déploiement Vercel + Supabase dédié — **configuré côté repo**
+
+Périmètre livré le 2026-06-03 :
+
+- Export Expo Router passé en `web.output=server` pour générer `dist/client` + `dist/server`.
+- Entrypoint Vercel `api/index.js` avec `expo-server/adapter/vercel`.
+- `vercel.json` v3 : build `expo export -p web`, output `dist/client`, inclusion `dist/server/**`, rewrite vers la Function.
+- Helper serveur Supabase centralisé (`src/db/serverSupabase.ts`) : `SUPABASE_URL` prioritaire, fallback `EXPO_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` serveur uniquement.
+- Route smoke-test `GET /api/health` sans secret pour confirmer provider IA + statut Supabase.
+- Runbook complet dans `docs/09_DEPLOYMENT.md`.
+
+Limite : les vraies clés Supabase/IA ne sont pas présentes dans le repo et doivent être ajoutées dans Vercel. La connexion au projet Supabase dédié sera effective après création des variables `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` dans Vercel et redéploiement.
