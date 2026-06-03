@@ -17,6 +17,38 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-03] – Claude (étape 4 — chat streaming + prompt public.v2 + 4 outils)
+### Files modified
+- src/ai/prompts/_schema.ts (update : align spec 04_CHATBOT §3 — RegulatoryScope, contract, eval_threshold multi-champs, template, model_default)
+- src/ai/prompts/public.v2.ts (nouveau : artefact publicPromptV2 versionné sous contrat)
+- src/ai/prompts/index.ts (nouveau : registry getActivePrompt par persona)
+- src/ai/skills/propose_followups.ts (nouveau : tool AI SDK v6, inputSchema Zod)
+- src/ai/skills/show_sources.ts (nouveau : idem)
+- src/ai/skills/refuse_and_redirect.ts (nouveau : retourne CANONICAL_REFUSAL)
+- src/ai/skills/render_qcm.ts (nouveau : student only, activé étape 6)
+- src/ai/guardrails/outputValidator.ts (nouveau : couche 3 — regex marqueurs diagnostiques)
+- src/ai/logging/logInteraction.ts (nouveau : insert ai_interactions service_role, 0 donnée santé)
+- src/hooks/useSession.ts (nouveau : persona via Supabase auth, défaut public)
+- app/api/chat+api.ts (nouveau : POST handler streaming — 3 couches + log)
+- app/(chat)/chat.tsx (update : useChat AI SDK v6 + rendu tool-calls natifs)
+- scripts/eval/validate-prompts.mjs (update : exclure index.ts du gate prompt-contract)
+- .env.example (update : SUPABASE_URL serveur)
+- tests/guardrails/output-validator.test.ts (nouveau : TDD couche 3)
+- tests/chat/tool-calling.test.ts (nouveau : matrice persona × outil + execute)
+### Purpose
+Implémenter le chat streaming (Vercel AI SDK v6 streamText + useChat), le prompt public.v2
+versionné sous contrat, et les 4 outils (tool-calling natif). Defense-in-depth 3 couches :
+classifieur couche 1 (inchangé), contrainte prompt couche 2, validation de sortie couche 3.
+Logging ai_interactions (service_role only, aucune donnée santé). 76/76 tests verts.
+### Regulatory impact
+Confirmed (positif) : première route LLM complète sous le régime safe-box 3 couches ;
+le LLM n'est jamais appelé sur personal_symptoms / emergency / ambiguous.
+Aucune fonctionnalité MDSW introduite ; prompt public.v2 conforme 01_REGULATION §1.
+### Rollback plan
+git revert du commit de cette étape ; les fichiers supprimés restent gitignorés.
+
+---
+
 ## [2026-06-02] – Claude (foundation)
 ### Files modified
 - docs/00_CHARTER.md, 01_REGULATION.md, 02_ARCHITECTURE.md, 03_SECURITY.md,
@@ -196,3 +228,22 @@ DEFINER) était appelable via PostgREST RPC par anon/authenticated → REVOKE EX
 None (durcissement sécurité ; aucune logique métier/médicale ; aucune donnée santé).
 ### Rollback plan
 git revert de ce commit + GRANT EXECUTE ... TO authenticated si réactivation RPC souhaitée.
+
+## [2026-06-03] – Claude (réintégration étape 4 chat sur dev + dédoublonnage useSession)
+### Files modified
+- merge de claude/etape-4-chat-streaming-015pt dans dev (app/api/chat+api.ts, src/ai/prompts/*,
+  src/ai/skills/*, src/ai/guardrails/outputValidator.ts, src/ai/providers, src/ai/logging,
+  app/(chat)/chat.tsx, tests/chat, tests/guardrails)
+- app/(chat)/chat.tsx : useSession importé depuis @/auth/AuthProvider (persona via profiles/RLS)
+- src/hooks/useSession.ts : SUPPRIMÉ (doublon lisant la persona via user_metadata)
+### Purpose
+L'étape 4 (chat streaming + public.v2 + 4 outils + couche 3) avait été mergée dans `main` sur
+une base antérieure à l'étape 3, recréant un `useSession` parallèle adossé à `user_metadata`.
+Réintégration sur `dev` (branche d'intégration) PAR-DESSUS l'étape 3, en conservant l'unique
+AuthProvider adossé à la RLS : le chat lit désormais la persona via `profiles` (RLS), pas via
+`user_metadata`. Le doublon est supprimé. Aucune logique de triage/diagnostic introduite ; la
+défense 3 couches (classifieur + prompt + validation sortie) reste intacte.
+### Regulatory impact
+None (réconciliation de branches ; persona toujours adossée à la RLS ; safe-box inchangée).
+### Rollback plan
+git revert du commit de merge de réintégration.
