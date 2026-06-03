@@ -13,6 +13,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
+import * as Linking from 'expo-linking';
 
 import { getSupabaseClient } from '@/db/supabase';
 import type { Persona } from '@/ai/prompts/_schema';
@@ -70,7 +71,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       async signInWithEmail(email: string) {
         const supabase = getSupabaseClient();
-        const { error } = await supabase.auth.signInWithOtp({ email });
+        const { error } = await supabase.auth.signInWithOtp({
+          email: email.trim().toLowerCase(),
+          options: { emailRedirectTo: Linking.createURL('/') },
+        });
         return { error: error?.message ?? null };
       },
       async signOut() {

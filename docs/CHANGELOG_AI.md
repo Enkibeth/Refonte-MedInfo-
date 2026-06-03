@@ -164,3 +164,21 @@ maintenu désactivé. Secrets hors repo (anon côté client protégée RLS, serv
 ### Rollback plan
 git revert du commit de l'étape 3 (supprime migrations/policies/auth/routing ; le scaffold
 revient à l'état post-étape 2, le gate rls-isolation redevient un placeholder).
+
+## [2026-06-03] – Claude + GPT-5.3-Codex (intégration polish UI auth dans l'étape 3)
+### Files modified
+- app/(auth)/sign-in.tsx, app/(account)/account.tsx (écrans polis de Codex, PR #4)
+- src/auth/AuthProvider.tsx (emailRedirectTo magic link + normalisation email, repris de Codex)
+### Purpose
+Intégrer le scaffolding UI poli produit par Codex (PR #4 : états chargement/succès/erreur,
+accessibilité, ActivityIndicator) DANS la branche étape 3, plutôt que de merger #4 telle quelle.
+Raison : #4 ciblait `main` (gouvernance = PR vers `dev`) et dupliquait un AuthProvider lisant la
+persona depuis `user_metadata` au lieu de la table `profiles` via RLS. On conserve l'AuthProvider
+de l'étape 3 (persona = source profiles/RLS) + la garde de navigation par persona, et on adopte
+les deux améliorations utiles de Codex (emailRedirectTo, normalisation email). PR #4 fermée comme
+intégrée. Crédit Codex conservé.
+### Regulatory impact
+None (UI et plomberie auth ; aucune logique médicale, persona toujours adossée à la RLS, module
+professionnel inchangé/désactivé).
+### Rollback plan
+git revert de ce commit (les écrans reviennent à la version minimale fonctionnelle de l'étape 3).
