@@ -17,6 +17,84 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-03] – Claude (fix déploiement Vercel — Node 22.x + 404 racine)
+### Files modified
+- package.json (engines.node = "22.x" ; build:web ajoute le fallback HTML ; vercel-build = npm run build:web)
+- vercel.json (buildCommand = npm run build:web)
+- scripts/vercel/copy-server-html-to-client.mjs (nouveau — copie les coquilles HTML
+  pré-rendues de dist/server vers dist/client, fallback statique racine + écrans)
+### Purpose
+Corriger le 404 du site sur Vercel. Deux causes identifiées via les logs de build/déploiement :
+1) Le projet Vercel était réglé sur Node 24.x alors que @vercel/node@5.1.8 exige 22.x →
+   tout déploiement portant la config de fonctions échouait. Fix : engines.node "22.x" dans
+   package.json (override le réglage projet, doc Vercel). 2) En mode web.output=server, Vercel
+   renvoyait un 404 plateforme à la racine faute de dist/client/index.html. Fix : script de
+   fallback copiant les HTML pré-rendus dans dist/client (les routes /api/* restent servies
+   par api/index.js). Build web validé localement (index.html généré). N'altère AUCUNE logique
+   applicative (safe-box, rate-limit, classifieur inchangés). Reprend la bonne idée de la PR #15
+   sans ses régressions (la #15 datait d'avant le rate-limit #13).
+### Regulatory impact
+None (déploiement/build uniquement ; aucune logique médicale, aucune donnée santé).
+### Rollback plan
+git revert du commit ; revenir à buildCommand "expo export -p web" et retirer engines.node.
+Note : nécessite que les variables d'env Supabase/LLM soient configurées dans Vercel.
+
+
+### Files modified
+- src/compliance/disclosures.ts (AI_DISCLOSURE constante → getAiDisclosure(system?) ;
+  défaut nomme les deux providers ; source unique conservée)
+- src/ai/providers/index.ts (getActiveSystemLabel() : libellé serveur du modèle actif)
+- app/index.tsx, app/(auth)/sign-in.tsx (utilisent getAiDisclosure())
+- docs/01_REGULATION.md §6 (v1.2.0 : disclosure reflète le modèle servi ; deux providers
+  Anthropic + OpenAI ; note juridique deux DPA/SCC à couvrir)
+- tests/unit/disclosure.test.ts (nouveau)
+### Purpose
+Corriger l'incohérence audit I3 : la disclosure annonçait « GPT-5.x, OpenAI » alors que le
+stack par défaut est Anthropic (claude-sonnet-4-6). Décision Hugo : les DEUX providers seront
+utilisés → la disclosure doit refléter le système réellement servi. Forme UI statique = nomme
+les deux ; forme serveur = injecte le libellé du modèle actif (getActiveSystemLabel). Source
+unique conservée (pas de variante concurrente).
+### Regulatory impact
+Confirmed (positif) : disclosure art. 50 exacte vis-à-vis du modèle réellement servi.
+Point ouvert signalé pour Hugo : couvrir DEUX DPA/SCC + résidence EU (Anthropic ET OpenAI, §5).
+### Rollback plan
+git revert du commit ; restaurer la constante AI_DISCLOSURE et les imports d'origine.
+
+---
+
+## [2026-06-03] – Claude (durcissement safe-box 3 couches — corrections audit B1/I1/I2/M1)
+### Files modified
+- app/api/chat+api.ts (refonte : screening couche 1 sur TOUTE la conversation ; couche 3
+  bufferisée + remplaçante ; refus émis en flux UI-message ; logging unifié)
+- src/ai/orchestrator.ts (nouveau rôle : screenConversation + extractUserTexts = accès pré-LLM ;
+  n'est plus du code mort — réalise l'invariant 02_ARCHITECTURE §3)
+- src/ai/guardrails/refusalStream.ts (nouveau : buildRefusalChunks — refus en tool-call
+  refuse_and_redirect portant CANONICAL_REFUSAL)
+- app/(chat)/chat.tsx (fix état tool-part 'output-available' : sans ça AUCUN tool-call ne
+  s'affichait — sources, refus, suggestions)
+- tests/guardrails/conversation-screen.test.ts (nouveau — I1, historique forgé bloqué)
+- tests/guardrails/refusal-stream.test.ts (nouveau — I2, refus porte le message canonique)
+### Purpose
+Corriger 4 écarts révélés par l'audit, sans toucher au classifieur couche 1 :
+- B1 : la couche 3 (validateOutput) était seulement loggée APRÈS le streaming → sortie
+  diagnostique déjà partie. Désormais la réponse complète est bufferisée puis validée AVANT
+  émission ; si bloquée, REMPLACÉE par le refus canonique (01_REGULATION §4 enfin tenu).
+- I1 : le classifieur n'inspectait que le DERNIER message alors que tout l'historique
+  (client non fiable) atteignait le LLM. screenConversation reclassifie chaque tour
+  utilisateur → un historique forgé avec symptômes en tour antérieur est bloqué.
+- I2 : le refus couche 1 était un JSON non rendu par useChat (bannière d'erreur générique).
+  Il est désormais émis dans le flux UI-message et s'affiche comme refus.
+- M1 : orchestrator.ts (code mort) devient le module d'accès pré-LLM utilisé par la route.
+### Regulatory impact
+Confirmed (positif) : defense-in-depth réellement à 3 couches effectives ; aucun chemin
+identifié laissant un message atteindre le LLM sans passage couche 1 ; refus affiché à
+l'utilisateur. Aucune logique de triage/diagnostic introduite ; classifieur couche 1 inchangé.
+### Rollback plan
+git revert du commit de cette branche ; les nouveaux fichiers (refusalStream.ts, tests) sont
+supprimés et chat+api.ts revient au handler streaming précédent.
+
+---
+
 ## [2026-06-03] – Claude (étape 4 — chat streaming + prompt public.v2 + 4 outils)
 ### Files modified
 - src/ai/prompts/_schema.ts (update : align spec 04_CHATBOT §3 — RegulatoryScope, contract, eval_threshold multi-champs, template, model_default)
@@ -247,3 +325,40 @@ défense 3 couches (classifieur + prompt + validation sortie) reste intacte.
 None (réconciliation de branches ; persona toujours adossée à la RLS ; safe-box inchangée).
 ### Rollback plan
 git revert du commit de merge de réintégration.
+
+## [2026-06-03] – GPT-5.3-Codex (audit M2 — rate limiting 03_SECURITY §3)
+### Files modified
+- supabase/migrations/0004_usage_counters.sql, supabase/migrations/README.md (table compteurs journaliers + RPC atomique)
+- supabase/policies/usage_counters.sql, supabase/policies/README.md (service_role only)
+- src/ai/rateLimit/chatRateLimit.ts (nouveau — limites free MVP public/student + cap IP non-auth)
+- app/api/chat+api.ts (check rate-limit avant la couche 1, sans modifier le classifieur ni la défense 3 couches)
+- tests/rls/isolation.test.ts (couverture RLS usage_counters)
+- tests/chat/rate-limit.test.ts, tests/chat/chat-api-rate-limit.test.ts (11e message public free → 429, ordre avant classifieur)
+### Purpose
+Corriger l'audit M2 rate limiting : compteur journalier technique par identité/persona, reset quotidien, limites MVP Public free 10/j et Étudiant free 20/j, module Pro non activé, cap dur par IP hashée pour les non-authentifiés anti-scraping. Le contrôle est exécuté au début de `POST /api/chat`, après parsing JSON/persona mais AVANT le classifieur couche 1 conformément à 02_ARCHITECTURE §3 [1].
+### Regulatory impact
+Confirmed (positif) : réduction du risque d'abus/coûts et scraping sans stockage de donnée santé ni contenu de message. La safe-box non-MDSW reste inchangée : aucun changement du classifieur couche 1, des prompts, des outils ou de la validation de sortie.
+### Rollback plan
+git revert de ce commit (supprime la migration/policy usage_counters, le helper rate-limit, les tests associés et retire le check 429 de la route chat).
+
+---
+
+## [2026-06-03] – GPT-5.3-Codex (préparation Vercel + Supabase dédié)
+### Files modified
+- app.json (export Expo Router server)
+- api/index.js, vercel.json (adapter Vercel + rewrites)
+- package.json, package-lock.json (scripts build web + dépendance expo-server)
+- src/db/serverSupabase.ts, src/ai/logging/logInteraction.ts, app/api/health+api.ts (helper Supabase serveur + smoke-test)
+- tests/unit/server-supabase.test.ts (couverture config Supabase serveur)
+- docs/09_DEPLOYMENT.md, docs/README.md, docs/STATUS.md, README.md, .env.example
+### Purpose
+Adapter le projet au déploiement Vercel avec API routes Expo Router : build `expo export -p web`,
+publication `dist/client`, Function Vercel déléguant au bundle `dist/server`. Centraliser la
+connexion Supabase serveur pour le projet dédié MedInfo et documenter toutes les variables Vercel
+nécessaires, y compris `EXPO_PUBLIC_SUPABASE_ANON_KEY` côté client et `SUPABASE_SERVICE_ROLE_KEY`
+côté serveur. Ajouter `/api/health` pour vérifier la configuration sans exposer de secrets.
+### Regulatory impact
+None (déploiement, secrets et observabilité technique ; aucune logique médicale, aucun stockage de
+contenu de santé identifiable, safe-box inchangée).
+### Rollback plan
+git revert de ce commit puis suppression des variables Vercel ajoutées si besoin.

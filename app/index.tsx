@@ -1,7 +1,7 @@
 import { Link } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { INTENDED_PURPOSE, AI_DISCLOSURE } from '@/compliance/disclosures';
+import { INTENDED_PURPOSE, getAiDisclosure } from '@/compliance/disclosures';
 import { tokens } from '@/ui/tokens';
 
 export default function HomeScreen() {
@@ -11,7 +11,7 @@ export default function HomeScreen() {
         <Text style={styles.eyebrow}>MedInfo AI v4</Text>
         <Text style={styles.title}>Socle Expo prêt.</Text>
         <Text style={styles.body}>{INTENDED_PURPOSE}</Text>
-        <Text style={styles.notice}>{AI_DISCLOSURE}</Text>
+        <Text style={styles.notice}>{getAiDisclosure()}</Text>
 
         <View style={styles.links}>
           <Link href="/(chat)/chat" style={styles.link}>Chat placeholder</Link>

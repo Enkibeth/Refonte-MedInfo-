@@ -2,7 +2,7 @@
 
 ```yaml
 title: Regulatory Doctrine
-version: 1.1.0
+version: 1.2.0
 owner: Hugo Bettembourg
 status: Active
 date: 2026-06-03
@@ -97,10 +97,16 @@ Le refus ne repose **jamais** sur le seul prompt. Implémentation dans `04_CHATB
 
 **Position :** hors MDSW → **« risque limité »** → seul **art. 50(1)** (informer interaction IA). Applicable **2 août 2026**. Sanction ≤ 15 M€ / 3% CA.
 
-**Disclosure AI Act (verbatim, avant 1ʳᵉ interaction) :**
-> *Vous interagissez avec un système d'intelligence artificielle (GPT-5.x, OpenAI). Les réponses sont générées automatiquement et peuvent contenir des erreurs.*
+**Disclosure AI Act (avant 1ʳᵉ interaction) — le système nommé doit refléter le modèle réellement servi.**
+Le projet peut servir **deux providers** (Anthropic et OpenAI, cf `02_ARCHITECTURE §5` et `src/ai/providers`). La disclosure ne fige donc aucun fournisseur : elle nomme le système actif quand il est connu (contexte serveur), sinon les deux providers possibles (contexte UI statique). Source unique : `src/compliance/disclosures.ts` (`getAiDisclosure`).
 
-GPAI (Art. 51-55) → OpenAI, pas MedInfo. Bascule auto en haut-risque (Art. 6(1)) si MedInfo devient MDSW.
+- Forme UI statique (onboarding, sign-in) :
+> *Vous interagissez avec un système d'intelligence artificielle (Claude (Anthropic) ou GPT (OpenAI) selon le modèle servi). Les réponses sont générées automatiquement et peuvent contenir des erreurs.*
+- Forme serveur (modèle connu, ex. réponse chat) : le libellé exact du modèle actif est injecté (ex. *« …(claude-sonnet-4-6, Anthropic)… »* ou *« …(gpt-5.x, OpenAI)… »*) via `getActiveSystemLabel()`.
+
+GPAI (Art. 51-55) → **le ou les providers GPAI** (OpenAI et/ou Anthropic), pas MedInfo. Bascule auto en haut-risque (Art. 6(1)) si MedInfo devient MDSW.
+
+> **À valider côté juridique (Hugo) :** deux providers = **deux DPA / SCC + résidence EU** à couvrir (Anthropic ET OpenAI, cf §5), pas un seul.
 
 ---
 

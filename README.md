@@ -16,9 +16,10 @@ Le projet opère sous doctrine **safe-box non-MDSW** (hors dispositif médical, 
 - Étape 1 scaffold : **livrée**.
 - App Expo vide : **présente**.
 - Supabase/Vercel AI SDK : **préparés**.
+- Déploiement Vercel + connexion Supabase dédié : **configurés côté repo** (`vercel.json`, `api/index.js`, `docs/09_DEPLOYMENT.md`).
 - Module Pro/RPPS : **post-MVP, non activé**.
 - Données santé identifiables : **interdites au MVP**.
-- Appel LLM principal : **non branché** tant que le classifieur étape 2 n'est pas implémenté.
+- Chat streaming + appels LLM : **branchés côté API**, protégés par la safe-box 3 couches.
 
 ## Installation
 
@@ -27,6 +28,16 @@ cp .env.example .env
 npm install
 npm run dev
 ```
+
+## Déploiement Vercel
+
+Le repo contient la configuration Vercel pour Expo Router en sortie serveur :
+
+```bash
+npm run build:web
+```
+
+Configurer ensuite les variables Vercel/Supabase décrites dans `docs/09_DEPLOYMENT.md`, puis vérifier `GET /api/health` après déploiement.
 
 ## Commandes de validation
 
