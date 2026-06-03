@@ -20,7 +20,7 @@ import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, isTextUIPart, isToolUIPart } from 'ai';
 import type { UIMessage, UIMessagePart, UIDataTypes, UITools } from 'ai';
 
-import { useSession } from '@/hooks/useSession';
+import { useSession } from '@/auth/AuthProvider';
 import { tokens } from '@/ui/tokens';
 
 // ── Types tool-call ────────────────────────────────────────────────────────
@@ -151,13 +151,15 @@ function MessageBubble({
 // ── Écran principal ────────────────────────────────────────────────────────
 
 export default function ChatScreen() {
+  // Persona issue de l'AuthProvider (source profiles/RLS, étape 3). Fallback 'public'
+  // tant que la session/le profil charge ou pour un visiteur non authentifié.
   const { persona } = useSession();
   const [input, setInput] = useState('');
 
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat',
-      body: { persona },
+      body: { persona: persona ?? 'public' },
     }),
   });
 
