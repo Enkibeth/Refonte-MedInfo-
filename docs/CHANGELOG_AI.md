@@ -17,7 +17,29 @@ None | Potential | Confirmed
 
 ---
 
-## [2026-06-03] – Claude (disclosure AI Act multi-provider — correction audit I3)
+## [2026-06-03] – Claude (fix déploiement Vercel — Node 22.x + 404 racine)
+### Files modified
+- package.json (engines.node = "22.x" ; build:web ajoute le fallback HTML ; vercel-build = npm run build:web)
+- vercel.json (buildCommand = npm run build:web)
+- scripts/vercel/copy-server-html-to-client.mjs (nouveau — copie les coquilles HTML
+  pré-rendues de dist/server vers dist/client, fallback statique racine + écrans)
+### Purpose
+Corriger le 404 du site sur Vercel. Deux causes identifiées via les logs de build/déploiement :
+1) Le projet Vercel était réglé sur Node 24.x alors que @vercel/node@5.1.8 exige 22.x →
+   tout déploiement portant la config de fonctions échouait. Fix : engines.node "22.x" dans
+   package.json (override le réglage projet, doc Vercel). 2) En mode web.output=server, Vercel
+   renvoyait un 404 plateforme à la racine faute de dist/client/index.html. Fix : script de
+   fallback copiant les HTML pré-rendus dans dist/client (les routes /api/* restent servies
+   par api/index.js). Build web validé localement (index.html généré). N'altère AUCUNE logique
+   applicative (safe-box, rate-limit, classifieur inchangés). Reprend la bonne idée de la PR #15
+   sans ses régressions (la #15 datait d'avant le rate-limit #13).
+### Regulatory impact
+None (déploiement/build uniquement ; aucune logique médicale, aucune donnée santé).
+### Rollback plan
+git revert du commit ; revenir à buildCommand "expo export -p web" et retirer engines.node.
+Note : nécessite que les variables d'env Supabase/LLM soient configurées dans Vercel.
+
+
 ### Files modified
 - src/compliance/disclosures.ts (AI_DISCLOSURE constante → getAiDisclosure(system?) ;
   défaut nomme les deux providers ; source unique conservée)
