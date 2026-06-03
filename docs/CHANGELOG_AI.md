@@ -17,6 +17,62 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-03] – Claude (disclosure AI Act multi-provider — correction audit I3)
+### Files modified
+- src/compliance/disclosures.ts (AI_DISCLOSURE constante → getAiDisclosure(system?) ;
+  défaut nomme les deux providers ; source unique conservée)
+- src/ai/providers/index.ts (getActiveSystemLabel() : libellé serveur du modèle actif)
+- app/index.tsx, app/(auth)/sign-in.tsx (utilisent getAiDisclosure())
+- docs/01_REGULATION.md §6 (v1.2.0 : disclosure reflète le modèle servi ; deux providers
+  Anthropic + OpenAI ; note juridique deux DPA/SCC à couvrir)
+- tests/unit/disclosure.test.ts (nouveau)
+### Purpose
+Corriger l'incohérence audit I3 : la disclosure annonçait « GPT-5.x, OpenAI » alors que le
+stack par défaut est Anthropic (claude-sonnet-4-6). Décision Hugo : les DEUX providers seront
+utilisés → la disclosure doit refléter le système réellement servi. Forme UI statique = nomme
+les deux ; forme serveur = injecte le libellé du modèle actif (getActiveSystemLabel). Source
+unique conservée (pas de variante concurrente).
+### Regulatory impact
+Confirmed (positif) : disclosure art. 50 exacte vis-à-vis du modèle réellement servi.
+Point ouvert signalé pour Hugo : couvrir DEUX DPA/SCC + résidence EU (Anthropic ET OpenAI, §5).
+### Rollback plan
+git revert du commit ; restaurer la constante AI_DISCLOSURE et les imports d'origine.
+
+---
+
+## [2026-06-03] – Claude (durcissement safe-box 3 couches — corrections audit B1/I1/I2/M1)
+### Files modified
+- app/api/chat+api.ts (refonte : screening couche 1 sur TOUTE la conversation ; couche 3
+  bufferisée + remplaçante ; refus émis en flux UI-message ; logging unifié)
+- src/ai/orchestrator.ts (nouveau rôle : screenConversation + extractUserTexts = accès pré-LLM ;
+  n'est plus du code mort — réalise l'invariant 02_ARCHITECTURE §3)
+- src/ai/guardrails/refusalStream.ts (nouveau : buildRefusalChunks — refus en tool-call
+  refuse_and_redirect portant CANONICAL_REFUSAL)
+- app/(chat)/chat.tsx (fix état tool-part 'output-available' : sans ça AUCUN tool-call ne
+  s'affichait — sources, refus, suggestions)
+- tests/guardrails/conversation-screen.test.ts (nouveau — I1, historique forgé bloqué)
+- tests/guardrails/refusal-stream.test.ts (nouveau — I2, refus porte le message canonique)
+### Purpose
+Corriger 4 écarts révélés par l'audit, sans toucher au classifieur couche 1 :
+- B1 : la couche 3 (validateOutput) était seulement loggée APRÈS le streaming → sortie
+  diagnostique déjà partie. Désormais la réponse complète est bufferisée puis validée AVANT
+  émission ; si bloquée, REMPLACÉE par le refus canonique (01_REGULATION §4 enfin tenu).
+- I1 : le classifieur n'inspectait que le DERNIER message alors que tout l'historique
+  (client non fiable) atteignait le LLM. screenConversation reclassifie chaque tour
+  utilisateur → un historique forgé avec symptômes en tour antérieur est bloqué.
+- I2 : le refus couche 1 était un JSON non rendu par useChat (bannière d'erreur générique).
+  Il est désormais émis dans le flux UI-message et s'affiche comme refus.
+- M1 : orchestrator.ts (code mort) devient le module d'accès pré-LLM utilisé par la route.
+### Regulatory impact
+Confirmed (positif) : defense-in-depth réellement à 3 couches effectives ; aucun chemin
+identifié laissant un message atteindre le LLM sans passage couche 1 ; refus affiché à
+l'utilisateur. Aucune logique de triage/diagnostic introduite ; classifieur couche 1 inchangé.
+### Rollback plan
+git revert du commit de cette branche ; les nouveaux fichiers (refusalStream.ts, tests) sont
+supprimés et chat+api.ts revient au handler streaming précédent.
+
+---
+
 ## [2026-06-03] – Claude (étape 4 — chat streaming + prompt public.v2 + 4 outils)
 ### Files modified
 - src/ai/prompts/_schema.ts (update : align spec 04_CHATBOT §3 — RegulatoryScope, contract, eval_threshold multi-champs, template, model_default)
