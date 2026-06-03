@@ -10,31 +10,49 @@ date: 2026-06-03
 
 ## État courant
 
-- Étape 1 — scaffold : **terminée et poussée sur GitHub**.
-- Commit de référence : `745a4f3f6d74964ecc19f60783f4aabfef01f692`.
-- Branches présentes : `main`, `dev`, `staging`, toutes initialisées depuis le commit de l'étape 1.
+- Étapes 1 → 4 livrées. Corrections d'audit (B1/I1/I2/I3/M1), rate-limiting (M2) et
+  déploiement Vercel intégrés.
+- Branches `main`, `dev`, `staging` : **alignées** (même arbre) après PR #17/#18.
+  `dev` reste la branche d'intégration ; brancher les sessions depuis `dev`.
 - Architecture documentaire : organisée dans `docs/` avec ADRs dans `docs/DECISIONS/`.
-- Workflow GitHub Actions : présent dans `.github/workflows/compliance.yml`.
+- Workflow GitHub Actions : `.github/workflows/compliance.yml` (5 gates).
 
-## Validations locales effectuées
+## Validations
 
-Les commandes suivantes ont été exécutées localement sur le scaffold étape 1 :
+Local et CI distante (GitHub Actions) : **OK**.
 
 ```bash
-npm run typecheck
-npm run test
-npm run compliance
+npm run typecheck   # OK
+npm run test        # OK
+npm run compliance  # 5 gates OK
 ```
 
-Résultat local : **OK**.
+## Statut CI distante
 
-## Limite de vérification distante
+La chaîne CI distante (GitHub Actions `compliance`) est **active et verte** sur `dev`,
+`staging` et `main` (runs `pull_request` + `push`). La réserve initiale (« aucun run
+exploitable au moment du contrôle ») est **levée**.
 
-Au moment de la vérification initiale, GitHub ne renvoyait pas encore de run GitHub Actions exploitable pour le commit `745a4f3f6d74964ecc19f60783f4aabfef01f692`.
+## Corrections d'audit IA (2026-06-03)
 
-Conséquence : l'étape 1 est validée par les contrôles locaux et par la présence distante des fichiers critiques, mais le premier statut CI GitHub Actions reste à confirmer lors d'un prochain push ou d'une prochaine pull request.
+Audit en lecture seule → corrections appliquées et mergées sur `dev` puis `main`/`staging` :
 
-Cette limite ne bloque pas l'étape 2, mais elle doit être levée avant de considérer la chaîne CI distante comme prouvée.
+- **B1** — couche 3 (validation de sortie) désormais bufferisée et **remplaçante** avant émission.
+- **I1** — couche 1 appliquée à **tout l'historique** (`screenConversation`), pas au seul dernier message.
+- **I2** — refus déterministe émis en **flux UI-message** (s'affiche au lieu d'une erreur générique).
+- **I3** — disclosure AI Act **multi-provider** (`getAiDisclosure`, reflète le modèle servi ; 01_REGULATION §6 v1.2.0).
+- **M1** — `orchestrator.ts` devient le module d'accès pré-LLM (plus de code mort).
+- **M2** — rate-limiting `POST /api/chat` (table `usage_counters`, limites MVP).
+- Fix latent : état tool-part client `'output-available'` (les tool-calls ne s'affichaient pas).
+
+Le classifieur couche 1 (lexique/regex) n'a pas été modifié. Suite : `npm run compliance` (5 gates) + 107 tests verts.
+
+## Déploiement Vercel — fix 404 (2026-06-03)
+
+Le site renvoyait 404. Causes : projet Vercel en Node 24.x (incompatible `@vercel/node`,
+build en échec) + absence de `dist/client/index.html` en `web.output=server`. Corrigé par
+`engines.node = "22.x"` (package.json) + script de fallback HTML (`scripts/vercel/`). Déploiement
+validé READY. **À faire côté Vercel** : variables d'env Supabase/LLM (cf `docs/09_DEPLOYMENT.md`).
 
 ## Étape 2 — classifieur d'intention : **implémentée (couche 1)**
 
@@ -125,7 +143,7 @@ Chat streaming (Vercel AI SDK v6), prompt `public.v2` (versionné sous contrat, 
 l'étape 3 (recréant un `useSession` parallèle via `user_metadata`). Réintégrée sur `dev`
 par-dessus l'étape 3 : le chat lit la persona via l'`AuthProvider` adossé à la RLS (`profiles`),
 doublon `src/hooks/useSession.ts` supprimé. `dev` porte désormais les étapes 2 + 3 + 4.
-`main` reste à réaligner via `dev → staging → main`.
+`main` et `staging` ont été réalignés sur `dev` (PR #17/#18).
 
 Validations : `npm run typecheck` ✅ · `npm run test` (88) ✅ · `npm run compliance` (5 gates) ✅.
 
