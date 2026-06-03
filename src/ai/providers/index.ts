@@ -35,3 +35,18 @@ export function getActiveModelId(): string {
   const provider = getActiveProvider();
   return process.env.AI_MODEL_ID ?? PROVIDER_MODELS[provider];
 }
+
+/**
+ * Libellé humain du système d'IA actif, pour la disclosure AI Act (art. 50, 01_REGULATION §6).
+ * Réservé au contexte SERVEUR (lit AI_PROVIDER côté serveur) ; l'UI statique utilise la
+ * forme par défaut de getAiDisclosure() qui nomme les deux providers possibles.
+ */
+const PROVIDER_VENDORS: Record<AIProvider, string> = {
+  anthropic: 'Anthropic',
+  openai: 'OpenAI',
+};
+
+export function getActiveSystemLabel(): string {
+  const provider = getActiveProvider();
+  return `${getActiveModelId()}, ${PROVIDER_VENDORS[provider]}`;
+}

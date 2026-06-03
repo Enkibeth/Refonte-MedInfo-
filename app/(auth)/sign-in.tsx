@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
-import { AI_DISCLOSURE } from '@/compliance/disclosures';
+import { getAiDisclosure } from '@/compliance/disclosures';
 import { tokens } from '@/ui/tokens';
 
 /**
@@ -122,7 +122,7 @@ export default function SignInScreen() {
         </View>
       </View>
 
-      <Text style={styles.notice}>{AI_DISCLOSURE}</Text>
+      <Text style={styles.notice}>{getAiDisclosure()}</Text>
     </ScrollView>
   );
 }
