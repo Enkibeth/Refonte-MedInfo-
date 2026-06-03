@@ -16,6 +16,7 @@
     "test:rls": "vitest run tests/rls",
     "validate:prompts": "node scripts/eval/validate-prompts.mjs",
     "validate:rag": "node scripts/embeddings/validate-rag-metadata.mjs",
+    "eval:classifier": "node scripts/eval/classifier-goldenset.mjs",
     "compliance:grep": "node scripts/eval/compliance-grep.mjs",
     "compliance": "npm run compliance:grep && npm run test:prompt-regression && npm run test:rls && npm run validate:prompts && npm run validate:rag"
   },
