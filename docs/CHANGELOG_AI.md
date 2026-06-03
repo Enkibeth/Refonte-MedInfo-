@@ -303,3 +303,23 @@ défense 3 couches (classifieur + prompt + validation sortie) reste intacte.
 None (réconciliation de branches ; persona toujours adossée à la RLS ; safe-box inchangée).
 ### Rollback plan
 git revert du commit de merge de réintégration.
+
+## [2026-06-03] – GPT-5.3-Codex (préparation Vercel + Supabase dédié)
+### Files modified
+- app.json (export Expo Router server)
+- api/index.js, vercel.json (adapter Vercel + rewrites)
+- package.json, package-lock.json (scripts build web + dépendance expo-server)
+- src/db/serverSupabase.ts, src/ai/logging/logInteraction.ts, app/api/health+api.ts (helper Supabase serveur + smoke-test)
+- tests/unit/server-supabase.test.ts (couverture config Supabase serveur)
+- docs/09_DEPLOYMENT.md, docs/README.md, docs/STATUS.md, README.md, .env.example
+### Purpose
+Adapter le projet au déploiement Vercel avec API routes Expo Router : build `expo export -p web`,
+publication `dist/client`, Function Vercel déléguant au bundle `dist/server`. Centraliser la
+connexion Supabase serveur pour le projet dédié MedInfo et documenter toutes les variables Vercel
+nécessaires, y compris `EXPO_PUBLIC_SUPABASE_ANON_KEY` côté client et `SUPABASE_SERVICE_ROLE_KEY`
+côté serveur. Ajouter `/api/health` pour vérifier la configuration sans exposer de secrets.
+### Regulatory impact
+None (déploiement, secrets et observabilité technique ; aucune logique médicale, aucun stockage de
+contenu de santé identifiable, safe-box inchangée).
+### Rollback plan
+git revert de ce commit puis suppression des variables Vercel ajoutées si besoin.
