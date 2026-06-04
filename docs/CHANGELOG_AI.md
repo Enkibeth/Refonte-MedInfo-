@@ -17,6 +17,23 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-03] – Claude (hygiène : MAJ STATUS + suppression test doublon — audit M3/M4)
+### Files modified
+- docs/STATUS.md (état réel : CI distante verte, branches main/dev/staging alignées,
+  corrections d'audit + rate-limit + fix Vercel ; suppression de la réserve périmée)
+- tests/prompt-regression/refusal-placeholder.test.ts (SUPPRIMÉ — doublon scaffold de refusal.test.ts)
+### Purpose
+Corriger les écarts d'audit M3 (STATUS périmé : CI distante « non confirmée » alors qu'elle est
+verte ; branches désormais alignées) et M4 (test placeholder redondant). Le gate
+`refusal-regression` reste couvert par refusal.test.ts (10 tests). Aucune logique applicative
+modifiée.
+### Regulatory impact
+None (documentation + nettoyage de test ; safe-box inchangée).
+### Rollback plan
+git revert du commit ; restaurer refusal-placeholder.test.ts si besoin.
+
+---
+
 ## [2026-06-03] – Claude (fix déploiement Vercel — Node 22.x + 404 racine)
 ### Files modified
 - package.json (engines.node = "22.x" ; build:web ajoute le fallback HTML ; vercel-build = npm run build:web)
