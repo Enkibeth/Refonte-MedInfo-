@@ -17,6 +17,24 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-04] – Codex (auth : renvoi email de confirmation)
+### Files modified
+- src/auth/AuthProvider.tsx (redirect auth configurable + resendSignupConfirmation via Supabase Auth)
+- app/(auth)/sign-in.tsx (bouton « Renvoyer l’email de confirmation » + message spams/renvoi)
+- tests/unit/auth-provider.test.ts (mock resend + test redirect configurable)
+- .env.example, docs/DECISIONS/0010-auth-password-oauth.md, docs/CHANGELOG_AI.md (configuration et diagnostic Supabase SMTP/redirect)
+### Purpose
+Corriger le blocage d'inscription classique : après signup avec confirmation email active, l'utilisateur
+peut renvoyer explicitement l'email de confirmation et les liens utilisent une URL publique configurée
+par `EXPO_PUBLIC_AUTH_REDIRECT_URL` au lieu de dépendre uniquement de l'URL Expo dev. Documente aussi
+les causes hors code : Confirm signup, SMTP/délivrabilité, quotas/rate limits, Redirect URLs.
+### Regulatory impact
+None (authentification uniquement ; email de compte/PII minimale ; aucune donnée de santé).
+### Rollback plan
+git revert du commit ; retire le bouton de renvoi et revient au redirect généré par Expo.
+
+---
+
 ## [2026-06-04] – Codex (étape 6 : student.v2 + QCM + sources)
 ### Files modified
 - src/ai/prompts/student.v2.ts (nouveau prompt étudiant v2, non-MDSW éducatif, cas fictifs only)
