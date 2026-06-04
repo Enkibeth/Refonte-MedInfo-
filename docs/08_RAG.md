@@ -99,3 +99,16 @@ Ingestion corpus initial (50-100M tokens) : ~0 € (free tier voyage) à < 20 �
 - voyage-3.5-lite **vs** BGE-M3 sur 200 questions médicales FR (recall@3).
 - Flash-Lite **vs** Haiku 4.5 pour le classifieur (cf 07_CLASSIFIER).
 Décisions à valider empiriquement en semaine 3-4, pas sur la foi de ce doc.
+
+---
+
+## 12. Implémentation MVP étape 5 (2026-06-04)
+
+Livré côté repo :
+
+- Schéma Supabase `rag_sources` / `rag_chunks` avec pgvector, index HNSW, index lexical français et RPC `match_rag_chunks` (`supabase/migrations/0006_rag_pgvector.sql`).
+- Petit corpus officiel HAS/ANSM versionné dans `src/rag/corpus/`, volontairement réduit pour valider la chaîne : HAS diabète type 2, HAS surpoids/obésité adulte, ANSM bon usage AINS.
+- Gate `rag-license` réel via `npm run validate:rag` : source HTTPS, licence, date, hash, section et contenu obligatoires.
+- Intégration `/api/chat` : après le classifieur couche 1, retrieval RAG pour les questions `general_info`; sans source validée, refus documentaire déterministe avant tout appel LLM.
+
+Limites : l'embedding production (`voyage-3.5-lite` vs BGE-M3) reste à benchmarker comme prévu dans `START.md`; le fallback local lexical est désactivé par défaut en production, sert uniquement au dev/test et ne remplace pas l'ingestion large.

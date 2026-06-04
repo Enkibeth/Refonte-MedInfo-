@@ -17,6 +17,66 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-04] – Codex (alignement main sur dev jusqu'à PR #32)
+### Files modified
+- docs/STATUS.md (état distant réel : `main` à PR #26, `dev` à PR #32, `staging` à PR #27 ; consigne de merge vers `main`)
+- docs/CHANGELOG_AI.md (entrée de transmission pour les prochains agents)
+- ensemble des fichiers applicatifs/documentaires déjà présents sur `origin/dev` via merge d'alignement (PR #28, #30, #31, #32)
+### Purpose
+Corriger l'alignement incomplet précédent : les nouvelles PR présentes sur `dev` jusqu'à #32
+étaient absentes de `main`. Cette branche fusionne `origin/dev` dans la branche d'alignement destinée
+à `main` et documente explicitement l'état distant vérifié.
+### Regulatory impact
+Potential (reprend les impacts déjà documentés des PR #31/#32 : persona étudiant, RAG cite-or-refuse,
+auth ; aucun nouvel assouplissement de safe-box ajouté par cette PR d'alignement).
+### Rollback plan
+git revert du merge d'alignement ; `main` revient à l'état PR #26 et les PR #28/#30/#31/#32 restent
+uniquement sur `dev`.
+
+---
+
+## [2026-06-04] – Codex (auth : renvoi email de confirmation)
+### Files modified
+- src/auth/AuthProvider.tsx (redirect auth configurable + resendSignupConfirmation via Supabase Auth)
+- app/(auth)/sign-in.tsx (bouton « Renvoyer l’email de confirmation » + message spams/renvoi)
+- tests/unit/auth-provider.test.ts (mock resend + test redirect configurable)
+- .env.example, docs/DECISIONS/0010-auth-password-oauth.md, docs/CHANGELOG_AI.md (configuration et diagnostic Supabase SMTP/redirect)
+### Purpose
+Corriger le blocage d'inscription classique : après signup avec confirmation email active, l'utilisateur
+peut renvoyer explicitement l'email de confirmation et les liens utilisent une URL publique configurée
+par `EXPO_PUBLIC_AUTH_REDIRECT_URL` au lieu de dépendre uniquement de l'URL Expo dev. Documente aussi
+les causes hors code : Confirm signup, SMTP/délivrabilité, quotas/rate limits, Redirect URLs.
+### Regulatory impact
+None (authentification uniquement ; email de compte/PII minimale ; aucune donnée de santé).
+### Rollback plan
+git revert du commit ; retire le bouton de renvoi et revient au redirect généré par Expo.
+
+---
+
+## [2026-06-04] – Codex (étape 6 : student.v2 + QCM + sources)
+### Files modified
+- src/ai/prompts/student.v2.ts (nouveau prompt étudiant v2, non-MDSW éducatif, cas fictifs only)
+- src/ai/prompts/index.ts (activation du prompt student)
+- app/api/chat+api.ts (persona student actif, matrice tools public/student, render_qcm student-only)
+- src/ai/orchestrator.ts (exception étroite cas clinique explicitement fictif/pédagogique pour student ; cas réels/personnels bloqués)
+- app/(chat)/chat.tsx, src/ai/ui/chatSources.ts, src/ui/tokens.ts (rendu QCM interactif minimal + toggle/panneau sources haut de chat)
+- tests/chat/student-step6.test.ts, tests/chat/chat-ui-step6.test.ts, tests/guardrails/rag-cite-or-refuse-student.test.ts (contrats étape 6)
+- docs/STATUS.md, docs/CHANGELOG_AI.md (reprise IA/documentation)
+### Purpose
+Livrer l'étape 6 de START.md : persona étudiant branché dans le chat, prompt `student.v2`,
+`render_qcm` réservé aux étudiants, toggle sources visible côté UI et conservation du RAG
+cite-or-refuse de l'étape 5.
+### Regulatory impact
+Potential (maîtrisé) : ouverture du persona étudiant avec cas cliniques fictifs pédagogiques.
+Garde-fous : aucun triage/diagnostic/CAT/prescription/anamnèse ; cas patient réel ou personnel
+refusé avant LLM ; cas clinique autorisé seulement si explicitement fictif/pédagogique ; aucune
+persistance de donnée santé.
+### Rollback plan
+git revert du commit ; retire `student.v2` actif, enlève `render_qcm` de la route et revient au
+chat public/RAG étape 5.
+
+---
+
 ## [2026-06-04] – Claude (branding : logo MedInfo AI sur accueil + sign-in)
 ### Files modified
 - src/ui/Logo.tsx (nouveau : wordmark rendu en code — croix + « MedInfo AI » bleu pétrole)
@@ -457,3 +517,64 @@ None (déploiement, secrets et observabilité technique ; aucune logique médica
 contenu de santé identifiable, safe-box inchangée).
 ### Rollback plan
 git revert de ce commit puis suppression des variables Vercel ajoutées si besoin.
+
+---
+
+## [2026-06-04] – GPT-5.5-Codex (étape 5 — RAG pgvector HAS/ANSM MVP)
+### Files modified
+- supabase/migrations/0006_rag_pgvector.sql (nouveau schéma RAG pgvector, RPC `match_rag_chunks`, seed HAS/ANSM)
+- src/rag/types.ts, src/rag/retrieval.ts, src/rag/corpus/has-ansm-mvp.ts, src/rag/corpus/has-ansm-mvp.json, src/rag/README.md
+- app/api/chat+api.ts (retrieval RAG après couche 1, cite-or-refuse avant LLM)
+- src/ai/logging/logInteraction.ts (nouvelle valeur `rag_cite_or_refuse`)
+- scripts/embeddings/validate-rag-metadata.mjs (gate metadata/licence/hash réel)
+- tests/rag/retrieval.test.ts
+- docs/STATUS.md
+### Purpose
+Livrer le MVP de l'étape 5 : infrastructure Supabase pgvector, petit corpus test officiel HAS/ANSM,
+retrieval Supabase avec fallback local testable, et intégration chat cite-or-refuse. Une question
+`general_info` non couverte par une source validée retourne un refus documentaire déterministe sans
+appel au LLM principal ; une question couverte peut citer une vraie source HAS.
+### Regulatory impact
+Confirmed (positif) : renforce le grounding documentaire et évite les réponses médicales factuelles
+non sourcées. Aucun triage, diagnostic individualisé, anamnèse ou orientation clinique n'est ajouté ;
+la couche 1 classifieur et la couche 3 validation de sortie restent en place.
+### Rollback plan
+git revert de ce commit (retire migration RAG, corpus, retrieval, gate metadata et branchement chat),
+puis supprimer la migration `0006_rag_pgvector.sql` du projet Supabase si elle a déjà été appliquée.
+
+---
+
+## [2026-06-04] – GPT-5.5-Codex (review RAG — fallback local + embeddings)
+### Files modified
+- src/rag/retrieval.ts (suppression de la pseudo-embedding, fallback local désactivé par défaut en production)
+- tests/rag/retrieval.test.ts (couverture fallback production et opt-in explicite)
+- src/rag/README.md, docs/08_RAG.md, docs/STATUS.md (handoff mis à jour)
+### Purpose
+Corriger deux points de review de l'étape 5 : ne jamais envoyer de vecteur factice à la RPC
+pgvector, et éviter que le corpus local de dev/test masque en production une Supabase vide ou mal
+configurée. Sans vrais embeddings ingérés, la RPC reste lexicale ; en production, absence de chunks
+Supabase = cite-or-refuse sauf opt-in explicite `RAG_ENABLE_LOCAL_FALLBACK=true`.
+### Regulatory impact
+Confirmed (positif) : réduit le risque de faux ranking vectoriel et renforce le fail-closed
+documentaire en production. Aucune nouvelle logique médicale, triage, diagnostic ou orientation.
+### Rollback plan
+git revert de ce commit pour revenir au fallback local systématique et à l'appel RPC précédent.
+
+
+---
+
+## [2026-06-04] – GPT-5.5-Codex (setup local RLS Postgres/pgvector)
+### Files modified
+- package.json (script `setup:rls:ubuntu`)
+- scripts/dev/install-rls-postgres-ubuntu.sh (helper Ubuntu/Debian pour Postgres + pgvector)
+- docs/STATUS.md, docs/03_SECURITY.md (validation locale verte + prérequis RLS)
+### Purpose
+Résoudre le blocage local `npm run test` / `npm run compliance` causé par l'absence de binaire
+Postgres `initdb` et, après l'étape 5 RAG, de l'extension `vector`. Le repo documente maintenant
+une commande reproductible pour installer les prérequis du harness RLS sur Ubuntu/Debian, ou
+l'alternative `RLS_TEST_DATABASE_URL` / `DATABASE_URL` sur les autres environnements.
+### Regulatory impact
+None (outillage de test local uniquement ; aucun changement de logique médicale, RLS produit ou
+flux utilisateur).
+### Rollback plan
+git revert de ce commit (retire le helper d'installation et restaure la documentation précédente).

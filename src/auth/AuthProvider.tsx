@@ -22,6 +22,12 @@ import * as Linking from 'expo-linking';
 import { getSupabaseClient } from '@/db/supabase';
 import type { Persona } from '@/ai/prompts/_schema';
 
+export function getAuthRedirectTo(): string {
+  const configured = process.env.EXPO_PUBLIC_AUTH_REDIRECT_URL?.trim();
+  if (configured) return configured;
+  return Linking.createURL('/');
+}
+
 export type OAuthProvider = 'google' | 'apple';
 
 export interface SessionState {
@@ -36,6 +42,8 @@ export interface SessionState {
     email: string,
     password: string,
   ) => Promise<{ error: string | null; needsConfirmation: boolean }>;
+  /** Renvoi de l'email de confirmation Supabase pour une inscription non confirmée. */
+  resendSignupConfirmation: (email: string) => Promise<{ error: string | null }>;
   /** Connexion OAuth (Google / Apple), redirection web. */
   signInWithOAuth: (provider: OAuthProvider) => Promise<{ error: string | null }>;
   /** Magic link OTP (option conservée, ADR-0007). */
@@ -106,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data, error } = await supabase.auth.signUp({
           email: email.trim().toLowerCase(),
           password,
-          options: { emailRedirectTo: Linking.createURL('/') },
+          options: { emailRedirectTo: getAuthRedirectTo() },
         });
         // Si la confirmation email est activée, la session est nulle jusqu'à confirmation.
         return {
@@ -114,11 +122,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           needsConfirmation: !error && !data.session,
         };
       },
+      async resendSignupConfirmation(email: string) {
+        const supabase = getSupabaseClient();
+        const { error } = await supabase.auth.resend({
+          type: 'signup',
+          email: email.trim().toLowerCase(),
+          options: { emailRedirectTo: getAuthRedirectTo() },
+        });
+        return { error: error?.message ?? null };
+      },
       async signInWithOAuth(provider: OAuthProvider) {
         const supabase = getSupabaseClient();
         const { error } = await supabase.auth.signInWithOAuth({
           provider,
-          options: { redirectTo: Linking.createURL('/') },
+          options: { redirectTo: getAuthRedirectTo() },
         });
         return { error: error?.message ?? null };
       },
@@ -126,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const supabase = getSupabaseClient();
         const { error } = await supabase.auth.signInWithOtp({
           email: email.trim().toLowerCase(),
-          options: { emailRedirectTo: Linking.createURL('/') },
+          options: { emailRedirectTo: getAuthRedirectTo() },
         });
         return { error: error?.message ?? null };
       },
