@@ -498,6 +498,96 @@ git revert de ce commit (supprime la migration/policy usage_counters, le helper 
 
 ---
 
+## [2026-06-04] – Claude Code (Phase 3 benchmark : pilote + évaluation humaine)
+### Files modified
+- scripts/eval/lib/{agreement,sampling}.mjs (κ de Cohen, Pearson, force d'accord Landis & Koch,
+  biais systématique ; échantillonnage stratifié déterministe)
+- scripts/eval/benchmark-{pilot,anonymize,agreement,preflight}.mjs (CLI Phase 3)
+- scripts/eval/benchmark-run.mjs (extraction du helper exporté runItems — réutilisé par le pilote)
+- benchmarks/models.lock.example.json (gabarit de gel des versions, medinfo en stub)
+- tests/unit/benchmark-phase3.test.ts (κ cas connus, Pearson, sampling, round-trip scellage, désaccords)
+- package.json (scripts bench:pilot/anonymize/agreement/preflight — aucune dépendance)
+- scripts/eval/README.md, benchmarks/README.md, benchmarks/benchmark_protocol.md (workflow Phase 3)
+### Purpose
+Phase 3 : outillage du run pilote et de l'évaluation humaine. Échantillonnage stratifié (pilote de
+calibration), anonymisation double-aveugle (paquets par évaluateur, ordre randomisé, clé scellée),
+accord inter-évaluateurs (κ de Cohen sur éliminatoires + classement safe-box, Pearson sur totaux),
+calibration juge↔humain (corrélation, biais systématique, biais de longueur), gel des versions de
+modèles (models.lock) + préflight refusant un run --live non figé.
+### Regulatory impact
+None. Outillage d'évaluation sans logique médicale. Le chemin medinfo reste un STUB (produit non
+construit) : toutes les sorties l'étiquettent *-stub, aucune ne suggère de supériorité — c'est de
+l'outillage, pas une preuve. Anonymisation réelle (scrub du préfixe stub) ; clé scellée écrite
+uniquement sous benchmarks/runs/.../.keys/ (gitignoré) via garde-fou fail-safe. benchmark-agreement
+sort en exitCode=1 si κ < 0,6 sur un flag de sûreté (protocole à fiabiliser avant run complet).
+Rien sous app/ ni src/ui/ ; les 5 gates CI passent sans régression.
+### Rollback plan
+git revert de ce commit. Aucun impact runtime app (scripts d'éval isolés, hors bundle).
+
+## [2026-06-04] – Claude Code (Phase 2 benchmark : harness d'évaluation)
+### Files modified
+- scripts/eval/lib/{csv,stats,refusal,providers}.mjs (parseur CSV, stats+bootstrap IC seedé,
+  refus canonique verbatim, adaptateurs providers stub/openai/anthropic)
+- scripts/eval/benchmark-run.mjs, benchmark-judge.mjs, benchmark-stats.mjs (pipeline CLI)
+- scripts/eval/README.md
+- tests/unit/benchmark-harness.test.ts (csv round-trip, bootstrap déterministe, run e2e stub)
+- package.json (scripts bench:run/bench:judge/bench:stats — aucune nouvelle dépendance)
+- package-lock.json (sync bénin du champ engines node 22.x ; aucune dépendance ajoutée)
+- .gitignore (benchmarks/runs/ — sorties générées)
+- benchmarks/README.md, benchmarks/benchmark_protocol.md (section Harness, commandes CLI)
+### Purpose
+Phase 2 : harness d'exécution du benchmark sous scripts/eval/. Run (modèle × question × run,
+température 0, logs horodatés) → LLM-as-judge (assistance, revue humaine obligatoire sur safety) →
+stats (moyennes/dimension + IC 95% bootstrap, matrice de confusion safe-box, recall des refus,
+faux négatifs pondérés gravité, SHR). Hors-ligne par défaut / CI-safe via provider stub
+déterministe ; providers réels openai/anthropic uniquement en --live avec clé présente.
+### Regulatory impact
+None. Outil d'évaluation sans logique médicale. Le stub medinfo applique la règle de refus en
+renvoyant le message canonique VERBATIM chargé depuis docs/01_REGULATION.md §4 (source unique, jamais
+réécrit) ; benchmark-stats sort en exitCode=1 si un faux négatif critique est détecté (seuil
+bloquant safe-box). Rien sous app/ ni src/ui/ ; les 5 gates CI passent sans régression.
+### Rollback plan
+git revert de ce commit. Aucun impact runtime app (scripts d'éval isolés, hors bundle).
+
+## [2026-06-04] – Claude Code (Phase 1 benchmark : golden set + livrables)
+### Files modified
+- benchmarks/ (nouveau dossier, hors app/ et src/ui/ → sans impact compliance-grep)
+  - benchmark_protocol.md, dataset_schema.json, scoring_rubric.md, judge_prompt.md,
+    evaluator_form.md, results_template.csv, benchmark_report_template.md,
+    public_blog_template.md, README.md
+  - public_questions.csv (100), student_questions.csv (100, cas fictifs),
+    professional_questions.csv (100, hors leaderboard MVP), safety_cases.csv
+    (200 : 100 interdits D + 100 adversariaux/ambigus E dont 20 contre-exemples légitimes)
+- docs/CHANGELOG_AI.md (cette entrée)
+### Purpose
+Phase 1 du protocole de benchmark (docs/10_BENCHMARK.md) : matérialiser les 12 livrables et le
+golden set initial (5 blocs). Permet de lancer le run pilote une fois classifieur + personas
+public/student + RAG opérationnels (étapes 0→5 de START.md).
+### Regulatory impact
+None. Tous les cas cliniques sont fictifs (fictif=true) ; aucune donnée patient réelle. Les prompts
+de safety_cases.csv sont des stimuli de test du refus (réponse attendue = refus canonique
+01_REGULATION §4), jamais des demandes à satisfaire. Aucune métrique ni claim de performance
+diagnostique/thérapeutique. Dossier hors app/ et src/ui/ : n'altère aucun gate CI.
+### Rollback plan
+git revert de ce commit (suppression du dossier benchmarks/). Aucun impact code/CI.
+
+## [2026-06-04] – Claude Code (design benchmark MedInfo vs généralistes)
+### Files modified
+- docs/10_BENCHMARK.md (nouveau — protocole de benchmark non-MDSW, 18 sections + roadmap + checklist 20 actions)
+- docs/CHANGELOG_AI.md (cette entrée)
+### Purpose
+Ajouter le protocole de benchmark MedInfo AI vs modèles généralistes (inspiré Synapse/MedGPT mais
+transparent, reproductible, à intervalles de confiance et double évaluation aveugle). Mesure la
+qualité informationnelle, pédagogique, le sourçage et la robustesse du refus safe-box. Document de
+conception uniquement — aucune logique exécutable, aucun dataset patient.
+### Regulatory impact
+None. Le benchmark est explicitement subordonné à 01_REGULATION.md : il ne mesure ni ne revendique
+aucune performance diagnostique/pronostique/thérapeutique ; tous les cas cliniques sont fictifs ;
+les prompts « interdits » servent à tester le refus déterministe, jamais à produire un acte médical ;
+claims de supériorité clinique explicitement interdits. Safe-box non-MDSW inchangée.
+### Rollback plan
+git revert de ce commit (suppression de docs/10_BENCHMARK.md). Aucun impact code/CI.
+
 ## [2026-06-03] – GPT-5.3-Codex (préparation Vercel + Supabase dédié)
 ### Files modified
 - app.json (export Expo Router server)
