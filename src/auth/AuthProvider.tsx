@@ -1,8 +1,12 @@
 /**
- * AuthProvider — état Supabase Auth + persona (étape 3).
+ * AuthProvider — état Supabase Auth + persona.
  *
- * Magic link OTP email (ADR-0007, étudiants). Expose la persona lue dans `profiles`
- * (RLS : le user ne lit que SA ligne). Aucune donnée de santé manipulée ici.
+ * Méthodes de connexion (ADR-0010, remplace le magic-link seul d'ADR-0007) :
+ *   - email + mot de passe (signInWithPassword / signUpWithPassword) ;
+ *   - OAuth Google / Apple (signInWithOAuth, redirection web) ;
+ *   - magic link conservé en option (signInWithEmail).
+ * Expose la persona lue dans `profiles` (RLS : le user ne lit que SA ligne).
+ * Aucune donnée de santé manipulée ici.
  */
 import {
   createContext,
@@ -18,12 +22,32 @@ import * as Linking from 'expo-linking';
 import { getSupabaseClient } from '@/db/supabase';
 import type { Persona } from '@/ai/prompts/_schema';
 
+export type OAuthProvider = 'google' | 'apple';
+
 export interface SessionState {
   session: Session | null;
   user: User | null;
   persona: Persona | null;
   loading: boolean;
+  /** Connexion email + mot de passe. */
+  signInWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
+  /** Inscription email + mot de passe (confirmation email selon config Supabase). */
+  signUpWithPassword: (
+    email: string,
+    password: string,
+  ) => Promise<{ error: string | null; needsConfirmation: boolean }>;
+  /** Connexion OAuth (Google / Apple), redirection web. */
+  signInWithOAuth: (provider: OAuthProvider) => Promise<{ error: string | null }>;
+  /** Magic link OTP (option conservée, ADR-0007). */
   signInWithEmail: (email: string) => Promise<{ error: string | null }>;
+  /**
+   * Demande d'attribution de rôle vérifié (ADR-0011). Délègue au serveur `/api/role` :
+   * le client ne fixe JAMAIS persona/status lui-même. `pending` = vérif pro RPPS à venir.
+   */
+  requestRole: (
+    persona: Persona,
+    proof?: { email?: string; rpps?: string },
+  ) => Promise<{ error: string | null; pending?: boolean; message?: string }>;
   signOut: () => Promise<void>;
 }
 
@@ -69,6 +93,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: session?.user ?? null,
       persona,
       loading,
+      async signInWithPassword(email: string, password: string) {
+        const supabase = getSupabaseClient();
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password,
+        });
+        return { error: error?.message ?? null };
+      },
+      async signUpWithPassword(email: string, password: string) {
+        const supabase = getSupabaseClient();
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim().toLowerCase(),
+          password,
+          options: { emailRedirectTo: Linking.createURL('/') },
+        });
+        // Si la confirmation email est activée, la session est nulle jusqu'à confirmation.
+        return {
+          error: error?.message ?? null,
+          needsConfirmation: !error && !data.session,
+        };
+      },
+      async signInWithOAuth(provider: OAuthProvider) {
+        const supabase = getSupabaseClient();
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider,
+          options: { redirectTo: Linking.createURL('/') },
+        });
+        return { error: error?.message ?? null };
+      },
       async signInWithEmail(email: string) {
         const supabase = getSupabaseClient();
         const { error } = await supabase.auth.signInWithOtp({
@@ -76,6 +129,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           options: { emailRedirectTo: Linking.createURL('/') },
         });
         return { error: error?.message ?? null };
+      },
+      async requestRole(persona: Persona, proof?: { email?: string; rpps?: string }) {
+        const token = session?.access_token;
+        if (!token) return { error: 'Non authentifié.' };
+        try {
+          const res = await fetch('/api/role', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ persona, ...proof }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.status === 202) {
+            return { error: null, pending: true, message: data?.message };
+          }
+          if (!res.ok) {
+            return { error: data?.error ?? 'Échec de la vérification.' };
+          }
+          setPersona((data?.persona as Persona) ?? persona);
+          return { error: null };
+        } catch (e) {
+          return { error: e instanceof Error ? e.message : 'Erreur réseau.' };
+        }
       },
       async signOut() {
         await getSupabaseClient().auth.signOut();

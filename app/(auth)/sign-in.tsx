@@ -10,47 +10,78 @@ import {
   View,
 } from 'react-native';
 
-import { useSession } from '@/auth/AuthProvider';
+import { useSession, type OAuthProvider } from '@/auth/AuthProvider';
 import { getAiDisclosure } from '@/compliance/disclosures';
+import { Logo } from '@/ui/Logo';
 import { tokens } from '@/ui/tokens';
 
 /**
- * Connexion par magic link OTP (ADR-0007). UI polie (états chargement/succès/erreur,
- * accessibilité) — scaffold Codex intégré à l'étape 3, adapté à l'API `useSession`
- * (signInWithEmail → { error }). Aucune mention de symptôme/triage/diagnostic.
+ * Connexion MedInfo AI (ADR-0010) : email + mot de passe (connexion / inscription)
+ * et OAuth Google / Apple. Aucune mention de symptôme/triage/diagnostic.
+ * Le persona public n'a PAS besoin de se connecter (01_REGULATION §5) : cet écran
+ * sert les comptes (étudiant/pro/réglages).
  */
+type Mode = 'signin' | 'signup';
+
 export default function SignInScreen() {
-  const { loading, signInWithEmail, user } = useSession();
+  const { loading, user, signInWithPassword, signUpWithPassword, signInWithOAuth } = useSession();
+  const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState('');
-  const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [info, setInfo] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const isDisabled = loading || sending || email.trim().length === 0;
+  const isDisabled =
+    loading || busy || email.trim().length === 0 || password.length < 6;
+
+  function reset() {
+    setErrorMessage(null);
+    setInfo(null);
+  }
 
   async function handleSubmit() {
     if (isDisabled) return;
+    setBusy(true);
+    reset();
 
-    setSending(true);
-    setSent(false);
-    setErrorMessage(null);
+    if (mode === 'signin') {
+      const { error } = await signInWithPassword(email, password);
+      setBusy(false);
+      if (error) setErrorMessage(error);
+    } else {
+      const { error, needsConfirmation } = await signUpWithPassword(email, password);
+      setBusy(false);
+      if (error) setErrorMessage(error);
+      else if (needsConfirmation)
+        setInfo('Compte créé. Vérifie ta boîte mail pour confirmer ton adresse.');
+      else setInfo('Compte créé et connecté.');
+    }
+  }
 
-    const { error } = await signInWithEmail(email);
-    setSending(false);
+  async function handleOAuth(provider: OAuthProvider) {
+    if (busy || loading) return;
+    setBusy(true);
+    reset();
+    const { error } = await signInWithOAuth(provider);
+    setBusy(false);
     if (error) setErrorMessage(error);
-    else setSent(true);
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
-    >
+    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <View style={styles.card}>
+        <View style={styles.logoWrap}>
+          <Logo size="md" />
+        </View>
         <Text style={styles.eyebrow}>Accès sécurisé</Text>
-        <Text style={styles.title}>Connexion à MedInfo AI</Text>
+        <Text style={styles.title}>
+          {mode === 'signin' ? 'Connexion à MedInfo AI' : 'Créer un compte'}
+        </Text>
         <Text style={styles.body}>
-          Indique ton adresse email pour recevoir un lien de connexion à usage unique.
+          {mode === 'signin'
+            ? 'Connecte-toi avec ton email et ton mot de passe, ou via Google / Apple.'
+            : 'Choisis un email et un mot de passe (6 caractères minimum), ou utilise Google / Apple.'}
         </Text>
 
         {user ? (
@@ -63,25 +94,69 @@ export default function SignInScreen() {
           </View>
         ) : null}
 
+        {/* OAuth */}
+        <View style={styles.oauthRow}>
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy || loading}
+            onPress={() => handleOAuth('google')}
+            style={({ pressed }) => [styles.oauthButton, pressed ? styles.pressed : null]}
+          >
+            <Text style={styles.oauthText}>Continuer avec Google</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy || loading}
+            onPress={() => handleOAuth('apple')}
+            style={({ pressed }) => [styles.oauthButton, pressed ? styles.pressed : null]}
+          >
+            <Text style={styles.oauthText}>Continuer avec Apple</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.separatorRow}>
+          <View style={styles.separatorLine} />
+          <Text style={styles.separatorText}>ou</Text>
+          <View style={styles.separatorLine} />
+        </View>
+
+        {/* Email + mot de passe */}
         <View style={styles.form}>
           <Text style={styles.label}>Email</Text>
           <TextInput
             accessibilityLabel="Adresse email"
             autoCapitalize="none"
             autoComplete="email"
-            editable={!sending && !loading}
+            editable={!busy && !loading}
             inputMode="email"
             keyboardType="email-address"
             onChangeText={(value) => {
               setEmail(value);
-              setErrorMessage(null);
-              setSent(false);
+              reset();
             }}
             placeholder="nom@example.com"
             placeholderTextColor={tokens.colors.textMuted}
             style={styles.input}
             textContentType="emailAddress"
             value={email}
+          />
+
+          <Text style={styles.label}>Mot de passe</Text>
+          <TextInput
+            accessibilityLabel="Mot de passe"
+            autoCapitalize="none"
+            autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+            editable={!busy && !loading}
+            onChangeText={(value) => {
+              setPassword(value);
+              reset();
+            }}
+            placeholder="6 caractères minimum"
+            placeholderTextColor={tokens.colors.textMuted}
+            secureTextEntry
+            style={styles.input}
+            textContentType="password"
+            value={password}
           />
 
           <Pressable
@@ -91,20 +166,38 @@ export default function SignInScreen() {
             style={({ pressed }) => [
               styles.button,
               isDisabled ? styles.buttonDisabled : null,
-              pressed && !isDisabled ? styles.buttonPressed : null,
+              pressed && !isDisabled ? styles.pressed : null,
             ]}
           >
-            {sending ? <ActivityIndicator color={tokens.colors.surface} /> : null}
+            {busy ? <ActivityIndicator color={tokens.colors.background} /> : null}
             <Text style={styles.buttonText}>
-              {sending ? 'Envoi en cours…' : 'Recevoir le lien de connexion'}
+              {busy
+                ? 'Veuillez patienter…'
+                : mode === 'signin'
+                  ? 'Se connecter'
+                  : 'Créer mon compte'}
             </Text>
           </Pressable>
         </View>
 
-        {sent ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            setMode((m) => (m === 'signin' ? 'signup' : 'signin'));
+            reset();
+          }}
+          style={styles.toggle}
+        >
+          <Text style={styles.toggleText}>
+            {mode === 'signin'
+              ? "Pas encore de compte ? Créer un compte"
+              : 'Déjà un compte ? Se connecter'}
+          </Text>
+        </Pressable>
+
+        {info ? (
           <View style={styles.statusBox} accessibilityLiveRegion="polite">
-            <Text style={styles.statusTitle}>Lien envoyé</Text>
-            <Text style={styles.statusText}>Vérifie ta boîte mail.</Text>
+            <Text style={styles.statusText}>{info}</Text>
           </View>
         ) : null}
 
@@ -144,6 +237,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: tokens.colors.border,
   },
+  logoWrap: { marginBottom: 18 },
   eyebrow: {
     color: tokens.colors.accent,
     fontSize: 14,
@@ -152,33 +246,31 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: 12,
   },
-  title: {
-    color: tokens.colors.text,
-    fontSize: 34,
-    fontWeight: '800',
-    marginBottom: 14,
+  title: { color: tokens.colors.text, fontSize: 30, fontWeight: '800', marginBottom: 12 },
+  body: { color: tokens.colors.textMuted, fontSize: 16, lineHeight: 24 },
+  oauthRow: { gap: 10, marginTop: 24 },
+  oauthButton: {
+    minHeight: 50,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.background,
   },
-  body: {
-    color: tokens.colors.textMuted,
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  form: {
-    gap: 12,
-    marginTop: 28,
-  },
-  label: {
-    color: tokens.colors.text,
-    fontSize: 14,
-    fontWeight: '700',
-  },
+  oauthText: { color: tokens.colors.text, fontSize: 15, fontWeight: '700' },
+  separatorRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 18 },
+  separatorLine: { flex: 1, height: 1, backgroundColor: tokens.colors.border },
+  separatorText: { color: tokens.colors.textMuted, fontSize: 13, fontWeight: '600' },
+  form: { gap: 10 },
+  label: { color: tokens.colors.text, fontSize: 14, fontWeight: '700' },
   input: {
     width: '100%',
     minHeight: 52,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
+    backgroundColor: tokens.colors.background,
     color: tokens.colors.text,
     fontSize: 16,
     paddingHorizontal: 16,
@@ -192,18 +284,13 @@ const styles = StyleSheet.create({
     gap: 10,
     backgroundColor: tokens.colors.accent,
     paddingHorizontal: 18,
+    marginTop: 6,
   },
-  buttonDisabled: {
-    opacity: 0.55,
-  },
-  buttonPressed: {
-    opacity: 0.86,
-  },
-  buttonText: {
-    color: tokens.colors.surface,
-    fontSize: 16,
-    fontWeight: '800',
-  },
+  buttonDisabled: { opacity: 0.55 },
+  pressed: { opacity: 0.86 },
+  buttonText: { color: tokens.colors.background, fontSize: 16, fontWeight: '800' },
+  toggle: { marginTop: 16, alignItems: 'center' },
+  toggleText: { color: tokens.colors.accent, fontSize: 14, fontWeight: '700' },
   statusBox: {
     marginTop: 18,
     borderRadius: 18,
@@ -212,17 +299,7 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.background,
     padding: 16,
   },
-  statusTitle: {
-    color: tokens.colors.text,
-    fontSize: 16,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  statusText: {
-    color: tokens.colors.textMuted,
-    fontSize: 15,
-    lineHeight: 22,
-  },
+  statusText: { color: tokens.colors.text, fontSize: 15, lineHeight: 22 },
   errorBox: {
     marginTop: 18,
     borderRadius: 18,
@@ -235,11 +312,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: 4,
   },
-  errorText: {
-    color: tokens.colors.warningText,
-    fontSize: 15,
-    lineHeight: 22,
-  },
+  errorText: { color: tokens.colors.warningText, fontSize: 15, lineHeight: 22 },
   successBox: {
     marginTop: 22,
     borderRadius: 18,
@@ -248,26 +321,15 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.background,
     padding: 16,
   },
-  successTitle: {
-    color: tokens.colors.text,
-    fontSize: 16,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
+  successTitle: { color: tokens.colors.text, fontSize: 16, fontWeight: '800', marginBottom: 4 },
   successText: {
     color: tokens.colors.textMuted,
     fontSize: 15,
     lineHeight: 22,
     marginBottom: 10,
   },
-  footer: {
-    marginTop: 22,
-  },
-  inlineLink: {
-    color: tokens.colors.accent,
-    fontSize: 15,
-    fontWeight: '800',
-  },
+  footer: { marginTop: 22 },
+  inlineLink: { color: tokens.colors.accent, fontSize: 15, fontWeight: '800' },
   notice: {
     width: '100%',
     maxWidth: 640,

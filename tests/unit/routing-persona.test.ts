@@ -7,30 +7,23 @@ import {
 } from '@/ai/routing/persona';
 
 /**
- * Routing par persona (ADR-0006) : public + student activés au MVP, professional REPORTÉ.
- * Le module pro doit rester routable dans le code mais jamais servi en surface UI.
+ * Routing par persona (ADR-0006 amendé par ADR-0011) : public + student + professional
+ * actifs. Le pro reste soumis à la safe-box ; ses features cliniques restent gelées (ADR-0006).
  */
-describe('routing par persona — MVP', () => {
-  it('public et student sont activés au MVP', () => {
+describe('routing par persona', () => {
+  it('les trois personas sont activées', () => {
     expect(isPersonaEnabled('public')).toBe(true);
     expect(isPersonaEnabled('student')).toBe(true);
+    expect(isPersonaEnabled('professional')).toBe(true);
   });
 
-  it('professional est routable mais désactivé au MVP (enabledInMvp=false)', () => {
+  it('professional est défini et routable', () => {
     expect(PERSONA_ROUTES.professional).toBeDefined();
-    expect(isPersonaEnabled('professional')).toBe(false);
   });
 
-  it('resolvePersonaRoute(public|student) → autorisé vers (chat)', () => {
+  it('resolvePersonaRoute(public|student|professional) → autorisé vers (chat)', () => {
     expect(resolvePersonaRoute('public')).toEqual({ allowed: true, group: '(chat)' });
     expect(resolvePersonaRoute('student')).toEqual({ allowed: true, group: '(chat)' });
-  });
-
-  it('resolvePersonaRoute(professional) → refusé, reporté post-MVP (aucune surface pro)', () => {
-    const res = resolvePersonaRoute('professional');
-    expect(res.allowed).toBe(false);
-    if (!res.allowed) {
-      expect(res.reason).toBe('reported_post_mvp');
-    }
+    expect(resolvePersonaRoute('professional')).toEqual({ allowed: true, group: '(chat)' });
   });
 });
