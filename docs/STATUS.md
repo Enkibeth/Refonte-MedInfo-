@@ -5,27 +5,37 @@ title: Project Status
 version: 1.0.0
 owner: Hugo Bettembourg
 status: Active
-date: 2026-06-03
+date: 2026-06-04
 ```
 
 ## État courant
 
-- Étapes 1 → 4 livrées. Corrections d'audit (B1/I1/I2/I3/M1), rate-limiting (M2) et
-  déploiement Vercel intégrés.
-- Branches `main`, `dev`, `staging` : **alignées** (même arbre) après PR #17/#18.
-  `dev` reste la branche d'intégration ; brancher les sessions depuis `dev`.
+- Étapes 1 → 5 livrées côté repo. Corrections d'audit (B1/I1/I2/I3/M1), rate-limiting (M2),
+  déploiement Vercel et RAG pgvector MVP HAS/ANSM intégrés.
+- Branches `main`, `dev`, `staging` : **alignées** après PR #26 côté historique local.
+  `dev` reste la branche d'intégration ; brancher les sessions depuis `dev`, puis feature branch `ai/<agent>/<feature>`.
 - Architecture documentaire : organisée dans `docs/` avec ADRs dans `docs/DECISIONS/`.
 - Workflow GitHub Actions : `.github/workflows/compliance.yml` (5 gates).
 
 ## Validations
 
-Local et CI distante (GitHub Actions) : **OK**.
+Dernière validation locale étape 5 (2026-06-04) :
 
 ```bash
-npm run typecheck   # OK
-npm run test        # OK
-npm run compliance  # 5 gates OK
+npm run typecheck                                            # OK
+npm run test:unit                                           # OK
+npm run test -- tests/rag/retrieval.test.ts tests/chat/chat-api-rate-limit.test.ts  # OK
+npm run validate:prompts                                    # OK
+npm run validate:rag                                        # OK
+npm run compliance:grep                                     # OK
+npm run test:prompt-regression                              # OK
+npm run test / npm run compliance                           # OK après installation Postgres + pgvector local
 ```
+
+Le blocage local précédent du gate RLS est résolu dans cet environnement par l'installation de
+`postgresql` et `postgresql-16-pgvector`. Pour reproduire sur Ubuntu/Debian :
+`sudo npm run setup:rls:ubuntu`. Sur un autre système, fournir `RLS_TEST_DATABASE_URL` ou
+`DATABASE_URL` vers un Postgres disposant de l'extension `vector`.
 
 ## Statut CI distante
 
@@ -53,6 +63,29 @@ Le site renvoyait 404. Causes : projet Vercel en Node 24.x (incompatible `@verce
 build en échec) + absence de `dist/client/index.html` en `web.output=server`. Corrigé par
 `engines.node = "22.x"` (package.json) + script de fallback HTML (`scripts/vercel/`). Déploiement
 validé READY. **À faire côté Vercel** : variables d'env Supabase/LLM (cf `docs/09_DEPLOYMENT.md`).
+
+
+## Étape 5 — RAG pgvector HAS/ANSM : **implémentée MVP (TDD)**
+
+Critère minimal START.md — **atteint côté repo/test local** : une question générale couverte
+par le corpus renvoie une citation HAS réelle (`has-sante.fr`) via `retrieveLocalRagChunks`.
+
+Périmètre livré :
+
+- Migration `0006_rag_pgvector.sql` : extension pgvector, tables `rag_sources` / `rag_chunks`,
+  index HNSW + GIN français, fonction RPC `match_rag_chunks` avec fusion lexical/vectorielle
+  et seed minimal HAS/ANSM.
+- Corpus MVP officiel : HAS diabète de type 2 2025, HAS surpoids/obésité adulte 2023, ANSM
+  bon usage AINS. Métadonnées obligatoires : source HTTPS, licence, date, section, EDN, hash.
+- Retrieval `src/rag/retrieval.ts` : Supabase RPC si configuré, fallback local lexical verrouillé dev/test,
+  section de prompt RAG et refus cite-or-refuse.
+- `/api/chat` : après couche 1 et uniquement pour `general_info`, récupération RAG avant LLM ; si
+  aucun chunk validé ne couvre la question, réponse déterministe « Les sources disponibles ne
+  permettent pas de répondre avec certitude. » et LLM principal non appelé.
+- Gate `npm run validate:rag` devenu effectif : valide le corpus au lieu de retourner un OK scaffold.
+
+Limites assumées : embeddings production et ingestion PDF/OCR large non encore livrés ; aucune pseudo-embedding n'est envoyée ; le MVP
+prépare pgvector et valide le contrat réglementaire/technique sur petit corpus.
 
 ## Étape 2 — classifieur d'intention : **implémentée (couche 1)**
 

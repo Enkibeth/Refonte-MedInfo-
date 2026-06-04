@@ -151,3 +151,11 @@ Procédure : (1) rollback immédiat, (2) consignation, (3) ajout d'un test qui a
 - Supabase : backups automatiques (Pro). Export DDL versionné dans `supabase/migrations/`.
 - Corpus RAG : source PDF + scripts d'ingestion versionnés → ré-ingestion reproductible.
 - Pas de SPOF documentaire : `docs/` est dans le repo, pas dans un outil tiers.
+
+
+### Gate RLS — prérequis local
+
+Le harness RLS démarre un vrai Postgres (`initdb`/`pg_ctl`) et applique les migrations, y compris
+l'extension `vector` depuis l'étape 5 RAG. Sur Ubuntu/Debian, installer les prérequis avec
+`sudo npm run setup:rls:ubuntu`; sinon fournir `RLS_TEST_DATABASE_URL` ou `DATABASE_URL` vers un
+Postgres avec pgvector.

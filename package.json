@@ -20,7 +20,8 @@
     "compliance:grep": "node scripts/eval/compliance-grep.mjs",
     "compliance": "npm run compliance:grep && npm run test:prompt-regression && npm run test:rls && npm run validate:prompts && npm run validate:rag",
     "build:web": "expo export -p web && node scripts/vercel/copy-server-html-to-client.mjs",
-    "vercel-build": "npm run build:web"
+    "vercel-build": "npm run build:web",
+    "setup:rls:ubuntu": "bash scripts/dev/install-rls-postgres-ubuntu.sh"
   },
   "engines": {
     "node": "22.x"
