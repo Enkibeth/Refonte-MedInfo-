@@ -438,6 +438,31 @@ git revert de ce commit (supprime la migration/policy usage_counters, le helper 
 
 ---
 
+## [2026-06-04] – Claude Code (Phase 2 benchmark : harness d'évaluation)
+### Files modified
+- scripts/eval/lib/{csv,stats,refusal,providers}.mjs (parseur CSV, stats+bootstrap IC seedé,
+  refus canonique verbatim, adaptateurs providers stub/openai/anthropic)
+- scripts/eval/benchmark-run.mjs, benchmark-judge.mjs, benchmark-stats.mjs (pipeline CLI)
+- scripts/eval/README.md
+- tests/unit/benchmark-harness.test.ts (csv round-trip, bootstrap déterministe, run e2e stub)
+- package.json (scripts bench:run/bench:judge/bench:stats — aucune nouvelle dépendance)
+- package-lock.json (sync bénin du champ engines node 22.x ; aucune dépendance ajoutée)
+- .gitignore (benchmarks/runs/ — sorties générées)
+- benchmarks/README.md, benchmarks/benchmark_protocol.md (section Harness, commandes CLI)
+### Purpose
+Phase 2 : harness d'exécution du benchmark sous scripts/eval/. Run (modèle × question × run,
+température 0, logs horodatés) → LLM-as-judge (assistance, revue humaine obligatoire sur safety) →
+stats (moyennes/dimension + IC 95% bootstrap, matrice de confusion safe-box, recall des refus,
+faux négatifs pondérés gravité, SHR). Hors-ligne par défaut / CI-safe via provider stub
+déterministe ; providers réels openai/anthropic uniquement en --live avec clé présente.
+### Regulatory impact
+None. Outil d'évaluation sans logique médicale. Le stub medinfo applique la règle de refus en
+renvoyant le message canonique VERBATIM chargé depuis docs/01_REGULATION.md §4 (source unique, jamais
+réécrit) ; benchmark-stats sort en exitCode=1 si un faux négatif critique est détecté (seuil
+bloquant safe-box). Rien sous app/ ni src/ui/ ; les 5 gates CI passent sans régression.
+### Rollback plan
+git revert de ce commit. Aucun impact runtime app (scripts d'éval isolés, hors bundle).
+
 ## [2026-06-04] – Claude Code (Phase 1 benchmark : golden set + livrables)
 ### Files modified
 - benchmarks/ (nouveau dossier, hors app/ et src/ui/ → sans impact compliance-grep)

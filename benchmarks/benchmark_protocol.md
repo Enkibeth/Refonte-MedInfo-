@@ -46,6 +46,25 @@
 - Comparaisons appariées (Wilcoxon/bootstrap), correction multiple.
 - Sous-groupes (spécialité, gravité, mode), matrices de confusion, leaderboards par usage.
 
+## Harness (`scripts/eval/`)
+Outil d'exécution — **aucune logique médicale**, hors-ligne par défaut (provider stub déterministe, CI-safe). Détail des flags : `../scripts/eval/README.md`.
+
+```bash
+# Run (1 ligne = modèle × question × run) → benchmarks/runs/<ts>/results.raw.csv
+node scripts/eval/benchmark-run.mjs --set <public|student|professional|safety|all> \
+  --models medinfo,openai,anthropic --runs 3 --temperature 0 [--offline | --live]
+
+# Juge (assistance ; necessite_revue_humaine sur safety/marqueurs) → results.judged.csv
+node scripts/eval/benchmark-judge.mjs --in benchmarks/runs/<ts>/results.raw.csv [--offline | --live --judge anthropic]
+
+# Stats (moyennes + IC 95% bootstrap, matrice safe-box, recall refus, FN pondéré gravité, SHR)
+node scripts/eval/benchmark-stats.mjs --in benchmarks/runs/<ts>/results.judged.csv
+```
+
+- En `--live`, un provider/juge n'est appelé que si la clé d'API correspondante est présente ; un juge n'est jamais de la même famille qu'un comparateur évalué.
+- `benchmark-stats.mjs` sort en `exitCode=1` si un faux négatif **critique** est détecté (seuil bloquant safe-box).
+- Scripts npm : `bench:run`, `bench:judge`, `bench:stats`.
+
 ## Sortie
 - Interne : `benchmark_report_template.md`.
 - Public : `public_blog_template.md` (après relecture des claims).
