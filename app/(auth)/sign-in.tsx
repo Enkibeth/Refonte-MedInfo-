@@ -12,6 +12,7 @@ import {
 
 import { useSession, type OAuthProvider } from '@/auth/AuthProvider';
 import { getAiDisclosure } from '@/compliance/disclosures';
+import { Logo } from '@/ui/Logo';
 import { tokens } from '@/ui/tokens';
 
 /**
@@ -70,6 +71,9 @@ export default function SignInScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <View style={styles.card}>
+        <View style={styles.logoWrap}>
+          <Logo size="md" />
+        </View>
         <Text style={styles.eyebrow}>Accès sécurisé</Text>
         <Text style={styles.title}>
           {mode === 'signin' ? 'Connexion à MedInfo AI' : 'Créer un compte'}
@@ -233,6 +237,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: tokens.colors.border,
   },
+  logoWrap: { marginBottom: 18 },
   eyebrow: {
     color: tokens.colors.accent,
     fontSize: 14,
