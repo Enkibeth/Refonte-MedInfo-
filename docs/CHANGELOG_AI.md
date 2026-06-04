@@ -17,6 +17,22 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-04] – Claude (branding : logo MedInfo AI sur accueil + sign-in)
+### Files modified
+- src/ui/Logo.tsx (nouveau : wordmark rendu en code — croix + « MedInfo AI » bleu pétrole)
+- app/index.tsx (logo + tagline, liens nommés) ; app/(auth)/sign-in.tsx (logo en tête)
+- assets/brand/README.md (nouveau : où déposer le vrai logo PNG + l'ancienne illustration)
+### Purpose
+Mettre le branding MedInfo AI (charte bleu pétrole) à l'accueil et au sign-in, sans dépendre
+d'un binaire (logo en code, build robuste). Procédure documentée pour basculer vers le logo
+image fourni + placer l'ancienne illustration « pour le moment » dès que les PNG sont déposés.
+### Regulatory impact
+None (design/branding).
+### Rollback plan
+git revert du commit.
+
+---
+
 ## [2026-06-04] – Claude (rôles public/étudiant/pro + vérification — ADR-0011)
 ### Files modified
 - docs/DECISIONS/0011-roles-actifs-verification.md (nouveau) ; docs/DECISIONS/0006 (amendé) ; START.md

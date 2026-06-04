@@ -2,21 +2,22 @@ import { Link } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { INTENDED_PURPOSE, getAiDisclosure } from '@/compliance/disclosures';
+import { Logo } from '@/ui/Logo';
 import { tokens } from '@/ui/tokens';
 
 export default function HomeScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.eyebrow}>MedInfo AI v4</Text>
-        <Text style={styles.title}>Socle Expo prêt.</Text>
+        <Logo size="lg" />
+        <Text style={styles.tagline}>Information médicale générale, claire et sourcée.</Text>
         <Text style={styles.body}>{INTENDED_PURPOSE}</Text>
         <Text style={styles.notice}>{getAiDisclosure()}</Text>
 
         <View style={styles.links}>
-          <Link href="/(chat)/chat" style={styles.link}>Chat placeholder</Link>
-          <Link href="/(auth)/sign-in" style={styles.link}>Auth placeholder</Link>
-          <Link href="/(account)/account" style={styles.link}>Compte placeholder</Link>
+          <Link href="/(chat)/chat" style={styles.link}>Ouvrir le chat</Link>
+          <Link href="/(auth)/sign-in" style={styles.link}>Se connecter</Link>
+          <Link href="/(account)/account" style={styles.link}>Mon compte</Link>
         </View>
       </View>
     </ScrollView>
@@ -53,6 +54,13 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: '800',
     marginBottom: 16,
+  },
+  tagline: {
+    color: tokens.colors.text,
+    fontSize: 22,
+    fontWeight: '700',
+    marginTop: 20,
+    marginBottom: 12,
   },
   body: {
     color: tokens.colors.textMuted,
