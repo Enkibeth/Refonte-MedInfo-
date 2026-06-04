@@ -21,6 +21,7 @@ import { DefaultChatTransport, isTextUIPart, isToolUIPart } from 'ai';
 import type { UIMessage, UIMessagePart, UIDataTypes, UITools } from 'ai';
 
 import { useSession } from '@/auth/AuthProvider';
+import { getSupabaseClient } from '@/db/supabase';
 import { tokens } from '@/ui/tokens';
 import { collectLatestCitations, type Citation } from '@/ai/ui/chatSources';
 
@@ -206,18 +207,28 @@ function MessageBubble({
 // ── Écran principal ────────────────────────────────────────────────────────
 
 export default function ChatScreen() {
-  // Persona issue de l'AuthProvider (source profiles/RLS, étape 3). Fallback 'public'
-  // tant que la session/le profil charge ou pour un visiteur non authentifié.
+  // Persona affichée (titre) issue de l'AuthProvider. Le serveur, lui, NE fait PAS confiance
+  // au client : il dérive le persona du token d'auth (ADR-0012). On envoie donc le token, pas
+  // le persona.
   const { persona } = useSession();
   const [input, setInput] = useState('');
   const [sourcesOpen, setSourcesOpen] = useState(false);
 
-  const { messages, sendMessage, status, error } = useChat({
-    transport: new DefaultChatTransport({
-      api: '/api/chat',
-      body: { persona: persona ?? 'public' },
-    }),
-  });
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: '/api/chat',
+        // Token frais à chaque requête (la session peut se rafraîchir en cours d'usage).
+        headers: async (): Promise<Record<string, string>> => {
+          const { data } = await getSupabaseClient().auth.getSession();
+          const token = data.session?.access_token;
+          return token ? { Authorization: `Bearer ${token}` } : {};
+        },
+      }),
+    [],
+  );
+
+  const { messages, sendMessage, status, error } = useChat({ transport });
 
   const latestCitations = useMemo(() => collectLatestCitations(messages), [messages]);
   const isLoading = status === 'streaming' || status === 'submitted';

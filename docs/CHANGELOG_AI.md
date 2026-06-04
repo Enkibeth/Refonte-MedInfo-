@@ -17,6 +17,30 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-04] – Claude (audit étapes 5/6 : RAG débloqué + cite-or-refuse ciblé + persona serveur — ADR-0012)
+### Files modified
+- supabase/migrations/0007_rag_match_or_semantics.sql (nouveau : `match_rag_chunks` en sémantique OU ; corrige le ET de `plainto_tsquery` qui ne matchait quasi aucune vraie question)
+- src/rag/grounding.ts (nouveau : `requiresMedicalGrounding` — cite-or-refuse limité aux demandes factuelles, fail-safe)
+- app/api/chat+api.ts (`resolvePersonaFromRequest` : persona dérivé du token d'auth + profiles, plus jamais du body ; cite-or-refuse conditionné à l'ancrage requis ; RAG injecté seulement si extraits)
+- app/(chat)/chat.tsx (envoi du token d'auth via header ; le persona n'est plus envoyé par le client)
+- docs/DECISIONS/0012-rag-grounding-scope-et-persona-serveur.md (nouvel ADR)
+- tests/rag/grounding.test.ts (nouveau)
+### Purpose
+Corriger trois défauts constatés en prod sur les étapes 5/6 : (1) le chat refusait TOUT — la
+migration RAG `0006` n'était pas appliquée sur Supabase (0 chunk → refus systématique) ET le
+cite-or-refuse s'appliquait même aux salutations ; (2) `match_rag_chunks` (plainto/ET) ne
+retrouvait pas les extraits pour une question naturelle ; (3) le persona venait du body client
+(faille de gating : n'importe qui pouvait passer `student` et débloquer render_qcm + cas fictifs).
+Migrations `0006` (corpus) et `0007` (OU) appliquées sur le projet Supabase `sbpnjswffrqxgnglnjml`.
+### Regulatory impact
+None (maîtrisé) : aucune donnée de santé ; safe-box 3 couches inchangée ; durcissement du gating
+persona (réduction de surface). Détail dans ADR-0012.
+### Rollback plan
+git revert du commit ; restaurer `match_rag_chunks` depuis `0006` (cite-or-refuse redevient global)
+et le persona depuis le body (déconseillé : réintroduit la faille).
+
+---
+
 ## [2026-06-04] – Claude (auth : compte déjà existant + mot de passe oublié)
 ### Files modified
 - src/auth/AuthProvider.tsx (signUpWithPassword détecte l'email déjà enregistré via `data.user.identities` vide → `alreadyRegistered` ; nouvelle méthode `resetPassword` via `resetPasswordForEmail`)

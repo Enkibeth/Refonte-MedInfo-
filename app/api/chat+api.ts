@@ -20,6 +20,7 @@ import {
   generateId,
   type UIMessageChunk,
 } from 'ai';
+import { createClient } from '@supabase/supabase-js';
 
 import { getActiveModel, getActiveModelId } from '@/ai/providers/index';
 
@@ -30,6 +31,7 @@ import { buildRefusalChunks } from '@/ai/guardrails/refusalStream';
 import { logInteraction } from '@/ai/logging/logInteraction';
 import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
 import { retrieveRagContext, buildRagSystemSection, RAG_REFUSAL_MESSAGE } from '@/rag/retrieval';
+import { requiresMedicalGrounding } from '@/rag/grounding';
 import { proposeFollowupsTool } from '@/ai/skills/propose_followups';
 import { showSourcesTool } from '@/ai/skills/show_sources';
 import { refuseAndRedirectTool } from '@/ai/skills/refuse_and_redirect';
@@ -53,22 +55,54 @@ export function getToolsForPersona(persona: Persona) {
   return commonTools;
 }
 
+/**
+ * Persona dérivé du SERVEUR à partir du token d'auth (ADR-0011/0012) : le client ne peut
+ * PLUS imposer son persona via le body. Sans token valide → `public` (fail-safe). Le rôle
+ * `student` (et ses privilèges : render_qcm, cas fictifs en couche 1) n'est honoré que s'il
+ * a été attribué côté serveur dans `profiles` via /api/role (vérification académique).
+ */
+export async function resolvePersonaFromRequest(request: Request): Promise<Persona> {
+  const token = (request.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
+  if (!token) return 'public';
+
+  const url = process.env.SUPABASE_URL ?? process.env.EXPO_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anonKey) return 'public';
+
+  try {
+    // Identité + lecture du profil sous la RLS de l'utilisateur (il ne lit que SA ligne).
+    const userClient = createClient(url, anonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { persistSession: false },
+    });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData.user) return 'public';
+
+    const { data: profile } = await userClient
+      .from('profiles')
+      .select('persona')
+      .eq('id', userData.user.id)
+      .single();
+
+    // Seul `student` est élevé ; professional reporté (ADR-0006) → public.
+    return profile?.persona === 'student' ? 'student' : 'public';
+  } catch {
+    return 'public';
+  }
+}
 
 export async function POST(request: Request): Promise<Response> {
   const startMs = Date.now();
 
-  let body: { messages?: unknown[]; persona?: unknown };
+  let body: { messages?: unknown[] };
   try {
     body = await request.json();
   } catch {
     return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400 });
   }
 
-  const rawPersona = body.persona;
-  const persona: Persona =
-    typeof rawPersona === 'string' && (VALID_PERSONAS as string[]).includes(rawPersona)
-      ? (rawPersona as Persona)
-      : 'public';
+  // Le persona n'est JAMAIS lu depuis le body : il est dérivé du token d'auth côté serveur.
+  const persona: Persona = await resolvePersonaFromRequest(request);
 
   const uiMessages = Array.isArray(body.messages) ? body.messages : [];
 
@@ -125,9 +159,16 @@ export async function POST(request: Request): Promise<Response> {
   const prompt = getActivePrompt(persona);
   const modelMessages = await convertToModelMessages(uiMessages as any);
   const lastUserText = [...extractUserTexts(uiMessages)].filter((text) => text.trim().length > 0).pop() ?? '';
-  const rag = await retrieveRagContext(lastUserText);
 
-  if (rag.chunks.length === 0) {
+  // Cite-or-refuse ciblé (ADR-0012) : on n'exige un ancrage RAG que pour les demandes
+  // d'information factuelle. Les messages purement conversationnels (salutation, méta) passent
+  // au LLM sans RAG — le prompt persona + la couche 3 interdisent toujours diagnostic/conseil.
+  const needsGrounding = requiresMedicalGrounding(lastUserText);
+  const rag = needsGrounding
+    ? await retrieveRagContext(lastUserText)
+    : { query: lastUserText, chunks: [], citations: [] };
+
+  if (needsGrounding && rag.chunks.length === 0) {
     await logInteraction({
       persona,
       model_used: 'none',
@@ -148,9 +189,13 @@ export async function POST(request: Request): Promise<Response> {
     return createUIMessageStreamResponse({ stream: ragRefusalStream });
   }
 
+  // RAG injecté uniquement quand des extraits existent ; sinon (conversationnel) le système
+  // reste le seul prompt persona, sans section cite-or-refuse trompeuse.
+  const system = rag.chunks.length > 0 ? `${prompt.template}${buildRagSystemSection(rag)}` : prompt.template;
+
   const result = streamText({
     model: getActiveModel(),
-    system: `${prompt.template}${buildRagSystemSection(rag)}`,
+    system,
     messages: modelMessages,
     tools: getToolsForPersona(persona),
   });
