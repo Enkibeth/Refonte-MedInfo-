@@ -41,9 +41,11 @@ export interface SessionState {
   signUpWithPassword: (
     email: string,
     password: string,
-  ) => Promise<{ error: string | null; needsConfirmation: boolean }>;
+  ) => Promise<{ error: string | null; needsConfirmation: boolean; alreadyRegistered: boolean }>;
   /** Renvoi de l'email de confirmation Supabase pour une inscription non confirmée. */
   resendSignupConfirmation: (email: string) => Promise<{ error: string | null }>;
+  /** Envoi d'un email de réinitialisation de mot de passe (mot de passe oublié). */
+  resetPassword: (email: string) => Promise<{ error: string | null }>;
   /** Connexion OAuth (Google / Apple), redirection web. */
   signInWithOAuth: (provider: OAuthProvider) => Promise<{ error: string | null }>;
   /** Magic link OTP (option conservée, ADR-0007). */
@@ -116,10 +118,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           password,
           options: { emailRedirectTo: getAuthRedirectTo() },
         });
+        if (error) {
+          return { error: error.message, needsConfirmation: false, alreadyRegistered: false };
+        }
+        // Anti-énumération Supabase : si l'email est DÉJÀ enregistré et confirmé, l'API renvoie
+        // un faux succès (200, pas d'erreur) MAIS sans renvoyer d'email et avec `identities` vide.
+        // On le détecte pour éviter l'impasse « vérifie tes mails » alors qu'aucun mail ne partira.
+        const alreadyRegistered = !data.session && (data.user?.identities?.length ?? 0) === 0;
         // Si la confirmation email est activée, la session est nulle jusqu'à confirmation.
         return {
-          error: error?.message ?? null,
-          needsConfirmation: !error && !data.session,
+          error: null,
+          needsConfirmation: !data.session && !alreadyRegistered,
+          alreadyRegistered,
         };
       },
       async resendSignupConfirmation(email: string) {
@@ -128,6 +138,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           type: 'signup',
           email: email.trim().toLowerCase(),
           options: { emailRedirectTo: getAuthRedirectTo() },
+        });
+        return { error: error?.message ?? null };
+      },
+      async resetPassword(email: string) {
+        const supabase = getSupabaseClient();
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+          redirectTo: getAuthRedirectTo(),
         });
         return { error: error?.message ?? null };
       },

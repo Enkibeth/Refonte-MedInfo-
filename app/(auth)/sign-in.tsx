@@ -30,6 +30,7 @@ export default function SignInScreen() {
     signInWithPassword,
     signUpWithPassword,
     resendSignupConfirmation,
+    resetPassword,
     signInWithOAuth,
   } = useSession();
   const [mode, setMode] = useState<Mode>('signin');
@@ -62,10 +63,21 @@ export default function SignInScreen() {
         if (error.toLowerCase().includes('email not confirmed')) setCanResendConfirmation(true);
       }
     } else {
-      const { error, needsConfirmation } = await signUpWithPassword(email, password);
+      const { error, needsConfirmation, alreadyRegistered } = await signUpWithPassword(
+        email,
+        password,
+      );
       setBusy(false);
       if (error) setErrorMessage(error);
-      else if (needsConfirmation) {
+      else if (alreadyRegistered) {
+        // Email déjà enregistré : aucun mail ne sera renvoyé. On bascule vers la connexion
+        // plutôt que de laisser l'utilisateur attendre un email de confirmation fantôme.
+        setMode('signin');
+        setInfo(
+          'Un compte existe déjà avec cet email. Connecte-toi avec ton mot de passe. ' +
+            'Si tu l’as oublié, utilise « Mot de passe oublié ».',
+        );
+      } else if (needsConfirmation) {
         setCanResendConfirmation(true);
         setInfo(
           'Compte créé. Vérifie ta boîte mail et tes spams pour confirmer ton adresse. Tu peux renvoyer le mail si besoin.',
@@ -82,6 +94,19 @@ export default function SignInScreen() {
     setBusy(false);
     if (error) setErrorMessage(error);
     else setInfo('Email de confirmation renvoyé. Vérifie ta boîte mail et tes spams.');
+  }
+
+  async function handleResetPassword() {
+    if (busy || loading || email.trim().length === 0) return;
+    setBusy(true);
+    reset();
+    const { error } = await resetPassword(email);
+    setBusy(false);
+    if (error) setErrorMessage(error);
+    else
+      setInfo(
+        'Si un compte existe pour cet email, un lien de réinitialisation vient d’être envoyé. Vérifie ta boîte mail et tes spams.',
+      );
   }
 
   async function handleOAuth(provider: OAuthProvider) {
@@ -204,6 +229,17 @@ export default function SignInScreen() {
             </Text>
           </Pressable>
         </View>
+
+        {mode === 'signin' ? (
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy || loading || email.trim().length === 0}
+            onPress={handleResetPassword}
+            style={styles.toggle}
+          >
+            <Text style={styles.toggleText}>Mot de passe oublié ?</Text>
+          </Pressable>
+        ) : null}
 
         <Pressable
           accessibilityRole="button"

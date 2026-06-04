@@ -17,6 +17,29 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-04] – Claude (auth : compte déjà existant + mot de passe oublié)
+### Files modified
+- src/auth/AuthProvider.tsx (signUpWithPassword détecte l'email déjà enregistré via `data.user.identities` vide → `alreadyRegistered` ; nouvelle méthode `resetPassword` via `resetPasswordForEmail`)
+- app/(auth)/sign-in.tsx (message clair « compte déjà existant » + bascule vers connexion ; bouton « Mot de passe oublié ? »)
+- tests/unit/auth-provider.test.ts (mock `signUp.identities` + `resetPasswordForEmail`)
+### Purpose
+Lever l'impasse de création de compte signalée : avec un email DÉJÀ enregistré et confirmé,
+Supabase renvoie un faux succès (anti-énumération) SANS envoyer d'email, et l'app affichait
+« Compte créé, vérifie tes mails » → l'utilisateur attendait un email fantôme. Diagnostic confirmé
+par les logs Auth Supabase (`user_repeated_signup` 200 sans `mail.send`). On détecte désormais ce cas
+(`identities` vide) pour rediriger vers la connexion, et on ajoute la réinitialisation de mot de passe.
+Causes hors code à traiter dans le dashboard Supabase (non modifiables par le repo) : SMTP custom
+(Resend) car l'expéditeur par défaut `noreply@mail.app.supabase.io` ne livre de façon fiable qu'aux
+membres du projet (rate limit ~2-4/h) ; providers OAuth Google/Apple non activés (logs :
+`provider is not enabled` / `missing OAuth secret`) ; Site URL & Redirect URLs.
+### Regulatory impact
+None (authentification uniquement ; email de compte/PII minimale ; aucune donnée de santé).
+### Rollback plan
+git revert du commit ; l'UI repasse au message de confirmation unique, sans détection
+« déjà inscrit » ni réinitialisation de mot de passe.
+
+---
+
 ## [2026-06-04] – Codex (alignement main sur dev jusqu'à PR #32)
 ### Files modified
 - docs/STATUS.md (état distant réel : `main` à PR #26, `dev` à PR #32, `staging` à PR #27 ; consigne de merge vers `main`)
