@@ -17,6 +17,84 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-04] – Claude (branding : logo MedInfo AI sur accueil + sign-in)
+### Files modified
+- src/ui/Logo.tsx (nouveau : wordmark rendu en code — croix + « MedInfo AI » bleu pétrole)
+- app/index.tsx (logo + tagline, liens nommés) ; app/(auth)/sign-in.tsx (logo en tête)
+- assets/brand/README.md (nouveau : où déposer le vrai logo PNG + l'ancienne illustration)
+### Purpose
+Mettre le branding MedInfo AI (charte bleu pétrole) à l'accueil et au sign-in, sans dépendre
+d'un binaire (logo en code, build robuste). Procédure documentée pour basculer vers le logo
+image fourni + placer l'ancienne illustration « pour le moment » dès que les PNG sont déposés.
+### Regulatory impact
+None (design/branding).
+### Rollback plan
+git revert du commit.
+
+---
+
+## [2026-06-04] – Claude (rôles public/étudiant/pro + vérification — ADR-0011)
+### Files modified
+- docs/DECISIONS/0011-roles-actifs-verification.md (nouveau) ; docs/DECISIONS/0006 (amendé) ; START.md
+- src/auth/roles.ts (nouveau : catalogue rôles + isAcademicEmail + isValidRppsFormat) + tests/unit/roles.test.ts
+- src/ai/routing/persona.ts (professional enabledInMvp=true, group (chat)) + tests/unit/routing-persona.test.ts
+- supabase/migrations/0005_profile_verification.sql (nouveau : colonnes verified_at/verification_method
+  + trigger anti-auto-promotion — persona/status modifiables uniquement par service_role)
+- app/api/role+api.ts (nouveau : vérif serveur — student=email académique, pro=RPPS stub ANS)
+- src/auth/AuthProvider.tsx (requestRole → /api/role) ; app/(account)/choose-role.tsx (nouveau, UI)
+- app/(account)/account.tsx (lien « Gérer mon rôle »)
+- tests/rls/isolation.test.ts (anti-auto-promotion : user ne peut pas se donner un rôle vérifié)
+### Purpose
+Onboarding de sélection de rôle (ADR-0011) : public (sans login), étudiant (vérif email
+académique), professionnel (vérif RPPS — intégration ANS à finaliser, sinon « pending »). Sécurité :
+le client ne peut JAMAIS s'auto-attribuer un rôle vérifié (trigger DB + écriture serveur service_role,
+prouvé par test RLS sur vrai Postgres). Le pro reste sous la safe-box ; ses features cliniques restent
+gelées par ADR-0006. 113 tests verts, 5 gates OK.
+### Regulatory impact
+Potential (maîtrisé) : ouverture du rôle pro = surface plus exposée, mais safe-box inchangée et
+appliquée au pro, features cliniques pro gelées (ADR-0006), vérification d'identité ≠ MDSW, aucune
+donnée de santé. À confirmer : avis GIO ANSM. Vérif étudiant = PII minimale, aucun document stocké.
+### Rollback plan
+git revert du commit (remet professional.enabledInMvp=false, retire la migration 0005, la route
+/api/role, la sélection de rôle et les helpers).
+
+---
+
+## [2026-06-04] – Claude (auth : email+mot de passe + OAuth Google/Apple — ADR-0010)
+### Files modified
+- src/db/supabase.ts (detectSessionInUrl: true — corrige la session web non établie / reconnexion à chaque fois)
+- src/auth/AuthProvider.tsx (signInWithPassword, signUpWithPassword, signInWithOAuth google/apple ; magic link conservé)
+- app/(auth)/sign-in.tsx (UI : email+mot de passe avec bascule connexion/inscription + boutons Google/Apple)
+- docs/DECISIONS/0010-auth-password-oauth.md (nouveau — remplace la méthode de connexion d'ADR-0007)
+- tests/unit/auth-provider.test.ts (nouveau — smoke test)
+### Purpose
+Décision Hugo : remplacer le magic-link seul (pénible, lien localhost, session non persistée)
+par email+mot de passe + OAuth Google/Apple. `detectSessionInUrl: true` répare la session web.
+Le persona public reste anonyme sans login (01_REGULATION §5). Config Supabase requise (providers
+Email/Google/Apple + Site URL/Redirect URLs) documentée dans l'ADR.
+### Regulatory impact
+None (méthode d'authentification ; aucune donnée santé ; public anonyme ; persona via RLS ; safe-box inchangée).
+### Rollback plan
+git revert du commit ; revient au magic-link seul (et remettre detectSessionInUrl si souhaité).
+
+---
+
+## [2026-06-04] – Claude (design : thème blanc/bleu pétrole conforme 05_DESIGN)
+### Files modified
+- src/ui/tokens.ts (palette « bleu pétrole » validée : fond blanc #FFFFFF, accent petrol
+  #0A4D68 ; remplace le thème vert/teal provisoire du scaffold ; ajout success/danger/accentStrong)
+- app.json (splash backgroundColor petrol #0A4D68 au lieu du teal #0B3B3C)
+### Purpose
+Aligner le code sur la charte validée 05_DESIGN §2 (identité MedInfo blanc/bleu), le scaffold
+ayant posé un thème vert non conforme. Clés de tokens inchangées (zéro casse composants).
+À FAIRE (asset requis de Hugo) : ajouter le logo pour favicon / app icon iOS-Android / image de splash.
+### Regulatory impact
+None (design ; aucune logique médicale).
+### Rollback plan
+git revert du commit (revient au thème vert du scaffold).
+
+---
+
 ## [2026-06-03] – Claude (hygiène : MAJ STATUS + suppression test doublon — audit M3/M4)
 ### Files modified
 - docs/STATUS.md (état réel : CI distante verte, branches main/dev/staging alignées,

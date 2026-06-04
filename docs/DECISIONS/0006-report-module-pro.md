@@ -17,4 +17,7 @@ MVP = public + student uniquement. Module pro reporté à M6-M9, conditionné à
 - professional.v2.ts existe dans le repo mais N'EST PAS activé (référencé dans 04_CHATBOT §7).
 
 ## Statut
-Accepted.
+Accepted — **amendé par ADR-0011** : la SÉLECTION du rôle pro et la vérification RPPS sont
+sorties du report (vérifier une identité pro n'est pas du MDSW). Les garde-fous de cet ADR
+(avis GIO ANSM, RCP, télémétrie, qualification interne) restent **en vigueur** pour les
+features cliniques pro et la commercialisation. Le pro reste soumis à la safe-box complète.

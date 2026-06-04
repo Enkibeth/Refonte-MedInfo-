@@ -12,7 +12,10 @@ export function createBrowserSupabaseClient(): SupabaseClient {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: false,
+      // true : nécessaire sur web pour consommer le token du callback (magic link / OAuth)
+      // et établir la session. À false, la session ne s'établissait jamais → reconnexion
+      // perçue à chaque fois.
+      detectSessionInUrl: true,
     },
   });
 }
