@@ -82,6 +82,24 @@ describe('profiles — isolation cross-user', () => {
       ),
     ).rejects.toThrow();
   });
+
+  // ADR-0011 : anti-auto-promotion. Le client ne peut pas se donner un rôle vérifié.
+  it("user A NE PEUT PAS s'auto-promouvoir (UPDATE de SA persona en professional → throw)", async () => {
+    await expect(
+      db.asUser(USER_A, (q) =>
+        q("UPDATE profiles SET persona = 'professional' WHERE id = $1", [USER_A]),
+      ),
+    ).rejects.toThrow();
+  });
+
+  it('le service_role PEUT attribuer un rôle vérifié (UPDATE persona côté serveur)', async () => {
+    const { rowCount } = await db.asService((q) =>
+      q("UPDATE profiles SET persona = 'professional', status = 'verified' WHERE id = $1", [
+        USER_A,
+      ]),
+    );
+    expect(rowCount).toBe(1);
+  });
 });
 
 describe('ai_interactions — service_role only (jamais accessible au client)', () => {
