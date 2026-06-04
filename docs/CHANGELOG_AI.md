@@ -17,6 +17,22 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-04] – Claude (design : thème blanc/bleu pétrole conforme 05_DESIGN)
+### Files modified
+- src/ui/tokens.ts (palette « bleu pétrole » validée : fond blanc #FFFFFF, accent petrol
+  #0A4D68 ; remplace le thème vert/teal provisoire du scaffold ; ajout success/danger/accentStrong)
+- app.json (splash backgroundColor petrol #0A4D68 au lieu du teal #0B3B3C)
+### Purpose
+Aligner le code sur la charte validée 05_DESIGN §2 (identité MedInfo blanc/bleu), le scaffold
+ayant posé un thème vert non conforme. Clés de tokens inchangées (zéro casse composants).
+À FAIRE (asset requis de Hugo) : ajouter le logo pour favicon / app icon iOS-Android / image de splash.
+### Regulatory impact
+None (design ; aucune logique médicale).
+### Rollback plan
+git revert du commit (revient au thème vert du scaffold).
+
+---
+
 ## [2026-06-03] – Claude (hygiène : MAJ STATUS + suppression test doublon — audit M3/M4)
 ### Files modified
 - docs/STATUS.md (état réel : CI distante verte, branches main/dev/staging alignées,
