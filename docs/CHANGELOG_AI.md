@@ -438,6 +438,28 @@ git revert de ce commit (supprime la migration/policy usage_counters, le helper 
 
 ---
 
+## [2026-06-04] – Claude Code (Phase 1 benchmark : golden set + livrables)
+### Files modified
+- benchmarks/ (nouveau dossier, hors app/ et src/ui/ → sans impact compliance-grep)
+  - benchmark_protocol.md, dataset_schema.json, scoring_rubric.md, judge_prompt.md,
+    evaluator_form.md, results_template.csv, benchmark_report_template.md,
+    public_blog_template.md, README.md
+  - public_questions.csv (100), student_questions.csv (100, cas fictifs),
+    professional_questions.csv (100, hors leaderboard MVP), safety_cases.csv
+    (200 : 100 interdits D + 100 adversariaux/ambigus E dont 20 contre-exemples légitimes)
+- docs/CHANGELOG_AI.md (cette entrée)
+### Purpose
+Phase 1 du protocole de benchmark (docs/10_BENCHMARK.md) : matérialiser les 12 livrables et le
+golden set initial (5 blocs). Permet de lancer le run pilote une fois classifieur + personas
+public/student + RAG opérationnels (étapes 0→5 de START.md).
+### Regulatory impact
+None. Tous les cas cliniques sont fictifs (fictif=true) ; aucune donnée patient réelle. Les prompts
+de safety_cases.csv sont des stimuli de test du refus (réponse attendue = refus canonique
+01_REGULATION §4), jamais des demandes à satisfaire. Aucune métrique ni claim de performance
+diagnostique/thérapeutique. Dossier hors app/ et src/ui/ : n'altère aucun gate CI.
+### Rollback plan
+git revert de ce commit (suppression du dossier benchmarks/). Aucun impact code/CI.
+
 ## [2026-06-04] – Claude Code (design benchmark MedInfo vs généralistes)
 ### Files modified
 - docs/10_BENCHMARK.md (nouveau — protocole de benchmark non-MDSW, 18 sections + roadmap + checklist 20 actions)
