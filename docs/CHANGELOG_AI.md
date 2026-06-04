@@ -17,6 +17,33 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-04] – Claude (rôles public/étudiant/pro + vérification — ADR-0011)
+### Files modified
+- docs/DECISIONS/0011-roles-actifs-verification.md (nouveau) ; docs/DECISIONS/0006 (amendé) ; START.md
+- src/auth/roles.ts (nouveau : catalogue rôles + isAcademicEmail + isValidRppsFormat) + tests/unit/roles.test.ts
+- src/ai/routing/persona.ts (professional enabledInMvp=true, group (chat)) + tests/unit/routing-persona.test.ts
+- supabase/migrations/0005_profile_verification.sql (nouveau : colonnes verified_at/verification_method
+  + trigger anti-auto-promotion — persona/status modifiables uniquement par service_role)
+- app/api/role+api.ts (nouveau : vérif serveur — student=email académique, pro=RPPS stub ANS)
+- src/auth/AuthProvider.tsx (requestRole → /api/role) ; app/(account)/choose-role.tsx (nouveau, UI)
+- app/(account)/account.tsx (lien « Gérer mon rôle »)
+- tests/rls/isolation.test.ts (anti-auto-promotion : user ne peut pas se donner un rôle vérifié)
+### Purpose
+Onboarding de sélection de rôle (ADR-0011) : public (sans login), étudiant (vérif email
+académique), professionnel (vérif RPPS — intégration ANS à finaliser, sinon « pending »). Sécurité :
+le client ne peut JAMAIS s'auto-attribuer un rôle vérifié (trigger DB + écriture serveur service_role,
+prouvé par test RLS sur vrai Postgres). Le pro reste sous la safe-box ; ses features cliniques restent
+gelées par ADR-0006. 113 tests verts, 5 gates OK.
+### Regulatory impact
+Potential (maîtrisé) : ouverture du rôle pro = surface plus exposée, mais safe-box inchangée et
+appliquée au pro, features cliniques pro gelées (ADR-0006), vérification d'identité ≠ MDSW, aucune
+donnée de santé. À confirmer : avis GIO ANSM. Vérif étudiant = PII minimale, aucun document stocké.
+### Rollback plan
+git revert du commit (remet professional.enabledInMvp=false, retire la migration 0005, la route
+/api/role, la sélection de rôle et les helpers).
+
+---
+
 ## [2026-06-04] – Claude (auth : email+mot de passe + OAuth Google/Apple — ADR-0010)
 ### Files modified
 - src/db/supabase.ts (detectSessionInUrl: true — corrige la session web non établie / reconnexion à chaque fois)

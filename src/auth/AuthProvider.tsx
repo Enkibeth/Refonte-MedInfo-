@@ -40,6 +40,14 @@ export interface SessionState {
   signInWithOAuth: (provider: OAuthProvider) => Promise<{ error: string | null }>;
   /** Magic link OTP (option conservée, ADR-0007). */
   signInWithEmail: (email: string) => Promise<{ error: string | null }>;
+  /**
+   * Demande d'attribution de rôle vérifié (ADR-0011). Délègue au serveur `/api/role` :
+   * le client ne fixe JAMAIS persona/status lui-même. `pending` = vérif pro RPPS à venir.
+   */
+  requestRole: (
+    persona: Persona,
+    proof?: { email?: string; rpps?: string },
+  ) => Promise<{ error: string | null; pending?: boolean; message?: string }>;
   signOut: () => Promise<void>;
 }
 
@@ -121,6 +129,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           options: { emailRedirectTo: Linking.createURL('/') },
         });
         return { error: error?.message ?? null };
+      },
+      async requestRole(persona: Persona, proof?: { email?: string; rpps?: string }) {
+        const token = session?.access_token;
+        if (!token) return { error: 'Non authentifié.' };
+        try {
+          const res = await fetch('/api/role', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ persona, ...proof }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.status === 202) {
+            return { error: null, pending: true, message: data?.message };
+          }
+          if (!res.ok) {
+            return { error: data?.error ?? 'Échec de la vérification.' };
+          }
+          setPersona((data?.persona as Persona) ?? persona);
+          return { error: null };
+        } catch (e) {
+          return { error: e instanceof Error ? e.message : 'Erreur réseau.' };
+        }
       },
       async signOut() {
         await getSupabaseClient().auth.signOut();

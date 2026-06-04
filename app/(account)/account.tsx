@@ -73,10 +73,15 @@ export default function AccountScreen() {
           </View>
         </View>
 
-        {persona === 'professional' ? (
+        {user ? (
           <View style={styles.professionalBox}>
-            <Text style={styles.professionalTitle}>Module professionnel</Text>
-            <Text style={styles.professionalText}>Disponible ultérieurement.</Text>
+            <Text style={styles.professionalTitle}>Rôle</Text>
+            <Text style={styles.professionalText}>
+              Choisis ou change ton rôle (public / étudiant / professionnel).
+            </Text>
+            <Link href="/(account)/choose-role" style={styles.inlineLink}>
+              Gérer mon rôle
+            </Link>
           </View>
         ) : null}
 

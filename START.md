@@ -10,7 +10,7 @@ Expo (web+iOS+Android, une app) · Supabase (Postgres+Auth+pgvector) · Vercel A
 
 ## Loi du projet (non négociable)
 1. **Safe-box non-MDSW** : jamais de triage symptomatique, diagnostic individualisé, calculateur clinique interprétatif, synthèse décisionnelle. Cf `docs/01_REGULATION.md` (source de vérité).
-2. **MVP = public + student uniquement.** Module pro REPORTÉ (ADR-0006).
+2. **Rôles public + student + pro** (sélection + vérif, ADR-0011). Les features **cliniques** pro et la commercialisation restent **gelées** par ADR-0006 (GIO ANSM, RCP…). Le pro reste sous la safe-box complète.
 3. **Une feature à la fois, validée avant la suivante.** Branche par feature (`ai/<agent>/<feature>`), jamais de push direct sur `main`.
 4. **Tests de conformité AVANT les features** (TDD). 5 gates CI doivent passer (cf `docs/03_SECURITY.md §1`).
 5. **Prompts = artefacts versionnés sous contrat** (cf `docs/04_CHATBOT.md`), jamais éditables en prod.
