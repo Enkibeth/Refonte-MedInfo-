@@ -24,13 +24,21 @@ import { tokens } from '@/ui/tokens';
 type Mode = 'signin' | 'signup';
 
 export default function SignInScreen() {
-  const { loading, user, signInWithPassword, signUpWithPassword, signInWithOAuth } = useSession();
+  const {
+    loading,
+    user,
+    signInWithPassword,
+    signUpWithPassword,
+    resendSignupConfirmation,
+    signInWithOAuth,
+  } = useSession();
   const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [canResendConfirmation, setCanResendConfirmation] = useState(false);
 
   const isDisabled =
     loading || busy || email.trim().length === 0 || password.length < 6;
@@ -38,6 +46,7 @@ export default function SignInScreen() {
   function reset() {
     setErrorMessage(null);
     setInfo(null);
+    setCanResendConfirmation(false);
   }
 
   async function handleSubmit() {
@@ -48,15 +57,31 @@ export default function SignInScreen() {
     if (mode === 'signin') {
       const { error } = await signInWithPassword(email, password);
       setBusy(false);
-      if (error) setErrorMessage(error);
+      if (error) {
+        setErrorMessage(error);
+        if (error.toLowerCase().includes('email not confirmed')) setCanResendConfirmation(true);
+      }
     } else {
       const { error, needsConfirmation } = await signUpWithPassword(email, password);
       setBusy(false);
       if (error) setErrorMessage(error);
-      else if (needsConfirmation)
-        setInfo('Compte créé. Vérifie ta boîte mail pour confirmer ton adresse.');
-      else setInfo('Compte créé et connecté.');
+      else if (needsConfirmation) {
+        setCanResendConfirmation(true);
+        setInfo(
+          'Compte créé. Vérifie ta boîte mail et tes spams pour confirmer ton adresse. Tu peux renvoyer le mail si besoin.',
+        );
+      } else setInfo('Compte créé et connecté.');
     }
+  }
+
+  async function handleResendConfirmation() {
+    if (busy || loading || email.trim().length === 0) return;
+    setBusy(true);
+    setErrorMessage(null);
+    const { error } = await resendSignupConfirmation(email);
+    setBusy(false);
+    if (error) setErrorMessage(error);
+    else setInfo('Email de confirmation renvoyé. Vérifie ta boîte mail et tes spams.');
   }
 
   async function handleOAuth(provider: OAuthProvider) {
@@ -201,6 +226,17 @@ export default function SignInScreen() {
           </View>
         ) : null}
 
+        {canResendConfirmation ? (
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy || loading || email.trim().length === 0}
+            onPress={handleResendConfirmation}
+            style={({ pressed }) => [styles.secondaryButton, pressed ? styles.pressed : null]}
+          >
+            <Text style={styles.secondaryButtonText}>Renvoyer l’email de confirmation</Text>
+          </Pressable>
+        ) : null}
+
         {errorMessage ? (
           <View style={styles.errorBox} accessibilityLiveRegion="polite">
             <Text style={styles.errorTitle}>Erreur</Text>
@@ -289,6 +325,16 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.55 },
   pressed: { opacity: 0.86 },
   buttonText: { color: tokens.colors.background, fontSize: 16, fontWeight: '800' },
+  secondaryButton: {
+    minHeight: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: tokens.colors.accent,
+    marginTop: 12,
+  },
+  secondaryButtonText: { color: tokens.colors.accent, fontSize: 15, fontWeight: '800' },
   toggle: { marginTop: 16, alignItems: 'center' },
   toggleText: { color: tokens.colors.accent, fontSize: 14, fontWeight: '700' },
   statusBox: {
