@@ -23,12 +23,13 @@ import {
 
 import { getActiveModel, getActiveModelId } from '@/ai/providers/index';
 
-import { screenConversation } from '@/ai/orchestrator';
+import { extractUserTexts, screenConversation } from '@/ai/orchestrator';
 import { getActivePrompt } from '@/ai/prompts/index';
 import { validateOutput } from '@/ai/guardrails/outputValidator';
 import { buildRefusalChunks } from '@/ai/guardrails/refusalStream';
 import { logInteraction } from '@/ai/logging/logInteraction';
 import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
+import { retrieveRagContext, buildRagSystemSection, RAG_REFUSAL_MESSAGE } from '@/rag/retrieval';
 import { proposeFollowupsTool } from '@/ai/skills/propose_followups';
 import { showSourcesTool } from '@/ai/skills/show_sources';
 import { refuseAndRedirectTool } from '@/ai/skills/refuse_and_redirect';
@@ -44,6 +45,7 @@ function getToolsForPersona(_persona: Persona) {
     refuse_and_redirect: refuseAndRedirectTool,
   };
 }
+
 
 export async function POST(request: Request): Promise<Response> {
   const startMs = Date.now();
@@ -113,10 +115,33 @@ export async function POST(request: Request): Promise<Response> {
   // ── Couches 2 & 3 : LLM + validation de sortie (bufferisée avant émission) ─────
   const prompt = getActivePrompt(persona);
   const modelMessages = await convertToModelMessages(uiMessages as any);
+  const lastUserText = [...extractUserTexts(uiMessages)].filter((text) => text.trim().length > 0).pop() ?? '';
+  const rag = await retrieveRagContext(lastUserText);
+
+  if (rag.chunks.length === 0) {
+    await logInteraction({
+      persona,
+      model_used: 'none',
+      latency_ms: Date.now() - startMs,
+      refusal_triggered: true,
+      guardrail_layer: 'rag_cite_or_refuse',
+      intent_category: 'general_info',
+    });
+
+    const ragRefusalStream = createUIMessageStream({
+      execute: ({ writer }) => {
+        const id = generateId();
+        writer.write({ type: 'text-start', id } as UIMessageChunk);
+        writer.write({ type: 'text-delta', id, delta: RAG_REFUSAL_MESSAGE } as UIMessageChunk);
+        writer.write({ type: 'text-end', id } as UIMessageChunk);
+      },
+    });
+    return createUIMessageStreamResponse({ stream: ragRefusalStream });
+  }
 
   const result = streamText({
     model: getActiveModel(),
-    system: prompt.template,
+    system: `${prompt.template}${buildRagSystemSection(rag)}`,
     messages: modelMessages,
     tools: getToolsForPersona(persona),
   });

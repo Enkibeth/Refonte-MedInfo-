@@ -457,3 +457,64 @@ None (déploiement, secrets et observabilité technique ; aucune logique médica
 contenu de santé identifiable, safe-box inchangée).
 ### Rollback plan
 git revert de ce commit puis suppression des variables Vercel ajoutées si besoin.
+
+---
+
+## [2026-06-04] – GPT-5.5-Codex (étape 5 — RAG pgvector HAS/ANSM MVP)
+### Files modified
+- supabase/migrations/0006_rag_pgvector.sql (nouveau schéma RAG pgvector, RPC `match_rag_chunks`, seed HAS/ANSM)
+- src/rag/types.ts, src/rag/retrieval.ts, src/rag/corpus/has-ansm-mvp.ts, src/rag/corpus/has-ansm-mvp.json, src/rag/README.md
+- app/api/chat+api.ts (retrieval RAG après couche 1, cite-or-refuse avant LLM)
+- src/ai/logging/logInteraction.ts (nouvelle valeur `rag_cite_or_refuse`)
+- scripts/embeddings/validate-rag-metadata.mjs (gate metadata/licence/hash réel)
+- tests/rag/retrieval.test.ts
+- docs/STATUS.md
+### Purpose
+Livrer le MVP de l'étape 5 : infrastructure Supabase pgvector, petit corpus test officiel HAS/ANSM,
+retrieval Supabase avec fallback local testable, et intégration chat cite-or-refuse. Une question
+`general_info` non couverte par une source validée retourne un refus documentaire déterministe sans
+appel au LLM principal ; une question couverte peut citer une vraie source HAS.
+### Regulatory impact
+Confirmed (positif) : renforce le grounding documentaire et évite les réponses médicales factuelles
+non sourcées. Aucun triage, diagnostic individualisé, anamnèse ou orientation clinique n'est ajouté ;
+la couche 1 classifieur et la couche 3 validation de sortie restent en place.
+### Rollback plan
+git revert de ce commit (retire migration RAG, corpus, retrieval, gate metadata et branchement chat),
+puis supprimer la migration `0006_rag_pgvector.sql` du projet Supabase si elle a déjà été appliquée.
+
+---
+
+## [2026-06-04] – GPT-5.5-Codex (review RAG — fallback local + embeddings)
+### Files modified
+- src/rag/retrieval.ts (suppression de la pseudo-embedding, fallback local désactivé par défaut en production)
+- tests/rag/retrieval.test.ts (couverture fallback production et opt-in explicite)
+- src/rag/README.md, docs/08_RAG.md, docs/STATUS.md (handoff mis à jour)
+### Purpose
+Corriger deux points de review de l'étape 5 : ne jamais envoyer de vecteur factice à la RPC
+pgvector, et éviter que le corpus local de dev/test masque en production une Supabase vide ou mal
+configurée. Sans vrais embeddings ingérés, la RPC reste lexicale ; en production, absence de chunks
+Supabase = cite-or-refuse sauf opt-in explicite `RAG_ENABLE_LOCAL_FALLBACK=true`.
+### Regulatory impact
+Confirmed (positif) : réduit le risque de faux ranking vectoriel et renforce le fail-closed
+documentaire en production. Aucune nouvelle logique médicale, triage, diagnostic ou orientation.
+### Rollback plan
+git revert de ce commit pour revenir au fallback local systématique et à l'appel RPC précédent.
+
+
+---
+
+## [2026-06-04] – GPT-5.5-Codex (setup local RLS Postgres/pgvector)
+### Files modified
+- package.json (script `setup:rls:ubuntu`)
+- scripts/dev/install-rls-postgres-ubuntu.sh (helper Ubuntu/Debian pour Postgres + pgvector)
+- docs/STATUS.md, docs/03_SECURITY.md (validation locale verte + prérequis RLS)
+### Purpose
+Résoudre le blocage local `npm run test` / `npm run compliance` causé par l'absence de binaire
+Postgres `initdb` et, après l'étape 5 RAG, de l'extension `vector`. Le repo documente maintenant
+une commande reproductible pour installer les prérequis du harness RLS sur Ubuntu/Debian, ou
+l'alternative `RLS_TEST_DATABASE_URL` / `DATABASE_URL` sur les autres environnements.
+### Regulatory impact
+None (outillage de test local uniquement ; aucun changement de logique médicale, RLS produit ou
+flux utilisateur).
+### Rollback plan
+git revert de ce commit (retire le helper d'installation et restaure la documentation précédente).
