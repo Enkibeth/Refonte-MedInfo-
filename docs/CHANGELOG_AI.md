@@ -17,6 +17,25 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-04] – Claude (auth : email+mot de passe + OAuth Google/Apple — ADR-0010)
+### Files modified
+- src/db/supabase.ts (detectSessionInUrl: true — corrige la session web non établie / reconnexion à chaque fois)
+- src/auth/AuthProvider.tsx (signInWithPassword, signUpWithPassword, signInWithOAuth google/apple ; magic link conservé)
+- app/(auth)/sign-in.tsx (UI : email+mot de passe avec bascule connexion/inscription + boutons Google/Apple)
+- docs/DECISIONS/0010-auth-password-oauth.md (nouveau — remplace la méthode de connexion d'ADR-0007)
+- tests/unit/auth-provider.test.ts (nouveau — smoke test)
+### Purpose
+Décision Hugo : remplacer le magic-link seul (pénible, lien localhost, session non persistée)
+par email+mot de passe + OAuth Google/Apple. `detectSessionInUrl: true` répare la session web.
+Le persona public reste anonyme sans login (01_REGULATION §5). Config Supabase requise (providers
+Email/Google/Apple + Site URL/Redirect URLs) documentée dans l'ADR.
+### Regulatory impact
+None (méthode d'authentification ; aucune donnée santé ; public anonyme ; persona via RLS ; safe-box inchangée).
+### Rollback plan
+git revert du commit ; revient au magic-link seul (et remettre detectSessionInUrl si souhaité).
+
+---
+
 ## [2026-06-04] – Claude (design : thème blanc/bleu pétrole conforme 05_DESIGN)
 ### Files modified
 - src/ui/tokens.ts (palette « bleu pétrole » validée : fond blanc #FFFFFF, accent petrol
