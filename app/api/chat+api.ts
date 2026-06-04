@@ -33,17 +33,24 @@ import { retrieveRagContext, buildRagSystemSection, RAG_REFUSAL_MESSAGE } from '
 import { proposeFollowupsTool } from '@/ai/skills/propose_followups';
 import { showSourcesTool } from '@/ai/skills/show_sources';
 import { refuseAndRedirectTool } from '@/ai/skills/refuse_and_redirect';
+import { renderQcmTool } from '@/ai/skills/render_qcm';
 import type { Persona } from '@/ai/prompts/_schema';
 
-const VALID_PERSONAS: Persona[] = ['public', 'student'];
+export const VALID_PERSONAS: Persona[] = ['public', 'student'];
 
-function getToolsForPersona(_persona: Persona) {
-  // Matrice 04_CHATBOT §8 : public = 3 tools (render_qcm student only, étape 6)
-  return {
+export function getToolsForPersona(persona: Persona) {
+  // Matrice 04_CHATBOT §8 : public = 3 tools ; student ajoute render_qcm.
+  const commonTools = {
     propose_followups: proposeFollowupsTool,
     show_sources: showSourcesTool,
     refuse_and_redirect: refuseAndRedirectTool,
   };
+
+  if (persona === 'student') {
+    return { ...commonTools, render_qcm: renderQcmTool };
+  }
+
+  return commonTools;
 }
 
 
@@ -90,7 +97,9 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // ── Couche 1 : classifieur d'intention sur TOUTE la conversation (pré-LLM) ─────
-  const screen = await screenConversation(uiMessages);
+  const screen = await screenConversation(uiMessages, {
+    allowFictiveEducationalCases: persona === 'student',
+  });
 
   if (!screen.allowed) {
     await logInteraction({

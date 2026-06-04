@@ -10,8 +10,8 @@ date: 2026-06-04
 
 ## État courant
 
-- Étapes 1 → 5 livrées côté repo. Corrections d'audit (B1/I1/I2/I3/M1), rate-limiting (M2),
-  déploiement Vercel et RAG pgvector MVP HAS/ANSM intégrés.
+- Étapes 1 → 6 livrées côté repo. Corrections d'audit (B1/I1/I2/I3/M1), rate-limiting (M2),
+  déploiement Vercel, RAG pgvector MVP HAS/ANSM et persona étudiant `student.v2` intégrés.
 - Branches `main`, `dev`, `staging` : **alignées** après PR #26 côté historique local.
   `dev` reste la branche d'intégration ; brancher les sessions depuis `dev`, puis feature branch `ai/<agent>/<feature>`.
 - Architecture documentaire : organisée dans `docs/` avec ADRs dans `docs/DECISIONS/`.
@@ -19,17 +19,14 @@ date: 2026-06-04
 
 ## Validations
 
-Dernière validation locale étape 5 (2026-06-04) :
+Dernière validation locale étape 6 (2026-06-04) :
 
 ```bash
-npm run typecheck                                            # OK
-npm run test:unit                                           # OK
-npm run test -- tests/rag/retrieval.test.ts tests/chat/chat-api-rate-limit.test.ts  # OK
-npm run validate:prompts                                    # OK
-npm run validate:rag                                        # OK
-npm run compliance:grep                                     # OK
-npm run test:prompt-regression                              # OK
-npm run test / npm run compliance                           # OK après installation Postgres + pgvector local
+npm run typecheck                 # OK
+npm run test                      # OK (127 tests)
+npm run validate:prompts          # OK (2 artefacts)
+npm run validate:rag              # OK (4 chunks RAG)
+npm run compliance                # OK (5 gates, RLS avec Postgres + pgvector local)
 ```
 
 Le blocage local précédent du gate RLS est résolu dans cet environnement par l'installation de
@@ -64,6 +61,32 @@ build en échec) + absence de `dist/client/index.html` en `web.output=server`. C
 `engines.node = "22.x"` (package.json) + script de fallback HTML (`scripts/vercel/`). Déploiement
 validé READY. **À faire côté Vercel** : variables d'env Supabase/LLM (cf `docs/09_DEPLOYMENT.md`).
 
+
+## Étape 6 — Prompt student.v2 + QCM + toggle sources : **implémentée (TDD)**
+
+Critères START.md — **atteints côté repo/test local** : persona `student` actif dans
+`/api/chat`, prompt `student.v2` sous contrat, `render_qcm` exposé uniquement aux étudiants,
+panneau/toggle sources haut de chat alimenté par `show_sources`, et RAG cite-or-refuse conservé.
+
+Périmètre livré :
+
+- Prompt `src/ai/prompts/student.v2.ts` conforme `docs/04_CHATBOT.md §6` : éducatif non-MDSW,
+  cas cliniques acceptés uniquement s'ils sont explicitement fictifs/pédagogiques, refus déterministe
+  pour patient réel/personnel, anti-hallucination et RAG cite-or-refuse.
+- `/api/chat` : `VALID_PERSONAS = public | student`; matrice tools explicite : public sans
+  `render_qcm`, student avec `propose_followups`, `show_sources`, `refuse_and_redirect`,
+  `render_qcm`. `professional` reste hors route MVP.
+- Couche 1 : exception étroite `allowFictiveEducationalCases` uniquement appelée par la route
+  `student`; les cas réels/anonymisés/stage/proche restent bloqués avant LLM.
+- UI chat : rendu interactif minimal du tool `render_qcm` et bouton d'en-tête « Sources (n) »
+  basculant vers le panneau de sources de la réponse courante ; le panneau inline historique reste
+  disponible.
+- Tests ajoutés : contrat prompt student, matrice tools, cas fictif vs cas réel, helper UI sources,
+  non-régression RAG cite-or-refuse student.
+
+Limites assumées : le rendu QCM est minimal (sélection/réponse/explication) et ne persiste aucun
+résultat ; les citations EDN pages/rangs restent dépendantes du corpus futur. Aucune donnée de santé
+identifiable n'est stockée.
 
 ## Étape 5 — RAG pgvector HAS/ANSM : **implémentée MVP (TDD)**
 
@@ -182,7 +205,7 @@ Validations : `npm run typecheck` ✅ · `npm run test` (88) ✅ · `npm run com
 
 ## Étape suivante
 
-Étape 5 — RAG pgvector sur petit corpus test HAS/ANSM (`08_RAG`).
+Étape 7+ — features isolées selon START.md : historique, dossiers, export PDF, Stripe, vérification statut.
 Pré-requis classifieur restants (post-MVP) : câblage étage 2 (Gemini Flash-Lite / Haiku 4.5),
 persistance `classifier_decisions`, diversification du golden set, lexique `out_of_scope`.
 
