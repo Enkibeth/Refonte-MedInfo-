@@ -17,6 +17,30 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-04] – Codex (étape 6 : student.v2 + QCM + sources)
+### Files modified
+- src/ai/prompts/student.v2.ts (nouveau prompt étudiant v2, non-MDSW éducatif, cas fictifs only)
+- src/ai/prompts/index.ts (activation du prompt student)
+- app/api/chat+api.ts (persona student actif, matrice tools public/student, render_qcm student-only)
+- src/ai/orchestrator.ts (exception étroite cas clinique explicitement fictif/pédagogique pour student ; cas réels/personnels bloqués)
+- app/(chat)/chat.tsx, src/ai/ui/chatSources.ts, src/ui/tokens.ts (rendu QCM interactif minimal + toggle/panneau sources haut de chat)
+- tests/chat/student-step6.test.ts, tests/chat/chat-ui-step6.test.ts, tests/guardrails/rag-cite-or-refuse-student.test.ts (contrats étape 6)
+- docs/STATUS.md, docs/CHANGELOG_AI.md (reprise IA/documentation)
+### Purpose
+Livrer l'étape 6 de START.md : persona étudiant branché dans le chat, prompt `student.v2`,
+`render_qcm` réservé aux étudiants, toggle sources visible côté UI et conservation du RAG
+cite-or-refuse de l'étape 5.
+### Regulatory impact
+Potential (maîtrisé) : ouverture du persona étudiant avec cas cliniques fictifs pédagogiques.
+Garde-fous : aucun triage/diagnostic/CAT/prescription/anamnèse ; cas patient réel ou personnel
+refusé avant LLM ; cas clinique autorisé seulement si explicitement fictif/pédagogique ; aucune
+persistance de donnée santé.
+### Rollback plan
+git revert du commit ; retire `student.v2` actif, enlève `render_qcm` de la route et revient au
+chat public/RAG étape 5.
+
+---
+
 ## [2026-06-04] – Claude (branding : logo MedInfo AI sur accueil + sign-in)
 ### Files modified
 - src/ui/Logo.tsx (nouveau : wordmark rendu en code — croix + « MedInfo AI » bleu pétrole)
