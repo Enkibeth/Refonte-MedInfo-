@@ -438,6 +438,23 @@ git revert de ce commit (supprime la migration/policy usage_counters, le helper 
 
 ---
 
+## [2026-06-04] – Claude Code (design benchmark MedInfo vs généralistes)
+### Files modified
+- docs/10_BENCHMARK.md (nouveau — protocole de benchmark non-MDSW, 18 sections + roadmap + checklist 20 actions)
+- docs/CHANGELOG_AI.md (cette entrée)
+### Purpose
+Ajouter le protocole de benchmark MedInfo AI vs modèles généralistes (inspiré Synapse/MedGPT mais
+transparent, reproductible, à intervalles de confiance et double évaluation aveugle). Mesure la
+qualité informationnelle, pédagogique, le sourçage et la robustesse du refus safe-box. Document de
+conception uniquement — aucune logique exécutable, aucun dataset patient.
+### Regulatory impact
+None. Le benchmark est explicitement subordonné à 01_REGULATION.md : il ne mesure ni ne revendique
+aucune performance diagnostique/pronostique/thérapeutique ; tous les cas cliniques sont fictifs ;
+les prompts « interdits » servent à tester le refus déterministe, jamais à produire un acte médical ;
+claims de supériorité clinique explicitement interdits. Safe-box non-MDSW inchangée.
+### Rollback plan
+git revert de ce commit (suppression de docs/10_BENCHMARK.md). Aucun impact code/CI.
+
 ## [2026-06-03] – GPT-5.3-Codex (préparation Vercel + Supabase dédié)
 ### Files modified
 - app.json (export Expo Router server)
