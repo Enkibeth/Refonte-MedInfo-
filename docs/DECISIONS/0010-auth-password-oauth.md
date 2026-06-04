@@ -17,7 +17,8 @@ token de callback → reconnexion perçue à chaque visite).
 1. **`detectSessionInUrl: true`** côté client web (`src/db/supabase.ts`) : la session est
    désormais établie depuis le callback (magic link / OAuth) puis persistée → connexion **unique**.
 2. Méthodes de connexion proposées :
-   - **Email + mot de passe** (`signInWithPassword` / `signUpWithPassword`) ;
+   - **Email + mot de passe** (`signInWithPassword` / `signUpWithPassword`) avec renvoi explicite
+     de l'email de confirmation (`resendSignupConfirmation`) si l'utilisateur ne l'a pas reçu ;
    - **OAuth Google et Apple** (`signInWithOAuth`, redirection web) ;
    - magic link **conservé** en option (rétro-compatibilité).
 3. Le **persona public reste anonyme sans login** (01_REGULATION §5). La connexion ne concerne
@@ -30,8 +31,14 @@ token de callback → reconnexion perçue à chaque visite).
   (Google Cloud Console / Apple Developer).
 - **Authentication → URL Configuration** : définir le **Site URL** = URL de production
   (`https://refonte-med-info.vercel.app` ou domaine final) et ajouter les **Redirect URLs**
-  autorisées (prod + previews + localhost de dev). Sans ça, les liens/redirections pointent vers
-  localhost.
+  autorisées (prod + previews + localhost de dev). Côté app, renseigner
+  `EXPO_PUBLIC_AUTH_REDIRECT_URL` avec cette URL publique ; sinon Expo génère une URL dev
+  (`localhost`/scheme local) via `Linking.createURL('/')`, ce qui peut rendre les liens email
+  inutilisables hors dev.
+- **Authentication → Emails / SMTP** : si « Confirm email » est activé, vérifier que le template
+  « Confirm signup » est actif, que les quotas/rate limits Supabase ne sont pas atteints, et que
+  le provider SMTP/domaine d'envoi délivre bien les emails. L'application ne peut que demander
+  l'envoi/renvoi ; la délivrabilité se diagnostique dans les logs Supabase/SMTP.
 
 ## Limites
 - L'OAuth est câblé pour le **web** (redirection). Le flux **natif** iOS/Android

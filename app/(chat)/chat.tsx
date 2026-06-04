@@ -4,7 +4,7 @@
  * show_sources → panneau toggleable, refuse_and_redirect → bannière refus.
  * Disclaimer permanent conforme 01_REGULATION §4.
  */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -22,15 +22,19 @@ import type { UIMessage, UIMessagePart, UIDataTypes, UITools } from 'ai';
 
 import { useSession } from '@/auth/AuthProvider';
 import { tokens } from '@/ui/tokens';
+import { collectLatestCitations, type Citation } from '@/ai/ui/chatSources';
 
 // ── Types tool-call ────────────────────────────────────────────────────────
 
-interface Citation {
-  title: string;
-  emitter: string;
-  url?: string;
-  excerpt?: string;
+interface QcmPayload {
+  stem: string;
+  options: string[];
+  correct_index: number;
+  explanation: string;
+  item_edn: number;
+  college: string;
 }
+
 
 // ── Composants tool-call ───────────────────────────────────────────────────
 
@@ -52,8 +56,14 @@ function FollowupButtons({
   );
 }
 
-function SourcesPanel({ citations }: { citations: Citation[] }) {
-  const [open, setOpen] = useState(false);
+function SourcesPanel({
+  citations,
+  defaultOpen = false,
+}: {
+  citations: Citation[];
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <View style={styles.sourcesWrapper}>
       <TouchableOpacity onPress={() => setOpen((o) => !o)} style={styles.sourcesToggle}>
@@ -67,9 +77,49 @@ function SourcesPanel({ citations }: { citations: Citation[] }) {
             <Text style={styles.citationTitle}>
               {c.title} — {c.emitter}
             </Text>
+            {c.url ? <Text style={styles.citationUrl}>{c.url}</Text> : null}
             {c.excerpt ? <Text style={styles.citationExcerpt}>{c.excerpt}</Text> : null}
           </View>
         ))}
+    </View>
+  );
+}
+
+
+function QcmCard({ qcm }: { qcm: QcmPayload }) {
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const answered = selectedIndex !== null;
+
+  return (
+    <View style={styles.qcmCard}>
+      <Text style={styles.qcmMeta}>
+        QCM · {qcm.college} · Item EDN {qcm.item_edn}
+      </Text>
+      <Text style={styles.qcmStem}>{qcm.stem}</Text>
+      {qcm.options.map((option, index) => {
+        const isSelected = selectedIndex === index;
+        const isCorrect = qcm.correct_index === index;
+        return (
+          <TouchableOpacity
+            key={index}
+            style={[
+              styles.qcmOption,
+              answered && isCorrect && styles.qcmOptionCorrect,
+              answered && isSelected && !isCorrect && styles.qcmOptionWrong,
+            ]}
+            onPress={() => setSelectedIndex(index)}
+          >
+            <Text style={styles.qcmOptionText}>
+              {String.fromCharCode(65 + index)}. {option}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+      {answered ? (
+        <Text style={styles.qcmExplanation}>
+          Réponse : {String.fromCharCode(65 + qcm.correct_index)} — {qcm.explanation}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -111,6 +161,9 @@ function MessagePart({
     }
     if (toolName === 'show_sources' && output?.citations) {
       return <SourcesPanel citations={output.citations} />;
+    }
+    if (toolName === 'render_qcm' && output?.stem && Array.isArray(output?.options)) {
+      return <QcmCard qcm={output as QcmPayload} />;
     }
     if (toolName === 'refuse_and_redirect' && output?.message) {
       return <RefusalBanner message={output.message} />;
@@ -157,6 +210,7 @@ export default function ChatScreen() {
   // tant que la session/le profil charge ou pour un visiteur non authentifié.
   const { persona } = useSession();
   const [input, setInput] = useState('');
+  const [sourcesOpen, setSourcesOpen] = useState(false);
 
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
@@ -165,6 +219,7 @@ export default function ChatScreen() {
     }),
   });
 
+  const latestCitations = useMemo(() => collectLatestCitations(messages), [messages]);
   const isLoading = status === 'streaming' || status === 'submitted';
 
   const handleSend = () => {
@@ -184,6 +239,25 @@ export default function ChatScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={80}
     >
+      <View style={styles.chatHeader}>
+        <Text style={styles.chatTitle}>{persona === 'student' ? 'Chat étudiant' : 'Chat santé'}</Text>
+        <TouchableOpacity
+          style={[styles.headerSourcesButton, latestCitations.length === 0 && styles.headerSourcesButtonDisabled]}
+          onPress={() => setSourcesOpen((open) => !open)}
+          disabled={latestCitations.length === 0}
+        >
+          <Text style={styles.headerSourcesText}>
+            {sourcesOpen ? 'Masquer' : 'Sources'} ({latestCitations.length})
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {sourcesOpen && latestCitations.length > 0 ? (
+        <View style={styles.sourcesPane}>
+          <SourcesPanel citations={latestCitations} defaultOpen />
+        </View>
+      ) : null}
+
       <ScrollView
         style={styles.messages}
         contentContainerStyle={styles.messagesContent}
@@ -237,6 +311,28 @@ export default function ChatScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: tokens.colors.background },
+  chatHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: tokens.colors.surface,
+    borderBottomWidth: 1,
+    borderColor: tokens.colors.border,
+  },
+  chatTitle: { color: tokens.colors.text, fontSize: 16, fontWeight: '700' },
+  headerSourcesButton: {
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: tokens.colors.background,
+    borderWidth: 1,
+    borderColor: tokens.colors.accent,
+  },
+  headerSourcesButtonDisabled: { opacity: 0.45, borderColor: tokens.colors.border },
+  headerSourcesText: { color: tokens.colors.accent, fontSize: 13, fontWeight: '700' },
+  sourcesPane: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: tokens.colors.background },
   messages: { flex: 1 },
   messagesContent: { padding: 16, gap: 12 },
   bubble: { maxWidth: '85%', borderRadius: 16, padding: 12, gap: 8 },
@@ -270,7 +366,29 @@ const styles = StyleSheet.create({
   sourcesToggleText: { color: tokens.colors.textMuted, fontSize: 13, fontWeight: '600' },
   citation: { padding: 8, borderTopWidth: 1, borderColor: tokens.colors.border },
   citationTitle: { color: tokens.colors.text, fontSize: 13, fontWeight: '600' },
+  citationUrl: { color: tokens.colors.accent, fontSize: 11, marginTop: 2 },
   citationExcerpt: { color: tokens.colors.textMuted, fontSize: 12, marginTop: 2 },
+  qcmCard: {
+    gap: 8,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: tokens.colors.background,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+  },
+  qcmMeta: { color: tokens.colors.textMuted, fontSize: 12, fontWeight: '700' },
+  qcmStem: { color: tokens.colors.text, fontSize: 14, lineHeight: 20, fontWeight: '600' },
+  qcmOption: {
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surface,
+  },
+  qcmOptionCorrect: { borderColor: tokens.colors.success, backgroundColor: tokens.colors.successBackground },
+  qcmOptionWrong: { borderColor: tokens.colors.warningText, backgroundColor: tokens.colors.warningBackground },
+  qcmOptionText: { color: tokens.colors.text, fontSize: 13, lineHeight: 18 },
+  qcmExplanation: { color: tokens.colors.text, fontSize: 13, lineHeight: 19, fontWeight: '600' },
   refusalBanner: {
     backgroundColor: tokens.colors.warningBackground,
     borderRadius: 12,
