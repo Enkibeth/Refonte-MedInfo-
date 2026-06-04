@@ -1,0 +1,63 @@
+{
+  "_comment": "GABARIT de gel des versions de modèles (Phase 3). Copier en benchmarks/models.lock.json et figer le JOUR J. Valider via `npm run bench:preflight -- --live`. benchmarks/models.lock.json peut être commité (traçabilité) ; il ne contient AUCUN secret (les clés d'API restent dans l'environnement).",
+  "_comment_champs": "Par modèle : name (libellé), provider (famille : medinfo|medinfo-rag|openai|anthropic|gemini|perplexity|opensource), model_id_exact (identifiant EXACT figé, non vide, non « stub » pour un run --live), date_figee (ISO, ex. 2026-06-15), mode (base|rag|web), enabled (false pour exclure du run).",
+  "_comment_medinfo": "medinfo / medinfo-rag restent en STUB tant que le produit n'est pas construit : model_id_exact porte le suffixe -stub et un run --live est explicitement REFUSÉ par le preflight. Aucune sortie ne doit suggérer une supériorité réelle.",
+  "frozen_at": "____",
+  "protocol_ref": "benchmarks/benchmark_protocol.md §Modèles & versions",
+  "models": [
+    {
+      "name": "MedInfo AI (base)",
+      "provider": "medinfo",
+      "model_id_exact": "medinfo-public-v2.0.0-stub",
+      "date_figee": "____",
+      "mode": "base",
+      "enabled": true,
+      "_comment": "STUB — produit non construit. Run --live refusé. À remplacer par l'identifiant réel une fois le backend branché."
+    },
+    {
+      "name": "MedInfo AI (RAG)",
+      "provider": "medinfo-rag",
+      "model_id_exact": "medinfo-public-v2.0.0-rag-stub",
+      "date_figee": "____",
+      "mode": "rag",
+      "enabled": true,
+      "_comment": "STUB — idem base, avec récupération documentaire. Run --live refusé tant que stub."
+    },
+    {
+      "name": "OpenAI (base)",
+      "provider": "openai",
+      "model_id_exact": "____",
+      "date_figee": "____",
+      "mode": "base",
+      "enabled": true,
+      "_comment": "Figer l'identifiant exact le jour J (ex. gpt-4o-2024-08-06). Clé : OPENAI_API_KEY."
+    },
+    {
+      "name": "Claude (base)",
+      "provider": "anthropic",
+      "model_id_exact": "____",
+      "date_figee": "____",
+      "mode": "base",
+      "enabled": true,
+      "_comment": "Figer l'identifiant exact le jour J (ex. claude-sonnet-4-5-20250929). Clé : ANTHROPIC_API_KEY. Ne jamais utiliser comme JUGE si évalué (biais de famille)."
+    },
+    {
+      "name": "Gemini (base)",
+      "provider": "gemini",
+      "model_id_exact": "____",
+      "date_figee": "____",
+      "mode": "base",
+      "enabled": false,
+      "_comment": "Optionnel MVP. enabled=false par défaut. Brancher le provider avant activation."
+    },
+    {
+      "name": "Perplexity / web",
+      "provider": "perplexity",
+      "model_id_exact": "____",
+      "date_figee": "____",
+      "mode": "web",
+      "enabled": false,
+      "_comment": "Condition « web » dédiée et étiquetée à part (benchmark_protocol.md §Conditions de run)."
+    }
+  ]
+}

@@ -45,5 +45,39 @@ node ../scripts/eval/benchmark-stats.mjs --in runs/<ts>/results.judged.csv
 
 Scripts npm : `bench:run`, `bench:judge`, `bench:stats`. Les sorties vont dans `runs/<timestamp>/` (ignoré par git). `bench:stats` sort en `exitCode=1` si un **faux négatif critique** est détecté (seuil bloquant).
 
+## Phase 3 — pilote & évaluation humaine
+
+Outillage du **run pilote** et de l'**évaluation humaine double-aveugle** (`../docs/10_BENCHMARK.md §10/§11/§15`). Toujours hors-ligne par défaut. Les sorties `medinfo` restent étiquetées `*-stub` : c'est de l'**outillage**, jamais une preuve de supériorité.
+
+| Fichier | Rôle |
+|---|---|
+| `models.lock.example.json` | gabarit de **gel des versions** (par modèle : `provider`, `model_id_exact`, `date_figee`, `mode`). Copier en `models.lock.json` et figer le jour J. medinfo marqué stub. |
+
+Workflow (les commandes complètes sont dans `../scripts/eval/README.md`) :
+
+```bash
+# 1) Gel des versions — refuse un run --live non figé
+node ../scripts/eval/benchmark-preflight.mjs            # offline : structure + avertit stub
+node ../scripts/eval/benchmark-preflight.mjs --live     # exige model_id_exact figé + clés
+
+# 2) Sous-ensemble PILOTE stratifié (proportions dimension/gravité) + run réduit
+node ../scripts/eval/benchmark-pilot.mjs --set safety --n 12 --offline
+#    → runs/<ts>/pilot/{pilot.items.csv, pilot.meta.json, results.raw.csv}
+
+# 3) Paquets d'évaluation AVEUGLE (1 par évaluateur, ordre randomisé/seed distinct) + clé scellée
+node ../scripts/eval/benchmark-anonymize.mjs --in runs/<ts>/pilot/results.raw.csv --evaluators A,B
+#    → runs/<ts>/pilot/eval_packets/eval_packet.{A,B}.csv  (identité modèle MASQUÉE)
+#    → runs/<ts>/.keys/sealing.json  (CLÉ SCELLÉE, dossier gitignoré)
+
+# 4) Après remplissage en aveugle : κ de Cohen + désaccords + calibration juge↔humain
+node ../scripts/eval/benchmark-agreement.mjs \
+  --a runs/<ts>/pilot/eval_packets/eval_packet.A.csv \
+  --b runs/<ts>/pilot/eval_packets/eval_packet.B.csv \
+  --judge runs/<ts>/pilot/results.judged.csv
+#    → agreement.md + agreement.json ; exitCode=1 si κ < 0,6 sur un flag de sûreté
+```
+
+Scripts npm : `bench:preflight`, `bench:pilot`, `bench:anonymize`, `bench:agreement`. La **clé scellée** (`blind_label → modèle`) ne sort **jamais** de `runs/<ts>/.keys/` (gitignoré) : ne la partagez pas avec les évaluateurs avant la mise en commun.
+
 ## Statut
-Phase 1 (protocole & dataset) — **brouillon v0.1**. Phase 2 (harness `scripts/eval/`) — **implémentée, mode stub offline**. À faire avant run réel : revue safe-box du dataset par un relecteur médical, figer les versions de modèles, brancher les providers `--live`.
+Phase 1 (protocole & dataset) — **brouillon v0.1**. Phase 2 (harness `scripts/eval/`) — **implémentée, mode stub offline**. Phase 3 (pilote, anonymisation aveugle, κ + calibration, gel des versions, preflight) — **outillage implémenté, mode stub offline**. À faire avant run réel : revue safe-box du dataset par un relecteur médical, figer les versions de modèles (`models.lock.json`), brancher les providers `--live`, recruter les évaluateurs.

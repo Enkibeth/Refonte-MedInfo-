@@ -65,6 +65,39 @@ node scripts/eval/benchmark-stats.mjs --in benchmarks/runs/<ts>/results.judged.c
 - `benchmark-stats.mjs` sort en `exitCode=1` si un faux négatif **critique** est détecté (seuil bloquant safe-box).
 - Scripts npm : `bench:run`, `bench:judge`, `bench:stats`.
 
+## Workflow pilote → aveugle → κ → calibration → run complet (Phase 3)
+
+Avant le run complet, on calibre le protocole sur un **pilote réduit** (`docs/10_BENCHMARK.md §15` ; cible κ ≥ 0,7, ≥ 0,8 sûreté). Outillage hors-ligne par défaut ; `medinfo` reste un **stub** étiqueté (le produit n'est pas construit).
+
+1. **Geler les versions** (preflight). Copier `models.lock.example.json` → `models.lock.json`, renseigner `model_id_exact` + `date_figee` par modèle. Le preflight refuse un run `--live` non figé.
+   ```bash
+   node scripts/eval/benchmark-preflight.mjs --live   # exitCode=1 si version vide/stub ou clé manquante
+   ```
+2. **Pilote stratifié** (~24 items respectant les proportions dimension/gravité, déterministe) + run réduit.
+   ```bash
+   node scripts/eval/benchmark-pilot.mjs --set all --n 24 --seed 12345 --offline
+   ```
+3. **Juger** le pilote (assistance, pour la calibration ultérieure).
+   ```bash
+   node scripts/eval/benchmark-judge.mjs --in benchmarks/runs/<ts>/pilot/results.raw.csv --offline
+   ```
+4. **Anonymiser** en paquets double-aveugle (ordre randomisé, seed distinct par évaluateur ; clé scellée gitignorée).
+   ```bash
+   node scripts/eval/benchmark-anonymize.mjs --in benchmarks/runs/<ts>/pilot/results.raw.csv --evaluators A,B
+   ```
+5. **Évaluation humaine** : 2 évaluateurs remplissent `eval_packet.A.csv` / `eval_packet.B.csv` en aveugle et indépendamment (rubrique `scoring_rubric.md` + 6 éliminatoires + safe-box).
+6. **Accord + calibration** : κ de Cohen (éliminatoires + classement safe-box), Pearson sur totaux /100, liste des désaccords à arbitrer (> 15 pts, ou divergence éliminatoire/safe-box), calibration juge↔humain (corrélation, biais systématique, biais de longueur).
+   ```bash
+   node scripts/eval/benchmark-agreement.mjs \
+     --a benchmarks/runs/<ts>/pilot/eval_packets/eval_packet.A.csv \
+     --b benchmarks/runs/<ts>/pilot/eval_packets/eval_packet.B.csv \
+     --judge benchmarks/runs/<ts>/pilot/results.judged.csv
+   ```
+   `exitCode=1` si **κ < 0,6 sur un flag de sûreté** → ajuster la rubrique / former les évaluateurs **avant** le run complet.
+7. **Arbitrage** des désaccords listés par un 3ᵉ évaluateur, puis **run complet** (`bench:run` sur tout le set) une fois κ atteint et le juge calibré.
+
+Scripts npm : `bench:preflight`, `bench:pilot`, `bench:anonymize`, `bench:agreement`. La clé scellée (`blind_label → modèle`) reste sous `benchmarks/runs/<ts>/.keys/` (gitignoré) — jamais partagée avec les évaluateurs avant la mise en commun.
+
 ## Sortie
 - Interne : `benchmark_report_template.md`.
 - Public : `public_blog_template.md` (après relecture des claims).

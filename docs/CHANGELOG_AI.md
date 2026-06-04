@@ -438,6 +438,32 @@ git revert de ce commit (supprime la migration/policy usage_counters, le helper 
 
 ---
 
+## [2026-06-04] – Claude Code (Phase 3 benchmark : pilote + évaluation humaine)
+### Files modified
+- scripts/eval/lib/{agreement,sampling}.mjs (κ de Cohen, Pearson, force d'accord Landis & Koch,
+  biais systématique ; échantillonnage stratifié déterministe)
+- scripts/eval/benchmark-{pilot,anonymize,agreement,preflight}.mjs (CLI Phase 3)
+- scripts/eval/benchmark-run.mjs (extraction du helper exporté runItems — réutilisé par le pilote)
+- benchmarks/models.lock.example.json (gabarit de gel des versions, medinfo en stub)
+- tests/unit/benchmark-phase3.test.ts (κ cas connus, Pearson, sampling, round-trip scellage, désaccords)
+- package.json (scripts bench:pilot/anonymize/agreement/preflight — aucune dépendance)
+- scripts/eval/README.md, benchmarks/README.md, benchmarks/benchmark_protocol.md (workflow Phase 3)
+### Purpose
+Phase 3 : outillage du run pilote et de l'évaluation humaine. Échantillonnage stratifié (pilote de
+calibration), anonymisation double-aveugle (paquets par évaluateur, ordre randomisé, clé scellée),
+accord inter-évaluateurs (κ de Cohen sur éliminatoires + classement safe-box, Pearson sur totaux),
+calibration juge↔humain (corrélation, biais systématique, biais de longueur), gel des versions de
+modèles (models.lock) + préflight refusant un run --live non figé.
+### Regulatory impact
+None. Outillage d'évaluation sans logique médicale. Le chemin medinfo reste un STUB (produit non
+construit) : toutes les sorties l'étiquettent *-stub, aucune ne suggère de supériorité — c'est de
+l'outillage, pas une preuve. Anonymisation réelle (scrub du préfixe stub) ; clé scellée écrite
+uniquement sous benchmarks/runs/.../.keys/ (gitignoré) via garde-fou fail-safe. benchmark-agreement
+sort en exitCode=1 si κ < 0,6 sur un flag de sûreté (protocole à fiabiliser avant run complet).
+Rien sous app/ ni src/ui/ ; les 5 gates CI passent sans régression.
+### Rollback plan
+git revert de ce commit. Aucun impact runtime app (scripts d'éval isolés, hors bundle).
+
 ## [2026-06-04] – Claude Code (Phase 2 benchmark : harness d'évaluation)
 ### Files modified
 - scripts/eval/lib/{csv,stats,refusal,providers}.mjs (parseur CSV, stats+bootstrap IC seedé,

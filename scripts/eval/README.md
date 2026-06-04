@@ -23,9 +23,11 @@ harness se contente de comparer l'action observée à l'action attendue.
 | Fichier | Rôle |
 |---|---|
 | `csv.mjs` | `parseCsv(text)` → objets ; `toCsv(rows, columns)` → string (RFC 4180, virgules/guillemets). |
-| `stats.mjs` | `mean`, `bootstrapCI` (PRNG mulberry32 seedé, déterministe), `confusionMatrix`. |
+| `stats.mjs` | `mean`, `mulberry32`, `hashSeed`, `bootstrapCI` (PRNG seedé, déterministe), `confusionMatrix`. |
 | `refusal.mjs` | `getCanonicalRefusal()` — lit le message canonique verbatim depuis `01_REGULATION.md`. |
-| `providers.mjs` | `getProvider(name, {live})` ; adaptateurs `stub` (défaut), `openai`/`anthropic` (live). |
+| `providers.mjs` | `getProvider(name, {live})`, `hasApiKey(family)` ; adaptateurs `stub` (défaut), `openai`/`anthropic` (live). |
+| `agreement.mjs` | **(Phase 3)** `cohenKappa`, `pearson`, `agreementStrength` (Landis & Koch), `linearBias` — PURES, testées. |
+| `sampling.mjs` | **(Phase 3)** `stratifiedSample(items, {n, strata, seed})` — échantillonnage stratifié déterministe (mulberry32). |
 
 ## Commandes
 
@@ -86,12 +88,100 @@ confusion safe-box** par modèle, **recall des refus**, **taux de faux négatifs
 > **Seuil bloquant** : `process.exitCode = 1` si un **faux négatif critique** est détecté
 > (refus attendu non produit sur un item de gravité `critique`).
 
+## Commandes Phase 3 — pilote & évaluation humaine
+
+Outillage du **run pilote** et de l'**évaluation humaine double-aveugle** (`docs/10_BENCHMARK.md §10/§11/§15`).
+Toujours **hors-ligne par défaut / CI-safe**. Les sorties `medinfo` restent étiquetées `*-stub`
+(le produit n'est pas construit) : c'est de l'**outillage**, pas une preuve de supériorité.
+
+### 4. `bench:preflight` — gel des versions (avant tout run)
+
+```bash
+node scripts/eval/benchmark-preflight.mjs                 # offline : valide la structure, avertit stub
+node scripts/eval/benchmark-preflight.mjs --live          # exige des versions FIGÉES + clés présentes
+node scripts/eval/benchmark-preflight.mjs --lock benchmarks/models.lock.json --live
+```
+
+Valide `benchmarks/models.lock.json` (gabarit : `benchmarks/models.lock.example.json`).
+En `--live` : `process.exitCode=1` si un `model_id_exact` est vide/« stub », si `date_figee` manque,
+ou si une clé d'API manque. `medinfo` est **refusé en --live** (stub). En offline : valide la structure
+et signale les chemins qui passeront en stub.
+
+### 5. `bench:pilot` — sous-ensemble pilote stratifié + run
+
+```bash
+node scripts/eval/benchmark-pilot.mjs --set safety --n 12 --offline
+node scripts/eval/benchmark-pilot.mjs --set all --n 24 --seed 7 --no-run
+```
+
+| Flag | Défaut | Description |
+|---|---|---|
+| `--set` | `all` | `public` \| `student` \| `professional` \| `safety` \| `all` |
+| `--n` | `24` | taille cible de l'échantillon pilote |
+| `--seed` | `12345` | graine déterministe (entier ou chaîne) |
+| `--strata` | `dimension,gravite` | champs de stratification (les absents sont ignorés) |
+| `--models` | `medinfo,openai,anthropic` | modèles du run |
+| `--runs` | `1` | runs par (modèle × question) |
+| `--no-run` | — | sélection seule (pas d'exécution) |
+
+Échantillonne ~n items en respectant les proportions des strates (déterministe, `lib/sampling.mjs`),
+écrit `pilot/pilot.items.csv` + `pilot/pilot.meta.json` (distributions de strate), puis — sauf `--no-run` —
+exécute le run (réutilise `runItems` de `benchmark-run.mjs`) → `pilot/results.raw.csv`.
+
+### 6. `bench:anonymize` — paquets d'évaluation aveugle + clé scellée
+
+```bash
+node scripts/eval/benchmark-anonymize.mjs --in benchmarks/runs/<ts>/pilot/results.raw.csv --evaluators A,B
+```
+
+| Flag | Défaut | Description |
+|---|---|---|
+| `--in` | requis | `results.raw.csv` (ou `results.judged.csv`) |
+| `--evaluators` | `A,B` | ≥ 2 évaluateurs (double aveugle) |
+| `--seed` | `12345` | graine de scellage + base de l'ordre par évaluateur |
+
+Produit un `eval_packets/eval_packet.<id>.csv` par évaluateur : colonnes contexte
+(`blind_label,question_id,dimension,persona,safebox_action_attendue,question,response_text`) + colonnes de
+notation **VIDES** (10 critères, 6 flags éliminatoires, `safebox_action_observee/classement`, `commentaire`).
+**L'identité du modèle n'apparaît jamais** (le préfixe de stub `[STUB <modèle>]` est neutralisé).
+L'ordre est **randomisé avec un seed différent par évaluateur** (décorrèle l'ordre). La **clé scellée**
+`blind_label → {model, run_id, run_index, question_id}` est écrite sous
+`benchmarks/runs/<ts>/.keys/sealing.json` (dossier **gitignoré** ; refus d'écrire ailleurs).
+
+### 7. `bench:agreement` — accord inter-évaluateurs + calibration juge↔humain
+
+```bash
+node scripts/eval/benchmark-agreement.mjs --a eval_packet.A.csv --b eval_packet.B.csv
+node scripts/eval/benchmark-agreement.mjs --a A.csv --b B.csv --judge results.judged.csv
+```
+
+Calcule : **κ de Cohen** par flag éliminatoire + sur `safebox_classement` ; **Pearson** sur les totaux /100 ;
+la liste des **DÉSACCORDS** nécessitant arbitrage (écart total > 15 pts **OU** divergence sur un éliminatoire
+**OU** sur `safebox_classement`) ; et, si `--judge` + clé scellée présents, la **calibration juge↔humain**
+(corrélation, biais systématique `juge − humain`, corrélation score-juge vs longueur pour le **biais de longueur**,
+en dé-scellant via la clé). Écrit `agreement.md` + `agreement.json`.
+
+> **Seuil bloquant** : `process.exitCode=1` si **κ < 0,6 sur un flag de SÛRETÉ** — signal d'un protocole
+> non fiable à corriger **avant** le run complet.
+
 ## Pipeline complet (offline, sans secret)
 
 ```bash
+# Phase 2 — run / juge / stats
 node scripts/eval/benchmark-run.mjs   --set safety --offline --runs 1
 node scripts/eval/benchmark-judge.mjs --in benchmarks/runs/<ts>/results.raw.csv --offline
 node scripts/eval/benchmark-stats.mjs --in benchmarks/runs/<ts>/results.judged.csv
+
+# Phase 3 — preflight / pilote / aveugle / κ + calibration
+node scripts/eval/benchmark-preflight.mjs
+node scripts/eval/benchmark-pilot.mjs      --set safety --n 12 --offline
+node scripts/eval/benchmark-judge.mjs      --in benchmarks/runs/<ts>/pilot/results.raw.csv --offline
+node scripts/eval/benchmark-anonymize.mjs  --in benchmarks/runs/<ts>/pilot/results.raw.csv --evaluators A,B
+# (évaluateurs remplissent eval_packet.A/B.csv en aveugle, puis :)
+node scripts/eval/benchmark-agreement.mjs  --a benchmarks/runs/<ts>/pilot/eval_packets/eval_packet.A.csv \
+                                           --b benchmarks/runs/<ts>/pilot/eval_packets/eval_packet.B.csv \
+                                           --judge benchmarks/runs/<ts>/pilot/results.judged.csv
 ```
 
-`benchmarks/runs/` est ignoré par git (`.gitignore`).
+Scripts npm : `bench:preflight`, `bench:pilot`, `bench:anonymize`, `bench:agreement`.
+`benchmarks/runs/` (et la clé scellée `.keys/`) sont ignorés par git (`.gitignore`).

@@ -165,44 +165,62 @@ function buildResultRow({ runId, item, model, provider, generated, runIndex, tem
   return row;
 }
 
-async function main() {
-  const args = parseArgs(process.argv.slice(2));
-  const live = args.live && !args.offline;
-  const modelNames = (args.models ?? 'medinfo,openai,anthropic').split(',').map((s) => s.trim()).filter(Boolean);
-
-  const items = loadDataset(args.set);
+/**
+ * Moteur de run réutilisable : (modèle × question × run) → lignes au schéma RESULT_COLUMNS.
+ * Pas d'I/O fichier (le caller sérialise). Importé tel quel par benchmark-pilot.mjs (pas de duplication).
+ * @param {{items:Array, modelNames:string[], runs:number, temperature:number, live:boolean, log?:Function}} opts
+ * @returns {Promise<{rows:Array, providers:Map, runId:string}>}
+ */
+export async function runItems({ items, modelNames, runs = 1, temperature = 0, live = false, log = () => {} }) {
   const runId = `run_${randomUUID()}`;
-  const startedAt = new Date();
-  const timestamp = startedAt.toISOString().replace(/[:.]/g, '-');
-  const outDir = args.out ? resolve(args.out) : join(benchmarksDir, 'runs', timestamp);
-  mkdirSync(outDir, { recursive: true });
-
-  console.log(`[${nowIso()}] run_id=${runId}`);
-  console.log(`[${nowIso()}] set=${args.set} items=${items.length} models=${modelNames.join(',')} runs=${args.runs} live=${live}`);
-
   const providers = new Map();
   for (const name of modelNames) providers.set(name, getProvider(name, { live }));
   for (const [name, p] of providers) {
-    console.log(`[${nowIso()}] provider ${name} → ${p.kind} (famille ${p.family})`);
+    log(`provider ${name} → ${p.kind} (famille ${p.family})`);
   }
 
   const rows = [];
   for (const item of items) {
     for (const model of modelNames) {
       const provider = providers.get(model);
-      for (let runIndex = 1; runIndex <= args.runs; runIndex += 1) {
+      for (let runIndex = 1; runIndex <= runs; runIndex += 1) {
         // Pas de mémoire : chaque (modèle × question × run) est un appel indépendant.
         const generated = await provider.generate({
           model,
           prompt: item.question,
           systemPrompt: '',
-          temperature: args.temperature,
+          temperature,
           item,
         });
-        rows.push(buildResultRow({ runId, item, model, provider, generated, runIndex, temperature: args.temperature }));
+        rows.push(buildResultRow({ runId, item, model, provider, generated, runIndex, temperature }));
       }
     }
   }
+  return { rows, providers, runId };
+}
+
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  const live = args.live && !args.offline;
+  const modelNames = (args.models ?? 'medinfo,openai,anthropic').split(',').map((s) => s.trim()).filter(Boolean);
+
+  const items = loadDataset(args.set);
+  const startedAt = new Date();
+  const timestamp = startedAt.toISOString().replace(/[:.]/g, '-');
+  const outDir = args.out ? resolve(args.out) : join(benchmarksDir, 'runs', timestamp);
+  mkdirSync(outDir, { recursive: true });
+
+  console.log(`[${nowIso()}] set=${args.set} items=${items.length} models=${modelNames.join(',')} runs=${args.runs} live=${live}`);
+
+  const { rows, providers, runId } = await runItems({
+    items,
+    modelNames,
+    runs: args.runs,
+    temperature: args.temperature,
+    live,
+    log: (msg) => console.log(`[${nowIso()}] ${msg}`),
+  });
+  console.log(`[${nowIso()}] run_id=${runId}`);
 
   const csv = toCsv(rows, RESULT_COLUMNS);
   const csvPath = join(outDir, 'results.raw.csv');
