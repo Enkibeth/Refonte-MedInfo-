@@ -1,5 +1,5 @@
 import { Link } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
+import { getSupabaseClient } from '@/db/supabase';
 import { INTENDED_PURPOSE } from '@/compliance/disclosures';
 import { tokens } from '@/ui/tokens';
 
@@ -28,6 +29,33 @@ export default function AccountScreen() {
   const { loading, persona, signOut, user } = useSession();
   const [signingOut, setSigningOut] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Abonnement lu via RLS own-row (06_BILLING §6). Aucune donnée de santé.
+  const [subscription, setSubscription] = useState<{ plan: string; status: string } | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setSubscription(null);
+      return;
+    }
+    let active = true;
+    (async () => {
+      try {
+        const { data } = await getSupabaseClient()
+          .from('subscriptions')
+          .select('plan, status')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (active) setSubscription(data ? { plan: data.plan, status: data.status } : null);
+      } catch {
+        if (active) setSubscription(null);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  const isPaid = subscription?.status === 'active' || subscription?.status === 'trialing';
 
   async function handleSignOut() {
     if (signingOut) return;
@@ -72,6 +100,20 @@ export default function AccountScreen() {
             <Text style={styles.badge}>{persona ? personaLabels[persona] : '—'}</Text>
           </View>
         </View>
+
+        {user ? (
+          <View style={styles.professionalBox}>
+            <Text style={styles.professionalTitle}>Abonnement</Text>
+            <Text style={styles.professionalText}>
+              {isPaid
+                ? `Offre active : ${subscription?.plan} (${subscription?.status}).`
+                : 'Offre gratuite. Les sources restent gratuites pour tous.'}
+            </Text>
+            <Link href="/(billing)/pricing" style={styles.inlineLink}>
+              Voir les offres
+            </Link>
+          </View>
+        ) : null}
 
         {user ? (
           <View style={styles.professionalBox}>

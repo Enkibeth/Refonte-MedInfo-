@@ -45,6 +45,7 @@ function RootNavigator() {
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(chat)" />
       <Stack.Screen name="(account)" />
+      <Stack.Screen name="(billing)" />
     </Stack>
   );
 }
