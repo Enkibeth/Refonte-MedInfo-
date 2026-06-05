@@ -1,18 +1,13 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
 import { ROLES } from '@/auth/roles';
 import type { Persona } from '@/ai/prompts/_schema';
+import { Button } from '@/ui/Button';
+import { Card } from '@/ui/Card';
+import { Screen } from '@/ui/Screen';
 import { tokens } from '@/ui/tokens';
 
 /**
@@ -49,195 +44,164 @@ export default function ChooseRoleScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <View style={styles.card}>
-        <Text style={styles.eyebrow}>Profil</Text>
-        <Text style={styles.title}>Choisis ton rôle</Text>
-        <Text style={styles.body}>
-          Le rôle adapte ton expérience. {persona ? `Rôle actuel : ${ROLES[persona].label}.` : ''}
-        </Text>
+    <Screen maxWidth={560}>
+      <Text style={styles.title}>Choisis ton rôle</Text>
+      <Text style={styles.body}>
+        Le rôle adapte ton expérience.{persona ? ` Rôle actuel : ${ROLES[persona].label}.` : ''}
+      </Text>
 
-        {/* Public */}
-        <View style={styles.roleBox}>
-          <Text style={styles.roleTitle}>{ROLES.public.label}</Text>
-          <Text style={styles.roleDesc}>{ROLES.public.description}</Text>
-          <Pressable
-            accessibilityRole="button"
-            disabled={busy !== null}
-            onPress={() => choose('public')}
-            style={({ pressed }) => [styles.button, pressed ? styles.pressed : null]}
-          >
-            {busy === 'public' ? <ActivityIndicator color={tokens.colors.background} /> : null}
-            <Text style={styles.buttonText}>Continuer en grand public</Text>
-          </Pressable>
+      {/* Public */}
+      <Card style={styles.roleCard}>
+        <Text style={styles.roleTitle}>{ROLES.public.label}</Text>
+        <Text style={styles.roleDesc}>{ROLES.public.description}</Text>
+        <Button
+          label="Continuer en grand public"
+          loading={busy === 'public'}
+          disabled={busy !== null}
+          onPress={() => choose('public')}
+          style={styles.roleAction}
+        />
+      </Card>
+
+      {/* Étudiant */}
+      <Card style={styles.roleCard}>
+        <Text style={styles.roleTitle}>{ROLES.student.label}</Text>
+        <Text style={styles.roleDesc}>{ROLES.student.description}</Text>
+        <TextInput
+          accessibilityLabel="Email étudiant"
+          autoCapitalize="none"
+          inputMode="email"
+          keyboardType="email-address"
+          onChangeText={(v) => {
+            setEmail(v);
+            setError(null);
+          }}
+          placeholder="prenom@etu.univ-...fr"
+          placeholderTextColor={tokens.colors.textMuted}
+          style={styles.input}
+          value={email}
+        />
+        <Button
+          label="Vérifier mon statut étudiant"
+          variant="secondary"
+          loading={busy === 'student'}
+          disabled={busy !== null || email.trim().length === 0}
+          onPress={() => choose('student', { email })}
+          style={styles.roleAction}
+        />
+      </Card>
+
+      {/* Professionnel */}
+      <Card style={styles.roleCard}>
+        <Text style={styles.roleTitle}>{ROLES.professional.label}</Text>
+        <Text style={styles.roleDesc}>{ROLES.professional.description}</Text>
+        <TextInput
+          accessibilityLabel="Numéro RPPS"
+          autoCapitalize="none"
+          inputMode="numeric"
+          keyboardType="number-pad"
+          onChangeText={(v) => {
+            setRpps(v.replace(/\D/g, ''));
+            setError(null);
+          }}
+          placeholder="Numéro RPPS (11 chiffres)"
+          placeholderTextColor={tokens.colors.textMuted}
+          style={styles.input}
+          value={rpps}
+        />
+        <Button
+          label="Vérifier mon RPPS"
+          variant="secondary"
+          loading={busy === 'professional'}
+          disabled={busy !== null || rpps.length === 0}
+          onPress={() => choose('professional', { rpps })}
+          style={styles.roleAction}
+        />
+      </Card>
+
+      {info ? (
+        <View style={styles.infoBox} accessibilityLiveRegion="polite">
+          <Text style={styles.infoText}>{info}</Text>
         </View>
-
-        {/* Étudiant */}
-        <View style={styles.roleBox}>
-          <Text style={styles.roleTitle}>{ROLES.student.label}</Text>
-          <Text style={styles.roleDesc}>{ROLES.student.description}</Text>
-          <TextInput
-            accessibilityLabel="Email étudiant"
-            autoCapitalize="none"
-            inputMode="email"
-            keyboardType="email-address"
-            onChangeText={(v) => {
-              setEmail(v);
-              setError(null);
-            }}
-            placeholder="prenom@etu.univ-...fr"
-            placeholderTextColor={tokens.colors.textMuted}
-            style={styles.input}
-            value={email}
-          />
-          <Pressable
-            accessibilityRole="button"
-            disabled={busy !== null || email.trim().length === 0}
-            onPress={() => choose('student', { email })}
-            style={({ pressed }) => [
-              styles.buttonAlt,
-              busy !== null || email.trim().length === 0 ? styles.disabled : null,
-              pressed ? styles.pressed : null,
-            ]}
-          >
-            {busy === 'student' ? <ActivityIndicator color={tokens.colors.accent} /> : null}
-            <Text style={styles.buttonAltText}>Vérifier mon statut étudiant</Text>
-          </Pressable>
+      ) : null}
+      {error ? (
+        <View style={styles.errorBox} accessibilityLiveRegion="polite">
+          <Text style={styles.errorText}>{error}</Text>
         </View>
-
-        {/* Professionnel */}
-        <View style={styles.roleBox}>
-          <Text style={styles.roleTitle}>{ROLES.professional.label}</Text>
-          <Text style={styles.roleDesc}>{ROLES.professional.description}</Text>
-          <TextInput
-            accessibilityLabel="Numéro RPPS"
-            autoCapitalize="none"
-            inputMode="numeric"
-            keyboardType="number-pad"
-            onChangeText={(v) => {
-              setRpps(v.replace(/\D/g, ''));
-              setError(null);
-            }}
-            placeholder="Numéro RPPS (11 chiffres)"
-            placeholderTextColor={tokens.colors.textMuted}
-            style={styles.input}
-            value={rpps}
-          />
-          <Pressable
-            accessibilityRole="button"
-            disabled={busy !== null || rpps.length === 0}
-            onPress={() => choose('professional', { rpps })}
-            style={({ pressed }) => [
-              styles.buttonAlt,
-              busy !== null || rpps.length === 0 ? styles.disabled : null,
-              pressed ? styles.pressed : null,
-            ]}
-          >
-            {busy === 'professional' ? <ActivityIndicator color={tokens.colors.accent} /> : null}
-            <Text style={styles.buttonAltText}>Vérifier mon RPPS</Text>
-          </Pressable>
-        </View>
-
-        {info ? (
-          <View style={styles.infoBox} accessibilityLiveRegion="polite">
-            <Text style={styles.infoText}>{info}</Text>
-          </View>
-        ) : null}
-        {error ? (
-          <View style={styles.errorBox} accessibilityLiveRegion="polite">
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        ) : null}
-      </View>
-    </ScrollView>
+      ) : null}
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    alignItems: 'center',
-    padding: 24,
-    backgroundColor: tokens.colors.background,
+  title: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.h1.fontSize,
+    lineHeight: tokens.type.h1.lineHeight,
+    letterSpacing: tokens.type.h1.letterSpacing,
+    fontWeight: tokens.weight.bold,
+    marginBottom: tokens.space.sm,
   },
-  card: {
-    width: '100%',
-    maxWidth: 640,
-    borderRadius: 28,
-    padding: 28,
-    backgroundColor: tokens.colors.surface,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
+  body: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.bodyLg.fontSize,
+    lineHeight: tokens.type.bodyLg.lineHeight,
+    marginBottom: tokens.space.sm,
   },
-  eyebrow: {
-    color: tokens.colors.accent,
-    fontSize: 14,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 12,
+  roleCard: { marginTop: tokens.space.lg, gap: tokens.space.md },
+  roleTitle: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.h3.fontSize,
+    letterSpacing: tokens.type.h3.letterSpacing,
+    fontWeight: tokens.weight.bold,
   },
-  title: { color: tokens.colors.text, fontSize: 30, fontWeight: '800', marginBottom: 12 },
-  body: { color: tokens.colors.textMuted, fontSize: 16, lineHeight: 24, marginBottom: 12 },
-  roleBox: {
-    marginTop: 16,
-    padding: 16,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.background,
-    gap: 10,
+  roleDesc: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.label.fontSize,
+    lineHeight: tokens.type.label.lineHeight,
   },
-  roleTitle: { color: tokens.colors.text, fontSize: 18, fontWeight: '800' },
-  roleDesc: { color: tokens.colors.textMuted, fontSize: 14, lineHeight: 20 },
   input: {
     minHeight: 48,
-    borderRadius: 14,
+    borderRadius: tokens.radius.md,
     borderWidth: 1,
     borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
+    backgroundColor: tokens.colors.surfaceSunken,
     color: tokens.colors.text,
-    fontSize: 15,
-    paddingHorizontal: 14,
+    fontFamily: tokens.font.sans,
+    fontSize: tokens.type.body.fontSize,
+    paddingHorizontal: tokens.space.lg,
   },
-  button: {
-    minHeight: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    backgroundColor: tokens.colors.accent,
-  },
-  buttonText: { color: tokens.colors.background, fontSize: 15, fontWeight: '800' },
-  buttonAlt: {
-    minHeight: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    borderWidth: 1,
-    borderColor: tokens.colors.accent,
-    backgroundColor: tokens.colors.surface,
-  },
-  buttonAltText: { color: tokens.colors.accent, fontSize: 15, fontWeight: '800' },
-  disabled: { opacity: 0.5 },
-  pressed: { opacity: 0.86 },
+  roleAction: { marginTop: tokens.space.xs },
   infoBox: {
-    marginTop: 18,
-    borderRadius: 16,
+    marginTop: tokens.space.lg,
+    borderRadius: tokens.radius.md,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.background,
-    padding: 14,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    backgroundColor: tokens.colors.accentSurface,
+    padding: tokens.space.lg,
   },
-  infoText: { color: tokens.colors.text, fontSize: 14, lineHeight: 20 },
+  infoText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.label.fontSize,
+    lineHeight: 21,
+  },
   errorBox: {
-    marginTop: 18,
-    borderRadius: 16,
-    backgroundColor: tokens.colors.warningBackground,
-    padding: 14,
+    marginTop: tokens.space.lg,
+    borderRadius: tokens.radius.md,
+    borderLeftWidth: 4,
+    borderLeftColor: tokens.colors.danger,
+    backgroundColor: tokens.colors.dangerBackground,
+    padding: tokens.space.lg,
   },
-  errorText: { color: tokens.colors.warningText, fontSize: 14, lineHeight: 20 },
+  errorText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.danger,
+    fontSize: tokens.type.label.fontSize,
+    lineHeight: 21,
+  },
 });
