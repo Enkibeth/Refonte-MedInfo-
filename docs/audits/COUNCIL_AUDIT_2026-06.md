@@ -13,6 +13,17 @@ method: analyse du code réel (pas des placeholders du brief). Refs = fichier:li
 > Verdict d'ensemble en une phrase : **la gouvernance réglementaire est excellente, la couche produit
 > (qualité de réponse réelle) est la plus faible et la plus en retard — les priorités sont inversées.**
 
+> **Mise à jour d'état (rebase sur `dev`).** L'audit initial a été produit sur un snapshot issu de
+> `main` (point `c175cf6`). Après rebase sur la branche d'intégration `dev`, deux précisions :
+> - **CC-02 (étage 2 du classifieur, LLM léger Haiku 4.5) est DÉJÀ implémenté sur `dev`** (ADR-0013,
+>   `src/ai/classifier/llmStage2.ts`, câblé conditionnellement dans `app/api/chat+api.ts`). Le constat
+>   F8/Agent-1 « étage 2 non câblé » et la tâche CC-02 sont donc **caducs sur `dev`** (restait vrai sur le
+>   snapshot `main`). Le recall `general_info` doit être re-mesuré étage 1+2 activés.
+> - En revanche, **CC-01 (persona côté client), CC-04 (isolation des sources) et le bug RLS duplicate-policy
+>   restaient présents sur `dev`** et sont corrigés par cette branche. Les autres constats (F3 couche 3,
+>   F4 streaming bufferisé, F5/F6 corpus 4 chunks lexical-only, F7 cascade/coûts, F10 monitoring) restent
+>   valables sur `dev` (à reconfirmer).
+
 ---
 
 ## 0. Faits établis (vérifiés dans le code)
