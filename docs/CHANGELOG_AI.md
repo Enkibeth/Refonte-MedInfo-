@@ -17,6 +17,43 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-05] – Claude (couche 2 classifieur Haiku 4.5 + pages légales)
+### Files modified
+- src/ai/classifier/llmStage2.ts (nouveau — étage 2 LLM léger : Claude Haiku 4.5 via @ai-sdk/anthropic,
+  generateObject + Zod, temperature=0, fail-closed ; prompt 07_CLASSIFIER §4 verbatim)
+- src/ai/classifier/index.ts (exports étage 2) ; app/api/chat+api.ts (branchement conditionnel de l'étage 2
+  dans screenConversation — isStage2Configured/createLlmStage2)
+- .env.example (CLASSIFIER_STAGE2_ENABLED, CLASSIFIER_MODEL_ID)
+- tests/classifier/llm-stage2.test.ts (nouveau — modèle peu coûteux par défaut, prompt, temperature=0,
+  fail-closed, intégration classifyIntent regex-prioritaire, câblage conditionnel)
+- docs/DECISIONS/0013-classifier-stage2-haiku.md (nouveau ADR) ; docs/07_CLASSIFIER.md §3 (câblage MVP Haiku)
+- src/compliance/legal.ts (nouveau — mentions légales, politique de confidentialité RGPD, CGU/CGV ;
+  source unique versionnée, réutilise INTENDED_PURPOSE / getAiDisclosure / CANONICAL_REFUSAL)
+- src/ui/LegalScreen.tsx (nouveau — rendu générique, aucun texte médical en dur)
+- app/(legal)/_layout.tsx, mentions-legales.tsx, confidentialite.tsx, cgu.tsx (nouvelles routes publiques)
+- app/_layout.tsx (groupe (legal) enregistré + routes publiques accessibles sans session : index + (legal))
+- app/index.tsx, app/(account)/account.tsx (liens de pied de page vers les pages légales)
+- tests/unit/legal.test.ts (nouveau — vérifie LCEN, droits RGPD, sous-traitants art. 28, AI Act art. 50,
+  avertissement médical + numéros d'urgence 15/112/3114, zéro donnée de santé)
+### Purpose
+(1) Câbler l'étage 2 du classifieur (couche 1 du safe-box) avec une IA efficace et peu coûteuse —
+Claude Haiku 4.5 — pour récupérer le recall `general_info` (moins de sur-refus) et capter les demandes
+personnelles déguisées que le regex ne couvre pas. L'étage 1 reste prioritaire et inchangé ; verdict
+`general_info` toujours soumis au garde-fou marqueur-personnel + seuil de confiance ; fail-closed sur
+erreur. (2) Ajouter les pages légales obligatoires (mentions légales LCEN, politique de confidentialité
+RGPD, CGU/CGV), accessibles publiquement, avant ouverture au public.
+### Regulatory impact
+Confirmed (positif) : (couche 2) renforce la détection sémantique non-MDSW sans assouplir la barrière
+déterministe des urgences/cas personnels explicites ; aucune logique de triage/diagnostic introduite —
+l'étage 2 ne fait que router vers un refus ou vers le LLM principal (déjà sous safe-box 3 couches + RAG).
+(Pages légales) matérialise la disclosure AI Act art. 50, l'information RGPD (sous-traitants Stripe /
+Supabase / Vercel / Anthropic / OpenAI, droits, CNIL) et l'avertissement non-dispositif-médical.
+Champs propres à l'éditeur laissés en placeholder « [À COMPLÉTER] » (raison sociale, SIREN, adresse,
+directeur de publication, e-mail DPO) — action Hugo. Zéro donnée de santé.
+### Rollback plan
+Couche 2 : `CLASSIFIER_STAGE2_ENABLED=false` (sans déploiement) ou git revert (retour regex-seul + fail-safe).
+Pages légales : git revert (retire le groupe (legal), les liens et le contenu).
+
 ## [2026-06-05] – Claude (durcissement base Supabase + parité migrations)
 ### Files modified
 - supabase/migrations/0009_rag_match_or_semantics.sql (nouveau — capture repo de la migration

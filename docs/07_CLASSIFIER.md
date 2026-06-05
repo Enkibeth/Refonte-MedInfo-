@@ -40,8 +40,14 @@ L'option encodeur fin-tuné (CamemBERT-bio, DrBERT) est **reportée post-MVP** c
 
 ## 3. Modèle LLM retenu
 
-**Production : Gemini 2.5 Flash-Lite** (~0,03 $/1000 classifs, ~300 ms, structured output natif).
-**Shadow mode 4 premières semaines : Claude Haiku 4.5** (meilleure compréhension d'intention, alignement sécurité). On mesure les désaccords sur le golden set ; si Haiku rattrape des emergencies manquées par Flash-Lite, on bascule en prod.
+**Câblage MVP (ADR-0013) : Claude Haiku 4.5** (`claude-haiku-4-5`) — le modèle Claude le moins
+cher et le plus rapide, déjà intégré via `@ai-sdk/anthropic` (aucun nouveau sous-traitant ni clé :
+réutilise `ANTHROPIC_API_KEY`). C'est l'étage 2 réellement branché dans `app/api/chat+api.ts` via
+`src/ai/classifier/llmStage2.ts` (`generateObject`, schéma Zod, `temperature=0`, fail-closed).
+
+**Option d'optimisation ultérieure : Gemini 2.5 Flash-Lite** (~0,03 $/1000 classifs, ~300 ms).
+Activable sans changement de code via `CLASSIFIER_MODEL_ID` une fois le sous-traitant/DPA en place ;
+on mesure alors les désaccords sur le golden set avant bascule.
 
 Coût à 100 000 conversations/mois : **< 30 €** même avec Haiku. Le poste budgétaire n'est pas là (il est dans le LLM principal).
 
