@@ -11,11 +11,28 @@ date: 2026-06-04
 ## État courant
 
 - Étapes 1 → 6 livrées côté repo. Corrections d'audit (B1/I1/I2/I3/M1), rate-limiting (M2),
-  déploiement Vercel, RAG pgvector MVP HAS/ANSM et persona étudiant `student.v2` intégrés.
-- Branches `main`, `dev`, `staging` : **alignées** après PR #26 côté historique local.
-  `dev` reste la branche d'intégration ; brancher les sessions depuis `dev`, puis feature branch `ai/<agent>/<feature>`.
+  déploiement Vercel, RAG pgvector MVP HAS/ANSM, persona étudiant `student.v2` et fix
+  de renvoi d'email de confirmation intégrés.
+- `dev` contient les PR #28, #30, #31 et #32 au-dessus de `main` (`aae2c2d`).
+  Cette branche d'alignement fusionne `origin/dev` (`d87aa74`, PR #32) vers `main`, afin que
+  `main` récupère aussi les changements jusqu'à la PR #32.
+- `staging` reste à réaligner séparément après merge de `main` si l'objectif est une parité
+  stricte `main`/`dev`/`staging`. `dev` reste la branche d'intégration ; brancher les sessions
+  depuis `dev`, puis feature branch `ai/<agent>/<feature>`.
 - Architecture documentaire : organisée dans `docs/` avec ADRs dans `docs/DECISIONS/`.
 - Workflow GitHub Actions : `.github/workflows/compliance.yml` (5 gates).
+
+## Alignement main ← dev (2026-06-04)
+
+Demande traitée : intégrer sur `main` les nouvelles branches/PR présentes sur `dev` jusqu'à la
+PR #32. État distant vérifié par `git fetch origin` :
+
+- `origin/main` : `aae2c2d` — dernier alignement PR #26.
+- `origin/dev` : `d87aa74` — merge PR #32, avec PR #28, #30 et #31 également absentes de `main`.
+- `origin/staging` : `d9ca851` — encore au jalon PR #27, donc non alignée sur le `dev` actuel.
+
+Cette PR doit être mergée vers `main` pour porter `main` au niveau de `dev`/PR #32. Ensuite, si
+nécessaire, ouvrir un alignement `staging` depuis `main` ou `dev`.
 
 ## Validations
 
@@ -23,7 +40,7 @@ Dernière validation locale étape 6 (2026-06-04) :
 
 ```bash
 npm run typecheck                 # OK
-npm run test                      # OK (127 tests)
+npm run test                      # OK (128 tests)
 npm run validate:prompts          # OK (2 artefacts)
 npm run validate:rag              # OK (4 chunks RAG)
 npm run compliance                # OK (5 gates, RLS avec Postgres + pgvector local)
