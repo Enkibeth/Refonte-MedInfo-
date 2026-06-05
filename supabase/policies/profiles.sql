@@ -7,19 +7,21 @@ ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 -- assurée par la RLS (et non par un simple GRANT manquant). anon n'a aucun accès profils.
 GRANT SELECT, INSERT, UPDATE, DELETE ON profiles TO authenticated;
 
+-- Note perf : auth.uid() est encapsulé dans (select …) pour n'être évalué qu'une fois
+-- par requête et non par ligne (advisor auth_rls_initplan). Isolation inchangée.
 CREATE POLICY "users read own profile"
   ON profiles FOR SELECT
-  USING (auth.uid() = id);
+  USING ((select auth.uid()) = id);
 
 CREATE POLICY "users insert own profile"
   ON profiles FOR INSERT
-  WITH CHECK (auth.uid() = id);
+  WITH CHECK ((select auth.uid()) = id);
 
 CREATE POLICY "users update own profile"
   ON profiles FOR UPDATE
-  USING (auth.uid() = id)
-  WITH CHECK (auth.uid() = id);
+  USING ((select auth.uid()) = id)
+  WITH CHECK ((select auth.uid()) = id);
 
 CREATE POLICY "users delete own profile"
   ON profiles FOR DELETE
-  USING (auth.uid() = id);
+  USING ((select auth.uid()) = id);
