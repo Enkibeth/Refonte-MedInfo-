@@ -7,6 +7,7 @@ import { createHash } from 'node:crypto';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import type { Persona } from '@/ai/prompts/_schema';
+import { resolveEntitlement } from '@/billing/entitlements';
 
 const DAILY_LIMITS: Record<Persona, number> = {
   public: 10,
@@ -92,6 +93,36 @@ async function resolveUserId(request: Request, supabase: SupabaseClient | null):
   return data.user?.id ?? null;
 }
 
+/**
+ * Abonnement actif → quota de messages illimité (06_BILLING §1). Le paywall ne lève QUE le
+ * volume : il ne touche jamais l'accès aux sources (06_BILLING §5). Lecture service_role.
+ * Tolérante aux erreurs (table absente / env partiel) → repli sur le quota gratuit.
+ */
+async function hasUnlimitedMessages(supabase: SupabaseClient, userId: string): Promise<boolean> {
+  try {
+    const { data } = await supabase
+      .from('subscriptions')
+      .select('plan, status, current_period_end')
+      .eq('user_id', userId)
+      .maybeSingle();
+    return resolveEntitlement(data ?? null).unlimitedMessages;
+  } catch {
+    return false;
+  }
+}
+
+function unlimitedResult(identityType: 'user' | 'ip', windowDate: string): ChatRateLimitResult {
+  return {
+    allowed: true,
+    status: 'ok',
+    dailyCount: 0,
+    dailyLimit: Number.MAX_SAFE_INTEGER,
+    remaining: Number.MAX_SAFE_INTEGER,
+    resetAt: resetAtUtc(windowDate),
+    identityType,
+  };
+}
+
 function incrementInMemory(params: {
   counterKey: string;
   persona: Persona;
@@ -125,6 +156,11 @@ export async function checkChatRateLimit(request: Request, persona: Persona): Pr
 
   if (!supabase) {
     return incrementInMemory({ counterKey, persona, dailyLimit, windowDate, identityType });
+  }
+
+  // Abonné payant actif → pas de décompte de quota (messages illimités, 06_BILLING §1).
+  if (userId && (await hasUnlimitedMessages(supabase, userId))) {
+    return unlimitedResult(identityType, windowDate);
   }
 
   const { data, error } = await supabase.rpc('increment_usage_counter', {

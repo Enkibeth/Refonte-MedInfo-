@@ -79,6 +79,44 @@ build en échec) + absence de `dist/client/index.html` en `web.output=server`. C
 validé READY. **À faire côté Vercel** : variables d'env Supabase/LLM (cf `docs/09_DEPLOYMENT.md`).
 
 
+## Étape 7 — Facturation Stripe web-first (freemium tiered) : **implémentée (TDD, ADR-0012)**
+
+Feature unique du bloc (START.md règle 3) : monétisation **freemium tiered** public + étudiant,
+**Stripe direct web-first, zéro IAP** (06_BILLING §1/§3/§4/§6). Branchée depuis le contenu de `dev`
+(arbre identique à `main`), feature branch de session. Aucun push main/dev/staging.
+
+Critères « terminé » START.md — **atteints côté repo/test local** :
+
+```bash
+npm run typecheck     # OK
+npm run test          # OK (194 tests, +23 vs étape 6)
+npm run compliance    # OK (5 gates ; rls-isolation 23 tests, dont billing-isolation)
+```
+
+Périmètre livré :
+
+- Migrations `0007_subscriptions.sql` (RLS lecture own-row, écriture service_role) + `0008_billing_events.sql`
+  (idempotence, service_role only). **Zéro donnée de santé** ; e-mail non dupliqué (reste dans `auth.users`).
+- `src/billing/` : `plans` (public + étudiant ; **aucun plan pro**, gelé ADR-0006), `entitlements`
+  (quota uniquement, **aucun gating de sources** — invariant testé), `stripeSignature` (HMAC maison
+  timing-safe + anti-rejeu), `webhookHandler` (idempotent, mapping statuts), `createCheckoutSession`
+  (REST Stripe via `fetch`, no-SDK), `surface` (web-first/zéro IAP).
+- Routes : `POST /api/billing/checkout` (identité dérivée du token, audience gating, ne gate aucune
+  source) ; `POST /api/stripe/webhook` (signature vérifiée, idempotent, upsert service_role —
+  **seule source de vérité** du statut payant).
+- Rate-limit : abonné actif → quota illimité (volume seul ; sources jamais concernées, 06_BILLING §5).
+- UI : écran `(billing)/pricing` web-only (bandeau « sources gratuites pour tous », mention TVA
+  293 B CGI, aucun prix/bouton sur natif) ; encart abonnement dans `(account)/account`.
+- Tests : RLS d'isolation + anti-auto-promotion (vrai Postgres) ; signature ; webhook idempotent ;
+  entitlements (anti-gating sources) ; checkout (rejet plan pro) ; surface (zéro IAP).
+
+Garde-fous respectés : safe-box 3 couches + classifieur couche 1 **inchangés** ; pas d'historique /
+dossiers / persistance de message (donnée santé → HDS, hors périmètre) ; secrets hors repo
+(`.env.example` + `docs/09_DEPLOYMENT.md`, à poser dans Vercel — action Hugo).
+
+Limites assumées : pricing/portail Stripe minimalistes ; `current_period_end` exact alimenté par
+`customer.subscription.updated` ; pas de Customer Portal Stripe (lien de gestion) au MVP.
+
 ## Étape 6 — Prompt student.v2 + QCM + toggle sources : **implémentée (TDD)**
 
 Critères START.md — **atteints côté repo/test local** : persona `student` actif dans
@@ -222,7 +260,9 @@ Validations : `npm run typecheck` ✅ · `npm run test` (88) ✅ · `npm run com
 
 ## Étape suivante
 
-Étape 7+ — features isolées selon START.md : historique, dossiers, export PDF, Stripe, vérification statut.
+Étape 7 (Stripe billing web-first) **livrée** (ADR-0012). Features isolées restantes selon START.md :
+export PDF, vérification statut pro (post-ADR-0006). **Historique / dossiers : NE PAS implémenter**
+sans ADR « Proposed » + arbitrage Hugo (donnée de santé attribuable → HDS, 01_REGULATION §5).
 Pré-requis classifieur restants (post-MVP) : câblage étage 2 (Gemini Flash-Lite / Haiku 4.5),
 persistance `classifier_decisions`, diversification du golden set, lexique `out_of_scope`.
 
