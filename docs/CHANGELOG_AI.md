@@ -28,6 +28,7 @@ None | Potential | Confirmed
 - app/(billing)/_layout.tsx, app/(billing)/pricing.tsx, app/_layout.tsx (groupe billing), app/(account)/account.tsx (encart abonnement)
 - tests/rls/billing-isolation.test.ts ; tests/unit/{stripe-signature,billing-webhook,billing-entitlements,billing-checkout,billing-surface}.test.ts
 - docs/DECISIONS/0012-stripe-billing-web-first.md, docs/STATUS.md, .env.example, docs/09_DEPLOYMENT.md
+- .github/workflows/compliance.yml (installe pgvector en CI : le gate rls-isolation applique 0006_rag_pgvector.sql ; lacune CI antérieure révélée par l'ajout d'un 2e fichier RLS)
 ### Purpose
 Monétisation freemium tiered (public + étudiant) via Stripe direct web-first, zéro IAP (06_BILLING
 §1/§3/§4). Webhook signé = seule source de vérité du statut payant ; anti-auto-promotion par RLS
