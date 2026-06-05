@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-const corpusPath = resolve('src/rag/corpus/has-ansm-mvp.json');
+const corpusDir = resolve('src/rag/corpus');
 const allowedEmitters = new Set(['HAS', 'ANSM', 'SPF', 'INCa', 'Orphanet', 'ameli.fr', 'CRAT', 'BDPM']);
 const required = [
   'chunk_id',
@@ -25,8 +25,18 @@ function fail(message) {
   process.exitCode = 1;
 }
 
-const raw = await readFile(corpusPath, 'utf8');
-const chunks = JSON.parse(raw);
+// Le gate couvre TOUS les fichiers corpus *.json (pas seulement le MVP) : un nouveau
+// fichier de corpus ne peut pas échapper à la validation source/license/hash (CC-03).
+const files = (await readdir(corpusDir)).filter((name) => name.endsWith('.json')).sort();
+const chunks = [];
+for (const file of files) {
+  const parsed = JSON.parse(await readFile(resolve(corpusDir, file), 'utf8'));
+  if (!Array.isArray(parsed)) {
+    fail(`${file} must be a JSON array`);
+    continue;
+  }
+  for (const chunk of parsed) chunks.push(chunk);
+}
 
 if (!Array.isArray(chunks) || chunks.length === 0) {
   fail('corpus must be a non-empty array');
@@ -53,4 +63,4 @@ if (!Array.isArray(chunks) || chunks.length === 0) {
 }
 
 if (process.exitCode) process.exit();
-console.log(`OK — ${chunks.length} RAG chunks validated with required source/license/hash metadata`);
+console.log(`OK — ${chunks.length} RAG chunks (${files.length} corpus file(s)) validated with required source/license/hash metadata`);

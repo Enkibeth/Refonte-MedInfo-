@@ -17,6 +17,40 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-05] – Claude (CC-03 : RAG embeddings réels — pipeline + mesure recall + ADR-0014)
+### Files modified
+- src/rag/embeddings.ts (nouveau — embedText/embedMany via @ai-sdk/openai `text-embedding-3-small`,
+  1536 dims ; ZÉRO pseudo-embedding : clé absente → throw ; garde de dimension stricte)
+- src/rag/retrieval.ts (génère l'embedding de la requête → match_rag_chunks active la fusion
+  lexical+dense RRF k=60 ; dégradation lexical-only propre si l'embedding échoue ; INV-B inchangé)
+- scripts/embeddings/ingest-corpus.mjs (nouveau — ingestion idempotente `chunk_id`+hash du corpus AVEC
+  embeddings, service-role, `--dry-run` hors réseau) ; package.json (scripts `rag:ingest`, `rag:recall`)
+- scripts/embeddings/validate-rag-metadata.mjs (gate `rag-license` étendu à TOUS les `src/rag/corpus/*.json`)
+- scripts/eval/rag-recall.mjs (nouveau — recall@1/@3 chunk & doc, modes lexical|fused, coût réel)
+- tests/rag/recall-questions.fr.json (nouveau — questions FR → chunk/doc attendu + hors-corpus)
+- tests/rag/embeddings.test.ts, tests/rag/retrieval-embedding.test.ts (nouveaux — CI-safe, mockés :
+  garde anti-pseudo-embedding, vecteur 1536 transmis, dégradation lexical-only, garde de dimension)
+- docs/DECISIONS/0014-embeddings-text-embedding-3-small.md (nouveau ADR) ; docs/STATUS.md ;
+  docs/08_RAG.md (§9/§12/§13)
+### Purpose
+CC-03 (risque R1 de l'audit Council — « le produit refuse l'essentiel ») : rendre le retrieval dense
+opérationnel. `match_rag_chunks` fait déjà la fusion RRF dès qu'un vecteur de requête est fourni ; on
+livre le pipeline d'embeddings réels (`text-embedding-3-small`, 1536, ADR-0014) et on câble le vecteur
+de requête. **Différé, bloqué par l'allowlist réseau** (`api.openai.com` + `has-sante.fr`/`ansm.sante.fr`
+en HTTP 403 `host_not_allowed`) : **embeddings non encore peuplés**, recall **dense** non mesuré, et
+**élargissement du corpus (Lot B) non fait** (aucun contenu médical inventé). Baseline **lexical** live
+mesurée (10 questions in-corpus : recall@1/@3 100 % — non informatif sur 4 chunks ; hors corpus →
+cite-or-refuse). À la réouverture : `npm run rag:ingest` puis `npm run rag:recall -- --mode=fused`.
+INV-A/INV-B non régressés ; 4/5 gates verts en local (RLS exécutée en CI).
+### Regulatory impact
+None — aucune donnée de santé stockée/transmise ; corpus = littérature publique HAS/ANSM ; intended
+purpose et disclosure AI Act inchangés. Rappel **hors-code (Hugo)** : activer EU Data Residency + Zero
+Data Retention + DPA/SCC Module 2 sur le projet OpenAI **avant ingestion de production** (01_REGULATION §5).
+### Rollback plan
+`git revert` (supprime `src/rag/embeddings.ts`, le câblage `retrieval.ts`, les scripts
+`rag:ingest`/`rag:recall`) → retour au lexical-only `query_embedding: null`. Sans revert : laisser
+`rag_chunks.embedding` vide ou retirer la clé OpenAI → `retrieval.ts` dégrade automatiquement.
+
 ## [2026-06-05] – Claude (couche 2 classifieur Haiku 4.5 + pages légales)
 ### Files modified
 - src/ai/classifier/llmStage2.ts (nouveau — étage 2 LLM léger : Claude Haiku 4.5 via @ai-sdk/anthropic,

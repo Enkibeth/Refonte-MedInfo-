@@ -16,6 +16,8 @@
     "test:rls": "vitest run tests/rls",
     "validate:prompts": "node scripts/eval/validate-prompts.mjs",
     "validate:rag": "node scripts/embeddings/validate-rag-metadata.mjs",
+    "rag:ingest": "node scripts/embeddings/ingest-corpus.mjs",
+    "rag:recall": "node scripts/eval/rag-recall.mjs",
     "eval:classifier": "node scripts/eval/classifier-goldenset.mjs",
     "bench:run": "node scripts/eval/benchmark-run.mjs",
     "bench:judge": "node scripts/eval/benchmark-judge.mjs",
