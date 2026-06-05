@@ -7,6 +7,7 @@ import { createHash } from 'node:crypto';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import type { Persona } from '@/ai/prompts/_schema';
+import { resolveVerifiedUserId } from '@/auth/serverIdentity';
 import { resolveEntitlement } from '@/billing/entitlements';
 
 const DAILY_LIMITS: Record<Persona, number> = {
@@ -67,13 +68,6 @@ function hashIdentifier(value: string): string {
   return createHash('sha256').update(`${pepper}:${value}`).digest('hex');
 }
 
-function bearerToken(request: Request): string | null {
-  const header = request.headers.get('authorization');
-  if (!header) return null;
-  const match = header.match(/^Bearer\s+(.+)$/i);
-  return match?.[1]?.trim() || null;
-}
-
 function clientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
   return (
@@ -82,15 +76,6 @@ function clientIp(request: Request): string {
     request.headers.get('x-real-ip')?.trim() ||
     IP_FALLBACK
   );
-}
-
-async function resolveUserId(request: Request, supabase: SupabaseClient | null): Promise<string | null> {
-  const token = bearerToken(request);
-  if (!token || !supabase) return null;
-
-  const { data, error } = await supabase.auth.getUser(token);
-  if (error) return null;
-  return data.user?.id ?? null;
 }
 
 /**
@@ -149,7 +134,7 @@ export async function checkChatRateLimit(request: Request, persona: Persona): Pr
   const dailyLimit = DAILY_LIMITS[persona];
   const windowDate = todayUtc();
   const supabase = getServiceClient();
-  const userId = await resolveUserId(request, supabase);
+  const userId = supabase ? await resolveVerifiedUserId(request, supabase) : null;
   const identityType: 'user' | 'ip' = userId ? 'user' : 'ip';
   const ipHash = userId ? null : hashIdentifier(clientIp(request));
   const counterKey = userId ? `user:${userId}` : `ip:${ipHash}`;
