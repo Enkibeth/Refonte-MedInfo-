@@ -22,21 +22,33 @@ linked_to: [02_ARCHITECTURE.md, 04_CHATBOT.md]
 
 ---
 
-## 2. Palette (validée)
+## 2. Palette (validée, étoffée)
 
-| Token | Hex | Usage |
+Identité petrol conservée, déclinée en rampe pour la profondeur et les fonds teintés ;
+neutres cliniques (gris froids désaturés) pour éviter l'aspect « template plat ».
+Source unique : `src/ui/tokens.ts` (clés `tokens.colors.*`).
+
+| Token (tokens.colors) | Hex | Usage |
 |---|---|---|
-| `--petrol` (primaire) | `#0A4D68` | accent principal, header, CTA |
-| `--petrol-prime` (variante) | `#0C4A6E` | hover, états actifs |
-| `--petrol-deep` | `#083B52` | texte sur fond clair, profondeur |
-| `--surface` | `#FFFFFF` | fond principal |
-| `--surface-alt` | `#F4F7FA` | fond messages IA, cartes |
-| `--ink` | `#0F1B22` | texte principal |
-| `--ink-soft` | `#4A5A63` | texte secondaire |
-| `--border` | `#E1E8ED` | bordures, séparateurs |
-| `--success` | `#1A9E60` | validation QCM correcte |
-| `--danger` | `#D7263D` | erreur, refus, urgence |
-| `--warning` | `#E8A33D` | vigilance |
+| `accent` | `#0A4D68` | accent principal, header, CTA, bulle user |
+| `accentStrong` | `#0C5C7E` | hover, états actifs |
+| `accentDeep` | `#083B52` | texte accent sur fond clair, profondeur |
+| `accentSurface` | `#EFF5F9` | fond teinté léger (encarts, badges) |
+| `accentSurfaceStrong` | `#DCEAF1` | bordure des fonds teintés |
+| `background` | `#FAFBFC` | fond d'app (off-white, moins plat que blanc pur) |
+| `surface` | `#FFFFFF` | cartes/panneaux surélevés |
+| `surfaceAlt` | `#F4F6F8` | bulles IA, zones secondaires |
+| `surfaceSunken` | `#ECEFF2` | champs de saisie, fonds enfoncés |
+| `text` | `#0F1B22` | texte principal (ink) |
+| `textSubtle` | `#3A474E` | texte tertiaire renforcé |
+| `textMuted` | `#697880` | texte secondaire (ink-soft) |
+| `border` / `borderStrong` | `#DEE3E8` / `#C4CCD2` | bordures, séparateurs |
+| `success` | `#157F50` | validation QCM correcte |
+| `danger` | `#C42233` | erreur, refus, urgence |
+| `warningText` | `#9A6516` | texte vigilance |
+
+Sémantiques fournies avec leur fond doux (`successBackground`, `dangerBackground`,
+`warningBackground`). Élévations discrètes via `tokens.elevation.{sm,md,lg}` (web).
 
 **Phase 1 : monochrome petrol.** Accents par audience (public/étudiant/pro) **différés en Phase 2** — ne pas fragmenter l'identité au lancement.
 
@@ -51,7 +63,11 @@ linked_to: [02_ARCHITECTURE.md, 04_CHATBOT.md]
 | UI / labels | Inter / system-ui | 500 | 14 px |
 | Mono (code, items EDN) | JetBrains Mono / monospace | 400 | 14 px |
 
-Hiérarchie claire H1>H2>H3>corps. Interligne corps 1.5. Système d'abord (perf RN), Inter en fallback web.
+Hiérarchie claire display>H1>H2>H3>corps via `tokens.type.*` (échelle modulaire ~1.2,
+letter-spacing négatif sur les grands titres = rendu « dessiné »). Poids via
+`tokens.weight.*` (400/500/600/700 — on évite le 800 omniprésent). Interligne corps 1.5.
+**Inter** chargé sur web (`app/+html.tsx`, avec lissage anti-aliasing), police système
+en natif ; mono JetBrains Mono (items EDN). Familles via `tokens.font.{sans,mono}`.
 
 ---
 
@@ -100,4 +116,14 @@ Hiérarchie claire H1>H2>H3>corps. Interligne corps 1.5. Système d'abord (perf 
 
 ## 8. Tokens — implémentation
 
-Tokens centralisés dans `src/ui/tokens.ts`, consommés par NativeWind/Tamagui. Source unique : tout changement de couleur/typo passe par ce fichier, jamais de valeur hex en dur dans les composants (vérifiable par lint custom si besoin).
+Tokens centralisés dans `src/ui/tokens.ts` : `colors`, `font`, `weight`, `type` (échelle
+typo), `space` (base 4), `radius` (8/12/16/20/pill — pas de « tout arrondi »), `elevation`.
+Source unique : tout changement de couleur/typo/espacement passe par ce fichier, jamais de
+valeur hex en dur dans les composants (vérifiable par lint custom si besoin).
+
+Primitives UI partagées (consommatrices exclusives des tokens) :
+- `src/ui/Button.tsx` — variantes `primary | secondary | ghost | danger`, tailles `md | lg`,
+  états pressed/disabled/loading.
+- `src/ui/Card.tsx` — surface surélevée (bordure fine + ombre légère, rayon mesuré).
+- `src/ui/Screen.tsx` — conteneur d'écran (fond d'app, colonne centrée à largeur mesurée,
+  alignée haut — on évite la carte « flottante au centre vertical » des templates).

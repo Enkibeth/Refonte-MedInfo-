@@ -1,87 +1,71 @@
-import { Link } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { INTENDED_PURPOSE, getAiDisclosure } from '@/compliance/disclosures';
+import { Button } from '@/ui/Button';
+import { Card } from '@/ui/Card';
 import { Logo } from '@/ui/Logo';
+import { Screen } from '@/ui/Screen';
 import { tokens } from '@/ui/tokens';
 
 export default function HomeScreen() {
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.card}>
-        <Logo size="lg" />
-        <Text style={styles.tagline}>Information médicale générale, claire et sourcée.</Text>
-        <Text style={styles.body}>{INTENDED_PURPOSE}</Text>
-        <Text style={styles.notice}>{getAiDisclosure()}</Text>
+  const router = useRouter();
 
-        <View style={styles.links}>
-          <Link href="/(chat)/chat" style={styles.link}>Ouvrir le chat</Link>
-          <Link href="/(auth)/sign-in" style={styles.link}>Se connecter</Link>
-          <Link href="/(account)/account" style={styles.link}>Mon compte</Link>
-        </View>
+  return (
+    <Screen maxWidth={680} center>
+      <View style={styles.brandRow}>
+        <Logo size="lg" />
       </View>
-    </ScrollView>
+
+      <Text style={styles.headline}>Information médicale claire, sourcée, sans détour.</Text>
+      <Text style={styles.lede}>{INTENDED_PURPOSE}</Text>
+
+      <View style={styles.actions}>
+        <Button label="Ouvrir le chat" onPress={() => router.push('/(chat)/chat')} />
+        <Button label="Se connecter" variant="secondary" onPress={() => router.push('/(auth)/sign-in')} />
+        <Button label="Mon compte" variant="ghost" onPress={() => router.push('/(account)/account')} />
+      </View>
+
+      <Card style={styles.notice} padded={false}>
+        <View style={styles.noticeAccent} />
+        <Text style={styles.noticeText}>{getAiDisclosure()}</Text>
+      </Card>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: tokens.colors.background,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 760,
-    borderRadius: 28,
-    padding: 28,
-    backgroundColor: tokens.colors.surface,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-  },
-  eyebrow: {
-    color: tokens.colors.accent,
-    fontSize: 14,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 12,
-  },
-  title: {
+  brandRow: { marginBottom: tokens.space['2xl'] },
+  headline: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.text,
-    fontSize: 36,
-    fontWeight: '800',
-    marginBottom: 16,
+    fontSize: tokens.type.display.fontSize,
+    lineHeight: tokens.type.display.lineHeight,
+    letterSpacing: tokens.type.display.letterSpacing,
+    fontWeight: tokens.weight.bold,
+    marginBottom: tokens.space.lg,
   },
-  tagline: {
-    color: tokens.colors.text,
-    fontSize: 22,
-    fontWeight: '700',
-    marginTop: 20,
-    marginBottom: 12,
-  },
-  body: {
+  lede: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: tokens.type.bodyLg.fontSize,
+    lineHeight: tokens.type.bodyLg.lineHeight,
   },
+  actions: { marginTop: tokens.space['2xl'], gap: tokens.space.md, maxWidth: 320 },
   notice: {
-    marginTop: 20,
-    color: tokens.colors.warningText,
-    backgroundColor: tokens.colors.warningBackground,
-    borderRadius: 16,
-    padding: 16,
-    lineHeight: 22,
+    marginTop: tokens.space['2xl'],
+    flexDirection: 'row',
+    overflow: 'hidden',
+    backgroundColor: tokens.colors.accentSurface,
+    borderColor: tokens.colors.accentSurfaceStrong,
   },
-  links: {
-    marginTop: 24,
-    gap: 12,
-  },
-  link: {
-    color: tokens.colors.accent,
-    fontSize: 16,
-    fontWeight: '700',
+  noticeAccent: { width: 4, backgroundColor: tokens.colors.accent },
+  noticeText: {
+    flex: 1,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.label.fontSize,
+    lineHeight: tokens.type.label.lineHeight,
+    padding: tokens.space.lg,
   },
 });

@@ -1,6 +1,9 @@
-import { Link } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { StyleSheet, Text } from 'react-native';
 
+import { Button } from './Button';
+import { Card } from './Card';
+import { Screen } from './Screen';
 import { tokens } from './tokens';
 
 type PlaceholderScreenProps = {
@@ -9,48 +12,33 @@ type PlaceholderScreenProps = {
 };
 
 export function PlaceholderScreen({ title, description }: PlaceholderScreenProps) {
+  const router = useRouter();
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
+    <Screen maxWidth={560} center>
+      <Card>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.description}>{description}</Text>
-        <Link href="/" style={styles.link}>Retour accueil</Link>
-      </View>
-    </View>
+        <Button label="Retour à l'accueil" variant="secondary" onPress={() => router.push('/')} />
+      </Card>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: tokens.colors.background,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 640,
-    borderRadius: 24,
-    padding: 24,
-    backgroundColor: tokens.colors.surface,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-  },
   title: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.text,
-    fontSize: 28,
-    fontWeight: '800',
-    marginBottom: 12,
+    fontSize: tokens.type.h1.fontSize,
+    lineHeight: tokens.type.h1.lineHeight,
+    letterSpacing: tokens.type.h1.letterSpacing,
+    fontWeight: tokens.weight.bold,
+    marginBottom: tokens.space.md,
   },
   description: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
-    fontSize: 16,
-    lineHeight: 24,
-    marginBottom: 20,
-  },
-  link: {
-    color: tokens.colors.accent,
-    fontWeight: '700',
+    fontSize: tokens.type.body.fontSize,
+    lineHeight: tokens.type.body.lineHeight,
+    marginBottom: tokens.space.xl,
   },
 });

@@ -1,17 +1,13 @@
 import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
 import { getSupabaseClient } from '@/db/supabase';
 import { INTENDED_PURPOSE } from '@/compliance/disclosures';
+import { Button } from '@/ui/Button';
+import { Card } from '@/ui/Card';
+import { Screen } from '@/ui/Screen';
 import { tokens } from '@/ui/tokens';
 
 /**
@@ -20,9 +16,9 @@ import { tokens } from '@/ui/tokens';
  * fonctionnalité pro servie. Aucun profil santé ni wizard (01_REGULATION §5).
  */
 const personaLabels = {
-  public: 'public',
-  student: 'student',
-  professional: 'professional',
+  public: 'Grand public',
+  student: 'Étudiant en santé',
+  professional: 'Professionnel de santé',
 } as const;
 
 export default function AccountScreen() {
@@ -67,9 +63,7 @@ export default function AccountScreen() {
       await signOut();
     } catch (error) {
       setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : 'Impossible de fermer la session pour le moment.',
+        error instanceof Error ? error.message : 'Impossible de fermer la session pour le moment.',
       );
     } finally {
       setSigningOut(false);
@@ -77,271 +71,211 @@ export default function AccountScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.eyebrow}>Compte</Text>
-        <Text style={styles.title}>Paramètres de session</Text>
-        <Text style={styles.body}>
-          Retrouve les informations de connexion associées à ta session MedInfo AI.
-        </Text>
+    <Screen maxWidth={640}>
+      <Text style={styles.title}>Mon compte</Text>
+      <Text style={styles.body}>
+        Informations de connexion et préférences associées à ta session MedInfo AI.
+      </Text>
 
-        <View style={styles.details}>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Email</Text>
-            {loading ? (
-              <ActivityIndicator color={tokens.colors.accent} />
-            ) : (
-              <Text style={styles.detailValue}>{user?.email ?? 'Non connecté'}</Text>
-            )}
-          </View>
-
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Persona</Text>
-            <Text style={styles.badge}>{persona ? personaLabels[persona] : '—'}</Text>
+      <Card style={styles.section}>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Email</Text>
+          {loading ? (
+            <ActivityIndicator color={tokens.colors.accent} />
+          ) : (
+            <Text style={styles.detailValue}>{user?.email ?? 'Non connecté'}</Text>
+          )}
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Rôle</Text>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{persona ? personaLabels[persona] : '—'}</Text>
           </View>
         </View>
+      </Card>
 
-        {user ? (
-          <View style={styles.professionalBox}>
-            <Text style={styles.professionalTitle}>Abonnement</Text>
-            <Text style={styles.professionalText}>
-              {isPaid
-                ? `Offre active : ${subscription?.plan} (${subscription?.status}).`
-                : 'Offre gratuite. Les sources restent gratuites pour tous.'}
-            </Text>
-            <Link href="/(billing)/pricing" style={styles.inlineLink}>
-              Voir les offres
-            </Link>
-          </View>
-        ) : null}
-
-        {user ? (
-          <View style={styles.professionalBox}>
-            <Text style={styles.professionalTitle}>Rôle</Text>
-            <Text style={styles.professionalText}>
-              Choisis ou change ton rôle (public / étudiant / professionnel).
-            </Text>
-            <Link href="/(account)/choose-role" style={styles.inlineLink}>
-              Gérer mon rôle
-            </Link>
-          </View>
-        ) : null}
-
-        <Pressable
-          accessibilityRole="button"
-          disabled={loading || signingOut || !user}
-          onPress={handleSignOut}
-          style={({ pressed }) => [
-            styles.button,
-            loading || signingOut || !user ? styles.buttonDisabled : null,
-            pressed && !loading && !signingOut && user ? styles.buttonPressed : null,
-          ]}
-        >
-          {signingOut ? <ActivityIndicator color={tokens.colors.surface} /> : null}
-          <Text style={styles.buttonText}>
-            {signingOut ? 'Déconnexion…' : 'Se déconnecter'}
+      {user ? (
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>Abonnement</Text>
+          <Text style={styles.sectionText}>
+            {isPaid
+              ? `Offre active : ${subscription?.plan} (${subscription?.status}).`
+              : 'Offre gratuite. Les sources restent gratuites pour tous.'}
           </Text>
-        </Pressable>
+          <Link href="/(billing)/pricing" style={styles.inlineLink}>
+            Voir les offres
+          </Link>
+        </Card>
+      ) : null}
 
-        {errorMessage ? (
-          <View style={styles.errorBox} accessibilityLiveRegion="polite">
-            <Text style={styles.errorTitle}>Erreur</Text>
-            <Text style={styles.errorText}>{errorMessage}</Text>
-          </View>
-        ) : null}
+      {user ? (
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>Rôle</Text>
+          <Text style={styles.sectionText}>
+            Choisis ou change ton rôle (public / étudiant / professionnel).
+          </Text>
+          <Link href="/(account)/choose-role" style={styles.inlineLink}>
+            Gérer mon rôle
+          </Link>
+        </Card>
+      ) : null}
 
-        {!loading && !user ? (
-          <View style={styles.statusBox}>
-            <Text style={styles.statusText}>Aucune session active.</Text>
-            <Link href="/(auth)/sign-in" style={styles.inlineLink}>
-              Se connecter
-            </Link>
-          </View>
-        ) : null}
+      {user ? (
+        <Button
+          label={signingOut ? 'Déconnexion…' : 'Se déconnecter'}
+          variant="secondary"
+          disabled={loading || signingOut}
+          loading={signingOut}
+          onPress={handleSignOut}
+          style={styles.signOut}
+        />
+      ) : null}
 
-        <View style={styles.purposeBox}>
+      {errorMessage ? (
+        <View style={styles.errorBox} accessibilityLiveRegion="polite">
+          <Text style={styles.errorTitle}>Erreur</Text>
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        </View>
+      ) : null}
+
+      {!loading && !user ? (
+        <Card style={styles.section}>
+          <Text style={styles.sectionText}>Aucune session active.</Text>
+          <Link href="/(auth)/sign-in" style={styles.inlineLink}>
+            Se connecter
+          </Link>
+        </Card>
+      ) : null}
+
+      <View style={styles.purposeBox}>
+        <View style={styles.purposeAccent} />
+        <View style={styles.purposeContent}>
           <Text style={styles.purposeTitle}>Finalité prévue</Text>
           <Text style={styles.purposeText}>{INTENDED_PURPOSE}</Text>
         </View>
-
-        <View style={styles.footer}>
-          <Link href="/" style={styles.inlineLink}>
-            Retour accueil
-          </Link>
-        </View>
       </View>
-    </ScrollView>
+
+      <View style={styles.footer}>
+        <Link href="/" style={styles.inlineLink}>
+          Retour à l'accueil
+        </Link>
+      </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: tokens.colors.background,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 760,
-    borderRadius: 28,
-    padding: 28,
-    backgroundColor: tokens.colors.surface,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-  },
-  eyebrow: {
-    color: tokens.colors.accent,
-    fontSize: 14,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 12,
-  },
   title: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.text,
-    fontSize: 34,
-    fontWeight: '800',
-    marginBottom: 14,
+    fontSize: tokens.type.h1.fontSize,
+    lineHeight: tokens.type.h1.lineHeight,
+    letterSpacing: tokens.type.h1.letterSpacing,
+    fontWeight: tokens.weight.bold,
+    marginBottom: tokens.space.sm,
   },
   body: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: tokens.type.bodyLg.fontSize,
+    lineHeight: tokens.type.bodyLg.lineHeight,
   },
-  details: {
-    gap: 12,
-    marginTop: 28,
-  },
+  section: { marginTop: tokens.space.lg },
   detailRow: {
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.background,
-    padding: 16,
-    gap: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: tokens.space.xs,
   },
+  divider: { height: 1, backgroundColor: tokens.colors.border, marginVertical: tokens.space.md },
   detailLabel: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
-    fontSize: 13,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.medium,
   },
   detailValue: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.text,
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: tokens.type.body.fontSize,
+    fontWeight: tokens.weight.semibold,
+    flexShrink: 1,
+    textAlign: 'right',
   },
   badge: {
-    alignSelf: 'flex-start',
-    borderRadius: 999,
-    overflow: 'hidden',
-    color: tokens.colors.accent,
-    backgroundColor: tokens.colors.surface,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accentSurface,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    fontSize: 15,
-    fontWeight: '800',
+    borderColor: tokens.colors.accentSurfaceStrong,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.xs,
   },
-  professionalBox: {
-    marginTop: 18,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
-    padding: 16,
+  badgeText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
   },
-  professionalTitle: {
+  sectionTitle: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.text,
-    fontSize: 16,
-    fontWeight: '800',
-    marginBottom: 4,
+    fontSize: tokens.type.h3.fontSize,
+    letterSpacing: tokens.type.h3.letterSpacing,
+    fontWeight: tokens.weight.bold,
+    marginBottom: tokens.space.xs,
   },
-  professionalText: {
+  sectionText: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: tokens.type.body.fontSize,
+    lineHeight: tokens.type.body.lineHeight,
+    marginBottom: tokens.space.md,
   },
-  button: {
-    minHeight: 52,
-    marginTop: 24,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 10,
-    backgroundColor: tokens.colors.accent,
-    paddingHorizontal: 18,
-  },
-  buttonDisabled: {
-    opacity: 0.55,
-  },
-  buttonPressed: {
-    opacity: 0.86,
-  },
-  buttonText: {
-    color: tokens.colors.surface,
-    fontSize: 16,
-    fontWeight: '800',
-  },
+  signOut: { marginTop: tokens.space.xl },
   errorBox: {
-    marginTop: 18,
-    borderRadius: 18,
-    backgroundColor: tokens.colors.warningBackground,
-    padding: 16,
+    marginTop: tokens.space.lg,
+    borderRadius: tokens.radius.md,
+    borderLeftWidth: 4,
+    borderLeftColor: tokens.colors.danger,
+    backgroundColor: tokens.colors.dangerBackground,
+    padding: tokens.space.lg,
   },
   errorTitle: {
-    color: tokens.colors.warningText,
-    fontSize: 16,
-    fontWeight: '800',
-    marginBottom: 4,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.danger,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.bold,
+    marginBottom: 2,
   },
-  errorText: {
-    color: tokens.colors.warningText,
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  statusBox: {
-    gap: 10,
-    marginTop: 18,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.background,
-    padding: 16,
-  },
-  statusText: {
-    color: tokens.colors.textMuted,
-    fontSize: 15,
-    lineHeight: 22,
-  },
+  errorText: { fontFamily: tokens.font.sans, color: tokens.colors.danger, fontSize: tokens.type.label.fontSize, lineHeight: 21 },
   purposeBox: {
-    marginTop: 24,
-    borderRadius: 18,
+    flexDirection: 'row',
+    marginTop: tokens.space.xl,
+    borderRadius: tokens.radius.md,
+    overflow: 'hidden',
     backgroundColor: tokens.colors.warningBackground,
-    padding: 16,
   },
+  purposeAccent: { width: 4, backgroundColor: tokens.colors.warningText },
+  purposeContent: { flex: 1, padding: tokens.space.lg },
   purposeTitle: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.warningText,
-    fontSize: 16,
-    fontWeight: '800',
-    marginBottom: 8,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.bold,
+    marginBottom: tokens.space.xs,
   },
   purposeText: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.warningText,
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: tokens.type.label.fontSize,
+    lineHeight: 21,
   },
-  footer: {
-    marginTop: 22,
-  },
+  footer: { marginTop: tokens.space.xl },
   inlineLink: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.accent,
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
   },
 });
