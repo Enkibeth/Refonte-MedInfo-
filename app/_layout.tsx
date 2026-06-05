@@ -14,13 +14,20 @@ import { resolvePersonaRoute } from '@/ai/routing/persona';
  *   aucune surface UI pro servie.
  */
 function useProtectedRoute() {
-  const { session, persona, loading } = useSession();
+  const { session, persona, loading, passwordRecovery } = useSession();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
     if (loading) return;
     const inAuthGroup = segments[0] === '(auth)';
+
+    // Mode récupération de mot de passe : prioritaire sur toute autre redirection.
+    if (passwordRecovery) {
+      const onResetScreen = (segments as string[])[1] === 'reset-password';
+      if (!onResetScreen) router.replace('/(auth)/reset-password');
+      return;
+    }
 
     if (!session) {
       if (!inAuthGroup) router.replace('/(auth)/sign-in');
@@ -34,7 +41,7 @@ function useProtectedRoute() {
       // Persona reportée (professional) : pas d'accès au chat MVP.
       router.replace('/(account)/account');
     }
-  }, [session, persona, loading, segments, router]);
+  }, [session, persona, loading, passwordRecovery, segments, router]);
 }
 
 function RootNavigator() {

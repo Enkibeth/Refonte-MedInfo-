@@ -60,6 +60,7 @@ export const tokens = {
     accent: palette.petrol700, // primaire
     accentStrong: palette.petrol600, // hover / actif
     accentDeep: palette.petrol800, // texte accent sur fond clair
+    accentDarker: palette.petrol900, // fond hero, profondeur maximale
     accentSurface: palette.petrol50, // fond teinté très léger
     accentSurfaceStrong: palette.petrol100,
 

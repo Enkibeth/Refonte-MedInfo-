@@ -15,7 +15,7 @@ import { tokens } from './tokens';
  * Variantes : primary (CTA petrol), secondary (contour), ghost (texte), danger.
  * États gérés : pressed (translation/opacité sobre), disabled, loading.
  */
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'inverse' | 'outlineLight';
 type Size = 'md' | 'lg';
 
 interface ButtonProps {
@@ -26,6 +26,7 @@ interface ButtonProps {
   disabled?: boolean;
   loading?: boolean;
   fullWidth?: boolean;
+  leftIcon?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
 }
@@ -38,6 +39,7 @@ export function Button({
   disabled = false,
   loading = false,
   fullWidth = true,
+  leftIcon,
   style,
   accessibilityLabel,
 }: ButtonProps) {
@@ -64,8 +66,16 @@ export function Button({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'primary' || variant === 'danger' ? tokens.colors.onAccent : tokens.colors.accent}
+          color={
+            variant === 'inverse'
+              ? tokens.colors.accent
+              : variant === 'primary' || variant === 'danger' || variant === 'outlineLight'
+                ? tokens.colors.onAccent
+                : tokens.colors.accent
+          }
         />
+      ) : leftIcon ? (
+        <View style={styles.icon}>{leftIcon}</View>
       ) : null}
       <Text style={[styles.label, size === 'lg' ? styles.labelLg : styles.labelMd, v.label]} numberOfLines={1}>
         {label}
@@ -89,6 +99,7 @@ const styles = StyleSheet.create({
   lg: { minHeight: 52, paddingHorizontal: tokens.space.xl },
   pressed: { opacity: 0.92, transform: [{ translateY: 1 }] },
   disabled: { opacity: 0.5 },
+  icon: { alignItems: 'center', justifyContent: 'center' },
   label: { fontFamily: tokens.font.sans, fontWeight: tokens.weight.semibold },
   labelMd: { fontSize: tokens.type.label.fontSize },
   labelLg: { fontSize: tokens.type.bodyLg.fontSize },
@@ -109,6 +120,16 @@ const variantStyles: Record<Variant, { container: ViewStyle; label: { color: str
   },
   danger: {
     container: { backgroundColor: tokens.colors.danger },
+    label: { color: tokens.colors.onAccent },
+  },
+  // Pour fonds petrol/sombres (hero) : bouton blanc, texte petrol.
+  inverse: {
+    container: { backgroundColor: tokens.colors.onAccent, ...tokens.elevation.md },
+    label: { color: tokens.colors.accentDeep },
+  },
+  // Contour clair sur fond sombre.
+  outlineLight: {
+    container: { backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.55)' },
     label: { color: tokens.colors.onAccent },
   },
 };
