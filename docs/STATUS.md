@@ -258,13 +258,30 @@ doublon `src/hooks/useSession.ts` supprimé. `dev` porte désormais les étapes 
 
 Validations : `npm run typecheck` ✅ · `npm run test` (88) ✅ · `npm run compliance` (5 gates) ✅.
 
+## Couche 2 classifieur + pages légales (2026-06-05) : **implémentées (TDD)**
+
+- **Étage 2 du classifieur câblé** avec **Claude Haiku 4.5** (ADR-0013) — modèle Claude le moins cher/rapide,
+  réutilise `ANTHROPIC_API_KEY`, aucun nouveau sous-traitant. `src/ai/classifier/llmStage2.ts`
+  (`generateObject` + Zod, `temperature=0`, fail-closed), branché dans `app/api/chat+api.ts` de façon
+  conditionnelle (`CLASSIFIER_STAGE2_ENABLED`). Étage 1 regex inchangé et prioritaire ; garde-fous
+  (rétrogradation marqueur personnel + seuil 0,85) conservés. Gemini Flash-Lite reste activable via
+  `CLASSIFIER_MODEL_ID` sans changement de code.
+- **Pages légales** publiques ajoutées : mentions légales (LCEN), politique de confidentialité (RGPD),
+  CGU/CGV. Contenu dans `src/compliance/legal.ts` (source unique, réutilise INTENDED_PURPOSE /
+  getAiDisclosure / CANONICAL_REFUSAL), rendu par `src/ui/LegalScreen.tsx`, routes `app/(legal)/`,
+  liens en pied de page (accueil + compte). Champs propres à l'éditeur en placeholder « [À COMPLÉTER] »
+  (action Hugo : raison sociale, SIREN, adresse, directeur de publication, e-mail DPO).
+- Validations locales : `npm run typecheck` OK · tests hors-RLS **189 verts** (+18) · `compliance:grep`,
+  `validate:prompts`, `validate:rag` OK. (RLS : inchangées, exécutées en CI.)
+
 ## Étape suivante
 
 Étape 7 (Stripe billing web-first) **livrée** (ADR-0012). Features isolées restantes selon START.md :
 export PDF, vérification statut pro (post-ADR-0006). **Historique / dossiers : NE PAS implémenter**
 sans ADR « Proposed » + arbitrage Hugo (donnée de santé attribuable → HDS, 01_REGULATION §5).
-Pré-requis classifieur restants (post-MVP) : câblage étage 2 (Gemini Flash-Lite / Haiku 4.5),
-persistance `classifier_decisions`, diversification du golden set, lexique `out_of_scope`.
+Pré-requis classifieur restants (post-MVP) : ~~câblage étage 2~~ **fait (ADR-0013)** ; persistance
+`classifier_decisions`, diversification du golden set, lexique `out_of_scope`. Pages légales : remplir
+les champs éditeur « [À COMPLÉTER] » avant ouverture au public.
 
 ⚠️ **Hygiène branches** : faire brancher les prochaines sessions (Claude/Codex) depuis `dev`,
 jamais `main`. Envisager de définir `dev` comme branche par défaut du repo pour éviter les

@@ -20,10 +20,15 @@ function useProtectedRoute() {
 
   useEffect(() => {
     if (loading) return;
-    const inAuthGroup = segments[0] === '(auth)';
+    const rootSegment = segments[0] as string | undefined;
+    const inAuthGroup = rootSegment === '(auth)';
+    // Routes publiques accessibles sans session : accueil (index) et pages légales
+    // (obligation LCEN/RGPD : mentions légales, confidentialité et CGU doivent être
+    // consultables par tout visiteur, connecté ou non).
+    const isPublicRoute = rootSegment === undefined || rootSegment === '(legal)';
 
     if (!session) {
-      if (!inAuthGroup) router.replace('/(auth)/sign-in');
+      if (!inAuthGroup && !isPublicRoute) router.replace('/(auth)/sign-in');
       return;
     }
 
@@ -46,6 +51,7 @@ function RootNavigator() {
       <Stack.Screen name="(chat)" />
       <Stack.Screen name="(account)" />
       <Stack.Screen name="(billing)" />
+      <Stack.Screen name="(legal)" />
     </Stack>
   );
 }

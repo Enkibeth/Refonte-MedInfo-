@@ -50,6 +50,13 @@ export async function classifyIntent(
 export { classifyByRegex } from './regexClassifier';
 export { resolveDecision, GENERAL_INFO_MIN_CONFIDENCE } from './decision';
 export { runClassifierGate } from './gate';
+export {
+  createLlmStage2,
+  isStage2Configured,
+  resolveStage2ModelId,
+  CLASSIFIER_STAGE2_MODEL_ID,
+  CLASSIFIER_STAGE2_PROMPT,
+} from './llmStage2';
 export type {
   IntentCategory,
   ClassifierLayer,

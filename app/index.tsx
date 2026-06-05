@@ -2,6 +2,7 @@ import { Link } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { INTENDED_PURPOSE, getAiDisclosure } from '@/compliance/disclosures';
+import { legalLinks } from '@/compliance/legal';
 import { Logo } from '@/ui/Logo';
 import { tokens } from '@/ui/tokens';
 
@@ -18,6 +19,14 @@ export default function HomeScreen() {
           <Link href="/(chat)/chat" style={styles.link}>Ouvrir le chat</Link>
           <Link href="/(auth)/sign-in" style={styles.link}>Se connecter</Link>
           <Link href="/(account)/account" style={styles.link}>Mon compte</Link>
+        </View>
+
+        <View style={styles.legalFooter}>
+          {legalLinks.map((link) => (
+            <Link key={link.slug} href={`/(legal)/${link.slug}`} style={styles.legalLink}>
+              {link.title}
+            </Link>
+          ))}
         </View>
       </View>
     </ScrollView>
@@ -82,6 +91,20 @@ const styles = StyleSheet.create({
   link: {
     color: tokens.colors.accent,
     fontSize: 16,
+    fontWeight: '700',
+  },
+  legalFooter: {
+    marginTop: 28,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.border,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  legalLink: {
+    color: tokens.colors.textMuted,
+    fontSize: 13,
     fontWeight: '700',
   },
 });

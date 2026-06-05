@@ -24,6 +24,7 @@ import {
 import { getActiveModel, getActiveModelId } from '@/ai/providers/index';
 
 import { extractUserTexts, screenConversation } from '@/ai/orchestrator';
+import { createLlmStage2, isStage2Configured } from '@/ai/classifier/llmStage2';
 import { getActivePrompt } from '@/ai/prompts/index';
 import { validateOutput } from '@/ai/guardrails/outputValidator';
 import { buildRefusalChunks } from '@/ai/guardrails/refusalStream';
@@ -97,8 +98,13 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // ── Couche 1 : classifieur d'intention sur TOUTE la conversation (pré-LLM) ─────
+  // Étage 1 (regex) toujours actif ; étage 2 (LLM léger Haiku 4.5) câblé uniquement s'il
+  // est configuré — sinon fail-safe `ambiguous` (07_CLASSIFIER §2-§4). L'étage 2 capte les
+  // demandes personnelles déguisées que le regex ne couvre pas, sans jamais court-circuiter
+  // le refus déterministe des marqueurs explicites.
   const screen = await screenConversation(uiMessages, {
     allowFictiveEducationalCases: persona === 'student',
+    llmStage2: isStage2Configured() ? createLlmStage2() : undefined,
   });
 
   if (!screen.allowed) {

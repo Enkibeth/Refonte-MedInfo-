@@ -12,6 +12,7 @@ import {
 import { useSession } from '@/auth/AuthProvider';
 import { getSupabaseClient } from '@/db/supabase';
 import { INTENDED_PURPOSE } from '@/compliance/disclosures';
+import { legalLinks } from '@/compliance/legal';
 import { tokens } from '@/ui/tokens';
 
 /**
@@ -168,6 +169,13 @@ export default function AccountScreen() {
           <Link href="/" style={styles.inlineLink}>
             Retour accueil
           </Link>
+          <View style={styles.legalRow}>
+            {legalLinks.map((link) => (
+              <Link key={link.slug} href={`/(legal)/${link.slug}`} style={styles.legalLink}>
+                {link.title}
+              </Link>
+            ))}
+          </View>
         </View>
       </View>
     </ScrollView>
@@ -338,6 +346,17 @@ const styles = StyleSheet.create({
   },
   footer: {
     marginTop: 22,
+    gap: 14,
+  },
+  legalRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  legalLink: {
+    color: tokens.colors.textMuted,
+    fontSize: 13,
+    fontWeight: '700',
   },
   inlineLink: {
     color: tokens.colors.accent,
