@@ -18,6 +18,7 @@ export const tokens = {
     accentDeep: '#083B52', // profondeur, texte accent sur fond clair
     // États
     success: '#1A9E60', // QCM correct
+    successBackground: '#E7F6EE', // fond réponse QCM correcte
     danger: '#D7263D', // erreur / refus / urgence
     warningBackground: '#FCEFD6', // bandeau vigilance (amber doux)
     warningText: '#8A5A12',

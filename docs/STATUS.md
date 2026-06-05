@@ -5,27 +5,51 @@ title: Project Status
 version: 1.0.0
 owner: Hugo Bettembourg
 status: Active
-date: 2026-06-03
+date: 2026-06-04
 ```
 
 ## État courant
 
-- Étapes 1 → 4 livrées. Corrections d'audit (B1/I1/I2/I3/M1), rate-limiting (M2) et
-  déploiement Vercel intégrés.
-- Branches `main`, `dev`, `staging` : **alignées** (même arbre) après PR #17/#18.
-  `dev` reste la branche d'intégration ; brancher les sessions depuis `dev`.
+- Étapes 1 → 6 livrées côté repo. Corrections d'audit (B1/I1/I2/I3/M1), rate-limiting (M2),
+  déploiement Vercel, RAG pgvector MVP HAS/ANSM, persona étudiant `student.v2` et fix
+  de renvoi d'email de confirmation intégrés.
+- `dev` contient les PR #28, #30, #31 et #32 au-dessus de `main` (`aae2c2d`).
+  Cette branche d'alignement fusionne `origin/dev` (`d87aa74`, PR #32) vers `main`, afin que
+  `main` récupère aussi les changements jusqu'à la PR #32.
+- `staging` reste à réaligner séparément après merge de `main` si l'objectif est une parité
+  stricte `main`/`dev`/`staging`. `dev` reste la branche d'intégration ; brancher les sessions
+  depuis `dev`, puis feature branch `ai/<agent>/<feature>`.
 - Architecture documentaire : organisée dans `docs/` avec ADRs dans `docs/DECISIONS/`.
 - Workflow GitHub Actions : `.github/workflows/compliance.yml` (5 gates).
 
+## Alignement main ← dev (2026-06-04)
+
+Demande traitée : intégrer sur `main` les nouvelles branches/PR présentes sur `dev` jusqu'à la
+PR #32. État distant vérifié par `git fetch origin` :
+
+- `origin/main` : `aae2c2d` — dernier alignement PR #26.
+- `origin/dev` : `d87aa74` — merge PR #32, avec PR #28, #30 et #31 également absentes de `main`.
+- `origin/staging` : `d9ca851` — encore au jalon PR #27, donc non alignée sur le `dev` actuel.
+
+Cette PR doit être mergée vers `main` pour porter `main` au niveau de `dev`/PR #32. Ensuite, si
+nécessaire, ouvrir un alignement `staging` depuis `main` ou `dev`.
+
 ## Validations
 
-Local et CI distante (GitHub Actions) : **OK**.
+Dernière validation locale étape 6 (2026-06-04) :
 
 ```bash
-npm run typecheck   # OK
-npm run test        # OK
-npm run compliance  # 5 gates OK
+npm run typecheck                 # OK
+npm run test                      # OK (128 tests)
+npm run validate:prompts          # OK (2 artefacts)
+npm run validate:rag              # OK (4 chunks RAG)
+npm run compliance                # OK (5 gates, RLS avec Postgres + pgvector local)
 ```
+
+Le blocage local précédent du gate RLS est résolu dans cet environnement par l'installation de
+`postgresql` et `postgresql-16-pgvector`. Pour reproduire sur Ubuntu/Debian :
+`sudo npm run setup:rls:ubuntu`. Sur un autre système, fournir `RLS_TEST_DATABASE_URL` ou
+`DATABASE_URL` vers un Postgres disposant de l'extension `vector`.
 
 ## Statut CI distante
 
@@ -53,6 +77,55 @@ Le site renvoyait 404. Causes : projet Vercel en Node 24.x (incompatible `@verce
 build en échec) + absence de `dist/client/index.html` en `web.output=server`. Corrigé par
 `engines.node = "22.x"` (package.json) + script de fallback HTML (`scripts/vercel/`). Déploiement
 validé READY. **À faire côté Vercel** : variables d'env Supabase/LLM (cf `docs/09_DEPLOYMENT.md`).
+
+
+## Étape 6 — Prompt student.v2 + QCM + toggle sources : **implémentée (TDD)**
+
+Critères START.md — **atteints côté repo/test local** : persona `student` actif dans
+`/api/chat`, prompt `student.v2` sous contrat, `render_qcm` exposé uniquement aux étudiants,
+panneau/toggle sources haut de chat alimenté par `show_sources`, et RAG cite-or-refuse conservé.
+
+Périmètre livré :
+
+- Prompt `src/ai/prompts/student.v2.ts` conforme `docs/04_CHATBOT.md §6` : éducatif non-MDSW,
+  cas cliniques acceptés uniquement s'ils sont explicitement fictifs/pédagogiques, refus déterministe
+  pour patient réel/personnel, anti-hallucination et RAG cite-or-refuse.
+- `/api/chat` : `VALID_PERSONAS = public | student`; matrice tools explicite : public sans
+  `render_qcm`, student avec `propose_followups`, `show_sources`, `refuse_and_redirect`,
+  `render_qcm`. `professional` reste hors route MVP.
+- Couche 1 : exception étroite `allowFictiveEducationalCases` uniquement appelée par la route
+  `student`; les cas réels/anonymisés/stage/proche restent bloqués avant LLM.
+- UI chat : rendu interactif minimal du tool `render_qcm` et bouton d'en-tête « Sources (n) »
+  basculant vers le panneau de sources de la réponse courante ; le panneau inline historique reste
+  disponible.
+- Tests ajoutés : contrat prompt student, matrice tools, cas fictif vs cas réel, helper UI sources,
+  non-régression RAG cite-or-refuse student.
+
+Limites assumées : le rendu QCM est minimal (sélection/réponse/explication) et ne persiste aucun
+résultat ; les citations EDN pages/rangs restent dépendantes du corpus futur. Aucune donnée de santé
+identifiable n'est stockée.
+
+## Étape 5 — RAG pgvector HAS/ANSM : **implémentée MVP (TDD)**
+
+Critère minimal START.md — **atteint côté repo/test local** : une question générale couverte
+par le corpus renvoie une citation HAS réelle (`has-sante.fr`) via `retrieveLocalRagChunks`.
+
+Périmètre livré :
+
+- Migration `0006_rag_pgvector.sql` : extension pgvector, tables `rag_sources` / `rag_chunks`,
+  index HNSW + GIN français, fonction RPC `match_rag_chunks` avec fusion lexical/vectorielle
+  et seed minimal HAS/ANSM.
+- Corpus MVP officiel : HAS diabète de type 2 2025, HAS surpoids/obésité adulte 2023, ANSM
+  bon usage AINS. Métadonnées obligatoires : source HTTPS, licence, date, section, EDN, hash.
+- Retrieval `src/rag/retrieval.ts` : Supabase RPC si configuré, fallback local lexical verrouillé dev/test,
+  section de prompt RAG et refus cite-or-refuse.
+- `/api/chat` : après couche 1 et uniquement pour `general_info`, récupération RAG avant LLM ; si
+  aucun chunk validé ne couvre la question, réponse déterministe « Les sources disponibles ne
+  permettent pas de répondre avec certitude. » et LLM principal non appelé.
+- Gate `npm run validate:rag` devenu effectif : valide le corpus au lieu de retourner un OK scaffold.
+
+Limites assumées : embeddings production et ingestion PDF/OCR large non encore livrés ; aucune pseudo-embedding n'est envoyée ; le MVP
+prépare pgvector et valide le contrat réglementaire/technique sur petit corpus.
 
 ## Étape 2 — classifieur d'intention : **implémentée (couche 1)**
 
@@ -149,7 +222,7 @@ Validations : `npm run typecheck` ✅ · `npm run test` (88) ✅ · `npm run com
 
 ## Étape suivante
 
-Étape 5 — RAG pgvector sur petit corpus test HAS/ANSM (`08_RAG`).
+Étape 7+ — features isolées selon START.md : historique, dossiers, export PDF, Stripe, vérification statut.
 Pré-requis classifieur restants (post-MVP) : câblage étage 2 (Gemini Flash-Lite / Haiku 4.5),
 persistance `classifier_decisions`, diversification du golden set, lexique `out_of_scope`.
 

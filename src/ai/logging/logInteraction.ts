@@ -7,7 +7,7 @@ import type { IntentCategory } from '@/ai/classifier/types';
 import type { Persona } from '@/ai/prompts/_schema';
 import { createServerSupabaseClient } from '@/db/serverSupabase';
 
-export type GuardrailLayer = 'classifier' | 'prompt' | 'output_validation' | 'none';
+export type GuardrailLayer = 'classifier' | 'prompt' | 'output_validation' | 'rag_cite_or_refuse' | 'none';
 
 export interface InteractionLog {
   user_id?: string;

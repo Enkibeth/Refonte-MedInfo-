@@ -13,6 +13,7 @@ vi.mock('@/db/supabase', () => ({
       signInWithPassword: vi.fn(async () => ({ error: null })),
       signUp: vi.fn(async () => ({ data: { session: null }, error: null })),
       signInWithOAuth: vi.fn(async () => ({ error: null })),
+      resend: vi.fn(async () => ({ error: null })),
       signInWithOtp: vi.fn(async () => ({ error: null })),
       signOut: vi.fn(async () => ({ error: null })),
     },
@@ -34,5 +35,12 @@ describe('AuthProvider — ADR-0010 (password + OAuth)', () => {
   it('useSession lève hors provider (garde-fou)', async () => {
     const { useSession } = await import('@/auth/AuthProvider');
     expect(() => useSession()).toThrow();
+  });
+
+  it('priorise EXPO_PUBLIC_AUTH_REDIRECT_URL pour les liens email/OAuth', async () => {
+    vi.stubEnv('EXPO_PUBLIC_AUTH_REDIRECT_URL', 'https://app.medinfo.test/auth/callback');
+    const { getAuthRedirectTo } = await import('@/auth/AuthProvider');
+    expect(getAuthRedirectTo()).toBe('https://app.medinfo.test/auth/callback');
+    vi.unstubAllEnvs();
   });
 });

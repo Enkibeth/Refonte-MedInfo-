@@ -1,6 +1,8 @@
 # Dependencies
 node_modules/
 .pnp/
+# Sorties de runs benchmark (générées, jamais commitées)
+benchmarks/runs/
 # Env & secrets (JAMAIS commités)
 .env
 .env.*
