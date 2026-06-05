@@ -17,6 +17,33 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-05] – Claude (durcissement base Supabase + parité migrations)
+### Files modified
+- supabase/migrations/0009_rag_match_or_semantics.sql (nouveau — capture repo de la migration
+  déjà en prod sous le ledger `0007_rag_match_or_semantics` : tsquery FR en sémantique OR)
+- supabase/migrations/0010_db_hardening.sql (nouveau — appliquée en prod sous ledger
+  `0008_db_hardening` : search_path figé sur increment_usage_counter et match_rag_chunks ;
+  policies profiles réécrites en (select auth.uid()))
+- supabase/policies/profiles.sql (source de vérité alignée : (select auth.uid()) = id)
+### Purpose
+Traiter les advisors Supabase de medinfo-ai-v4 et rétablir la parité repo ↔ prod : (1)
+function_search_path_mutable (SECURITY/WARN) → search_path pinné sur `public` (les fonctions
+utilisent l'opérateur vector `<=>` et l'enum persona, dans public). (2) auth_rls_initplan
+(PERF/WARN) → `auth.uid()` encapsulé dans un sous-select (évaluation 1×/requête). (3) Capture de
+la migration RAG OR-semantics absente du repo. Migrations appliquées en prod sous les noms de
+ledger `0007_rag_match_or_semantics`/`0008_db_hardening` ; renumérotées 0009/0010 côté repo pour
+éviter la collision de préfixe avec le lot Stripe (0007_subscriptions/0008_billing_events) déjà
+mergé sur dev. Alertes laissées telles quelles : RLS-no-policy (service_role only, by design),
+unused_index (tables vides), extension_in_public (différé), leaked-password (réglage dashboard).
+### Regulatory impact
+None (durcissement technique/perf ; aucune logique médicale, aucune donnée de santé ; isolation
+own-row de profiles strictement inchangée — sémantique identique, couverte par tests/rls/isolation).
+### Rollback plan
+git revert du commit (retire 0009/0010, restaure profiles.sql) ; côté prod : réappliquer la
+définition sans `set search_path` et recréer les 4 policies profiles avec `auth.uid() = id`.
+
+---
+
 ## [2026-06-05] – Claude (étape 7 : facturation Stripe web-first, ADR-0012)
 ### Files modified
 - supabase/migrations/0007_subscriptions.sql, 0008_billing_events.sql (tables billing, zéro donnée santé)
