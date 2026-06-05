@@ -17,6 +17,30 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-05] – Claude (durcissement base Supabase + parité migrations)
+### Files modified
+- supabase/migrations/0007_rag_match_or_semantics.sql (nouveau — capture dans le repo de la
+  migration déjà appliquée en prod : tsquery FR en sémantique OR pour match_rag_chunks)
+- supabase/migrations/0008_db_hardening.sql (nouveau — search_path figé sur
+  increment_usage_counter et match_rag_chunks ; policies profiles réécrites en (select auth.uid()))
+- supabase/policies/profiles.sql (source de vérité alignée : (select auth.uid()) = id)
+### Purpose
+Traiter les alertes des advisors Supabase sur le projet medinfo-ai-v4 et rétablir la parité
+repo ↔ prod : (1) function_search_path_mutable (SECURITY/WARN) → search_path pinné sur `public`
+(convention handle_new_user ; les fonctions utilisent l'opérateur vector `<=>` et l'enum persona,
+tous deux dans public). (2) auth_rls_initplan (PERF/WARN) → `auth.uid()` encapsulé dans un
+sous-select pour évaluation une fois par requête. (3) Capture de la migration 0007 (OR semantics)
+absente du repo. Les alertes « par design » (RLS enabled-no-policy sur ai_interactions/usage_counters
+= service_role only) et « unused_index » (tables quasi vides) sont laissées telles quelles.
+### Regulatory impact
+None (durcissement technique/perf ; aucune logique médicale, aucune donnée de santé ; isolation
+own-row de profiles strictement inchangée — sémantique identique, prouvée par tests/rls/isolation).
+### Rollback plan
+git revert du commit (retire 0008, restaure profiles.sql) ; côté prod : réappliquer la définition
+0006/0007 sans `set search_path` et recréer les 4 policies profiles avec `auth.uid() = id`.
+
+---
+
 ## [2026-06-04] – Codex (alignement main sur dev jusqu'à PR #32)
 ### Files modified
 - docs/STATUS.md (état distant réel : `main` à PR #26, `dev` à PR #32, `staging` à PR #27 ; consigne de merge vers `main`)
