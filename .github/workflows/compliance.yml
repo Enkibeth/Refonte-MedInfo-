@@ -20,12 +20,16 @@ jobs:
       - run: npm install
       - run: npm run typecheck
       # Gate 3 (rls-isolation) lance un cluster Postgres éphémère (initdb/pg_ctl) pour
-      # tester les vraies policies RLS. Garantir la présence des binaires serveur.
-      - name: "Ensure Postgres server binaries"
+      # tester les vraies policies RLS. Depuis l'étape 5 RAG, les migrations requièrent aussi
+      # l'extension pgvector (migration 0006 : `create extension vector`). Garantir les deux.
+      - name: "Ensure Postgres server binaries + pgvector"
         run: |
           if ! ls /usr/lib/postgresql/*/bin/initdb >/dev/null 2>&1; then
             sudo apt-get update && sudo apt-get install -y postgresql
           fi
+          PG_MAJOR="$(find /usr/lib/postgresql -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -nr | head -n 1)"
+          sudo apt-get update
+          sudo apt-get install -y "postgresql-${PG_MAJOR}-pgvector"
       - name: "Gate 1 — compliance-grep"
         run: npm run compliance:grep
       - name: "Gate 2 — refusal-regression"
