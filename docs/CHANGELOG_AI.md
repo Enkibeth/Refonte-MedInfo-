@@ -17,6 +17,33 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-05] – Claude (étape 7 : facturation Stripe web-first, ADR-0012)
+### Files modified
+- supabase/migrations/0007_subscriptions.sql, 0008_billing_events.sql (tables billing, zéro donnée santé)
+- supabase/policies/subscriptions.sql (RLS lecture own-row, aucune écriture client), billing_events.sql (service_role only)
+- src/billing/plans.ts, entitlements.ts, stripeSignature.ts, webhookHandler.ts, createCheckoutSession.ts, surface.ts
+- app/api/billing/checkout+api.ts (POST Checkout, identité dérivée du token, audience gating)
+- app/api/stripe/webhook+api.ts (signature vérifiée, idempotent, écriture service_role)
+- src/ai/rateLimit/chatRateLimit.ts (bypass quota pour abonné actif — volume uniquement, jamais les sources)
+- app/(billing)/_layout.tsx, app/(billing)/pricing.tsx, app/_layout.tsx (groupe billing), app/(account)/account.tsx (encart abonnement)
+- tests/rls/billing-isolation.test.ts ; tests/unit/{stripe-signature,billing-webhook,billing-entitlements,billing-checkout,billing-surface}.test.ts
+- docs/DECISIONS/0012-stripe-billing-web-first.md, docs/STATUS.md, .env.example, docs/09_DEPLOYMENT.md
+### Purpose
+Monétisation freemium tiered (public + étudiant) via Stripe direct web-first, zéro IAP (06_BILLING
+§1/§3/§4). Webhook signé = seule source de vérité du statut payant ; anti-auto-promotion par RLS
+(service_role only) prouvée par test. Le paywall ne lève que le quota de messages : les sources
+HAS/ANSM restent gratuites pour tous (§5). Aucun plan pro (gelé ADR-0006).
+### Regulatory impact
+Potential (maîtrisé) : nouveau sous-traitant Stripe (RGPD Art. 28) à documenter dans la politique de
+confidentialité ; ZÉRO donnée de santé en facturation ; safe-box 3 couches + classifieur couche 1
+INCHANGÉS ; sources jamais gatées (verrouillé par test). Aucun impact MDSW.
+### Rollback plan
+git revert de la PR. Retirer les variables Stripe de Vercel désactive la surface (routes → 503).
+Migrations additives : `DROP TABLE subscriptions, billing_events` + `DROP TYPE billing_plan,
+subscription_status` si suppression complète souhaitée.
+
+---
+
 ## [2026-06-04] – Codex (alignement main sur dev jusqu'à PR #32)
 ### Files modified
 - docs/STATUS.md (état distant réel : `main` à PR #26, `dev` à PR #32, `staging` à PR #27 ; consigne de merge vers `main`)

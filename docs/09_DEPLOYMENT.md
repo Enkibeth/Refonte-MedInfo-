@@ -44,6 +44,32 @@ Dans **Vercel → Project → Settings → Environment Variables**, créer au mi
 
 > Ne jamais mettre `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY` ou `OPENAI_API_KEY` dans un fichier committé.
 
+### Variables Stripe (facturation web-first, ADR-0012)
+
+| Variable | Environnements | Valeur attendue | Secret ? | Notes |
+|---|---:|---|---:|---|
+| `STRIPE_SECRET_KEY` | tous | clé secrète Stripe (`sk_live_…`/`sk_test_…`) | Oui | Serveur uniquement : création de session Checkout. |
+| `STRIPE_WEBHOOK_SECRET` | tous | signing secret du webhook (`whsec_…`) | Oui | Serveur uniquement : vérification de signature (seule source de vérité). |
+| `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` | tous | clé publique (`pk_…`) | Non | Réservée à un usage client éventuel. |
+| `STRIPE_PRICE_PUBLIC_MID` | tous | `price_…` du plan public 4,99 € | Non | Créé dans le dashboard Stripe (mode subscription). |
+| `STRIPE_PRICE_STUDENT_MID` | tous | `price_…` du plan étudiant 7,99 € | Non | — |
+| `STRIPE_PRICE_STUDENT_PREMIUM` | tous | `price_…` du plan étudiant 14,99 € | Non | — |
+| `EXPO_PUBLIC_APP_URL` | tous | URL publique (ex. `https://medinfo-ai.vercel.app`) | Non | `success_url`/`cancel_url` Checkout. Vide = origin de la requête. |
+
+> Aucun plan **professionnel** : gelé par ADR-0006. `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET` ne
+> doivent jamais être committés. Tant que ces variables sont absentes, les routes de facturation
+> renvoient `503` (« non configuré ») — désactivation propre.
+
+### Endpoint webhook Stripe (à configurer dans le dashboard Stripe)
+
+1. Stripe → Developers → Webhooks → **Add endpoint**.
+2. URL : `https://<ton-domaine>/api/stripe/webhook`.
+3. Événements à écouter : `checkout.session.completed`, `customer.subscription.updated`,
+   `customer.subscription.deleted`.
+4. Copier le **Signing secret** (`whsec_…`) → variable `STRIPE_WEBHOOK_SECRET` dans Vercel.
+5. Créer les **Products/Prices** (mode *recurring*) et reporter les `price_…` dans les variables
+   `STRIPE_PRICE_*`.
+
 ## Étapes Vercel
 
 1. Importer le repo GitHub dans Vercel.
