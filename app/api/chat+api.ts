@@ -25,6 +25,7 @@ import { getActiveModel, getActiveModelId } from '@/ai/providers/index';
 
 import { extractUserTexts, screenConversation } from '@/ai/orchestrator';
 import { createLlmStage2, isStage2Configured } from '@/ai/classifier/llmStage2';
+import { CHAT_PERSONAS, resolveChatPersona } from '@/ai/routing/serverPersona';
 import { getActivePrompt } from '@/ai/prompts/index';
 import { validateOutput } from '@/ai/guardrails/outputValidator';
 import { buildRefusalChunks } from '@/ai/guardrails/refusalStream';
@@ -37,7 +38,8 @@ import { refuseAndRedirectTool } from '@/ai/skills/refuse_and_redirect';
 import { renderQcmTool } from '@/ai/skills/render_qcm';
 import type { Persona } from '@/ai/prompts/_schema';
 
-export const VALID_PERSONAS: Persona[] = ['public', 'student'];
+// Personas servables par la route chat MVP. Source unique : serverPersona.CHAT_PERSONAS.
+export const VALID_PERSONAS: Persona[] = CHAT_PERSONAS;
 
 export function getToolsForPersona(persona: Persona) {
   // Matrice 04_CHATBOT §8 : public = 3 tools ; student ajoute render_qcm.
@@ -65,11 +67,20 @@ export async function POST(request: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400 });
   }
 
-  const rawPersona = body.persona;
-  const persona: Persona =
-    typeof rawPersona === 'string' && (VALID_PERSONAS as string[]).includes(rawPersona)
-      ? (rawPersona as Persona)
-      : 'public';
+  // ── Persona EFFECTIVE dérivée du serveur (CC-01, INV-A) ───────────────────────
+  // JAMAIS depuis body.persona : un client anonyme/public ne peut pas s'auto-élever en
+  // student (chemin classifieur assoupli + outil render_qcm). La persona pilote ensuite
+  // le safe-box, la matrice d'outils ET le quota.
+  const personaResolution = await resolveChatPersona(request, body.persona);
+  const persona = personaResolution.persona;
+
+  if (personaResolution.attemptedElevation) {
+    // Incident sécurité sans PII : le client a réclamé une persona non accordée.
+    console.warn(
+      `[chat] persona elevation refused: requested=${personaResolution.requested} ` +
+        `granted=${persona} verified=${personaResolution.verified}`,
+    );
+  }
 
   const uiMessages = Array.isArray(body.messages) ? body.messages : [];
 
