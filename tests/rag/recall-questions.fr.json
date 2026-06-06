@@ -243,6 +243,66 @@
       "expected_doc_id": "bdpm-amoxicilline-500"
     },
     {
+      "id": "ema-role",
+      "question": "Quel est le rôle de l'Agence européenne des médicaments ?",
+      "expected_chunk_ids": ["ema-role-amm-centralisee-001"],
+      "expected_doc_id": "ema-systeme-europeen-medicaments"
+    },
+    {
+      "id": "ema-valproate-grossesse",
+      "question": "Quels risques le valproate présente-t-il pendant la grossesse ?",
+      "expected_chunk_ids": ["ema-valproate-grossesse-001"],
+      "expected_doc_id": "ema-valproate-grossesse"
+    },
+    {
+      "id": "ema-declaration-effet-indesirable",
+      "question": "Comment sont déclarés les effets indésirables des médicaments en Europe ?",
+      "expected_chunk_ids": ["ema-pharmacovigilance-eudravigilance-001"],
+      "expected_doc_id": "ema-eudravigilance"
+    },
+    {
+      "id": "ecdc-amr-deces",
+      "question": "Combien de décès la résistance aux antibiotiques cause-t-elle dans l'UE ?",
+      "expected_chunk_ids": ["ecdc-antibioresistance-ears-net-001"],
+      "expected_doc_id": "ecdc-antibioresistance"
+    },
+    {
+      "id": "ecdc-rougeole-couverture",
+      "question": "Quelle couverture vaccinale faut-il pour prévenir la rougeole en Europe ?",
+      "expected_chunk_ids": ["ecdc-rougeole-vaccination-001"],
+      "expected_doc_id": "ecdc-rougeole"
+    },
+    {
+      "id": "oms-activite-physique",
+      "question": "Combien d'activité physique par semaine l'OMS recommande-t-elle aux adultes ?",
+      "expected_chunk_ids": ["oms-activite-physique-adultes-001"],
+      "expected_doc_id": "oms-activite-physique"
+    },
+    {
+      "id": "oms-antibioresistance",
+      "question": "Pourquoi la résistance aux antimicrobiens est-elle une menace mondiale selon l'OMS ?",
+      "expected_chunk_ids": ["oms-antibioresistance-001"],
+      "expected_doc_id": "oms-antibioresistance"
+    },
+    {
+      "id": "oms-tabac-deces",
+      "question": "Combien de personnes le tabac tue-t-il chaque année dans le monde selon l'OMS ?",
+      "expected_chunk_ids": ["oms-tabac-001"],
+      "expected_doc_id": "oms-tabac"
+    },
+    {
+      "id": "oms-definition-sante",
+      "question": "Comment l'OMS définit-elle la santé ?",
+      "expected_chunk_ids": ["oms-definition-sante-001"],
+      "expected_doc_id": "oms-constitution-sante"
+    },
+    {
+      "id": "oms-allaitement-duree",
+      "question": "Jusqu'à quel âge l'OMS recommande-t-elle l'allaitement maternel exclusif ?",
+      "expected_chunk_ids": ["oms-allaitement-maternel-001"],
+      "expected_doc_id": "oms-allaitement"
+    },
+    {
       "id": "ooc-sclerose-en-plaques",
       "question": "Quel est le traitement de fond de la sclérose en plaques ?",
       "expected_chunk_ids": [],

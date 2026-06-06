@@ -162,11 +162,10 @@ Périmètre livré :
   permettent pas de répondre avec certitude. » et LLM principal non appelé.
 - Gate `npm run validate:rag` devenu effectif : valide le corpus au lieu de retourner un OK scaffold.
 
-Limites assumées : le **pipeline d'embeddings réels** est livré (CC-03, section dédiée, ADR-0014) et le
-**corpus est élargi (Lot B, 32 chunks réellement sourcés, 8 émetteurs)**. L'allowlist réseau est désormais
-**ouverte**, mais le **peuplement des vecteurs** reste en attente de la confirmation (Hugo) que le projet
-OpenAI est en EU Data Residency + ZDR + DPA/SCC Module 2 (01_REGULATION §5) ; aucun pseudo-embedding n'est
-jamais envoyé.
+Limites assumées : le **pipeline d'embeddings réels** est livré **et peuplé** (CC-03, section dédiée,
+ADR-0014). Corpus = **42 chunks réellement sourcés, 11 émetteurs** (Lot B FR + Lot C européen EMA/ECDC/OMS) ;
+embeddings `text-embedding-3-small` peuplés (**42/42**), **dense actif**, recall dense @3 = **100 %**. Le
+benchmark du modèle définitif (voyage/BGE-M3, alternative Mistral) reste prévu sur corpus de masse.
 
 ## Étape 2 — classifieur d'intention : **implémentée (couche 1)**
 
@@ -279,12 +278,13 @@ Validations : `npm run typecheck` ✅ · `npm run test` (88) ✅ · `npm run com
 
 ## CC-03 — RAG embeddings réels (pipeline) + mesure recall (2026-06-05) : **pipeline livré, peuplement en attente d'allowlist**
 
-> **Mise à jour 2026-06-06 (Lot B — corpus élargi).** L'allowlist réseau est désormais **ouverte**
-> (`api.openai.com` → 401 ; `has-sante.fr`/`ansm.sante.fr` → 200). Le **corpus Lot B** est livré
-> (28 nouveaux chunks réellement sourcés → **32 au total**, **8 émetteurs** ; voir bullet dédié). Les
-> **embeddings restent NON peuplés** : le peuplement de production attend la confirmation (Hugo) que le
-> projet OpenAI est en EU Data Residency + Zero Data Retention + DPA/SCC Module 2 (01_REGULATION §5).
-> **Aucun appel OpenAI** n'est effectué tant que ce point n'est pas confirmé (décision Hugo, 2026-06-06).
+> **Mise à jour 2026-06-06 (Lot B + Lot C — LIVE).** Réseau ouvert + OpenAI EU residency/ZDR/DPA/SCC
+> **confirmé (Hugo)** → **embeddings peuplés**. Corpus porté à **42 chunks réellement sourcés**, **11
+> émetteurs** : Lot B (8 émetteurs FR) + **Lot C européen** (EMA, ECDC, OMS). Ingestion réelle effectuée
+> (`npm run rag:ingest` → **42/42 vecteurs**, 5925 tok ≈ 0,0001 USD) ; migration `0011` (allowlist
+> émetteurs étendue en base). **Recall dense mesuré** (50 questions in-corpus) : chunk @1/@3 =
+> **90 % / 100 %**, doc @1/@3 = **92 % / 100 %** (vs lexical 86 %/94 % · 88 %/96 %) → la fusion dense
+> (RRF) améliore le recall. **Dense actif ; limite « embeddings non peuplés » levée.**
 
 - **Modèle décidé** (ADR-0014) : OpenAI `text-embedding-3-small` (1536 dims) — tient dans
   `rag_chunks.embedding vector(1536)` (aucun `ALTER`), réutilise `OPENAI_API_KEY` / `@ai-sdk/openai`
@@ -314,13 +314,21 @@ Validations : `npm run typecheck` ✅ · `npm run test` (88) ✅ · `npm run com
   posologie jamais fragmentée). `RagLicense` (src/rag/types.ts) étendu aux nouveaux émetteurs ;
   `tests/rag/recall-questions.fr.json` étendu (40 questions in-corpus + 3 hors-corpus). Gate
   `validate:rag` vert sur les 32 chunks ; `rag:ingest --dry-run` OK (~4088 tokens, ≈ 0,00008 USD).
-- **Différé — en attente de confirmation OpenAI (Hugo)** : l'allowlist réseau est désormais **ouverte**
-  (`api.openai.com` → 401, plus de `host_not_allowed`). Le **Lot B (corpus)** est donc fait. Restent
-  **embeddings non encore peuplés** et **recall dense non mesuré** : sur décision Hugo (2026-06-06),
-  **aucun appel OpenAI** n'est lancé tant que la résidence EU + ZDR + DPA/SCC Module 2 du projet OpenAI
-  n'est pas confirmée (01_REGULATION §5). Une fois confirmé : `npm run rag:ingest` puis
-  `npm run rag:recall -- --mode=fused` (mesure dense sur 32 chunks + coût réel), puis **lever** la limite
-  « embeddings non peuplés » dans STATUS/08_RAG.
+- **Lot C — sources européennes (livré + peuplé 2026-06-06)** : **10 chunks** EMA (rôle/AMM, valproate
+  grossesse, pharmacovigilance EudraVigilance), ECDC (antibiorésistance/EARS-Net, rougeole), OMS (activité
+  physique, antibiorésistance, tabac, définition de la santé, allaitement) → `src/rag/corpus/lot-c-europe.json`.
+  `RagEmitter`/`RagLicense` étendus (EMA, ECDC, OMS) ; migration `0011_rag_emitters_europe.sql` (CHECK
+  `rag_sources.emitter`). OMS = résumés factuels attribués (clause non-commerciale CC BY-NC-SA à valider
+  par le juriste avant commercialisation, 01_REGULATION §6/§10).
+- **Peuplement + recall dense — FAIT (2026-06-06)** : OpenAI EU residency/ZDR/DPA/SCC confirmé (Hugo),
+  `npm run rag:ingest` exécuté → **42/42 chunks avec embedding** (5925 tok ≈ 0,0001 USD). Recall dense
+  (`--mode=fused`, 50 questions) : chunk @1/@3 = **90 % / 100 %**, doc @1/@3 = **92 % / 100 %** (vs lexical
+  86 %/94 % · 88 %/96 %) ; coût requêtes ≈ 0,00002 USD. **Limite « embeddings non peuplés » levée.**
+- **À surveiller (cite-or-refuse)** : sur ce corpus élargi + sémantique OR (mig. 0009), `match_rag_chunks`
+  renvoie des chunks faiblement pertinents pour des questions hors corpus (0/3 « sans source » au lieu de
+  refus au niveau retrieval). La garantie cite-or-refuse repose donc sur la **couche prompt**
+  (`buildRagSystemSection` : « si ces extraits ne contiennent pas la réponse, réponds [refus] »). Un seuil
+  de pertinence sur `rank_score` et/ou la vérification NLI (08_RAG §4) sont une amélioration à prévoir.
 - **Action Hugo (hors code)** : activer EU Data Residency + Zero Data Retention + DPA/SCC Module 2 sur
   le projet OpenAI **avant ingestion de production** (01_REGULATION §5).
 

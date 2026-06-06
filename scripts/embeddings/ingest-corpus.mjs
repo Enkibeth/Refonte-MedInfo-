@@ -31,7 +31,7 @@ const EMBEDDING_DIMENSIONS = 1536;
 const USD_PER_1M_TOKENS = 0.02;
 
 const CORPUS_DIR = resolve('src/rag/corpus');
-const ALLOWED_EMITTERS = new Set(['HAS', 'ANSM', 'SPF', 'INCa', 'Orphanet', 'ameli.fr', 'CRAT', 'BDPM']);
+const ALLOWED_EMITTERS = new Set(['HAS', 'ANSM', 'SPF', 'INCa', 'Orphanet', 'ameli.fr', 'CRAT', 'BDPM', 'EMA', 'ECDC', 'OMS']);
 const REQUIRED_FIELDS = [
   'chunk_id',
   'parent_doc_id',

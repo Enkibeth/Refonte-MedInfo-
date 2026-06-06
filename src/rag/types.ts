@@ -1,4 +1,16 @@
-export type RagEmitter = 'HAS' | 'ANSM' | 'SPF' | 'INCa' | 'Orphanet' | 'ameli.fr' | 'CRAT' | 'BDPM';
+export type RagEmitter =
+  | 'HAS'
+  | 'ANSM'
+  | 'SPF'
+  | 'INCa'
+  | 'Orphanet'
+  | 'ameli.fr'
+  | 'CRAT'
+  | 'BDPM'
+  // Lot C (CC-03) — institutions européennes / internationales.
+  | 'EMA'
+  | 'ECDC'
+  | 'OMS';
 
 // Licences déclarant la base de réutilisation (publique, avec attribution) de chaque
 // émetteur whitelisté. Le gate `rag-license` exige que toute licence contienne la
@@ -12,7 +24,10 @@ export type RagLicense =
   | 'ameli.fr (Assurance Maladie) réutilisation publique avec attribution'
   | 'CRAT réutilisation publique avec attribution'
   | 'Orphanet réutilisation publique avec attribution'
-  | 'BDPM (ANSM) réutilisation publique avec attribution';
+  | 'BDPM (ANSM) réutilisation publique avec attribution'
+  | 'EMA réutilisation publique avec attribution'
+  | 'ECDC réutilisation publique avec attribution'
+  | 'OMS (WHO) réutilisation publique avec attribution';
 
 export type RagChunkMetadata = {
   chunk_id: string;

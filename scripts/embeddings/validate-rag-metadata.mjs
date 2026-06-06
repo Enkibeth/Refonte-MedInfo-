@@ -3,7 +3,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const corpusDir = resolve('src/rag/corpus');
-const allowedEmitters = new Set(['HAS', 'ANSM', 'SPF', 'INCa', 'Orphanet', 'ameli.fr', 'CRAT', 'BDPM']);
+const allowedEmitters = new Set(['HAS', 'ANSM', 'SPF', 'INCa', 'Orphanet', 'ameli.fr', 'CRAT', 'BDPM', 'EMA', 'ECDC', 'OMS']);
 const required = [
   'chunk_id',
   'parent_doc_id',
