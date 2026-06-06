@@ -35,7 +35,8 @@ vi.mock('@/ai/logging/logInteraction', () => ({
 }));
 
 vi.mock('@/ai/classifier/llmStage2', () => ({
-  isStage2Configured: vi.fn(() => false),
+  // Étage 2 = Gemini : non configuré dans ce test → undefined (fail-safe regex-seul).
+  getStage2Classifier: vi.fn(() => undefined),
   createLlmStage2: vi.fn(),
 }));
 
