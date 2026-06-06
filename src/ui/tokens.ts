@@ -38,6 +38,15 @@ const palette = {
   red50: '#FBEAEC',
   amber600: '#9A6516',
   amber50: '#FBF1DD',
+
+  // Accents par audience (design system §4 — usage strict : eyebrow pills,
+  // bordure d'accent, pastille d'icône. ≤ 5 % de la surface).
+  proAccent: '#B45309', // ambre brûlé — professionnels de santé
+  proSoft: '#FBF1E3',
+  studentAccent: '#4D7C0F', // olive — étudiants en médecine
+  studentSoft: '#EEF6DE',
+  publicAccent: '#BE185D', // framboise sobre — grand public
+  publicSoft: '#FBE7F0',
 } as const;
 
 export const tokens = {
@@ -71,6 +80,14 @@ export const tokens = {
     dangerBackground: palette.red50,
     warningText: palette.amber600,
     warningBackground: palette.amber50,
+
+    // ── Accents par audience (persona) ───────────────────────────────────────
+    // Trois publics distincts du design system : pro / étudiant / grand public.
+    personas: {
+      pro: { accent: palette.proAccent, soft: palette.proSoft },
+      student: { accent: palette.studentAccent, soft: palette.studentSoft },
+      public: { accent: palette.publicAccent, soft: palette.publicSoft },
+    },
   },
 
   // ── Typographie ────────────────────────────────────────────────────────────
@@ -78,6 +95,11 @@ export const tokens = {
   font: {
     sans: Platform.select({
       web: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+      default: 'System',
+    }) as string,
+    // DM Sans — réservée aux titres / display (design system §3). Inter en repli.
+    display: Platform.select({
+      web: "'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       default: 'System',
     }) as string,
     mono: Platform.select({
@@ -137,5 +159,20 @@ export const tokens = {
       web: { boxShadow: '0 12px 32px -8px rgba(8, 59, 82, 0.16)' },
       default: {},
     }) as object,
+  },
+
+  // ── Mouvement (design system §4) ─────────────────────────────────────────────
+  // Pas de bounce ni de spring tape-à-l'œil : fades, translate 4–8 px, scale 0.98→1.
+  // Toujours coupé sous prefers-reduced-motion (cf. useReducedMotion).
+  motion: {
+    duration: { fast: 120, base: 200, slow: 320 },
+    // Courbes de Bézier (mêmes valeurs côté web CSS, cf. app/+html.tsx).
+    easing: {
+      standard: [0.4, 0, 0.2, 1] as const, // entrée / interaction
+      out: [0.16, 1, 0.3, 1] as const, // sortie douce
+    },
+    // Amplitudes d'entrée par défaut.
+    revealOffset: 8, // translateY initial (px)
+    revealStagger: 70, // décalage entre éléments d'une séquence (ms)
   },
 } as const;

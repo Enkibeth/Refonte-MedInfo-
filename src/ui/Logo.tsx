@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
   cross: { position: 'absolute', backgroundColor: tokens.colors.onAccent, borderRadius: 2 },
   crossLight: { backgroundColor: tokens.colors.accent },
   word: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.accentDeep,
     fontWeight: tokens.weight.bold,
     letterSpacing: -0.4,
