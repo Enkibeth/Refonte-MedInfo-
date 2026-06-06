@@ -17,6 +17,37 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-06-06] – Claude (CC-03 LIVE/Lot B : corpus élargi 8 émetteurs — ingestion en attente confirmation OpenAI EU/ZDR)
+### Files modified
+- src/rag/corpus/lot-b-has-ansm.json, lot-b-prevention-spf-inca.json, lot-b-ameli-soins-courants.json,
+  lot-b-grossesse-rare-medicaments.json (nouveaux — 28 chunks réellement sourcés ; résumés fidèles
+  attribués, zéro contenu inventé ; émetteurs HAS, ANSM, SPF, INCa, ameli.fr, CRAT, Orphanet, BDPM)
+- src/rag/types.ts (RagLicense étendu : SPF, INCa, ameli.fr, CRAT, Orphanet, BDPM)
+- tests/rag/recall-questions.fr.json (étendu : 40 questions in-corpus + 3 hors-corpus, couvre le Lot B)
+- docs/STATUS.md, docs/08_RAG.md (§12/§13), docs/DECISIONS/0014-embeddings-text-embedding-3-small.md
+  (§Conséquences), src/rag/README.md (état réel : corpus élargi, embeddings NON peuplés)
+### Purpose
+CC-03 — étape LIVE/Lot B. L'allowlist réseau étant ouverte (api.openai.com → 401 ; has-sante.fr /
+ansm.sante.fr → 200), élargissement du corpus RAG de 4 → **32 chunks réellement sourcés** sur 8 émetteurs
+whitelistés (chunking 08_RAG §3 ; validation_hash = sha256(content) ; source_url HTTPS ; licence
+« réutilisation publique »). Le **peuplement des embeddings et la mesure du recall dense ne sont PAS
+faits** : sur décision Hugo (2026-06-06), aucun appel OpenAI tant que la résidence EU + ZDR + DPA/SCC
+Module 2 du projet OpenAI n'est pas confirmée (01_REGULATION §5 / ADR-0014). Pipeline (PR #42) non refait.
+INV-A/INV-B non régressés. Validations locales : typecheck OK ; tests hors-RLS 210 verts ; gates
+compliance-grep / prompt-contract / rag-license (32 chunks) verts ; rag:ingest --dry-run OK
+(~4088 tokens ≈ 0,00008 USD).
+### Regulatory impact
+None — corpus = littérature publique (résumés attribués, pas de copie verbatim intégrale ; exception TDM
+08_RAG §6) ; aucune donnée de santé stockée/transmise ; intended purpose et disclosure AI Act inchangés.
+Rappel hors-code (Hugo), bloquant : EU Data Residency + ZDR + DPA/SCC Module 2 sur le projet OpenAI AVANT
+toute ingestion de production (01_REGULATION §5).
+### Rollback plan
+`git revert` de la PR (supprime les `src/rag/corpus/lot-b-*.json`, l'extension `RagLicense`, les questions
+ajoutées) → retour au corpus MVP 4 chunks. Aucune écriture DB effectuée (ingestion non lancée) : rien à
+nettoyer côté Supabase.
+
+---
+
 ## [2026-06-05] – Claude (CC-03 : RAG embeddings réels — pipeline + mesure recall + ADR-0014)
 ### Files modified
 - src/rag/embeddings.ts (nouveau — embedText/embedMany via @ai-sdk/openai `text-embedding-3-small`,

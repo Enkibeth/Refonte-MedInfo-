@@ -114,11 +114,12 @@ Livré côté repo :
 - Gate `rag-license` réel via `npm run validate:rag` : source HTTPS, licence, date, hash, section et contenu obligatoires.
 - Intégration `/api/chat` : après le classifieur couche 1, retrieval RAG pour les questions `general_info`; sans source validée, refus documentaire déterministe avant tout appel LLM.
 
-Limites : le **pipeline d'embeddings réels** est désormais livré (CC-03, §13, ADR-0014) ; le
-**peuplement des vecteurs** et l'**ingestion large** restent en attente de l'ouverture de l'allowlist
-réseau. Le benchmark du modèle définitif (`voyage-3.5-lite` vs BGE-M3, alternative Mistral) reste prévu
-sur corpus de masse. Le fallback local lexical est désactivé par défaut en production, sert uniquement
-au dev/test et ne remplace pas l'ingestion large.
+Limites : le **pipeline d'embeddings réels** est livré (CC-03, §13, ADR-0014) et le **corpus est élargi**
+(Lot B, 32 chunks réellement sourcés, §13). L'allowlist réseau est désormais ouverte, mais le
+**peuplement des vecteurs** reste en attente de la confirmation OpenAI EU residency + ZDR + DPA (Hugo,
+01_REGULATION §5). Le benchmark du modèle définitif (`voyage-3.5-lite` vs BGE-M3, alternative Mistral)
+reste prévu sur corpus de masse. Le fallback local lexical est désactivé par défaut en production, sert
+uniquement au dev/test et ne remplace pas l'ingestion large.
 
 ---
 
@@ -147,7 +148,14 @@ de chunk retenue = recette §3).
 sur 4 chunks (le lexical sature ; le gain du dense se mesure sur corpus élargi). Hors corpus → 0 source
 → cite-or-refuse. Le **dense** sera mesuré après peuplement.
 
-**En attente d'allowlist réseau** : `api.openai.com` et `has-sante.fr`/`ansm.sante.fr` sont bloqués
-(HTTP 403 `host_not_allowed`) dans l'environnement d'exécution → **embeddings non encore peuplés** et
-**élargissement du corpus (Lot B) non fait** (aucun contenu médical inventé). À la réouverture :
-`npm run rag:ingest` puis `npm run rag:recall -- --mode=fused`, et fetch des sources HAS/ANSM.
+**Lot B — corpus élargi (2026-06-06)** : l'allowlist réseau est désormais **ouverte**. Le corpus est
+porté à **32 chunks réellement sourcés** (28 nouveaux, **8 émetteurs** : HAS, ANSM, SPF, INCa, ameli.fr,
+CRAT, Orphanet, BDPM) dans `src/rag/corpus/lot-b-*.json` — résumés fidèles attribués (zéro contenu
+inventé, pas de verbatim intégral — exception TDM §6), métadonnées + `validation_hash = sha256(content)`
++ licence « réutilisation publique », chunking §3 respecté (recos = sections ; monographies = chunk
+entier, posologie non fragmentée). `RagLicense` et `recall-questions.fr.json` étendus.
+
+**Toujours en attente (confirmation OpenAI — Hugo)** : les **embeddings restent non peuplés** et le
+**recall dense n'est pas encore mesuré**. Sur décision Hugo (2026-06-06), **aucun appel OpenAI** n'est
+effectué tant que la résidence EU + ZDR + DPA/SCC Module 2 du projet OpenAI n'est pas confirmée
+(01_REGULATION §5). Une fois confirmé : `npm run rag:ingest` puis `npm run rag:recall -- --mode=fused`.

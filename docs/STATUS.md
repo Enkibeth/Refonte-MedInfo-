@@ -162,10 +162,11 @@ Périmètre livré :
   permettent pas de répondre avec certitude. » et LLM principal non appelé.
 - Gate `npm run validate:rag` devenu effectif : valide le corpus au lieu de retourner un OK scaffold.
 
-Limites assumées : le **pipeline d'embeddings réels** est désormais livré (CC-03, section dédiée,
-ADR-0014), mais le **peuplement des vecteurs** et l'**ingestion PDF/OCR large** restent en attente de
-l'ouverture de l'allowlist réseau ; aucune pseudo-embedding n'est jamais envoyée ; le MVP prépare
-pgvector et valide le contrat réglementaire/technique sur petit corpus.
+Limites assumées : le **pipeline d'embeddings réels** est livré (CC-03, section dédiée, ADR-0014) et le
+**corpus est élargi (Lot B, 32 chunks réellement sourcés, 8 émetteurs)**. L'allowlist réseau est désormais
+**ouverte**, mais le **peuplement des vecteurs** reste en attente de la confirmation (Hugo) que le projet
+OpenAI est en EU Data Residency + ZDR + DPA/SCC Module 2 (01_REGULATION §5) ; aucun pseudo-embedding n'est
+jamais envoyé.
 
 ## Étape 2 — classifieur d'intention : **implémentée (couche 1)**
 
@@ -278,6 +279,13 @@ Validations : `npm run typecheck` ✅ · `npm run test` (88) ✅ · `npm run com
 
 ## CC-03 — RAG embeddings réels (pipeline) + mesure recall (2026-06-05) : **pipeline livré, peuplement en attente d'allowlist**
 
+> **Mise à jour 2026-06-06 (Lot B — corpus élargi).** L'allowlist réseau est désormais **ouverte**
+> (`api.openai.com` → 401 ; `has-sante.fr`/`ansm.sante.fr` → 200). Le **corpus Lot B** est livré
+> (28 nouveaux chunks réellement sourcés → **32 au total**, **8 émetteurs** ; voir bullet dédié). Les
+> **embeddings restent NON peuplés** : le peuplement de production attend la confirmation (Hugo) que le
+> projet OpenAI est en EU Data Residency + Zero Data Retention + DPA/SCC Module 2 (01_REGULATION §5).
+> **Aucun appel OpenAI** n'est effectué tant que ce point n'est pas confirmé (décision Hugo, 2026-06-06).
+
 - **Modèle décidé** (ADR-0014) : OpenAI `text-embedding-3-small` (1536 dims) — tient dans
   `rag_chunks.embedding vector(1536)` (aucun `ALTER`), réutilise `OPENAI_API_KEY` / `@ai-sdk/openai`
   (zéro nouvelle dépendance). Benchmark voyage/BGE et alternative souveraine Mistral reportés.
@@ -297,10 +305,22 @@ Validations : `npm run typecheck` ✅ · `npm run test` (88) ✅ · `npm run com
   `tests/rag/retrieval-embedding.test.ts`, mocks → aucun réseau).
 - Validations locales : `typecheck` OK · tests hors-RLS **210 verts** (+21) · `compliance:grep`,
   `validate:prompts`, `validate:rag` OK · `rag:ingest --dry-run` OK. (RLS inchangées, exécutées en CI.)
-- **Différé (bloqué réseau)** : l'allowlist de l'environnement bloque `api.openai.com` et
-  `has-sante.fr`/`ansm.sante.fr` (HTTP 403 `host_not_allowed`). Donc **embeddings non encore peuplés**,
-  recall **dense** non mesuré, et **élargissement du corpus (Lot B)** non fait (aucun contenu inventé).
-  À la réouverture : `npm run rag:ingest` puis `npm run rag:recall -- --mode=fused`.
+- **Lot B — corpus élargi (livré 2026-06-06)** : **28 nouveaux chunks** réellement sourcés (→ **32 au
+  total**, **27 sources**) sur **8 émetteurs** whitelistés (HAS, ANSM, SPF, INCa, ameli.fr, CRAT,
+  Orphanet, BDPM) dans `src/rag/corpus/lot-b-*.json`. Contenus = **résumés fidèles attribués** à la
+  source (zéro contenu médical inventé, jamais de copie verbatim intégrale — 08_RAG §3/§6),
+  `validation_hash = sha256(content)`, `source_url` HTTPS, licence « réutilisation publique avec
+  attribution ». Chunking §3 respecté (recos = sections ; monographies BDPM/ANSM = chunk entier,
+  posologie jamais fragmentée). `RagLicense` (src/rag/types.ts) étendu aux nouveaux émetteurs ;
+  `tests/rag/recall-questions.fr.json` étendu (40 questions in-corpus + 3 hors-corpus). Gate
+  `validate:rag` vert sur les 32 chunks ; `rag:ingest --dry-run` OK (~4088 tokens, ≈ 0,00008 USD).
+- **Différé — en attente de confirmation OpenAI (Hugo)** : l'allowlist réseau est désormais **ouverte**
+  (`api.openai.com` → 401, plus de `host_not_allowed`). Le **Lot B (corpus)** est donc fait. Restent
+  **embeddings non encore peuplés** et **recall dense non mesuré** : sur décision Hugo (2026-06-06),
+  **aucun appel OpenAI** n'est lancé tant que la résidence EU + ZDR + DPA/SCC Module 2 du projet OpenAI
+  n'est pas confirmée (01_REGULATION §5). Une fois confirmé : `npm run rag:ingest` puis
+  `npm run rag:recall -- --mode=fused` (mesure dense sur 32 chunks + coût réel), puis **lever** la limite
+  « embeddings non peuplés » dans STATUS/08_RAG.
 - **Action Hugo (hors code)** : activer EU Data Residency + Zero Data Retention + DPA/SCC Module 2 sur
   le projet OpenAI **avant ingestion de production** (01_REGULATION §5).
 

@@ -59,6 +59,15 @@ sous-traitant ni changement de schéma**, et **réversible**.
   AI Act (§6) et l'intended purpose (§1) sont inchangés. Le rappel EU residency+ZDR est une action de
   configuration externe, pas une modification produit.
 
+> **Mise à jour 2026-06-06 (CC-03 LIVE + Lot B).** L'allowlist réseau est **ouverte** (`api.openai.com`
+> → 401). Le **corpus est élargi (Lot B)** à **32 chunks réellement sourcés** sur **8 émetteurs** (HAS,
+> ANSM, SPF, INCa, ameli.fr, CRAT, Orphanet, BDPM ; `src/rag/corpus/lot-b-*.json`), `RagLicense` étendu,
+> chunking §4 respecté (monographies en chunk entier, posologie non fragmentée). Le **peuplement des
+> embeddings et la mesure du recall dense restent à faire** : sur décision Hugo, **aucun appel OpenAI**
+> n'est lancé tant que la résidence EU + ZDR + DPA/SCC Module 2 du projet OpenAI n'est pas confirmée
+> (§5 ci-dessus). Le rappel « EU residency + ZDR + DPA avant ingestion de production » de cet ADR est
+> donc **actif et bloquant**. Coût d'ingestion estimé (dry-run) : ~4088 tokens ≈ 0,00008 USD.
+
 ## Rollback
 - Désactivation du dense sans déploiement : laisser `rag_chunks.embedding` vide **ou** retirer la clé →
   `retrieval.ts` dégrade automatiquement en lexical-only (comportement antérieur, inchangé).

@@ -1,6 +1,6 @@
 {
   "model": "text-embedding-3-small",
-  "note": "Jeu de questions FR pour mesurer le recall@k de match_rag_chunks (CC-03). Chaque question pointe vers le(s) chunk_id / doc attendu(s) dans le corpus réel. Les entrées out_of_corpus servent au contrôle cite-or-refuse (aucune source attendue). À étendre avec le corpus (Lot B).",
+  "note": "Jeu de questions FR pour mesurer le recall@k de match_rag_chunks (CC-03). Chaque question pointe vers le(s) chunk_id / doc attendu(s) dans le corpus réel (MVP + Lot B). Les entrées out_of_corpus servent au contrôle cite-or-refuse (aucune source attendue). Étendu au Lot B (HAS, ANSM, SPF, INCa, ameli.fr, CRAT, Orphanet, BDPM). À ré-exécuter (`npm run rag:recall -- --mode=fused`) après peuplement des embeddings.",
   "questions": [
     {
       "id": "dt2-prediabete",
@@ -63,6 +63,186 @@
       "expected_doc_id": "ansm-ains-bon-usage-2013"
     },
     {
+      "id": "hta-definition",
+      "question": "À partir de quelle valeur parle-t-on d'hypertension artérielle chez l'adulte selon la HAS ?",
+      "expected_chunk_ids": ["has-hta-adulte-diagnostic-001"],
+      "expected_doc_id": "has-hta-adulte-fiche-memo-2016"
+    },
+    {
+      "id": "hta-confirmation",
+      "question": "Comment confirmer le diagnostic d'hypertension artérielle avant de traiter ?",
+      "expected_chunk_ids": ["has-hta-adulte-diagnostic-001"],
+      "expected_doc_id": "has-hta-adulte-fiche-memo-2016"
+    },
+    {
+      "id": "hta-mesures-hygiene",
+      "question": "Quelles mesures hygiéno-diététiques la HAS recommande-t-elle en cas d'hypertension ?",
+      "expected_chunk_ids": ["has-hta-adulte-mesures-hygiene-002"],
+      "expected_doc_id": "has-hta-adulte-fiche-memo-2016"
+    },
+    {
+      "id": "hta-traitement",
+      "question": "Par quelle classe de médicament débuter le traitement d'une hypertension artérielle ?",
+      "expected_chunk_ids": ["has-hta-adulte-traitement-003"],
+      "expected_doc_id": "has-hta-adulte-fiche-memo-2016"
+    },
+    {
+      "id": "paracetamol-dose-max",
+      "question": "Quelle est la dose maximale de paracétamol par jour en automédication chez l'adulte ?",
+      "expected_chunk_ids": ["ansm-paracetamol-posologie-001"],
+      "expected_doc_id": "ansm-paracetamol-bon-usage"
+    },
+    {
+      "id": "paracetamol-duree",
+      "question": "Combien de jours peut-on prendre du paracétamol contre la fièvre sans avis médical ?",
+      "expected_chunk_ids": ["ansm-paracetamol-posologie-001"],
+      "expected_doc_id": "ansm-paracetamol-bon-usage"
+    },
+    {
+      "id": "paracetamol-foie",
+      "question": "Quel risque pour le foie en cas de surdosage en paracétamol ?",
+      "expected_chunk_ids": ["ansm-paracetamol-surdosage-002"],
+      "expected_doc_id": "ansm-paracetamol-bon-usage"
+    },
+    {
+      "id": "alcool-reperes",
+      "question": "Quels sont les repères de consommation d'alcool à moindre risque ?",
+      "expected_chunk_ids": ["spf-reperes-alcool-001"],
+      "expected_doc_id": "spf-reperes-alcool-2019"
+    },
+    {
+      "id": "activite-physique-adulte",
+      "question": "Combien de minutes d'activité physique par jour sont recommandées chez l'adulte ?",
+      "expected_chunk_ids": ["spf-activite-physique-adultes-001"],
+      "expected_doc_id": "spf-activite-physique-sedentarite-adultes"
+    },
+    {
+      "id": "tabac-benefices",
+      "question": "Quels sont les bénéfices rapides de l'arrêt du tabac ?",
+      "expected_chunk_ids": ["spf-arret-tabac-benefices-001"],
+      "expected_doc_id": "tabac-info-service-arret"
+    },
+    {
+      "id": "depistage-colorectal",
+      "question": "À quel âge et à quelle fréquence réaliser le dépistage du cancer colorectal ?",
+      "expected_chunk_ids": ["inca-depistage-colorectal-001"],
+      "expected_doc_id": "inca-depistage-colorectal"
+    },
+    {
+      "id": "depistage-col-uterus",
+      "question": "Comment se déroule le dépistage du cancer du col de l'utérus selon l'âge ?",
+      "expected_chunk_ids": ["inca-depistage-col-uterus-001"],
+      "expected_doc_id": "inca-depistage-col-uterus"
+    },
+    {
+      "id": "angine-trod",
+      "question": "À quoi sert le test rapide d'orientation diagnostique de l'angine ?",
+      "expected_chunk_ids": ["ameli-angine-trod-001"],
+      "expected_doc_id": "ameli-angine"
+    },
+    {
+      "id": "angine-antibiotique",
+      "question": "Quand un antibiotique est-il nécessaire en cas d'angine ?",
+      "expected_chunk_ids": ["ameli-angine-traitement-002"],
+      "expected_doc_id": "ameli-angine"
+    },
+    {
+      "id": "depistage-sein",
+      "question": "En quoi consiste le dépistage organisé du cancer du sein ?",
+      "expected_chunk_ids": ["ameli-depistage-sein-001"],
+      "expected_doc_id": "ameli-depistage-sein"
+    },
+    {
+      "id": "bronchiolite-kine",
+      "question": "La kinésithérapie respiratoire est-elle recommandée pour la bronchiolite du nourrisson ?",
+      "expected_chunk_ids": ["ameli-bronchiolite-nourrisson-001"],
+      "expected_doc_id": "ameli-bronchiolite-nourrisson"
+    },
+    {
+      "id": "lombalgie-repos",
+      "question": "Faut-il rester au repos au lit en cas de lombalgie aiguë ?",
+      "expected_chunk_ids": ["ameli-lombalgie-aigue-001"],
+      "expected_doc_id": "ameli-lombalgie-aigue"
+    },
+    {
+      "id": "gastro-antibiotique",
+      "question": "Faut-il des antibiotiques pour une gastro-entérite aiguë ?",
+      "expected_chunk_ids": ["ameli-gastro-enterite-adulte-001"],
+      "expected_doc_id": "ameli-gastro-enterite-adulte"
+    },
+    {
+      "id": "rhume-antibiotique",
+      "question": "Les antibiotiques sont-ils utiles contre un rhume ?",
+      "expected_chunk_ids": ["ameli-rhinopharyngite-adulte-001"],
+      "expected_doc_id": "ameli-rhinopharyngite-adulte"
+    },
+    {
+      "id": "antibioresistance",
+      "question": "Qu'est-ce que l'antibiorésistance et comment limiter le mauvais usage des antibiotiques ?",
+      "expected_chunk_ids": ["ameli-antibioresistance-001"],
+      "expected_doc_id": "ameli-antibioresistance"
+    },
+    {
+      "id": "cystite-diagnostic",
+      "question": "Comment diagnostiquer une cystite aiguë simple chez la femme ?",
+      "expected_chunk_ids": ["ameli-cystite-femme-001"],
+      "expected_doc_id": "ameli-cystite-femme"
+    },
+    {
+      "id": "vaccination-grippe",
+      "question": "Pour qui la vaccination contre la grippe saisonnière est-elle recommandée ?",
+      "expected_chunk_ids": ["ameli-vaccination-grippe-001"],
+      "expected_doc_id": "ameli-vaccination-grippe"
+    },
+    {
+      "id": "vaccins-obligatoires-nourrisson",
+      "question": "Combien de vaccinations sont obligatoires pour les nourrissons en France ?",
+      "expected_chunk_ids": ["ameli-calendrier-vaccinal-nourrisson-001"],
+      "expected_doc_id": "ameli-calendrier-vaccinal"
+    },
+    {
+      "id": "paracetamol-grossesse",
+      "question": "Le paracétamol peut-il être utilisé pendant la grossesse ?",
+      "expected_chunk_ids": ["crat-paracetamol-grossesse-001"],
+      "expected_doc_id": "crat-paracetamol-grossesse"
+    },
+    {
+      "id": "ains-grossesse",
+      "question": "À partir de quel terme les AINS sont-ils contre-indiqués pendant la grossesse ?",
+      "expected_chunk_ids": ["crat-ains-grossesse-001"],
+      "expected_doc_id": "crat-ains-grossesse"
+    },
+    {
+      "id": "paracetamol-allaitement",
+      "question": "Peut-on prendre du paracétamol en allaitant ?",
+      "expected_chunk_ids": ["crat-paracetamol-allaitement-001"],
+      "expected_doc_id": "crat-paracetamol-allaitement"
+    },
+    {
+      "id": "drepanocytose",
+      "question": "Qu'est-ce que la drépanocytose et comment se transmet-elle ?",
+      "expected_chunk_ids": ["orphanet-drepanocytose-001"],
+      "expected_doc_id": "orphanet-drepanocytose"
+    },
+    {
+      "id": "mucoviscidose",
+      "question": "Quel gène est impliqué dans la mucoviscidose ?",
+      "expected_chunk_ids": ["orphanet-mucoviscidose-001"],
+      "expected_doc_id": "orphanet-mucoviscidose"
+    },
+    {
+      "id": "doliprane-1000-dose",
+      "question": "Quelle est la dose journalière maximale du DOLIPRANE 1000 mg sur avis médical ?",
+      "expected_chunk_ids": ["bdpm-doliprane-1000-001"],
+      "expected_doc_id": "bdpm-doliprane-1000"
+    },
+    {
+      "id": "amoxicilline-famille",
+      "question": "À quelle famille d'antibiotiques appartient l'amoxicilline ?",
+      "expected_chunk_ids": ["bdpm-amoxicilline-500-001"],
+      "expected_doc_id": "bdpm-amoxicilline-500"
+    },
+    {
       "id": "ooc-sclerose-en-plaques",
       "question": "Quel est le traitement de fond de la sclérose en plaques ?",
       "expected_chunk_ids": [],
@@ -72,6 +252,13 @@
     {
       "id": "ooc-asthme-enfant",
       "question": "Comment adapter le traitement de l'asthme chez l'enfant ?",
+      "expected_chunk_ids": [],
+      "expected_doc_id": null,
+      "out_of_corpus": true
+    },
+    {
+      "id": "ooc-maladie-de-crohn",
+      "question": "Comment traite-t-on la maladie de Crohn ?",
       "expected_chunk_ids": [],
       "expected_doc_id": null,
       "out_of_corpus": true
