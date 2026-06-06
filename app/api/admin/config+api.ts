@@ -84,7 +84,7 @@ export async function POST(request: Request): Promise<Response> {
       return Response.json({ error: 'model_id et provider requis.' }, { status: 400 });
     }
 
-    // Validation des réglages de génération (cf contraintes CHECK migration 0013).
+    // Validation des réglages de génération (cf contraintes CHECK migration 0015).
     if (
       temperature != null &&
       (typeof temperature !== 'number' || temperature < 0 || temperature > 2)

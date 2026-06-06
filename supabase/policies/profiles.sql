@@ -7,11 +7,12 @@ ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 -- assurée par la RLS (et non par un simple GRANT manquant). anon n'a aucun accès profils.
 GRANT SELECT, INSERT, UPDATE, DELETE ON profiles TO authenticated;
 
+-- Idempotence : la migration 0010_db_hardening.sql (re)crée déjà "users read own profile".
+-- Comme le harness/CI applique les migrations PUIS ce fichier, on droppe avant de créer
+-- pour éviter une collision "policy already exists" (gate rls-isolation). Isolation inchangée.
+
 -- Note perf : auth.uid() est encapsulé dans (select …) pour n'être évalué qu'une fois
 -- par requête et non par ligne (advisor auth_rls_initplan). Isolation inchangée.
--- Idempotence : la migration 0010_db_hardening recrée ces mêmes policies (DROP+CREATE).
--- On reprend le DROP IF EXISTS pour que ce bundle déclaratif soit ré-applicable après les
--- migrations (le harness RLS applique migrations PUIS policies) sans « already exists ».
 DROP POLICY IF EXISTS "users read own profile" ON profiles;
 CREATE POLICY "users read own profile"
   ON profiles FOR SELECT

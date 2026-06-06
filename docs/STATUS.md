@@ -2,11 +2,29 @@
 
 ```yaml
 title: Project Status
-version: 1.0.0
+version: 1.1.0
 owner: Hugo Bettembourg
 status: Active
-date: 2026-06-04
+date: 2026-06-06
 ```
+
+## État courant — 2026-06-06
+
+- Documentation de reprise ajoutée dans `CLAUDE.md` : tableau des features IA et table des migrations Supabase existantes/attendues.
+- Safe-box IA : classifieur étage 1 regex toujours prioritaire ; étage 2 LLM léger accepté comme routeur sémantique fail-closed (ADR-0013 + ADR-0015).
+- Configuration IA runtime : trajectoire documentée pour centraliser les flags/modèles/features côté serveur, sans contrôle client.
+- RPPS : vérification ANS/FHIR reste contrôlée serveur ; en absence de clé `ANNUAIRE_SANTE_API_KEY`, le statut professionnel reste `pending` et les features cliniques pro restent gelées.
+- ECOS : cas pédagogiques à stocker en DB comme contenus synthétiques/versionnés, jamais comme cas patient réel (ADR-0017).
+- Quotas : décision de passer à une matrice par feature (`chat`, `ecos`, `transcription`, `export`) ; paywall toujours limité au volume/features avancées, jamais aux sources HAS/ANSM (ADR-0016).
+- ADRs actées : 0015 (runtime classifieur étage 2), 0016 (quotas par feature), 0017 (cas ECOS en DB).
+
+## Validations documentation — 2026-06-06
+
+```bash
+git diff --check                 # OK
+```
+
+Aucune modification de code ou de schéma SQL dans cette passe ; pas de test applicatif relancé.
 
 ## État courant
 
@@ -162,8 +180,10 @@ Périmètre livré :
   permettent pas de répondre avec certitude. » et LLM principal non appelé.
 - Gate `npm run validate:rag` devenu effectif : valide le corpus au lieu de retourner un OK scaffold.
 
-Limites assumées : embeddings production et ingestion PDF/OCR large non encore livrés ; aucune pseudo-embedding n'est envoyée ; le MVP
-prépare pgvector et valide le contrat réglementaire/technique sur petit corpus.
+Limites assumées : le **pipeline d'embeddings réels** est désormais livré (CC-03, section dédiée,
+ADR-0014), mais le **peuplement des vecteurs** et l'**ingestion PDF/OCR large** restent en attente de
+l'ouverture de l'allowlist réseau ; aucune pseudo-embedding n'est jamais envoyée ; le MVP prépare
+pgvector et valide le contrat réglementaire/technique sur petit corpus.
 
 ## Étape 2 — classifieur d'intention : **implémentée (couche 1)**
 
@@ -194,8 +214,11 @@ Validations locales : `npm run typecheck`, `npm run test`, `npm run compliance`
 
 Golden set de 500 exemples (`tests/classifier/golden/golden-set.fr.jsonl`, produit par Codex)
 + harnais d'éval (`scripts/eval/classifier-goldenset.mjs`, `npm run eval:classifier`, **hors**
-chaîne `compliance`). Audit : distribution 35/30/20/10/5 % conforme §5, 30 % adversariaux,
-0 PII (dette qualité : 56 doublons exacts à diversifier).
+chaîne `compliance`). Audit initial : distribution 35/30/20/10/5 % conforme §5, 30 % adversariaux,
+0 PII. Hygiène dataset (2026-06-06) : 56 doublons exacts supprimés, 56 exemples
+FR diversifiés ajoutés sans changer le schéma JSONL ni les labels des exemples conservés.
+Distribution après déduplication : `general_info` 175, `personal_symptoms` 144, `emergency` 100,
+`out_of_scope` 40, `ambiguous` 41 ; 0 doublon exact restant (`npm run eval:classifier` OK).
 
 Calibration du lexique (couche 1, regex seul, sans étage 2) :
 
@@ -203,14 +226,14 @@ Calibration du lexique (couche 1, regex seul, sans étage 2) :
 |---|---|---|---|
 | emergency | **100 %** | 100 % | recall ≥99 % ✅ |
 | personal_symptoms | **100 %** | 98 % | recall ≥97 % ✅ |
-| general_info | 28,6 % | 90,9 % | précision ≥95 % ⚠️ |
+| general_info | 28,6 % | 96,2 % | précision ≥95 % ✅ |
 
 **0 fuite vers le LLM principal** (aucun cas `emergency`/`personal_symptoms` routé `general_info`).
-La précision `general_info` < 95 % et le faible recall `general_info`/`out_of_scope` sont une
-limite **assumée du regex seul** : séparer « explique la différence entre un ETF » (non médical)
-de « explique la différence entre angine et pharyngite » (médical) relève de l'**étage 2 (LLM
-sémantique)**, reporté. `eval:classifier` sort donc en exit 1 sur la cible `general_info`
-précision — informatif, non bloquant (hors `compliance`).
+Le faible recall `general_info`/`out_of_scope` reste une limite **assumée du regex seul** :
+séparer « explique la différence entre un ETF » (non médical) de « explique la différence entre
+angine et pharyngite » (médical) relève de l'**étage 2 (LLM sémantique)**. Après hygiène du
+golden set (2026-06-06), les cibles bloquantes `eval:classifier` passent en local ; le harnais
+reste informatif et hors `compliance`.
 
 ## Étape 3 — Auth Supabase + routing persona + RLS testées : **implémentée (TDD)**
 
@@ -258,13 +281,59 @@ doublon `src/hooks/useSession.ts` supprimé. `dev` porte désormais les étapes 
 
 Validations : `npm run typecheck` ✅ · `npm run test` (88) ✅ · `npm run compliance` (5 gates) ✅.
 
+## Couche 2 classifieur + pages légales (2026-06-05) : **implémentées (TDD)**
+
+- **Étage 2 du classifieur câblé** avec **Claude Haiku 4.5** (ADR-0013) — modèle Claude le moins cher/rapide,
+  réutilise `ANTHROPIC_API_KEY`, aucun nouveau sous-traitant. `src/ai/classifier/llmStage2.ts`
+  (`generateObject` + Zod, `temperature=0`, fail-closed), branché dans `app/api/chat+api.ts` de façon
+  conditionnelle (`CLASSIFIER_STAGE2_ENABLED`). Étage 1 regex inchangé et prioritaire ; garde-fous
+  (rétrogradation marqueur personnel + seuil 0,85) conservés. Gemini Flash-Lite reste activable via
+  `CLASSIFIER_MODEL_ID` sans changement de code.
+- **Pages légales** publiques ajoutées : mentions légales (LCEN), politique de confidentialité (RGPD),
+  CGU/CGV. Contenu dans `src/compliance/legal.ts` (source unique, réutilise INTENDED_PURPOSE /
+  getAiDisclosure / CANONICAL_REFUSAL), rendu par `src/ui/LegalScreen.tsx`, routes `app/(legal)/`,
+  liens en pied de page (accueil + compte). Champs propres à l'éditeur en placeholder « [À COMPLÉTER] »
+  (action Hugo : raison sociale, SIREN, adresse, directeur de publication, e-mail DPO).
+- Validations locales : `npm run typecheck` OK · tests hors-RLS **189 verts** (+18) · `compliance:grep`,
+  `validate:prompts`, `validate:rag` OK. (RLS : inchangées, exécutées en CI.)
+
+## CC-03 — RAG embeddings réels (pipeline) + mesure recall (2026-06-05) : **pipeline livré, peuplement en attente d'allowlist**
+
+- **Modèle décidé** (ADR-0014) : OpenAI `text-embedding-3-small` (1536 dims) — tient dans
+  `rag_chunks.embedding vector(1536)` (aucun `ALTER`), réutilise `OPENAI_API_KEY` / `@ai-sdk/openai`
+  (zéro nouvelle dépendance). Benchmark voyage/BGE et alternative souveraine Mistral reportés.
+- **Pipeline livré (Lot A)** : `src/rag/embeddings.ts` (`embedText`/`embedMany`, garde de dimension,
+  **zéro pseudo-embedding** — clé absente → throw) ; `src/rag/retrieval.ts` envoie un vrai vecteur de
+  requête à `match_rag_chunks` (active la fusion lexical+dense RRF k=60 déjà en base) avec
+  **dégradation lexical-only** propre si l'embedding échoue ; `scripts/embeddings/ingest-corpus.mjs`
+  (`npm run rag:ingest`, idempotent `chunk_id`+hash, service-role, `--dry-run`). INV-B
+  (`buildRagSystemSection` + `sanitizeSourceContent`) **non régressé**.
+- **Mesure (Lot C)** : harnais `scripts/eval/rag-recall.mjs` (`npm run rag:recall`, modes
+  lexical|fused) + jeu FR `tests/rag/recall-questions.fr.json`. **Baseline lexical live** (Supabase
+  MCP) sur 10 questions in-corpus : recall@1/@3 chunk & doc = **100 %** — *non informatif* (corpus
+  4 chunks : le lexical sature ; le gain du dense ne se mesure que sur corpus élargi, Lot B). 2
+  questions hors corpus → **0 source → cite-or-refuse** OK.
+- Gate `rag-license` **étendu à tous les `src/rag/corpus/*.json`** (un nouveau fichier ne peut plus
+  échapper à la validation). Tests CI-safe ajoutés (`tests/rag/embeddings.test.ts`,
+  `tests/rag/retrieval-embedding.test.ts`, mocks → aucun réseau).
+- Validations locales : `typecheck` OK · tests hors-RLS **210 verts** (+21) · `compliance:grep`,
+  `validate:prompts`, `validate:rag` OK · `rag:ingest --dry-run` OK. (RLS inchangées, exécutées en CI.)
+- **Différé (bloqué réseau)** : l'allowlist de l'environnement bloque `api.openai.com` et
+  `has-sante.fr`/`ansm.sante.fr` (HTTP 403 `host_not_allowed`). Donc **embeddings non encore peuplés**,
+  recall **dense** non mesuré, et **élargissement du corpus (Lot B)** non fait (aucun contenu inventé).
+  À la réouverture : `npm run rag:ingest` puis `npm run rag:recall -- --mode=fused`.
+- **Action Hugo (hors code)** : activer EU Data Residency + Zero Data Retention + DPA/SCC Module 2 sur
+  le projet OpenAI **avant ingestion de production** (01_REGULATION §5).
+
 ## Étape suivante
 
 Étape 7 (Stripe billing web-first) **livrée** (ADR-0012). Features isolées restantes selon START.md :
 export PDF, vérification statut pro (post-ADR-0006). **Historique / dossiers : NE PAS implémenter**
 sans ADR « Proposed » + arbitrage Hugo (donnée de santé attribuable → HDS, 01_REGULATION §5).
-Pré-requis classifieur restants (post-MVP) : câblage étage 2 (Gemini Flash-Lite / Haiku 4.5),
-persistance `classifier_decisions`, diversification du golden set, lexique `out_of_scope`.
+Pré-requis classifieur restants (post-MVP) : ~~câblage étage 2~~ **fait (ADR-0013)** ; persistance
+`classifier_decisions`, ~~diversification du golden set~~ **faite (0 doublon exact, 2026-06-06)**,
+lexique `out_of_scope`. Pages légales : remplir
+les champs éditeur « [À COMPLÉTER] » avant ouverture au public.
 
 ⚠️ **Hygiène branches** : faire brancher les prochaines sessions (Claude/Codex) depuis `dev`,
 jamais `main`. Envisager de définir `dev` comme branche par défaut du repo pour éviter les

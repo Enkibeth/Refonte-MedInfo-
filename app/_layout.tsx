@@ -21,9 +21,10 @@ function useProtectedRoute() {
   useEffect(() => {
     if (loading) return;
     const inAuthGroup = segments[0] === '(auth)';
-    // Groupes publics accessibles sans session : authentification et pages légales
-    // (LCEN art. 6 : les mentions légales doivent rester accessibles à tous).
-    const inPublicGroup = inAuthGroup || segments[0] === '(legal)';
+    // Groupes publics accessibles sans session : accueil (landing/hero), authentification et
+    // pages légales (LCEN art. 6 : mentions légales accessibles à tous ; la landing avec ses
+    // CTA « Se connecter »/« Ouvrir le chat » doit rester visible déconnecté).
+    const inPublicGroup = inAuthGroup || segments[0] === undefined || segments[0] === '(legal)';
 
     // Mode récupération de mot de passe : prioritaire sur toute autre redirection.
     if (passwordRecovery) {

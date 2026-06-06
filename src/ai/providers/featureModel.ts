@@ -5,7 +5,7 @@
  *
  * ⚠️  CONVENTION : quand tu ajoutes une nouvelle fonctionnalité IA, ajoute
  * son key ici dans FEATURE_DEFAULTS et dans src/admin/index.ts AI_FEATURES.
- * Voir aussi les migrations SQL ai_model_config (0011) et ai_model_params (0013).
+ * Voir aussi les migrations SQL ai_model_config (0011) et ai_model_params (0015).
  */
 import { anthropic } from '@ai-sdk/anthropic';
 import { openai } from '@ai-sdk/openai';

@@ -16,6 +16,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, isTextUIPart, isToolUIPart } from 'ai';
 import type { UIMessage, UIMessagePart, UIDataTypes, UITools } from 'ai';
@@ -234,6 +235,7 @@ export default function ChatScreen() {
   // Persona issue de l'AuthProvider (source profiles/RLS, étape 3). Fallback 'public'
   // tant que la session/le profil charge ou pour un visiteur non authentifié.
   const { persona } = useSession();
+  const router = useRouter();
   const [input, setInput] = useState('');
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
@@ -271,16 +273,25 @@ export default function ChatScreen() {
           <Text style={styles.chatTitle}>{persona === 'student' ? 'Chat étudiant' : 'Chat santé'}</Text>
           <Text style={styles.chatSubtitle}>Information générale et sourcée</Text>
         </View>
-        <TouchableOpacity
-          style={[styles.headerSourcesButton, !hasSources && styles.headerSourcesButtonDisabled]}
-          onPress={() => setSourcesOpen((open) => !open)}
-          disabled={!hasSources}
-          accessibilityRole="button"
-        >
-          <Text style={[styles.headerSourcesText, !hasSources && styles.headerSourcesTextDisabled]}>
-            {sourcesOpen ? 'Masquer' : 'Sources'} · {latestCitations.length}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.headerAudioButton}
+            onPress={() => router.push('/audio' as never)}
+            accessibilityRole="button"
+          >
+            <Text style={styles.headerAudioText}>🎙️ Audio</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.headerSourcesButton, !hasSources && styles.headerSourcesButtonDisabled]}
+            onPress={() => setSourcesOpen((open) => !open)}
+            disabled={!hasSources}
+            accessibilityRole="button"
+          >
+            <Text style={[styles.headerSourcesText, !hasSources && styles.headerSourcesTextDisabled]}>
+              {sourcesOpen ? 'Masquer' : 'Sources'} · {latestCitations.length}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {sourcesOpen && hasSources ? (
@@ -365,6 +376,19 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.surface,
     borderBottomWidth: 1,
     borderColor: tokens.colors.border,
+  },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
+  headerAudioButton: {
+    borderRadius: tokens.radius.pill,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm,
+    backgroundColor: tokens.colors.accent,
+  },
+  headerAudioText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.onAccent,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
   },
   chatTitle: {
     fontFamily: tokens.font.sans,

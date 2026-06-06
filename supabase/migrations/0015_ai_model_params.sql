@@ -1,4 +1,4 @@
--- Migration 0013 — paramètres de génération par fonctionnalité IA (panel admin)
+-- Migration 0015 — paramètres de génération par fonctionnalité IA (panel admin)
 -- Étend ai_model_config (0011) avec les réglages réglables par feature :
 --   - temperature      : créativité (0–2). NULL = défaut provider.
 --   - reasoning_effort  : effort de raisonnement ('minimal'|'low'|'medium'|'high').

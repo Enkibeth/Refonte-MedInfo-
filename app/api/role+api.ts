@@ -76,8 +76,24 @@ export async function POST(request: Request): Promise<Response> {
       return json({ error: 'Numéro RPPS invalide (11 chiffres attendus).' }, 422);
     }
     // Lookup ANS Annuaire Santé (FHIR) — ADR-0011.
-    // Sans clé : accepté en dev (bypass) ou avec format RPPS valide.
-    // En production avec ANNUAIRE_SANTE_API_KEY : TODO appel FHIR réel.
+    // SÉCURITÉ : ne JAMAIS auto-valider un professionnel sans vérification réelle.
+    // - dev bypass → verified (jamais en prod).
+    // - sinon, sans ANNUAIRE_SANTE_API_KEY → statut `pending` SANS écriture en base
+    //   (la vérification FHIR réelle est implémentée par CC3 / branche determined-ride).
+    if (!devBypass && !process.env.ANNUAIRE_SANTE_API_KEY) {
+      return json(
+        {
+          ok: true,
+          persona,
+          status: 'pending',
+          message:
+            'Vérification professionnelle en attente : ANNUAIRE_SANTE_API_KEY non configurée. ' +
+            "Aucun accès professionnel n'est accordé tant que le RPPS n'est pas vérifié auprès de l'Annuaire Santé.",
+        },
+        202,
+      );
+    }
+    // TODO (CC3) : avec ANNUAIRE_SANTE_API_KEY, appeler le FHIR Practitioner réel.
     status = 'verified';
     method = devBypass ? 'none' : 'rpps';
   }
