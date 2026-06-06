@@ -160,6 +160,9 @@ export default function AccountScreen() {
         <Link href="/" style={styles.inlineLink}>
           Retour à l'accueil
         </Link>
+        <Link href="/(legal)/legal" style={styles.inlineLink}>
+          Informations légales
+        </Link>
       </View>
     </Screen>
   );
@@ -271,7 +274,12 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.label.fontSize,
     lineHeight: 21,
   },
-  footer: { marginTop: tokens.space.xl },
+  footer: {
+    marginTop: tokens.space.xl,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: tokens.space.lg,
+  },
   inlineLink: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.accent,

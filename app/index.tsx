@@ -67,6 +67,12 @@ export default function HomeScreen() {
             fullWidth={false}
             onPress={() => router.push('/(account)/account')}
           />
+          <Button
+            label="Informations légales"
+            variant="ghost"
+            fullWidth={false}
+            onPress={() => router.push('/(legal)/legal')}
+          />
         </View>
       </View>
     </ScrollView>
@@ -217,5 +223,10 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     padding: tokens.space.lg,
   },
-  footerActions: { marginTop: tokens.space.lg },
+  footerActions: {
+    marginTop: tokens.space.lg,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: tokens.space.sm,
+  },
 });

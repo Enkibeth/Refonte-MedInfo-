@@ -24,6 +24,7 @@ import {
 import { getActiveModel, getActiveModelId } from '@/ai/providers/index';
 
 import { extractUserTexts, screenConversation } from '@/ai/orchestrator';
+import { getStage2Classifier } from '@/ai/classifier/llmStage2';
 import { getActivePrompt } from '@/ai/prompts/index';
 import { validateOutput } from '@/ai/guardrails/outputValidator';
 import { buildRefusalChunks } from '@/ai/guardrails/refusalStream';
@@ -97,8 +98,12 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // ── Couche 1 : classifieur d'intention sur TOUTE la conversation (pré-LLM) ─────
+  // Étage 2 (deuxième lecture LLM, Gemini 2.5 Flash-Lite) injecté SI configuré : il
+  // relit les tours que le regex ne tranche pas pour réduire les sur-refus `ambiguous`
+  // (07_CLASSIFIER §2-4). Sans clé Gemini → undefined → fail-safe historique inchangé.
   const screen = await screenConversation(uiMessages, {
     allowFictiveEducationalCases: persona === 'student',
+    llmStage2: getStage2Classifier(),
   });
 
   if (!screen.allowed) {
