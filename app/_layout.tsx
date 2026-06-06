@@ -21,6 +21,9 @@ function useProtectedRoute() {
   useEffect(() => {
     if (loading) return;
     const inAuthGroup = segments[0] === '(auth)';
+    // Groupes publics accessibles sans session : authentification et pages légales
+    // (LCEN art. 6 : les mentions légales doivent rester accessibles à tous).
+    const inPublicGroup = inAuthGroup || segments[0] === '(legal)';
 
     // Mode récupération de mot de passe : prioritaire sur toute autre redirection.
     if (passwordRecovery) {
@@ -30,7 +33,7 @@ function useProtectedRoute() {
     }
 
     if (!session) {
-      if (!inAuthGroup) router.replace('/(auth)/sign-in');
+      if (!inPublicGroup) router.replace('/(auth)/sign-in');
       return;
     }
 
@@ -53,6 +56,7 @@ function RootNavigator() {
       <Stack.Screen name="(chat)" />
       <Stack.Screen name="(account)" />
       <Stack.Screen name="(billing)" />
+      <Stack.Screen name="(legal)" />
     </Stack>
   );
 }
