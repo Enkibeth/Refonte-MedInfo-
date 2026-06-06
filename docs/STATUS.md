@@ -2,11 +2,29 @@
 
 ```yaml
 title: Project Status
-version: 1.0.0
+version: 1.1.0
 owner: Hugo Bettembourg
 status: Active
-date: 2026-06-04
+date: 2026-06-06
 ```
+
+## État courant — 2026-06-06
+
+- Documentation de reprise ajoutée dans `CLAUDE.md` : tableau des features IA et table des migrations Supabase existantes/attendues.
+- Safe-box IA : classifieur étage 1 regex toujours prioritaire ; étage 2 LLM léger accepté comme routeur sémantique fail-closed (ADR-0013 + ADR-0015).
+- Configuration IA runtime : trajectoire documentée pour centraliser les flags/modèles/features côté serveur, sans contrôle client.
+- RPPS : vérification ANS/FHIR reste contrôlée serveur ; en absence de clé `ANNUAIRE_SANTE_API_KEY`, le statut professionnel reste `pending` et les features cliniques pro restent gelées.
+- ECOS : cas pédagogiques à stocker en DB comme contenus synthétiques/versionnés, jamais comme cas patient réel (ADR-0017).
+- Quotas : décision de passer à une matrice par feature (`chat`, `ecos`, `transcription`, `export`) ; paywall toujours limité au volume/features avancées, jamais aux sources HAS/ANSM (ADR-0016).
+- ADRs actées : 0015 (runtime classifieur étage 2), 0016 (quotas par feature), 0017 (cas ECOS en DB).
+
+## Validations documentation — 2026-06-06
+
+```bash
+git diff --check                 # OK
+```
+
+Aucune modification de code ou de schéma SQL dans cette passe ; pas de test applicatif relancé.
 
 ## État courant
 

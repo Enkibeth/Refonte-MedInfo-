@@ -13,13 +13,16 @@ Le projet opère sous doctrine **safe-box non-MDSW** (hors dispositif médical, 
 
 ## Statut actuel
 
-- Étape 1 scaffold : **livrée**.
-- App Expo vide : **présente**.
-- Supabase/Vercel AI SDK : **préparés**.
-- Déploiement Vercel + connexion Supabase dédié : **configurés côté repo** (`vercel.json`, `api/index.js`, `docs/09_DEPLOYMENT.md`).
-- Module Pro/RPPS : **post-MVP, non activé**.
-- Données santé identifiables : **interdites au MVP**.
-- Chat streaming + appels LLM : **branchés côté API**, protégés par la safe-box 3 couches.
+- App Expo + API Vercel : **présentes**, avec chat streaming côté `POST /api/chat`.
+- Safe-box non-MDSW : **active** (classifieur avant LLM, refus canonique, validation de sortie, RAG cite-or-refuse).
+- Classifieur : **étage 1 regex prioritaire** + **étage 2 LLM léger conditionnel** (Claude Haiku 4.5, fail-closed).
+- RAG : corpus HAS/ANSM MVP, pgvector, retrieval lexical + fusion dense prête ; embeddings réels `text-embedding-3-small` à peupler après configuration OpenAI prod.
+- Auth/routing : personas `public` et `student` actifs ; `professional` routable mais features cliniques gelées par ADR-0006.
+- RPPS : vérification ANS documentée/configurable ; tant que la clé Annuaire Santé est absente, le statut reste `pending`.
+- Facturation : Stripe web-first pour public/étudiant ; paywall limité au volume et aux features avancées, jamais aux sources.
+- Quotas : trajectoire documentée vers des quotas **par feature** (`chat`, `ecos`, `transcription`, `export`) côté serveur.
+- Cas ECOS : décision actée pour un stockage DB de cas **fictifs et pédagogiques** uniquement.
+- Données santé identifiables : **interdites au MVP** ; pas d'historique patient ni dossier sans ADR dédiée + HDS.
 
 ## Installation
 
@@ -59,7 +62,8 @@ src/ui/                  Tokens et composants UI partagés
 supabase/                Migrations, policies, seeds
 scripts/                 Ingestion, embeddings, évaluation, compliance
 tests/                   Unit, RLS, prompt regression, prompt eval
-docs/                    Documentation fondatrice et ADRs
+docs/                    Documentation fondatrice, STATUS et ADRs
+CLAUDE.md                Mémo de reprise agents : features IA + migrations
 .github/workflows/       Gates CI
 ```
 
