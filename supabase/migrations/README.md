@@ -11,3 +11,4 @@ DDL versionné. Toute table utilisateur a une RLS active (voir `../policies/`) E
 - `0006_rag_pgvector.sql` — tables documentaires RAG HAS/ANSM, pgvector, RPC retrieval, seed MVP. Aucune donnée utilisateur.
 - `0011_ai_model_config.sql` — modèle IA par fonctionnalité (panel admin). Service role only. Seed des 6 features.
 - `0012_ai_prompts.sql` — overrides admin des system prompts. Service role only. Table vide (fallback code).
+- `0013_ai_model_params.sql` — réglages de génération par feature (température, raisonnement, verbosité, recherche internet) sur `ai_model_config`. Service role only (hérite du verrou 0011).

@@ -9,7 +9,7 @@
  * Si tu ajoutes une étape IA ici, déclare-la dans src/admin/index.ts AI_FEATURES.
  */
 import { generateText } from 'ai';
-import { getModelForFeature } from '@/ai/providers/featureModel';
+import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 
 const MAX_SIZE_BYTES = 25 * 1024 * 1024;
@@ -78,15 +78,16 @@ export async function POST(request: Request): Promise<Response> {
   // ── Étape 2 : Diarisation — labellise Médecin / Patient ──────────────────
   let labelledTranscription = rawTranscription;
   try {
-    const [diarizeModel, diarizePrompt] = await Promise.all([
-      getModelForFeature('audio_diarize'),
+    const [diarizeRuntime, diarizePrompt] = await Promise.all([
+      getRuntimeForFeature('audio_diarize'),
       getPromptTemplate('audio_diarize'),
     ]);
 
     const { text: labelled } = await generateText({
-      model: diarizeModel,
+      model: diarizeRuntime.model,
       system: diarizePrompt,
       messages: [{ role: 'user', content: rawTranscription }],
+      ...diarizeRuntime.options,
     });
 
     if (labelled.trim()) labelledTranscription = labelled.trim();
@@ -101,14 +102,15 @@ export async function POST(request: Request): Promise<Response> {
 
   // ── Étape 3 : Génération du compte rendu depuis la transcription labellisée
   try {
-    const [reportModel, reportPrompt] = await Promise.all([
-      getModelForFeature('audio_report'),
+    const [reportRuntime, reportPrompt] = await Promise.all([
+      getRuntimeForFeature('audio_report'),
       getPromptTemplate('audio_report'),
     ]);
 
     const { text: report } = await generateText({
-      model: reportModel,
+      model: reportRuntime.model,
       system: reportPrompt,
+      ...reportRuntime.options,
       messages: [
         {
           role: 'user',

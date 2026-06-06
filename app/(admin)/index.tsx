@@ -29,19 +29,47 @@ import { tokens } from '@/ui/tokens';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+type ReasoningEffort = 'minimal' | 'low' | 'medium' | 'high';
+type Verbosity = 'low' | 'medium' | 'high';
+
 interface ModelRow {
   key: string;
   model_id: string;
   provider: string;
   label: string;
+  temperature: number | null;
+  reasoning_effort: ReasoningEffort | null;
+  verbosity: Verbosity | null;
+  web_search: boolean;
   updated_at: string | null;
+}
+
+interface ModelCapabilities {
+  temperature: boolean;
+  reasoning: boolean;
+  verbosity: boolean;
+  webSearch: boolean;
 }
 
 interface AvailableModel {
   id: string;
   provider: string;
   label: string;
+  capabilities: ModelCapabilities;
 }
+
+interface FeatureSettingsDraft {
+  model_id: string;
+  provider: string;
+  temperature: number | null;
+  reasoning_effort: ReasoningEffort | null;
+  verbosity: Verbosity | null;
+  web_search: boolean;
+}
+
+const REASONING_OPTIONS: ReasoningEffort[] = ['minimal', 'low', 'medium', 'high'];
+const VERBOSITY_OPTIONS: Verbosity[] = ['low', 'medium', 'high'];
+const TEMPERATURE_PRESETS = [0, 0.3, 0.7, 1, 1.5, 2];
 
 interface PromptRow {
   key: string;
@@ -101,17 +129,42 @@ function ModelsTab({
 }) {
   const [saving, setSaving] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
-  const [local, setLocal] = useState<Record<string, { model_id: string; provider: string }>>({});
+  const [local, setLocal] = useState<Record<string, FeatureSettingsDraft>>({});
 
   useEffect(() => {
-    const init: Record<string, { model_id: string; provider: string }> = {};
-    for (const m of config.models) init[m.key] = { model_id: m.model_id, provider: m.provider };
+    const init: Record<string, FeatureSettingsDraft> = {};
+    for (const m of config.models) {
+      init[m.key] = {
+        model_id: m.model_id,
+        provider: m.provider,
+        temperature: m.temperature,
+        reasoning_effort: m.reasoning_effort,
+        verbosity: m.verbosity,
+        web_search: m.web_search,
+      };
+    }
     setLocal(init);
   }, [config.models]);
+
+  function patch(key: string, changes: Partial<FeatureSettingsDraft>) {
+    setLocal((prev) => ({ ...prev, [key]: { ...prev[key], ...changes } }));
+  }
+
+  function capabilitiesFor(modelId: string): ModelCapabilities {
+    return (
+      config.availableModels.find((m) => m.id === modelId)?.capabilities ?? {
+        temperature: false,
+        reasoning: false,
+        verbosity: false,
+        webSearch: false,
+      }
+    );
+  }
 
   async function save(key: string) {
     const entry = local[key];
     if (!entry) return;
+    const caps = capabilitiesFor(entry.model_id);
     setSaving(key);
     try {
       await fetch('/api/admin/config', {
@@ -120,7 +173,17 @@ function ModelsTab({
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({ type: 'model', key, ...entry }),
+        // On n'envoie que les réglages supportés par le modèle (sinon null/false).
+        body: JSON.stringify({
+          type: 'model',
+          key,
+          model_id: entry.model_id,
+          provider: entry.provider,
+          temperature: caps.temperature ? entry.temperature : null,
+          reasoning_effort: caps.reasoning ? entry.reasoning_effort : null,
+          verbosity: caps.verbosity ? entry.verbosity : null,
+          web_search: caps.webSearch ? entry.web_search : false,
+        }),
       });
       setSaved(key);
       setTimeout(() => setSaved(null), 2000);
@@ -133,8 +196,9 @@ function ModelsTab({
   return (
     <ScrollView contentContainerStyle={tabStyles.content}>
       <Text style={tabStyles.intro}>
-        Sélectionne le modèle IA pour chaque fonctionnalité. Les changements s'appliquent immédiatement
-        (cache 60 s).
+        Sélectionne le modèle IA et ses réglages (raisonnement, verbosité, température, recherche
+        internet) pour chaque fonctionnalité. Les options affichées dépendent du modèle choisi. Les
+        changements s'appliquent immédiatement (cache 60 s).
       </Text>
 
       {AI_FEATURES.map((feature) => {
@@ -144,6 +208,8 @@ function ModelsTab({
         const featureModels = config.availableModels.filter((m) =>
           feature.providers.includes(m.provider as any),
         );
+        const caps = capabilitiesFor(current.model_id);
+        const hasParams = caps.temperature || caps.reasoning || caps.verbosity || caps.webSearch;
 
         return (
           <View key={feature.key} style={cardStyles.card}>
@@ -166,12 +232,7 @@ function ModelsTab({
                   <TouchableOpacity
                     key={m.id}
                     style={[modelStyles.option, isSelected && modelStyles.selected]}
-                    onPress={() =>
-                      setLocal((prev) => ({
-                        ...prev,
-                        [feature.key]: { model_id: m.id, provider: m.provider },
-                      }))
-                    }
+                    onPress={() => patch(feature.key, { model_id: m.id, provider: m.provider })}
                   >
                     <View style={[modelStyles.radio, isSelected && modelStyles.radioSelected]} />
                     <View>
@@ -186,6 +247,99 @@ function ModelsTab({
                 );
               })}
             </View>
+
+            {hasParams ? (
+              <View style={paramStyles.section}>
+                <Text style={paramStyles.sectionTitle}>Réglages de génération</Text>
+
+                {caps.reasoning ? (
+                  <View style={paramStyles.row}>
+                    <Text style={paramStyles.rowLabel}>Raisonnement</Text>
+                    <View style={paramStyles.segments}>
+                      {REASONING_OPTIONS.map((opt) => {
+                        const active = current.reasoning_effort === opt;
+                        return (
+                          <TouchableOpacity
+                            key={opt}
+                            style={[paramStyles.segment, active && paramStyles.segmentActive]}
+                            onPress={() =>
+                              patch(feature.key, { reasoning_effort: active ? null : opt })
+                            }
+                          >
+                            <Text style={[paramStyles.segmentText, active && paramStyles.segmentTextActive]}>
+                              {opt}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+                ) : null}
+
+                {caps.verbosity ? (
+                  <View style={paramStyles.row}>
+                    <Text style={paramStyles.rowLabel}>Verbosité</Text>
+                    <View style={paramStyles.segments}>
+                      {VERBOSITY_OPTIONS.map((opt) => {
+                        const active = current.verbosity === opt;
+                        return (
+                          <TouchableOpacity
+                            key={opt}
+                            style={[paramStyles.segment, active && paramStyles.segmentActive]}
+                            onPress={() => patch(feature.key, { verbosity: active ? null : opt })}
+                          >
+                            <Text style={[paramStyles.segmentText, active && paramStyles.segmentTextActive]}>
+                              {opt === 'low' ? 'court' : opt === 'medium' ? 'moyen' : 'long'}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+                ) : null}
+
+                {caps.temperature ? (
+                  <View style={paramStyles.row}>
+                    <Text style={paramStyles.rowLabel}>
+                      Température{current.temperature != null ? ` · ${current.temperature}` : ' · défaut'}
+                    </Text>
+                    <View style={paramStyles.segments}>
+                      {TEMPERATURE_PRESETS.map((t) => {
+                        const active = current.temperature === t;
+                        return (
+                          <TouchableOpacity
+                            key={t}
+                            style={[paramStyles.segment, active && paramStyles.segmentActive]}
+                            onPress={() => patch(feature.key, { temperature: active ? null : t })}
+                          >
+                            <Text style={[paramStyles.segmentText, active && paramStyles.segmentTextActive]}>
+                              {t}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+                ) : null}
+
+                {caps.webSearch ? (
+                  <TouchableOpacity
+                    style={paramStyles.toggleRow}
+                    onPress={() => patch(feature.key, { web_search: !current.web_search })}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={paramStyles.rowLabel}>🌐 Recherche internet</Text>
+                      <Text style={paramStyles.toggleHint}>
+                        Autorise le modèle à chercher sur le web pendant la génération.
+                      </Text>
+                    </View>
+                    <View style={[paramStyles.switch, current.web_search && paramStyles.switchOn]}>
+                      <View style={[paramStyles.knob, current.web_search && paramStyles.knobOn]} />
+                    </View>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            ) : null}
 
             <TouchableOpacity
               style={[
@@ -679,6 +833,87 @@ const modelStyles = StyleSheet.create({
     fontSize: 11,
     marginTop: 1,
   },
+});
+
+const paramStyles = StyleSheet.create({
+  section: {
+    paddingHorizontal: tokens.space.md,
+    paddingBottom: tokens.space.md,
+    gap: tokens.space.sm,
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.border,
+    paddingTop: tokens.space.md,
+  },
+  sectionTitle: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.textMuted,
+    fontSize: 11,
+    fontWeight: tokens.weight.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  row: { gap: tokens.space.xs },
+  rowLabel: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.medium,
+  },
+  segments: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: tokens.space.xs,
+  },
+  segment: {
+    borderRadius: tokens.radius.sm,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surfaceAlt,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.xs,
+  },
+  segmentActive: {
+    borderColor: tokens.colors.accent,
+    backgroundColor: tokens.colors.accentSurface,
+  },
+  segmentText: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.textMuted,
+    fontSize: 12,
+    fontWeight: tokens.weight.medium,
+  },
+  segmentTextActive: { color: tokens.colors.accentDeep, fontWeight: tokens.weight.semibold },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.md,
+    marginTop: tokens.space.xs,
+  },
+  toggleHint: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 2,
+  },
+  switch: {
+    width: 44,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: tokens.colors.borderStrong,
+    padding: 3,
+    justifyContent: 'center',
+  },
+  switchOn: { backgroundColor: tokens.colors.accent },
+  knob: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: tokens.colors.onAccent,
+    alignSelf: 'flex-start',
+  },
+  knobOn: { alignSelf: 'flex-end' },
 });
 
 const promptStyles = StyleSheet.create({

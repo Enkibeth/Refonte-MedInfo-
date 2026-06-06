@@ -25,15 +25,11 @@ export async function GET(request: Request): Promise<Response> {
   const db = serviceClient();
 
   const [modelsRes, promptsRes] = await Promise.all([
-    db.from('ai_model_config').select('key, model_id, provider, label, updated_at'),
+    db
+      .from('ai_model_config')
+      .select('key, model_id, provider, label, temperature, reasoning_effort, verbosity, web_search, updated_at'),
     db.from('ai_prompts').select('key, label, template, scope, version, updated_at'),
   ]);
-
-  // Modèles : merge DB + defaults
-  const dbModels: Record<string, { model_id: string; provider: string; updated_at: string }> = {};
-  for (const row of modelsRes.data ?? []) {
-    dbModels[row.key] = { model_id: row.model_id, provider: row.provider, updated_at: row.updated_at };
-  }
 
   // Prompts : merge DB (override) + defaults
   const dbPrompts: Record<string, { template: string; label: string; scope: string; updated_at: string }> = {};
@@ -66,6 +62,10 @@ export async function POST(request: Request): Promise<Response> {
     model_id?: string;
     provider?: string;
     template?: string;
+    temperature?: number | null;
+    reasoning_effort?: string | null;
+    verbosity?: string | null;
+    web_search?: boolean;
   };
   try {
     body = await request.json();
@@ -79,13 +79,36 @@ export async function POST(request: Request): Promise<Response> {
   const db = serviceClient();
 
   if (type === 'model') {
-    const { model_id, provider } = body;
+    const { model_id, provider, temperature, reasoning_effort, verbosity, web_search } = body;
     if (!model_id || !provider) {
       return Response.json({ error: 'model_id et provider requis.' }, { status: 400 });
     }
+
+    // Validation des réglages de génération (cf contraintes CHECK migration 0013).
+    if (
+      temperature != null &&
+      (typeof temperature !== 'number' || temperature < 0 || temperature > 2)
+    ) {
+      return Response.json({ error: 'temperature doit être entre 0 et 2.' }, { status: 400 });
+    }
+    if (reasoning_effort != null && !['minimal', 'low', 'medium', 'high'].includes(reasoning_effort)) {
+      return Response.json({ error: 'reasoning_effort invalide.' }, { status: 400 });
+    }
+    if (verbosity != null && !['low', 'medium', 'high'].includes(verbosity)) {
+      return Response.json({ error: 'verbosity invalide.' }, { status: 400 });
+    }
+
     const { error } = await db
       .from('ai_model_config')
-      .update({ model_id, provider, updated_at: new Date().toISOString() })
+      .update({
+        model_id,
+        provider,
+        temperature: temperature ?? null,
+        reasoning_effort: reasoning_effort ?? null,
+        verbosity: verbosity ?? null,
+        web_search: Boolean(web_search),
+        updated_at: new Date().toISOString(),
+      })
       .eq('key', key);
 
     if (error) return Response.json({ error: error.message }, { status: 500 });

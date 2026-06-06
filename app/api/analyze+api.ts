@@ -6,7 +6,7 @@
  * Si tu ajoutes une étape IA ici, déclare-la dans src/admin/index.ts AI_FEATURES.
  */
 import { streamText } from 'ai';
-import { getModelForFeature } from '@/ai/providers/featureModel';
+import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
 
@@ -33,17 +33,18 @@ export async function POST(request: Request): Promise<Response> {
   const truncated = documentText.slice(0, MAX_DOC_LENGTH);
 
   try {
-    const [model, systemPrompt] = await Promise.all([
-      getModelForFeature('analyze'),
+    const [runtime, systemPrompt] = await Promise.all([
+      getRuntimeForFeature('analyze'),
       getPromptTemplate('analyze'),
     ]);
 
     const result = streamText({
-      model,
+      model: runtime.model,
       system: systemPrompt,
       messages: [
         { role: 'user', content: `Voici le document médical à analyser :\n\n${truncated}` },
       ],
+      ...runtime.options,
     });
 
     return result.toTextStreamResponse();
