@@ -1,14 +1,18 @@
 /**
- * POST /api/transcribe — Transcription audio via OpenAI Whisper.
- * Requiert multipart/form-data avec un champ "audio" (Blob) et "mode" (transcription|report).
- * Mode "report" génère en plus un compte rendu médical structuré depuis la transcription.
+ * POST /api/transcribe — Pipeline audio en 3 étapes :
+ *   1. Whisper (OpenAI) → transcription brute
+ *   2. Diarisation GPT — labellise Médecin / Patient selon le contexte
+ *   3. Compte rendu GPT (mode "report") → document médical structuré
+ *
+ * ⚠️  CONVENTION : les modèles utilisés (audio_diarize, audio_report) sont
+ * configurables depuis le panel admin (app/(admin)/index.tsx).
+ * Si tu ajoutes une étape IA ici, déclare-la dans src/admin/index.ts AI_FEATURES.
  */
-import { openai } from '@ai-sdk/openai';
 import { generateText } from 'ai';
+import { getModelForFeature } from '@/ai/providers/featureModel';
+import { getPromptTemplate } from '@/ai/prompts/promptStore';
 
 const MAX_SIZE_BYTES = 25 * 1024 * 1024;
-
-const REPORT_SYSTEM = `Tu es un assistant médical expert en rédaction. À partir d'une transcription audio (dictée ou consultation), génère un compte rendu médical structuré, professionnel et factuel en français, au format markdown. Adapte les sections au contenu (motif, anamnèse, examen clinique, conclusion, conduite à tenir…). N'utilise que les informations de la transcription.`;
 
 export async function POST(request: Request): Promise<Response> {
   const openaiKey = process.env.OPENAI_API_KEY;
@@ -38,7 +42,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: 'Fichier trop volumineux (max 25 MB).' }, { status: 413 });
   }
 
-  // Whisper API via fetch direct
+  // ── Étape 1 : Whisper transcription brute ─────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const whisperForm: any = new FormData();
   whisperForm.append('file', audioEntry, 'audio.webm');
@@ -46,7 +50,7 @@ export async function POST(request: Request): Promise<Response> {
   whisperForm.append('language', 'fr');
   whisperForm.append('response_format', 'text');
 
-  let transcription: string;
+  let rawTranscription: string;
   try {
     const whisperRes = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
@@ -61,37 +65,61 @@ export async function POST(request: Request): Promise<Response> {
       return Response.json({ error: 'Échec de la transcription audio.' }, { status: 502 });
     }
 
-    transcription = (await whisperRes.text()).trim();
+    rawTranscription = (await whisperRes.text()).trim();
   } catch (e) {
     console.error('Whisper fetch error:', e);
     return Response.json({ error: 'Erreur réseau lors de la transcription.' }, { status: 502 });
   }
 
-  if (!transcription) {
+  if (!rawTranscription) {
     return Response.json({ error: 'Aucun contenu audio détecté.' }, { status: 422 });
   }
 
-  if (mode !== 'report') {
-    return Response.json({ transcription });
+  // ── Étape 2 : Diarisation — labellise Médecin / Patient ──────────────────
+  let labelledTranscription = rawTranscription;
+  try {
+    const [diarizeModel, diarizePrompt] = await Promise.all([
+      getModelForFeature('audio_diarize'),
+      getPromptTemplate('audio_diarize'),
+    ]);
+
+    const { text: labelled } = await generateText({
+      model: diarizeModel,
+      system: diarizePrompt,
+      messages: [{ role: 'user', content: rawTranscription }],
+    });
+
+    if (labelled.trim()) labelledTranscription = labelled.trim();
+  } catch (e) {
+    console.error('Diarisation error (non-bloquant):', e);
+    // Fallback : on continue avec la transcription brute
   }
 
-  // Mode report : génère un compte rendu structuré
+  if (mode !== 'report') {
+    return Response.json({ transcription: labelledTranscription });
+  }
+
+  // ── Étape 3 : Génération du compte rendu depuis la transcription labellisée
   try {
-    const model = openai('gpt-4o-mini');
+    const [reportModel, reportPrompt] = await Promise.all([
+      getModelForFeature('audio_report'),
+      getPromptTemplate('audio_report'),
+    ]);
+
     const { text: report } = await generateText({
-      model,
-      system: REPORT_SYSTEM,
+      model: reportModel,
+      system: reportPrompt,
       messages: [
         {
           role: 'user',
-          content: `Voici la transcription audio à mettre en forme en compte rendu médical :\n\n${transcription}`,
+          content: `Voici la transcription labellisée de la consultation :\n\n${labelledTranscription}`,
         },
       ],
     });
 
-    return Response.json({ transcription, report });
+    return Response.json({ transcription: labelledTranscription, report });
   } catch (e) {
     console.error('Report generation error:', e);
-    return Response.json({ transcription, report: null });
+    return Response.json({ transcription: labelledTranscription, report: null });
   }
 }

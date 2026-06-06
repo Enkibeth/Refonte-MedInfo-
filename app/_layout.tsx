@@ -57,6 +57,7 @@ function RootNavigator() {
       <Stack.Screen name="(account)" />
       <Stack.Screen name="(billing)" />
       <Stack.Screen name="(legal)" />
+      <Stack.Screen name="(admin)" />
     </Stack>
   );
 }

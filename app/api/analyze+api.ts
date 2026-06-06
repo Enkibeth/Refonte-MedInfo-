@@ -1,32 +1,14 @@
 /**
- * POST /api/analyze — Analyse de document médical.
- * Génère un résumé patient structuré depuis un texte de document médical.
- * Streamed (text/plain chunks).
+ * POST /api/analyze — Analyse de document médical (streaming).
+ *
+ * ⚠️  CONVENTION : le modèle utilisé (feature key: "analyze") est configurable
+ * depuis le panel admin (app/(admin)/index.tsx).
+ * Si tu ajoutes une étape IA ici, déclare-la dans src/admin/index.ts AI_FEATURES.
  */
 import { streamText } from 'ai';
-import { getActiveModel } from '@/ai/providers/index';
+import { getModelForFeature } from '@/ai/providers/featureModel';
+import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
-
-const SYSTEM = `Tu es un assistant médical pédagogique. L'utilisateur te fournit un document médical (compte rendu, ordonnance, résultats d'analyse, lettre de consultation).
-
-Génère un résumé structuré en markdown pour un patient non médecin :
-
-## Ce que dit ce document
-Résumé clair et simple du contenu principal (3-5 phrases, sans jargon).
-
-## Termes médicaux expliqués
-Liste (- **Terme** : explication simple) pour chaque terme technique important.
-
-## Questions à poser à votre médecin
-4 à 6 questions pertinentes que le patient devrait poser.
-
-## Points importants à retenir
-Les 2 à 3 informations essentielles à ne pas oublier.
-
----
-*Ce résumé est informatif et ne remplace pas une consultation médicale.*
-
-Règles : langage clair, jamais d'interprétation clinique, jamais d'avis médical.`;
 
 const MAX_DOC_LENGTH = 8000;
 
@@ -51,14 +33,16 @@ export async function POST(request: Request): Promise<Response> {
   const truncated = documentText.slice(0, MAX_DOC_LENGTH);
 
   try {
+    const [model, systemPrompt] = await Promise.all([
+      getModelForFeature('analyze'),
+      getPromptTemplate('analyze'),
+    ]);
+
     const result = streamText({
-      model: getActiveModel(),
-      system: SYSTEM,
+      model,
+      system: systemPrompt,
       messages: [
-        {
-          role: 'user',
-          content: `Voici le document médical à analyser :\n\n${truncated}`,
-        },
+        { role: 'user', content: `Voici le document médical à analyser :\n\n${truncated}` },
       ],
     });
 

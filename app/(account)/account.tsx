@@ -5,6 +5,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useSession } from '@/auth/AuthProvider';
 import { getSupabaseClient } from '@/db/supabase';
 import { INTENDED_PURPOSE } from '@/compliance/disclosures';
+import { isAdminUserId } from '@/admin/index';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Screen } from '@/ui/Screen';
@@ -52,6 +53,7 @@ export default function AccountScreen() {
   }, [user]);
 
   const isPaid = subscription?.status === 'active' || subscription?.status === 'trialing';
+  const isAdmin = user ? isAdminUserId(user.id) : false;
 
   async function handleSignOut() {
     if (signingOut) return;
@@ -155,6 +157,18 @@ export default function AccountScreen() {
           <Text style={styles.purposeText}>{INTENDED_PURPOSE}</Text>
         </View>
       </View>
+
+      {isAdmin ? (
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>⚙️ Administration</Text>
+          <Text style={styles.sectionText}>
+            Configurer les modèles IA et éditer les prompts système.
+          </Text>
+          <Link href="/(admin)" style={styles.adminLink}>
+            Ouvrir le panel admin IA
+          </Link>
+        </Card>
+      ) : null}
 
       <View style={styles.footer}>
         <Link href="/" style={styles.inlineLink}>
@@ -285,5 +299,17 @@ const styles = StyleSheet.create({
     color: tokens.colors.accent,
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.semibold,
+  },
+  adminLink: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.onAccent,
+    fontWeight: tokens.weight.semibold,
+    fontSize: tokens.type.label.fontSize,
+    backgroundColor: tokens.colors.accentDarker,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm + 2,
+    borderRadius: tokens.radius.md,
+    overflow: 'hidden',
+    alignSelf: 'flex-start',
   },
 });

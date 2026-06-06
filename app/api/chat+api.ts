@@ -37,7 +37,9 @@ import { refuseAndRedirectTool } from '@/ai/skills/refuse_and_redirect';
 import { renderQcmTool } from '@/ai/skills/render_qcm';
 import type { Persona } from '@/ai/prompts/_schema';
 
-export const VALID_PERSONAS: Persona[] = ['public', 'student'];
+// ⚠️  CONVENTION : si tu ajoutes une fonctionnalité IA, enregistre-la dans
+// src/admin/index.ts (AI_FEATURES) et src/ai/providers/featureModel.ts.
+export const VALID_PERSONAS: Persona[] = ['public', 'student', 'professional'];
 
 export function getToolsForPersona(persona: Persona) {
   // Matrice 04_CHATBOT §8 : public = 3 tools ; student ajoute render_qcm.

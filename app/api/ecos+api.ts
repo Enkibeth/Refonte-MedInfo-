@@ -1,10 +1,13 @@
 /**
  * POST /api/ecos — Simulation patient ECOS et évaluation.
- * Deux modes : "simulate" (réponse patient IA) et "evaluate" (évaluation sur grille).
- * Accès réservé aux persona=student.
+ *
+ * ⚠️  CONVENTION : les modèles utilisés (ecos_simulate, ecos_evaluate) sont
+ * configurables depuis le panel admin (app/(admin)/index.tsx).
+ * Si tu ajoutes un mode IA ici, déclare-le dans src/admin/index.ts AI_FEATURES.
  */
 import { streamText, generateText } from 'ai';
-import { getActiveModel } from '@/ai/providers/index';
+import { getModelForFeature } from '@/ai/providers/featureModel';
+import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
 
 interface EcosMessage {
@@ -34,19 +37,22 @@ export async function POST(request: Request): Promise<Response> {
   if (!systemPrompt || typeof systemPrompt !== 'string') {
     return Response.json({ error: 'systemPrompt requis.' }, { status: 400 });
   }
-
   if (systemPrompt.length > 4000) {
     return Response.json({ error: 'systemPrompt trop long.' }, { status: 400 });
   }
 
-  const model = getActiveModel();
-
   if (mode === 'evaluate') {
-    // Évaluation complète — non streamée, retourne JSON
+    const [evalPromptSuffix, model] = await Promise.all([
+      getPromptTemplate('ecos_evaluate'),
+      getModelForFeature('ecos_evaluate'),
+    ]);
+
+    const combinedSystem = `${systemPrompt}\n\n${evalPromptSuffix}`;
+
     try {
       const { text } = await generateText({
         model,
-        system: systemPrompt,
+        system: combinedSystem,
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
       });
       return Response.json({ evaluation: text });
@@ -56,14 +62,14 @@ export async function POST(request: Request): Promise<Response> {
     }
   }
 
-  // Mode simulate — streamed SSE simple (text/event-stream)
+  // Mode simulate — streamed
   try {
+    const model = await getModelForFeature('ecos_simulate');
     const result = streamText({
       model,
       system: systemPrompt,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
     });
-
     return result.toTextStreamResponse();
   } catch (e) {
     console.error('ECOS simulate error:', e);
