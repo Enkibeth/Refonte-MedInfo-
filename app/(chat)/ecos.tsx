@@ -2,6 +2,7 @@
  * ECOS — Examen Clinique Objectif Structuré.
  * Simulation patient–étudiant avec évaluation IA sur grille de correction.
  * Accès réservé aux étudiants en santé (persona student).
+ * Les cas cliniques sont chargés depuis Supabase (table ecos_cases, RLS published).
  */
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -18,6 +19,7 @@ import {
 import { Link } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
+import { getSupabaseClient } from '@/db/supabase';
 import { tokens } from '@/ui/tokens';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 
@@ -25,8 +27,10 @@ import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 
 interface EcosCase {
   id: string;
+  slug: string;
   titre: string;
   specialite: string;
+  level: string;
   duree: number;
   consigneCandidat: string;
   briefPatient: string;
@@ -38,154 +42,34 @@ interface Message {
   content: string;
 }
 
-// ── Cas cliniques intégrés ─────────────────────────────────────────────────
+// ── Chargement depuis Supabase ──────────────────────────────────────────────
 
-const ECOS_CASES: EcosCase[] = [
-  {
-    id: 'douleur-thoracique',
-    titre: 'Douleur thoracique aiguë',
-    specialite: 'Cardiologie · Urgences',
-    duree: 10,
-    consigneCandidat:
-      'M. Bernard, 58 ans, consulte aux urgences pour une douleur thoracique depuis 2 heures. Réalisez l\'interrogatoire et proposez votre démarche diagnostique.',
-    briefPatient: `Tu joues le rôle du patient M. Bernard, 58 ans, cadre stressé.
-SYMPTÔMES : douleur thoracique rétrosternale en étau depuis 2h, irradiant dans le bras gauche et la mâchoire, 8/10. Sueurs, nausées. Pas de dyspnée au repos.
-ATCD : HTA traitée (amlodipine), dyslipidémie (statine), tabagisme actif 30 PA, père décédé d'un IDM à 62 ans.
-COMPORTEMENT : tu es anxieux, tu penses à une crise cardiaque. Tu réponds aux questions précisément mais n'offres pas spontanément les infos. Tu nies la consommation d'alcool.
-Ne révèle pas le diagnostic. Réponds naturellement comme un patient, sans termes médicaux.`,
-    grilleCorrection: `## Grille d'évaluation — Douleur thoracique
+async function fetchEcosCases(): Promise<EcosCase[]> {
+  try {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+      .from('ecos_cases')
+      .select('id, slug, titre, specialite, level, duree, consigne_candidat, brief_patient, grille_correction')
+      .eq('is_published', true)
+      .order('specialite');
 
-**Interrogatoire (6 pts)**
-- Caractéristiques de la douleur : siège, type, irradiations, intensité /2
-- Facteurs déclenchants / calmants /1
-- Signes associés : sueurs, nausées, dyspnée /1
-- ATCD cardiovasculaires personnels et familiaux /1
-- Facteurs de risque : tabac, HTA, dyslipidémie /1
+    if (error || !data) return [];
 
-**Diagnostic (4 pts)**
-- Évoque SCA en premier /2
-- Diagnostics différentiels (EP, dissection aortique) /1
-- Urgence reconnue, appel SAMU /1
-
-**Examens complémentaires (3 pts)**
-- ECG en urgence /1
-- Troponines (×2 à 3h) /1
-- Bilan biologique (NFS, ionogramme, bilan de coagulation) /1
-
-**Communication (3 pts)**
-- Empathie, ton rassurant /1
-- Explication claire au patient /1
-- Appel de l'équipe médicale / organisation /1`,
-  },
-  {
-    id: 'cephalees-febriles',
-    titre: 'Céphalées aiguës fébriles',
-    specialite: 'Neurologie · Infectiologie',
-    duree: 10,
-    consigneCandidat:
-      'Mme Léa, 24 ans, étudiante, consulte pour des céphalées intenses depuis 24h avec de la fièvre. Évaluez la situation et orientez votre diagnostic.',
-    briefPatient: `Tu joues le rôle de Léa, 24 ans, étudiante en droit, fiancée, sans ATCD.
-SYMPTÔMES : céphalée diffuse très intense (10/10) apparue brutalement hier soir, fièvre à 39°C, photophobie, nausées, nuque raide. Ce matin tu as remarqué de petites taches rouges sur les jambes.
-COMPORTEMENT : tu es effrayée, la lumière te fait mal (grimace si on te parle de lumière), tu parles doucement car la voix résonne dans ta tête.
-ENTOURAGE : ta coloc a eu une grippe la semaine passée mais elle va bien.
-Ne révèle pas le diagnostic. Réponds naturellement, sans termes médicaux. Montre ta détresse.`,
-    grilleCorrection: `## Grille d'évaluation — Céphalées fébriles
-
-**Interrogatoire (5 pts)**
-- Caractère brutal du début (en coup de tonnerre ?) /1
-- Fièvre, frissons /1
-- Signes méningés : photophobie, phonophobie, raideur de nuque /1
-- Purpura (taches cutanées) /1
-- Contage récent, vie en collectivité /1
-
-**Diagnostic (4 pts)**
-- Méningite bactérienne évoquée en premier /2
-- Purpura fulminans reconnu comme urgence absolue /1
-- Diagnostics différentiels (méningite virale, HSA) /1
-
-**Prise en charge (4 pts)**
-- Appel du SAMU 15 immédiat /2
-- Ceftriaxone IV sans attendre (si purpura) /1
-- Isolement / protection /1
-
-**Communication (3 pts)**
-- Rassure sans minimiser la gravité /1
-- Explique la démarche /1
-- Prévient l'entourage pour antibioprophylaxie /1`,
-  },
-  {
-    id: 'dyspnee-aigue',
-    titre: 'Dyspnée aiguë',
-    specialite: 'Cardiologie · Pneumologie',
-    duree: 10,
-    consigneCandidat:
-      'M. Dumont, 72 ans, est amené par son épouse pour une dyspnée progressive depuis 6h. Évaluez et prenez en charge.',
-    briefPatient: `Tu joues le rôle de M. Dumont, 72 ans, retraité, avec son épouse présente.
-SYMPTÔMES : tu es très essoufflé (tu parles par petites phrases), tu as du mal à t'allonger (orthopnée 3 oreillers), tu toussotes une mousse rosée. Œdème des chevilles depuis 3 jours.
-ATCD : insuffisance cardiaque (FE 35%), fibrillation auriculaire, HTA. Médicaments : furosémide, bisoprolol, ramipril, apixaban.
-AVEU IMPORTANT : tu as arrêté le furosémide il y a 5 jours car tu avais "trop envie d'uriner". Tu le diras seulement si on te pose la question sur tes médicaments.
-COMPORTEMENT : anxieux, tu transpires, tu restes assis, tu t'exprimes avec peine.`,
-    grilleCorrection: `## Grille d'évaluation — Dyspnée aiguë
-
-**Interrogatoire (5 pts)**
-- Délai et mode d'installation /1
-- Orthopnée, DPN /1
-- Toux, expectoration rosée /1
-- ATCD : IC, FA, traitements /1
-- Observance médicamenteuse (arrêt furosémide) /1
-
-**Diagnostic (3 pts)**
-- Œdème aigu pulmonaire sur IC décompensée /2
-- Facteur déclenchant identifié (non-observance) /1
-
-**Prise en charge (4 pts)**
-- Position demi-assise, O2 /1
-- Diurétiques IV (furosémide) /1
-- Monitorage (SaO2, TA, ECG) /1
-- Appel réanimation si aggravation /1
-
-**Communication (4 pts)**
-- Réassurance du patient et de l'épouse /1
-- Explication simple de la situation /1
-- Importance de l'observance expliquée /1
-- Pas de jargon médical /1`,
-  },
-  {
-    id: 'douleur-abdominale',
-    titre: 'Douleur abdominale aiguë',
-    specialite: 'Chirurgie · Gastroentérologie',
-    duree: 10,
-    consigneCandidat:
-      'Mme Sophie, 32 ans, consulte pour une douleur abdominale aiguë en fosse iliaque droite. Réalisez l\'interrogatoire et proposez une démarche.',
-    briefPatient: `Tu joues le rôle de Sophie, 32 ans, secrétaire, enceinte de 8 semaines (test positif il y a 3 semaines, grossesse non suivie).
-SYMPTÔMES : douleur en FID depuis 12h, de plus en plus intense (7/10), à bascule. Nausées. Pas de fièvre (37,2°C). Dernières règles il y a 8 semaines. Saignements vaginaux légers depuis ce matin.
-COMPORTEMENT : tu révèles la grossesse seulement si on te demande directement si tu peux être enceinte. Tu as peur. Tu n'as pas encore dit à ton compagnon.
-POINT CLÉ : tu ne sais pas si c'est une grossesse intra-utérine, tu as juste fait un test urinaire.`,
-    grilleCorrection: `## Grille d'évaluation — Douleur abdominale
-
-**Interrogatoire (6 pts)**
-- Caractéristiques de la douleur /1
-- Signes digestifs associés /1
-- Recherche active de grossesse (INTERROGATOIRE SYSTÉMATIQUE) /2
-- Méno-métrorragies /1
-- ATCD gynécologiques (GEU, salpingite, DIU, chirurgie) /1
-
-**Diagnostic (4 pts)**
-- GEU évoquée en priorité /2
-- Appendicite en diagnostic différentiel /1
-- Conscience de l'urgence /1
-
-**Examens (3 pts)**
-- β-hCG quantitatif /1
-- Échographie pelvienne en urgence /1
-- NFS, groupe sanguin, rhésus /1
-
-**Communication (3 pts)**
-- Annonce bienveillante de la situation /1
-- Urgence expliquée sans créer de panique /1
-- Confidentialité respectée /1`,
-  },
-];
+    return data.map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      titre: row.titre,
+      specialite: row.specialite,
+      level: row.level,
+      duree: row.duree,
+      consigneCandidat: row.consigne_candidat,
+      briefPatient: row.brief_patient,
+      grilleCorrection: row.grille_correction,
+    }));
+  } catch {
+    return [];
+  }
+}
 
 // ── Composants ─────────────────────────────────────────────────────────────
 
@@ -194,8 +78,13 @@ function CaseCard({ cas, onSelect }: { cas: EcosCase; onSelect: () => void }) {
     <TouchableOpacity style={caseStyles.card} onPress={onSelect} accessibilityRole="button">
       <View style={caseStyles.cardHeader}>
         <Text style={caseStyles.cardTitle}>{cas.titre}</Text>
-        <View style={caseStyles.badge}>
-          <Text style={caseStyles.badgeText}>{cas.duree} min</Text>
+        <View style={caseStyles.badgeRow}>
+          <View style={caseStyles.badge}>
+            <Text style={caseStyles.badgeText}>{cas.duree} min</Text>
+          </View>
+          <View style={[caseStyles.badge, caseStyles.levelBadge]}>
+            <Text style={caseStyles.badgeText}>{cas.level}</Text>
+          </View>
         </View>
       </View>
       <Text style={caseStyles.cardSpecialite}>{cas.specialite}</Text>
@@ -253,7 +142,16 @@ export default function EcosScreen() {
   const [aiLoading, setAiLoading] = useState(false);
   const [evaluation, setEvaluation] = useState('');
   const [evalLoading, setEvalLoading] = useState(false);
+  const [cases, setCases] = useState<EcosCase[]>([]);
+  const [casesLoading, setCasesLoading] = useState(true);
   const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    fetchEcosCases().then((data) => {
+      setCases(data);
+      setCasesLoading(false);
+    });
+  }, []);
 
   if (persona !== 'student') {
     return (
@@ -404,9 +302,20 @@ Sois précis, bienveillant et pédagogique.`;
             une évaluation sur grille.
           </Text>
         </View>
-        {ECOS_CASES.map((cas) => (
-          <CaseCard key={cas.id} cas={cas} onSelect={() => selectCase(cas)} />
-        ))}
+        {casesLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator color={tokens.colors.accent} size="large" />
+            <Text style={styles.loadingText}>Chargement des cas cliniques…</Text>
+          </View>
+        ) : cases.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Aucun cas disponible pour le moment.</Text>
+          </View>
+        ) : (
+          cases.map((cas) => (
+            <CaseCard key={cas.id} cas={cas} onSelect={() => selectCase(cas)} />
+          ))
+        )}
       </ScrollView>
     );
   }
@@ -573,6 +482,21 @@ Sois précis, bienveillant et pédagogique.`;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: tokens.colors.background },
+
+  // Loading / empty states
+  loadingContainer: { alignItems: 'center', gap: tokens.space.lg, padding: tokens.space['2xl'] },
+  loadingText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.label.fontSize,
+  },
+  emptyContainer: { alignItems: 'center', padding: tokens.space.xl },
+  emptyText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.body.fontSize,
+    textAlign: 'center',
+  },
 
   // Selection
   selectionContent: { padding: tokens.space.lg, gap: tokens.space.md },
@@ -895,14 +819,14 @@ const caseStyles = StyleSheet.create({
     gap: tokens.space.xs,
     ...tokens.elevation.sm,
   },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: tokens.space.sm },
+  badgeRow: { flexDirection: 'row', gap: tokens.space.xs, flexShrink: 0 },
   cardTitle: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
     fontWeight: tokens.weight.bold,
     flex: 1,
-    marginRight: tokens.space.sm,
   },
   badge: {
     borderRadius: tokens.radius.pill,
@@ -911,6 +835,10 @@ const caseStyles = StyleSheet.create({
     borderColor: tokens.colors.accentSurfaceStrong,
     paddingHorizontal: tokens.space.sm,
     paddingVertical: 2,
+  },
+  levelBadge: {
+    backgroundColor: tokens.colors.surfaceAlt,
+    borderColor: tokens.colors.border,
   },
   badgeText: {
     fontFamily: tokens.font.sans,
