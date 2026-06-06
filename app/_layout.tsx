@@ -7,11 +7,12 @@ import { AuthProvider, useSession } from '@/auth/AuthProvider';
 import { resolvePersonaRoute } from '@/ai/routing/persona';
 
 /**
- * Garde de navigation par persona (02_ARCHITECTURE §4).
+ * Garde de navigation par persona (02_ARCHITECTURE §4 ; ADR-0011).
  * - non authentifié → groupe (auth)
- * - public / student → groupe (chat)
- * - professional → reporté (ADR-0006) : maintenu hors (chat), redirigé vers (account),
- *   aucune surface UI pro servie.
+ * - public / student / professional → groupe (chat)
+ * La persona pro est active (sélection + vérif RPPS ANS, ADR-0011) ; seules les features
+ * CLINIQUES pro (module rapport) restent gelées par ADR-0006, et la safe-box médicale
+ * (classifieur + garde-fous de sortie) s'applique identiquement à toutes les personas.
  */
 function useProtectedRoute() {
   const { session, persona, loading, passwordRecovery } = useSession();

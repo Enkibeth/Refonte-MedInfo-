@@ -21,9 +21,49 @@ import { DefaultChatTransport, isTextUIPart, isToolUIPart } from 'ai';
 import type { UIMessage, UIMessagePart, UIDataTypes, UITools } from 'ai';
 
 import { useSession } from '@/auth/AuthProvider';
+import type { Persona } from '@/ai/prompts/_schema';
 import { tokens } from '@/ui/tokens';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
+import { MenuDropdown } from '@/ui/MenuDropdown';
 import { collectLatestCitations, type Citation } from '@/ai/ui/chatSources';
+
+// Modes de chat sélectionnables. Le grand public reste sur le mode « public ».
+// Étudiant et pro santé (vérifiés) peuvent basculer entre les trois (la safe-box médicale
+// — classifieur + garde-fous de sortie — s'applique identiquement à chaque mode).
+const CHAT_MODES: { persona: Persona; label: string; emoji: string }[] = [
+  { persona: 'public', label: 'Grand public', emoji: '🩺' },
+  { persona: 'student', label: 'Étudiant', emoji: '🎓' },
+  { persona: 'professional', label: 'Pro santé', emoji: '⚕️' },
+];
+
+function ModeSwitcher({
+  active,
+  onChange,
+}: {
+  active: Persona;
+  onChange: (p: Persona) => void;
+}) {
+  return (
+    <View style={styles.switcher} accessibilityRole="tablist">
+      {CHAT_MODES.map((mode) => {
+        const selected = mode.persona === active;
+        return (
+          <TouchableOpacity
+            key={mode.persona}
+            accessibilityRole="tab"
+            accessibilityState={{ selected }}
+            accessibilityLabel={`Mode ${mode.label}`}
+            style={[styles.switcherItem, selected && styles.switcherItemActive]}
+            onPress={() => onChange(mode.persona)}
+          >
+            <Text style={styles.switcherEmoji}>{mode.emoji}</Text>
+            <Text style={[styles.switcherText, selected && styles.switcherTextActive]}>{mode.label}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
 
 // ── Types tool-call ────────────────────────────────────────────────────────
 
@@ -234,16 +274,21 @@ export default function ChatScreen() {
   // Persona issue de l'AuthProvider (source profiles/RLS, étape 3). Fallback 'public'
   // tant que la session/le profil charge ou pour un visiteur non authentifié.
   const { persona } = useSession();
+  const accountPersona: Persona = persona ?? 'public';
+  // Seuls étudiant et pro santé peuvent changer de mode ; le grand public reste en 'public'.
+  const canSwitch = accountPersona === 'student' || accountPersona === 'professional';
+  const [override, setOverride] = useState<Persona | null>(null);
+  const activeMode: Persona = canSwitch ? override ?? accountPersona : 'public';
+
   const [input, setInput] = useState('');
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
 
   const { messages, sendMessage, status, error } = useChat({
-    transport: new DefaultChatTransport({
-      api: '/api/chat',
-      body: { persona: persona ?? 'public' },
-    }),
+    transport: new DefaultChatTransport({ api: '/api/chat' }),
   });
+
+  const activeModeLabel = CHAT_MODES.find((m) => m.persona === activeMode)?.label ?? 'Grand public';
 
   const latestCitations = useMemo(() => collectLatestCitations(messages), [messages]);
   const isLoading = status === 'streaming' || status === 'submitted';
@@ -253,11 +298,12 @@ export default function ChatScreen() {
     const text = input.trim();
     if (!text || isLoading) return;
     setInput('');
-    sendMessage({ text });
+    // Le mode actif est transmis par requête (le serveur applique la safe-box quel que soit le mode).
+    sendMessage({ text }, { body: { persona: activeMode } });
   };
 
   const handleFollowup = (suggestion: string) => {
-    sendMessage({ text: suggestion });
+    sendMessage({ text: suggestion }, { body: { persona: activeMode } });
   };
 
   return (
@@ -267,8 +313,11 @@ export default function ChatScreen() {
       keyboardVerticalOffset={80}
     >
       <View style={styles.chatHeader}>
-        <View>
-          <Text style={styles.chatTitle}>{persona === 'student' ? 'Chat étudiant' : 'Chat santé'}</Text>
+        <MenuDropdown />
+        <View style={styles.chatHeaderTitle}>
+          <Text style={styles.chatTitle} numberOfLines={1}>
+            {canSwitch ? `Chat · ${activeModeLabel}` : 'Chat santé'}
+          </Text>
           <Text style={styles.chatSubtitle}>Information générale et sourcée</Text>
         </View>
         <TouchableOpacity
@@ -282,6 +331,9 @@ export default function ChatScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Switcher de mode : visible uniquement pour les comptes étudiant / pro santé. */}
+      {canSwitch ? <ModeSwitcher active={activeMode} onChange={setOverride} /> : null}
 
       {sourcesOpen && hasSources ? (
         <View style={styles.sourcesPane}>
@@ -365,7 +417,41 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.surface,
     borderBottomWidth: 1,
     borderColor: tokens.colors.border,
+    gap: tokens.space.md,
   },
+  chatHeaderTitle: { flex: 1, minWidth: 0 },
+  switcher: {
+    flexDirection: 'row',
+    gap: tokens.space.xs,
+    padding: tokens.space.xs,
+    backgroundColor: tokens.colors.surfaceAlt,
+    borderBottomWidth: 1,
+    borderColor: tokens.colors.border,
+  },
+  switcherItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: tokens.space.xs,
+    paddingVertical: tokens.space.sm,
+    borderRadius: tokens.radius.md,
+    backgroundColor: 'transparent',
+  },
+  switcherItemActive: {
+    backgroundColor: tokens.colors.surface,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    ...tokens.elevation.sm,
+  },
+  switcherEmoji: { fontSize: 15 },
+  switcherText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.medium,
+  },
+  switcherTextActive: { color: tokens.colors.accentDeep, fontWeight: tokens.weight.semibold },
   chatTitle: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,

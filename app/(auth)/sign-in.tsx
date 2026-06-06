@@ -6,7 +6,7 @@ import { useSession, toFriendlyAuthError, type OAuthProvider } from '@/auth/Auth
 import { getAiDisclosure } from '@/compliance/disclosures';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
-import { GoogleIcon, AppleIcon } from '@/ui/icons';
+import { GoogleIcon } from '@/ui/icons';
 import { Logo } from '@/ui/Logo';
 import { Screen } from '@/ui/Screen';
 import { tokens } from '@/ui/tokens';
@@ -141,9 +141,9 @@ export default function SignInScreen() {
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.body}>
           {mode === 'signin'
-            ? 'Connecte-toi avec ton email, ou via Google / Apple.'
+            ? 'Connecte-toi avec ton email, ou via Google.'
             : mode === 'signup'
-              ? 'Choisis un email et un mot de passe (6 caractères min.), ou utilise Google / Apple.'
+              ? 'Choisis un email et un mot de passe (6 caractères min.), ou utilise Google.'
               : 'Saisis ton email : nous t’enverrons un lien pour définir un nouveau mot de passe.'}
         </Text>
 
@@ -159,7 +159,7 @@ export default function SignInScreen() {
 
         {mode !== 'forgot' ? (
           <>
-            {/* OAuth */}
+            {/* OAuth — Apple retiré tant que le provider n'est pas activé côté Supabase. */}
             <View style={styles.oauthRow}>
               <Button
                 label="Continuer avec Google"
@@ -167,13 +167,6 @@ export default function SignInScreen() {
                 leftIcon={<GoogleIcon size={18} />}
                 disabled={busy || loading}
                 onPress={() => handleOAuth('google')}
-              />
-              <Button
-                label="Continuer avec Apple"
-                variant="secondary"
-                leftIcon={<AppleIcon size={18} />}
-                disabled={busy || loading}
-                onPress={() => handleOAuth('apple')}
               />
             </View>
 

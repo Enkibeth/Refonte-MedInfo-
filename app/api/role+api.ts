@@ -10,6 +10,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 import { isAcademicEmail, isValidRppsFormat } from '@/auth/roles';
+import { lookupRpps } from '@/auth/annuaireSante';
 
 function json(payload: unknown, status: number): Response {
   return new Response(JSON.stringify(payload), {
@@ -75,9 +76,22 @@ export async function POST(request: Request): Promise<Response> {
     if (!devBypass && !isValidRppsFormat(rpps)) {
       return json({ error: 'Numéro RPPS invalide (11 chiffres attendus).' }, 422);
     }
-    // Lookup ANS Annuaire Santé (FHIR) — ADR-0011.
-    // Sans clé : accepté en dev (bypass) ou avec format RPPS valide.
-    // En production avec ANNUAIRE_SANTE_API_KEY : TODO appel FHIR réel.
+    // Lookup ANS Annuaire Santé (FHIR) — ADR-0007/0011, 06_BILLING §10.2.
+    // - bypass dev : accepté sans vérif ;
+    // - clé ANNUAIRE_SANTE_API_KEY présente : vérification réelle (RPPS doit exister) ;
+    // - sans clé : repli sur la seule validation de format (comportement historique).
+    const annuaireKey = process.env.ANNUAIRE_SANTE_API_KEY;
+    if (!devBypass && annuaireKey) {
+      try {
+        const { found } = await lookupRpps(rpps, { apiKey: annuaireKey });
+        if (!found) {
+          return json({ error: "Numéro RPPS introuvable dans l'Annuaire Santé." }, 422);
+        }
+      } catch {
+        // Strict sur le pro (06_BILLING §10.4) : en cas d'indisponibilité ANS, on ne promeut pas.
+        return json({ error: 'Vérification RPPS momentanément indisponible. Réessaie plus tard.' }, 502);
+      }
+    }
     status = 'verified';
     method = devBypass ? 'none' : 'rpps';
   }

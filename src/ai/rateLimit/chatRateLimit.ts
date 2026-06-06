@@ -12,8 +12,9 @@ import { resolveEntitlement } from '@/billing/entitlements';
 const DAILY_LIMITS: Record<Persona, number> = {
   public: 10,
   student: 20,
-  // Pro post-MVP : non activé ; conserver une valeur technique non utilisée par la route MVP.
-  professional: 0,
+  // Pro activé (vérif RPPS ANS, ADR-0011) : quota gratuit aligné sur l'étudiant.
+  // La safe-box médicale (3 couches) s'applique identiquement — aucun triage/diagnostic.
+  professional: 20,
 };
 
 const IP_FALLBACK = 'unknown-ip';

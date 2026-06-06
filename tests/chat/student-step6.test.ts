@@ -24,12 +24,20 @@ describe('étape 6 — prompt student.v2', () => {
 });
 
 describe('étape 6 — matrice tools /api/chat', () => {
-  it('accepte public + student, sans activer professional dans la route MVP', () => {
-    expect(VALID_PERSONAS).toEqual(['public', 'student']);
+  it('accepte public + student + professional (pro activé, ADR-0011)', () => {
+    expect(VALID_PERSONAS).toEqual(['public', 'student', 'professional']);
   });
 
   it('public ne reçoit jamais render_qcm', () => {
     expect(Object.keys(getToolsForPersona('public'))).toEqual([
+      'propose_followups',
+      'show_sources',
+      'refuse_and_redirect',
+    ]);
+  });
+
+  it('professional reçoit uniquement les outils communs (pas de render_qcm)', () => {
+    expect(Object.keys(getToolsForPersona('professional'))).toEqual([
       'propose_followups',
       'show_sources',
       'refuse_and_redirect',
