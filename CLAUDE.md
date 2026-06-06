@@ -94,6 +94,7 @@ const [model, systemPrompt] = await Promise.all([
 | `0010_db_hardening.sql` | `search_path` figé, `(select auth.uid())` perf fix |
 | `0011_ai_model_config.sql` | Table `ai_model_config` + seed 6 features (service_role only) |
 | `0012_ai_prompts.sql` | Table `ai_prompts` pour overrides admin (service_role only) |
+| `0013_ecos_cases.sql` | Table `ecos_cases` + seed 16 cas (SELECT public sur is_published) |
 
 ## Panel admin
 
