@@ -21,7 +21,7 @@ import {
   type UIMessageChunk,
 } from 'ai';
 
-import { getActiveModel, getActiveModelId } from '@/ai/providers/index';
+import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 
 import { extractUserTexts, screenConversation } from '@/ai/orchestrator';
 import { getStage2Classifier } from '@/ai/classifier/llmStage2';
@@ -168,11 +168,19 @@ export async function POST(request: Request): Promise<Response> {
     return createUIMessageStreamResponse({ stream: ragRefusalStream });
   }
 
+  // Modèle + réglages admin (feature key "chat") : température, raisonnement,
+  // verbosité et recherche internet (cf src/ai/providers/featureRuntime.ts).
+  // Le web_search est OFF par défaut : la garantie « cite-or-refuse » du RAG
+  // HAS/ANSM reste prioritaire tant qu'un admin ne l'active pas explicitement.
+  const runtime = await getRuntimeForFeature('chat');
+  const { tools: webTools, ...callOptions } = runtime.options;
+
   const result = streamText({
-    model: getActiveModel(),
+    model: runtime.model,
     system: `${prompt.template}${buildRagSystemSection(rag)}`,
     messages: modelMessages,
-    tools: getToolsForPersona(persona),
+    tools: { ...getToolsForPersona(persona), ...(webTools ?? {}) },
+    ...callOptions,
   });
 
   const stream = createUIMessageStream({
@@ -201,7 +209,7 @@ export async function POST(request: Request): Promise<Response> {
 
       await logInteraction({
         persona,
-        model_used: getActiveModelId(),
+        model_used: runtime.modelId,
         tokens_in: usage?.inputTokens,
         tokens_out: usage?.outputTokens,
         latency_ms: Date.now() - startMs,

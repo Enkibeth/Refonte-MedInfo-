@@ -48,6 +48,7 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 | `0012_ai_prompts.sql` | Overrides admin des system prompts (key/template/scope/version) | Non | Service role only (RLS sans policy client) | Fallback PROMPT_DEFAULTS ; upsert au save |
 | `0013_ecos_cases.sql` | Cas ECOS fictifs versionnés | Non si cas synthétiques uniquement | Lecture selon entitlement étudiant | Ne jamais importer de cas patient réel |
 | `0014_feature_quotas.sql` | Quotas par feature et compteurs associés | Non | Service role only | Remplace la logique « quota chat unique » par une matrice extensible |
+| `0015_ai_model_params.sql` | Réglages de génération par feature (temperature, reasoning_effort, verbosity, web_search) sur `ai_model_config` | Non | Service role only (hérite du verrou 0011) | Lus par featureModel.ts (`getFeatureSettings`), appliqués par featureRuntime.ts ; 0013/0014 réservés |
 
 > Si une migration ci-dessus n'existe pas encore dans `supabase/migrations/`, la documenter comme décision attendue et ne pas modifier le schéma sans tests RLS correspondants.
 
@@ -136,6 +137,22 @@ const [model, systemPrompt] = await Promise.all([
 | `src/ai/prompts/promptStore.ts` | Chargement des prompts (Supabase override > fichiers TS) |
 | `app/(admin)/index.tsx` | Panel admin UI (modèles + prompts) |
 | `app/api/admin/config+api.ts` | API admin (lecture/écriture config) |
+
+| `src/ai/providers/featureRuntime.ts` | Construit les options d'appel LLM par feature (température, raisonnement, verbosité, web search) → `getRuntimeForFeature()` |
+
+Tables Supabase (service role only, RLS sans policy) :
+- `ai_model_config` — migration `0011_ai_model_config.sql` (seed des 6 features ; le POST admin fait un UPDATE, les lignes doivent préexister).
+- `ai_prompts` — migration `0012_ai_prompts.sql` (overrides des prompts ; table vide, fallback sur `PROMPT_DEFAULTS`).
+- Réglages de génération par feature — migration `0015_ai_model_params.sql` (colonnes `temperature`, `reasoning_effort`, `verbosity`, `web_search` sur `ai_model_config`).
+
+### Réglages par fonctionnalité (panel admin → onglet Modèles)
+Chaque feature expose, **selon les capacités du modèle choisi** (`AVAILABLE_MODELS[].capabilities` dans `featureModel.ts`) :
+- **Raisonnement** (`reasoning_effort` : minimal/low/medium/high) — OpenAI `reasoningEffort` ; Anthropic → budget *thinking*.
+- **Verbosité** (`verbosity` : low/medium/high) — OpenAI `textVerbosity` (gpt-5.x).
+- **Température** (0–2).
+- **Recherche internet** (`web_search`, OFF par défaut) — outil web du provider (OpenAI / Anthropic). Pour le chat, le RAG *cite-or-refuse* reste prioritaire ; n'activer qu'en connaissance de cause.
+
+Les réglages sont appliqués au call LLM par `getRuntimeForFeature()` dans toutes les routes IA.
 
 ## Panel admin
 

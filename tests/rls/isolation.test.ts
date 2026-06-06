@@ -126,6 +126,55 @@ describe('ai_interactions — service_role only (jamais accessible au client)', 
 });
 
 
+describe('ai_model_config — service_role only (config admin, jamais exposée au client)', () => {
+  it('le seed a bien créé les 6 lignes de fonctionnalités', async () => {
+    const { rows } = await db.asService((q) => q('SELECT key FROM ai_model_config'));
+    expect(rows).toHaveLength(6);
+  });
+
+  it('un client authentifié NE PEUT PAS lire ai_model_config', async () => {
+    await expect(
+      db.asUser(USER_A, (q) => q('SELECT * FROM ai_model_config')),
+    ).rejects.toThrow();
+  });
+
+  it('un client authentifié NE PEUT PAS modifier ai_model_config', async () => {
+    await expect(
+      db.asUser(USER_A, (q) => q("UPDATE ai_model_config SET model_id = 'hack' WHERE key = 'chat'")),
+    ).rejects.toThrow();
+  });
+
+  it('le service_role PEUT mettre à jour la config (modèle + réglages)', async () => {
+    const { rowCount } = await db.asService((q) =>
+      q(
+        "UPDATE ai_model_config SET model_id = 'gpt-5.5', provider = 'openai', reasoning_effort = 'high', web_search = true WHERE key = 'chat'",
+      ),
+    );
+    expect(rowCount).toBe(1);
+  });
+});
+
+describe('ai_prompts — service_role only (overrides admin, jamais exposés au client)', () => {
+  it('un client authentifié NE PEUT PAS lire ai_prompts', async () => {
+    await expect(db.asUser(USER_A, (q) => q('SELECT * FROM ai_prompts'))).rejects.toThrow();
+  });
+
+  it('un client authentifié NE PEUT PAS écrire dans ai_prompts', async () => {
+    await expect(
+      db.asUser(USER_A, (q) =>
+        q("INSERT INTO ai_prompts (key, label, template, scope) VALUES ('chat', 'x', 'y', 'z')"),
+      ),
+    ).rejects.toThrow();
+  });
+
+  it('le service_role PEUT upserter un override de prompt', async () => {
+    const { rowCount } = await db.asService((q) =>
+      q("INSERT INTO ai_prompts (key, label, template, scope) VALUES ('analyze', 'Analyse', 'override', 'Outils')"),
+    );
+    expect(rowCount).toBe(1);
+  });
+});
+
 describe('usage_counters — service_role only + isolation compteur', () => {
   it('le service_role PEUT incrémenter un compteur journalier user/persona sans donnée santé', async () => {
     const { rows } = await db.asService((q) =>

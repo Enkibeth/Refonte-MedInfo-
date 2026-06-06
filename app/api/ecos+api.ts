@@ -6,7 +6,7 @@
  * Si tu ajoutes un mode IA ici, déclare-le dans src/admin/index.ts AI_FEATURES.
  */
 import { streamText, generateText } from 'ai';
-import { getModelForFeature } from '@/ai/providers/featureModel';
+import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
 
@@ -42,18 +42,19 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   if (mode === 'evaluate') {
-    const [evalPromptSuffix, model] = await Promise.all([
+    const [evalPromptSuffix, runtime] = await Promise.all([
       getPromptTemplate('ecos_evaluate'),
-      getModelForFeature('ecos_evaluate'),
+      getRuntimeForFeature('ecos_evaluate'),
     ]);
 
     const combinedSystem = `${systemPrompt}\n\n${evalPromptSuffix}`;
 
     try {
       const { text } = await generateText({
-        model,
+        model: runtime.model,
         system: combinedSystem,
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
+        ...runtime.options,
       });
       return Response.json({ evaluation: text });
     } catch (e) {
@@ -64,11 +65,12 @@ export async function POST(request: Request): Promise<Response> {
 
   // Mode simulate — streamed
   try {
-    const model = await getModelForFeature('ecos_simulate');
+    const runtime = await getRuntimeForFeature('ecos_simulate');
     const result = streamText({
-      model,
+      model: runtime.model,
       system: systemPrompt,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
+      ...runtime.options,
     });
     return result.toTextStreamResponse();
   } catch (e) {

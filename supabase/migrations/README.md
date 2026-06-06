@@ -18,6 +18,7 @@ médical individualisé ni devenir un historique patient.
 - `0010_db_hardening.sql` — `search_path` figé sur fonctions et optimisation policies `profiles`.
 - `0011_ai_model_config.sql` — config admin du modèle par feature IA (`key, model_id, provider, label`). Service role only, RLS sans policy client. **Seed des 6 features** (le POST admin fait un UPDATE, les lignes doivent préexister). Lue par `featureModel.ts` + `app/api/admin/config+api.ts`.
 - `0012_ai_prompts.sql` — overrides admin des system prompts (`key, label, template, scope, version`). Service role only, RLS sans policy client. Pas de seed (fallback `PROMPT_DEFAULTS`, upsert au save). Lue par `promptStore.ts` + panel admin.
+- `0015_ai_model_params.sql` — réglages de génération par feature (`temperature`, `reasoning_effort`, `verbosity`, `web_search`) ajoutés sur `ai_model_config`. Service role only (hérite du verrou 0011). Lus par `featureModel.ts` (`getFeatureSettings`) et appliqués au call LLM par `featureRuntime.ts`. *(Numéroté 0015 : 0013/0014 sont réservés ci-dessous.)*
 
 ## Migrations structurantes documentées pour la suite
 
