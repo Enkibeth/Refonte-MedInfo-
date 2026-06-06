@@ -22,6 +22,7 @@ import type { UIMessage, UIMessagePart, UIDataTypes, UITools } from 'ai';
 
 import { useSession } from '@/auth/AuthProvider';
 import { tokens } from '@/ui/tokens';
+import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { collectLatestCitations, type Citation } from '@/ai/ui/chatSources';
 
 // ── Types tool-call ────────────────────────────────────────────────────────
@@ -213,7 +214,11 @@ function MessageBubble({
   return (
     <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAssistant]}>
       {textContent ? (
-        <Text style={isUser ? styles.textUser : styles.textAssistant}>{textContent}</Text>
+        isUser ? (
+          <Text style={styles.textUser}>{textContent}</Text>
+        ) : (
+          <MarkdownRenderer text={textContent} />
+        )
       ) : null}
 
       {parts.map((p, i) => (
