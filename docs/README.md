@@ -19,7 +19,7 @@ Base documentaire du projet MedInfo AI v4. **À lire avant toute contribution** 
 | `07_CLASSIFIER.md` | Classifieur d'intention (couche 1 safe-box) — composant critique |
 | `08_RAG.md` | Pipeline RAG, qualité réponses, corpus FR, citation grounding |
 | `09_DEPLOYMENT.md` | Runbook Vercel + Supabase dédié, variables, smoke-test |
-| `DECISIONS/` | ADRs (1 fichier = 1 décision) — 8 décisions actées |
+| `DECISIONS/` | ADRs (1 fichier = 1 décision) — 17 décisions actées |
 
 ## Règle pour les agents IA
 Toute PR passe 5 gates CI (`03_SECURITY §1`) : `compliance-grep`, `refusal-regression`, `rls-isolation`, `prompt-contract`, `rag-license`. Échec = merge bloqué. La conformité est **testée, pas déclarée**.
@@ -38,3 +38,12 @@ Tests de refus et gates écrits **avant** les features.
 | `0006-report-module-pro.md` | Report module Pro | Accepted |
 | `0007-verification-rpps-annuaire-sante.md` | Vérification RPPS/Annuaire Santé post-MVP | Accepted |
 | `0008-refus-canonique-et-pro-post-mvp.md` | Refus canonique + Pro post-MVP | Accepted |
+| `0009-rls-test-harness-postgres-ephemere.md` | Tests RLS sur Postgres éphémère | Accepted |
+| `0010-auth-password-oauth.md` | Auth password/OAuth | Accepted |
+| `0011-roles-actifs-verification.md` | Rôles actifs + vérification serveur | Accepted |
+| `0012-stripe-billing-web-first.md` | Stripe web-first + paywall volume | Accepted |
+| `0013-classifier-stage2-haiku.md` | Classifieur étage 2 Haiku 4.5 | Accepted |
+| `0014-embeddings-text-embedding-3-small.md` | Embeddings RAG OpenAI 1536 | Accepted |
+| `0015-classifier-etage2-runtime.md` | Classifieur étage 2 fail-closed runtime | Accepted |
+| `0016-quotas-par-feature.md` | Quotas par feature découplés des sources | Accepted |
+| `0017-cas-ecos-en-db.md` | Cas ECOS pédagogiques en base | Accepted |
