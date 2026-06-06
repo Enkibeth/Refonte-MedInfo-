@@ -17,6 +17,21 @@ None | Potential | Confirmed
 
 ---
 
+
+## [2026-06-06] – Codex (enregistrement audio natif iOS/Android)
+### Files modified
+- app/(chat)/audio.tsx (nouvelle route dictée vocale : branche web MediaRecorder conservée, branche native expo-audio, upload multipart inchangé vers /api/transcribe)
+- app/(chat)/chat.tsx (bouton d'accès à la dictée audio depuis l'en-tête du chat)
+- app.json (permissions micro iOS/Android + config plugin expo-audio)
+- package.json / package-lock.json (dépendance Expo SDK 56 `expo-audio`)
+- docs/CHANGELOG_AI.md (présente entrée de transmission)
+### Purpose
+Ajouter l'enregistrement audio natif iOS/Android via `expo-audio` pour Expo SDK 56 tout en gardant le chemin web MediaRecorder et le contrat d'upload `/api/transcribe` existant.
+### Regulatory impact
+Potential (maîtrisé) : nouvelle capture microphone explicite et permissionnée ; pas de stockage local ajouté, pas de changement de safe-box chat, et l'audio reste transmis uniquement au endpoint de transcription existant.
+### Rollback plan
+`git revert` de la PR pour supprimer la route audio, le lien chat, les permissions micro et la dépendance `expo-audio`.
+
 ## [2026-06-05] – Claude (CC-03 : RAG embeddings réels — pipeline + mesure recall + ADR-0014)
 ### Files modified
 - src/rag/embeddings.ts (nouveau — embedText/embedMany via @ai-sdk/openai `text-embedding-3-small`,

@@ -42,6 +42,7 @@
     "@supabase/supabase-js": "^2.107.0",
     "ai": "^6.0.195",
     "expo": "~56.0.8",
+    "expo-audio": "~56.0.11",
     "expo-constants": "~56.0.16",
     "expo-linking": "~56.0.13",
     "expo-router": "~56.2.8",

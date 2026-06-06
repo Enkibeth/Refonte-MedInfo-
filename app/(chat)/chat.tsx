@@ -5,6 +5,7 @@
  * Disclaimer permanent conforme 01_REGULATION §4.
  */
 import { useMemo, useState } from 'react';
+import { useRouter } from 'expo-router';
 import {
   View,
   Text,
@@ -209,6 +210,7 @@ export default function ChatScreen() {
   // Persona issue de l'AuthProvider (source profiles/RLS, étape 3). Fallback 'public'
   // tant que la session/le profil charge ou pour un visiteur non authentifié.
   const { persona } = useSession();
+  const router = useRouter();
   const [input, setInput] = useState('');
   const [sourcesOpen, setSourcesOpen] = useState(false);
 
@@ -241,15 +243,23 @@ export default function ChatScreen() {
     >
       <View style={styles.chatHeader}>
         <Text style={styles.chatTitle}>{persona === 'student' ? 'Chat étudiant' : 'Chat santé'}</Text>
-        <TouchableOpacity
-          style={[styles.headerSourcesButton, latestCitations.length === 0 && styles.headerSourcesButtonDisabled]}
-          onPress={() => setSourcesOpen((open) => !open)}
-          disabled={latestCitations.length === 0}
-        >
-          <Text style={styles.headerSourcesText}>
-            {sourcesOpen ? 'Masquer' : 'Sources'} ({latestCitations.length})
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.audioButton}
+            onPress={() => router.push('/audio' as any)}
+          >
+            <Text style={styles.audioButtonText}>🎙️ Audio</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.headerSourcesButton, latestCitations.length === 0 && styles.headerSourcesButtonDisabled]}
+            onPress={() => setSourcesOpen((open) => !open)}
+            disabled={latestCitations.length === 0}
+          >
+            <Text style={styles.headerSourcesText}>
+              {sourcesOpen ? 'Masquer' : 'Sources'} ({latestCitations.length})
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {sourcesOpen && latestCitations.length > 0 ? (
@@ -322,6 +332,14 @@ const styles = StyleSheet.create({
     borderColor: tokens.colors.border,
   },
   chatTitle: { color: tokens.colors.text, fontSize: 16, fontWeight: '700' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  audioButton: {
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: tokens.colors.accent,
+  },
+  audioButtonText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   headerSourcesButton: {
     borderRadius: 16,
     paddingHorizontal: 12,
