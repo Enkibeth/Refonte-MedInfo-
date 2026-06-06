@@ -44,8 +44,8 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 | `0008_billing_events.sql` | Idempotence webhooks Stripe | Non | Service role only | Anti-rejeu / déduplication |
 | `0009_rag_match_or_semantics.sql` | Match RAG lexical OR + fusion dense | Non | RPC documentaire | Active RRF si embedding fourni |
 | `0010_db_hardening.sql` | Search path fonctions + policies profiles | Non | Inchangé | Durcissement advisors Supabase |
-| `0011_ai_runtime_config.sql` | Configuration IA runtime (features, modèles, flags) | Non | Service role/admin only | Table de pilotage, jamais contrôlée par le client |
-| `0012_rpps_verifications.sql` | Journal minimal de vérification RPPS | Non médical ; donnée perso publique | Service role only | Cache ANS court, pas de donnée patient |
+| `0011_ai_model_config.sql` | Config admin du modèle par feature IA (seed des 6 features) | Non | Service role only (RLS sans policy client) | Lue par featureModel.ts + panel admin ; UPDATE → seed obligatoire |
+| `0012_ai_prompts.sql` | Overrides admin des system prompts (key/template/scope/version) | Non | Service role only (RLS sans policy client) | Fallback PROMPT_DEFAULTS ; upsert au save |
 | `0013_ecos_cases.sql` | Cas ECOS fictifs versionnés | Non si cas synthétiques uniquement | Lecture selon entitlement étudiant | Ne jamais importer de cas patient réel |
 | `0014_feature_quotas.sql` | Quotas par feature et compteurs associés | Non | Service role only | Remplace la logique « quota chat unique » par une matrice extensible |
 

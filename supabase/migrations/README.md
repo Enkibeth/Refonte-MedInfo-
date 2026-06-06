@@ -16,16 +16,17 @@ médical individualisé ni devenir un historique patient.
 - `0008_billing_events.sql` — idempotence webhook Stripe, service role only.
 - `0009_rag_match_or_semantics.sql` — RPC `match_rag_chunks` en sémantique OR + fusion lexical/dense RRF si embedding fourni.
 - `0010_db_hardening.sql` — `search_path` figé sur fonctions et optimisation policies `profiles`.
+- `0011_ai_model_config.sql` — config admin du modèle par feature IA (`key, model_id, provider, label`). Service role only, RLS sans policy client. **Seed des 6 features** (le POST admin fait un UPDATE, les lignes doivent préexister). Lue par `featureModel.ts` + `app/api/admin/config+api.ts`.
+- `0012_ai_prompts.sql` — overrides admin des system prompts (`key, label, template, scope, version`). Service role only, RLS sans policy client. Pas de seed (fallback `PROMPT_DEFAULTS`, upsert au save). Lue par `promptStore.ts` + panel admin.
 
 ## Migrations structurantes documentées pour la suite
 
 Ces objets sont décidés/documentés pour refléter l'état cible de la session, mais tout ajout SQL doit
 rester accompagné de policies et tests RLS dédiés avant merge.
 
-- `0011_ai_runtime_config.sql` — tables de configuration IA runtime : features, modèles, flags d'activation, paramètres safe-box. Accès client interdit.
-- `0012_rpps_verifications.sql` — cache/journal minimal de vérification RPPS via Annuaire Santé FHIR. Donnée personnelle publique, pas de donnée patient, service role only.
-- `0013_ecos_cases.sql` — cas/stations ECOS fictifs et versionnés. Lecture selon audience/entitlement étudiant ; interdiction d'importer un cas patient réel.
-- `0014_feature_quotas.sql` — quotas par feature (`chat`, `ecos`, `transcription`, `export`) et compteurs techniques associés. Service role only, aucune source HAS/ANSM paywallée.
+- `0013_ecos_cases.sql` — cas/stations ECOS fictifs et versionnés. Lecture selon audience/entitlement étudiant ; interdiction d'importer un cas patient réel. *(branche `zealous-mendel`, à intégrer par une session CC dédiée.)*
+- `0014_entitlements.sql` — quotas par feature (`chat`, `ecos`, `transcription`, `export`) et compteurs techniques associés. Service role only, aucune source HAS/ANSM paywallée. *(branche `gracious-brown`, à intégrer par une session CC dédiée.)*
+- RPPS / Annuaire Santé FHIR — vérification professionnelle réelle (statut `pending` sans clé ANS). *(branche `determined-ride`, à intégrer par une session CC dédiée.)*
 
 ## Invariants
 
