@@ -17,6 +17,10 @@
 **À faire** (Vercel → projet `refonte-med-info` → Settings → Environment Variables, Prod + Preview) :
 - `EXPO_PUBLIC_SUPABASE_URL` = `https://sbpnjswffrqxgnglnjml.supabase.co`
 - `EXPO_PUBLIC_SUPABASE_ANON_KEY` = `sb_publishable_y_ACBkPvepD5YInUNj_FoQ_aa2HE3sF`
+  - ⚠️ **À ressaisir en ASCII pur** : la valeur actuellement dans Vercel contient des
+    sosies cyrilliques (`У А С В Р е р о Н З` au lieu de `Y A C B P e p o H 3`), ce qui
+    casse l'en-tête HTTP `apikey` → faux message « Vérifie ta connexion » à l'inscription.
+    Recopier la clé ci-dessus (lettres latines), **sans la retaper**, puis **Redeploy**.
 - `SUPABASE_URL` = `https://sbpnjswffrqxgnglnjml.supabase.co`
 - `SUPABASE_SERVICE_ROLE_KEY` = *(Supabase → Settings → API → `service_role`, SECRET)*
 - `AI_PROVIDER` = `anthropic` (ou `openai`) + `ANTHROPIC_API_KEY` (et/ou `OPENAI_API_KEY`)
