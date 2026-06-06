@@ -75,6 +75,10 @@ const [model, systemPrompt] = await Promise.all([
 | `app/(admin)/index.tsx` | Panel admin UI (modèles + prompts) |
 | `app/api/admin/config+api.ts` | API admin (lecture/écriture config) |
 
+Tables Supabase (service role only, RLS sans policy) :
+- `ai_model_config` — migration `0011_ai_model_config.sql` (seed des 6 features ; le POST admin fait un UPDATE, les lignes doivent préexister).
+- `ai_prompts` — migration `0012_ai_prompts.sql` (overrides des prompts ; table vide, fallback sur `PROMPT_DEFAULTS`).
+
 ## Panel admin
 
 Accessible depuis **Mon compte → Ouvrir le panel admin IA** (comptes admin seulement).
