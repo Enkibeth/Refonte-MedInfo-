@@ -162,8 +162,10 @@ Périmètre livré :
   permettent pas de répondre avec certitude. » et LLM principal non appelé.
 - Gate `npm run validate:rag` devenu effectif : valide le corpus au lieu de retourner un OK scaffold.
 
-Limites assumées : embeddings production et ingestion PDF/OCR large non encore livrés ; aucune pseudo-embedding n'est envoyée ; le MVP
-prépare pgvector et valide le contrat réglementaire/technique sur petit corpus.
+Limites assumées : le **pipeline d'embeddings réels** est désormais livré (CC-03, section dédiée,
+ADR-0014), mais le **peuplement des vecteurs** et l'**ingestion PDF/OCR large** restent en attente de
+l'ouverture de l'allowlist réseau ; aucune pseudo-embedding n'est jamais envoyée ; le MVP prépare
+pgvector et valide le contrat réglementaire/technique sur petit corpus.
 
 ## Étape 2 — classifieur d'intention : **implémentée (couche 1)**
 
@@ -273,6 +275,34 @@ Validations : `npm run typecheck` ✅ · `npm run test` (88) ✅ · `npm run com
   (action Hugo : raison sociale, SIREN, adresse, directeur de publication, e-mail DPO).
 - Validations locales : `npm run typecheck` OK · tests hors-RLS **189 verts** (+18) · `compliance:grep`,
   `validate:prompts`, `validate:rag` OK. (RLS : inchangées, exécutées en CI.)
+
+## CC-03 — RAG embeddings réels (pipeline) + mesure recall (2026-06-05) : **pipeline livré, peuplement en attente d'allowlist**
+
+- **Modèle décidé** (ADR-0014) : OpenAI `text-embedding-3-small` (1536 dims) — tient dans
+  `rag_chunks.embedding vector(1536)` (aucun `ALTER`), réutilise `OPENAI_API_KEY` / `@ai-sdk/openai`
+  (zéro nouvelle dépendance). Benchmark voyage/BGE et alternative souveraine Mistral reportés.
+- **Pipeline livré (Lot A)** : `src/rag/embeddings.ts` (`embedText`/`embedMany`, garde de dimension,
+  **zéro pseudo-embedding** — clé absente → throw) ; `src/rag/retrieval.ts` envoie un vrai vecteur de
+  requête à `match_rag_chunks` (active la fusion lexical+dense RRF k=60 déjà en base) avec
+  **dégradation lexical-only** propre si l'embedding échoue ; `scripts/embeddings/ingest-corpus.mjs`
+  (`npm run rag:ingest`, idempotent `chunk_id`+hash, service-role, `--dry-run`). INV-B
+  (`buildRagSystemSection` + `sanitizeSourceContent`) **non régressé**.
+- **Mesure (Lot C)** : harnais `scripts/eval/rag-recall.mjs` (`npm run rag:recall`, modes
+  lexical|fused) + jeu FR `tests/rag/recall-questions.fr.json`. **Baseline lexical live** (Supabase
+  MCP) sur 10 questions in-corpus : recall@1/@3 chunk & doc = **100 %** — *non informatif* (corpus
+  4 chunks : le lexical sature ; le gain du dense ne se mesure que sur corpus élargi, Lot B). 2
+  questions hors corpus → **0 source → cite-or-refuse** OK.
+- Gate `rag-license` **étendu à tous les `src/rag/corpus/*.json`** (un nouveau fichier ne peut plus
+  échapper à la validation). Tests CI-safe ajoutés (`tests/rag/embeddings.test.ts`,
+  `tests/rag/retrieval-embedding.test.ts`, mocks → aucun réseau).
+- Validations locales : `typecheck` OK · tests hors-RLS **210 verts** (+21) · `compliance:grep`,
+  `validate:prompts`, `validate:rag` OK · `rag:ingest --dry-run` OK. (RLS inchangées, exécutées en CI.)
+- **Différé (bloqué réseau)** : l'allowlist de l'environnement bloque `api.openai.com` et
+  `has-sante.fr`/`ansm.sante.fr` (HTTP 403 `host_not_allowed`). Donc **embeddings non encore peuplés**,
+  recall **dense** non mesuré, et **élargissement du corpus (Lot B)** non fait (aucun contenu inventé).
+  À la réouverture : `npm run rag:ingest` puis `npm run rag:recall -- --mode=fused`.
+- **Action Hugo (hors code)** : activer EU Data Residency + Zero Data Retention + DPA/SCC Module 2 sur
+  le projet OpenAI **avant ingestion de production** (01_REGULATION §5).
 
 ## Étape suivante
 

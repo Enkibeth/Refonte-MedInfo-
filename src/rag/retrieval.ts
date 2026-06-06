@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from '@/db/serverSupabase';
 import { MVP_RAG_CHUNKS } from './corpus/has-ansm-mvp';
+import { embedText, isEmbeddingConfigured } from './embeddings';
 import type { RagChunk, RagCitation, RagRetrievalResult } from './types';
 
 export const RAG_REFUSAL_MESSAGE = 'Les sources disponibles ne permettent pas de répondre avec certitude.';
@@ -107,15 +108,32 @@ type RagRpcRow = {
   content: string;
 };
 
+/**
+ * Embedding de la requête pour la fusion dense. Dégradation propre (CC-03) :
+ * pas de clé OpenAI → null ; échec réseau/quota/dimension → null. La RPC retombe
+ * alors en lexical-only. On ne renvoie JAMAIS un vecteur factice.
+ */
+async function embedQueryOrNull(query: string): Promise<number[] | null> {
+  if (!isEmbeddingConfigured()) return null;
+  try {
+    return await embedText(query);
+  } catch {
+    return null;
+  }
+}
+
 async function retrieveSupabaseRagChunks(query: string, topK: number): Promise<RagRetrievalResult> {
   const supabase = createServerSupabaseClient();
   if (!supabase) return { query, chunks: [], citations: [] };
 
+  // CC-03 : un vrai vecteur de requête active la fusion lexical+dense (RRF k=60) de
+  // match_rag_chunks. Si l'embedding échoue, on dégrade en lexical-only — jamais de
+  // vecteur factice.
+  const queryEmbedding = await embedQueryOrNull(query);
+
   const { data, error } = await supabase.rpc('match_rag_chunks', {
     query_text: query,
-    // Étape 5 MVP : pas de fausse embedding. Tant que le pipeline d'ingestion n'a pas
-    // écrit de vrais vecteurs, la RPC fonctionne en lexical français uniquement.
-    query_embedding: null,
+    query_embedding: queryEmbedding,
     match_count: topK,
   });
 
