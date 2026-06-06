@@ -18,14 +18,14 @@ médical individualisé ni devenir un historique patient.
 - `0010_db_hardening.sql` — `search_path` figé sur fonctions et optimisation policies `profiles`.
 - `0011_ai_model_config.sql` — config admin du modèle par feature IA (`key, model_id, provider, label`). Service role only, RLS sans policy client. **Seed des 6 features** (le POST admin fait un UPDATE, les lignes doivent préexister). Lue par `featureModel.ts` + `app/api/admin/config+api.ts`.
 - `0012_ai_prompts.sql` — overrides admin des system prompts (`key, label, template, scope, version`). Service role only, RLS sans policy client. Pas de seed (fallback `PROMPT_DEFAULTS`, upsert au save). Lue par `promptStore.ts` + panel admin.
-- `0015_ai_model_params.sql` — réglages de génération par feature (`temperature`, `reasoning_effort`, `verbosity`, `web_search`) ajoutés sur `ai_model_config`. Service role only (hérite du verrou 0011). Lus par `featureModel.ts` (`getFeatureSettings`) et appliqués au call LLM par `featureRuntime.ts`. *(Numéroté 0015 : 0013/0014 sont réservés ci-dessous.)*
+- `0013_ecos_cases.sql` — banque de cas ECOS (contenu pédagogique fictif). Lecture publique des cas publiés (RLS inline, comme `rag_*`), écriture service_role. CRUD admin `/api/admin/ecos-cases`, corpus `data/ecos-cases.json` (seed `scripts/seed-ecos-cases.mjs`). Test `tests/rls/ecos-cases.test.ts`.
+- `0015_ai_model_params.sql` — réglages de génération par feature (`temperature`, `reasoning_effort`, `verbosity`, `web_search`) ajoutés sur `ai_model_config`. Service role only (hérite du verrou 0011). Lus par `featureModel.ts` (`getFeatureSettings`) et appliqués au call LLM par `featureRuntime.ts`. *(Numéroté 0015 : 0014 réservé ci-dessous.)*
 
 ## Migrations structurantes documentées pour la suite
 
 Ces objets sont décidés/documentés pour refléter l'état cible de la session, mais tout ajout SQL doit
 rester accompagné de policies et tests RLS dédiés avant merge.
 
-- `0013_ecos_cases.sql` — cas/stations ECOS fictifs et versionnés. Lecture selon audience/entitlement étudiant ; interdiction d'importer un cas patient réel. *(branche `zealous-mendel`, à intégrer par une session CC dédiée.)*
 - `0014_entitlements.sql` — quotas par feature (`chat`, `ecos`, `transcription`, `export`) et compteurs techniques associés. Service role only, aucune source HAS/ANSM paywallée. *(branche `gracious-brown`, à intégrer par une session CC dédiée.)*
 - RPPS / Annuaire Santé FHIR — vérification professionnelle réelle (statut `pending` sans clé ANS). *(branche `determined-ride`, à intégrer par une session CC dédiée.)*
 
