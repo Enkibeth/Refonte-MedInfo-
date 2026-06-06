@@ -196,8 +196,11 @@ Validations locales : `npm run typecheck`, `npm run test`, `npm run compliance`
 
 Golden set de 500 exemples (`tests/classifier/golden/golden-set.fr.jsonl`, produit par Codex)
 + harnais d'éval (`scripts/eval/classifier-goldenset.mjs`, `npm run eval:classifier`, **hors**
-chaîne `compliance`). Audit : distribution 35/30/20/10/5 % conforme §5, 30 % adversariaux,
-0 PII (dette qualité : 56 doublons exacts à diversifier).
+chaîne `compliance`). Audit initial : distribution 35/30/20/10/5 % conforme §5, 30 % adversariaux,
+0 PII. Hygiène dataset (2026-06-06) : 56 doublons exacts supprimés, 56 exemples
+FR diversifiés ajoutés sans changer le schéma JSONL ni les labels des exemples conservés.
+Distribution après déduplication : `general_info` 175, `personal_symptoms` 144, `emergency` 100,
+`out_of_scope` 40, `ambiguous` 41 ; 0 doublon exact restant (`npm run eval:classifier` OK).
 
 Calibration du lexique (couche 1, regex seul, sans étage 2) :
 
@@ -205,14 +208,14 @@ Calibration du lexique (couche 1, regex seul, sans étage 2) :
 |---|---|---|---|
 | emergency | **100 %** | 100 % | recall ≥99 % ✅ |
 | personal_symptoms | **100 %** | 98 % | recall ≥97 % ✅ |
-| general_info | 28,6 % | 90,9 % | précision ≥95 % ⚠️ |
+| general_info | 28,6 % | 96,2 % | précision ≥95 % ✅ |
 
 **0 fuite vers le LLM principal** (aucun cas `emergency`/`personal_symptoms` routé `general_info`).
-La précision `general_info` < 95 % et le faible recall `general_info`/`out_of_scope` sont une
-limite **assumée du regex seul** : séparer « explique la différence entre un ETF » (non médical)
-de « explique la différence entre angine et pharyngite » (médical) relève de l'**étage 2 (LLM
-sémantique)**, reporté. `eval:classifier` sort donc en exit 1 sur la cible `general_info`
-précision — informatif, non bloquant (hors `compliance`).
+Le faible recall `general_info`/`out_of_scope` reste une limite **assumée du regex seul** :
+séparer « explique la différence entre un ETF » (non médical) de « explique la différence entre
+angine et pharyngite » (médical) relève de l'**étage 2 (LLM sémantique)**. Après hygiène du
+golden set (2026-06-06), les cibles bloquantes `eval:classifier` passent en local ; le harnais
+reste informatif et hors `compliance`.
 
 ## Étape 3 — Auth Supabase + routing persona + RLS testées : **implémentée (TDD)**
 
@@ -310,7 +313,8 @@ Validations : `npm run typecheck` ✅ · `npm run test` (88) ✅ · `npm run com
 export PDF, vérification statut pro (post-ADR-0006). **Historique / dossiers : NE PAS implémenter**
 sans ADR « Proposed » + arbitrage Hugo (donnée de santé attribuable → HDS, 01_REGULATION §5).
 Pré-requis classifieur restants (post-MVP) : ~~câblage étage 2~~ **fait (ADR-0013)** ; persistance
-`classifier_decisions`, diversification du golden set, lexique `out_of_scope`. Pages légales : remplir
+`classifier_decisions`, ~~diversification du golden set~~ **faite (0 doublon exact, 2026-06-06)**,
+lexique `out_of_scope`. Pages légales : remplir
 les champs éditeur « [À COMPLÉTER] » avant ouverture au public.
 
 ⚠️ **Hygiène branches** : faire brancher les prochaines sessions (Claude/Codex) depuis `dev`,
