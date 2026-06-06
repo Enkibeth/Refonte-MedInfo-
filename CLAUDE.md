@@ -27,10 +27,13 @@ ma_feature: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
 ```
 
 ### 3. Ajouter la ligne dans la migration SQL
+Ajoute un INSERT dans une nouvelle migration (numéro libre après `0012`) :
 ```sql
-INSERT INTO ai_model_config (key, model_id, label, provider) VALUES
-  ('ma_feature', 'claude-sonnet-4-6', 'Ma fonctionnalité', 'anthropic');
+INSERT INTO public.ai_model_config (key, model_id, provider, label) VALUES
+  ('ma_feature', 'claude-sonnet-4-6', 'anthropic', 'Ma fonctionnalité');
 ```
+> Les tables `ai_model_config` et `ai_prompts` sont créées par les migrations `0011` et `0012`.
+> Le POST admin fait un `UPDATE` (pas upsert) sur `ai_model_config` → la ligne doit préexister.
 
 ### 4. Enregistrer le prompt dans promptStore.ts
 Fichier : `src/ai/prompts/promptStore.ts` → objet `PROMPT_DEFAULTS`
@@ -74,6 +77,23 @@ const [model, systemPrompt] = await Promise.all([
 | `src/ai/prompts/promptStore.ts` | Chargement des prompts (Supabase override > fichiers TS) |
 | `app/(admin)/index.tsx` | Panel admin UI (modèles + prompts) |
 | `app/api/admin/config+api.ts` | API admin (lecture/écriture config) |
+
+## Migrations DB (Supabase)
+
+| Migration | Contenu |
+|-----------|---------|
+| `0001_profiles.sql` | Table `profiles`, trigger `handle_new_user` |
+| `0002_ai_interactions.sql` | Table `ai_interactions` (audit, service_role only) |
+| `0003_harden_handle_new_user.sql` | Durcissement trigger |
+| `0004_usage_counters.sql` | Table `usage_counters`, fonction `increment_usage_counter` |
+| `0005_profile_verification.sql` | Colonnes de vérification professionnelle |
+| `0006_rag_pgvector.sql` | Tables RAG + fonction `match_rag_chunks` |
+| `0007_subscriptions.sql` | Table `subscriptions` |
+| `0008_billing_events.sql` | Table `billing_events` (Stripe webhook) |
+| `0009_rag_match_or_semantics.sql` | Fallback lexical RAG |
+| `0010_db_hardening.sql` | `search_path` figé, `(select auth.uid())` perf fix |
+| `0011_ai_model_config.sql` | Table `ai_model_config` + seed 6 features (service_role only) |
+| `0012_ai_prompts.sql` | Table `ai_prompts` pour overrides admin (service_role only) |
 
 ## Panel admin
 
