@@ -18,6 +18,18 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-06-06] – Claude Code (fix gate prompt-contract : exclusion du loader promptStore.ts)
+### Files modified
+- scripts/eval/validate-prompts.mjs (le scan d'artefacts exclut désormais `promptStore.ts`, comme `index.ts` et `_schema.ts`)
+- docs/CHANGELOG_AI.md (présente entrée)
+### Purpose
+Le gate `prompt-contract` (Gate 4) échouait sur `promptStore.ts` (`missing prompt contract field: regulatory_scope`). Ce fichier est le **loader/agrégateur** des prompts (fallback TS + override Supabase), pas un artefact de prompt versionné sous contrat : il ne porte donc pas — et n'a pas vocation à porter — les champs `regulatory_scope/forbidden_outputs/mandatory_sections/eval_threshold`. Le validateur l'inspectait par erreur (denylist incomplète). Il est désormais exclu au même titre que `index.ts` (ré-exports) et `_schema.ts` (contrat). Le gate valide à nouveau exactement les 3 artefacts versionnés (`public.v2`, `student.v2`, `professional.v1`).
+### Regulatory impact
+None (correctif d'outillage CI : aucun changement de prompt, de logique médicale, de RLS produit ni de flux utilisateur ; le périmètre de validation des artefacts sous contrat est inchangé).
+### Rollback plan
+git revert de ce commit (restaure la denylist précédente du validateur ; le gate redeviendra rouge sur `promptStore.ts`).
+
+
 ## [2026-06-06] – Codex (enregistrement audio natif iOS/Android)
 ### Files modified
 - app/(chat)/audio.tsx (nouvelle route dictée vocale : branche web MediaRecorder conservée, branche native expo-audio, upload multipart inchangé vers /api/transcribe)
