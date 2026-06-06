@@ -1,19 +1,13 @@
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Linking,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Linking, Platform, StyleSheet, Text, View } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
 import { plansForPersona, type BillingPlanId } from '@/billing/plans';
 import { shouldShowWebBilling } from '@/billing/surface';
+import { Button } from '@/ui/Button';
+import { Card } from '@/ui/Card';
+import { Screen } from '@/ui/Screen';
 import { tokens } from '@/ui/tokens';
 
 /**
@@ -62,207 +56,162 @@ export default function PricingScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.eyebrow}>Offres</Text>
-        <Text style={styles.title}>Choisis ton offre</Text>
+    <Screen maxWidth={640}>
+      <Text style={styles.title}>Offres</Text>
 
-        <View style={styles.sourcesBox}>
-          <Text style={styles.sourcesText}>
-            Les références (HAS, ANSM…) restent gratuites et visibles pour tous, abonné ou non.
-            Un abonnement lève seulement la limite de messages et débloque des fonctions avancées.
-          </Text>
-        </View>
-
-        {!webBilling ? (
-          <View style={styles.nativeBox}>
-            <Text style={styles.nativeText}>
-              La gestion de l'abonnement se fait sur le site web. L'application mobile donne accès à
-              ton compte déjà souscrit.
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.plans}>
-            {plans.map((plan) => (
-              <View key={plan.id} style={styles.plan}>
-                <Text style={styles.planLabel}>{plan.label}</Text>
-                <Text style={styles.planPrice}>{plan.priceLabel}</Text>
-                <View style={styles.perks}>
-                  {plan.perks.map((perk) => (
-                    <Text key={perk} style={styles.perk}>
-                      • {perk}
-                    </Text>
-                  ))}
-                </View>
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={loadingPlan !== null}
-                  onPress={() => handleSubscribe(plan.id)}
-                  style={({ pressed }) => [
-                    styles.button,
-                    loadingPlan !== null ? styles.buttonDisabled : null,
-                    pressed && loadingPlan === null ? styles.buttonPressed : null,
-                  ]}
-                >
-                  {loadingPlan === plan.id ? (
-                    <ActivityIndicator color={tokens.colors.surface} />
-                  ) : null}
-                  <Text style={styles.buttonText}>S'abonner</Text>
-                </Pressable>
-              </View>
-            ))}
-            {plans.length === 0 ? (
-              <Text style={styles.nativeText}>Aucune offre disponible pour ce profil.</Text>
-            ) : null}
-            <Text style={styles.vatNote}>TVA non applicable, article 293 B du CGI.</Text>
-          </View>
-        )}
-
-        {errorMessage ? (
-          <View style={styles.errorBox} accessibilityLiveRegion="polite">
-            <Text style={styles.errorText}>{errorMessage}</Text>
-          </View>
-        ) : null}
-
-        <View style={styles.footer}>
-          <Link href="/(account)/account" style={styles.inlineLink}>
-            Retour au compte
-          </Link>
-        </View>
+      <View style={styles.sourcesBox}>
+        <View style={styles.sourcesAccent} />
+        <Text style={styles.sourcesText}>
+          Les références (HAS, ANSM…) restent gratuites et visibles pour tous, abonné ou non.
+          Un abonnement lève seulement la limite de messages et débloque des fonctions avancées.
+        </Text>
       </View>
-    </ScrollView>
+
+      {!webBilling ? (
+        <Card style={styles.section}>
+          <Text style={styles.nativeText}>
+            La gestion de l'abonnement se fait sur le site web. L'application mobile donne accès à
+            ton compte déjà souscrit.
+          </Text>
+        </Card>
+      ) : (
+        <View style={styles.plans}>
+          {plans.map((plan) => (
+            <Card key={plan.id} style={styles.plan}>
+              <Text style={styles.planLabel}>{plan.label}</Text>
+              <Text style={styles.planPrice}>{plan.priceLabel}</Text>
+              <View style={styles.perks}>
+                {plan.perks.map((perk) => (
+                  <View key={perk} style={styles.perkRow}>
+                    <View style={styles.perkDot} />
+                    <Text style={styles.perk}>{perk}</Text>
+                  </View>
+                ))}
+              </View>
+              <Button
+                label="S'abonner"
+                loading={loadingPlan === plan.id}
+                disabled={loadingPlan !== null}
+                onPress={() => handleSubscribe(plan.id)}
+                style={styles.planAction}
+              />
+            </Card>
+          ))}
+          {plans.length === 0 ? (
+            <Text style={styles.nativeText}>Aucune offre disponible pour ce profil.</Text>
+          ) : null}
+          <Text style={styles.vatNote}>TVA non applicable, article 293 B du CGI.</Text>
+        </View>
+      )}
+
+      {errorMessage ? (
+        <View style={styles.errorBox} accessibilityLiveRegion="polite">
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        </View>
+      ) : null}
+
+      <View style={styles.footer}>
+        <Link href="/(account)/account" style={styles.inlineLink}>
+          Retour au compte
+        </Link>
+      </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: tokens.colors.background,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 760,
-    borderRadius: 28,
-    padding: 28,
-    backgroundColor: tokens.colors.surface,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-  },
-  eyebrow: {
-    color: tokens.colors.accent,
-    fontSize: 14,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 12,
-  },
   title: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.text,
-    fontSize: 34,
-    fontWeight: '800',
-    marginBottom: 18,
+    fontSize: tokens.type.h1.fontSize,
+    lineHeight: tokens.type.h1.lineHeight,
+    letterSpacing: tokens.type.h1.letterSpacing,
+    fontWeight: tokens.weight.bold,
+    marginBottom: tokens.space.lg,
   },
   sourcesBox: {
-    borderRadius: 18,
-    backgroundColor: tokens.colors.warningBackground,
-    padding: 16,
-    marginBottom: 18,
+    flexDirection: 'row',
+    borderRadius: tokens.radius.md,
+    overflow: 'hidden',
+    backgroundColor: tokens.colors.accentSurface,
+    marginBottom: tokens.space.lg,
   },
+  sourcesAccent: { width: 4, backgroundColor: tokens.colors.accent },
   sourcesText: {
-    color: tokens.colors.warningText,
-    fontSize: 15,
-    lineHeight: 22,
-    fontWeight: '700',
+    flex: 1,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.label.fontSize,
+    lineHeight: 21,
+    fontWeight: tokens.weight.medium,
+    padding: tokens.space.lg,
   },
-  nativeBox: {
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.background,
-    padding: 16,
-  },
+  section: { marginTop: tokens.space.sm },
   nativeText: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: tokens.type.body.fontSize,
+    lineHeight: tokens.type.body.lineHeight,
   },
-  plans: {
-    gap: 16,
-  },
-  plan: {
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.background,
-    padding: 18,
-    gap: 8,
-  },
+  plans: { gap: tokens.space.lg },
+  plan: { gap: tokens.space.xs },
   planLabel: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.text,
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: tokens.type.h3.fontSize,
+    letterSpacing: tokens.type.h3.letterSpacing,
+    fontWeight: tokens.weight.bold,
   },
   planPrice: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.accent,
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: tokens.type.h1.fontSize,
+    letterSpacing: tokens.type.h1.letterSpacing,
+    fontWeight: tokens.weight.bold,
+    marginTop: tokens.space.xs,
   },
-  perks: {
-    gap: 4,
-    marginVertical: 6,
+  perks: { gap: tokens.space.sm, marginVertical: tokens.space.md },
+  perkRow: { flexDirection: 'row', alignItems: 'flex-start', gap: tokens.space.sm },
+  perkDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: tokens.colors.accent,
+    marginTop: 8,
   },
   perk: {
-    color: tokens.colors.textMuted,
-    fontSize: 15,
-    lineHeight: 22,
+    flex: 1,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textSubtle,
+    fontSize: tokens.type.body.fontSize,
+    lineHeight: tokens.type.body.lineHeight,
   },
-  button: {
-    minHeight: 48,
-    marginTop: 8,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 10,
-    backgroundColor: tokens.colors.accent,
-    paddingHorizontal: 18,
-  },
-  buttonDisabled: {
-    opacity: 0.55,
-  },
-  buttonPressed: {
-    opacity: 0.86,
-  },
-  buttonText: {
-    color: tokens.colors.surface,
-    fontSize: 16,
-    fontWeight: '800',
-  },
+  planAction: { marginTop: tokens.space.sm },
   vatNote: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
-    fontSize: 13,
-    marginTop: 6,
+    fontSize: tokens.type.caption.fontSize,
+    marginTop: tokens.space.xs,
   },
   errorBox: {
-    marginTop: 18,
-    borderRadius: 18,
-    backgroundColor: tokens.colors.warningBackground,
-    padding: 16,
+    marginTop: tokens.space.lg,
+    borderRadius: tokens.radius.md,
+    borderLeftWidth: 4,
+    borderLeftColor: tokens.colors.danger,
+    backgroundColor: tokens.colors.dangerBackground,
+    padding: tokens.space.lg,
   },
   errorText: {
-    color: tokens.colors.warningText,
-    fontSize: 15,
-    lineHeight: 22,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.danger,
+    fontSize: tokens.type.label.fontSize,
+    lineHeight: 21,
   },
-  footer: {
-    marginTop: 22,
-  },
+  footer: { marginTop: tokens.space.xl },
   inlineLink: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.accent,
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
   },
 });

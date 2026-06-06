@@ -24,7 +24,7 @@ import {
 import { getActiveModel, getActiveModelId } from '@/ai/providers/index';
 
 import { extractUserTexts, screenConversation } from '@/ai/orchestrator';
-import { createLlmStage2, isStage2Configured } from '@/ai/classifier/llmStage2';
+import { getStage2Classifier } from '@/ai/classifier/llmStage2';
 import { CHAT_PERSONAS, resolveChatPersona } from '@/ai/routing/serverPersona';
 import { getActivePrompt } from '@/ai/prompts/index';
 import { validateOutput } from '@/ai/guardrails/outputValidator';
@@ -38,7 +38,10 @@ import { refuseAndRedirectTool } from '@/ai/skills/refuse_and_redirect';
 import { renderQcmTool } from '@/ai/skills/render_qcm';
 import type { Persona } from '@/ai/prompts/_schema';
 
-// Personas servables par la route chat MVP. Source unique : serverPersona.CHAT_PERSONAS.
+// ⚠️  CONVENTION : si tu ajoutes une fonctionnalité IA, enregistre-la dans
+// src/admin/index.ts (AI_FEATURES) et src/ai/providers/featureModel.ts.
+// Personas servables par la route chat MVP. Source unique : serverPersona.CHAT_PERSONAS
+// (dérivées côté serveur depuis le profil vérifié, jamais depuis body.persona).
 export const VALID_PERSONAS: Persona[] = CHAT_PERSONAS;
 
 export function getToolsForPersona(persona: Persona) {
@@ -109,13 +112,13 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // ── Couche 1 : classifieur d'intention sur TOUTE la conversation (pré-LLM) ─────
-  // Étage 1 (regex) toujours actif ; étage 2 (LLM léger Haiku 4.5) câblé uniquement s'il
-  // est configuré — sinon fail-safe `ambiguous` (07_CLASSIFIER §2-§4). L'étage 2 capte les
-  // demandes personnelles déguisées que le regex ne couvre pas, sans jamais court-circuiter
-  // le refus déterministe des marqueurs explicites.
+  // Étage 1 (regex) toujours actif ; étage 2 (deuxième lecture LLM, Gemini 2.5 Flash-Lite)
+  // injecté SI configuré : il relit les tours que le regex ne tranche pas pour réduire les
+  // sur-refus `ambiguous` (07_CLASSIFIER §2-4) sans jamais court-circuiter le refus
+  // déterministe des marqueurs explicites. Sans clé Gemini → undefined → fail-safe inchangé.
   const screen = await screenConversation(uiMessages, {
     allowFictiveEducationalCases: persona === 'student',
-    llmStage2: isStage2Configured() ? createLlmStage2() : undefined,
+    llmStage2: getStage2Classifier(),
   });
 
   if (!screen.allowed) {

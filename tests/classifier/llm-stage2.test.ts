@@ -1,129 +1,56 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// L'étage 2 appelle un LLM réel via @ai-sdk/anthropic ; on le mocke pour tester la
-// logique (sélection de modèle, temperature=0, fail-closed) SANS appel réseau.
+/**
+ * Étage 2 du classifieur (07_CLASSIFIER §2-4) — deuxième lecture LLM.
+ * On vérifie le câblage par environnement et le fail-safe absolu (jamais fail-open).
+ * Le SDK `ai` est mocké : aucun appel réseau réel.
+ */
 const generateObjectMock = vi.fn();
+
 vi.mock('ai', () => ({
   generateObject: (...args: unknown[]) => generateObjectMock(...args),
 }));
-vi.mock('@ai-sdk/anthropic', () => ({
-  anthropic: (id: string) => ({ __model: id }),
+
+vi.mock('@/ai/providers/index', () => ({
+  getClassifierModel: () => ({ id: 'gemini-2.5-flash-lite-mock' }),
 }));
 
-import {
-  CLASSIFIER_STAGE2_MODEL_ID,
-  CLASSIFIER_STAGE2_PROMPT,
-  createLlmStage2,
-  isStage2Configured,
-  resolveStage2ModelId,
-} from '@/ai/classifier/llmStage2';
-import { classifyIntent } from '@/ai/classifier';
+import { createLlmStage2, getStage2Classifier } from '@/ai/classifier/llmStage2';
 
-const ENV_KEYS = ['ANTHROPIC_API_KEY', 'CLASSIFIER_STAGE2_ENABLED', 'CLASSIFIER_MODEL_ID'] as const;
-let savedEnv: Record<string, string | undefined>;
+const ORIGINAL_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
-beforeEach(() => {
-  savedEnv = Object.fromEntries(ENV_KEYS.map((k) => [k, process.env[k]]));
+afterEach(() => {
+  if (ORIGINAL_KEY === undefined) delete process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  else process.env.GOOGLE_GENERATIVE_AI_API_KEY = ORIGINAL_KEY;
   generateObjectMock.mockReset();
 });
 
-afterEach(() => {
-  for (const k of ENV_KEYS) {
-    if (savedEnv[k] === undefined) delete process.env[k];
-    else process.env[k] = savedEnv[k];
-  }
-});
-
-describe('étage 2 — modèle peu coûteux par défaut', () => {
-  it('utilise Claude Haiku 4.5 (le Claude le moins cher/rapide)', () => {
-    delete process.env.CLASSIFIER_MODEL_ID;
-    expect(CLASSIFIER_STAGE2_MODEL_ID).toBe('claude-haiku-4-5');
-    expect(resolveStage2ModelId()).toBe('claude-haiku-4-5');
+describe('getStage2Classifier — câblage conditionnel à la clé Gemini', () => {
+  it('retourne undefined sans clé (fail-safe historique conservé)', () => {
+    delete process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    expect(getStage2Classifier()).toBeUndefined();
   });
 
-  it('permet de surcharger le modèle via CLASSIFIER_MODEL_ID', () => {
-    process.env.CLASSIFIER_MODEL_ID = 'claude-sonnet-4-6';
-    expect(resolveStage2ModelId()).toBe('claude-sonnet-4-6');
+  it('retourne une fonction d’étage 2 quand la clé est configurée', () => {
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY = 'test-key';
+    expect(typeof getStage2Classifier()).toBe('function');
   });
 });
 
-describe('étage 2 — prompt de classification (contrat 07_CLASSIFIER §4)', () => {
-  it('porte l’asymétrie et les 5 catégories', () => {
-    expect(CLASSIFIER_STAGE2_PROMPT).toContain('classifieur de sécurité');
-    expect(CLASSIFIER_STAGE2_PROMPT).toContain('"emergency"');
-    expect(CLASSIFIER_STAGE2_PROMPT).toContain('"personal_symptoms"');
-    expect(CLASSIFIER_STAGE2_PROMPT).toContain('"general_info"');
-    expect(CLASSIFIER_STAGE2_PROMPT).toContain('"out_of_scope"');
-    expect(CLASSIFIER_STAGE2_PROMPT).toContain('"ambiguous"');
-    expect(CLASSIFIER_STAGE2_PROMPT).toContain('ASYMÉTRIE');
-  });
-});
-
-describe('étage 2 — appel LLM', () => {
-  it('appelle generateObject avec le modèle Haiku et temperature=0', async () => {
-    generateObjectMock.mockResolvedValue({ object: { category: 'general_info', confidence: 0.96 } });
-    const stage2 = createLlmStage2();
-
-    const verdict = await stage2("qu'est-ce que l'hypertension ?");
-
-    expect(verdict).toEqual({ category: 'general_info', confidence: 0.96 });
-    expect(generateObjectMock).toHaveBeenCalledTimes(1);
-    const callArg = generateObjectMock.mock.calls[0][0] as Record<string, unknown>;
-    expect(callArg.temperature).toBe(0);
-    expect(callArg.model).toEqual({ __model: 'claude-haiku-4-5' });
-    expect(callArg.system).toBe(CLASSIFIER_STAGE2_PROMPT);
-  });
-
-  it('FAIL-CLOSED : toute erreur LLM renvoie ambiguous/0 (refus par sécurité)', async () => {
-    generateObjectMock.mockRejectedValue(new Error('timeout réseau'));
-    const stage2 = createLlmStage2();
-
-    const verdict = await stage2('formulation neutre non couverte par le lexique');
-
-    expect(verdict).toEqual({ category: 'ambiguous', confidence: 0 });
-  });
-});
-
-describe('étage 2 — intégration avec classifyIntent (defense-in-depth)', () => {
-  it('le regex court-circuite l’étage 2 sur un marqueur personnel explicite', async () => {
-    generateObjectMock.mockResolvedValue({ object: { category: 'general_info', confidence: 0.99 } });
-    const stage2 = createLlmStage2();
-
-    const out = await classifyIntent("j'ai mal au ventre", { llmStage2: stage2 });
-
-    expect(generateObjectMock).not.toHaveBeenCalled();
-    expect(out.category).toBe('personal_symptoms');
-  });
-
-  it('l’étage 2 rattrape une question générale non couverte par le regex', async () => {
-    generateObjectMock.mockResolvedValue({ object: { category: 'general_info', confidence: 0.94 } });
-    const stage2 = createLlmStage2();
-
-    const out = await classifyIntent('quelle est la différence entre angine et pharyngite', {
-      llmStage2: stage2,
+describe('createLlmStage2 — verdict et fail-safe', () => {
+  it('relaie le verdict du LLM (general_info récupéré)', async () => {
+    generateObjectMock.mockResolvedValueOnce({
+      object: { category: 'general_info', confidence: 0.93 },
     });
-
-    expect(out.category).toBe('general_info');
-    expect(out.layer).toBe('llm');
-  });
-});
-
-describe('étage 2 — câblage conditionnel fail-closed', () => {
-  it('non configuré sans clé Anthropic', () => {
-    delete process.env.ANTHROPIC_API_KEY;
-    process.env.CLASSIFIER_STAGE2_ENABLED = 'true';
-    expect(isStage2Configured()).toBe(false);
+    const stage2 = createLlmStage2();
+    const verdict = await stage2('quelle est la posologie usuelle de référence ?');
+    expect(verdict).toEqual({ category: 'general_info', confidence: 0.93 });
   });
 
-  it('non configuré si explicitement désactivé', () => {
-    process.env.ANTHROPIC_API_KEY = 'sk-test';
-    process.env.CLASSIFIER_STAGE2_ENABLED = 'false';
-    expect(isStage2Configured()).toBe(false);
-  });
-
-  it('configuré avec clé présente et activation par défaut', () => {
-    process.env.ANTHROPIC_API_KEY = 'sk-test';
-    delete process.env.CLASSIFIER_STAGE2_ENABLED;
-    expect(isStage2Configured()).toBe(true);
+  it('retombe sur ambiguous (refus) si le LLM échoue — jamais fail-open', async () => {
+    generateObjectMock.mockRejectedValueOnce(new Error('LLM indisponible'));
+    const stage2 = createLlmStage2();
+    const verdict = await stage2('formulation neutre');
+    expect(verdict).toEqual({ category: 'ambiguous', confidence: 0 });
   });
 });

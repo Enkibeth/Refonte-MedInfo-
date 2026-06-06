@@ -1,326 +1,564 @@
 /**
- * Écran d'enregistrement vocal pour transcription.
- * - Web : conserve le chemin MediaRecorder navigateur.
- * - iOS/Android : enregistrement natif via expo-audio (Expo SDK 56).
- * L'upload reste inchangé : multipart/form-data vers /api/transcribe avec le champ `file`.
+ * Fonctionnalités audio — version premium.
+ * Mode 1 : Transcription d'un enregistrement audio (consultation, dictée).
+ * Mode 2 : Rédaction d'un compte rendu médical structuré depuis une dictée audio.
+ *
+ * Utilise l'API MediaRecorder (web) pour l'enregistrement côté client.
+ * Transcription via /api/transcribe (Whisper).
  */
 import { useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Platform,
-  ScrollView,
-  StyleSheet,
+  View,
   Text,
   TouchableOpacity,
-  View,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+  Platform,
 } from 'react-native';
-import {
-  RecordingPresets,
-  requestRecordingPermissionsAsync,
-  setAudioModeAsync,
-  useAudioRecorder,
-  useAudioRecorderState,
-} from 'expo-audio';
+import { Link } from 'expo-router';
 
+import { useSession } from '@/auth/AuthProvider';
 import { tokens } from '@/ui/tokens';
+import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 
-type RecordingStatus = 'idle' | 'recording' | 'uploading';
+type Mode = 'transcription' | 'report';
+type RecordState = 'idle' | 'recording' | 'have-audio' | 'processing' | 'done';
 
-type WebRecorder = {
-  start: () => void;
-  stop: () => void;
-  state: string;
-  ondataavailable: ((event: { data?: Blob }) => void) | null;
-  onstop: (() => void | Promise<void>) | null;
-};
+const REPORT_PROMPT = `Tu es un assistant médical expert en rédaction. À partir de la transcription audio ci-dessous (dictée médicale ou consultation), génère un compte rendu médical structuré en français en markdown, avec les sections adaptées au contexte (ex. Motif de consultation, Anamnèse, Examen clinique, Conclusion, Conduite à tenir, Prescription le cas échéant).
 
-type WebMediaStream = {
-  getTracks: () => Array<{ stop: () => void }>;
-};
-
-const isWeb = Platform.OS === 'web';
-
-function getTranscriptFromResponse(payload: unknown): string {
-  if (typeof payload === 'string') return payload;
-  if (!payload || typeof payload !== 'object') return '';
-
-  const record = payload as Record<string, unknown>;
-  const candidates = [record.text, record.transcript, record.transcription];
-  const transcript = candidates.find((value): value is string => typeof value === 'string');
-  return transcript ?? '';
-}
-
-function getAudioFilename(): string {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  return isWeb ? `recording-${timestamp}.webm` : `recording-${timestamp}.m4a`;
-}
-
-async function uploadRecording(part: Blob | { uri: string; name: string; type: string }): Promise<string> {
-  const formData = new FormData();
-
-  if (typeof Blob !== 'undefined' && part instanceof Blob) {
-    formData.append('file', part, getAudioFilename());
-  } else {
-    formData.append('file', part as unknown as Blob);
-  }
-
-  const response = await fetch('/api/transcribe', {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    throw new Error(`Transcription failed with HTTP ${response.status}`);
-  }
-
-  const contentType = response.headers.get('content-type') ?? '';
-  if (contentType.includes('application/json')) {
-    return getTranscriptFromResponse(await response.json());
-  }
-
-  return getTranscriptFromResponse(await response.text());
-}
-
-function showError(message: string) {
-  if (Platform.OS === 'web') {
-    // `alert` est disponible dans les navigateurs ; Alert.alert garde le même rendu natif.
-    globalThis.alert?.(message);
-    return;
-  }
-  Alert.alert('Enregistrement audio', message);
-}
+Adapte les sections au contenu réel de la transcription. Le compte rendu doit être professionnel, factuel et complet.`;
 
 export default function AudioScreen() {
-  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
-  const recorderState = useAudioRecorderState(audioRecorder, 250);
-  const [status, setStatus] = useState<RecordingStatus>('idle');
-  const [transcript, setTranscript] = useState('');
-  const [lastError, setLastError] = useState('');
-  const webRecorderRef = useRef<WebRecorder | null>(null);
-  const webChunksRef = useRef<Blob[]>([]);
-  const webStreamRef = useRef<WebMediaStream | null>(null);
+  const { session } = useSession();
+  const isPaid = Boolean(session); // simplified
 
-  const isRecording = status === 'recording';
-  const isUploading = status === 'uploading';
-  const durationMs = isWeb ? 0 : recorderState.durationMillis;
+  if (!isPaid) return <PremiumGate />;
 
-  const resetWebStream = () => {
-    webStreamRef.current?.getTracks().forEach((track) => track.stop());
-    webStreamRef.current = null;
-  };
+  return <AudioFeature />;
+}
 
-  const startWebRecording = async () => {
-    const mediaDevices = globalThis.navigator?.mediaDevices;
-    if (!mediaDevices?.getUserMedia || typeof globalThis.MediaRecorder === 'undefined') {
-      throw new Error('Enregistrement audio indisponible sur ce navigateur.');
-    }
+function AudioFeature() {
+  const { session } = useSession();
+  const [mode, setMode] = useState<Mode>('transcription');
+  const [recordState, setRecordState] = useState<RecordState>('idle');
+  const [transcription, setTranscription] = useState('');
+  const [report, setReport] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [duration, setDuration] = useState(0);
 
-    const stream = (await mediaDevices.getUserMedia({ audio: true })) as WebMediaStream;
-    webStreamRef.current = stream;
-    webChunksRef.current = [];
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const audioBlobRef = useRef<Blob | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    const RecorderCtor = globalThis.MediaRecorder;
-    const preferredMime = 'audio/webm';
-    const recorder = new RecorderCtor(
-      stream as unknown as MediaStream,
-      RecorderCtor.isTypeSupported?.(preferredMime) ? { mimeType: preferredMime } : undefined,
-    ) as WebRecorder;
+  if (Platform.OS !== 'web') {
+    return (
+      <View style={styles.container}>
+        <View style={styles.centeredBox}>
+          <Text style={styles.emoji}>📱</Text>
+          <Text style={styles.infoTitle}>Disponible sur le web</Text>
+          <Text style={styles.infoText}>
+            L'enregistrement audio est actuellement disponible sur la version web de MedInfo.
+            Connectez-vous sur n-med-info.vercel.app pour utiliser cette fonctionnalité.
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
-    recorder.ondataavailable = (event) => {
-      if (event.data && event.data.size > 0) webChunksRef.current.push(event.data);
-    };
-
-    recorder.onstop = async () => {
-      const blob = new Blob(webChunksRef.current, { type: preferredMime });
-      resetWebStream();
-      webRecorderRef.current = null;
-      await uploadBlob(blob);
-    };
-
-    webRecorderRef.current = recorder;
-    recorder.start();
-    setStatus('recording');
-  };
-
-  const startNativeRecording = async () => {
-    const permission = await requestRecordingPermissionsAsync();
-    if (!permission.granted) {
-      throw new Error('Permission micro refusée. Activez le microphone dans les réglages de l’appareil.');
-    }
-
-    await setAudioModeAsync({
-      allowsRecording: true,
-      playsInSilentMode: true,
-    });
-    await audioRecorder.prepareToRecordAsync();
-    audioRecorder.record();
-    setStatus('recording');
-  };
-
-  const handleStart = async () => {
-    if (status !== 'idle') return;
-    setLastError('');
-    setTranscript('');
+  async function startRecording() {
+    setError(null);
+    setTranscription('');
+    setReport('');
+    chunksRef.current = [];
+    setDuration(0);
 
     try {
-      if (isWeb) {
-        await startWebRecording();
-      } else {
-        await startNativeRecording();
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Impossible de démarrer l’enregistrement.';
-      setStatus('idle');
-      setLastError(message);
-      resetWebStream();
-      showError(message);
+      const stream = await (navigator as any).mediaDevices.getUserMedia({ audio: true });
+      const mimeType =
+        MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : 'audio/mp4';
+
+      const mr = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = mr;
+
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mr.onstop = () => {
+        stream.getTracks().forEach((t: MediaStreamTrack) => t.stop());
+        audioBlobRef.current = new Blob(chunksRef.current, { type: mimeType });
+        setRecordState('have-audio');
+      };
+
+      mr.start(250);
+      setRecordState('recording');
+
+      timerRef.current = setInterval(() => {
+        setDuration((d) => d + 1);
+      }, 1000);
+    } catch {
+      setError('Impossible d\'accéder au microphone. Vérifiez les permissions.');
     }
-  };
+  }
 
-  const uploadBlob = async (blob: Blob) => {
+  function stopRecording() {
+    if (timerRef.current) clearInterval(timerRef.current);
+    mediaRecorderRef.current?.stop();
+  }
+
+  async function processAudio() {
+    const blob = audioBlobRef.current;
+    if (!blob) return;
+    setError(null);
+    setRecordState('processing');
+
     try {
-      setStatus('uploading');
-      const text = await uploadRecording(blob);
-      setTranscript(text);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'La transcription a échoué.';
-      setLastError(message);
-      showError(message);
-    } finally {
-      setStatus('idle');
-    }
-  };
+      const formData = new FormData();
+      formData.append('audio', blob, 'recording.webm');
+      formData.append('mode', mode);
 
-  const stopWebRecording = () => {
-    const recorder = webRecorderRef.current;
-    if (!recorder || recorder.state === 'inactive') return;
-    recorder.stop();
-  };
-
-  const stopNativeRecording = async () => {
-    await audioRecorder.stop();
-    const uri = audioRecorder.uri ?? recorderState.url;
-    if (!uri) throw new Error('Aucun fichier audio natif à envoyer.');
-
-    setStatus('uploading');
-    try {
-      const text = await uploadRecording({
-        uri,
-        name: getAudioFilename(),
-        type: 'audio/mp4',
+      const token = session?.access_token;
+      const res = await fetch('/api/transcribe', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
       });
-      setTranscript(text);
-    } finally {
-      await setAudioModeAsync({ allowsRecording: false });
-    }
-  };
 
-  const handleStop = async () => {
-    if (!isRecording) return;
-    setLastError('');
-
-    try {
-      if (isWeb) {
-        stopWebRecording();
-      } else {
-        await stopNativeRecording();
-        setStatus('idle');
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Erreur serveur' }));
+        throw new Error(err.error ?? 'Transcription échouée.');
       }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Impossible de terminer l’enregistrement.';
-      setLastError(message);
-      showError(message);
-      setStatus('idle');
+
+      const data = await res.json() as { transcription: string; report?: string };
+      setTranscription(data.transcription);
+      if (mode === 'report' && data.report) setReport(data.report);
+      setRecordState('done');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Une erreur est survenue.');
+      setRecordState('have-audio');
     }
-  };
+  }
+
+  function reset() {
+    audioBlobRef.current = null;
+    setRecordState('idle');
+    setTranscription('');
+    setReport('');
+    setDuration(0);
+    setError(null);
+  }
+
+  const formatTime = (s: number) =>
+    `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Dictée vocale</Text>
-        <Text style={styles.description}>
-          Enregistrez une question générale de santé. Le fichier audio est envoyé tel quel vers /api/transcribe.
-        </Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Audio médical</Text>
+        <View style={styles.modeSwitcher}>
+          <TouchableOpacity
+            style={[styles.modeTab, mode === 'transcription' && styles.modeTabActive]}
+            onPress={() => { setMode('transcription'); reset(); }}
+          >
+            <Text style={[styles.modeLabel, mode === 'transcription' && styles.modeLabelActive]}>
+              Transcription
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modeTab, mode === 'report' && styles.modeTabActive]}
+            onPress={() => { setMode('report'); reset(); }}
+          >
+            <Text style={[styles.modeLabel, mode === 'report' && styles.modeLabelActive]}>
+              Compte rendu
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
-        <View style={styles.statusPill}>
-          <Text style={styles.statusText}>
-            {isRecording ? '● Enregistrement en cours' : isUploading ? 'Transcription en cours…' : 'Prêt'}
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.infoBox}>
+          <Text style={styles.infoBoxText}>
+            {mode === 'transcription'
+              ? 'Enregistrez une consultation, une dictée ou une note vocale. Obtenez la transcription écrite complète.'
+              : 'Dictez vos observations cliniques. L\'IA génère un compte rendu médical structuré et professionnel.'}
           </Text>
         </View>
 
-        {!isWeb && isRecording ? (
-          <Text style={styles.duration}>{Math.round(durationMs / 1000)} s</Text>
-        ) : null}
+        {/* Recorder */}
+        <View style={styles.recorder}>
+          {recordState === 'idle' && (
+            <TouchableOpacity style={styles.recordButton} onPress={startRecording}>
+              <Text style={styles.recordEmoji}>🎤</Text>
+              <Text style={styles.recordLabel}>Démarrer l'enregistrement</Text>
+            </TouchableOpacity>
+          )}
 
-        <TouchableOpacity
-          style={[styles.recordButton, isRecording && styles.stopButton, isUploading && styles.disabledButton]}
-          onPress={isRecording ? handleStop : handleStart}
-          disabled={isUploading}
-        >
-          {isUploading ? <ActivityIndicator color="#fff" /> : null}
-          <Text style={styles.recordButtonText}>{isRecording ? 'Arrêter et transcrire' : 'Démarrer'}</Text>
-        </TouchableOpacity>
+          {recordState === 'recording' && (
+            <View style={styles.recordingActive}>
+              <View style={styles.recordingIndicator} />
+              <Text style={styles.recordingTime}>{formatTime(duration)}</Text>
+              <TouchableOpacity style={styles.stopButton} onPress={stopRecording}>
+                <Text style={styles.stopEmoji}>⏹</Text>
+                <Text style={styles.stopLabel}>Arrêter</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
-        {transcript ? (
-          <View style={styles.resultBox}>
-            <Text style={styles.resultLabel}>Transcription</Text>
-            <Text style={styles.resultText}>{transcript}</Text>
+          {recordState === 'have-audio' && (
+            <View style={styles.haveAudio}>
+              <Text style={styles.haveAudioText}>
+                Enregistrement prêt ({formatTime(duration)})
+              </Text>
+              <View style={styles.haveAudioButtons}>
+                <TouchableOpacity style={styles.retryButton} onPress={reset}>
+                  <Text style={styles.retryText}>Recommencer</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.processButton} onPress={processAudio}>
+                  <Text style={styles.processText}>
+                    {mode === 'transcription' ? 'Transcrire' : 'Générer le compte rendu'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {recordState === 'processing' && (
+            <View style={styles.processingState}>
+              <ActivityIndicator color={tokens.colors.accent} size="large" />
+              <Text style={styles.processingText}>
+                {mode === 'transcription' ? 'Transcription en cours…' : 'Rédaction du compte rendu…'}
+              </Text>
+            </View>
+          )}
+
+          {recordState === 'done' && (
+            <TouchableOpacity style={styles.newRecordingButton} onPress={reset}>
+              <Text style={styles.newRecordingText}>Nouvel enregistrement</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {error ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{error}</Text>
           </View>
         ) : null}
 
-        {lastError ? <Text style={styles.errorText}>{lastError}</Text> : null}
+        {transcription && recordState === 'done' ? (
+          <View style={styles.resultCard}>
+            <Text style={styles.resultCardTitle}>Transcription</Text>
+            <Text style={styles.transcriptionText}>{transcription}</Text>
+          </View>
+        ) : null}
+
+        {report && mode === 'report' && recordState === 'done' ? (
+          <View style={styles.resultCard}>
+            <Text style={styles.resultCardTitle}>Compte rendu généré</Text>
+            <MarkdownRenderer text={report} />
+            <View style={styles.disclaimer}>
+              <Text style={styles.disclaimerText}>
+                À vérifier et valider par le professionnel de santé avant tout usage clinique.
+              </Text>
+            </View>
+          </View>
+        ) : null}
+      </ScrollView>
+    </View>
+  );
+}
+
+function PremiumGate() {
+  return (
+    <View style={styles.gateContainer}>
+      <View style={styles.gateCard}>
+        <Text style={styles.emoji}>🎤</Text>
+        <Text style={styles.gateTitle}>Fonctions audio</Text>
+        <Text style={styles.gateText}>
+          Transcription d'enregistrements et rédaction de comptes rendus médicaux automatisée.
+          Réservé aux abonnés MedInfo Premium.
+        </Text>
+        <Link href="/(billing)/pricing" style={styles.gateLink}>
+          Voir les offres Premium
+        </Link>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: tokens.colors.background },
-  content: { padding: 16 },
-  card: {
-    gap: 16,
-    padding: 18,
-    borderRadius: 18,
+  header: {
+    paddingTop: tokens.space.xl,
+    paddingHorizontal: tokens.space.lg,
+    paddingBottom: 0,
     backgroundColor: tokens.colors.surface,
-    borderWidth: 1,
+    borderBottomWidth: 1,
     borderColor: tokens.colors.border,
   },
-  title: { color: tokens.colors.text, fontSize: 22, fontWeight: '800' },
-  description: { color: tokens.colors.textMuted, fontSize: 14, lineHeight: 21 },
-  statusPill: {
-    alignSelf: 'flex-start',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: tokens.colors.background,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
+  title: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.h3.fontSize,
+    letterSpacing: tokens.type.h3.letterSpacing,
+    fontWeight: tokens.weight.bold,
+    marginBottom: tokens.space.md,
   },
-  statusText: { color: tokens.colors.text, fontSize: 13, fontWeight: '700' },
-  duration: { color: tokens.colors.textMuted, fontSize: 13, fontWeight: '600' },
-  recordButton: {
-    minHeight: 48,
-    borderRadius: 24,
-    paddingHorizontal: 18,
-    backgroundColor: tokens.colors.accent,
+  modeSwitcher: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
+    borderBottomWidth: 0,
+    gap: 0,
   },
-  stopButton: { backgroundColor: tokens.colors.warningText },
-  disabledButton: { opacity: 0.6 },
-  recordButtonText: { color: '#fff', fontSize: 15, fontWeight: '800' },
-  resultBox: {
-    gap: 8,
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: tokens.colors.background,
+  modeTab: {
+    flex: 1,
+    paddingVertical: tokens.space.sm + 2,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  modeTabActive: { borderBottomColor: tokens.colors.accent },
+  modeLabel: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.medium,
+  },
+  modeLabelActive: { color: tokens.colors.accent, fontWeight: tokens.weight.semibold },
+  scroll: { flex: 1 },
+  scrollContent: { padding: tokens.space.lg, gap: tokens.space.md },
+  infoBox: {
+    borderRadius: tokens.radius.md,
+    backgroundColor: tokens.colors.accentSurface,
+    borderLeftWidth: 3,
+    borderLeftColor: tokens.colors.accent,
+    padding: tokens.space.md,
+  },
+  infoBoxText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.label.fontSize,
+    lineHeight: 21,
+  },
+  recorder: {
+    borderRadius: tokens.radius.lg,
     borderWidth: 1,
     borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surface,
+    padding: tokens.space.xl,
+    alignItems: 'center',
+    gap: tokens.space.md,
+    ...tokens.elevation.sm,
   },
-  resultLabel: { color: tokens.colors.textMuted, fontSize: 12, fontWeight: '800' },
-  resultText: { color: tokens.colors.text, fontSize: 15, lineHeight: 22 },
-  errorText: { color: tokens.colors.warningText, fontSize: 13, lineHeight: 19, fontWeight: '700' },
+  recordButton: {
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    padding: tokens.space.lg,
+  },
+  recordEmoji: { fontSize: 48 },
+  recordLabel: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accent,
+    fontWeight: tokens.weight.semibold,
+    fontSize: tokens.type.label.fontSize,
+  },
+  recordingActive: { alignItems: 'center', gap: tokens.space.md },
+  recordingIndicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: tokens.colors.danger,
+  },
+  recordingTime: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.text,
+    fontSize: 32,
+    fontWeight: tokens.weight.bold,
+  },
+  stopButton: {
+    alignItems: 'center',
+    gap: 4,
+    padding: tokens.space.md,
+    borderRadius: tokens.radius.md,
+    backgroundColor: tokens.colors.dangerBackground,
+    borderWidth: 1,
+    borderColor: tokens.colors.danger,
+  },
+  stopEmoji: { fontSize: 24 },
+  stopLabel: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.danger,
+    fontWeight: tokens.weight.semibold,
+    fontSize: tokens.type.label.fontSize,
+  },
+  haveAudio: { alignItems: 'center', gap: tokens.space.md, width: '100%' },
+  haveAudioText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textSubtle,
+    fontSize: tokens.type.body.fontSize,
+  },
+  haveAudioButtons: { flexDirection: 'row', gap: tokens.space.md, width: '100%' },
+  retryButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderStrong,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  retryText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textSubtle,
+    fontWeight: tokens.weight.medium,
+    fontSize: tokens.type.label.fontSize,
+  },
+  processButton: {
+    flex: 2,
+    height: 44,
+    borderRadius: tokens.radius.md,
+    backgroundColor: tokens.colors.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...tokens.elevation.sm,
+  },
+  processText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.onAccent,
+    fontWeight: tokens.weight.semibold,
+    fontSize: tokens.type.label.fontSize,
+  },
+  processingState: { alignItems: 'center', gap: tokens.space.lg, padding: tokens.space.xl },
+  processingText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.label.fontSize,
+  },
+  newRecordingButton: {
+    height: 44,
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.accent,
+    paddingHorizontal: tokens.space.xl,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  newRecordingText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accent,
+    fontWeight: tokens.weight.semibold,
+    fontSize: tokens.type.label.fontSize,
+  },
+  errorBox: {
+    borderRadius: tokens.radius.md,
+    borderLeftWidth: 4,
+    borderLeftColor: tokens.colors.danger,
+    backgroundColor: tokens.colors.dangerBackground,
+    padding: tokens.space.lg,
+  },
+  errorText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.danger,
+    fontSize: tokens.type.label.fontSize,
+    lineHeight: 21,
+  },
+  resultCard: {
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surface,
+    overflow: 'hidden',
+    ...tokens.elevation.sm,
+  },
+  resultCardTitle: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+    padding: tokens.space.md,
+    paddingHorizontal: tokens.space.lg,
+    backgroundColor: tokens.colors.accentSurface,
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.colors.accentSurfaceStrong,
+  },
+  transcriptionText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.body.fontSize,
+    lineHeight: tokens.type.body.lineHeight,
+    padding: tokens.space.lg,
+  },
+  disclaimer: {
+    padding: tokens.space.md,
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.border,
+    backgroundColor: tokens.colors.warningBackground,
+  },
+  disclaimerText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.warningText,
+    fontSize: tokens.type.caption.fontSize,
+    lineHeight: 18,
+  },
+  // Gate styles
+  gateContainer: { flex: 1, justifyContent: 'center', padding: tokens.space.xl, backgroundColor: tokens.colors.background },
+  gateCard: {
+    borderRadius: tokens.radius.lg,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surface,
+    padding: tokens.space.xl,
+    alignItems: 'center',
+    gap: tokens.space.md,
+    ...tokens.elevation.md,
+  },
+  emoji: { fontSize: 40 },
+  gateTitle: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.h3.fontSize,
+    fontWeight: tokens.weight.bold,
+    letterSpacing: tokens.type.h3.letterSpacing,
+    textAlign: 'center',
+  },
+  gateText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.body.fontSize,
+    lineHeight: tokens.type.body.lineHeight,
+    textAlign: 'center',
+    maxWidth: 340,
+  },
+  gateLink: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.onAccent,
+    fontWeight: tokens.weight.semibold,
+    fontSize: tokens.type.label.fontSize,
+    backgroundColor: tokens.colors.accent,
+    paddingHorizontal: tokens.space.xl,
+    paddingVertical: tokens.space.md,
+    borderRadius: tokens.radius.lg,
+    overflow: 'hidden',
+    marginTop: tokens.space.sm,
+  },
+  centeredBox: { alignItems: 'center', gap: tokens.space.lg, padding: tokens.space.xl },
+  infoTitle: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.h3.fontSize,
+    fontWeight: tokens.weight.bold,
+    textAlign: 'center',
+  },
+  infoText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.body.fontSize,
+    lineHeight: tokens.type.body.lineHeight,
+    textAlign: 'center',
+    maxWidth: 340,
+  },
 });

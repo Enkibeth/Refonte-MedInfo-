@@ -6,6 +6,7 @@
  */
 import { anthropic } from '@ai-sdk/anthropic';
 import { openai } from '@ai-sdk/openai';
+import { google } from '@ai-sdk/google';
 import type { LanguageModel } from 'ai';
 
 export type AIProvider = 'anthropic' | 'openai';
@@ -49,4 +50,21 @@ const PROVIDER_VENDORS: Record<AIProvider, string> = {
 export function getActiveSystemLabel(): string {
   const provider = getActiveProvider();
   return `${getActiveModelId()}, ${PROVIDER_VENDORS[provider]}`;
+}
+
+/**
+ * Modèle de l'étage 2 du classifieur (07_CLASSIFIER §3 — couche 1, deuxième lecture).
+ *
+ * Indépendant du provider du LLM PRINCIPAL : la classification de sécurité est un poste
+ * à part (modèle léger, rapide, peu coûteux). Production = Gemini 2.5 Flash-Lite.
+ * Surchargable via CLASSIFIER_MODEL_ID. Réservé au contexte SERVEUR.
+ */
+export const CLASSIFIER_MODEL_DEFAULT = 'gemini-2.5-flash-lite';
+
+export function getClassifierModelId(): string {
+  return process.env.CLASSIFIER_MODEL_ID ?? CLASSIFIER_MODEL_DEFAULT;
+}
+
+export function getClassifierModel(): LanguageModel {
+  return google(getClassifierModelId());
 }
