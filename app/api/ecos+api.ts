@@ -9,6 +9,7 @@ import { streamText, generateText } from 'ai';
 import { getModelForFeature } from '@/ai/providers/featureModel';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
+import { enforceFeatureQuota, quotaExceededResponse } from '@/billing/usage';
 
 interface EcosMessage {
   role: 'user' | 'assistant';
@@ -42,6 +43,13 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   if (mode === 'evaluate') {
+    // Quota mensuel PAR FEATURE (06_BILLING §1) : on comptabilise 1 ECOS par SESSION terminée
+    // (= une évaluation), pas par tour de simulation. 10 ECOS/mois en gratuit, illimité en payant.
+    const quota = await enforceFeatureQuota(request, 'ecos');
+    if (!quota.allowed) {
+      return quotaExceededResponse(quota);
+    }
+
     const [evalPromptSuffix, model] = await Promise.all([
       getPromptTemplate('ecos_evaluate'),
       getModelForFeature('ecos_evaluate'),

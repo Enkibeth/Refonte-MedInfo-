@@ -9,6 +9,7 @@ import { streamText } from 'ai';
 import { getModelForFeature } from '@/ai/providers/featureModel';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
+import { enforceFeatureQuota, quotaExceededResponse } from '@/billing/usage';
 
 const MAX_DOC_LENGTH = 8000;
 
@@ -16,6 +17,12 @@ export async function POST(request: Request): Promise<Response> {
   const rateLimit = await checkChatRateLimit(request, 'public');
   if (!rateLimit.allowed) {
     return Response.json({ error: 'Limite de requêtes atteinte.' }, { status: 429 });
+  }
+
+  // Quota mensuel PAR FEATURE (06_BILLING §1) : 10 analyses/mois en gratuit, illimité en payant.
+  const quota = await enforceFeatureQuota(request, 'analyze');
+  if (!quota.allowed) {
+    return quotaExceededResponse(quota);
   }
 
   let body: { documentText?: string };

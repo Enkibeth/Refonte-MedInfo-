@@ -92,3 +92,44 @@ Pour ajouter un admin : modifier `ADMIN_USER_IDS` dans `src/admin/index.ts`.
 | `ecos_evaluate` | `/api/ecos` | claude-sonnet-4-6 |
 | `audio_diarize` | `/api/transcribe` | gpt-4o-mini |
 | `audio_report` | `/api/transcribe` | gpt-4o-mini |
+
+## Quotas d'usage PAR FEATURE (facturation)
+
+Deux couches de limitation coexistent :
+
+1. **Anti-flood JOURNALIER GLOBAL par persona** — `src/ai/rateLimit/chatRateLimit.ts`
+   + migration `0004_usage_counters.sql`. Compteur journalier (user/persona ou IP). Inchangé.
+2. **Quota MENSUEL PAR FEATURE** — `src/billing/usage.ts` + migration `0014_entitlements.sql`
+   (table `feature_usage_counters` + RPC `consume_feature_quota`, check-and-consume atomique).
+   Modulé par le plan d'abonnement (freemium tiered, 06_BILLING §1).
+
+### Fonction centrale
+
+```ts
+import { enforceFeatureQuota, quotaExceededResponse } from '@/billing/usage';
+
+const quota = await enforceFeatureQuota(request, 'analyze'); // 'chat' | 'analyze' | 'ecos' | 'audio'
+if (!quota.allowed) return quotaExceededResponse(quota); // 429 + message FR
+```
+
+`enforceFeatureQuota(request, feature, amount?)` résout l'utilisateur depuis le Bearer token
+puis appelle `checkAndConsume(userId, feature, amount)`. Les **anonymes** (sans token) ne sont
+PAS décomptés ici (`skipped=true`) → ils restent gouvernés par le cap journalier IP (0004),
+ce qui **préserve le comportement gratuit existant**.
+
+### Barème par défaut (`FEATURE_QUOTAS` dans `src/billing/usage.ts`)
+
+| Feature | Gratuit (free) | Plans payants | Unité | Décompté dans |
+|---------|----------------|---------------|-------|----------------|
+| `chat` | 300/mois | illimité | message | `/api/chat` (auth.) |
+| `analyze` | 10/mois | illimité | analyse | `/api/analyze` |
+| `ecos` | 10/mois | illimité* | session (1 par évaluation) | `/api/ecos` (mode `evaluate`) |
+| `audio` | 30/mois | illimité | minute (estimée ≈ taille/1 Mo) | `/api/transcribe` |
+
+\* `public_mid` n'a pas l'ECOS (feature étudiante) → quota 0. Les plans payants lèvent les
+plafonds de volume (cohérent avec `resolveEntitlement().unlimitedMessages`, 06_BILLING §1).
+
+**INVARIANT 06_BILLING §5** : ces quotas ne portent QUE sur le VOLUME, jamais sur l'accès aux
+sources (HAS/ANSM restent gratuites pour tous). **RLS** : lecture own-row (`authenticated`),
+écriture service_role only (anti-tampering). Tests : `tests/unit/billing-usage.test.ts`,
+`tests/rls/usage-isolation.test.ts`.

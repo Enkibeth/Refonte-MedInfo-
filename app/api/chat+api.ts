@@ -30,6 +30,7 @@ import { validateOutput } from '@/ai/guardrails/outputValidator';
 import { buildRefusalChunks } from '@/ai/guardrails/refusalStream';
 import { logInteraction } from '@/ai/logging/logInteraction';
 import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
+import { enforceFeatureQuota, quotaExceededResponse } from '@/billing/usage';
 import { retrieveRagContext, buildRagSystemSection, RAG_REFUSAL_MESSAGE } from '@/rag/retrieval';
 import { proposeFollowupsTool } from '@/ai/skills/propose_followups';
 import { showSourcesTool } from '@/ai/skills/show_sources';
@@ -97,6 +98,14 @@ export async function POST(request: Request): Promise<Response> {
         },
       },
     );
+  }
+
+  // Quota MENSUEL PAR FEATURE (06_BILLING §1) : plafond de messages chat des comptes
+  // authentifiés (300/mois en gratuit, illimité en payant). Le cap anti-flood JOURNALIER
+  // ci-dessus (0004) reste actif. Les anonymes (sans token) ne sont PAS décomptés ici.
+  const messageQuota = await enforceFeatureQuota(request, 'chat');
+  if (!messageQuota.allowed) {
+    return quotaExceededResponse(messageQuota);
   }
 
   // ── Couche 1 : classifieur d'intention sur TOUTE la conversation (pré-LLM) ─────

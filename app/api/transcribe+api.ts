@@ -11,8 +11,12 @@
 import { generateText } from 'ai';
 import { getModelForFeature } from '@/ai/providers/featureModel';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
+import { enforceFeatureQuota, quotaExceededResponse } from '@/billing/usage';
 
 const MAX_SIZE_BYTES = 25 * 1024 * 1024;
+// Estimation des minutes consommées à partir de la taille du fichier. WebM/Opus voix ≈ 1 Mo/min.
+// Métrage APPROXIMATIF (pas de décodage serveur) : suffisant pour un quota de volume.
+const AUDIO_BYTES_PER_MINUTE = 1_000_000;
 
 export async function POST(request: Request): Promise<Response> {
   const openaiKey = process.env.OPENAI_API_KEY;
@@ -40,6 +44,14 @@ export async function POST(request: Request): Promise<Response> {
 
   if (audioEntry.size > MAX_SIZE_BYTES) {
     return Response.json({ error: 'Fichier trop volumineux (max 25 MB).' }, { status: 413 });
+  }
+
+  // Quota mensuel PAR FEATURE (06_BILLING §1) : décompté en MINUTES audio (estimées depuis la
+  // taille). 30 min/mois en gratuit, illimité en payant. Anonymes : non décomptés ici.
+  const estimatedMinutes = Math.max(1, Math.ceil(audioEntry.size / AUDIO_BYTES_PER_MINUTE));
+  const quota = await enforceFeatureQuota(request, 'audio', estimatedMinutes);
+  if (!quota.allowed) {
+    return quotaExceededResponse(quota);
   }
 
   // ── Étape 1 : Whisper transcription brute ─────────────────────────────────
