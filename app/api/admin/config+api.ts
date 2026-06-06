@@ -10,11 +10,54 @@ import { AVAILABLE_MODELS } from '@/ai/providers/featureModel';
 import { PROMPT_DEFAULTS } from '@/ai/prompts/promptStore';
 import { invalidateConfigCache } from '@/ai/providers/featureModel';
 import { invalidatePromptCache } from '@/ai/prompts/promptStore';
+import {
+  savePromptWithHistory,
+  restorePromptVersion,
+  type PromptHistoryStore,
+  type PromptRecord,
+  type HistoryRecord,
+} from '@/ai/prompts/promptHistory';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 function serviceClient() {
   const url = process.env.SUPABASE_URL ?? process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
   return createClient(url, key, { auth: { persistSession: false } });
+}
+
+/** Adaptateur Supabase de l'interface PromptHistoryStore (logique pure dans promptHistory.ts). */
+function supabaseHistoryStore(db: SupabaseClient): PromptHistoryStore {
+  return {
+    async getPrompt(key) {
+      const { data, error } = await db
+        .from('ai_prompts')
+        .select('key, label, scope, template, version')
+        .eq('key', key)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return (data as PromptRecord | null) ?? null;
+    },
+    async upsertPrompt(record) {
+      const { error } = await db.from('ai_prompts').upsert({
+        ...record,
+        updated_at: new Date().toISOString(),
+      });
+      if (error) throw new Error(error.message);
+    },
+    async insertHistory(record) {
+      const { error } = await db.from('ai_prompts_history').insert(record);
+      if (error) throw new Error(error.message);
+    },
+    async listHistory(key) {
+      const { data, error } = await db
+        .from('ai_prompts_history')
+        .select('key, template, version, author, created_at')
+        .eq('key', key)
+        .order('created_at', { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data as HistoryRecord[] | null) ?? [];
+    },
+  };
 }
 
 // ── GET ───────────────────────────────────────────────────────────────────────
@@ -24,6 +67,18 @@ export async function GET(request: Request): Promise<Response> {
 
   const db = serviceClient();
 
+  // ?history=<key> → liste des versions archivées d'un prompt (récent → ancien).
+  const historyKey = new URL(request.url).searchParams.get('history');
+  if (historyKey) {
+    const { data, error } = await db
+      .from('ai_prompts_history')
+      .select('key, template, version, author, created_at')
+      .eq('key', historyKey)
+      .order('created_at', { ascending: false });
+    if (error) return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ history: data ?? [] });
+  }
+
   const [modelsRes, promptsRes] = await Promise.all([
     db
       .from('ai_model_config')
@@ -32,9 +87,18 @@ export async function GET(request: Request): Promise<Response> {
   ]);
 
   // Prompts : merge DB (override) + defaults
-  const dbPrompts: Record<string, { template: string; label: string; scope: string; updated_at: string }> = {};
+  const dbPrompts: Record<
+    string,
+    { template: string; label: string; scope: string; version: string; updated_at: string }
+  > = {};
   for (const row of promptsRes.data ?? []) {
-    dbPrompts[row.key] = { template: row.template, label: row.label, scope: row.scope, updated_at: row.updated_at };
+    dbPrompts[row.key] = {
+      template: row.template,
+      label: row.label,
+      scope: row.scope,
+      version: row.version,
+      updated_at: row.updated_at,
+    };
   }
 
   return Response.json({
@@ -46,6 +110,7 @@ export async function GET(request: Request): Promise<Response> {
       scope: dbPrompts[key]?.scope ?? def.scope,
       template: dbPrompts[key]?.template ?? def.template,
       isOverridden: Boolean(dbPrompts[key]),
+      version: dbPrompts[key]?.version ?? null,
       updated_at: dbPrompts[key]?.updated_at ?? null,
     })),
   });
@@ -62,6 +127,7 @@ export async function POST(request: Request): Promise<Response> {
     model_id?: string;
     provider?: string;
     template?: string;
+    version?: string;
     temperature?: number | null;
     reasoning_effort?: string | null;
     verbosity?: string | null;
@@ -121,18 +187,39 @@ export async function POST(request: Request): Promise<Response> {
     if (!template) return Response.json({ error: 'template requis.' }, { status: 400 });
 
     const def = PROMPT_DEFAULTS[key];
-    const { error } = await db.from('ai_prompts').upsert({
-      key,
-      label: def?.label ?? key,
-      scope: def?.scope ?? 'system',
-      template,
-      version: '1.0.0',
-      updated_at: new Date().toISOString(),
-    });
+    try {
+      const result = await savePromptWithHistory(supabaseHistoryStore(db), {
+        key,
+        template,
+        label: def?.label ?? key,
+        scope: def?.scope ?? 'system',
+        author: auth.userId,
+      });
+      invalidatePromptCache();
+      return Response.json({ ok: true, version: result.version });
+    } catch (e) {
+      return Response.json({ error: e instanceof Error ? e.message : 'Erreur.' }, { status: 500 });
+    }
+  }
 
-    if (error) return Response.json({ error: error.message }, { status: 500 });
-    invalidatePromptCache();
-    return Response.json({ ok: true });
+  if (type === 'restore_prompt') {
+    const { version } = body;
+    if (!version) return Response.json({ error: 'version requise.' }, { status: 400 });
+
+    const def = PROMPT_DEFAULTS[key];
+    try {
+      const result = await restorePromptVersion(supabaseHistoryStore(db), {
+        key,
+        version,
+        label: def?.label ?? key,
+        scope: def?.scope ?? 'system',
+        author: auth.userId,
+      });
+      invalidatePromptCache();
+      return Response.json({ ok: true, version: result.version });
+    } catch (e) {
+      return Response.json({ error: e instanceof Error ? e.message : 'Erreur.' }, { status: 400 });
+    }
   }
 
   if (type === 'reset_prompt') {

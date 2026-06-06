@@ -49,6 +49,7 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 | `0013_ecos_cases.sql` | Cas ECOS fictifs versionnés | Non si cas synthétiques uniquement | Lecture selon entitlement étudiant | Ne jamais importer de cas patient réel |
 | `0014_feature_quotas.sql` | Quotas par feature et compteurs associés | Non | Service role only | Remplace la logique « quota chat unique » par une matrice extensible |
 | `0015_ai_model_params.sql` | Réglages de génération par feature (temperature, reasoning_effort, verbosity, web_search) sur `ai_model_config` | Non | Service role only (hérite du verrou 0011) | Lus par featureModel.ts (`getFeatureSettings`), appliqués par featureRuntime.ts ; 0013/0014 réservés |
+| `0016_ai_prompts_history.sql` | Versionnement des system prompts (snapshot immuable key/template/version/author/created_at) | Non | Service role only (RLS sans policy client) | Écrite/lue par app/api/admin/config+api.ts via `src/ai/prompts/promptHistory.ts` ; bump semver patch + rollback/diff côté panel admin |
 
 > Si une migration ci-dessus n'existe pas encore dans `supabase/migrations/`, la documenter comme décision attendue et ne pas modifier le schéma sans tests RLS correspondants.
 

@@ -175,6 +175,29 @@ describe('ai_prompts — service_role only (overrides admin, jamais exposés au 
   });
 });
 
+describe('ai_prompts_history — service_role only (versionnement des prompts, 0016)', () => {
+  it('un client authentifié NE PEUT PAS lire ai_prompts_history', async () => {
+    await expect(db.asUser(USER_A, (q) => q('SELECT * FROM ai_prompts_history'))).rejects.toThrow();
+  });
+
+  it('un client authentifié NE PEUT PAS écrire dans ai_prompts_history', async () => {
+    await expect(
+      db.asUser(USER_A, (q) =>
+        q("INSERT INTO ai_prompts_history (key, template, version) VALUES ('chat', 'x', '1.0.0')"),
+      ),
+    ).rejects.toThrow();
+  });
+
+  it('le service_role PEUT snapshoter une version de prompt', async () => {
+    const { rowCount } = await db.asService((q) =>
+      q(
+        "INSERT INTO ai_prompts_history (key, template, version, author) VALUES ('analyze', 'ancienne version', '1.0.0', 'admin-1')",
+      ),
+    );
+    expect(rowCount).toBe(1);
+  });
+});
+
 describe('usage_counters — service_role only + isolation compteur', () => {
   it('le service_role PEUT incrémenter un compteur journalier user/persona sans donnée santé', async () => {
     const { rows } = await db.asService((q) =>

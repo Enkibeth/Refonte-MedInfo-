@@ -77,7 +77,53 @@ interface PromptRow {
   scope: string;
   template: string;
   isOverridden: boolean;
+  version: string | null;
   updated_at: string | null;
+}
+
+interface HistoryRecord {
+  key: string;
+  template: string;
+  version: string;
+  author: string | null;
+  created_at: string;
+}
+
+// ── Diff ligne-à-ligne (LCS) ────────────────────────────────────────────────
+type DiffLine = { type: 'same' | 'add' | 'del'; text: string };
+
+/** Diff simple basé sur la plus longue sous-séquence commune (par lignes). */
+function diffLines(oldText: string, newText: string): DiffLine[] {
+  const a = oldText.split('\n');
+  const b = newText.split('\n');
+  const n = a.length;
+  const m = b.length;
+  // Table LCS.
+  const lcs: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      lcs[i][j] = a[i] === b[j] ? lcs[i + 1][j + 1] + 1 : Math.max(lcs[i + 1][j], lcs[i][j + 1]);
+    }
+  }
+  const out: DiffLine[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < n && j < m) {
+    if (a[i] === b[j]) {
+      out.push({ type: 'same', text: a[i] });
+      i++;
+      j++;
+    } else if (lcs[i + 1][j] >= lcs[i][j + 1]) {
+      out.push({ type: 'del', text: a[i] });
+      i++;
+    } else {
+      out.push({ type: 'add', text: b[j] });
+      j++;
+    }
+  }
+  while (i < n) out.push({ type: 'del', text: a[i++] });
+  while (j < m) out.push({ type: 'add', text: b[j++] });
+  return out;
 }
 
 interface Config {
@@ -365,6 +411,100 @@ function ModelsTab({
   );
 }
 
+// ── Historique + diff d'un prompt ───────────────────────────────────────────
+
+function HistoryPanel({
+  currentTemplate,
+  records,
+  loading,
+  selectedVersion,
+  onSelectVersion,
+  onRestore,
+  disabled,
+}: {
+  currentTemplate: string;
+  records: HistoryRecord[];
+  loading: boolean;
+  selectedVersion: string;
+  onSelectVersion: (version: string) => void;
+  onRestore: (version: string) => void;
+  disabled: boolean;
+}) {
+  const selected = records.find((r) => r.version === selectedVersion) ?? null;
+  // Diff : ancienne version (sélectionnée) vs nouvelle (template courant).
+  const diff = selected ? diffLines(selected.template, currentTemplate) : null;
+
+  return (
+    <View style={historyStyles.panel}>
+      <Text style={historyStyles.title}>Historique des versions</Text>
+      {loading ? (
+        <ActivityIndicator color={tokens.colors.accent} size="small" style={{ marginVertical: 12 }} />
+      ) : records.length === 0 ? (
+        <Text style={historyStyles.empty}>
+          Aucune version archivée. L'historique se remplit à chaque sauvegarde.
+        </Text>
+      ) : (
+        records.map((rec) => {
+          const isSelected = rec.version === selectedVersion;
+          return (
+            <View key={`${rec.version}-${rec.created_at}`} style={historyStyles.row}>
+              <TouchableOpacity
+                style={{ flex: 1 }}
+                onPress={() => onSelectVersion(rec.version)}
+              >
+                <Text style={[historyStyles.version, isSelected && historyStyles.versionActive]}>
+                  v{rec.version}
+                </Text>
+                <Text style={historyStyles.date}>
+                  {rec.created_at ? new Date(rec.created_at).toLocaleString('fr') : ''}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={historyStyles.diffBtn}
+                onPress={() => onSelectVersion(rec.version)}
+              >
+                <Text style={historyStyles.diffBtnText}>{isSelected ? 'Masquer' : 'Diff'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={historyStyles.restoreBtn}
+                onPress={() => onRestore(rec.version)}
+                disabled={disabled}
+              >
+                <Text style={historyStyles.restoreBtnText}>Restaurer</Text>
+              </TouchableOpacity>
+            </View>
+          );
+        })
+      )}
+
+      {diff ? (
+        <View style={historyStyles.diff}>
+          <Text style={historyStyles.diffHeader}>
+            Diff · v{selected!.version} (rouge) → version actuelle (vert)
+          </Text>
+          <ScrollView style={historyStyles.diffScroll} horizontal>
+            <View>
+              {diff.map((line, idx) => (
+                <Text
+                  key={idx}
+                  style={[
+                    historyStyles.diffLine,
+                    line.type === 'add' && historyStyles.diffAdd,
+                    line.type === 'del' && historyStyles.diffDel,
+                  ]}
+                >
+                  {line.type === 'add' ? '+ ' : line.type === 'del' ? '- ' : '  '}
+                  {line.text || ' '}
+                </Text>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 // ── Onglet Prompts ────────────────────────────────────────────────────────────
 
 function PromptsTab({
@@ -380,12 +520,58 @@ function PromptsTab({
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
+  // Historique des versions par prompt + version sélectionnée pour le diff.
+  const [historyOpen, setHistoryOpen] = useState<string | null>(null);
+  const [history, setHistory] = useState<Record<string, HistoryRecord[]>>({});
+  const [loadingHistory, setLoadingHistory] = useState<string | null>(null);
+  const [diffVersion, setDiffVersion] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const init: Record<string, string> = {};
     for (const p of config.prompts) init[p.key] = p.template;
     setDrafts(init);
   }, [config.prompts]);
+
+  async function loadHistory(key: string) {
+    setLoadingHistory(key);
+    try {
+      const res = await fetch(`/api/admin/config?history=${encodeURIComponent(key)}`, {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      const json = await res.json();
+      setHistory((prev) => ({ ...prev, [key]: json.history ?? [] }));
+    } finally {
+      setLoadingHistory(null);
+    }
+  }
+
+  function toggleHistory(key: string) {
+    if (historyOpen === key) {
+      setHistoryOpen(null);
+      return;
+    }
+    setHistoryOpen(key);
+    if (!history[key]) loadHistory(key);
+  }
+
+  async function restoreVersion(key: string, version: string) {
+    setSaving(key);
+    try {
+      await fetch('/api/admin/config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ type: 'restore_prompt', key, version }),
+      });
+      setDiffVersion((prev) => ({ ...prev, [key]: '' }));
+      await loadHistory(key);
+      onSaved();
+    } finally {
+      setSaving(null);
+    }
+  }
 
   async function savePrompt(key: string) {
     setSaving(key);
@@ -400,6 +586,8 @@ function PromptsTab({
       });
       setSaved(key);
       setTimeout(() => setSaved(null), 2000);
+      // Le snapshot a changé : on recharge l'historique si déjà chargé.
+      if (history[key]) await loadHistory(key);
       onSaved();
     } finally {
       setSaving(null);
@@ -453,7 +641,7 @@ function PromptsTab({
                     <Text style={promptStyles.label}>{p.label}</Text>
                     <Text style={promptStyles.meta}>
                       {p.isOverridden
-                        ? `Modifié ${p.updated_at ? new Date(p.updated_at).toLocaleDateString('fr') : ''}`
+                        ? `Modifié ${p.updated_at ? new Date(p.updated_at).toLocaleDateString('fr') : ''}${p.version ? ` · v${p.version}` : ''}`
                         : 'Valeur par défaut (code)'}
                     </Text>
                   </View>
@@ -478,6 +666,15 @@ function PromptsTab({
                       placeholderTextColor={tokens.colors.textMuted}
                     />
                     <View style={promptStyles.actions}>
+                      <TouchableOpacity
+                        style={promptStyles.resetBtn}
+                        onPress={() => toggleHistory(p.key)}
+                        disabled={saving !== null}
+                      >
+                        <Text style={promptStyles.resetBtnText}>
+                          {historyOpen === p.key ? '▲ Versions' : '🕓 Versions'}
+                        </Text>
+                      </TouchableOpacity>
                       {p.isOverridden ? (
                         <TouchableOpacity
                           style={promptStyles.resetBtn}
@@ -504,6 +701,20 @@ function PromptsTab({
                         )}
                       </TouchableOpacity>
                     </View>
+
+                    {historyOpen === p.key ? (
+                      <HistoryPanel
+                        currentTemplate={drafts[p.key] ?? p.template}
+                        records={history[p.key] ?? []}
+                        loading={loadingHistory === p.key}
+                        selectedVersion={diffVersion[p.key] ?? ''}
+                        onSelectVersion={(v) =>
+                          setDiffVersion((prev) => ({ ...prev, [p.key]: prev[p.key] === v ? '' : v }))
+                        }
+                        onRestore={(v) => restoreVersion(p.key, v)}
+                        disabled={saving !== null}
+                      />
+                    ) : null}
                   </View>
                 ) : null}
               </View>
@@ -1016,6 +1227,112 @@ const promptStyles = StyleSheet.create({
     color: tokens.colors.onAccent,
     fontWeight: tokens.weight.semibold,
     fontSize: tokens.type.label.fontSize,
+  },
+});
+
+const historyStyles = StyleSheet.create({
+  panel: {
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surface,
+    padding: tokens.space.md,
+    gap: tokens.space.xs,
+  },
+  title: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.textMuted,
+    fontSize: 11,
+    fontWeight: tokens.weight.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: tokens.space.xs,
+  },
+  empty: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: 12,
+    fontStyle: 'italic',
+    paddingVertical: tokens.space.sm,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    paddingVertical: tokens.space.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.colors.border,
+  },
+  version: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.text,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  versionActive: { color: tokens.colors.accentDeep },
+  date: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: 11,
+    marginTop: 1,
+  },
+  diffBtn: {
+    borderRadius: tokens.radius.sm,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.xs,
+  },
+  diffBtnText: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.textMuted,
+    fontSize: 11,
+    fontWeight: tokens.weight.medium,
+  },
+  restoreBtn: {
+    borderRadius: tokens.radius.sm,
+    backgroundColor: tokens.colors.accentSurface,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.xs,
+  },
+  restoreBtnText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: 11,
+    fontWeight: tokens.weight.semibold,
+  },
+  diff: {
+    marginTop: tokens.space.sm,
+    borderRadius: tokens.radius.sm,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surfaceAlt,
+    overflow: 'hidden',
+  },
+  diffHeader: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.textMuted,
+    fontSize: 10,
+    padding: tokens.space.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.colors.border,
+  },
+  diffScroll: { maxHeight: 280 },
+  diffLine: {
+    fontFamily: tokens.font.mono,
+    fontSize: 12,
+    lineHeight: 18,
+    color: tokens.colors.textMuted,
+    paddingHorizontal: tokens.space.sm,
+  },
+  diffAdd: {
+    color: tokens.colors.success,
+    backgroundColor: tokens.colors.success + '18',
+  },
+  diffDel: {
+    color: tokens.colors.danger,
+    backgroundColor: tokens.colors.danger + '18',
   },
 });
 
