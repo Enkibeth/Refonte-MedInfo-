@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getUser = vi.fn();
 const update = vi.fn();
-const eq = vi.fn();
+const updateEq = vi.fn();
+const select = vi.fn();
+const selectEq = vi.fn();
+const maybeSingle = vi.fn();
 const from = vi.fn();
 const createClient = vi.fn();
 
@@ -35,9 +38,13 @@ beforeEach(() => {
   delete process.env.ANNUAIRE_SANTE_API_KEY;
 
   getUser.mockResolvedValue({ data: { user: { id: 'user-123' } }, error: null });
-  eq.mockResolvedValue({ error: null });
-  update.mockReturnValue({ eq });
-  from.mockReturnValue({ update });
+  // Lecture de l'ensemble des rôles déjà vérifiés (multi-rôles, migration 0016).
+  maybeSingle.mockResolvedValue({ data: { verified_personas: ['public'] }, error: null });
+  selectEq.mockReturnValue({ maybeSingle });
+  select.mockReturnValue({ eq: selectEq });
+  updateEq.mockResolvedValue({ error: null });
+  update.mockReturnValue({ eq: updateEq });
+  from.mockReturnValue({ select, update });
   createClient.mockImplementation((_url: string, key: string) => {
     if (key === 'anon-test') return { auth: { getUser } };
     return { from };
@@ -109,7 +116,7 @@ describe('POST /api/role — edge cases et anti-usurpation', () => {
     const response = await POST(roleRequest({ persona: 'public', userId: 'attacker-id' }));
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ ok: true, persona: 'public', status: 'verified' });
+    expect(await response.json()).toMatchObject({ ok: true, persona: 'public', status: 'verified' });
     expect(createClient).toHaveBeenNthCalledWith(
       1,
       'https://project.supabase.co',
@@ -118,8 +125,8 @@ describe('POST /api/role — edge cases et anti-usurpation', () => {
     );
     expect(from).toHaveBeenCalledWith('profiles');
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ persona: 'public', status: 'verified' }));
-    expect(eq).toHaveBeenCalledWith('id', 'user-123');
-    expect(eq).not.toHaveBeenCalledWith('id', 'attacker-id');
+    expect(updateEq).toHaveBeenCalledWith('id', 'user-123');
+    expect(updateEq).not.toHaveBeenCalledWith('id', 'attacker-id');
   });
 
   it("rejette un email étudiant non académique sans mise à jour admin", async () => {
@@ -129,7 +136,8 @@ describe('POST /api/role — edge cases et anti-usurpation', () => {
     expect(response.status).toBe(422);
     expect(await response.json()).toEqual({ error: 'Email étudiant non reconnu (domaine académique requis).' });
     expect(getUser).toHaveBeenCalledTimes(1);
-    expect(from).not.toHaveBeenCalled();
+    // Lecture des rôles autorisée, mais aucune ÉCRITURE avant vérification réussie.
+    expect(update).not.toHaveBeenCalled();
   });
 
   it('laisse un RPPS valide en attente si la clé Annuaire Santé manque, sans auto-attribution pro', async () => {
@@ -140,6 +148,43 @@ describe('POST /api/role — edge cases et anti-usurpation', () => {
     expect(response.status).toBe(202);
     expect(payload.status).toBe('pending');
     expect(payload.message).toMatch(/ANNUAIRE_SANTE_API_KEY/);
-    expect(from).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('bascule vers un rôle DÉJÀ vérifié sans re-vérification (changer de chat librement)', async () => {
+    maybeSingle.mockResolvedValueOnce({
+      data: { verified_personas: ['public', 'student'] },
+      error: null,
+    });
+    const { POST } = await importRoute();
+    // Aucun email fourni : l'étudiant déjà vérifié rebascule sur son chat sans preuve.
+    const response = await POST(roleRequest({ persona: 'student' }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({ ok: true, persona: 'student', status: 'verified' });
+    expect(payload.verifiedPersonas).toEqual(expect.arrayContaining(['public', 'student']));
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ persona: 'student', status: 'verified' }),
+    );
+  });
+
+  it('agrège un nouveau rôle vérifié dans verified_personas', async () => {
+    const { POST } = await importRoute();
+    const response = await POST(
+      roleRequest({ persona: 'student', email: 'a@etu.univ-paris.fr' }),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.verifiedPersonas).toEqual(expect.arrayContaining(['public', 'student']));
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        persona: 'student',
+        status: 'verified',
+        verification_method: 'academic_email',
+        verified_personas: expect.arrayContaining(['public', 'student']),
+      }),
+    );
   });
 });

@@ -1,6 +1,9 @@
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { useSession } from '@/auth/AuthProvider';
+import type { Persona } from '@/ai/prompts/_schema';
 import { INTENDED_PURPOSE, getAiDisclosure } from '@/compliance/disclosures';
 import { Button } from '@/ui/Button';
 import { Icon, type IconName } from '@/ui/icons';
@@ -8,6 +11,13 @@ import { Logo } from '@/ui/Logo';
 import { PersonaCard, type PersonaId } from '@/ui/PersonaCard';
 import { Reveal } from '@/ui/Reveal';
 import { tokens } from '@/ui/tokens';
+
+/** Persona « santé » ciblée par une carte d'accueil (la carte `pro` → 'professional'). */
+const CARD_PERSONA: Record<PersonaId, Persona> = {
+  pro: 'professional',
+  student: 'student',
+  public: 'public',
+};
 
 const TRUST_POINTS: { icon: IconName; title: string; text: string }[] = [
   {
@@ -67,6 +77,28 @@ const PERSONAS: {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { user, verifiedPersonas, persona, requestRole } = useSession();
+  const [switching, setSwitching] = useState<PersonaId | null>(null);
+
+  const isAuthed = !!user;
+
+  // Connecté : on n'affiche QUE les chats auxquels le compte a accès (rôles vérifiés,
+  // `public` toujours acquis). Déconnecté : vitrine des trois usages.
+  const visiblePersonas = isAuthed
+    ? PERSONAS.filter((p) => verifiedPersonas.includes(CARD_PERSONA[p.id]))
+    : PERSONAS;
+
+  async function openPersonaChat(id: PersonaId) {
+    const target = CARD_PERSONA[id];
+    // Bascule libre entre rôles déjà vérifiés (le serveur ne re-demande pas de preuve).
+    if (target !== persona) {
+      setSwitching(id);
+      const res = await requestRole(target);
+      setSwitching(null);
+      if (res.error) return;
+    }
+    router.push('/(chat)/chat');
+  }
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
@@ -97,7 +129,28 @@ export default function HomeScreen() {
 
           <Reveal delay={tokens.motion.revealStagger * 4} style={styles.actions}>
             <Button label="Ouvrir le chat" variant="inverse" onPress={() => router.push('/(chat)/chat')} />
-            <Button label="Se connecter" variant="outlineLight" onPress={() => router.push('/(auth)/sign-in')} />
+            {isAuthed ? (
+              <Button
+                label="Mon compte"
+                variant="outlineLight"
+                onPress={() => router.push('/(account)/account')}
+              />
+            ) : (
+              <Button
+                label="Se connecter"
+                variant="outlineLight"
+                onPress={() => router.push('/(auth)/sign-in')}
+              />
+            )}
+          </Reveal>
+
+          <Reveal delay={tokens.motion.revealStagger * 5}>
+            <Image
+              source={require('../assets/brand/legacy-illustration.png')}
+              style={styles.heroIllustration}
+              resizeMode="contain"
+              accessibilityLabel="Illustration MedInfo AI : équipe soignante"
+            />
           </Reveal>
         </View>
       </View>
@@ -105,20 +158,30 @@ export default function HomeScreen() {
       {/* Trois audiences — cartes persona */}
       <View style={styles.section}>
         <Reveal style={styles.sectionHead}>
-          <Text style={styles.sectionEyebrow}>Pour qui ?</Text>
-          <Text style={styles.sectionTitle}>Une IA médicale, trois usages</Text>
+          <Text style={styles.sectionEyebrow}>{isAuthed ? 'Mes accès' : 'Pour qui ?'}</Text>
+          <Text style={styles.sectionTitle}>
+            {isAuthed ? 'Tes chats disponibles' : 'Une IA médicale, trois usages'}
+          </Text>
+          {isAuthed ? (
+            <Text style={styles.sectionSubtitle}>
+              Seuls les chats de tes rôles vérifiés sont affichés. Valide un nouveau rôle depuis
+              ton compte pour débloquer les autres.
+            </Text>
+          ) : null}
         </Reveal>
         <View style={styles.personaGrid}>
-          {PERSONAS.map((p, i) => (
+          {visiblePersonas.map((p, i) => (
             <Reveal key={p.id} delay={tokens.motion.revealStagger * (i + 1)} style={styles.personaCell}>
               <PersonaCard
                 persona={p.id}
                 eyebrow={p.eyebrow}
                 title={p.title}
                 description={p.description}
-                cta={p.cta}
+                cta={isAuthed ? (switching === p.id ? 'Ouverture…' : 'Ouvrir ce chat') : p.cta}
                 icon={p.icon}
-                onPress={() => router.push(p.route as never)}
+                onPress={() =>
+                  isAuthed ? openPersonaChat(p.id) : router.push(p.route as never)
+                }
               />
             </Reveal>
           ))}
@@ -244,6 +307,13 @@ const styles = StyleSheet.create({
     marginTop: tokens.space.lg,
     maxWidth: 420,
   },
+  heroIllustration: {
+    width: '100%',
+    maxWidth: 320,
+    height: 220,
+    marginTop: tokens.space.xl,
+    alignSelf: 'center',
+  },
 
   // ── Section personas ──
   section: {
@@ -268,6 +338,14 @@ const styles = StyleSheet.create({
     lineHeight: tokens.type.h1.lineHeight,
     letterSpacing: tokens.type.h1.letterSpacing,
     fontWeight: tokens.weight.bold,
+  },
+  sectionSubtitle: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.label.fontSize,
+    lineHeight: tokens.type.label.lineHeight,
+    marginTop: tokens.space.xs,
+    maxWidth: 560,
   },
   personaGrid: {
     width: '100%',
