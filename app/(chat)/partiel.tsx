@@ -1,150 +1,61 @@
 /**
- * Analyseur de partiel — outil étudiant (persona student).
- * L'étudiant colle ses résultats de partiel / session de QCM (questions + sa réponse +
- * la bonne réponse, ou un score par matière) et obtient :
- *  - une synthèse de performance
- *  - une analyse par item EDN / thème
- *  - les erreurs typiques à corriger
- *  - un plan de révision priorisé
+ * Analyseur de classement de promo — outil étudiant (persona student).
  *
- * Strictement pédagogique (annales/QCM fictifs) — jamais un cas patient réel.
+ * Concept (medoutils) : l'étudiant importe le fichier des notes de toute sa promo et
+ * obtient son classement, des statistiques, et peut comparer avec un autre numéro
+ * étudiant. Traitement 100 % CÔTÉ CLIENT (les notes des autres étudiants ne quittent
+ * jamais l'appareil) — aucune IA, aucune donnée envoyée.
+ *
+ * ⏳ Implémentation en attente de la spécification exacte (format de fichier, colonnes,
+ * « petites fonctionnalités ») du projet medoutils. Écran de cadrage en attendant.
  */
-import { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
-import { useSession } from '@/auth/AuthProvider';
 import { tokens } from '@/ui/tokens';
-import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
+import { ToolsMenu } from '@/ui/ToolsMenu';
 
-const PLACEHOLDER = `Colle ici tes résultats. Exemples acceptés :
-• Liste : "Q1 item 224 HTA — ma réponse B / correct C ; Q2 item 330 AINS — ma réponse A / correct A …"
-• Score par matière : "Cardio 12/20, Pneumo 8/20, Infectio 15/20 …"
-• Items ratés : "Items 224, 330, 91 non maîtrisés"`;
+const PLANNED = [
+  'Importer un fichier (CSV/Excel) avec les notes de toute la promo.',
+  'Voir mon classement (rang, moyenne, médiane, percentile).',
+  'Comparer avec un autre numéro étudiant (ex. ma copine).',
+  'Classement par matière + petites statistiques.',
+];
 
 function PartielInner() {
-  const { session } = useSession();
-  const [resultsText, setResultsText] = useState('');
-  const [analysis, setAnalysis] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleAnalyze() {
-    const text = resultsText.trim();
-    if (text.length < 20 || loading) return;
-    setError(null);
-    setAnalysis(null);
-    setLoading(true);
-
-    try {
-      const token = session?.access_token;
-      const response = await fetch('/api/partiel', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ results: text }),
-      });
-
-      if (!response.ok) {
-        const err = (await response.json().catch(() => ({}))) as { error?: string };
-        throw new Error(err.error ?? "Erreur lors de l'analyse. Réessaie.");
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error('Flux de réponse indisponible.');
-
-      const decoder = new TextDecoder();
-      let fullText = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        fullText += decoder.decode(value, { stream: true });
-        if (fullText.length > 20) setAnalysis(fullText);
-      }
-
-      if (!fullText) throw new Error('Aucune réponse reçue. Réessaie.');
-      setAnalysis(fullText);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Une erreur est survenue.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={80}
-    >
+    <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Analyseur de partiel</Text>
+        <View style={styles.headerTop}>
+          <ToolsMenu />
+        </View>
+        <Text style={styles.title}>Analyseur de classement</Text>
         <Text style={styles.subtitle}>
-          Colle tes résultats de QCM / partiel : l’IA repère tes items EDN faibles et te propose un
-          plan de révision.
+          Importe les notes de ta promo et situe-toi — calcul privé, sur ton appareil.
         </Text>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        <TextInput
-          style={styles.textArea}
-          value={resultsText}
-          onChangeText={setResultsText}
-          placeholder={PLACEHOLDER}
-          placeholderTextColor={tokens.colors.textMuted}
-          multiline
-          editable={!loading}
-          textAlignVertical="top"
-        />
-
-        <TouchableOpacity
-          style={[styles.button, (loading || resultsText.trim().length < 20) && styles.buttonDisabled]}
-          onPress={handleAnalyze}
-          disabled={loading || resultsText.trim().length < 20}
-          accessibilityRole="button"
-        >
-          {loading ? (
-            <ActivityIndicator color={tokens.colors.onAccent} size="small" />
-          ) : (
-            <Text style={styles.buttonText}>Analyser mes résultats</Text>
-          )}
-        </TouchableOpacity>
-
-        {error ? (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        ) : null}
-
-        {analysis ? (
-          <View style={styles.result}>
-            <View style={styles.resultHeader}>
-              <Text style={styles.resultTitle}>Analyse & plan de révision</Text>
+        <View style={styles.card}>
+          <Text style={styles.badge}>🛠️ En cours de conception</Text>
+          <Text style={styles.cardText}>
+            Cet outil reprendra l’analyseur de classement de medoutils. Je finalise sa mise en place
+            dès que j’ai la spécification (format du fichier, colonnes, fonctionnalités).
+          </Text>
+          <Text style={styles.listTitle}>Ce qu’il fera :</Text>
+          {PLANNED.map((p) => (
+            <View key={p} style={styles.listItem}>
+              <Text style={styles.bullet}>•</Text>
+              <Text style={styles.listText}>{p}</Text>
             </View>
-            <View style={styles.resultBody}>
-              <MarkdownRenderer text={analysis} />
-            </View>
-            <View style={styles.disclaimer}>
-              <Text style={styles.disclaimerText}>
-                Outil pédagogique d’entraînement aux examens — ne constitue pas un avis médical.
-              </Text>
-            </View>
-          </View>
-        ) : null}
+          ))}
+          <Text style={styles.note}>
+            Confidentialité : les notes des autres étudiants seront traitées localement et ne seront
+            jamais envoyées à un serveur ni à une IA.
+          </Text>
+        </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -160,12 +71,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: tokens.colors.background },
   header: {
     paddingHorizontal: tokens.space.lg,
-    paddingTop: tokens.space.xl,
+    paddingTop: tokens.space.md,
     paddingBottom: tokens.space.md,
     backgroundColor: tokens.colors.surface,
     borderBottomWidth: 1,
     borderColor: tokens.colors.border,
   },
+  headerTop: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: tokens.space.sm },
   title: {
     fontFamily: tokens.font.display,
     color: tokens.colors.text,
@@ -181,79 +93,58 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   scroll: { flex: 1 },
-  scrollContent: { padding: tokens.space.lg, gap: tokens.space.md },
-  textArea: {
-    minHeight: 160,
-    borderRadius: tokens.radius.md,
+  scrollContent: { padding: tokens.space.lg },
+  card: {
+    borderRadius: tokens.radius.lg,
     borderWidth: 1,
     borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.surface,
-    padding: tokens.space.md,
-    fontFamily: tokens.font.sans,
-    fontSize: tokens.type.body.fontSize,
-    color: tokens.colors.text,
-    lineHeight: tokens.type.body.lineHeight,
-  },
-  button: {
-    height: 48,
-    borderRadius: tokens.radius.lg,
-    backgroundColor: tokens.colors.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: tokens.space.lg,
+    gap: tokens.space.sm,
     ...tokens.elevation.sm,
   },
-  buttonDisabled: { opacity: 0.45 },
-  buttonText: {
+  badge: {
+    alignSelf: 'flex-start',
     fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
-    fontSize: tokens.type.label.fontSize,
+    backgroundColor: tokens.colors.accentSurface,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    borderRadius: tokens.radius.pill,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.xs,
+    overflow: 'hidden',
   },
-  errorBox: {
-    borderRadius: tokens.radius.md,
-    borderLeftWidth: 4,
-    borderLeftColor: tokens.colors.danger,
-    backgroundColor: tokens.colors.dangerBackground,
-    padding: tokens.space.lg,
-  },
-  errorText: {
+  cardText: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.danger,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.body.fontSize,
+    lineHeight: tokens.type.body.lineHeight,
+  },
+  listTitle: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+    marginTop: tokens.space.sm,
+  },
+  listItem: { flexDirection: 'row', gap: tokens.space.sm, alignItems: 'flex-start' },
+  bullet: { color: tokens.colors.accent, fontSize: tokens.type.body.fontSize, lineHeight: 22 },
+  listText: {
+    flex: 1,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textSubtle,
     fontSize: tokens.type.label.fontSize,
     lineHeight: 21,
   },
-  result: {
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
-    overflow: 'hidden',
-    ...tokens.elevation.sm,
-  },
-  resultHeader: {
-    paddingHorizontal: tokens.space.lg,
-    paddingVertical: tokens.space.md,
-    backgroundColor: tokens.colors.accentSurface,
-    borderBottomWidth: 1,
-    borderBottomColor: tokens.colors.accentSurfaceStrong,
-  },
-  resultTitle: {
+  note: {
+    marginTop: tokens.space.sm,
     fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
-    fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.semibold,
-  },
-  resultBody: { padding: tokens.space.lg },
-  disclaimer: {
-    padding: tokens.space.md,
-    borderTopWidth: 1,
-    borderTopColor: tokens.colors.border,
-    backgroundColor: tokens.colors.warningBackground,
-  },
-  disclaimerText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.warningText,
+    color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
     lineHeight: 18,
+    fontStyle: 'italic',
   },
 });

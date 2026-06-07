@@ -23,6 +23,7 @@ import { useSession } from '@/auth/AuthProvider';
 import { tokens } from '@/ui/tokens';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
+import { ToolsMenu } from '@/ui/ToolsMenu';
 
 interface Analysis {
   text: string;
@@ -102,6 +103,9 @@ function DocumentScreenInner() {
       keyboardVerticalOffset={80}
     >
       <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <ToolsMenu />
+        </View>
         <Text style={styles.title}>Analyse de document</Text>
         <Text style={styles.subtitle}>
           Collez un compte rendu, une ordonnance ou des résultats pour obtenir un résumé patient.
@@ -191,6 +195,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: tokens.colors.border,
   },
+  headerTop: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: tokens.space.sm },
   title: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,

@@ -18,6 +18,29 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-06-07] – Claude (dictée vocale + menu d'outils + correction analyseur + nettoyage PR)
+### Files modified
+- src/ui/DictationButton.tsx (nouveau : dictée Whisper → texte), intégré dans app/(chat)/chat.tsx et ecos.tsx
+- app/api/transcribe+api.ts (mode `raw` : transcription brute sans diarisation)
+- src/ui/ToolsMenu.tsx (nouveau : menu déroulant d'outils rôle-aware), intégré chat/document/audio
+- app/(chat)/partiel.tsx (réécrit en placeholder « Analyseur de classement », sans IA)
+- Retrait de la version LLM erronée : app/api/partiel+api.ts (supprimé), migration 0017 (supprimée),
+  src/admin/index.ts / featureModel.ts / promptStore.ts (feature `partiel_analyze` retirée),
+  tests/rls/isolation.test.ts (seed 7→6), src/ai/routing/featureVisibility.ts (label → « Classement »)
+- src/db/supabase.ts (garde Latin-1 sur clés/URL, ré-intègre PR #44)
+- .npmrc + package.json (overrides uuid@^11) + package-lock.json (ré-intègre PR #45, supprime warnings npm)
+- CLAUDE.md, docs/STATUS.md, docs/GLOWUP_ROADMAP.md, docs/DECISIONS/0019 (réécrit), docs/CHANGELOG_AI.md
+### Purpose
+Dictée vocale dans tous les chats (au lieu de taper), menu déroulant pour switcher d'outil,
+correction de l'analyseur de partiel (en réalité un analyseur de classement de promo, côté client,
+à livrer sur spéc medoutils), et nettoyage de toutes les PR (« reparte de 0 »).
+### Regulatory impact
+None. La dictée n'est que de la transcription (le texte repasse par la safe-box). L'analyseur de
+classement sera 100% client (aucune donnée envoyée). Aucune donnée de santé. Gel ADR-0006 inchangé.
+### Rollback plan
+Retirer DictationButton + mode `raw` ; masquer l'onglet Classement ; `git revert`.
+
+
 ## [2026-06-07] – Claude (visibilité par rôle + Analyseur de partiel + réconciliation main/dev)
 ### Files modified
 - src/ai/routing/featureVisibility.ts (nouveau : matrice stricte outils × persona, module pur)

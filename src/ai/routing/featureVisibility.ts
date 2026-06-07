@@ -59,9 +59,9 @@ export const APP_FEATURES: AppFeatureMeta[] = [
   {
     id: 'partiel',
     route: '/(chat)/partiel',
-    label: 'Partiel',
-    emoji: '📈',
-    description: 'Analyse de tes résultats de partiels/QCM (items EDN à revoir).',
+    label: 'Classement',
+    emoji: '📊',
+    description: 'Classement de promo : importe les notes et situe-toi (rang, comparaison).',
     personas: ['student'],
   },
   {

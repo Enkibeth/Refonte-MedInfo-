@@ -22,6 +22,7 @@ import { getSupabaseClient } from '@/db/supabase';
 import { tokens } from '@/ui/tokens';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
+import { DictationButton } from '@/ui/DictationButton';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -453,6 +454,10 @@ Sois précis, bienveillant et pédagogique.`;
 
         <View style={styles.simFooter}>
           <View style={styles.simInputRow}>
+            <DictationButton
+              onTranscript={(text) => setInput((prev) => (prev.trim() ? `${prev.trim()} ${text}` : text))}
+              disabled={aiLoading}
+            />
             <TextInput
               style={styles.simInput}
               value={input}

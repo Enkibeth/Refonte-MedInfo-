@@ -22,6 +22,7 @@ import { useSession } from '@/auth/AuthProvider';
 import { tokens } from '@/ui/tokens';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
+import { ToolsMenu } from '@/ui/ToolsMenu';
 
 type Mode = 'transcription' | 'report';
 type RecordState = 'idle' | 'recording' | 'have-audio' | 'processing' | 'done';
@@ -169,6 +170,9 @@ function AudioFeature() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <ToolsMenu />
+        </View>
         <Text style={styles.title}>Audio médical</Text>
         <View style={styles.modeSwitcher}>
           <TouchableOpacity
@@ -310,6 +314,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: tokens.colors.border,
   },
+  headerTop: { flexDirection: 'row', justifyContent: 'flex-end', paddingTop: tokens.space.sm },
   title: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,

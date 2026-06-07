@@ -29,8 +29,9 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 | Facturation Stripe | Actif web-first | Plans public + étudiant | `subscriptions`, `billing_events`, webhook Stripe | Paywall = volume/features uniquement ; ne gate jamais les sources | ADR-0012 |
 | Quotas par feature | Décidé / à maintenir côté serveur | Chat, ECOS, exports, transcriptions | Tables de limites/compteurs techniques, entitlements serveur | Quota découplé des sources ; service_role only ; aucune auto-promotion client | ADR-0016 |
 | Cas ECOS en base | Décidé / feature pédagogique | Étudiants vérifiés | Tables de cas/stations pédagogiques versionnées | Cas explicitement fictifs ; aucun patient réel ; séparation du chat médical | ADR-0017 |
-| Analyseur de partiel `partiel_analyze` | Actif | Étudiants vérifiés | `app/api/partiel+api.ts`, prompt `partiel_analyze`, garde persona serveur | Éducatif/non-MDSW ; analyse de résultats QCM/annales fictifs ; refus données patient réel ; pas d'avis individualisé | ADR-0019 |
-| Visibilité des outils par rôle | Actif | Tous (UI adaptée) | `src/ai/routing/featureVisibility.ts`, `src/ui/RoleGate.tsx`, `app/(chat)/_layout.tsx` | Cloisonnement UI strict par persona ; jamais l'unique barrière (autorisation serveur conservée) | ADR-0018 |
+| Analyseur de classement (medoutils) | En conception | Étudiants vérifiés | `app/(chat)/partiel.tsx` (placeholder), traitement client prévu | Import des notes de promo → rang/comparaison ; calcul 100% client (aucune donnée envoyée, sans IA) ; en attente de la spéc medoutils | ADR-0019 |
+| Visibilité des outils par rôle + menu d'outils | Actif | Tous (UI adaptée) | `src/ai/routing/featureVisibility.ts`, `src/ui/RoleGate.tsx`, `src/ui/ToolsMenu.tsx`, `app/(chat)/_layout.tsx` | Cloisonnement UI strict par persona ; menu déroulant rôle-aware ; jamais l'unique barrière (autorisation serveur conservée) | ADR-0018 |
+| Dictée vocale (chat/ECOS) | Actif | Tous | `src/ui/DictationButton.tsx`, `/api/transcribe` mode `raw` | Voix → texte (Whisper) dans les saisies ; transcription brute ; le texte repasse par la safe-box de la route cible | ADR-0019 |
 
 ## Migrations Supabase — état documentaire
 
@@ -51,7 +52,6 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 | `0013_ecos_cases.sql` | Cas ECOS fictifs versionnés | Non si cas synthétiques uniquement | Lecture selon entitlement étudiant | Ne jamais importer de cas patient réel |
 | `0014_feature_quotas.sql` | Quotas par feature et compteurs associés | Non | Service role only | Remplace la logique « quota chat unique » par une matrice extensible |
 | `0015_ai_model_params.sql` | Réglages de génération par feature (temperature, reasoning_effort, verbosity, web_search) sur `ai_model_config` | Non | Service role only (hérite du verrou 0011) | Lus par featureModel.ts (`getFeatureSettings`), appliqués par featureRuntime.ts ; 0013/0014 réservés |
-| `0017_partiel_analyze_feature.sql` | Ligne de config admin pour la feature `partiel_analyze` (Analyseur de partiel) | Non | Service role only (hérite du verrou 0011) | `INSERT … ON CONFLICT DO NOTHING` ; seed `ai_model_config` passe à **7 lignes** (test RLS 6→7) ; 0016 réservé à `ai_prompts_history` (PR ouverte) |
 
 > Si une migration ci-dessus n'existe pas encore dans `supabase/migrations/`, la documenter comme décision attendue et ne pas modifier le schéma sans tests RLS correspondants.
 
@@ -144,7 +144,7 @@ const [model, systemPrompt] = await Promise.all([
 | `src/ai/providers/featureRuntime.ts` | Construit les options d'appel LLM par feature (température, raisonnement, verbosité, web search) → `getRuntimeForFeature()` |
 
 Tables Supabase (service role only, RLS sans policy) :
-- `ai_model_config` — migration `0011_ai_model_config.sql` (seed initial 6 features, +1 via `0017` → **7** ; le POST admin fait un UPDATE, les lignes doivent préexister).
+- `ai_model_config` — migration `0011_ai_model_config.sql` (seed des 6 features ; le POST admin fait un UPDATE, les lignes doivent préexister).
 - `ai_prompts` — migration `0012_ai_prompts.sql` (overrides des prompts ; table vide, fallback sur `PROMPT_DEFAULTS`).
 - Réglages de génération par feature — migration `0015_ai_model_params.sql` (colonnes `temperature`, `reasoning_effort`, `verbosity`, `web_search` sur `ai_model_config`).
 
@@ -170,7 +170,6 @@ Pour ajouter un admin : modifier `ADMIN_USER_IDS` dans `src/admin/index.ts`.
 |-------------|-----------|-------------------|----------|
 | `chat` | `/api/chat` | claude-sonnet-4-6 | Tous |
 | `analyze` | `/api/analyze` | claude-sonnet-4-6 | Grand public |
-| `partiel_analyze` | `/api/partiel` | claude-sonnet-4-6 | Étudiant |
 | `ecos_simulate` | `/api/ecos` | claude-sonnet-4-6 | Étudiant |
 | `ecos_evaluate` | `/api/ecos` | claude-sonnet-4-6 | Étudiant |
 | `audio_diarize` | `/api/transcribe` | gpt-4o-mini | Professionnel |
@@ -188,14 +187,16 @@ Chaque rôle ne voit QUE ses outils (le grand public ne voit pas les outils
 | 💬 Chat santé | ✅ | ✅ | ✅ | ✅ |
 | 📄 Analyse de document | ✅ | — | — | ✅ |
 | 🩺 ECOS | — | ✅ | — | ✅ |
-| 📈 Analyseur de partiel | — | ✅ | — | ✅ |
+| 📊 Classement (analyseur, en conception) | — | ✅ | — | ✅ |
 | 🎤 Audio (compte rendu) | — | — | ✅ | ✅ |
 
 Application :
 - Barre d'onglets `app/(chat)/_layout.tsx` : onglet masqué via `href: null` si non visible.
-- Garde d'écran `<RoleGate feature="…">` (`src/ui/RoleGate.tsx`) sur Document/ECOS/Partiel/Audio
+- Menu déroulant d'outils `src/ui/ToolsMenu.tsx` (en-tête) : switch rôle-aware depuis n'importe quel écran.
+- Garde d'écran `<RoleGate feature="…">` (`src/ui/RoleGate.tsx`) sur Document/ECOS/Classement/Audio
   (défense en profondeur contre l'accès direct / deep-link).
 - Écran Compte : section « Mes outils » listant les outils du rôle courant.
+- Dictée vocale `src/ui/DictationButton.tsx` (Whisper, `/api/transcribe` mode `raw`) dans les saisies de chat/ECOS.
 - **Sécurité** : le masquage UI n'est jamais l'unique barrière. L'autorisation réelle des routes
   IA reste dérivée du profil vérifié côté serveur (`serverPersona.ts` ; garde persona étudiant/admin
   dans `/api/partiel`). ADR-0018.

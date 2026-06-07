@@ -27,9 +27,11 @@ Légende : ✅ fait · 🟡 en cours / partiel · ⬜ à faire.
 | Item | Statut | Détail |
 |---|:---:|---|
 | Visibilité stricte des outils par rôle | ✅ | `featureVisibility.ts` + `RoleGate` + onglets adaptés (ADR-0018) |
+| Menu déroulant d'outils (rôle-aware) | ✅ | `src/ui/ToolsMenu.tsx` dans les en-têtes (chat/document/audio) |
+| Dictée vocale (voix → texte) chat + ECOS | ✅ | `src/ui/DictationButton.tsx` + `/api/transcribe` mode `raw` (Whisper) |
 | Section « Mes outils » (Compte) | ✅ | Liste les outils du rôle courant |
 | Sélection / changement de rôle | ✅ | `choose-role` (email étudiant, RPPS pro) — vérif serveur |
-| Mode switcher in-chat (public/étudiant/pro) | ⬜ | Proposé dans PR #49 (non mergée) — à arbitrer |
+| Mode switcher in-chat (public/étudiant/pro) | ⬜ | Était dans PR #49 (fermée) — à refaire si voulu |
 
 ## 3. Outils IA par audience
 
@@ -38,7 +40,7 @@ Légende : ✅ fait · 🟡 en cours / partiel · ⬜ à faire.
 | 💬 Chat santé | Tous | ✅ | Safe-box 3 couches + RAG cite-or-refuse |
 | 📄 Analyse de document | Grand public | ✅ | Résumé patient (`/api/analyze`) |
 | 🩺 ECOS | Étudiant | ✅ | Simulation + évaluation, cas en base (ADR-0017) |
-| 📈 Analyseur de partiel | Étudiant | ✅ | **Nouveau** (`/api/partiel`, ADR-0019) : analyse de résultats QCM/partiels → items EDN faibles + plan de révision |
+| 📊 Analyseur de classement | Étudiant | 🟡 | En conception (medoutils, ADR-0019) : import des notes de promo → rang + comparaison, **côté client sans IA**. Placeholder en attente de la spéc |
 | 🎤 Audio (compte rendu) | Professionnel | ✅ | Transcription + compte rendu structuré |
 | QCM interactifs | Étudiant | ✅ | `render_qcm` dans le chat |
 
@@ -55,9 +57,9 @@ Légende : ✅ fait · 🟡 en cours / partiel · ⬜ à faire.
 
 ## 5. Prochaines passes suggérées
 
-1. Merger/clore les PR ouvertes pertinentes (#49 mode switcher, #51 quotas, #58 versioning prompts,
-   #43 corpus RAG, #44/#45/#46 fixes) puis réaligner `main`/`dev`/`staging`.
-2. Peupler les embeddings RAG une fois EU Data Residency + ZDR confirmés (action Hugo).
-3. Compléter les champs éditeur des pages légales avant ouverture publique.
-4. Étendre l'analyseur de partiel : import d'un fichier de résultats, suivi de progression (sous ADR
-   si donnée attribuable).
+1. **Fait** : « reparte de 0 » — #63 mergé sur `main`, `dev`/`staging` réalignés, 8 autres PR fermées
+   (fixes #44/#45 ré-intégrés). À refaire proprement plus tard si voulu : quotas (#51), versioning
+   prompts (#58), RPPS + mode switcher (#49), corpus RAG élargi (#43).
+2. **Livrer l'analyseur de classement** dès réception de la spéc medoutils (format fichier, colonnes).
+3. Peupler les embeddings RAG une fois EU Data Residency + ZDR confirmés (action Hugo).
+4. Compléter les champs éditeur des pages légales avant ouverture publique.

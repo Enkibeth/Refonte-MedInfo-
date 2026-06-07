@@ -27,6 +27,22 @@ date: 2026-06-06
 - Stratégie Git : développement sur la branche de session → **PR vers `main`** (alignement validé par Hugo).
 - Roadmap visuelle/produit : `docs/GLOWUP_ROADMAP.md` (créée/mise à jour).
 
+### Itération 2 (même jour) — dictée, menu d'outils, correction partiel, nettoyage PR
+
+- **Dictée vocale** dans les saisies chat + ECOS (`src/ui/DictationButton.tsx`) : voix → texte via
+  Whisper (`/api/transcribe`, nouveau mode `raw` sans diarisation). Le texte repasse par la safe-box.
+- **Menu déroulant d'outils** (`src/ui/ToolsMenu.tsx`) dans les en-têtes (chat/document/audio) : switch
+  rôle-aware bien visible, complète la barre d'onglets du bas.
+- **Analyseur de « partiel » corrigé** : la 1re version (coach de révision LLM) était erronée. La vraie
+  feature (medoutils) est un **analyseur de classement de promo** (import des notes → rang + comparaison),
+  prévu **côté client sans IA**. La version LLM est **retirée** (route `/api/partiel`, prompt, migration
+  `0017`, feature admin `partiel_analyze`) ; onglet `Classement` = placeholder en attente de la spéc. ADR-0019.
+- **Fixes ré-intégrés** : garde clé Supabase corrompue/Latin-1 (`src/db/supabase.ts`, ex-PR #44) ;
+  suppression des warnings npm du build Vercel (`.npmrc` legacy-peer-deps + override `uuid@^11`, ex-PR #45).
+- **Nettoyage PR (reparte de 0)** : #63 mergé sur `main`, `dev`/`staging` réalignés, et les 8 autres PR
+  fermées (obsolètes/divergentes ou ré-intégrées). Plus rien en attente.
+- Validations : `typecheck` OK · `npm test` **268 verts** · seed `ai_model_config` de retour à **6**.
+
 ## État courant — 2026-06-06
 
 - Documentation de reprise ajoutée dans `CLAUDE.md` : tableau des features IA et table des migrations Supabase existantes/attendues.

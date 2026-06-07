@@ -1,37 +1,39 @@
-# ADR-0019 — Analyseur de partiel (feature `partiel_analyze`)
+# ADR-0019 — Analyseur de classement de promo + dictée vocale
 
 ```yaml
 status: Accepted
 date: 2026-06-07
 owner: Hugo Bettembourg
-linked_to: [04_CHATBOT §student, 01_REGULATION §1 §4 §5, ADR-0005, ADR-0011, ADR-0017, ADR-0018]
+linked_to: [04_CHATBOT §student, 01_REGULATION §5, ADR-0011, ADR-0018]
+supersedes_note: "Remplace la 1re version « coach de révision LLM » (incorrecte) du même ADR."
 ```
 
 ## Contexte
-Le persona étudiant disposait du chat pédagogique, des QCM (`render_qcm`) et des stations ECOS, mais
-pas d'outil pour exploiter ses **résultats de partiels/QCM** (annales, sessions d'entraînement type
-« medoutils »). Le besoin : un outil qui analyse une performance et oriente la révision, sans devenir
-un dispositif médical ni traiter de patient réel.
+Première interprétation erronée : un « analyseur de partiel » = coach de révision LLM (corrige des QCM,
+plan de révision). En réalité, l'outil attendu (repris du projet **medoutils** / QCM-quizz) est un
+**analyseur de classement de promo** : l'étudiant importe le fichier des notes de toute sa promo et
+obtient son **rang**, des statistiques, et peut **comparer** avec un autre numéro étudiant.
 
 ## Décision
-Nouvelle fonctionnalité IA `partiel_analyze` (route `POST /api/partiel`, écran `app/(chat)/partiel.tsx`),
-réservée aux **étudiants vérifiés** (persona dérivée du profil serveur ; admin pour test). L'étudiant
-colle ses résultats (QCM + réponses, score par matière, items ratés) ; l'IA renvoie en markdown :
-synthèse de performance, analyse par item EDN/R2C, erreurs typiques à corriger, plan de révision priorisé.
-
-Cadre réglementaire (non-MDSW) inscrit dans le prompt système (`promptStore.ts`, clé `partiel_analyze`) :
-contexte exclusivement éducatif/fictif, **refus** si le contenu décrit un patient réel/identifiant,
-aucun avis médical individualisé, fidélité aux référentiels (Collèges/EDN/HAS), pas d'invention.
-Suit la convention 6 étapes (AI_FEATURES, FEATURE_DEFAULTS, migration `0017`, PROMPT_DEFAULTS, runtime,
-commentaire de convention). Aucune donnée de santé persistée.
+1. **Analyseur de classement** (onglet étudiant `Classement`, écran `app/(chat)/partiel.tsx`) :
+   - Traitement **100 % côté client** : le fichier (CSV/Excel) est parsé dans le navigateur ; les notes
+     des autres étudiants **ne quittent jamais l'appareil**, **aucune IA**, aucune persistance.
+   - Sorties prévues : rang, moyenne/médiane/percentile, comparaison par numéro étudiant, classement par
+     matière + petites stats.
+   - **Statut : en conception** — l'écran actuel est un placeholder de cadrage, en attente de la
+     spécification exacte de medoutils (format de fichier, colonnes, « petites fonctionnalités »).
+   - La version LLM précédente (`partiel_analyze`, route `/api/partiel`, prompt, migration `0017`) est
+     **retirée** : pas de dispositif médical, pas de doublon de feature IA.
+2. **Dictée vocale** : composant `src/ui/DictationButton.tsx` ajouté aux saisies de chat et ECOS.
+   Voix → texte via Whisper (`/api/transcribe`, nouveau mode `raw` = transcription brute sans
+   diarisation). Le texte dicté repasse par la safe-box normale de la route cible.
 
 ## Conséquences
-- Outil de révision à forte valeur pour l'étudiant, cohérent avec ECOS et les QCM existants.
-- Configurable depuis le panel admin (modèle + réglages) comme toute feature IA.
-- Garde d'audience serveur (403 si non étudiant/admin) + `RoleGate` côté écran (ADR-0018).
-- Périmètre volontairement limité aux annales/QCM pédagogiques ; aucune extension vers du suivi
-  longitudinal/dossier sans ADR dédiée (donnée de santé attribuable → HDS).
+- Confidentialité renforcée : le classement n'envoie aucune donnée (RGPD : données de tiers traitées
+  localement). Aucune donnée de santé.
+- L'analyseur reste un **slot visible** (onglet `Classement`, persona étudiant) jusqu'à livraison.
+- La dictée est non bloquante (web only ; le clavier reste disponible).
 
 ## Rollback
-Retirer l'onglet/écran et la route ; la ligne `ai_model_config` (`0017`) peut rester (inerte) ou être
-supprimée. Le reste de l'app étudiant (chat, ECOS, QCM) est inchangé.
+Masquer l'onglet `Classement` (retirer `partiel` de `featureVisibility`). Retirer `DictationButton`
+des saisies et le mode `raw` de `/api/transcribe` (le compte rendu audio pro est inchangé).

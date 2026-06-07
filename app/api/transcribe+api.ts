@@ -75,6 +75,13 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: 'Aucun contenu audio détecté.' }, { status: 422 });
   }
 
+  // Mode "raw"/"dictation" (dictée vocale dans une zone de saisie) : on renvoie la
+  // transcription BRUTE, sans diarisation Médecin/Patient (réservée au compte rendu pro).
+  // Le texte dicté repasse ensuite par la safe-box normale de la route cible (ex. /api/chat).
+  if (mode === 'raw' || mode === 'dictation') {
+    return Response.json({ transcription: rawTranscription });
+  }
+
   // ── Étape 2 : Diarisation — labellise Médecin / Patient ──────────────────
   let labelledTranscription = rawTranscription;
   try {
