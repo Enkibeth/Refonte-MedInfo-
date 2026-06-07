@@ -1,8 +1,12 @@
 import { Tabs } from 'expo-router';
 import { Platform, Text, View, StyleSheet } from 'react-native';
+
+import { useSession } from '@/auth/AuthProvider';
+import { isAdminUserId } from '@/admin/index';
+import { isFeatureVisible, type AppFeatureId } from '@/ai/routing/featureVisibility';
 import { tokens } from '@/ui/tokens';
 
-function TabIcon({ label, emoji }: { label: string; emoji: string }) {
+function TabIcon({ emoji }: { emoji: string }) {
   return (
     <View style={tabStyles.iconWrap}>
       <Text style={tabStyles.emoji}>{emoji}</Text>
@@ -10,7 +14,22 @@ function TabIcon({ label, emoji }: { label: string; emoji: string }) {
   );
 }
 
+/**
+ * Navigation adaptée au rôle (persona) — chaque rôle ne voit QUE ses outils
+ * (cf src/ai/routing/featureVisibility.ts). Un onglet non autorisé est retiré de la
+ * barre via `href: null` ; l'écran reste protégé par <RoleGate> en défense en profondeur.
+ *  - Grand public : Chat + Document.
+ *  - Étudiant     : Chat + ECOS + Partiel.
+ *  - Professionnel: Chat + Audio.
+ *  - Admin        : tout.
+ */
 export default function ChatLayout() {
+  const { persona, user } = useSession();
+  const isAdmin = user ? isAdminUserId(user.id) : false;
+
+  const hrefFor = (feature: AppFeatureId) =>
+    isFeatureVisible(feature, persona, { isAdmin }) ? undefined : null;
+
   return (
     <Tabs
       screenOptions={{
@@ -23,33 +42,23 @@ export default function ChatLayout() {
     >
       <Tabs.Screen
         name="chat"
-        options={{
-          title: 'Chat',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="💬" label="Chat" />
-          ),
-        }}
+        options={{ title: 'Chat', href: hrefFor('chat'), tabBarIcon: () => <TabIcon emoji="💬" /> }}
       />
       <Tabs.Screen
         name="document"
-        options={{
-          title: 'Document',
-          tabBarIcon: () => <TabIcon emoji="📄" label="Document" />,
-        }}
-      />
-      <Tabs.Screen
-        name="audio"
-        options={{
-          title: 'Audio',
-          tabBarIcon: () => <TabIcon emoji="🎤" label="Audio" />,
-        }}
+        options={{ title: 'Document', href: hrefFor('document'), tabBarIcon: () => <TabIcon emoji="📄" /> }}
       />
       <Tabs.Screen
         name="ecos"
-        options={{
-          title: 'ECOS',
-          tabBarIcon: () => <TabIcon emoji="🩺" label="ECOS" />,
-        }}
+        options={{ title: 'ECOS', href: hrefFor('ecos'), tabBarIcon: () => <TabIcon emoji="🩺" /> }}
+      />
+      <Tabs.Screen
+        name="partiel"
+        options={{ title: 'Partiel', href: hrefFor('partiel'), tabBarIcon: () => <TabIcon emoji="📈" /> }}
+      />
+      <Tabs.Screen
+        name="audio"
+        options={{ title: 'Audio', href: hrefFor('audio'), tabBarIcon: () => <TabIcon emoji="🎤" /> }}
       />
     </Tabs>
   );

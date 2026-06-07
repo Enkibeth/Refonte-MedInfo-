@@ -127,9 +127,9 @@ describe('ai_interactions — service_role only (jamais accessible au client)', 
 
 
 describe('ai_model_config — service_role only (config admin, jamais exposée au client)', () => {
-  it('le seed a bien créé les 6 lignes de fonctionnalités', async () => {
+  it('le seed a bien créé les 7 lignes de fonctionnalités', async () => {
     const { rows } = await db.asService((q) => q('SELECT key FROM ai_model_config'));
-    expect(rows).toHaveLength(6);
+    expect(rows).toHaveLength(7);
   });
 
   it('un client authentifié NE PEUT PAS lire ai_model_config', async () => {

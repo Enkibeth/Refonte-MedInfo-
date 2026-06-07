@@ -91,6 +91,15 @@ export const AI_FEATURES = [
     providers: ['anthropic', 'openai'],
   },
   {
+    key: 'partiel_analyze',
+    emoji: '📈',
+    label: 'Analyseur de partiel',
+    description: "Analyse les résultats de QCM/partiels (EDN/R2C) d'un étudiant : score, items faibles, plan de révision. Cas fictifs/pédagogiques uniquement.",
+    apiRoute: '/api/partiel',
+    promptKeys: ['partiel_analyze'],
+    providers: ['anthropic', 'openai'],
+  },
+  {
     key: 'ecos_simulate',
     emoji: '🩺',
     label: 'ECOS — Simulation patient',

@@ -1,9 +1,13 @@
 /**
- * Analyse de document médical — version premium.
- * L'utilisateur colle/saisit un compte rendu ou une ordonnance, et obtient :
- *  - un résumé patient clair
- *  - les termes médicaux expliqués
- *  - des questions à poser au médecin
+ * Analyseur de partiel — outil étudiant (persona student).
+ * L'étudiant colle ses résultats de partiel / session de QCM (questions + sa réponse +
+ * la bonne réponse, ou un score par matière) et obtient :
+ *  - une synthèse de performance
+ *  - une analyse par item EDN / thème
+ *  - les erreurs typiques à corriger
+ *  - un plan de révision priorisé
+ *
+ * Strictement pédagogique (annales/QCM fictifs) — jamais un cas patient réel.
  */
 import { useState } from 'react';
 import {
@@ -17,55 +21,45 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Link } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
 import { tokens } from '@/ui/tokens';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
 
-interface Analysis {
-  text: string;
-}
+const PLACEHOLDER = `Colle ici tes résultats. Exemples acceptés :
+• Liste : "Q1 item 224 HTA — ma réponse B / correct C ; Q2 item 330 AINS — ma réponse A / correct A …"
+• Score par matière : "Cardio 12/20, Pneumo 8/20, Infectio 15/20 …"
+• Items ratés : "Items 224, 330, 91 non maîtrisés"`;
 
-export default function DocumentScreen() {
-  return (
-    <RoleGate feature="document">
-      <DocumentScreenInner />
-    </RoleGate>
-  );
-}
-
-function DocumentScreenInner() {
+function PartielInner() {
   const { session } = useSession();
-  const [documentText, setDocumentText] = useState('');
-  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [resultsText, setResultsText] = useState('');
+  const [analysis, setAnalysis] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isPaid = Boolean(session); // simplified — replace with actual entitlement check
-
   async function handleAnalyze() {
-    const text = documentText.trim();
-    if (!text || loading) return;
+    const text = resultsText.trim();
+    if (text.length < 20 || loading) return;
     setError(null);
     setAnalysis(null);
     setLoading(true);
 
     try {
       const token = session?.access_token;
-      const response = await fetch('/api/analyze', {
+      const response = await fetch('/api/partiel', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ documentText: text }),
+        body: JSON.stringify({ results: text }),
       });
 
       if (!response.ok) {
-        const err = await response.json().catch(() => ({})) as { error?: string };
-        throw new Error(err.error ?? 'Erreur lors de l\'analyse. Réessayez.');
+        const err = (await response.json().catch(() => ({}))) as { error?: string };
+        throw new Error(err.error ?? "Erreur lors de l'analyse. Réessaie.");
       }
 
       const reader = response.body?.getReader();
@@ -73,26 +67,20 @@ function DocumentScreenInner() {
 
       const decoder = new TextDecoder();
       let fullText = '';
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         fullText += decoder.decode(value, { stream: true });
-        // Show progressive result
-        if (fullText.length > 20) setAnalysis({ text: fullText });
+        if (fullText.length > 20) setAnalysis(fullText);
       }
 
-      if (!fullText) throw new Error('Aucune réponse reçue. Réessayez.');
-      setAnalysis({ text: fullText });
+      if (!fullText) throw new Error('Aucune réponse reçue. Réessaie.');
+      setAnalysis(fullText);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Une erreur est survenue.');
     } finally {
       setLoading(false);
     }
-  }
-
-  if (!isPaid) {
-    return <PremiumGate feature="Analyse de document" />;
   }
 
   return (
@@ -102,18 +90,19 @@ function DocumentScreenInner() {
       keyboardVerticalOffset={80}
     >
       <View style={styles.header}>
-        <Text style={styles.title}>Analyse de document</Text>
+        <Text style={styles.title}>Analyseur de partiel</Text>
         <Text style={styles.subtitle}>
-          Collez un compte rendu, une ordonnance ou des résultats pour obtenir un résumé patient.
+          Colle tes résultats de QCM / partiel : l’IA repère tes items EDN faibles et te propose un
+          plan de révision.
         </Text>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         <TextInput
           style={styles.textArea}
-          value={documentText}
-          onChangeText={setDocumentText}
-          placeholder="Collez ici le texte de votre document médical…"
+          value={resultsText}
+          onChangeText={setResultsText}
+          placeholder={PLACEHOLDER}
           placeholderTextColor={tokens.colors.textMuted}
           multiline
           editable={!loading}
@@ -121,18 +110,15 @@ function DocumentScreenInner() {
         />
 
         <TouchableOpacity
-          style={[
-            styles.button,
-            (loading || documentText.trim().length < 20) && styles.buttonDisabled,
-          ]}
+          style={[styles.button, (loading || resultsText.trim().length < 20) && styles.buttonDisabled]}
           onPress={handleAnalyze}
-          disabled={loading || documentText.trim().length < 20}
+          disabled={loading || resultsText.trim().length < 20}
           accessibilityRole="button"
         >
           {loading ? (
             <ActivityIndicator color={tokens.colors.onAccent} size="small" />
           ) : (
-            <Text style={styles.buttonText}>Analyser le document</Text>
+            <Text style={styles.buttonText}>Analyser mes résultats</Text>
           )}
         </TouchableOpacity>
 
@@ -145,14 +131,14 @@ function DocumentScreenInner() {
         {analysis ? (
           <View style={styles.result}>
             <View style={styles.resultHeader}>
-              <Text style={styles.resultTitle}>Résumé patient</Text>
+              <Text style={styles.resultTitle}>Analyse & plan de révision</Text>
             </View>
             <View style={styles.resultBody}>
-              <MarkdownRenderer text={analysis.text} />
+              <MarkdownRenderer text={analysis} />
             </View>
             <View style={styles.disclaimer}>
               <Text style={styles.disclaimerText}>
-                Ce résumé est informatif et ne remplace pas une consultation médicale.
+                Outil pédagogique d’entraînement aux examens — ne constitue pas un avis médical.
               </Text>
             </View>
           </View>
@@ -162,22 +148,11 @@ function DocumentScreenInner() {
   );
 }
 
-function PremiumGate({ feature }: { feature: string }) {
+export default function PartielScreen() {
   return (
-    <View style={styles.gateContainer}>
-      <View style={styles.gateCard}>
-        <Text style={styles.gateEmoji}>🔒</Text>
-        <Text style={styles.gateTitle}>{feature}</Text>
-        <Text style={styles.gateText}>
-          Cette fonctionnalité est réservée aux abonnés MedInfo Premium. Elle vous permet
-          d'obtenir un résumé patient clair de vos documents médicaux avec les termes expliqués
-          et des questions à poser à votre médecin.
-        </Text>
-        <Link href="/(billing)/pricing" style={styles.gateLink}>
-          Voir les offres Premium
-        </Link>
-      </View>
-    </View>
+    <RoleGate feature="partiel">
+      <PartielInner />
+    </RoleGate>
   );
 }
 
@@ -192,7 +167,7 @@ const styles = StyleSheet.create({
     borderColor: tokens.colors.border,
   },
   title: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
     letterSpacing: tokens.type.h3.letterSpacing,
@@ -280,45 +255,5 @@ const styles = StyleSheet.create({
     color: tokens.colors.warningText,
     fontSize: tokens.type.caption.fontSize,
     lineHeight: 18,
-  },
-  gateContainer: { flex: 1, justifyContent: 'center', padding: tokens.space.xl, backgroundColor: tokens.colors.background },
-  gateCard: {
-    borderRadius: tokens.radius.lg,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
-    padding: tokens.space.xl,
-    alignItems: 'center',
-    gap: tokens.space.md,
-    ...tokens.elevation.md,
-  },
-  gateEmoji: { fontSize: 40 },
-  gateTitle: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.text,
-    fontSize: tokens.type.h3.fontSize,
-    fontWeight: tokens.weight.bold,
-    letterSpacing: tokens.type.h3.letterSpacing,
-    textAlign: 'center',
-  },
-  gateText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
-    fontSize: tokens.type.body.fontSize,
-    lineHeight: tokens.type.body.lineHeight,
-    textAlign: 'center',
-    maxWidth: 340,
-  },
-  gateLink: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.semibold,
-    fontSize: tokens.type.label.fontSize,
-    backgroundColor: tokens.colors.accent,
-    paddingHorizontal: tokens.space.xl,
-    paddingVertical: tokens.space.md,
-    borderRadius: tokens.radius.lg,
-    overflow: 'hidden',
-    marginTop: tokens.space.sm,
   },
 });

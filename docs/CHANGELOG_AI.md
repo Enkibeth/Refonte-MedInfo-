@@ -18,6 +18,35 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-06-07] – Claude (visibilité par rôle + Analyseur de partiel + réconciliation main/dev)
+### Files modified
+- src/ai/routing/featureVisibility.ts (nouveau : matrice stricte outils × persona, module pur)
+- src/ui/RoleGate.tsx (nouveau : garde d'écran par rôle + écran « non disponible »)
+- app/(chat)/_layout.tsx (onglets adaptés au rôle via href:null + onglet Partiel)
+- app/(chat)/document.tsx, audio.tsx, ecos.tsx (wrap RoleGate)
+- app/(account)/account.tsx (section « Mes outils » par rôle)
+- app/api/partiel+api.ts (nouveau : route Analyseur de partiel, garde persona étudiant/admin serveur)
+- app/(chat)/partiel.tsx (nouveau : écran étudiant d'analyse de résultats QCM/partiels)
+- src/admin/index.ts (AI_FEATURES += partiel_analyze)
+- src/ai/providers/featureModel.ts (FEATURE_DEFAULTS += partiel_analyze)
+- src/ai/prompts/promptStore.ts (PROMPT_DEFAULTS += partiel_analyze : prompt éducatif non-MDSW)
+- supabase/migrations/0017_partiel_analyze_feature.sql (nouveau : seed config admin, ON CONFLICT DO NOTHING)
+- tests/unit/feature-visibility.test.ts (nouveau), tests/rls/isolation.test.ts (seed 6→7)
+- app/index.tsx, src/ui/Logo.tsx (réconciliation merge dev ↔ main, résolution en faveur de dev)
+- CLAUDE.md, docs/STATUS.md, docs/GLOWUP_ROADMAP.md (nouveau), docs/DECISIONS/0018-*.md, 0019-*.md (nouveaux)
+### Purpose
+Adapter le visuel selon le rôle (chaque persona ne voit que ses outils), ajouter l'« Analyseur de
+partiel » étudiant (analyse de résultats QCM/partiels → items EDN faibles + plan de révision), et
+réconcilier `main` (branding) avec `dev` (refonte design) en un état unique cohérent.
+### Regulatory impact
+None. Safe-box 3 couches + classifieur inchangés. L'analyseur de partiel est éducatif/non-MDSW
+(prompt : refus patient réel, aucun avis individualisé). Le masquage UI par rôle ne remplace pas
+l'autorisation serveur (persona dérivée du profil vérifié). Gel ADR-0006 non levé. Aucune donnée de santé.
+### Rollback plan
+`isFeatureVisible` → toujours true (retour à tous les onglets) ; retirer la route/écran `partiel` et
+la migration `0017` ; `git revert` du merge de réconciliation si besoin.
+
+
 ## [2026-06-06] – Codex (enregistrement audio natif iOS/Android)
 ### Files modified
 - app/(chat)/audio.tsx (nouvelle route dictée vocale : branche web MediaRecorder conservée, branche native expo-audio, upload multipart inchangé vers /api/transcribe)

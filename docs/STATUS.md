@@ -8,6 +8,25 @@ status: Active
 date: 2026-06-06
 ```
 
+## État courant — 2026-06-07
+
+- **Réconciliation `main` ↔ `dev`** : merge de `origin/dev` (refonte design #59 + fix CI #62) dans la
+  branche de session, qui contenait déjà le branding `main` (#60/#61). Conflits limités à `app/index.tsx`
+  et `src/ui/Logo.tsx`, résolus en faveur de `dev` (Logo wordmark code `size`+`tone`, hero design system) ;
+  branding des écrans Compte/Tarifs/Légal/Chat + assets conservés. Typecheck vert.
+- **Visibilité des outils par rôle (grosse modif)** : matrice stricte par persona
+  (`src/ai/routing/featureVisibility.ts`) — grand public : Chat + Document ; étudiant : Chat + ECOS +
+  Analyseur de partiel ; pro : Chat + Audio ; admin : tout. Appliquée aux onglets (`href: null`), aux
+  écrans (`RoleGate`) et à l'écran Compte (« Mes outils »). ADR-0018.
+- **Analyseur de partiel** (`partiel_analyze`, route `/api/partiel`, écran `app/(chat)/partiel.tsx`) :
+  outil étudiant qui analyse des résultats de QCM/partiels (items EDN faibles + plan de révision),
+  éducatif/non-MDSW, garde persona serveur. Convention 6 étapes + migration `0017`. ADR-0019.
+- **Validations locales** : `typecheck` OK · `npm run test` **268 verts** (40 fichiers, dont RLS réel
+  avec Postgres+pgvector ; seed `ai_model_config` 6→7) · `npm run compliance` (5 gates) OK ·
+  `compliance:grep` / `validate:prompts` / `validate:rag` OK.
+- Stratégie Git : développement sur la branche de session → **PR vers `main`** (alignement validé par Hugo).
+- Roadmap visuelle/produit : `docs/GLOWUP_ROADMAP.md` (créée/mise à jour).
+
 ## État courant — 2026-06-06
 
 - Documentation de reprise ajoutée dans `CLAUDE.md` : tableau des features IA et table des migrations Supabase existantes/attendues.

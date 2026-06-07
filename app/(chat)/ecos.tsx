@@ -21,6 +21,7 @@ import { useSession } from '@/auth/AuthProvider';
 import { getSupabaseClient } from '@/db/supabase';
 import { tokens } from '@/ui/tokens';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
+import { RoleGate } from '@/ui/RoleGate';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -145,6 +146,14 @@ function Timer({ totalSeconds, onExpire }: { totalSeconds: number; onExpire: () 
 type Phase = 'selection' | 'preparation' | 'simulation' | 'evaluation';
 
 export default function EcosScreen() {
+  return (
+    <RoleGate feature="ecos">
+      <EcosScreenInner />
+    </RoleGate>
+  );
+}
+
+function EcosScreenInner() {
   const { persona } = useSession();
   const [phase, setPhase] = useState<Phase>('selection');
   const [selectedCase, setSelectedCase] = useState<EcosCase | null>(null);

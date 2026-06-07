@@ -21,6 +21,7 @@ import { Link } from 'expo-router';
 import { useSession } from '@/auth/AuthProvider';
 import { tokens } from '@/ui/tokens';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
+import { RoleGate } from '@/ui/RoleGate';
 
 type Mode = 'transcription' | 'report';
 type RecordState = 'idle' | 'recording' | 'have-audio' | 'processing' | 'done';
@@ -30,6 +31,14 @@ const REPORT_PROMPT = `Tu es un assistant médical expert en rédaction. À part
 Adapte les sections au contenu réel de la transcription. Le compte rendu doit être professionnel, factuel et complet.`;
 
 export default function AudioScreen() {
+  return (
+    <RoleGate feature="audio">
+      <AudioScreenInner />
+    </RoleGate>
+  );
+}
+
+function AudioScreenInner() {
   const { session } = useSession();
   const isPaid = Boolean(session); // simplified
 
