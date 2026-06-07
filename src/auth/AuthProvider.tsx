@@ -63,10 +63,17 @@ export function toFriendlyAuthError(raw: unknown): string {
   return message || 'Une erreur est survenue. Réessaie.';
 }
 
+/** Statut de vérification du rôle actif (profiles.status). */
+export type VerificationStatus = 'unverified' | 'verified' | 'pending';
+
 export interface SessionState {
   session: Session | null;
   user: User | null;
   persona: Persona | null;
+  /** Statut de vérification du rôle actif (lu dans profiles). */
+  status: VerificationStatus;
+  /** Rôles déjà vérifiés pour ce compte — bascule libre entre leurs chats (migration 0016). */
+  verifiedPersonas: Persona[];
   loading: boolean;
   /** True après l'ouverture d'un lien de réinitialisation (événement PASSWORD_RECOVERY). */
   passwordRecovery: boolean;
@@ -102,17 +109,41 @@ export interface SessionState {
 
 const AuthContext = createContext<SessionState | null>(null);
 
-async function fetchPersona(userId: string): Promise<Persona> {
+interface ProfileState {
+  persona: Persona;
+  status: VerificationStatus;
+  verifiedPersonas: Persona[];
+}
+
+async function fetchProfile(userId: string): Promise<ProfileState> {
   const supabase = getSupabaseClient();
-  const { data } = await supabase.from('profiles').select('persona').eq('id', userId).single();
-  return (data?.persona as Persona) ?? 'public';
+  const { data } = await supabase
+    .from('profiles')
+    .select('persona, status, verified_personas')
+    .eq('id', userId)
+    .single();
+  const persona = (data?.persona as Persona) ?? 'public';
+  const verified = (data?.verified_personas as Persona[] | null) ?? ['public'];
+  return {
+    persona,
+    status: (data?.status as VerificationStatus) ?? 'unverified',
+    verifiedPersonas: verified.includes('public') ? verified : ['public', ...verified],
+  };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [persona, setPersona] = useState<Persona | null>(null);
+  const [status, setStatus] = useState<VerificationStatus>('unverified');
+  const [verifiedPersonas, setVerifiedPersonas] = useState<Persona[]>(['public']);
   const [loading, setLoading] = useState(true);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
+
+  function applyProfile(p: ProfileState | null) {
+    setPersona(p?.persona ?? null);
+    setStatus(p?.status ?? 'unverified');
+    setVerifiedPersonas(p?.verifiedPersonas ?? ['public']);
+  }
 
   useEffect(() => {
     const supabase = getSupabaseClient();
@@ -121,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(async ({ data }) => {
       if (!active) return;
       setSession(data.session);
-      if (data.session?.user) setPersona(await fetchPersona(data.session.user.id));
+      if (data.session?.user) applyProfile(await fetchProfile(data.session.user.id));
       setLoading(false);
     });
 
@@ -130,7 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Lien de réinitialisation ouvert : on bascule en mode récupération (cf garde de route).
       if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
       setSession(next);
-      setPersona(next?.user ? await fetchPersona(next.user.id) : null);
+      applyProfile(next?.user ? await fetchProfile(next.user.id) : null);
     });
 
     return () => {
@@ -144,6 +175,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       user: session?.user ?? null,
       persona,
+      status,
+      verifiedPersonas,
       loading,
       passwordRecovery,
       async signInWithPassword(email: string, password: string) {
@@ -253,7 +286,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (!res.ok) {
             return { error: data?.error ?? 'Échec de la vérification.' };
           }
-          setPersona((data?.persona as Persona) ?? persona);
+          const nextPersona = (data?.persona as Persona) ?? persona;
+          setPersona(nextPersona);
+          setStatus((data?.status as VerificationStatus) ?? 'verified');
+          if (Array.isArray(data?.verifiedPersonas)) {
+            setVerifiedPersonas(data.verifiedPersonas as Persona[]);
+          } else {
+            setVerifiedPersonas((prev) =>
+              prev.includes(nextPersona) ? prev : [...prev, nextPersona],
+            );
+          }
           return { error: null };
         } catch (e) {
           return { error: e instanceof Error ? e.message : 'Erreur réseau.' };
@@ -263,7 +305,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await getSupabaseClient().auth.signOut();
       },
     }),
-    [session, persona, loading, passwordRecovery],
+    [session, persona, status, verifiedPersonas, loading, passwordRecovery],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

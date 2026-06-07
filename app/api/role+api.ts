@@ -50,6 +50,34 @@ export async function POST(request: Request): Promise<Response> {
   if (userErr || !userData.user) return json({ error: 'Session invalide.' }, 401);
   const userId = userData.user.id;
 
+  const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
+
+  // Ensemble des rôles DÉJÀ vérifiés pour ce compte (migration 0016). `public` est acquis.
+  const { data: current } = await admin
+    .from('profiles')
+    .select('verified_personas')
+    .eq('id', userId)
+    .maybeSingle();
+  const verifiedSet = new Set<string>(
+    (current?.verified_personas as string[] | null) ?? ['public'],
+  );
+  verifiedSet.add('public');
+
+  // ── Bascule libre entre rôles déjà vérifiés ─────────────────────────────────
+  // Si le compte a DÉJÀ été vérifié pour ce rôle, on bascule le rôle ACTIF sans
+  // re-demander d'email/RPPS (l'utilisateur peut changer de chat comme bon lui semble).
+  if (verifiedSet.has(persona)) {
+    const { error: switchErr } = await admin
+      .from('profiles')
+      .update({ persona, status: 'verified', updated_at: new Date().toISOString() })
+      .eq('id', userId);
+    if (switchErr) return json({ error: switchErr.message }, 500);
+    return json(
+      { ok: true, persona, status: 'verified', verifiedPersonas: [...verifiedSet] },
+      200,
+    );
+  }
+
   // ── Bypass développement ────────────────────────────────────────────────────
   // BYPASS_ROLE_VERIFICATION=true dans .env désactive toutes les vérifications.
   // NE JAMAIS activer en production. Utile pour les tests et le staging.
@@ -98,7 +126,10 @@ export async function POST(request: Request): Promise<Response> {
     method = devBypass ? 'none' : 'rpps';
   }
 
-  const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
+  // Le rôle fraîchement vérifié rejoint l'ensemble acquis (multi-rôles, migration 0016).
+  verifiedSet.add(persona);
+  const verifiedPersonas = [...verifiedSet];
+
   const { error: upErr } = await admin
     .from('profiles')
     .update({
@@ -107,9 +138,10 @@ export async function POST(request: Request): Promise<Response> {
       verification_method: method,
       verified_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      verified_personas: verifiedPersonas,
     })
     .eq('id', userId);
 
   if (upErr) return json({ error: upErr.message }, 500);
-  return json({ ok: true, persona, status }, 200);
+  return json({ ok: true, persona, status, verifiedPersonas }, 200);
 }

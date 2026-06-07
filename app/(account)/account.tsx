@@ -1,7 +1,8 @@
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
+import type { Persona } from '@/ai/prompts/_schema';
 import { useSession } from '@/auth/AuthProvider';
 import { getSupabaseClient } from '@/db/supabase';
 import { INTENDED_PURPOSE } from '@/compliance/disclosures';
@@ -24,9 +25,13 @@ const personaLabels = {
   professional: 'Professionnel de santé',
 } as const;
 
+const VERIFIABLE_PERSONAS: Persona[] = ['public', 'student', 'professional'];
+
 export default function AccountScreen() {
-  const { loading, persona, signOut, user } = useSession();
+  const { loading, persona, status, verifiedPersonas, requestRole, signOut, user } = useSession();
+  const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
+  const [switching, setSwitching] = useState<Persona | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // Abonnement lu via RLS own-row (06_BILLING §6). Aucune donnée de santé.
   const [subscription, setSubscription] = useState<{ plan: string; status: string } | null>(null);
@@ -56,6 +61,20 @@ export default function AccountScreen() {
 
   const isPaid = subscription?.status === 'active' || subscription?.status === 'trialing';
   const isAdmin = user ? isAdminUserId(user.id) : false;
+
+  // Bascule du rôle ACTIF vers un rôle déjà validé (sans re-vérification) → ouvre son chat.
+  async function switchTo(target: Persona) {
+    if (switching || target === persona) return;
+    setSwitching(target);
+    setErrorMessage(null);
+    const res = await requestRole(target);
+    setSwitching(null);
+    if (res.error) {
+      setErrorMessage(res.error);
+      return;
+    }
+    router.push('/(chat)/chat');
+  }
 
   async function handleSignOut() {
     if (signingOut) return;
@@ -134,12 +153,57 @@ export default function AccountScreen() {
 
       {user ? (
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>Rôle</Text>
+          <Text style={styles.sectionTitle}>Rôles vérifiés</Text>
           <Text style={styles.sectionText}>
-            Choisis ou change ton rôle (public / étudiant / professionnel).
+            Bascule librement entre les chats de tes rôles validés. Le rôle actif détermine le
+            chat ouvert.
           </Text>
+          <View style={styles.roleStatusList}>
+            {VERIFIABLE_PERSONAS.map((p) => {
+              const validated = verifiedPersonas.includes(p);
+              const active = persona === p;
+              const pending = p === 'professional' && status === 'pending' && persona === p;
+              return (
+                <View key={p} style={styles.roleStatusRow}>
+                  <Text style={styles.roleStatusLabel}>{personaLabels[p]}</Text>
+                  {validated ? (
+                    <View style={[styles.statusBadge, active && styles.statusBadgeActive]}>
+                      <Text style={[styles.statusBadgeText, active && styles.statusBadgeTextActive]}>
+                        {active ? '● Actif' : '✓ Validé'}
+                      </Text>
+                    </View>
+                  ) : pending ? (
+                    <View style={styles.statusBadgePending}>
+                      <Text style={styles.statusBadgePendingText}>En attente</Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.statusMuted}>Non validé</Text>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+
+          {verifiedPersonas.filter((p) => p !== persona).length > 0 ? (
+            <View style={styles.switchActions}>
+              {verifiedPersonas
+                .filter((p) => p !== persona)
+                .map((p) => (
+                  <Button
+                    key={p}
+                    label={`Passer en ${personaLabels[p]}`}
+                    variant="secondary"
+                    fullWidth={false}
+                    loading={switching === p}
+                    disabled={switching !== null}
+                    onPress={() => switchTo(p)}
+                  />
+                ))}
+            </View>
+          ) : null}
+
           <Link href="/(account)/choose-role" style={styles.inlineLink}>
-            Gérer mon rôle
+            Valider un nouveau rôle
           </Link>
         </Card>
       ) : null}
@@ -263,6 +327,61 @@ const styles = StyleSheet.create({
     letterSpacing: tokens.type.h3.letterSpacing,
     fontWeight: tokens.weight.bold,
     marginBottom: tokens.space.xs,
+  },
+  roleStatusList: { gap: tokens.space.sm, marginBottom: tokens.space.md },
+  roleStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  roleStatusLabel: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.medium,
+  },
+  statusBadge: {
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accentSurface,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.xs,
+  },
+  statusBadgeActive: {
+    backgroundColor: tokens.colors.accent,
+    borderColor: tokens.colors.accent,
+  },
+  statusBadgeText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  statusBadgeTextActive: { color: tokens.colors.onAccent },
+  statusBadgePending: {
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.warningBackground,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.xs,
+  },
+  statusBadgePendingText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.warningText,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  statusMuted: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.medium,
+  },
+  switchActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: tokens.space.sm,
+    marginBottom: tokens.space.md,
   },
   sectionText: {
     fontFamily: tokens.font.sans,

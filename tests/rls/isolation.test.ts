@@ -100,6 +100,35 @@ describe('profiles — isolation cross-user', () => {
     );
     expect(rowCount).toBe(1);
   });
+
+  // Migration 0016 : multi-rôles vérifiés. Le client ne peut pas s'ajouter un rôle vérifié.
+  it("user A NE PEUT PAS s'ajouter un rôle dans verified_personas (anti-auto-promotion)", async () => {
+    await expect(
+      db.asUser(USER_A, (q) =>
+        q(
+          "UPDATE profiles SET verified_personas = ARRAY['public','professional']::persona[] WHERE id = $1",
+          [USER_A],
+        ),
+      ),
+    ).rejects.toThrow();
+  });
+
+  it('le service_role PEUT agréger des rôles vérifiés (UPDATE verified_personas)', async () => {
+    const { rowCount } = await db.asService((q) =>
+      q(
+        "UPDATE profiles SET verified_personas = ARRAY['public','student','professional']::persona[] WHERE id = $1",
+        [USER_A],
+      ),
+    );
+    expect(rowCount).toBe(1);
+  });
+
+  it('verified_personas vaut [public] par défaut à la création du profil', async () => {
+    const { rows } = await db.asService((q) =>
+      q('SELECT verified_personas FROM profiles WHERE id = $1', [USER_B]),
+    );
+    expect(rows[0].verified_personas).toEqual(['public']);
+  });
 });
 
 describe('ai_interactions — service_role only (jamais accessible au client)', () => {
