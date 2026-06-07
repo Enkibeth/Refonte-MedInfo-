@@ -18,6 +18,22 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-06-07] – Claude (Analyseur de classement de promo — v1, client-side)
+### Files modified
+- src/lib/classement.ts (nouveau : parsing CSV/TSV FR + détection colonnes + rang/stats, pur/testé)
+- tests/unit/classement.test.ts (nouveau, 10 tests)
+- app/(chat)/partiel.tsx (réécrit : import fichier web/collage → rang + comparaison par n° étudiant)
+- CLAUDE.md, docs/STATUS.md, docs/GLOWUP_ROADMAP.md, docs/DECISIONS/0019, docs/CHANGELOG_AI.md
+### Purpose
+Implémenter l'analyseur de classement (concept medoutils, absent du repo public) : l'étudiant importe
+les notes de sa promo et obtient son rang + des stats + une comparaison par numéro étudiant.
+### Regulatory impact
+None. Traitement 100% côté client (aucune donnée envoyée à un serveur ni à une IA), aucune persistance.
+Données de tiers (notes de promo) traitées localement → minimisation. Aucune donnée de santé.
+### Rollback plan
+Masquer l'onglet Classement (`featureVisibility`) ; supprimer `src/lib/classement.ts` + l'écran.
+
+
 ## [2026-06-07] – Claude (dictée vocale + menu d'outils + correction analyseur + nettoyage PR)
 ### Files modified
 - src/ui/DictationButton.tsx (nouveau : dictée Whisper → texte), intégré dans app/(chat)/chat.tsx et ecos.tsx
