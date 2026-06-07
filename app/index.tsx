@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { INTENDED_PURPOSE, getAiDisclosure } from '@/compliance/disclosures';
 import { Button } from '@/ui/Button';
@@ -54,6 +54,14 @@ export default function HomeScreen() {
           <Text style={styles.purposeLabel}>Finalité prévue</Text>
           <Text style={styles.purposeText}>{INTENDED_PURPOSE}</Text>
         </View>
+
+        {/* Illustration de marque (transitoire — 05_DESIGN §6 : imagerie IA non définitive). */}
+        <Image
+          source={require('../assets/brand/legacy-illustration.png')}
+          style={styles.illustration}
+          resizeMode="contain"
+          accessibilityLabel="Illustration MedInfo AI : équipe soignante avec un chat et un chien — Soins · Compassion · Science"
+        />
 
         <View style={styles.notice}>
           <View style={styles.noticeAccent} />
@@ -179,6 +187,14 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.label.fontSize,
     lineHeight: tokens.type.label.lineHeight,
+  },
+  illustration: {
+    width: '100%',
+    maxWidth: 720,
+    height: 280,
+    alignSelf: 'center',
+    borderRadius: tokens.radius.lg,
+    marginTop: tokens.space.xl,
   },
   purpose: {
     width: '100%',

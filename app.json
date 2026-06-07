@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "scheme": "medinfoai",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
     "ios": {
       "bundleIdentifier": "com.medinfoai.app",
       "infoPlist": {
@@ -20,13 +21,16 @@
       ]
     },
     "web": {
-      "output": "server"
+      "output": "server",
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
           "backgroundColor": "#0A4D68"
         }
       ],
