@@ -6,6 +6,7 @@ import { useSession } from '@/auth/AuthProvider';
 import { getSupabaseClient } from '@/db/supabase';
 import { INTENDED_PURPOSE } from '@/compliance/disclosures';
 import { isAdminUserId } from '@/admin/index';
+import { visibleFeatures } from '@/ai/routing/featureVisibility';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Logo } from '@/ui/Logo';
@@ -112,6 +113,22 @@ export default function AccountScreen() {
           <Link href="/(billing)/pricing" style={styles.inlineLink}>
             Voir les offres
           </Link>
+        </Card>
+      ) : null}
+
+      {user ? (
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>Mes outils</Text>
+          <Text style={styles.sectionText}>
+            Les fonctionnalités disponibles dépendent de ton rôle.
+          </Text>
+          <View style={styles.toolList}>
+            {visibleFeatures(persona, { isAdmin }).map((f) => (
+              <Link key={f.id} href={f.route as never} style={styles.toolItem}>
+                {f.emoji} {f.label}
+              </Link>
+            ))}
+          </View>
         </Card>
       ) : null}
 
@@ -253,6 +270,20 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.body.fontSize,
     lineHeight: tokens.type.body.lineHeight,
     marginBottom: tokens.space.md,
+  },
+  toolList: { gap: tokens.space.sm },
+  toolItem: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+    backgroundColor: tokens.colors.accentSurface,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    borderRadius: tokens.radius.md,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm + 2,
+    overflow: 'hidden',
   },
   signOut: { marginTop: tokens.space.xl },
   errorBox: {

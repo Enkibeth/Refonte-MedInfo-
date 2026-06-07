@@ -35,6 +35,9 @@
   "engines": {
     "node": "22.x"
   },
+  "overrides": {
+    "uuid": "^11"
+  },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.81",
     "@ai-sdk/google": "^3.0.80",

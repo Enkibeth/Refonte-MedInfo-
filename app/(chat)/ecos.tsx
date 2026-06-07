@@ -21,6 +21,8 @@ import { useSession } from '@/auth/AuthProvider';
 import { getSupabaseClient } from '@/db/supabase';
 import { tokens } from '@/ui/tokens';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
+import { RoleGate } from '@/ui/RoleGate';
+import { DictationButton } from '@/ui/DictationButton';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -145,6 +147,14 @@ function Timer({ totalSeconds, onExpire }: { totalSeconds: number; onExpire: () 
 type Phase = 'selection' | 'preparation' | 'simulation' | 'evaluation';
 
 export default function EcosScreen() {
+  return (
+    <RoleGate feature="ecos">
+      <EcosScreenInner />
+    </RoleGate>
+  );
+}
+
+function EcosScreenInner() {
   const { persona } = useSession();
   const [phase, setPhase] = useState<Phase>('selection');
   const [selectedCase, setSelectedCase] = useState<EcosCase | null>(null);
@@ -444,6 +454,10 @@ Sois précis, bienveillant et pédagogique.`;
 
         <View style={styles.simFooter}>
           <View style={styles.simInputRow}>
+            <DictationButton
+              onTranscript={(text) => setInput((prev) => (prev.trim() ? `${prev.trim()} ${text}` : text))}
+              disabled={aiLoading}
+            />
             <TextInput
               style={styles.simInput}
               value={input}

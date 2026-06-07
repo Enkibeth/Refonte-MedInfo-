@@ -8,6 +8,41 @@ status: Active
 date: 2026-06-06
 ```
 
+## État courant — 2026-06-07
+
+- **Réconciliation `main` ↔ `dev`** : merge de `origin/dev` (refonte design #59 + fix CI #62) dans la
+  branche de session, qui contenait déjà le branding `main` (#60/#61). Conflits limités à `app/index.tsx`
+  et `src/ui/Logo.tsx`, résolus en faveur de `dev` (Logo wordmark code `size`+`tone`, hero design system) ;
+  branding des écrans Compte/Tarifs/Légal/Chat + assets conservés. Typecheck vert.
+- **Visibilité des outils par rôle (grosse modif)** : matrice stricte par persona
+  (`src/ai/routing/featureVisibility.ts`) — grand public : Chat + Document ; étudiant : Chat + ECOS +
+  Analyseur de partiel ; pro : Chat + Audio ; admin : tout. Appliquée aux onglets (`href: null`), aux
+  écrans (`RoleGate`) et à l'écran Compte (« Mes outils »). ADR-0018.
+- **Analyseur de partiel** (`partiel_analyze`, route `/api/partiel`, écran `app/(chat)/partiel.tsx`) :
+  outil étudiant qui analyse des résultats de QCM/partiels (items EDN faibles + plan de révision),
+  éducatif/non-MDSW, garde persona serveur. Convention 6 étapes + migration `0017`. ADR-0019.
+- **Validations locales** : `typecheck` OK · `npm run test` **268 verts** (40 fichiers, dont RLS réel
+  avec Postgres+pgvector ; seed `ai_model_config` 6→7) · `npm run compliance` (5 gates) OK ·
+  `compliance:grep` / `validate:prompts` / `validate:rag` OK.
+- Stratégie Git : développement sur la branche de session → **PR vers `main`** (alignement validé par Hugo).
+- Roadmap visuelle/produit : `docs/GLOWUP_ROADMAP.md` (créée/mise à jour).
+
+### Itération 2 (même jour) — dictée, menu d'outils, correction partiel, nettoyage PR
+
+- **Dictée vocale** dans les saisies chat + ECOS (`src/ui/DictationButton.tsx`) : voix → texte via
+  Whisper (`/api/transcribe`, nouveau mode `raw` sans diarisation). Le texte repasse par la safe-box.
+- **Menu déroulant d'outils** (`src/ui/ToolsMenu.tsx`) dans les en-têtes (chat/document/audio) : switch
+  rôle-aware bien visible, complète la barre d'onglets du bas.
+- **Analyseur de « partiel » corrigé** : la 1re version (coach de révision LLM) était erronée. La vraie
+  feature (medoutils) est un **analyseur de classement de promo** (import des notes → rang + comparaison),
+  prévu **côté client sans IA**. La version LLM est **retirée** (route `/api/partiel`, prompt, migration
+  `0017`, feature admin `partiel_analyze`) ; onglet `Classement` = placeholder en attente de la spéc. ADR-0019.
+- **Fixes ré-intégrés** : garde clé Supabase corrompue/Latin-1 (`src/db/supabase.ts`, ex-PR #44) ;
+  suppression des warnings npm du build Vercel (`.npmrc` legacy-peer-deps + override `uuid@^11`, ex-PR #45).
+- **Nettoyage PR (reparte de 0)** : #63 mergé sur `main`, `dev`/`staging` réalignés, et les 8 autres PR
+  fermées (obsolètes/divergentes ou ré-intégrées). Plus rien en attente.
+- Validations : `typecheck` OK · `npm test` **268 verts** · seed `ai_model_config` de retour à **6**.
+
 ## État courant — 2026-06-06
 
 - Documentation de reprise ajoutée dans `CLAUDE.md` : tableau des features IA et table des migrations Supabase existantes/attendues.

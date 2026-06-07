@@ -22,12 +22,22 @@ import { Link } from 'expo-router';
 import { useSession } from '@/auth/AuthProvider';
 import { tokens } from '@/ui/tokens';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
+import { RoleGate } from '@/ui/RoleGate';
+import { ToolsMenu } from '@/ui/ToolsMenu';
 
 interface Analysis {
   text: string;
 }
 
 export default function DocumentScreen() {
+  return (
+    <RoleGate feature="document">
+      <DocumentScreenInner />
+    </RoleGate>
+  );
+}
+
+function DocumentScreenInner() {
   const { session } = useSession();
   const [documentText, setDocumentText] = useState('');
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
@@ -93,6 +103,9 @@ export default function DocumentScreen() {
       keyboardVerticalOffset={80}
     >
       <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <ToolsMenu />
+        </View>
         <Text style={styles.title}>Analyse de document</Text>
         <Text style={styles.subtitle}>
           Collez un compte rendu, une ordonnance ou des résultats pour obtenir un résumé patient.
@@ -182,6 +195,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: tokens.colors.border,
   },
+  headerTop: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: tokens.space.sm },
   title: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,

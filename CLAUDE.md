@@ -29,6 +29,9 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 | Facturation Stripe | Actif web-first | Plans public + étudiant | `subscriptions`, `billing_events`, webhook Stripe | Paywall = volume/features uniquement ; ne gate jamais les sources | ADR-0012 |
 | Quotas par feature | Décidé / à maintenir côté serveur | Chat, ECOS, exports, transcriptions | Tables de limites/compteurs techniques, entitlements serveur | Quota découplé des sources ; service_role only ; aucune auto-promotion client | ADR-0016 |
 | Cas ECOS en base | Décidé / feature pédagogique | Étudiants vérifiés | Tables de cas/stations pédagogiques versionnées | Cas explicitement fictifs ; aucun patient réel ; séparation du chat médical | ADR-0017 |
+| Analyseur de classement (medoutils) | En conception | Étudiants vérifiés | `app/(chat)/partiel.tsx` (placeholder), traitement client prévu | Import des notes de promo → rang/comparaison ; calcul 100% client (aucune donnée envoyée, sans IA) ; en attente de la spéc medoutils | ADR-0019 |
+| Visibilité des outils par rôle + menu d'outils | Actif | Tous (UI adaptée) | `src/ai/routing/featureVisibility.ts`, `src/ui/RoleGate.tsx`, `src/ui/ToolsMenu.tsx`, `app/(chat)/_layout.tsx` | Cloisonnement UI strict par persona ; menu déroulant rôle-aware ; jamais l'unique barrière (autorisation serveur conservée) | ADR-0018 |
+| Dictée vocale (chat/ECOS) | Actif | Tous | `src/ui/DictationButton.tsx`, `/api/transcribe` mode `raw` | Voix → texte (Whisper) dans les saisies ; transcription brute ; le texte repasse par la safe-box de la route cible | ADR-0019 |
 
 ## Migrations Supabase — état documentaire
 
@@ -163,11 +166,37 @@ Pour ajouter un admin : modifier `ADMIN_USER_IDS` dans `src/admin/index.ts`.
 
 ## Fonctionnalités IA actuelles
 
-| Feature key | Route API | Modèle par défaut |
-|-------------|-----------|-------------------|
-| `chat` | `/api/chat` | claude-sonnet-4-6 |
-| `analyze` | `/api/analyze` | claude-sonnet-4-6 |
-| `ecos_simulate` | `/api/ecos` | claude-sonnet-4-6 |
-| `ecos_evaluate` | `/api/ecos` | claude-sonnet-4-6 |
-| `audio_diarize` | `/api/transcribe` | gpt-4o-mini |
-| `audio_report` | `/api/transcribe` | gpt-4o-mini |
+| Feature key | Route API | Modèle par défaut | Audience |
+|-------------|-----------|-------------------|----------|
+| `chat` | `/api/chat` | claude-sonnet-4-6 | Tous |
+| `analyze` | `/api/analyze` | claude-sonnet-4-6 | Grand public |
+| `ecos_simulate` | `/api/ecos` | claude-sonnet-4-6 | Étudiant |
+| `ecos_evaluate` | `/api/ecos` | claude-sonnet-4-6 | Étudiant |
+| `audio_diarize` | `/api/transcribe` | gpt-4o-mini | Professionnel |
+| `audio_report` | `/api/transcribe` | gpt-4o-mini | Professionnel |
+
+## Visibilité des fonctionnalités par rôle (persona)
+
+Chaque rôle ne voit QUE ses outils (le grand public ne voit pas les outils
+étudiant/pro, et inversement). Source de vérité unique :
+`src/ai/routing/featureVisibility.ts` (module pur, testé dans
+`tests/unit/feature-visibility.test.ts`).
+
+| Outil | Grand public | Étudiant | Professionnel | Admin |
+|---|:---:|:---:|:---:|:---:|
+| 💬 Chat santé | ✅ | ✅ | ✅ | ✅ |
+| 📄 Analyse de document | ✅ | — | — | ✅ |
+| 🩺 ECOS | — | ✅ | — | ✅ |
+| 📊 Classement (analyseur, en conception) | — | ✅ | — | ✅ |
+| 🎤 Audio (compte rendu) | — | — | ✅ | ✅ |
+
+Application :
+- Barre d'onglets `app/(chat)/_layout.tsx` : onglet masqué via `href: null` si non visible.
+- Menu déroulant d'outils `src/ui/ToolsMenu.tsx` (en-tête) : switch rôle-aware depuis n'importe quel écran.
+- Garde d'écran `<RoleGate feature="…">` (`src/ui/RoleGate.tsx`) sur Document/ECOS/Classement/Audio
+  (défense en profondeur contre l'accès direct / deep-link).
+- Écran Compte : section « Mes outils » listant les outils du rôle courant.
+- Dictée vocale `src/ui/DictationButton.tsx` (Whisper, `/api/transcribe` mode `raw`) dans les saisies de chat/ECOS.
+- **Sécurité** : le masquage UI n'est jamais l'unique barrière. L'autorisation réelle des routes
+  IA reste dérivée du profil vérifié côté serveur (`serverPersona.ts` ; garde persona étudiant/admin
+  dans `/api/partiel`). ADR-0018.
