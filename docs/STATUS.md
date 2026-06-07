@@ -43,6 +43,15 @@ date: 2026-06-06
   fermées (obsolètes/divergentes ou ré-intégrées). Plus rien en attente.
 - Validations : `typecheck` OK · `npm test` **268 verts** · seed `ai_model_config` de retour à **6**.
 
+### Itération 3 (même jour) — Analyseur de classement (v1)
+
+- Après fouille exhaustive du repo medoutils (`Enkibeth/QCM-quizz`, toutes branches) : la feature
+  « classement » **n'y existe pas** (repo = PDF→QCM/QROC + ECOS). Construite depuis la description de Hugo.
+- **Analyseur de classement v1** (`app/(chat)/partiel.tsx` + logique pure `src/lib/classement.ts`,
+  testée) : import CSV/TSV (upload web ou collage) → rang, moyenne/médiane/min/max, % en-dessous,
+  comparaison par n° étudiant. **100 % côté client** (aucune donnée envoyée, sans IA). Pas de dépendance
+  `xlsx` (version npm vulnérable high-severity) → Excel à exporter en CSV. `npm test` **278 verts**.
+
 ## État courant — 2026-06-06
 
 - Documentation de reprise ajoutée dans `CLAUDE.md` : tableau des features IA et table des migrations Supabase existantes/attendues.

@@ -40,7 +40,7 @@ Légende : ✅ fait · 🟡 en cours / partiel · ⬜ à faire.
 | 💬 Chat santé | Tous | ✅ | Safe-box 3 couches + RAG cite-or-refuse |
 | 📄 Analyse de document | Grand public | ✅ | Résumé patient (`/api/analyze`) |
 | 🩺 ECOS | Étudiant | ✅ | Simulation + évaluation, cas en base (ADR-0017) |
-| 📊 Analyseur de classement | Étudiant | 🟡 | En conception (medoutils, ADR-0019) : import des notes de promo → rang + comparaison, **côté client sans IA**. Placeholder en attente de la spéc |
+| 📊 Analyseur de classement | Étudiant | ✅ | v1 (ADR-0019) : import CSV/TSV des notes de promo → rang, stats, comparaison par n° étudiant, **côté client sans IA** (`src/lib/classement.ts`). Support `.xlsx` direct = à ajouter si voulu |
 | 🎤 Audio (compte rendu) | Professionnel | ✅ | Transcription + compte rendu structuré |
 | QCM interactifs | Étudiant | ✅ | `render_qcm` dans le chat |
 
