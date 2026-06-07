@@ -8,6 +8,7 @@ import { useMemo, useState } from 'react';
 import {
   View,
   Text,
+  Image,
   TextInput,
   ScrollView,
   TouchableOpacity,
@@ -306,6 +307,12 @@ export default function ChatScreen() {
       >
         {messages.length === 0 && !isLoading ? (
           <View style={styles.emptyState}>
+            <Image
+              source={require('../../assets/brand/legacy-illustration.png')}
+              style={styles.emptyIllustration}
+              resizeMode="contain"
+              accessibilityLabel="Illustration MedInfo AI : équipe soignante"
+            />
             <Text style={styles.emptyTitle}>Posez votre première question</Text>
             <Text style={styles.emptyText}>
               Réponses claires, appuyées sur des sources (HAS, ANSM…). Information générale,
@@ -427,6 +434,14 @@ const styles = StyleSheet.create({
     marginTop: tokens.space['2xl'],
     paddingHorizontal: tokens.space.lg,
     gap: tokens.space.sm,
+  },
+  emptyIllustration: {
+    width: '100%',
+    maxWidth: 280,
+    height: 180,
+    alignSelf: 'center',
+    borderRadius: tokens.radius.lg,
+    marginBottom: tokens.space.sm,
   },
   emptyTitle: {
     fontFamily: tokens.font.sans,
