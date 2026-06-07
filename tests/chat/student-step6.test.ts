@@ -9,7 +9,7 @@ describe('étape 6 — prompt student.v2', () => {
     const prompt = getActivePrompt('student');
 
     expect(prompt.id).toBe('student');
-    expect(prompt.version).toBe('2.0.0');
+    expect(prompt.version).toBe('2.1.0');
     expect(prompt.regulatory_scope).toBe('non-MDSW · éducatif (cas fictifs)');
     expect(prompt.contract.forbidden_outputs).toEqual(
       expect.arrayContaining(['real_patient_case_analysis', 'individualized_diagnosis', 'sycophancy']),

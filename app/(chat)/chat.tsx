@@ -26,7 +26,11 @@ import { tokens } from '@/ui/tokens';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { DictationButton } from '@/ui/DictationButton';
 import { ToolsMenu } from '@/ui/ToolsMenu';
+import { ChatSettingsSheet } from '@/ui/ChatSettingsSheet';
+import { ReflectionCard } from '@/ui/ReflectionCard';
 import { collectLatestCitations, type Citation } from '@/ai/ui/chatSources';
+import { splitReflection } from '@/ai/ui/reflection';
+import { DEFAULT_GENERATION, type GenerationSettings } from '@/ai/chat/generationSettings';
 
 // ── Types tool-call ────────────────────────────────────────────────────────
 
@@ -214,19 +218,27 @@ function MessageBubble({
     .map((p) => p.text)
     .join('');
 
+  // Extrait l'éventuel bloc d'auto-réflexion pour le rendre dans une carte dédiée
+  // (et ne jamais afficher les marqueurs bruts dans le corps de la réponse).
+  const { body, reflection, streaming } = isUser
+    ? { body: textContent, reflection: null, streaming: false }
+    : splitReflection(textContent);
+
   return (
     <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAssistant]}>
-      {textContent ? (
+      {body ? (
         isUser ? (
-          <Text style={styles.textUser}>{textContent}</Text>
+          <Text style={styles.textUser}>{body}</Text>
         ) : (
-          <MarkdownRenderer text={textContent} />
+          <MarkdownRenderer text={body} />
         )
       ) : null}
 
       {parts.map((p, i) => (
         <MessagePart key={i} part={p} onFollowup={onFollowup} />
       ))}
+
+      {reflection ? <ReflectionCard text={reflection} streaming={streaming} /> : null}
     </View>
   );
 }
@@ -236,31 +248,41 @@ function MessageBubble({
 export default function ChatScreen() {
   // Persona issue de l'AuthProvider (source profiles/RLS, étape 3). Fallback 'public'
   // tant que la session/le profil charge ou pour un visiteur non authentifié.
-  const { persona } = useSession();
+  const { persona, personalInfo } = useSession();
   const [input, setInput] = useState('');
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [generation, setGeneration] = useState<GenerationSettings>(DEFAULT_GENERATION);
 
   const { messages, sendMessage, status, error } = useChat({
-    transport: new DefaultChatTransport({
-      api: '/api/chat',
-      body: { persona: persona ?? 'public' },
-    }),
+    transport: new DefaultChatTransport({ api: '/api/chat' }),
   });
 
   const latestCitations = useMemo(() => collectLatestCitations(messages), [messages]);
   const isLoading = status === 'streaming' || status === 'submitted';
   const hasSources = latestCitations.length > 0;
 
+  // Corps de requête dynamique : persona + réglages utilisateur + contexte perso.
+  // Passé à chaque envoi (le transport ne capture pas l'état React au fil des rendus).
+  const requestBody = useMemo(
+    () => ({
+      persona: persona ?? 'public',
+      generation,
+      personalInfo: personalInfo ?? undefined,
+    }),
+    [persona, generation, personalInfo],
+  );
+
   const handleSend = () => {
     const text = input.trim();
     if (!text || isLoading) return;
     setInput('');
-    sendMessage({ text });
+    sendMessage({ text }, { body: requestBody });
   };
 
   const handleFollowup = (suggestion: string) => {
-    sendMessage({ text: suggestion });
+    sendMessage({ text: suggestion }, { body: requestBody });
   };
 
   return (
@@ -277,6 +299,14 @@ export default function ChatScreen() {
         <View style={styles.headerActions}>
           <ToolsMenu />
           <TouchableOpacity
+            style={styles.headerIconButton}
+            onPress={() => setSettingsOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Réglages du chat"
+          >
+            <Text style={styles.headerIconText}>⚙︎</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[styles.headerSourcesButton, !hasSources && styles.headerSourcesButtonDisabled]}
             onPress={() => setSourcesOpen((open) => !open)}
             disabled={!hasSources}
@@ -288,6 +318,13 @@ export default function ChatScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      <ChatSettingsSheet
+        visible={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        generation={generation}
+        onChangeGeneration={setGeneration}
+      />
 
       {sourcesOpen && hasSources ? (
         <View style={styles.sourcesPane}>
@@ -383,6 +420,20 @@ const styles = StyleSheet.create({
     borderColor: tokens.colors.border,
   },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
+  headerIconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: tokens.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: tokens.colors.accentSurface,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+  },
+  headerIconText: {
+    fontSize: 18,
+    color: tokens.colors.accentDeep,
+  },
   headerAudioButton: {
     borderRadius: tokens.radius.pill,
     paddingHorizontal: tokens.space.lg,

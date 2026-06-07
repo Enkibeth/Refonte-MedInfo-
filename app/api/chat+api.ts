@@ -31,7 +31,15 @@ import { validateOutput } from '@/ai/guardrails/outputValidator';
 import { buildRefusalChunks } from '@/ai/guardrails/refusalStream';
 import { logInteraction } from '@/ai/logging/logInteraction';
 import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
-import { retrieveRagContext, buildRagSystemSection, RAG_REFUSAL_MESSAGE } from '@/rag/retrieval';
+import { retrieveRagContext, buildRagSystemSection } from '@/rag/retrieval';
+import {
+  buildResponseDirectives,
+  coerceGeneration,
+  coercePersonalInfo,
+  reasoningEffortFor,
+  verbosityFor,
+  maxTokensFor,
+} from '@/ai/chat/responseDirectives';
 import { proposeFollowupsTool } from '@/ai/skills/propose_followups';
 import { showSourcesTool } from '@/ai/skills/show_sources';
 import { refuseAndRedirectTool } from '@/ai/skills/refuse_and_redirect';
@@ -63,12 +71,23 @@ export function getToolsForPersona(persona: Persona) {
 export async function POST(request: Request): Promise<Response> {
   const startMs = Date.now();
 
-  let body: { messages?: unknown[]; persona?: unknown };
+  let body: {
+    messages?: unknown[];
+    persona?: unknown;
+    generation?: unknown;
+    personalInfo?: unknown;
+  };
   try {
     body = await request.json();
   } catch {
     return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400 });
   }
+
+  // Réglages utilisateur (curseurs réflexion/détail) + contexte perso (prénom/âge/sexe).
+  // Non-autoritaires : ils n'influencent ni la persona, ni le quota, ni le safe-box ; ils
+  // ne servent qu'à moduler la génération et personnaliser l'information générale (ADR-0021).
+  const generation = coerceGeneration(body.generation);
+  const personalInfo = coercePersonalInfo(body.personalInfo);
 
   // ── Persona EFFECTIVE dérivée du serveur (CC-01, INV-A) ───────────────────────
   // JAMAIS depuis body.persona : un client anonyme/public ne peut pas s'auto-élever en
@@ -147,37 +166,32 @@ export async function POST(request: Request): Promise<Response> {
   const lastUserText = [...extractUserTexts(uiMessages)].filter((text) => text.trim().length > 0).pop() ?? '';
   const rag = await retrieveRagContext(lastUserText);
 
-  if (rag.chunks.length === 0) {
-    await logInteraction({
-      persona,
-      model_used: 'none',
-      latency_ms: Date.now() - startMs,
-      refusal_triggered: true,
-      guardrail_layer: 'rag_cite_or_refuse',
-      intent_category: 'general_info',
-    });
+  // Mode « web fiable d'abord » (ADR-0021) : le corpus RAG interne étant encore réduit, on
+  // n'oppose PLUS un refus déterministe quand il est vide. Le LLM s'appuie alors sur une
+  // recherche web restreinte aux sources officielles (cite-or-refuse conservé : on cite une
+  // source fiable ou on le dit). Le contexte RAG, s'il existe, reste injecté en appui.
+  const ragSection =
+    rag.chunks.length > 0
+      ? buildRagSystemSection(rag)
+      : '\n\n# CONTEXTE RAG OFFICIEL\nAucun extrait du corpus interne ne couvre cette question : ' +
+        'appuie-toi sur la recherche web restreinte aux sources officielles fiables (voir plus haut).';
 
-    const ragRefusalStream = createUIMessageStream({
-      execute: ({ writer }) => {
-        const id = generateId();
-        writer.write({ type: 'text-start', id } as UIMessageChunk);
-        writer.write({ type: 'text-delta', id, delta: RAG_REFUSAL_MESSAGE } as UIMessageChunk);
-        writer.write({ type: 'text-end', id } as UIMessageChunk);
-      },
-    });
-    return createUIMessageStreamResponse({ stream: ragRefusalStream });
-  }
+  const directives = buildResponseDirectives(persona, { personalInfo, generation });
 
-  // Modèle + réglages admin (feature key "chat") : température, raisonnement,
-  // verbosité et recherche internet (cf src/ai/providers/featureRuntime.ts).
-  // Le web_search est OFF par défaut : la garantie « cite-or-refuse » du RAG
-  // HAS/ANSM reste prioritaire tant qu'un admin ne l'active pas explicitement.
-  const runtime = await getRuntimeForFeature('chat');
+  // Modèle + réglages : la config admin (feature key "chat") est SURCHARGÉE par les curseurs
+  // utilisateur (réflexion → effort de raisonnement, détail → verbosité + budget de sortie) et
+  // la recherche web est forcée à ON pour ce mode (cf src/ai/providers/featureRuntime.ts).
+  const runtime = await getRuntimeForFeature('chat', {
+    reasoningEffort: reasoningEffortFor(generation),
+    verbosity: verbosityFor(generation),
+    webSearch: true,
+    maxOutputTokens: maxTokensFor(generation),
+  });
   const { tools: webTools, ...callOptions } = runtime.options;
 
   const result = streamText({
     model: runtime.model,
-    system: `${prompt.template}${buildRagSystemSection(rag)}`,
+    system: `${prompt.template}${directives}${ragSection}`,
     messages: modelMessages,
     tools: { ...getToolsForPersona(persona), ...(webTools ?? {}) },
     ...callOptions,

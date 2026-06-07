@@ -18,17 +18,30 @@ import {
   getModelCapabilities,
   type FeatureSettings,
   type ReasoningEffort,
+  type Verbosity,
 } from './featureModel';
 
 /** Options à étaler dans streamText/generateText. */
 export interface FeatureCallOptions {
   temperature?: number;
+  maxOutputTokens?: number;
   // Types provider-specific de l'AI SDK : on reste permissif pour rester compatible
   // entre versions de @ai-sdk/openai / @ai-sdk/anthropic.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   providerOptions?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tools?: any;
+}
+
+/**
+ * Surcharges par requête (non persistées) — ex. réglages utilisateur du chat.
+ * Priment sur la config admin lue en base pour CETTE requête uniquement.
+ */
+export interface FeatureRuntimeOverrides {
+  reasoningEffort?: ReasoningEffort | null;
+  verbosity?: Verbosity | null;
+  webSearch?: boolean;
+  maxOutputTokens?: number;
 }
 
 export interface FeatureRuntime {
@@ -53,8 +66,18 @@ function buildModel(modelId: string, provider: string): LanguageModel {
   return anthropic(modelId);
 }
 
-export async function getRuntimeForFeature(feature: FeatureKey): Promise<FeatureRuntime> {
-  const settings = await getFeatureSettings(feature);
+export async function getRuntimeForFeature(
+  feature: FeatureKey,
+  overrides: FeatureRuntimeOverrides = {},
+): Promise<FeatureRuntime> {
+  const base = await getFeatureSettings(feature);
+  // Les surcharges par requête (réglages utilisateur) priment sur la config admin.
+  const settings: FeatureSettings = {
+    ...base,
+    reasoningEffort: overrides.reasoningEffort ?? base.reasoningEffort,
+    verbosity: overrides.verbosity ?? base.verbosity,
+    webSearch: overrides.webSearch ?? base.webSearch,
+  };
   const caps = getModelCapabilities(settings.modelId);
   const model = buildModel(settings.modelId, settings.provider);
 
@@ -86,9 +109,15 @@ export async function getRuntimeForFeature(feature: FeatureKey): Promise<Feature
     }
   } else if (settings.provider === 'anthropic') {
     if (caps.reasoning && settings.reasoningEffort) {
+      const budget = ANTHROPIC_THINKING_BUDGET[settings.reasoningEffort];
       providerOptions.anthropic = {
-        thinking: { type: 'enabled', budgetTokens: ANTHROPIC_THINKING_BUDGET[settings.reasoningEffort] },
+        thinking: { type: 'enabled', budgetTokens: budget },
       };
+      // Anthropic exige temperature non personnalisée quand thinking est actif, et
+      // max_tokens > budget de thinking. On retire la température et on garantit une
+      // marge de sortie suffisante (sauf override explicite plus bas).
+      delete options.temperature;
+      options.maxOutputTokens = budget + 4096;
     }
 
     if (caps.webSearch && settings.webSearch) {
@@ -99,6 +128,12 @@ export async function getRuntimeForFeature(feature: FeatureKey): Promise<Feature
         /* idem */
       }
     }
+  }
+
+  // Override explicite du budget de sortie (ex. niveau de détail du chat). On respecte le
+  // plancher imposé par le thinking Anthropic (max_tokens doit dépasser le budget).
+  if (overrides.maxOutputTokens != null) {
+    options.maxOutputTokens = Math.max(overrides.maxOutputTokens, options.maxOutputTokens ?? 0);
   }
 
   if (Object.keys(providerOptions).length > 0) options.providerOptions = providerOptions;
