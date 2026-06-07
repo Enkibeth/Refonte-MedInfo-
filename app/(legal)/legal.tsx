@@ -7,6 +7,7 @@ import {
   getAiDisclosure,
 } from '@/compliance/disclosures';
 import { Card } from '@/ui/Card';
+import { Logo } from '@/ui/Logo';
 import { Screen } from '@/ui/Screen';
 import { tokens } from '@/ui/tokens';
 
@@ -23,6 +24,9 @@ const PENDING = '[À compléter avant lancement]';
 export default function LegalScreen() {
   return (
     <Screen maxWidth={760}>
+      <View style={styles.brandHeader}>
+        <Logo size="sm" />
+      </View>
       <Text style={styles.title}>Informations légales</Text>
       <Text style={styles.lead}>
         Mentions légales, finalité du service, statut réglementaire, information sur l’IA et
@@ -120,6 +124,7 @@ export default function LegalScreen() {
 }
 
 const styles = StyleSheet.create({
+  brandHeader: { marginBottom: tokens.space.lg },
   title: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,

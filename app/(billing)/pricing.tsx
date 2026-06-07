@@ -7,6 +7,7 @@ import { plansForPersona, type BillingPlanId } from '@/billing/plans';
 import { shouldShowWebBilling } from '@/billing/surface';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
+import { Logo } from '@/ui/Logo';
 import { Screen } from '@/ui/Screen';
 import { tokens } from '@/ui/tokens';
 
@@ -57,6 +58,9 @@ export default function PricingScreen() {
 
   return (
     <Screen maxWidth={640}>
+      <View style={styles.brandHeader}>
+        <Logo size="sm" />
+      </View>
       <Text style={styles.title}>Offres</Text>
 
       <View style={styles.sourcesBox}>
@@ -120,6 +124,7 @@ export default function PricingScreen() {
 }
 
 const styles = StyleSheet.create({
+  brandHeader: { marginBottom: tokens.space.lg },
   title: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,

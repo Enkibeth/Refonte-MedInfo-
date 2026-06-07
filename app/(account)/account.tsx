@@ -8,6 +8,7 @@ import { INTENDED_PURPOSE } from '@/compliance/disclosures';
 import { isAdminUserId } from '@/admin/index';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
+import { Logo } from '@/ui/Logo';
 import { Screen } from '@/ui/Screen';
 import { tokens } from '@/ui/tokens';
 
@@ -74,6 +75,9 @@ export default function AccountScreen() {
 
   return (
     <Screen maxWidth={640}>
+      <View style={styles.brandHeader}>
+        <Logo size="sm" />
+      </View>
       <Text style={styles.title}>Mon compte</Text>
       <Text style={styles.body}>
         Informations de connexion et préférences associées à ta session MedInfo AI.
@@ -183,6 +187,7 @@ export default function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
+  brandHeader: { marginBottom: tokens.space.lg },
   title: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,
