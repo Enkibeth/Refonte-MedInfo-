@@ -29,7 +29,7 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 | Facturation Stripe | Actif web-first | Plans public + étudiant | `subscriptions`, `billing_events`, webhook Stripe | Paywall = volume/features uniquement ; ne gate jamais les sources | ADR-0012 |
 | Quotas par feature | Décidé / à maintenir côté serveur | Chat, ECOS, exports, transcriptions | Tables de limites/compteurs techniques, entitlements serveur | Quota découplé des sources ; service_role only ; aucune auto-promotion client | ADR-0016 |
 | Cas ECOS en base | Décidé / feature pédagogique | Étudiants vérifiés | Tables de cas/stations pédagogiques versionnées | Cas explicitement fictifs ; aucun patient réel ; séparation du chat médical | ADR-0017 |
-| Analyseur de classement (medoutils) | En conception | Étudiants vérifiés | `app/(chat)/partiel.tsx` (placeholder), traitement client prévu | Import des notes de promo → rang/comparaison ; calcul 100% client (aucune donnée envoyée, sans IA) ; en attente de la spéc medoutils | ADR-0019 |
+| Analyseur de classement (medoutils) | Actif (v1) | Étudiants vérifiés | `app/(chat)/partiel.tsx`, logique pure `src/lib/classement.ts` | Import CSV/TSV des notes de promo (upload web ou collage) → rang, stats, comparaison par n° étudiant ; calcul 100% client (aucune donnée envoyée, sans IA) | ADR-0019 |
 | Visibilité des outils par rôle + menu d'outils | Actif | Tous (UI adaptée) | `src/ai/routing/featureVisibility.ts`, `src/ui/RoleGate.tsx`, `src/ui/ToolsMenu.tsx`, `app/(chat)/_layout.tsx` | Cloisonnement UI strict par persona ; menu déroulant rôle-aware ; jamais l'unique barrière (autorisation serveur conservée) | ADR-0018 |
 | Dictée vocale (chat/ECOS) | Actif | Tous | `src/ui/DictationButton.tsx`, `/api/transcribe` mode `raw` | Voix → texte (Whisper) dans les saisies ; transcription brute ; le texte repasse par la safe-box de la route cible | ADR-0019 |
 
@@ -187,7 +187,7 @@ Chaque rôle ne voit QUE ses outils (le grand public ne voit pas les outils
 | 💬 Chat santé | ✅ | ✅ | ✅ | ✅ |
 | 📄 Analyse de document | ✅ | — | — | ✅ |
 | 🩺 ECOS | — | ✅ | — | ✅ |
-| 📊 Classement (analyseur, en conception) | — | ✅ | — | ✅ |
+| 📊 Classement (analyseur de promo) | — | ✅ | — | ✅ |
 | 🎤 Audio (compte rendu) | — | — | ✅ | ✅ |
 
 Application :

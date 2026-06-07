@@ -16,14 +16,17 @@ obtient son **rang**, des statistiques, et peut **comparer** avec un autre numé
 
 ## Décision
 1. **Analyseur de classement** (onglet étudiant `Classement`, écran `app/(chat)/partiel.tsx`) :
-   - Traitement **100 % côté client** : le fichier (CSV/Excel) est parsé dans le navigateur ; les notes
-     des autres étudiants **ne quittent jamais l'appareil**, **aucune IA**, aucune persistance.
-   - Sorties prévues : rang, moyenne/médiane/percentile, comparaison par numéro étudiant, classement par
-     matière + petites stats.
-   - **Statut : en conception** — l'écran actuel est un placeholder de cadrage, en attente de la
-     spécification exacte de medoutils (format de fichier, colonnes, « petites fonctionnalités »).
-   - La version LLM précédente (`partiel_analyze`, route `/api/partiel`, prompt, migration `0017`) est
-     **retirée** : pas de dispositif médical, pas de doublon de feature IA.
+   - Traitement **100 % côté client** : le fichier CSV/TSV (upload web ou collé) est parsé dans le
+     navigateur ; les notes des autres étudiants **ne quittent jamais l'appareil**, **aucune IA**,
+     aucune persistance. Logique pure et testée : `src/lib/classement.ts` (`tests/unit/classement.test.ts`).
+   - **v1 livré** : import (auto-détection séparateur FR `;`, nombres « 12,5 »), détection des colonnes
+     (n° étudiant + notes), choix de la note à classer, **rang** (compétition, ex æquo partagés), moyenne,
+     médiane, min/max, % de la promo en-dessous, et **comparaison** avec un autre numéro étudiant.
+   - Excel : « Enregistrer sous → CSV » (pas de dépendance `xlsx` : version npm publique vulnérable
+     high-severity ; support `.xlsx` direct possible plus tard via le build CDN SheetJS si voulu).
+   - La feature n'existait pas dans le repo medoutils (QCM-quizz = PDF→QCM/ECOS) : construite depuis la
+     description de Hugo, à affiner sur fichier exemple. La version LLM précédente (`partiel_analyze`,
+     route `/api/partiel`, migration `0017`) reste **retirée** (pas de dispositif médical).
 2. **Dictée vocale** : composant `src/ui/DictationButton.tsx` ajouté aux saisies de chat et ECOS.
    Voix → texte via Whisper (`/api/transcribe`, nouveau mode `raw` = transcription brute sans
    diarisation). Le texte dicté repasse par la safe-box normale de la route cible.
