@@ -103,9 +103,18 @@ export const AI_FEATURES = [
     key: 'ecos_evaluate',
     emoji: '📊',
     label: 'ECOS — Évaluation',
-    description: 'IA évalue l\'étudiant sur la grille de correction',
+    description: 'IA évalue l\'étudiant sur la grille de correction (grille notée + note /20)',
     apiRoute: '/api/ecos',
     promptKeys: ['ecos_evaluate'],
+    providers: ['anthropic', 'openai'],
+  },
+  {
+    key: 'ecos_generate',
+    emoji: '🧪',
+    label: 'ECOS — Génération de cas',
+    description: 'Génère un cas ECOS FICTIF à partir d\'une station importée (texte collé)',
+    apiRoute: '/api/ecos',
+    promptKeys: ['ecos_generate'],
     providers: ['anthropic', 'openai'],
   },
   {
@@ -125,6 +134,15 @@ export const AI_FEATURES = [
     apiRoute: '/api/transcribe',
     promptKeys: ['audio_report'],
     providers: ['openai', 'anthropic'],
+  },
+  {
+    key: 'report_generate',
+    emoji: '📝',
+    label: 'Compte rendu — Rédaction (texte)',
+    description: 'Rédige un compte rendu structuré depuis des notes texte + modèle choisi',
+    apiRoute: '/api/report',
+    promptKeys: ['report_generate'],
+    providers: ['anthropic', 'openai'],
   },
 ] as const;
 

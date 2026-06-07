@@ -29,6 +29,8 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 | Facturation Stripe | Actif web-first | Plans public + étudiant | `subscriptions`, `billing_events`, webhook Stripe | Paywall = volume/features uniquement ; ne gate jamais les sources | ADR-0012 |
 | Quotas par feature | Décidé / à maintenir côté serveur | Chat, ECOS, exports, transcriptions | Tables de limites/compteurs techniques, entitlements serveur | Quota découplé des sources ; service_role only ; aucune auto-promotion client | ADR-0016 |
 | Cas ECOS en base | Décidé / feature pédagogique | Étudiants vérifiés | Tables de cas/stations pédagogiques versionnées | Cas explicitement fictifs ; aucun patient réel ; séparation du chat médical | ADR-0017 |
+| ECOS — favoris/progression + import de station | Actif | Étudiants vérifiés | `app/(chat)/ecos.tsx`, `src/lib/ecosStore.ts`, `src/lib/ecosProgress.ts`, `/api/ecos` mode `generate` (`ecos_generate`) | Favoris/progression **locaux** (web, `localStorage`) ; import → cas **FICTIF anonyme** éphémère (non écrit au corpus), refus si dossier réel ; grille notée + note /20 | ADR-0017, ADR-0020 |
+| Compte rendu — texte + modèles + export/historique | Actif | Professionnels | `app/(chat)/audio.tsx`, `/api/report` (`report_generate`), `src/lib/reportTemplates.ts`, `src/lib/reportHistory.ts` | Mise en forme uniquement (jamais de décision/prescription) ; historique **local** (web), jamais persisté côté serveur ; disclaimer pro | ADR-0006, ADR-0020 |
 | Analyseur de classement (medoutils) | Actif (v1) | Étudiants vérifiés | `app/(chat)/partiel.tsx`, logique pure `src/lib/classement.ts` | Import CSV/TSV des notes de promo (upload web ou collage) → rang, stats, comparaison par n° étudiant ; calcul 100% client (aucune donnée envoyée, sans IA) | ADR-0019 |
 | Visibilité des outils par rôle + menu d'outils | Actif | Tous (UI adaptée) | `src/ai/routing/featureVisibility.ts`, `src/ui/RoleGate.tsx`, `src/ui/ToolsMenu.tsx`, `app/(chat)/_layout.tsx` | Cloisonnement UI strict par persona ; menu déroulant rôle-aware ; jamais l'unique barrière (autorisation serveur conservée) | ADR-0018 |
 | Dictée vocale (chat/ECOS) | Actif | Tous | `src/ui/DictationButton.tsx`, `/api/transcribe` mode `raw` | Voix → texte (Whisper) dans les saisies ; transcription brute ; le texte repasse par la safe-box de la route cible | ADR-0019 |
@@ -52,6 +54,7 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 | `0013_ecos_cases.sql` | Cas ECOS fictifs versionnés | Non si cas synthétiques uniquement | Lecture selon entitlement étudiant | Ne jamais importer de cas patient réel |
 | `0014_feature_quotas.sql` | Quotas par feature et compteurs associés | Non | Service role only | Remplace la logique « quota chat unique » par une matrice extensible |
 | `0015_ai_model_params.sql` | Réglages de génération par feature (temperature, reasoning_effort, verbosity, web_search) sur `ai_model_config` | Non | Service role only (hérite du verrou 0011) | Lus par featureModel.ts (`getFeatureSettings`), appliqués par featureRuntime.ts ; 0013/0014 réservés |
+| `0016_ecos_cr_features.sql` | Seed de 2 features IA : `ecos_generate` (génération de cas ECOS fictif) + `report_generate` (CR depuis texte) dans `ai_model_config` | Non | Service role only (hérite du verrou 0011) | `INSERT … ON CONFLICT DO NOTHING` ; lignes requises pour l'UPDATE admin ; cf. ADR-0020 |
 
 > Si une migration ci-dessus n'existe pas encore dans `supabase/migrations/`, la documenter comme décision attendue et ne pas modifier le schéma sans tests RLS correspondants.
 
@@ -172,8 +175,10 @@ Pour ajouter un admin : modifier `ADMIN_USER_IDS` dans `src/admin/index.ts`.
 | `analyze` | `/api/analyze` | claude-sonnet-4-6 | Grand public |
 | `ecos_simulate` | `/api/ecos` | claude-sonnet-4-6 | Étudiant |
 | `ecos_evaluate` | `/api/ecos` | claude-sonnet-4-6 | Étudiant |
+| `ecos_generate` | `/api/ecos` (mode `generate`) | claude-sonnet-4-6 | Étudiant |
 | `audio_diarize` | `/api/transcribe` | gpt-4o-mini | Professionnel |
 | `audio_report` | `/api/transcribe` | gpt-4o-mini | Professionnel |
+| `report_generate` | `/api/report` | claude-sonnet-4-6 | Professionnel |
 
 ## Visibilité des fonctionnalités par rôle (persona)
 

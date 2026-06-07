@@ -15,12 +15,14 @@ import type { FeatureKey } from '@/admin/index';
 
 /** Modèles par défaut si Supabase est inaccessible. */
 const FEATURE_DEFAULTS: Record<FeatureKey, { modelId: string; provider: string }> = {
-  chat:          { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
-  analyze:       { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
-  ecos_simulate: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
-  ecos_evaluate: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
-  audio_diarize: { modelId: 'gpt-4o-mini',       provider: 'openai' },
-  audio_report:  { modelId: 'gpt-4o-mini',       provider: 'openai' },
+  chat:           { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
+  analyze:        { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
+  ecos_simulate:  { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
+  ecos_evaluate:  { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
+  ecos_generate:  { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
+  audio_diarize:  { modelId: 'gpt-4o-mini',       provider: 'openai' },
+  audio_report:   { modelId: 'gpt-4o-mini',       provider: 'openai' },
+  report_generate:{ modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
 };
 
 /**
