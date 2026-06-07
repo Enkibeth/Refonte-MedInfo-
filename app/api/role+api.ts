@@ -10,6 +10,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 import { isAcademicEmail, isValidRppsFormat } from '@/auth/roles';
+import { annuaireConfigFromEnv, verifyRpps } from '@/auth/annuaireSante';
 
 function json(payload: unknown, status: number): Response {
   return new Response(JSON.stringify(payload), {
@@ -103,27 +104,52 @@ export async function POST(request: Request): Promise<Response> {
     if (!devBypass && !isValidRppsFormat(rpps)) {
       return json({ error: 'Numéro RPPS invalide (11 chiffres attendus).' }, 422);
     }
-    // Lookup ANS Annuaire Santé (FHIR) — ADR-0011.
-    // SÉCURITÉ : ne JAMAIS auto-valider un professionnel sans vérification réelle.
-    // - dev bypass → verified (jamais en prod).
-    // - sinon, sans ANNUAIRE_SANTE_API_KEY → statut `pending` SANS écriture en base
-    //   (la vérification FHIR réelle est implémentée par CC3 / branche determined-ride).
-    if (!devBypass && !process.env.ANNUAIRE_SANTE_API_KEY) {
-      return json(
-        {
-          ok: true,
-          persona,
-          status: 'pending',
-          message:
-            'Vérification professionnelle en attente : ANNUAIRE_SANTE_API_KEY non configurée. ' +
-            "Aucun accès professionnel n'est accordé tant que le RPPS n'est pas vérifié auprès de l'Annuaire Santé.",
-        },
-        202,
-      );
+    // Vérification ANS Annuaire Santé (FHIR) — ADR-0011.
+    // SÉCURITÉ : ne JAMAIS auto-valider un professionnel sans confirmation réelle.
+    if (devBypass) {
+      status = 'verified';
+      method = 'none';
+    } else {
+      const config = annuaireConfigFromEnv();
+      // Sans clé configurée → `pending` SANS écriture (aucun accès pro accordé).
+      if (!config) {
+        return json(
+          {
+            ok: true,
+            persona,
+            status: 'pending',
+            message:
+              'Vérification professionnelle en attente : ANNUAIRE_SANTE_API_KEY non configurée. ' +
+              "Aucun accès professionnel n'est accordé tant que le RPPS n'est pas vérifié auprès de l'Annuaire Santé.",
+          },
+          202,
+        );
+      }
+      const result = await verifyRpps(rpps, config);
+      // RPPS introuvable ou praticien inactif → refus déterministe.
+      if (result.status === 'rejected') {
+        return json(
+          { error: `Vérification RPPS échouée : ${result.reason}.` },
+          422,
+        );
+      }
+      // API ANS injoignable → fail-closed : `pending`, aucune écriture, réessai possible.
+      if (result.status === 'unavailable') {
+        return json(
+          {
+            ok: true,
+            persona,
+            status: 'pending',
+            message:
+              "Annuaire Santé momentanément injoignable : vérification du RPPS impossible pour l'instant. " +
+              "Aucun accès professionnel n'est accordé ; réessaie dans quelques instants.",
+          },
+          202,
+        );
+      }
+      status = 'verified';
+      method = 'rpps';
     }
-    // TODO (CC3) : avec ANNUAIRE_SANTE_API_KEY, appeler le FHIR Practitioner réel.
-    status = 'verified';
-    method = devBypass ? 'none' : 'rpps';
   }
 
   // Le rôle fraîchement vérifié rejoint l'ensemble acquis (multi-rôles, migration 0016).
