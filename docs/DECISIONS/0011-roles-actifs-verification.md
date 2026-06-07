@@ -34,8 +34,11 @@ note de qualification interne, RCP pro, télémétrie de conformité + golden se
 aucun triage/diagnostic/pronostic individualisé, comme pour le public (01_REGULATION).
 
 ## Limites (étapes suivantes)
-- L'intégration **RPPS/ANS** réelle est à finaliser : tant que `ANNUAIRE_SANTE_API_KEY` n'est
-  pas configurée, `/api/role` renvoie `pending` pour le pro (aucune attribution du rôle).
+- L'intégration **RPPS/ANS** réelle est livrée (`src/auth/annuaireSante.ts`) : `/api/role`
+  interroge la ressource FHIR `Practitioner` (`identifier=http://rpps.fr|{RPPS}`) et exige
+  présence + `active != false`. Fail-closed : sans clé ou si l'ANS est injoignable → `pending`
+  (aucune attribution) ; RPPS introuvable/inactif → refus 422. URL/en-tête configurables
+  (`ANNUAIRE_SANTE_API_URL`, `ANNUAIRE_SANTE_API_KEY_HEADER`).
 - OAuth/flux natifs : cf ADR-0010.
 - Prompt `professional.v2` non activé (cf 04_CHATBOT §7) : le pro utilise le chat encyclopédique
   général tant que le prompt pro n'est pas livré sous les conditions ADR-0006.

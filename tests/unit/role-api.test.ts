@@ -151,6 +151,66 @@ describe('POST /api/role — edge cases et anti-usurpation', () => {
     expect(update).not.toHaveBeenCalled();
   });
 
+  it('valide un pro dont le RPPS est confirmé ACTIF par l’Annuaire Santé', async () => {
+    process.env.ANNUAIRE_SANTE_API_KEY = 'ans-key';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({ resourceType: 'Bundle', total: 1, entry: [{ resource: { active: true } }] }),
+      })),
+    );
+    const { POST } = await importRoute();
+    const response = await POST(roleRequest({ persona: 'professional', rpps: '12345678901' }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({ ok: true, persona: 'professional', status: 'verified' });
+    expect(payload.verifiedPersonas).toEqual(expect.arrayContaining(['public', 'professional']));
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ persona: 'professional', status: 'verified', verification_method: 'rpps' }),
+    );
+    vi.unstubAllGlobals();
+  });
+
+  it('refuse (422) un RPPS introuvable dans l’Annuaire Santé, sans écriture', async () => {
+    process.env.ANNUAIRE_SANTE_API_KEY = 'ans-key';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({ resourceType: 'Bundle', total: 0, entry: [] }),
+      })),
+    );
+    const { POST } = await importRoute();
+    const response = await POST(roleRequest({ persona: 'professional', rpps: '12345678901' }));
+
+    expect(response.status).toBe(422);
+    expect((await response.json()).error).toMatch(/RPPS/);
+    expect(update).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('met en attente (202) si l’Annuaire Santé est injoignable (fail-closed), sans écriture', async () => {
+    process.env.ANNUAIRE_SANTE_API_KEY = 'ans-key';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('network down');
+      }),
+    );
+    const { POST } = await importRoute();
+    const response = await POST(roleRequest({ persona: 'professional', rpps: '12345678901' }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(202);
+    expect(payload.status).toBe('pending');
+    expect(update).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
   it('bascule vers un rôle DÉJÀ vérifié sans re-vérification (changer de chat librement)', async () => {
     maybeSingle.mockResolvedValueOnce({
       data: { verified_personas: ['public', 'student'] },
