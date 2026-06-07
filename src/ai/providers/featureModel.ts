@@ -51,10 +51,91 @@ export const AVAILABLE_MODELS = [
     id: 'claude-haiku-4-5-20251001', provider: 'anthropic', label: 'Claude Haiku 4.5',
     capabilities: { temperature: true, reasoning: true, verbosity: false, webSearch: true },
   },
+  // ── GPT-5.5 ──────────────────────────────────────────────────────────────
   {
     id: 'gpt-5.5', provider: 'openai', label: 'GPT-5.5',
     capabilities: { temperature: true, reasoning: true, verbosity: true, webSearch: true },
   },
+  {
+    id: 'gpt-5.5-pro', provider: 'openai', label: 'GPT-5.5 Pro',
+    capabilities: { temperature: true, reasoning: true, verbosity: true, webSearch: true },
+  },
+  // ── GPT-5.4 ──────────────────────────────────────────────────────────────
+  {
+    id: 'gpt-5.4', provider: 'openai', label: 'GPT-5.4',
+    capabilities: { temperature: true, reasoning: true, verbosity: true, webSearch: true },
+  },
+  {
+    id: 'gpt-5.4-pro', provider: 'openai', label: 'GPT-5.4 Pro',
+    capabilities: { temperature: true, reasoning: true, verbosity: true, webSearch: true },
+  },
+  {
+    id: 'gpt-5.4-mini', provider: 'openai', label: 'GPT-5.4 mini',
+    capabilities: { temperature: true, reasoning: true, verbosity: true, webSearch: true },
+  },
+  {
+    id: 'gpt-5.4-nano', provider: 'openai', label: 'GPT-5.4 nano',
+    capabilities: { temperature: true, reasoning: false, verbosity: false, webSearch: true },
+  },
+  // ── GPT-5.3 ──────────────────────────────────────────────────────────────
+  {
+    id: 'gpt-5.3-codex', provider: 'openai', label: 'GPT-5.3 Codex',
+    capabilities: { temperature: true, reasoning: true, verbosity: false, webSearch: true },
+  },
+  // ── GPT-5.2 ──────────────────────────────────────────────────────────────
+  {
+    id: 'gpt-5.2', provider: 'openai', label: 'GPT-5.2',
+    capabilities: { temperature: true, reasoning: true, verbosity: true, webSearch: true },
+  },
+  {
+    id: 'gpt-5.2-pro', provider: 'openai', label: 'GPT-5.2 Pro',
+    capabilities: { temperature: true, reasoning: true, verbosity: true, webSearch: true },
+  },
+  // ── GPT-5.1 ──────────────────────────────────────────────────────────────
+  {
+    id: 'gpt-5.1', provider: 'openai', label: 'GPT-5.1',
+    capabilities: { temperature: true, reasoning: true, verbosity: true, webSearch: true },
+  },
+  // ── GPT-5 ─────────────────────────────────────────────────────────────────
+  {
+    id: 'gpt-5', provider: 'openai', label: 'GPT-5',
+    capabilities: { temperature: true, reasoning: true, verbosity: true, webSearch: true },
+  },
+  {
+    id: 'gpt-5-pro', provider: 'openai', label: 'GPT-5 Pro',
+    capabilities: { temperature: true, reasoning: true, verbosity: true, webSearch: true },
+  },
+  {
+    id: 'gpt-5-mini', provider: 'openai', label: 'GPT-5 mini',
+    capabilities: { temperature: true, reasoning: true, verbosity: true, webSearch: true },
+  },
+  {
+    id: 'gpt-5-nano', provider: 'openai', label: 'GPT-5 nano',
+    capabilities: { temperature: true, reasoning: false, verbosity: false, webSearch: true },
+  },
+  // ── O-series ──────────────────────────────────────────────────────────────
+  {
+    id: 'o3-pro', provider: 'openai', label: 'o3 Pro',
+    capabilities: { temperature: false, reasoning: true, verbosity: false, webSearch: true },
+  },
+  {
+    id: 'o3', provider: 'openai', label: 'o3',
+    capabilities: { temperature: false, reasoning: true, verbosity: false, webSearch: true },
+  },
+  {
+    id: 'o4-mini', provider: 'openai', label: 'o4 mini',
+    capabilities: { temperature: false, reasoning: true, verbosity: false, webSearch: true },
+  },
+  // ── GPT-4.1 ───────────────────────────────────────────────────────────────
+  {
+    id: 'gpt-4.1', provider: 'openai', label: 'GPT-4.1',
+    capabilities: { temperature: true, reasoning: false, verbosity: false, webSearch: true },
+  },
+  {
+    id: 'gpt-4.1-mini', provider: 'openai', label: 'GPT-4.1 mini',
+    capabilities: { temperature: true, reasoning: false, verbosity: false, webSearch: true },
+  },
+  // ── GPT-4o (legacy) ───────────────────────────────────────────────────────
   {
     id: 'gpt-4o', provider: 'openai', label: 'GPT-4o',
     capabilities: { temperature: true, reasoning: false, verbosity: false, webSearch: true },
