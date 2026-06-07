@@ -51,7 +51,7 @@ export default function ChooseRoleScreen() {
       </Text>
 
       {/* Public */}
-      <Card style={styles.roleCard}>
+      <Card style={[styles.roleCard, { borderLeftWidth: 3, borderLeftColor: tokens.colors.personas.public.accent }]}>
         <Text style={styles.roleTitle}>{ROLES.public.label}</Text>
         <Text style={styles.roleDesc}>{ROLES.public.description}</Text>
         <Button
@@ -64,7 +64,7 @@ export default function ChooseRoleScreen() {
       </Card>
 
       {/* Étudiant */}
-      <Card style={styles.roleCard}>
+      <Card style={[styles.roleCard, { borderLeftWidth: 3, borderLeftColor: tokens.colors.personas.student.accent }]}>
         <Text style={styles.roleTitle}>{ROLES.student.label}</Text>
         <Text style={styles.roleDesc}>{ROLES.student.description}</Text>
         <TextInput
@@ -92,7 +92,7 @@ export default function ChooseRoleScreen() {
       </Card>
 
       {/* Professionnel */}
-      <Card style={styles.roleCard}>
+      <Card style={[styles.roleCard, { borderLeftWidth: 3, borderLeftColor: tokens.colors.personas.pro.accent }]}>
         <Text style={styles.roleTitle}>{ROLES.professional.label}</Text>
         <Text style={styles.roleDesc}>{ROLES.professional.description}</Text>
         <TextInput
@@ -135,7 +135,7 @@ export default function ChooseRoleScreen() {
 
 const styles = StyleSheet.create({
   title: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h1.fontSize,
     lineHeight: tokens.type.h1.lineHeight,
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   },
   roleCard: { marginTop: tokens.space.lg, gap: tokens.space.md },
   roleTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
     letterSpacing: tokens.type.h3.letterSpacing,
