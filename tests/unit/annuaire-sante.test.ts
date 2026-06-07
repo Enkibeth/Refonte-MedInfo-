@@ -36,7 +36,7 @@ describe('verifyRpps — appel FHIR Annuaire Santé', () => {
     expect(res).toEqual({ status: 'verified' });
   });
 
-  it('interroge la bonne URL (identifier system|value) avec l’en-tête de clé', async () => {
+  it('interroge la bonne URL (valeur seule par défaut) avec l’en-tête de clé', async () => {
     const fetchImpl = vi.fn(async (_url: string, _init?: RequestInit) => okResponse(bundle(1, true)));
     await verifyRpps('12345678901', {
       apiKey: 'key-test',
@@ -45,11 +45,23 @@ describe('verifyRpps — appel FHIR Annuaire Santé', () => {
       fetchImpl: fetchImpl as unknown as typeof fetch,
     });
     const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe('https://gateway.example/fhir/v2/Practitioner?identifier=12345678901');
+    expect(init?.headers).toMatchObject({ 'ESANTE-API-KEY': 'key-test' });
+  });
+
+  it('utilise system|value quand un rppsSystem est fourni', async () => {
+    const fetchImpl = vi.fn(async (_url: string, _init?: RequestInit) => okResponse(bundle(1, true)));
+    await verifyRpps('12345678901', {
+      apiKey: 'key-test',
+      baseUrl: 'https://gateway.example/fhir/v2',
+      rppsSystem: 'https://rpps.esante.gouv.fr',
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    const [url] = fetchImpl.mock.calls[0];
     expect(url).toBe(
       'https://gateway.example/fhir/v2/Practitioner?identifier=' +
-        encodeURIComponent('http://rpps.fr|12345678901'),
+        encodeURIComponent('https://rpps.esante.gouv.fr|12345678901'),
     );
-    expect(init?.headers).toMatchObject({ 'ESANTE-API-KEY': 'key-test' });
   });
 
   it('refuse un RPPS introuvable (total = 0)', async () => {

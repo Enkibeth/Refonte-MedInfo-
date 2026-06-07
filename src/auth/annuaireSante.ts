@@ -6,15 +6,22 @@
  *
  * Source de vérité : Répertoire Partagé des Professionnels de Santé (RPPS), exposé en lecture
  * publique par l'ANS (HL7 FHIR R4). On interroge la ressource `Practitioner` par identifiant :
- *   GET {base}/Practitioner?identifier=http://rpps.fr|{RPPS}
+ *   GET {base}/Practitioner?identifier={RPPS}
  * et on confirme la présence (`Bundle.total >= 1`) ET le droit d'exercice (`active !== false` :
  * un praticien radié/suspendu reste dans l'annuaire avec `active = false`).
+ *
+ * Recherche par VALEUR seule (sans `system`) par défaut : c'est robuste quelle que soit la
+ * version de l'API. Vérifié sur la gateway ANS : le RPPS 11 chiffres est exposé sous des
+ * `system` DIFFÉRENTS selon la version (`http://rpps.fr` en v1, `https://rpps.esante.gouv.fr`
+ * en v2) — une recherche `system|value` ne matche donc qu'une version. La recherche par valeur
+ * matche les deux. Un `system` explicite reste possible via `ANNUAIRE_SANTE_RPPS_SYSTEM`.
  *
  * Configuration (la clé + les défauts proviennent de l'inscription au portail ANS
  * `portail.openfhir.annuaire.sante.fr`) :
  *   - ANNUAIRE_SANTE_API_KEY        (obligatoire) — clé d'abonnement « Annuaire Santé FHIR ».
  *   - ANNUAIRE_SANTE_API_URL        (optionnel)   — base FHIR ; défaut gateway ANS v2.
  *   - ANNUAIRE_SANTE_API_KEY_HEADER (optionnel)   — nom de l'en-tête ; défaut ESANTE-API-KEY.
+ *   - ANNUAIRE_SANTE_RPPS_SYSTEM    (optionnel)   — system FHIR de l'identifiant (sinon valeur seule).
  *
  * SÉCURITÉ — fail-closed : toute erreur réseau / réponse inattendue → `unavailable` (aucun
  * accès accordé, statut « en attente »). Jamais d'auto-validation pro sans confirmation ANS.
@@ -22,7 +29,6 @@
 
 const DEFAULT_BASE_URL = 'https://gateway.api.esante.gouv.fr/fhir/v2';
 const DEFAULT_KEY_HEADER = 'ESANTE-API-KEY';
-const RPPS_SYSTEM = 'http://rpps.fr';
 const REQUEST_TIMEOUT_MS = 8000;
 
 export interface AnnuaireSanteConfig {
@@ -31,6 +37,8 @@ export interface AnnuaireSanteConfig {
   baseUrl?: string;
   /** Nom de l'en-tête portant la clé. Défaut : ESANTE-API-KEY. */
   keyHeader?: string;
+  /** System FHIR de l'identifiant RPPS. Si absent : recherche par valeur seule (robuste). */
+  rppsSystem?: string;
   /** Injection de fetch (tests). Défaut : fetch global. */
   fetchImpl?: typeof fetch;
 }
@@ -51,6 +59,7 @@ export function annuaireConfigFromEnv(): AnnuaireSanteConfig | null {
     apiKey,
     baseUrl: process.env.ANNUAIRE_SANTE_API_URL,
     keyHeader: process.env.ANNUAIRE_SANTE_API_KEY_HEADER,
+    rppsSystem: process.env.ANNUAIRE_SANTE_RPPS_SYSTEM,
   };
 }
 
@@ -66,8 +75,12 @@ export async function verifyRpps(
   const header = config.keyHeader?.trim() || DEFAULT_KEY_HEADER;
   const doFetch = config.fetchImpl ?? fetch;
 
-  const identifier = `${RPPS_SYSTEM}|${rpps.trim()}`;
-  const url = `${base}/Practitioner?identifier=${encodeURIComponent(identifier)}`;
+  // Par défaut : recherche par valeur seule (robuste cross-version). Avec `rppsSystem`
+  // explicite : recherche FHIR `system|value`.
+  const value = rpps.trim();
+  const system = config.rppsSystem?.trim();
+  const identifierParam = system ? `${system}|${value}` : value;
+  const url = `${base}/Practitioner?identifier=${encodeURIComponent(identifierParam)}`;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
