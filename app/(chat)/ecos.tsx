@@ -23,6 +23,19 @@ import { tokens } from '@/ui/tokens';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
 import { DictationButton } from '@/ui/DictationButton';
+import {
+  loadFavorites,
+  toggleFavorite as persistToggleFavorite,
+  loadSessions,
+  addSession,
+  clearSessions,
+} from '@/lib/ecosStore';
+import {
+  parseEcosScore,
+  computeProgress,
+  lastScoreByCase,
+  type EcosSession,
+} from '@/lib/ecosProgress';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -34,6 +47,8 @@ interface EcosCase {
   consigneCandidat: string;
   briefPatient: string;
   grilleCorrection: string;
+  /** Cas généré localement depuis un import (éphémère, non publié au corpus). */
+  imported?: boolean;
 }
 
 interface Message {
@@ -91,19 +106,53 @@ async function fetchPublishedCases(): Promise<EcosCase[]> {
 
 // ── Composants ─────────────────────────────────────────────────────────────
 
-function CaseCard({ cas, onSelect }: { cas: EcosCase; onSelect: () => void }) {
+function CaseCard({
+  cas,
+  onSelect,
+  isFavorite,
+  onToggleFavorite,
+  lastScore,
+}: {
+  cas: EcosCase;
+  onSelect: () => void;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
+  lastScore?: number | null;
+}) {
   return (
     <TouchableOpacity style={caseStyles.card} onPress={onSelect} accessibilityRole="button">
       <View style={caseStyles.cardHeader}>
         <Text style={caseStyles.cardTitle}>{cas.titre}</Text>
-        <View style={caseStyles.badge}>
-          <Text style={caseStyles.badgeText}>{cas.duree} min</Text>
+        <View style={caseStyles.cardHeaderRight}>
+          <View style={caseStyles.badge}>
+            <Text style={caseStyles.badgeText}>{cas.duree} min</Text>
+          </View>
+          <TouchableOpacity
+            onPress={onToggleFavorite}
+            accessibilityRole="button"
+            accessibilityLabel={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={[caseStyles.star, isFavorite && caseStyles.starActive]}>
+              {isFavorite ? '★' : '☆'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
       <Text style={caseStyles.cardSpecialite}>{cas.specialite}</Text>
       <Text style={caseStyles.cardConsigne} numberOfLines={2}>
         {cas.consigneCandidat}
       </Text>
+      <View style={caseStyles.cardFooter}>
+        {cas.imported ? (
+          <View style={caseStyles.importedTag}>
+            <Text style={caseStyles.importedTagText}>Importé</Text>
+          </View>
+        ) : null}
+        {lastScore != null ? (
+          <Text style={caseStyles.lastScore}>Dernière note : {lastScore}/20</Text>
+        ) : null}
+      </View>
     </TouchableOpacity>
   );
 }
@@ -142,6 +191,15 @@ function Timer({ totalSeconds, onExpire }: { totalSeconds: number; onExpire: () 
   );
 }
 
+function ProgressStat({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.progressStat}>
+      <Text style={styles.progressStatValue}>{value}</Text>
+      <Text style={styles.progressStatLabel}>{label}</Text>
+    </View>
+  );
+}
+
 // ── Écran ECOS ─────────────────────────────────────────────────────────────
 
 type Phase = 'selection' | 'preparation' | 'simulation' | 'evaluation';
@@ -168,6 +226,18 @@ function EcosScreenInner() {
   const [evalLoading, setEvalLoading] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
+  // Favoris + progression (persistance locale, web ; cf. ecosStore).
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [sessions, setSessions] = useState<EcosSession[]>([]);
+  const sessionSavedRef = useRef(false);
+
+  // Import d'une station → cas fictif (mode "generate").
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [importLoading, setImportLoading] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+
   const loadCases = useCallback(async () => {
     setCasesLoading(true);
     setCasesError(null);
@@ -181,8 +251,85 @@ function EcosScreenInner() {
   }, []);
 
   useEffect(() => {
-    if (persona === 'student') loadCases();
+    if (persona === 'student') {
+      loadCases();
+      setFavorites(loadFavorites());
+      setSessions(loadSessions());
+    }
   }, [persona, loadCases]);
+
+  function onToggleFavorite(caseId: string) {
+    setFavorites(persistToggleFavorite(caseId));
+  }
+
+  async function importStation() {
+    const source = importText.trim();
+    if (source.length < 40 || importLoading) {
+      setImportError('Colle une station un peu plus complète (énoncé + grille).');
+      return;
+    }
+    setImportLoading(true);
+    setImportError(null);
+    try {
+      const res = await fetch('/api/ecos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'generate', sourceText: source }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        case?: {
+          title?: string;
+          specialty?: string;
+          duration_minutes?: number;
+          brief?: string;
+          patient_profile?: { role_brief?: string };
+          grading_grid?: { markdown?: string };
+        };
+        error?: string;
+      };
+      if (!res.ok || !data.case) {
+        throw new Error(data.error ?? 'Génération impossible. Réessayez.');
+      }
+      const c = data.case;
+      const imported: EcosCase = {
+        id: `import-${Date.now()}`,
+        titre: c.title?.trim() || 'Cas importé',
+        specialite: c.specialty?.trim() || 'Cas importé',
+        duree:
+          Number.isFinite(Number(c.duration_minutes)) && Number(c.duration_minutes) > 0
+            ? Math.min(60, Math.round(Number(c.duration_minutes)))
+            : 10,
+        consigneCandidat: c.brief?.trim() || '',
+        briefPatient: c.patient_profile?.role_brief?.trim() || '',
+        grilleCorrection: c.grading_grid?.markdown?.trim() || '',
+        imported: true,
+      };
+      setCases((prev) => [imported, ...prev]);
+      setImportText('');
+      setImportOpen(false);
+      selectCase(imported);
+    } catch (e) {
+      setImportError(e instanceof Error ? e.message : 'Une erreur est survenue.');
+    } finally {
+      setImportLoading(false);
+    }
+  }
+
+  function pickStationFile() {
+    if (Platform.OS !== 'web') return;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt,.md,text/plain,text/markdown';
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => setImportText(String(reader.result ?? ''));
+      reader.onerror = () => setImportError('Lecture du fichier impossible.');
+      reader.readAsText(file);
+    };
+    input.click();
+  }
 
   if (persona !== 'student') {
     return (
@@ -206,6 +353,7 @@ function EcosScreenInner() {
     setSelectedCase(cas);
     setMessages([]);
     setEvaluation('');
+    sessionSavedRef.current = false;
     setPhase('preparation');
   }
 
@@ -314,7 +462,21 @@ Sois précis, bienveillant et pédagogique.`;
 
       if (!res.ok) throw new Error('Erreur d\'évaluation.');
       const data = await res.json() as { evaluation?: string };
-      setEvaluation(data.evaluation ?? 'Évaluation non disponible.');
+      const evalText = data.evaluation ?? 'Évaluation non disponible.';
+      setEvaluation(evalText);
+
+      // Enregistre la session (note /20 extraite) une seule fois — local, web only.
+      if (!sessionSavedRef.current) {
+        sessionSavedRef.current = true;
+        const session: EcosSession = {
+          caseId: selectedCase.id,
+          caseTitle: selectedCase.titre,
+          specialty: selectedCase.specialite,
+          score: parseEcosScore(evalText),
+          date: new Date().toISOString(),
+        };
+        setSessions(addSession(session));
+      }
     } catch {
       setEvaluation('Une erreur est survenue lors de l\'évaluation.');
     } finally {
@@ -324,6 +486,13 @@ Sois précis, bienveillant et pédagogique.`;
 
   // ── Phase : sélection ──────────────────────────────────────────────────
   if (phase === 'selection') {
+    const favSet = new Set(favorites);
+    const lastScores = lastScoreByCase(sessions);
+    const progress = computeProgress(sessions);
+    const visibleCases = showFavoritesOnly
+      ? cases.filter((c) => favSet.has(c.id))
+      : cases;
+
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.selectionContent}>
         <View style={styles.selectionHeader}>
@@ -333,6 +502,86 @@ Sois précis, bienveillant et pédagogique.`;
             une évaluation sur grille.
           </Text>
         </View>
+
+        {progress.total > 0 ? (
+          <View style={styles.progressCard}>
+            <View style={styles.progressRow}>
+              <ProgressStat label="Stations" value={String(progress.total)} />
+              <ProgressStat
+                label="Moyenne"
+                value={progress.averageOn20 != null ? `${progress.averageOn20}/20` : '—'}
+              />
+              <ProgressStat
+                label="Meilleure"
+                value={progress.bestOn20 != null ? `${progress.bestOn20}/20` : '—'}
+              />
+            </View>
+            <TouchableOpacity
+              onPress={() => setSessions(clearSessions())}
+              accessibilityRole="button"
+            >
+              <Text style={styles.progressClear}>Réinitialiser ma progression</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        <View style={styles.actionsRow}>
+          <TouchableOpacity
+            style={[styles.actionChip, importOpen && styles.actionChipActive]}
+            onPress={() => setImportOpen((v) => !v)}
+            accessibilityRole="button"
+          >
+            <Text style={[styles.actionChipText, importOpen && styles.actionChipTextActive]}>
+              ＋ Importer une station
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionChip, showFavoritesOnly && styles.actionChipActive]}
+            onPress={() => setShowFavoritesOnly((v) => !v)}
+            accessibilityRole="button"
+          >
+            <Text style={[styles.actionChipText, showFavoritesOnly && styles.actionChipTextActive]}>
+              ★ Favoris{favorites.length ? ` (${favorites.length})` : ''}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {importOpen ? (
+          <View style={styles.importPanel}>
+            <Text style={styles.importHint}>
+              Colle une station corrigée (énoncé + grille). L'IA en génère un cas ECOS fictif et
+              anonyme, jouable immédiatement. Aucun dossier patient réel.
+            </Text>
+            <TextInput
+              style={styles.importInput}
+              value={importText}
+              onChangeText={setImportText}
+              placeholder="Colle ici l'énoncé et la grille de la station…"
+              placeholderTextColor={tokens.colors.textMuted}
+              multiline
+              editable={!importLoading}
+              textAlignVertical="top"
+            />
+            {Platform.OS === 'web' ? (
+              <TouchableOpacity onPress={pickStationFile} accessibilityRole="button">
+                <Text style={styles.importFileLink}>📂 …ou importer un fichier .txt / .md</Text>
+              </TouchableOpacity>
+            ) : null}
+            {importError ? <Text style={styles.importError}>{importError}</Text> : null}
+            <TouchableOpacity
+              style={[styles.importButton, (importLoading || importText.trim().length < 40) && styles.buttonDisabledOpacity]}
+              onPress={importStation}
+              disabled={importLoading || importText.trim().length < 40}
+              accessibilityRole="button"
+            >
+              {importLoading ? (
+                <ActivityIndicator color={tokens.colors.onAccent} size="small" />
+              ) : (
+                <Text style={styles.importButtonText}>Générer le cas</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         {casesLoading ? (
           <View style={styles.casesState}>
@@ -346,15 +595,24 @@ Sois précis, bienveillant et pédagogique.`;
               <Text style={styles.casesRetryText}>Réessayer</Text>
             </TouchableOpacity>
           </View>
-        ) : cases.length === 0 ? (
+        ) : visibleCases.length === 0 ? (
           <View style={styles.casesState}>
             <Text style={styles.casesStateText}>
-              Aucun cas ECOS disponible pour le moment.
+              {showFavoritesOnly
+                ? 'Aucun cas en favori. Touchez ☆ sur un cas pour l\'ajouter.'
+                : 'Aucun cas ECOS disponible pour le moment.'}
             </Text>
           </View>
         ) : (
-          cases.map((cas) => (
-            <CaseCard key={cas.id} cas={cas} onSelect={() => selectCase(cas)} />
+          visibleCases.map((cas) => (
+            <CaseCard
+              key={cas.id}
+              cas={cas}
+              onSelect={() => selectCase(cas)}
+              isFavorite={favSet.has(cas.id)}
+              onToggleFavorite={() => onToggleFavorite(cas.id)}
+              lastScore={lastScores[cas.id]}
+            />
           ))
         )}
       </ScrollView>
@@ -564,6 +822,122 @@ const styles = StyleSheet.create({
     paddingVertical: tokens.space.sm,
   },
   casesRetryText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.onAccent,
+    fontWeight: tokens.weight.semibold,
+    fontSize: tokens.type.label.fontSize,
+  },
+
+  // Progression
+  progressCard: {
+    borderRadius: tokens.radius.lg,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    backgroundColor: tokens.colors.accentSurface,
+    padding: tokens.space.lg,
+    gap: tokens.space.sm,
+    ...tokens.elevation.sm,
+  },
+  progressRow: { flexDirection: 'row', gap: tokens.space.sm },
+  progressStat: {
+    flex: 1,
+    borderRadius: tokens.radius.md,
+    backgroundColor: tokens.colors.surface,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    paddingVertical: tokens.space.sm,
+    paddingHorizontal: tokens.space.md,
+    alignItems: 'center',
+  },
+  progressStatValue: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.h3.fontSize,
+    fontWeight: tokens.weight.bold,
+  },
+  progressStatLabel: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  progressClear: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accent,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.medium,
+  },
+
+  // Actions (import + favoris)
+  actionsRow: { flexDirection: 'row', gap: tokens.space.sm, flexWrap: 'wrap' },
+  actionChip: {
+    borderRadius: tokens.radius.pill,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.xs + 2,
+    backgroundColor: tokens.colors.surfaceSunken,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+  },
+  actionChipActive: {
+    backgroundColor: tokens.colors.accentSurface,
+    borderColor: tokens.colors.accentSurfaceStrong,
+  },
+  actionChipText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textSubtle,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.medium,
+  },
+  actionChipTextActive: { color: tokens.colors.accentDeep, fontWeight: tokens.weight.semibold },
+
+  // Import panel
+  importPanel: {
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surface,
+    padding: tokens.space.lg,
+    gap: tokens.space.sm,
+    ...tokens.elevation.sm,
+  },
+  importHint: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+    lineHeight: 18,
+  },
+  importInput: {
+    minHeight: 120,
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surfaceSunken,
+    padding: tokens.space.md,
+    fontFamily: tokens.font.sans,
+    fontSize: tokens.type.label.fontSize,
+    color: tokens.colors.text,
+  },
+  importFileLink: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accent,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.medium,
+  },
+  importError: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.danger,
+    fontSize: tokens.type.caption.fontSize,
+  },
+  importButton: {
+    height: 44,
+    borderRadius: tokens.radius.md,
+    backgroundColor: tokens.colors.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...tokens.elevation.sm,
+  },
+  buttonDisabledOpacity: { opacity: 0.45 },
+  importButtonText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.onAccent,
     fontWeight: tokens.weight.semibold,
@@ -873,6 +1247,7 @@ const caseStyles = StyleSheet.create({
     ...tokens.elevation.sm,
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  cardHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
   cardTitle: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,
@@ -895,6 +1270,8 @@ const caseStyles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
   },
+  star: { fontSize: 20, color: tokens.colors.borderStrong },
+  starActive: { color: tokens.colors.warningText },
   cardSpecialite: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
@@ -907,6 +1284,32 @@ const caseStyles = StyleSheet.create({
     fontSize: tokens.type.label.fontSize,
     lineHeight: 20,
     marginTop: 2,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    marginTop: tokens.space.xs,
+  },
+  importedTag: {
+    borderRadius: tokens.radius.sm,
+    backgroundColor: tokens.colors.surfaceSunken,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    paddingHorizontal: tokens.space.sm,
+    paddingVertical: 1,
+  },
+  importedTagText: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.textMuted,
+    fontSize: 10,
+    fontWeight: tokens.weight.medium,
+  },
+  lastScore: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.success,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
   },
 });
 

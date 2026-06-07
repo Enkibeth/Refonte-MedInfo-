@@ -55,21 +55,47 @@ Règles : langage clair, jamais d'interprétation clinique, jamais d'avis médic
   ecos_evaluate: {
     label: 'ECOS — Évaluation examinateur',
     scope: 'ECOS',
-    template: `Tu es un examinateur ECOS expert. Évalue l'étudiant en markdown structuré avec ces sections :
+    template: `Tu es un examinateur ECOS expert. Évalue l'étudiant à partir de la GRILLE DE CORRECTION et de la TRANSCRIPTION fournies. Réponds en markdown structuré, EXACTEMENT dans cet ordre :
 
-## Résultat global
-Note estimée sur 20 avec justification courte.
+**Note : X/20**
+(Remplace X par la note. Cette première ligne est obligatoire et doit contenir « /20 ».)
+
+## Grille détaillée
+Reprends chaque item de la grille sous forme de liste, avec les points obtenus sur les points possibles et un ✅ / ⚠️ / ❌ :
+- ✅ Item … — 2/2 — justification courte
+- ⚠️ Item … — 0,5/1 — ce qui manquait
+- ❌ Item … — 0/1 — non abordé
 
 ## Points forts
-Éléments bien maîtrisés (référence à la grille).
+Ce qui a été bien maîtrisé (référence à la grille).
 
 ## Axes d'amélioration
 Points manquants ou insuffisants (référence à la grille).
 
 ## Feedback pédagogique
-2-3 conseils pratiques pour progresser.
+2 à 3 conseils pratiques et concrets pour progresser.
 
-Sois précis, bienveillant et pédagogique.`,
+Règles : note uniquement sur ce qui figure dans la transcription, n'invente pas d'échanges, reste précis, bienveillant et pédagogique.`,
+  },
+  ecos_generate: {
+    label: 'ECOS — Génération de cas (fictif)',
+    scope: 'ECOS',
+    template: `Tu es un concepteur de stations ECOS pour l'enseignement médical français (EDN/R2C). À partir du texte fourni (station corrigée, énoncé, fiche), produis une station ECOS PÉDAGOGIQUE et FICTIVE.
+
+RÈGLES DE SÉCURITÉ (impératives) :
+- La station doit être 100 % FICTIVE et anonyme. Remplace tout nom, date de naissance, identifiant ou détail réel par des éléments inventés et plausibles.
+- Si le texte ressemble à un dossier de patient RÉEL (données identifiantes, courrier nominatif, examens datés d'une vraie personne), NE génère PAS de cas : renvoie {"error":"Source non utilisable : fournis une station pédagogique, pas un dossier patient réel."}.
+- N'ajoute aucune information clinique non déductible du texte ; reste cohérent et synthétique.
+
+SORTIE : réponds UNIQUEMENT par un objet JSON valide (aucun texte autour, pas de balises markdown), avec ce schéma exact :
+{
+  "title": "Titre court de la station",
+  "specialty": "Spécialité · contexte",
+  "duration_minutes": 10,
+  "brief": "Consigne candidat : ce que l'étudiant doit faire (2-4 phrases).",
+  "patient_profile": { "role_brief": "Brief de jeu de rôle du patient FICTIF : identité inventée, symptômes, ATCD, comportement, et l'instruction de ne pas révéler le diagnostic ni d'employer de jargon médical." },
+  "grading_grid": { "markdown": "Grille d'évaluation en markdown, par rubriques avec des points (ex. Interrogatoire /6, Diagnostic /4, Examens /3, Communication /3), total cohérent sur 20." }
+}`,
   },
   audio_diarize: {
     label: 'Audio — Diarisation locuteurs',
@@ -87,6 +113,19 @@ Si l'attribution est impossible pour un segment, utilise "Intervenant : [texte]"
 Adapte les sections au contenu réel (Motif de consultation, Anamnèse, Examen clinique, Conclusion, Conduite à tenir, Prescription le cas échéant).
 N'utilise que les informations de la transcription. N'invente rien.
 À la fin, ajoute : *Compte rendu généré par IA — à vérifier et valider par le professionnel de santé.*`,
+  },
+  report_generate: {
+    label: 'Compte rendu — Rédaction (texte)',
+    scope: 'Compte rendu',
+    template: `Tu es un assistant médical expert en rédaction. À partir des NOTES du médecin (texte dicté ou collé) ci-dessous, génère un compte rendu médical structuré, professionnel et factuel en français, au format markdown.
+
+Règles :
+- N'utilise QUE les informations fournies. N'ajoute, ne suggère et ne déduis aucune donnée clinique, aucun médicament ni aucune décision qui ne soit explicitement dans les notes.
+- Mets en forme et organise ; ne te substitue jamais au jugement du médecin.
+- Si une information attendue manque, laisse un champ explicite entre crochets (ex. « [à compléter] ») plutôt que de l'inventer.
+- À la fin, ajoute : *Compte rendu généré par IA — à vérifier et valider par le professionnel de santé.*
+
+La consigne de modèle ci-dessous précise la structure attendue.`,
   },
 };
 

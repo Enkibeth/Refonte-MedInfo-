@@ -11,6 +11,7 @@
 import { generateText } from 'ai';
 import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
+import { buildTemplateInstruction } from '@/lib/reportTemplates';
 
 const MAX_SIZE_BYTES = 25 * 1024 * 1024;
 
@@ -33,6 +34,7 @@ export async function POST(request: Request): Promise<Response> {
 
   const audioEntry = incomingFormData.get('audio');
   const mode = (incomingFormData.get('mode') as string | null) ?? 'transcription';
+  const template = (incomingFormData.get('template') as string | null) ?? 'auto';
 
   if (!audioEntry || !(audioEntry instanceof Blob)) {
     return Response.json({ error: 'Champ "audio" manquant.' }, { status: 400 });
@@ -114,9 +116,11 @@ export async function POST(request: Request): Promise<Response> {
       getPromptTemplate('audio_report'),
     ]);
 
+    const reportSystem = `${reportPrompt}\n\n${buildTemplateInstruction(template)}`;
+
     const { text: report } = await generateText({
       model: reportRuntime.model,
-      system: reportPrompt,
+      system: reportSystem,
       ...reportRuntime.options,
       messages: [
         {
