@@ -6,10 +6,10 @@ import { isAdminUserId } from '@/admin/index';
 import { isFeatureVisible, type AppFeatureId } from '@/ai/routing/featureVisibility';
 import { tokens } from '@/ui/tokens';
 
-function TabIcon({ emoji }: { emoji: string }) {
+function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
   return (
-    <View style={tabStyles.iconWrap}>
-      <Text style={tabStyles.emoji}>{emoji}</Text>
+    <View style={[tabStyles.iconWrap, focused && tabStyles.iconWrapActive]}>
+      <Text style={[tabStyles.emoji, focused && tabStyles.emojiActive]}>{emoji}</Text>
     </View>
   );
 }
@@ -42,23 +42,23 @@ export default function ChatLayout() {
     >
       <Tabs.Screen
         name="chat"
-        options={{ title: 'Chat', href: hrefFor('chat'), tabBarIcon: () => <TabIcon emoji="💬" /> }}
+        options={{ title: 'Chat', href: hrefFor('chat'), tabBarIcon: ({ focused }) => <TabIcon emoji="💬" focused={focused} /> }}
       />
       <Tabs.Screen
         name="document"
-        options={{ title: 'Document', href: hrefFor('document'), tabBarIcon: () => <TabIcon emoji="📄" /> }}
+        options={{ title: 'Document', href: hrefFor('document'), tabBarIcon: ({ focused }) => <TabIcon emoji="📄" focused={focused} /> }}
       />
       <Tabs.Screen
         name="ecos"
-        options={{ title: 'ECOS', href: hrefFor('ecos'), tabBarIcon: () => <TabIcon emoji="🩺" /> }}
+        options={{ title: 'ECOS', href: hrefFor('ecos'), tabBarIcon: ({ focused }) => <TabIcon emoji="🩺" focused={focused} /> }}
       />
       <Tabs.Screen
         name="partiel"
-        options={{ title: 'Partiel', href: hrefFor('partiel'), tabBarIcon: () => <TabIcon emoji="📈" /> }}
+        options={{ title: 'Partiel', href: hrefFor('partiel'), tabBarIcon: ({ focused }) => <TabIcon emoji="📈" focused={focused} /> }}
       />
       <Tabs.Screen
         name="audio"
-        options={{ title: 'Audio', href: hrefFor('audio'), tabBarIcon: () => <TabIcon emoji="🎤" /> }}
+        options={{ title: 'Audio', href: hrefFor('audio'), tabBarIcon: ({ focused }) => <TabIcon emoji="🎤" focused={focused} /> }}
       />
     </Tabs>
   );
@@ -80,8 +80,22 @@ const tabStyles = StyleSheet.create({
   label: {
     fontFamily: tokens.font.sans,
     fontSize: 11,
-    fontWeight: tokens.weight.medium,
+    fontWeight: tokens.weight.semibold,
   },
-  iconWrap: { alignItems: 'center', justifyContent: 'center' },
-  emoji: { fontSize: 20 },
+  // Pastille d'arrière-plan sur l'outil actif → repère visuel net de la sélection.
+  iconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 44,
+    height: 30,
+    borderRadius: tokens.radius.pill,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  iconWrapActive: {
+    backgroundColor: tokens.colors.accentSurface,
+    borderColor: tokens.colors.accentSurfaceStrong,
+  },
+  emoji: { fontSize: 20, opacity: 0.6 },
+  emojiActive: { opacity: 1 },
 });

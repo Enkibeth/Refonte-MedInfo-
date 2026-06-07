@@ -149,19 +149,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const supabase = getSupabaseClient();
     let active = true;
 
-    supabase.auth.getSession().then(async ({ data }) => {
+    // Charge la session + le profil et garantit que `loading` repasse à false même
+    // si `fetchProfile` échoue (réseau/RLS). Sans ce try/finally, une erreur ici
+    // laissait le spinner tourner indéfiniment (email « Mon compte », écrans <RoleGate>).
+    async function hydrate(next: Session | null) {
       if (!active) return;
-      setSession(data.session);
-      if (data.session?.user) applyProfile(await fetchProfile(data.session.user.id));
-      setLoading(false);
-    });
+      setSession(next);
+      try {
+        applyProfile(next?.user ? await fetchProfile(next.user.id) : null);
+      } catch {
+        // Profil illisible : on retombe sur un état neutre plutôt que de bloquer l'UI.
+        if (active) applyProfile(next?.user ? { persona: 'public', status: 'unverified', verifiedPersonas: ['public'] } : null);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => hydrate(data.session))
+      .catch(() => {
+        // getSession lui-même peut rejeter (réseau) : ne jamais rester bloqué sur loading.
+        if (active) setLoading(false);
+      });
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, next) => {
       if (!active) return;
       // Lien de réinitialisation ouvert : on bascule en mode récupération (cf garde de route).
       if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
-      setSession(next);
-      applyProfile(next?.user ? await fetchProfile(next.user.id) : null);
+      await hydrate(next);
     });
 
     return () => {
