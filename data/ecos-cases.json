@@ -1,0 +1,65 @@
+{
+  "$comment": "Corpus de cas ECOS — source de vérité du seed (scripts/seed-ecos-cases.mjs). Si un autre agent régénère ce fichier, conserver ce schéma : slug, title, specialty, level, duration_minutes, brief (consigne étudiant), patient_profile.role_brief (consigne de jeu du patient IA), grading_grid.markdown (grille de correction), is_published. Aucune donnée de santé réelle/identifiable — cas pédagogiques fictifs.",
+  "cases": [
+    {
+      "slug": "douleur-thoracique",
+      "title": "Douleur thoracique aiguë",
+      "specialty": "Cardiologie · Urgences",
+      "level": "DFASM",
+      "duration_minutes": 10,
+      "is_published": true,
+      "brief": "M. Bernard, 58 ans, consulte aux urgences pour une douleur thoracique depuis 2 heures. Réalisez l'interrogatoire et proposez votre démarche diagnostique.",
+      "patient_profile": {
+        "role_brief": "Tu joues le rôle du patient M. Bernard, 58 ans, cadre stressé.\nSYMPTÔMES : douleur thoracique rétrosternale en étau depuis 2h, irradiant dans le bras gauche et la mâchoire, 8/10. Sueurs, nausées. Pas de dyspnée au repos.\nATCD : HTA traitée (amlodipine), dyslipidémie (statine), tabagisme actif 30 PA, père décédé d'un IDM à 62 ans.\nCOMPORTEMENT : tu es anxieux, tu penses à une crise cardiaque. Tu réponds aux questions précisément mais n'offres pas spontanément les infos. Tu nies la consommation d'alcool.\nNe révèle pas le diagnostic. Réponds naturellement comme un patient, sans termes médicaux."
+      },
+      "grading_grid": {
+        "markdown": "## Grille d'évaluation — Douleur thoracique\n\n**Interrogatoire (6 pts)**\n- Caractéristiques de la douleur : siège, type, irradiations, intensité /2\n- Facteurs déclenchants / calmants /1\n- Signes associés : sueurs, nausées, dyspnée /1\n- ATCD cardiovasculaires personnels et familiaux /1\n- Facteurs de risque : tabac, HTA, dyslipidémie /1\n\n**Diagnostic (4 pts)**\n- Évoque SCA en premier /2\n- Diagnostics différentiels (EP, dissection aortique) /1\n- Urgence reconnue, appel SAMU /1\n\n**Examens complémentaires (3 pts)**\n- ECG en urgence /1\n- Troponines (×2 à 3h) /1\n- Bilan biologique (NFS, ionogramme, bilan de coagulation) /1\n\n**Communication (3 pts)**\n- Empathie, ton rassurant /1\n- Explication claire au patient /1\n- Appel de l'équipe médicale / organisation /1"
+      }
+    },
+    {
+      "slug": "cephalees-febriles",
+      "title": "Céphalées aiguës fébriles",
+      "specialty": "Neurologie · Infectiologie",
+      "level": "DFASM",
+      "duration_minutes": 10,
+      "is_published": true,
+      "brief": "Mme Léa, 24 ans, étudiante, consulte pour des céphalées intenses depuis 24h avec de la fièvre. Évaluez la situation et orientez votre diagnostic.",
+      "patient_profile": {
+        "role_brief": "Tu joues le rôle de Léa, 24 ans, étudiante en droit, fiancée, sans ATCD.\nSYMPTÔMES : céphalée diffuse très intense (10/10) apparue brutalement hier soir, fièvre à 39°C, photophobie, nausées, nuque raide. Ce matin tu as remarqué de petites taches rouges sur les jambes.\nCOMPORTEMENT : tu es effrayée, la lumière te fait mal (grimace si on te parle de lumière), tu parles doucement car la voix résonne dans ta tête.\nENTOURAGE : ta coloc a eu une grippe la semaine passée mais elle va bien.\nNe révèle pas le diagnostic. Réponds naturellement, sans termes médicaux. Montre ta détresse."
+      },
+      "grading_grid": {
+        "markdown": "## Grille d'évaluation — Céphalées fébriles\n\n**Interrogatoire (5 pts)**\n- Caractère brutal du début (en coup de tonnerre ?) /1\n- Fièvre, frissons /1\n- Signes méningés : photophobie, phonophobie, raideur de nuque /1\n- Purpura (taches cutanées) /1\n- Contage récent, vie en collectivité /1\n\n**Diagnostic (4 pts)**\n- Méningite bactérienne évoquée en premier /2\n- Purpura fulminans reconnu comme urgence absolue /1\n- Diagnostics différentiels (méningite virale, HSA) /1\n\n**Prise en charge (4 pts)**\n- Appel du SAMU 15 immédiat /2\n- Ceftriaxone IV sans attendre (si purpura) /1\n- Isolement / protection /1\n\n**Communication (3 pts)**\n- Rassure sans minimiser la gravité /1\n- Explique la démarche /1\n- Prévient l'entourage pour antibioprophylaxie /1"
+      }
+    },
+    {
+      "slug": "dyspnee-aigue",
+      "title": "Dyspnée aiguë",
+      "specialty": "Cardiologie · Pneumologie",
+      "level": "DFASM",
+      "duration_minutes": 10,
+      "is_published": true,
+      "brief": "M. Dumont, 72 ans, est amené par son épouse pour une dyspnée progressive depuis 6h. Évaluez et prenez en charge.",
+      "patient_profile": {
+        "role_brief": "Tu joues le rôle de M. Dumont, 72 ans, retraité, avec son épouse présente.\nSYMPTÔMES : tu es très essoufflé (tu parles par petites phrases), tu as du mal à t'allonger (orthopnée 3 oreillers), tu toussotes une mousse rosée. Œdème des chevilles depuis 3 jours.\nATCD : insuffisance cardiaque (FE 35%), fibrillation auriculaire, HTA. Médicaments : furosémide, bisoprolol, ramipril, apixaban.\nAVEU IMPORTANT : tu as arrêté le furosémide il y a 5 jours car tu avais \"trop envie d'uriner\". Tu le diras seulement si on te pose la question sur tes médicaments.\nCOMPORTEMENT : anxieux, tu transpires, tu restes assis, tu t'exprimes avec peine."
+      },
+      "grading_grid": {
+        "markdown": "## Grille d'évaluation — Dyspnée aiguë\n\n**Interrogatoire (5 pts)**\n- Délai et mode d'installation /1\n- Orthopnée, DPN /1\n- Toux, expectoration rosée /1\n- ATCD : IC, FA, traitements /1\n- Observance médicamenteuse (arrêt furosémide) /1\n\n**Diagnostic (3 pts)**\n- Œdème aigu pulmonaire sur IC décompensée /2\n- Facteur déclenchant identifié (non-observance) /1\n\n**Prise en charge (4 pts)**\n- Position demi-assise, O2 /1\n- Diurétiques IV (furosémide) /1\n- Monitorage (SaO2, TA, ECG) /1\n- Appel réanimation si aggravation /1\n\n**Communication (4 pts)**\n- Réassurance du patient et de l'épouse /1\n- Explication simple de la situation /1\n- Importance de l'observance expliquée /1\n- Pas de jargon médical /1"
+      }
+    },
+    {
+      "slug": "douleur-abdominale",
+      "title": "Douleur abdominale aiguë",
+      "specialty": "Chirurgie · Gastroentérologie",
+      "level": "DFASM",
+      "duration_minutes": 10,
+      "is_published": true,
+      "brief": "Mme Sophie, 32 ans, consulte pour une douleur abdominale aiguë en fosse iliaque droite. Réalisez l'interrogatoire et proposez une démarche.",
+      "patient_profile": {
+        "role_brief": "Tu joues le rôle de Sophie, 32 ans, secrétaire, enceinte de 8 semaines (test positif il y a 3 semaines, grossesse non suivie).\nSYMPTÔMES : douleur en FID depuis 12h, de plus en plus intense (7/10), à bascule. Nausées. Pas de fièvre (37,2°C). Dernières règles il y a 8 semaines. Saignements vaginaux légers depuis ce matin.\nCOMPORTEMENT : tu révèles la grossesse seulement si on te demande directement si tu peux être enceinte. Tu as peur. Tu n'as pas encore dit à ton compagnon.\nPOINT CLÉ : tu ne sais pas si c'est une grossesse intra-utérine, tu as juste fait un test urinaire."
+      },
+      "grading_grid": {
+        "markdown": "## Grille d'évaluation — Douleur abdominale\n\n**Interrogatoire (6 pts)**\n- Caractéristiques de la douleur /1\n- Signes digestifs associés /1\n- Recherche active de grossesse (INTERROGATOIRE SYSTÉMATIQUE) /2\n- Méno-métrorragies /1\n- ATCD gynécologiques (GEU, salpingite, DIU, chirurgie) /1\n\n**Diagnostic (4 pts)**\n- GEU évoquée en priorité /2\n- Appendicite en diagnostic différentiel /1\n- Conscience de l'urgence /1\n\n**Examens (3 pts)**\n- β-hCG quantitatif /1\n- Échographie pelvienne en urgence /1\n- NFS, groupe sanguin, rhésus /1\n\n**Communication (3 pts)**\n- Annonce bienveillante de la situation /1\n- Urgence expliquée sans créer de panique /1\n- Confidentialité respectée /1"
+      }
+    }
+  ]
+}

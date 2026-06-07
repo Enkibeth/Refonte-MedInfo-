@@ -17,6 +17,144 @@ None | Potential | Confirmed
 
 ---
 
+
+## [2026-06-07] – Claude (dictée vocale + menu d'outils + correction analyseur + nettoyage PR)
+### Files modified
+- src/ui/DictationButton.tsx (nouveau : dictée Whisper → texte), intégré dans app/(chat)/chat.tsx et ecos.tsx
+- app/api/transcribe+api.ts (mode `raw` : transcription brute sans diarisation)
+- src/ui/ToolsMenu.tsx (nouveau : menu déroulant d'outils rôle-aware), intégré chat/document/audio
+- app/(chat)/partiel.tsx (réécrit en placeholder « Analyseur de classement », sans IA)
+- Retrait de la version LLM erronée : app/api/partiel+api.ts (supprimé), migration 0017 (supprimée),
+  src/admin/index.ts / featureModel.ts / promptStore.ts (feature `partiel_analyze` retirée),
+  tests/rls/isolation.test.ts (seed 7→6), src/ai/routing/featureVisibility.ts (label → « Classement »)
+- src/db/supabase.ts (garde Latin-1 sur clés/URL, ré-intègre PR #44)
+- .npmrc + package.json (overrides uuid@^11) + package-lock.json (ré-intègre PR #45, supprime warnings npm)
+- CLAUDE.md, docs/STATUS.md, docs/GLOWUP_ROADMAP.md, docs/DECISIONS/0019 (réécrit), docs/CHANGELOG_AI.md
+### Purpose
+Dictée vocale dans tous les chats (au lieu de taper), menu déroulant pour switcher d'outil,
+correction de l'analyseur de partiel (en réalité un analyseur de classement de promo, côté client,
+à livrer sur spéc medoutils), et nettoyage de toutes les PR (« reparte de 0 »).
+### Regulatory impact
+None. La dictée n'est que de la transcription (le texte repasse par la safe-box). L'analyseur de
+classement sera 100% client (aucune donnée envoyée). Aucune donnée de santé. Gel ADR-0006 inchangé.
+### Rollback plan
+Retirer DictationButton + mode `raw` ; masquer l'onglet Classement ; `git revert`.
+
+
+## [2026-06-07] – Claude (visibilité par rôle + Analyseur de partiel + réconciliation main/dev)
+### Files modified
+- src/ai/routing/featureVisibility.ts (nouveau : matrice stricte outils × persona, module pur)
+- src/ui/RoleGate.tsx (nouveau : garde d'écran par rôle + écran « non disponible »)
+- app/(chat)/_layout.tsx (onglets adaptés au rôle via href:null + onglet Partiel)
+- app/(chat)/document.tsx, audio.tsx, ecos.tsx (wrap RoleGate)
+- app/(account)/account.tsx (section « Mes outils » par rôle)
+- app/api/partiel+api.ts (nouveau : route Analyseur de partiel, garde persona étudiant/admin serveur)
+- app/(chat)/partiel.tsx (nouveau : écran étudiant d'analyse de résultats QCM/partiels)
+- src/admin/index.ts (AI_FEATURES += partiel_analyze)
+- src/ai/providers/featureModel.ts (FEATURE_DEFAULTS += partiel_analyze)
+- src/ai/prompts/promptStore.ts (PROMPT_DEFAULTS += partiel_analyze : prompt éducatif non-MDSW)
+- supabase/migrations/0017_partiel_analyze_feature.sql (nouveau : seed config admin, ON CONFLICT DO NOTHING)
+- tests/unit/feature-visibility.test.ts (nouveau), tests/rls/isolation.test.ts (seed 6→7)
+- app/index.tsx, src/ui/Logo.tsx (réconciliation merge dev ↔ main, résolution en faveur de dev)
+- CLAUDE.md, docs/STATUS.md, docs/GLOWUP_ROADMAP.md (nouveau), docs/DECISIONS/0018-*.md, 0019-*.md (nouveaux)
+### Purpose
+Adapter le visuel selon le rôle (chaque persona ne voit que ses outils), ajouter l'« Analyseur de
+partiel » étudiant (analyse de résultats QCM/partiels → items EDN faibles + plan de révision), et
+réconcilier `main` (branding) avec `dev` (refonte design) en un état unique cohérent.
+### Regulatory impact
+None. Safe-box 3 couches + classifieur inchangés. L'analyseur de partiel est éducatif/non-MDSW
+(prompt : refus patient réel, aucun avis individualisé). Le masquage UI par rôle ne remplace pas
+l'autorisation serveur (persona dérivée du profil vérifié). Gel ADR-0006 non levé. Aucune donnée de santé.
+### Rollback plan
+`isFeatureVisible` → toujours true (retour à tous les onglets) ; retirer la route/écran `partiel` et
+la migration `0017` ; `git revert` du merge de réconciliation si besoin.
+
+
+## [2026-06-06] – Codex (enregistrement audio natif iOS/Android)
+### Files modified
+- app/(chat)/audio.tsx (nouvelle route dictée vocale : branche web MediaRecorder conservée, branche native expo-audio, upload multipart inchangé vers /api/transcribe)
+- app/(chat)/chat.tsx (bouton d'accès à la dictée audio depuis l'en-tête du chat)
+- app.json (permissions micro iOS/Android + config plugin expo-audio)
+- package.json / package-lock.json (dépendance Expo SDK 56 `expo-audio`)
+- docs/CHANGELOG_AI.md (présente entrée de transmission)
+### Purpose
+Ajouter l'enregistrement audio natif iOS/Android via `expo-audio` pour Expo SDK 56 tout en gardant le chemin web MediaRecorder et le contrat d'upload `/api/transcribe` existant.
+### Regulatory impact
+Potential (maîtrisé) : nouvelle capture microphone explicite et permissionnée ; pas de stockage local ajouté, pas de changement de safe-box chat, et l'audio reste transmis uniquement au endpoint de transcription existant.
+### Rollback plan
+`git revert` de la PR pour supprimer la route audio, le lien chat, les permissions micro et la dépendance `expo-audio`.
+
+## [2026-06-05] – Claude (CC-03 : RAG embeddings réels — pipeline + mesure recall + ADR-0014)
+### Files modified
+- src/rag/embeddings.ts (nouveau — embedText/embedMany via @ai-sdk/openai `text-embedding-3-small`,
+  1536 dims ; ZÉRO pseudo-embedding : clé absente → throw ; garde de dimension stricte)
+- src/rag/retrieval.ts (génère l'embedding de la requête → match_rag_chunks active la fusion
+  lexical+dense RRF k=60 ; dégradation lexical-only propre si l'embedding échoue ; INV-B inchangé)
+- scripts/embeddings/ingest-corpus.mjs (nouveau — ingestion idempotente `chunk_id`+hash du corpus AVEC
+  embeddings, service-role, `--dry-run` hors réseau) ; package.json (scripts `rag:ingest`, `rag:recall`)
+- scripts/embeddings/validate-rag-metadata.mjs (gate `rag-license` étendu à TOUS les `src/rag/corpus/*.json`)
+- scripts/eval/rag-recall.mjs (nouveau — recall@1/@3 chunk & doc, modes lexical|fused, coût réel)
+- tests/rag/recall-questions.fr.json (nouveau — questions FR → chunk/doc attendu + hors-corpus)
+- tests/rag/embeddings.test.ts, tests/rag/retrieval-embedding.test.ts (nouveaux — CI-safe, mockés :
+  garde anti-pseudo-embedding, vecteur 1536 transmis, dégradation lexical-only, garde de dimension)
+- docs/DECISIONS/0014-embeddings-text-embedding-3-small.md (nouveau ADR) ; docs/STATUS.md ;
+  docs/08_RAG.md (§9/§12/§13)
+### Purpose
+CC-03 (risque R1 de l'audit Council — « le produit refuse l'essentiel ») : rendre le retrieval dense
+opérationnel. `match_rag_chunks` fait déjà la fusion RRF dès qu'un vecteur de requête est fourni ; on
+livre le pipeline d'embeddings réels (`text-embedding-3-small`, 1536, ADR-0014) et on câble le vecteur
+de requête. **Différé, bloqué par l'allowlist réseau** (`api.openai.com` + `has-sante.fr`/`ansm.sante.fr`
+en HTTP 403 `host_not_allowed`) : **embeddings non encore peuplés**, recall **dense** non mesuré, et
+**élargissement du corpus (Lot B) non fait** (aucun contenu médical inventé). Baseline **lexical** live
+mesurée (10 questions in-corpus : recall@1/@3 100 % — non informatif sur 4 chunks ; hors corpus →
+cite-or-refuse). À la réouverture : `npm run rag:ingest` puis `npm run rag:recall -- --mode=fused`.
+INV-A/INV-B non régressés ; 4/5 gates verts en local (RLS exécutée en CI).
+### Regulatory impact
+None — aucune donnée de santé stockée/transmise ; corpus = littérature publique HAS/ANSM ; intended
+purpose et disclosure AI Act inchangés. Rappel **hors-code (Hugo)** : activer EU Data Residency + Zero
+Data Retention + DPA/SCC Module 2 sur le projet OpenAI **avant ingestion de production** (01_REGULATION §5).
+### Rollback plan
+`git revert` (supprime `src/rag/embeddings.ts`, le câblage `retrieval.ts`, les scripts
+`rag:ingest`/`rag:recall`) → retour au lexical-only `query_embedding: null`. Sans revert : laisser
+`rag_chunks.embedding` vide ou retirer la clé OpenAI → `retrieval.ts` dégrade automatiquement.
+
+## [2026-06-05] – Claude (couche 2 classifieur Haiku 4.5 + pages légales)
+### Files modified
+- src/ai/classifier/llmStage2.ts (nouveau — étage 2 LLM léger : Claude Haiku 4.5 via @ai-sdk/anthropic,
+  generateObject + Zod, temperature=0, fail-closed ; prompt 07_CLASSIFIER §4 verbatim)
+- src/ai/classifier/index.ts (exports étage 2) ; app/api/chat+api.ts (branchement conditionnel de l'étage 2
+  dans screenConversation — isStage2Configured/createLlmStage2)
+- .env.example (CLASSIFIER_STAGE2_ENABLED, CLASSIFIER_MODEL_ID)
+- tests/classifier/llm-stage2.test.ts (nouveau — modèle peu coûteux par défaut, prompt, temperature=0,
+  fail-closed, intégration classifyIntent regex-prioritaire, câblage conditionnel)
+- docs/DECISIONS/0013-classifier-stage2-haiku.md (nouveau ADR) ; docs/07_CLASSIFIER.md §3 (câblage MVP Haiku)
+- src/compliance/legal.ts (nouveau — mentions légales, politique de confidentialité RGPD, CGU/CGV ;
+  source unique versionnée, réutilise INTENDED_PURPOSE / getAiDisclosure / CANONICAL_REFUSAL)
+- src/ui/LegalScreen.tsx (nouveau — rendu générique, aucun texte médical en dur)
+- app/(legal)/_layout.tsx, mentions-legales.tsx, confidentialite.tsx, cgu.tsx (nouvelles routes publiques)
+- app/_layout.tsx (groupe (legal) enregistré + routes publiques accessibles sans session : index + (legal))
+- app/index.tsx, app/(account)/account.tsx (liens de pied de page vers les pages légales)
+- tests/unit/legal.test.ts (nouveau — vérifie LCEN, droits RGPD, sous-traitants art. 28, AI Act art. 50,
+  avertissement médical + numéros d'urgence 15/112/3114, zéro donnée de santé)
+### Purpose
+(1) Câbler l'étage 2 du classifieur (couche 1 du safe-box) avec une IA efficace et peu coûteuse —
+Claude Haiku 4.5 — pour récupérer le recall `general_info` (moins de sur-refus) et capter les demandes
+personnelles déguisées que le regex ne couvre pas. L'étage 1 reste prioritaire et inchangé ; verdict
+`general_info` toujours soumis au garde-fou marqueur-personnel + seuil de confiance ; fail-closed sur
+erreur. (2) Ajouter les pages légales obligatoires (mentions légales LCEN, politique de confidentialité
+RGPD, CGU/CGV), accessibles publiquement, avant ouverture au public.
+### Regulatory impact
+Confirmed (positif) : (couche 2) renforce la détection sémantique non-MDSW sans assouplir la barrière
+déterministe des urgences/cas personnels explicites ; aucune logique de triage/diagnostic introduite —
+l'étage 2 ne fait que router vers un refus ou vers le LLM principal (déjà sous safe-box 3 couches + RAG).
+(Pages légales) matérialise la disclosure AI Act art. 50, l'information RGPD (sous-traitants Stripe /
+Supabase / Vercel / Anthropic / OpenAI, droits, CNIL) et l'avertissement non-dispositif-médical.
+Champs propres à l'éditeur laissés en placeholder « [À COMPLÉTER] » (raison sociale, SIREN, adresse,
+directeur de publication, e-mail DPO) — action Hugo. Zéro donnée de santé.
+### Rollback plan
+Couche 2 : `CLASSIFIER_STAGE2_ENABLED=false` (sans déploiement) ou git revert (retour regex-seul + fail-safe).
+Pages légales : git revert (retire le groupe (legal), les liens et le contenu).
+
 ## [2026-06-05] – Claude (durcissement base Supabase + parité migrations)
 ### Files modified
 - supabase/migrations/0009_rag_match_or_semantics.sql (nouveau — capture repo de la migration

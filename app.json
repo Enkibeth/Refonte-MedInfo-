@@ -6,22 +6,38 @@
     "orientation": "portrait",
     "scheme": "medinfoai",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
     "ios": {
-      "bundleIdentifier": "com.medinfoai.app"
+      "bundleIdentifier": "com.medinfoai.app",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Autoriser MedInfo AI à accéder au microphone pour transcrire vos questions vocales."
+      }
     },
     "android": {
       "package": "com.medinfoai.app",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
-      "output": "server"
+      "output": "server",
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
           "backgroundColor": "#0A4D68"
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Autoriser MedInfo AI à accéder au microphone pour transcrire vos questions vocales."
         }
       ]
     ],

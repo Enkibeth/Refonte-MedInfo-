@@ -8,6 +8,7 @@ import { useMemo, useState } from 'react';
 import {
   View,
   Text,
+  Image,
   TextInput,
   ScrollView,
   TouchableOpacity,
@@ -22,6 +23,9 @@ import type { UIMessage, UIMessagePart, UIDataTypes, UITools } from 'ai';
 
 import { useSession } from '@/auth/AuthProvider';
 import { tokens } from '@/ui/tokens';
+import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
+import { DictationButton } from '@/ui/DictationButton';
+import { ToolsMenu } from '@/ui/ToolsMenu';
 import { collectLatestCitations, type Citation } from '@/ai/ui/chatSources';
 
 // ── Types tool-call ────────────────────────────────────────────────────────
@@ -48,11 +52,25 @@ function FollowupButtons({
   return (
     <View style={styles.followupContainer}>
       {suggestions.map((s, i) => (
-        <TouchableOpacity key={i} style={styles.followupButton} onPress={() => onSelect(s)}>
+        <TouchableOpacity
+          key={i}
+          accessibilityRole="button"
+          style={styles.followupButton}
+          onPress={() => onSelect(s)}
+        >
           <Text style={styles.followupText}>{s}</Text>
         </TouchableOpacity>
       ))}
     </View>
+  );
+}
+
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <View
+      style={[styles.chevron, open ? styles.chevronOpen : styles.chevronClosed]}
+      accessibilityElementsHidden
+    />
   );
 }
 
@@ -66,10 +84,13 @@ function SourcesPanel({
   const [open, setOpen] = useState(defaultOpen);
   return (
     <View style={styles.sourcesWrapper}>
-      <TouchableOpacity onPress={() => setOpen((o) => !o)} style={styles.sourcesToggle}>
-        <Text style={styles.sourcesToggleText}>
-          {open ? '▲' : '▼'} Sources ({citations.length})
-        </Text>
+      <TouchableOpacity
+        onPress={() => setOpen((o) => !o)}
+        style={styles.sourcesToggle}
+        accessibilityRole="button"
+      >
+        <Chevron open={open} />
+        <Text style={styles.sourcesToggleText}>Sources ({citations.length})</Text>
       </TouchableOpacity>
       {open &&
         citations.map((c, i) => (
@@ -102,6 +123,7 @@ function QcmCard({ qcm }: { qcm: QcmPayload }) {
         return (
           <TouchableOpacity
             key={index}
+            accessibilityRole="button"
             style={[
               styles.qcmOption,
               answered && isCorrect && styles.qcmOptionCorrect,
@@ -110,6 +132,8 @@ function QcmCard({ qcm }: { qcm: QcmPayload }) {
             onPress={() => setSelectedIndex(index)}
           >
             <Text style={styles.qcmOptionText}>
+              {/* Indice par lettre + couleur + texte : info jamais portée par la seule couleur (05_DESIGN §7). */}
+              {answered && isCorrect ? '✓ ' : answered && isSelected && !isCorrect ? '✗ ' : ''}
               {String.fromCharCode(65 + index)}. {option}
             </Text>
           </TouchableOpacity>
@@ -193,7 +217,11 @@ function MessageBubble({
   return (
     <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAssistant]}>
       {textContent ? (
-        <Text style={isUser ? styles.textUser : styles.textAssistant}>{textContent}</Text>
+        isUser ? (
+          <Text style={styles.textUser}>{textContent}</Text>
+        ) : (
+          <MarkdownRenderer text={textContent} />
+        )
       ) : null}
 
       {parts.map((p, i) => (
@@ -211,6 +239,7 @@ export default function ChatScreen() {
   const { persona } = useSession();
   const [input, setInput] = useState('');
   const [sourcesOpen, setSourcesOpen] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
 
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
@@ -221,6 +250,7 @@ export default function ChatScreen() {
 
   const latestCitations = useMemo(() => collectLatestCitations(messages), [messages]);
   const isLoading = status === 'streaming' || status === 'submitted';
+  const hasSources = latestCitations.length > 0;
 
   const handleSend = () => {
     const text = input.trim();
@@ -240,19 +270,26 @@ export default function ChatScreen() {
       keyboardVerticalOffset={80}
     >
       <View style={styles.chatHeader}>
-        <Text style={styles.chatTitle}>{persona === 'student' ? 'Chat étudiant' : 'Chat santé'}</Text>
-        <TouchableOpacity
-          style={[styles.headerSourcesButton, latestCitations.length === 0 && styles.headerSourcesButtonDisabled]}
-          onPress={() => setSourcesOpen((open) => !open)}
-          disabled={latestCitations.length === 0}
-        >
-          <Text style={styles.headerSourcesText}>
-            {sourcesOpen ? 'Masquer' : 'Sources'} ({latestCitations.length})
-          </Text>
-        </TouchableOpacity>
+        <View>
+          <Text style={styles.chatTitle}>{persona === 'student' ? 'Chat étudiant' : 'Chat santé'}</Text>
+          <Text style={styles.chatSubtitle}>Information générale et sourcée</Text>
+        </View>
+        <View style={styles.headerActions}>
+          <ToolsMenu />
+          <TouchableOpacity
+            style={[styles.headerSourcesButton, !hasSources && styles.headerSourcesButtonDisabled]}
+            onPress={() => setSourcesOpen((open) => !open)}
+            disabled={!hasSources}
+            accessibilityRole="button"
+          >
+            <Text style={[styles.headerSourcesText, !hasSources && styles.headerSourcesTextDisabled]}>
+              {sourcesOpen ? 'Masquer' : 'Sources'} · {latestCitations.length}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {sourcesOpen && latestCitations.length > 0 ? (
+      {sourcesOpen && hasSources ? (
         <View style={styles.sourcesPane}>
           <SourcesPanel citations={latestCitations} defaultOpen />
         </View>
@@ -262,13 +299,29 @@ export default function ChatScreen() {
         style={styles.messages}
         contentContainerStyle={styles.messagesContent}
       >
+        {messages.length === 0 && !isLoading ? (
+          <View style={styles.emptyState}>
+            <Image
+              source={require('../../assets/brand/legacy-illustration.png')}
+              style={styles.emptyIllustration}
+              resizeMode="contain"
+              accessibilityLabel="Illustration MedInfo AI : équipe soignante"
+            />
+            <Text style={styles.emptyTitle}>Posez votre première question</Text>
+            <Text style={styles.emptyText}>
+              Réponses claires, appuyées sur des sources (HAS, ANSM…). Information générale,
+              jamais un avis médical individuel.
+            </Text>
+          </View>
+        ) : null}
+
         {messages.map((m) => (
           <MessageBubble key={m.id} message={m} onFollowup={handleFollowup} />
         ))}
         {isLoading && (
           <View style={styles.loadingRow}>
             <ActivityIndicator color={tokens.colors.accent} size="small" />
-            <Text style={styles.loadingText}>En cours…</Text>
+            <Text style={styles.loadingText}>Rédaction en cours…</Text>
           </View>
         )}
         {error && (
@@ -284,10 +337,16 @@ export default function ChatScreen() {
       </Text>
 
       <View style={styles.inputRow}>
+        <DictationButton
+          onTranscript={(text) => setInput((prev) => (prev.trim() ? `${prev.trim()} ${text}` : text))}
+          disabled={isLoading}
+        />
         <TextInput
-          style={styles.input}
+          style={[styles.input, inputFocused && styles.inputFocused]}
           value={input}
           onChangeText={setInput}
+          onFocus={() => setInputFocused(true)}
+          onBlur={() => setInputFocused(false)}
           placeholder="Posez une question sur la santé…"
           placeholderTextColor={tokens.colors.textMuted}
           multiline
@@ -296,9 +355,11 @@ export default function ChatScreen() {
           onSubmitEditing={handleSend}
         />
         <TouchableOpacity
-          style={[styles.sendButton, isLoading && styles.sendButtonDisabled]}
+          style={[styles.sendButton, (isLoading || input.trim().length === 0) && styles.sendButtonDisabled]}
           onPress={handleSend}
-          disabled={isLoading}
+          disabled={isLoading || input.trim().length === 0}
+          accessibilityRole="button"
+          accessibilityLabel="Envoyer le message"
         >
           <Text style={styles.sendText}>Envoyer</Text>
         </TouchableOpacity>
@@ -315,103 +376,241 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.md,
     backgroundColor: tokens.colors.surface,
     borderBottomWidth: 1,
     borderColor: tokens.colors.border,
   },
-  chatTitle: { color: tokens.colors.text, fontSize: 16, fontWeight: '700' },
-  headerSourcesButton: {
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: tokens.colors.background,
-    borderWidth: 1,
-    borderColor: tokens.colors.accent,
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
+  headerAudioButton: {
+    borderRadius: tokens.radius.pill,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm,
+    backgroundColor: tokens.colors.accent,
   },
-  headerSourcesButtonDisabled: { opacity: 0.45, borderColor: tokens.colors.border },
-  headerSourcesText: { color: tokens.colors.accent, fontSize: 13, fontWeight: '700' },
-  sourcesPane: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: tokens.colors.background },
+  headerAudioText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.onAccent,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  chatTitle: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.h3.fontSize,
+    letterSpacing: tokens.type.h3.letterSpacing,
+    fontWeight: tokens.weight.bold,
+  },
+  chatSubtitle: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+    marginTop: 2,
+  },
+  headerSourcesButton: {
+    borderRadius: tokens.radius.pill,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm,
+    backgroundColor: tokens.colors.accentSurface,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+  },
+  headerSourcesButtonDisabled: { backgroundColor: 'transparent', borderColor: tokens.colors.border },
+  headerSourcesText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  headerSourcesTextDisabled: { color: tokens.colors.textMuted },
+  sourcesPane: { paddingHorizontal: tokens.space.lg, paddingVertical: tokens.space.sm, backgroundColor: tokens.colors.surfaceAlt },
   messages: { flex: 1 },
-  messagesContent: { padding: 16, gap: 12 },
-  bubble: { maxWidth: '85%', borderRadius: 16, padding: 12, gap: 8 },
-  bubbleUser: { alignSelf: 'flex-end', backgroundColor: tokens.colors.accent },
+  messagesContent: { padding: tokens.space.lg, gap: tokens.space.md },
+
+  emptyState: {
+    marginTop: tokens.space['2xl'],
+    paddingHorizontal: tokens.space.lg,
+    gap: tokens.space.sm,
+  },
+  emptyIllustration: {
+    width: '100%',
+    maxWidth: 280,
+    height: 180,
+    alignSelf: 'center',
+    borderRadius: tokens.radius.lg,
+    marginBottom: tokens.space.sm,
+  },
+  emptyTitle: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.h2.fontSize,
+    lineHeight: tokens.type.h2.lineHeight,
+    letterSpacing: tokens.type.h2.letterSpacing,
+    fontWeight: tokens.weight.bold,
+  },
+  emptyText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.body.fontSize,
+    lineHeight: tokens.type.body.lineHeight,
+    maxWidth: 460,
+  },
+
+  bubble: { maxWidth: '88%', borderRadius: tokens.radius.lg, padding: tokens.space.md, gap: tokens.space.sm },
+  bubbleUser: {
+    alignSelf: 'flex-end',
+    backgroundColor: tokens.colors.accent,
+    borderBottomRightRadius: 6,
+  },
   bubbleAssistant: {
     alignSelf: 'flex-start',
-    backgroundColor: tokens.colors.surface,
+    backgroundColor: tokens.colors.surfaceAlt,
     borderWidth: 1,
     borderColor: tokens.colors.border,
+    borderBottomLeftRadius: 6,
   },
-  textUser: { color: '#fff', fontSize: 15, lineHeight: 22 },
-  textAssistant: { color: tokens.colors.text, fontSize: 15, lineHeight: 22 },
-  followupContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  textUser: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.onAccent,
+    fontSize: tokens.type.body.fontSize,
+    lineHeight: tokens.type.body.lineHeight,
+  },
+  textAssistant: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.body.fontSize,
+    lineHeight: tokens.type.body.lineHeight,
+  },
+
+  followupContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm, marginTop: tokens.space.xs },
   followupButton: {
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    backgroundColor: tokens.colors.background,
+    borderRadius: tokens.radius.pill,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm,
+    backgroundColor: tokens.colors.surface,
     borderWidth: 1,
-    borderColor: tokens.colors.accent,
+    borderColor: tokens.colors.borderStrong,
   },
-  followupText: { color: tokens.colors.accent, fontSize: 13, fontWeight: '600' },
+  followupText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.medium,
+  },
+
   sourcesWrapper: {
-    marginTop: 8,
-    borderRadius: 8,
+    marginTop: tokens.space.sm,
+    borderRadius: tokens.radius.md,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: tokens.colors.border,
-  },
-  sourcesToggle: { padding: 8, backgroundColor: tokens.colors.background },
-  sourcesToggleText: { color: tokens.colors.textMuted, fontSize: 13, fontWeight: '600' },
-  citation: { padding: 8, borderTopWidth: 1, borderColor: tokens.colors.border },
-  citationTitle: { color: tokens.colors.text, fontSize: 13, fontWeight: '600' },
-  citationUrl: { color: tokens.colors.accent, fontSize: 11, marginTop: 2 },
-  citationExcerpt: { color: tokens.colors.textMuted, fontSize: 12, marginTop: 2 },
-  qcmCard: {
-    gap: 8,
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: tokens.colors.background,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-  },
-  qcmMeta: { color: tokens.colors.textMuted, fontSize: 12, fontWeight: '700' },
-  qcmStem: { color: tokens.colors.text, fontSize: 14, lineHeight: 20, fontWeight: '600' },
-  qcmOption: {
-    borderRadius: 10,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.surface,
+  },
+  sourcesToggle: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm, padding: tokens.space.md },
+  sourcesToggleText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textSubtle,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  chevron: {
+    width: 7,
+    height: 7,
+    borderRightWidth: 1.5,
+    borderBottomWidth: 1.5,
+    borderColor: tokens.colors.textMuted,
+  },
+  chevronClosed: { transform: [{ rotate: '-45deg' }] },
+  chevronOpen: { transform: [{ rotate: '45deg' }] },
+  citation: { padding: tokens.space.md, borderTopWidth: 1, borderColor: tokens.colors.border },
+  citationTitle: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  citationUrl: { fontFamily: tokens.font.sans, color: tokens.colors.accent, fontSize: 11, marginTop: 2 },
+  citationExcerpt: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: 12, marginTop: 2, lineHeight: 17 },
+
+  qcmCard: {
+    gap: tokens.space.sm,
+    padding: tokens.space.md,
+    borderRadius: tokens.radius.md,
+    backgroundColor: tokens.colors.surface,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+  },
+  qcmMeta: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.textMuted,
+    fontSize: 12,
+    fontWeight: tokens.weight.medium,
+  },
+  qcmStem: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.label.fontSize,
+    lineHeight: tokens.type.label.lineHeight,
+    fontWeight: tokens.weight.semibold,
+  },
+  qcmOption: {
+    borderRadius: tokens.radius.sm,
+    padding: tokens.space.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surfaceAlt,
   },
   qcmOptionCorrect: { borderColor: tokens.colors.success, backgroundColor: tokens.colors.successBackground },
-  qcmOptionWrong: { borderColor: tokens.colors.warningText, backgroundColor: tokens.colors.warningBackground },
-  qcmOptionText: { color: tokens.colors.text, fontSize: 13, lineHeight: 18 },
-  qcmExplanation: { color: tokens.colors.text, fontSize: 13, lineHeight: 19, fontWeight: '600' },
-  refusalBanner: {
-    backgroundColor: tokens.colors.warningBackground,
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 4,
+  qcmOptionWrong: { borderColor: tokens.colors.danger, backgroundColor: tokens.colors.dangerBackground },
+  qcmOptionText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.label.fontSize,
+    lineHeight: 19,
   },
-  refusalText: { color: tokens.colors.warningText, fontSize: 14, lineHeight: 20 },
-  loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8 },
-  loadingText: { color: tokens.colors.textMuted, fontSize: 14 },
+  qcmExplanation: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textSubtle,
+    fontSize: tokens.type.label.fontSize,
+    lineHeight: 20,
+    fontWeight: tokens.weight.medium,
+  },
+
+  refusalBanner: {
+    flexDirection: 'row',
+    backgroundColor: tokens.colors.warningBackground,
+    borderRadius: tokens.radius.md,
+    borderLeftWidth: 4,
+    borderLeftColor: tokens.colors.warningText,
+    padding: tokens.space.lg,
+    marginTop: tokens.space.xs,
+  },
+  refusalText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.warningText,
+    fontSize: tokens.type.label.fontSize,
+    lineHeight: 20,
+  },
+
+  loadingRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm, padding: tokens.space.sm },
+  loadingText: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.label.fontSize },
+
   disclaimer: {
+    fontFamily: tokens.font.sans,
     textAlign: 'center',
-    fontSize: 11,
+    fontSize: tokens.type.caption.fontSize,
     color: tokens.colors.textMuted,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    backgroundColor: tokens.colors.surface,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm,
+    backgroundColor: tokens.colors.surfaceAlt,
     borderTopWidth: 1,
     borderColor: tokens.colors.border,
   },
   inputRow: {
     flexDirection: 'row',
-    padding: 12,
-    gap: 8,
+    padding: tokens.space.md,
+    gap: tokens.space.sm,
     backgroundColor: tokens.colors.surface,
     borderTopWidth: 1,
     borderColor: tokens.colors.border,
@@ -419,25 +618,36 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    minHeight: 40,
+    minHeight: 44,
     maxHeight: 120,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: tokens.colors.background,
+    borderRadius: tokens.radius.lg,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.md,
+    backgroundColor: tokens.colors.surfaceSunken,
     borderWidth: 1,
     borderColor: tokens.colors.border,
     color: tokens.colors.text,
-    fontSize: 15,
+    fontFamily: tokens.font.sans,
+    fontSize: tokens.type.body.fontSize,
+  },
+  inputFocused: {
+    borderColor: tokens.colors.accent,
+    backgroundColor: tokens.colors.surface,
   },
   sendButton: {
-    height: 40,
-    paddingHorizontal: 18,
-    borderRadius: 20,
+    height: 44,
+    paddingHorizontal: tokens.space.xl,
+    borderRadius: tokens.radius.lg,
     backgroundColor: tokens.colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
+    ...tokens.elevation.sm,
   },
-  sendButtonDisabled: { opacity: 0.5 },
-  sendText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  sendButtonDisabled: { opacity: 0.45 },
+  sendText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.onAccent,
+    fontWeight: tokens.weight.semibold,
+    fontSize: tokens.type.label.fontSize,
+  },
 });

@@ -1,0 +1,80 @@
+{
+  "model": "text-embedding-3-small",
+  "note": "Jeu de questions FR pour mesurer le recall@k de match_rag_chunks (CC-03). Chaque question pointe vers le(s) chunk_id / doc attendu(s) dans le corpus réel. Les entrées out_of_corpus servent au contrôle cite-or-refuse (aucune source attendue). À étendre avec le corpus (Lot B).",
+  "questions": [
+    {
+      "id": "dt2-prediabete",
+      "question": "Que recommande la HAS en cas de prédiabète ?",
+      "expected_chunk_ids": ["has-dt2-parcours-2025-prevention-001"],
+      "expected_doc_id": "has-dt2-parcours-2025"
+    },
+    {
+      "id": "dt2-prevention-mode-vie",
+      "question": "Quelles mesures de prévention du diabète de type 2 sont conseillées ?",
+      "expected_chunk_ids": ["has-dt2-parcours-2025-prevention-001"],
+      "expected_doc_id": "has-dt2-parcours-2025"
+    },
+    {
+      "id": "dt2-surveillance",
+      "question": "Quelle surveillance proposer en cas de risque de diabète de type 2 ?",
+      "expected_chunk_ids": ["has-dt2-parcours-2025-prevention-001"],
+      "expected_doc_id": "has-dt2-parcours-2025"
+    },
+    {
+      "id": "dt2-activite-physique",
+      "question": "Quelle place pour l'activité physique dans la prise en charge du diabète de type 2 ?",
+      "expected_chunk_ids": ["has-dt2-parcours-2025-prise-en-charge-002"],
+      "expected_doc_id": "has-dt2-parcours-2025"
+    },
+    {
+      "id": "dt2-non-medicamenteux",
+      "question": "La HAS privilégie-t-elle une prise en charge non médicamenteuse du diabète de type 2 ?",
+      "expected_chunk_ids": ["has-dt2-parcours-2025-prise-en-charge-002"],
+      "expected_doc_id": "has-dt2-parcours-2025"
+    },
+    {
+      "id": "obesite-parcours",
+      "question": "Comment la HAS décrit-elle le parcours de soins du surpoids et de l'obésité de l'adulte ?",
+      "expected_chunk_ids": ["has-obesite-adulte-parcours-2023-001"],
+      "expected_doc_id": "has-obesite-adulte-parcours-2023"
+    },
+    {
+      "id": "obesite-pas-que-le-poids",
+      "question": "La prise en charge de l'obésité de l'adulte se réduit-elle au seul poids selon la HAS ?",
+      "expected_chunk_ids": ["has-obesite-adulte-parcours-2023-001"],
+      "expected_doc_id": "has-obesite-adulte-parcours-2023"
+    },
+    {
+      "id": "ains-bon-usage",
+      "question": "Quelles sont les règles de bon usage des AINS selon l'ANSM ?",
+      "expected_chunk_ids": ["ansm-ains-bon-usage-2013-001"],
+      "expected_doc_id": "ansm-ains-bon-usage-2013"
+    },
+    {
+      "id": "ains-duree",
+      "question": "Pendant combien de temps faut-il utiliser un anti-inflammatoire non stéroïdien ?",
+      "expected_chunk_ids": ["ansm-ains-bon-usage-2013-001"],
+      "expected_doc_id": "ansm-ains-bon-usage-2013"
+    },
+    {
+      "id": "ains-dose",
+      "question": "À quelle dose un anti-inflammatoire non stéroïdien doit-il être utilisé ?",
+      "expected_chunk_ids": ["ansm-ains-bon-usage-2013-001"],
+      "expected_doc_id": "ansm-ains-bon-usage-2013"
+    },
+    {
+      "id": "ooc-sclerose-en-plaques",
+      "question": "Quel est le traitement de fond de la sclérose en plaques ?",
+      "expected_chunk_ids": [],
+      "expected_doc_id": null,
+      "out_of_corpus": true
+    },
+    {
+      "id": "ooc-asthme-enfant",
+      "question": "Comment adapter le traitement de l'asthme chez l'enfant ?",
+      "expected_chunk_ids": [],
+      "expected_doc_id": null,
+      "out_of_corpus": true
+    }
+  ]
+}

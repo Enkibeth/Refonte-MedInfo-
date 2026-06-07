@@ -1,23 +1,169 @@
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { INTENDED_PURPOSE, getAiDisclosure } from '@/compliance/disclosures';
+import { Button } from '@/ui/Button';
+import { Icon, type IconName } from '@/ui/icons';
 import { Logo } from '@/ui/Logo';
+import { PersonaCard, type PersonaId } from '@/ui/PersonaCard';
+import { Reveal } from '@/ui/Reveal';
 import { tokens } from '@/ui/tokens';
 
-export default function HomeScreen() {
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.card}>
-        <Logo size="lg" />
-        <Text style={styles.tagline}>Information médicale générale, claire et sourcée.</Text>
-        <Text style={styles.body}>{INTENDED_PURPOSE}</Text>
-        <Text style={styles.notice}>{getAiDisclosure()}</Text>
+const TRUST_POINTS: { icon: IconName; title: string; text: string }[] = [
+  {
+    icon: 'shield',
+    title: 'Sources officielles',
+    text: 'Réponses appuyées sur HAS, ANSM, VIDAL, Thériaque, PubMed.',
+  },
+  {
+    icon: 'sparkles',
+    title: 'Transparence',
+    text: 'Chaque échange rappelle qu’il s’agit d’une IA et reste vérifiable.',
+  },
+  {
+    icon: 'bookOpen',
+    title: 'Références gratuites',
+    text: 'Les sources restent accessibles à tous, abonné ou non.',
+  },
+];
 
-        <View style={styles.links}>
-          <Link href="/(chat)/chat" style={styles.link}>Ouvrir le chat</Link>
-          <Link href="/(auth)/sign-in" style={styles.link}>Se connecter</Link>
-          <Link href="/(account)/account" style={styles.link}>Mon compte</Link>
+const PERSONAS: {
+  id: PersonaId;
+  eyebrow: string;
+  title: string;
+  description: string;
+  cta: string;
+  icon: IconName;
+  route: string;
+}[] = [
+  {
+    id: 'pro',
+    eyebrow: 'Professionnel',
+    title: 'Support à la décision clinique',
+    description: 'Calculateurs, recommandations HAS/ESC, interactions, synthèses fondées sur les preuves.',
+    cta: 'Lancer une recherche',
+    icon: 'stethoscope',
+    route: '/(account)/choose-role',
+  },
+  {
+    id: 'student',
+    eyebrow: 'Étudiant',
+    title: 'Apprendre, comprendre, réviser',
+    description: 'Cas cliniques, physiopathologie, questions EDN, raisonnement guidé pas à pas.',
+    cta: 'Poser ma question',
+    icon: 'brain',
+    route: '/(account)/choose-role',
+  },
+  {
+    id: 'public',
+    eyebrow: 'Grand public',
+    title: 'Vos questions de santé, simplement',
+    description: 'Comprenez votre traitement, vos symptômes, vos résultats — sans jargon, jamais un avis individuel.',
+    cta: 'Commencer à parler ici',
+    icon: 'users',
+    route: '/(chat)/chat',
+  },
+];
+
+export default function HomeScreen() {
+  const router = useRouter();
+
+  return (
+    <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+      {/* Hero plein écran, fort contraste (petrol profond / blanc) */}
+      <View style={styles.hero}>
+        <View style={styles.heroGlow} />
+        <View style={styles.heroGlowSecondary} />
+        <View style={styles.heroInner}>
+          <Reveal>
+            <Logo size="lg" tone="light" />
+          </Reveal>
+          <Reveal delay={tokens.motion.revealStagger}>
+            <View style={styles.eyebrowPill}>
+              <Text style={styles.eyebrowText}>Information médicale de référence</Text>
+            </View>
+          </Reveal>
+          <Reveal delay={tokens.motion.revealStagger * 2}>
+            <Text style={styles.headline}>
+              Des réponses santé claires,{'\n'}sourcées et sans détour.
+            </Text>
+          </Reveal>
+          <Reveal delay={tokens.motion.revealStagger * 3}>
+            <Text style={styles.subhead}>
+              Posez vos questions médicales et pharmacologiques. MedInfo AI répond à partir de la
+              littérature française et européenne — information générale, jamais un avis individuel.
+            </Text>
+          </Reveal>
+
+          <Reveal delay={tokens.motion.revealStagger * 4} style={styles.actions}>
+            <Button label="Ouvrir le chat" variant="inverse" onPress={() => router.push('/(chat)/chat')} />
+            <Button label="Se connecter" variant="outlineLight" onPress={() => router.push('/(auth)/sign-in')} />
+          </Reveal>
+        </View>
+      </View>
+
+      {/* Trois audiences — cartes persona */}
+      <View style={styles.section}>
+        <Reveal style={styles.sectionHead}>
+          <Text style={styles.sectionEyebrow}>Pour qui ?</Text>
+          <Text style={styles.sectionTitle}>Une IA médicale, trois usages</Text>
+        </Reveal>
+        <View style={styles.personaGrid}>
+          {PERSONAS.map((p, i) => (
+            <Reveal key={p.id} delay={tokens.motion.revealStagger * (i + 1)} style={styles.personaCell}>
+              <PersonaCard
+                persona={p.id}
+                eyebrow={p.eyebrow}
+                title={p.title}
+                description={p.description}
+                cta={p.cta}
+                icon={p.icon}
+                onPress={() => router.push(p.route as never)}
+              />
+            </Reveal>
+          ))}
+        </View>
+      </View>
+
+      {/* Bloc confiance sur fond alterné */}
+      <View style={styles.sectionAlt}>
+        <View style={styles.trustGrid}>
+          {TRUST_POINTS.map((p, i) => (
+            <Reveal key={p.title} delay={tokens.motion.revealStagger * i} style={styles.trustCell}>
+              <View style={styles.trustCard}>
+                <View style={styles.trustIcon}>
+                  <Icon name={p.icon} size={20} color={tokens.colors.accent} />
+                </View>
+                <Text style={styles.trustTitle}>{p.title}</Text>
+                <Text style={styles.trustText}>{p.text}</Text>
+              </View>
+            </Reveal>
+          ))}
+        </View>
+
+        <Reveal style={styles.purpose}>
+          <Text style={styles.purposeLabel}>Finalité prévue</Text>
+          <Text style={styles.purposeText}>{INTENDED_PURPOSE}</Text>
+        </Reveal>
+
+        <Reveal style={styles.notice}>
+          <View style={styles.noticeAccent} />
+          <Text style={styles.noticeText}>{getAiDisclosure()}</Text>
+        </Reveal>
+
+        <View style={styles.footerActions}>
+          <Button
+            label="Accéder à mon compte"
+            variant="ghost"
+            fullWidth={false}
+            onPress={() => router.push('/(account)/account')}
+          />
+          <Button
+            label="Informations légales"
+            variant="ghost"
+            fullWidth={false}
+            onPress={() => router.push('/(legal)/legal')}
+          />
         </View>
       </View>
     </ScrollView>
@@ -25,63 +171,210 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
+  root: { flex: 1, backgroundColor: tokens.colors.background },
+  content: { flexGrow: 1 },
+
+  // ── Hero ──
+  hero: {
+    backgroundColor: tokens.colors.accentDarker,
+    overflow: 'hidden',
+    paddingHorizontal: tokens.space.xl,
+    paddingTop: tokens.space['3xl'],
+    paddingBottom: tokens.space['3xl'],
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: tokens.colors.background,
   },
-  card: {
+  heroGlow: {
+    position: 'absolute',
+    top: -160,
+    right: -120,
+    width: 360,
+    height: 360,
+    borderRadius: 999,
+    backgroundColor: tokens.colors.accent,
+    opacity: 0.35,
+  },
+  heroGlowSecondary: {
+    position: 'absolute',
+    bottom: -200,
+    left: -140,
+    width: 320,
+    height: 320,
+    borderRadius: 999,
+    backgroundColor: tokens.colors.accentStrong,
+    opacity: 0.18,
+  },
+  heroInner: { width: '100%', maxWidth: 720, gap: tokens.space.md },
+  eyebrowPill: {
+    alignSelf: 'flex-start',
+    marginTop: tokens.space.xl,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: 6,
+  },
+  eyebrowText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentSurfaceStrong,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  headline: {
+    fontFamily: tokens.font.display,
+    color: tokens.colors.onAccent,
+    fontSize: tokens.type.display.fontSize,
+    lineHeight: tokens.type.display.lineHeight,
+    letterSpacing: tokens.type.display.letterSpacing,
+    fontWeight: tokens.weight.bold,
+  },
+  subhead: {
+    fontFamily: tokens.font.sans,
+    color: 'rgba(255,255,255,0.82)',
+    fontSize: tokens.type.bodyLg.fontSize,
+    lineHeight: tokens.type.bodyLg.lineHeight,
+    maxWidth: 600,
+  },
+  actions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: tokens.space.md,
+    marginTop: tokens.space.lg,
+    maxWidth: 420,
+  },
+
+  // ── Section personas ──
+  section: {
+    paddingHorizontal: tokens.space.xl,
+    paddingTop: tokens.space['3xl'],
+    paddingBottom: tokens.space.xl,
+    alignItems: 'center',
+  },
+  sectionHead: { width: '100%', maxWidth: 960, gap: tokens.space.xs, marginBottom: tokens.space.xl },
+  sectionEyebrow: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accent,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  sectionTitle: {
+    fontFamily: tokens.font.display,
+    color: tokens.colors.text,
+    fontSize: tokens.type.h1.fontSize,
+    lineHeight: tokens.type.h1.lineHeight,
+    letterSpacing: tokens.type.h1.letterSpacing,
+    fontWeight: tokens.weight.bold,
+  },
+  personaGrid: {
     width: '100%',
-    maxWidth: 760,
-    borderRadius: 28,
-    padding: 28,
+    maxWidth: 960,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: tokens.space.lg,
+  },
+  personaCell: { flexGrow: 1, flexBasis: 260, flexDirection: 'row' },
+
+  // ── Section claire alternée ──
+  sectionAlt: {
+    backgroundColor: tokens.colors.surfaceAlt,
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.border,
+    paddingHorizontal: tokens.space.xl,
+    paddingTop: tokens.space['2xl'],
+    paddingBottom: tokens.space['3xl'],
+    alignItems: 'center',
+  },
+  trustGrid: {
+    width: '100%',
+    maxWidth: 720,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: tokens.space.md,
+  },
+  trustCell: { flexGrow: 1, flexBasis: 200, flexDirection: 'row' },
+  trustCard: {
+    flex: 1,
+    borderRadius: tokens.radius.lg,
     backgroundColor: tokens.colors.surface,
     borderWidth: 1,
     borderColor: tokens.colors.border,
+    padding: tokens.space.lg,
+    gap: tokens.space.xs,
+    ...tokens.elevation.sm,
   },
-  eyebrow: {
-    color: tokens.colors.accent,
-    fontSize: 14,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 12,
+  trustIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: tokens.radius.sm,
+    backgroundColor: tokens.colors.accentSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: tokens.space.xs,
   },
-  title: {
+  trustTitle: {
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
-    fontSize: 36,
-    fontWeight: '800',
-    marginBottom: 16,
+    fontSize: tokens.type.h3.fontSize,
+    letterSpacing: tokens.type.h3.letterSpacing,
+    fontWeight: tokens.weight.bold,
   },
-  tagline: {
-    color: tokens.colors.text,
-    fontSize: 22,
-    fontWeight: '700',
-    marginTop: 20,
-    marginBottom: 12,
-  },
-  body: {
+  trustText: {
+    fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: tokens.type.label.fontSize,
+    lineHeight: tokens.type.label.lineHeight,
+  },
+  purpose: {
+    width: '100%',
+    maxWidth: 720,
+    marginTop: tokens.space.xl,
+    borderRadius: tokens.radius.lg,
+    backgroundColor: tokens.colors.accentSurface,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    padding: tokens.space.lg,
+    gap: tokens.space.xs,
+  },
+  purposeLabel: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  purposeText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.label.fontSize,
+    lineHeight: 21,
   },
   notice: {
-    marginTop: 20,
-    color: tokens.colors.warningText,
+    width: '100%',
+    maxWidth: 720,
+    flexDirection: 'row',
+    marginTop: tokens.space.md,
+    borderRadius: tokens.radius.md,
+    overflow: 'hidden',
     backgroundColor: tokens.colors.warningBackground,
-    borderRadius: 16,
-    padding: 16,
-    lineHeight: 22,
   },
-  links: {
-    marginTop: 24,
-    gap: 12,
+  noticeAccent: { width: 4, backgroundColor: tokens.colors.warningText },
+  noticeText: {
+    flex: 1,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.warningText,
+    fontSize: tokens.type.caption.fontSize,
+    lineHeight: 19,
+    padding: tokens.space.lg,
   },
-  link: {
-    color: tokens.colors.accent,
-    fontSize: 16,
-    fontWeight: '700',
+  footerActions: {
+    marginTop: tokens.space.lg,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: tokens.space.sm,
   },
 });

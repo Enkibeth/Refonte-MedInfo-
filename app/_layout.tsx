@@ -14,16 +14,27 @@ import { resolvePersonaRoute } from '@/ai/routing/persona';
  *   aucune surface UI pro servie.
  */
 function useProtectedRoute() {
-  const { session, persona, loading } = useSession();
+  const { session, persona, loading, passwordRecovery } = useSession();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
     if (loading) return;
     const inAuthGroup = segments[0] === '(auth)';
+    // Groupes publics accessibles sans session : accueil (landing/hero), authentification et
+    // pages légales (LCEN art. 6 : mentions légales accessibles à tous ; la landing avec ses
+    // CTA « Se connecter »/« Ouvrir le chat » doit rester visible déconnecté).
+    const inPublicGroup = inAuthGroup || segments[0] === undefined || segments[0] === '(legal)';
+
+    // Mode récupération de mot de passe : prioritaire sur toute autre redirection.
+    if (passwordRecovery) {
+      const onResetScreen = (segments as string[])[1] === 'reset-password';
+      if (!onResetScreen) router.replace('/(auth)/reset-password');
+      return;
+    }
 
     if (!session) {
-      if (!inAuthGroup) router.replace('/(auth)/sign-in');
+      if (!inPublicGroup) router.replace('/(auth)/sign-in');
       return;
     }
 
@@ -34,7 +45,7 @@ function useProtectedRoute() {
       // Persona reportée (professional) : pas d'accès au chat MVP.
       router.replace('/(account)/account');
     }
-  }, [session, persona, loading, segments, router]);
+  }, [session, persona, loading, passwordRecovery, segments, router]);
 }
 
 function RootNavigator() {
@@ -46,6 +57,8 @@ function RootNavigator() {
       <Stack.Screen name="(chat)" />
       <Stack.Screen name="(account)" />
       <Stack.Screen name="(billing)" />
+      <Stack.Screen name="(legal)" />
+      <Stack.Screen name="(admin)" />
     </Stack>
   );
 }

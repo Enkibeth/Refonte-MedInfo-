@@ -50,6 +50,11 @@ export async function POST(request: Request): Promise<Response> {
   if (userErr || !userData.user) return json({ error: 'Session invalide.' }, 401);
   const userId = userData.user.id;
 
+  // ── Bypass développement ────────────────────────────────────────────────────
+  // BYPASS_ROLE_VERIFICATION=true dans .env désactive toutes les vérifications.
+  // NE JAMAIS activer en production. Utile pour les tests et le staging.
+  const devBypass = process.env.BYPASS_ROLE_VERIFICATION === 'true';
+
   // Vérification selon le rôle.
   let status: 'unverified' | 'verified' = 'unverified';
   let method: 'none' | 'academic_email' | 'rpps' = 'none';
@@ -59,7 +64,7 @@ export async function POST(request: Request): Promise<Response> {
     method = 'none';
   } else if (persona === 'student') {
     const email = typeof body.email === 'string' ? body.email : '';
-    if (!isAcademicEmail(email)) {
+    if (!devBypass && !isAcademicEmail(email)) {
       return json({ error: 'Email étudiant non reconnu (domaine académique requis).' }, 422);
     }
     status = 'verified';
@@ -67,24 +72,30 @@ export async function POST(request: Request): Promise<Response> {
   } else {
     // professional
     const rpps = typeof body.rpps === 'string' ? body.rpps : '';
-    if (!isValidRppsFormat(rpps)) {
+    if (!devBypass && !isValidRppsFormat(rpps)) {
       return json({ error: 'Numéro RPPS invalide (11 chiffres attendus).' }, 422);
     }
-    // Lookup ANS Annuaire Santé (FHIR Practitioner?identifier=RPPS) — ADR-0011.
-    // Tant que la clé n'est pas configurée, on NE valide PAS le rôle pro (aucune auto-attribution).
-    if (!process.env.ANNUAIRE_SANTE_API_KEY) {
+    // Lookup ANS Annuaire Santé (FHIR) — ADR-0011.
+    // SÉCURITÉ : ne JAMAIS auto-valider un professionnel sans vérification réelle.
+    // - dev bypass → verified (jamais en prod).
+    // - sinon, sans ANNUAIRE_SANTE_API_KEY → statut `pending` SANS écriture en base
+    //   (la vérification FHIR réelle est implémentée par CC3 / branche determined-ride).
+    if (!devBypass && !process.env.ANNUAIRE_SANTE_API_KEY) {
       return json(
         {
+          ok: true,
+          persona,
           status: 'pending',
           message:
-            "Vérification RPPS à venir : l'intégration ANS Annuaire Santé doit être configurée (ANNUAIRE_SANTE_API_KEY).",
+            'Vérification professionnelle en attente : ANNUAIRE_SANTE_API_KEY non configurée. ' +
+            "Aucun accès professionnel n'est accordé tant que le RPPS n'est pas vérifié auprès de l'Annuaire Santé.",
         },
         202,
       );
     }
-    // TODO(ADR-0011) : appel FHIR réel + contrôle d'existence/état avant d'accorder le rôle.
+    // TODO (CC3) : avec ANNUAIRE_SANTE_API_KEY, appeler le FHIR Practitioner réel.
     status = 'verified';
-    method = 'rpps';
+    method = devBypass ? 'none' : 'rpps';
   }
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } });

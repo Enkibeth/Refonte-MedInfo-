@@ -30,11 +30,46 @@ export function getAuthRedirectTo(): string {
 
 export type OAuthProvider = 'google' | 'apple';
 
+/**
+ * Convertit un message d'erreur Supabase/réseau brut en message FR clair et actionnable.
+ * Évite de laisser fuiter des libellés techniques (« Type error », « Failed to fetch »…)
+ * dans l'UI (cf retour terrain : « Type error » à la connexion).
+ */
+export function toFriendlyAuthError(raw: unknown): string {
+  const message =
+    raw instanceof Error ? raw.message : typeof raw === 'string' ? raw : String(raw ?? '');
+  const m = message.toLowerCase();
+
+  if (
+    m.includes('failed to fetch') ||
+    m.includes('load failed') ||
+    m.includes('networkerror') ||
+    m.includes('network request failed') ||
+    m === 'type error' ||
+    m.includes('typeerror') ||
+    m.includes('fetch')
+  ) {
+    return "Service d'authentification momentanément injoignable. Vérifie ta connexion et réessaie.";
+  }
+  if (m.includes('invalid login credentials')) return 'Email ou mot de passe incorrect.';
+  if (m.includes('email not confirmed')) return 'Email non confirmé. Vérifie ta boîte mail (et les spams).';
+  if (m.includes('user already registered')) return 'Un compte existe déjà avec cet email. Connecte-toi.';
+  if (m.includes('password should be') || m.includes('at least 6')) return 'Mot de passe trop court (6 caractères minimum).';
+  if (m.includes('provider is not enabled') || m.includes('unsupported provider')) {
+    return "Cette méthode de connexion n'est pas encore activée. Utilise l'email pour le moment.";
+  }
+  if (m.includes('rate limit') || m.includes('too many')) return 'Trop de tentatives. Patiente un instant avant de réessayer.';
+  if (m.includes('for security purposes') || m.includes('seconds')) return message; // délai d'envoi email : message Supabase déjà lisible
+  return message || 'Une erreur est survenue. Réessaie.';
+}
+
 export interface SessionState {
   session: Session | null;
   user: User | null;
   persona: Persona | null;
   loading: boolean;
+  /** True après l'ouverture d'un lien de réinitialisation (événement PASSWORD_RECOVERY). */
+  passwordRecovery: boolean;
   /** Connexion email + mot de passe. */
   signInWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
   /** Inscription email + mot de passe (confirmation email selon config Supabase). */
@@ -44,6 +79,12 @@ export interface SessionState {
   ) => Promise<{ error: string | null; needsConfirmation: boolean }>;
   /** Renvoi de l'email de confirmation Supabase pour une inscription non confirmée. */
   resendSignupConfirmation: (email: string) => Promise<{ error: string | null }>;
+  /** Envoi du lien de réinitialisation de mot de passe. */
+  sendPasswordReset: (email: string) => Promise<{ error: string | null }>;
+  /** Définit un nouveau mot de passe (session de récupération active). */
+  updatePassword: (password: string) => Promise<{ error: string | null }>;
+  /** Sort du mode récupération (après mise à jour réussie). */
+  clearPasswordRecovery: () => void;
   /** Connexion OAuth (Google / Apple), redirection web. */
   signInWithOAuth: (provider: OAuthProvider) => Promise<{ error: string | null }>;
   /** Magic link OTP (option conservée, ADR-0007). */
@@ -71,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [persona, setPersona] = useState<Persona | null>(null);
   const [loading, setLoading] = useState(true);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
 
   useEffect(() => {
     const supabase = getSupabaseClient();
@@ -83,8 +125,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, next) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, next) => {
       if (!active) return;
+      // Lien de réinitialisation ouvert : on bascule en mode récupération (cf garde de route).
+      if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
       setSession(next);
       setPersona(next?.user ? await fetchPersona(next.user.id) : null);
     });
@@ -101,51 +145,97 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: session?.user ?? null,
       persona,
       loading,
+      passwordRecovery,
       async signInWithPassword(email: string, password: string) {
-        const supabase = getSupabaseClient();
-        const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim().toLowerCase(),
-          password,
-        });
-        return { error: error?.message ?? null };
+        try {
+          const supabase = getSupabaseClient();
+          const { error } = await supabase.auth.signInWithPassword({
+            email: email.trim().toLowerCase(),
+            password,
+          });
+          return { error: error ? toFriendlyAuthError(error.message) : null };
+        } catch (e) {
+          return { error: toFriendlyAuthError(e) };
+        }
       },
       async signUpWithPassword(email: string, password: string) {
-        const supabase = getSupabaseClient();
-        const { data, error } = await supabase.auth.signUp({
-          email: email.trim().toLowerCase(),
-          password,
-          options: { emailRedirectTo: getAuthRedirectTo() },
-        });
-        // Si la confirmation email est activée, la session est nulle jusqu'à confirmation.
-        return {
-          error: error?.message ?? null,
-          needsConfirmation: !error && !data.session,
-        };
+        try {
+          const supabase = getSupabaseClient();
+          const { data, error } = await supabase.auth.signUp({
+            email: email.trim().toLowerCase(),
+            password,
+            options: { emailRedirectTo: getAuthRedirectTo() },
+          });
+          // Si la confirmation email est activée, la session est nulle jusqu'à confirmation.
+          return {
+            error: error ? toFriendlyAuthError(error.message) : null,
+            needsConfirmation: !error && !data.session,
+          };
+        } catch (e) {
+          return { error: toFriendlyAuthError(e), needsConfirmation: false };
+        }
       },
       async resendSignupConfirmation(email: string) {
-        const supabase = getSupabaseClient();
-        const { error } = await supabase.auth.resend({
-          type: 'signup',
-          email: email.trim().toLowerCase(),
-          options: { emailRedirectTo: getAuthRedirectTo() },
-        });
-        return { error: error?.message ?? null };
+        try {
+          const supabase = getSupabaseClient();
+          const { error } = await supabase.auth.resend({
+            type: 'signup',
+            email: email.trim().toLowerCase(),
+            options: { emailRedirectTo: getAuthRedirectTo() },
+          });
+          return { error: error ? toFriendlyAuthError(error.message) : null };
+        } catch (e) {
+          return { error: toFriendlyAuthError(e) };
+        }
+      },
+      async sendPasswordReset(email: string) {
+        try {
+          const supabase = getSupabaseClient();
+          // redirectTo = Site URL (déjà autorisée) : la session de récupération est captée
+          // au retour via l'événement PASSWORD_RECOVERY, qui route vers l'écran dédié.
+          const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+            redirectTo: getAuthRedirectTo(),
+          });
+          return { error: error ? toFriendlyAuthError(error.message) : null };
+        } catch (e) {
+          return { error: toFriendlyAuthError(e) };
+        }
+      },
+      async updatePassword(password: string) {
+        try {
+          const supabase = getSupabaseClient();
+          const { error } = await supabase.auth.updateUser({ password });
+          return { error: error ? toFriendlyAuthError(error.message) : null };
+        } catch (e) {
+          return { error: toFriendlyAuthError(e) };
+        }
+      },
+      clearPasswordRecovery() {
+        setPasswordRecovery(false);
       },
       async signInWithOAuth(provider: OAuthProvider) {
-        const supabase = getSupabaseClient();
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider,
-          options: { redirectTo: getAuthRedirectTo() },
-        });
-        return { error: error?.message ?? null };
+        try {
+          const supabase = getSupabaseClient();
+          const { error } = await supabase.auth.signInWithOAuth({
+            provider,
+            options: { redirectTo: getAuthRedirectTo() },
+          });
+          return { error: error ? toFriendlyAuthError(error.message) : null };
+        } catch (e) {
+          return { error: toFriendlyAuthError(e) };
+        }
       },
       async signInWithEmail(email: string) {
-        const supabase = getSupabaseClient();
-        const { error } = await supabase.auth.signInWithOtp({
-          email: email.trim().toLowerCase(),
-          options: { emailRedirectTo: getAuthRedirectTo() },
-        });
-        return { error: error?.message ?? null };
+        try {
+          const supabase = getSupabaseClient();
+          const { error } = await supabase.auth.signInWithOtp({
+            email: email.trim().toLowerCase(),
+            options: { emailRedirectTo: getAuthRedirectTo() },
+          });
+          return { error: error ? toFriendlyAuthError(error.message) : null };
+        } catch (e) {
+          return { error: toFriendlyAuthError(e) };
+        }
       },
       async requestRole(persona: Persona, proof?: { email?: string; rpps?: string }) {
         const token = session?.access_token;
@@ -173,7 +263,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await getSupabaseClient().auth.signOut();
       },
     }),
-    [session, persona, loading],
+    [session, persona, loading, passwordRecovery],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
