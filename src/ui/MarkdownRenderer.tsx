@@ -1,10 +1,11 @@
 /**
  * Lightweight markdown renderer for AI chat responses.
- * Handles: ##/### headings, **bold**, tables (|col|), - lists, --- hr.
+ * Handles: ##/### headings, **bold**, tables (|col|), - lists, --- hr,
+ * et liens markdown → notes de bas de page numérotées cliquables.
  * No external dependency — uses React Native primitives + design tokens.
  */
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Platform } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Platform, Linking } from 'react-native';
 import { tokens } from './tokens';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -20,29 +21,67 @@ type Block =
   | { kind: 'paragraph'; text: string }
   | { kind: 'spacer' };
 
-// ── Inline parser ────────────────────────────────────────────────────────────
+// ── Inline parser + notes de bas de page cliquables ───────────────────────────
+// Les liens markdown `[label](url)` (souvent de longues URL brutes en fin de phrase)
+// sont remplacés par un petit exposant numéroté ¹ ² cliquable qui ouvre la source.
+// On supprime ainsi les URL disgracieuses ET le débordement horizontal qu'elles
+// provoquaient. Numérotation par ordre d'apparition, URL identiques regroupées, via
+// un registre partagé entre tous les blocs d'un même message.
 
-const INLINE_RE = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+type FootnoteRegistry = { urls: string[] };
 
-function parseInline(text: string, base: object, key?: string): React.ReactNode {
-  const segments = text.split(INLINE_RE);
-  if (segments.length === 1) {
-    return <Text key={key} style={base}>{text}</Text>;
+function footnoteNumber(url: string, reg: FootnoteRegistry): number {
+  let idx = reg.urls.indexOf(url);
+  if (idx < 0) {
+    reg.urls.push(url);
+    idx = reg.urls.length - 1;
   }
+  return idx + 1;
+}
+
+// bold | code | lien markdown (parenthèses englobantes éventuelles absorbées).
+const INLINE_RE = /(\*\*[^*]+\*\*|`[^`]+`|\(?\s*\[[^\]]+\]\(https?:\/\/[^\s)]+\)\s*\)?)/g;
+const LINK_URL_RE = /\[[^\]]+\]\((https?:\/\/[^\s)]+)\)/;
+
+function parseInline(
+  text: string,
+  base: object,
+  reg: FootnoteRegistry,
+  key?: string,
+): React.ReactNode {
   return (
     <Text key={key} style={base}>
-      {segments.map((seg, i) => {
+      {text.split(INLINE_RE).map((seg, i) => {
+        if (!seg) return null;
         if (seg.startsWith('**') && seg.endsWith('**')) {
           return (
-            <Text key={i} style={[base as any, inlineStyles.bold]}>
+            <Text key={i} style={inlineStyles.bold}>
               {seg.slice(2, -2)}
             </Text>
           );
         }
         if (seg.startsWith('`') && seg.endsWith('`')) {
           return (
-            <Text key={i} style={[base as any, inlineStyles.code]}>
+            <Text key={i} style={inlineStyles.code}>
               {seg.slice(1, -1)}
+            </Text>
+          );
+        }
+        const link = seg.match(LINK_URL_RE);
+        if (link) {
+          const url = link[1];
+          const num = footnoteNumber(url, reg);
+          return (
+            <Text
+              key={i}
+              style={inlineStyles.footnote}
+              onPress={() => {
+                Linking.openURL(url).catch(() => {});
+              }}
+              accessibilityRole="link"
+              accessibilityLabel={`Source ${num}`}
+            >
+              {num}
             </Text>
           );
         }
@@ -214,15 +253,19 @@ export function MarkdownRenderer({
   const textColor = onDark ? tokens.colors.onAccent : tokens.colors.text;
   const mutedColor = onDark ? 'rgba(255,255,255,0.75)' : tokens.colors.textMuted;
 
+  // Registre de notes reconstruit à chaque rendu : la numérotation suit l'ordre
+  // d'apparition des liens, cohérente entre tous les blocs du message.
+  const footnotes: FootnoteRegistry = { urls: [] };
+
   return (
     <View style={mdStyles.container}>
       {blocks.map((block, i) => {
         switch (block.kind) {
           case 'h2':
-            return parseInline(block.text, { ...mdStyles.h2, color: textColor }, String(i));
+            return parseInline(block.text, { ...mdStyles.h2, color: textColor }, footnotes, String(i));
 
           case 'h3':
-            return parseInline(block.text, { ...mdStyles.h3, color: textColor }, String(i));
+            return parseInline(block.text, { ...mdStyles.h3, color: textColor }, footnotes, String(i));
 
           case 'hr':
             return (
@@ -241,7 +284,7 @@ export function MarkdownRenderer({
                 <Text style={[mdStyles.bullet, { color: mutedColor }]}>
                   {block.ordered ? `${block.index}.` : '•'}
                 </Text>
-                {parseInline(block.text, { ...mdStyles.listText, color: textColor })}
+                {parseInline(block.text, { ...mdStyles.listText, color: textColor }, footnotes)}
               </View>
             );
 
@@ -249,7 +292,7 @@ export function MarkdownRenderer({
             return <TableBlock key={i} rows={block.rows} />;
 
           case 'paragraph':
-            return parseInline(block.text, { ...mdStyles.paragraph, color: textColor }, String(i));
+            return parseInline(block.text, { ...mdStyles.paragraph, color: textColor }, footnotes, String(i));
 
           case 'spacer':
             return <View key={i} style={mdStyles.spacer} />;
@@ -309,6 +352,14 @@ const inlineStyles = StyleSheet.create({
     backgroundColor: tokens.colors.surfaceSunken,
     borderRadius: 3,
     paddingHorizontal: 3,
+  },
+  // Exposant de source : petit numéro accent cliquable (style « ¹ ² »).
+  footnote: {
+    fontFamily: tokens.font.sans,
+    fontSize: 11,
+    fontWeight: tokens.weight.bold,
+    color: tokens.colors.accent,
+    ...Platform.select({ web: { verticalAlign: 'super' } as object, default: {} }),
   },
 });
 

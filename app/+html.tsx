@@ -14,7 +14,7 @@ export default function Root({ children }: PropsWithChildren) {
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no" />
         <meta name="theme-color" content="#0A4D68" />
 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -34,6 +34,13 @@ export default function Root({ children }: PropsWithChildren) {
 
 const baseStyle = `
 html, body { background-color: #FAFBFC; }
+/* Hauteur dynamique (dvh) : sur Safari mobile, la barre d'outils du navigateur ne
+   recouvre plus le contenu → la barre d'onglets du bas reste entièrement visible.
+   overflow-x masqué : un token très long (URL) ne crée plus de défilement horizontal
+   qui décalait le header (bouton « Sources » coupé). */
+html, body, #root { height: 100%; }
+#root { display: flex; flex-direction: column; min-height: 100dvh; }
+body { overflow-x: hidden; }
 * {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
