@@ -115,4 +115,12 @@ describe('annuaireConfigFromEnv', () => {
       keyHeader: 'GRAVITEE-API-KEY',
     });
   });
+  it('nettoie les guillemets/espaces collés par erreur dans la clé (sinon 401)', () => {
+    vi.stubEnv('ANNUAIRE_SANTE_API_KEY', '  "abc-123"\n');
+    expect(annuaireConfigFromEnv()?.apiKey).toBe('abc-123');
+  });
+  it('traite une clé vide après nettoyage comme absente', () => {
+    vi.stubEnv('ANNUAIRE_SANTE_API_KEY', '   ""   ');
+    expect(annuaireConfigFromEnv()).toBeNull();
+  });
 });

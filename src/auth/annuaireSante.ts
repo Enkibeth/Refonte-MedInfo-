@@ -51,15 +51,26 @@ export type RppsVerification =
   /** API injoignable / réponse illisible → fail-closed (mettre « en attente », ne rien écrire). */
   | { status: 'unavailable'; reason: string };
 
+/**
+ * Normalise une valeur d'env : retire les espaces/sauts de ligne et d'éventuels guillemets
+ * englobants (erreur de copier-coller fréquente dans un dashboard). Une clé entourée de
+ * guillemets produit un en-tête invalide → 401 côté gateway → fail-closed silencieux.
+ */
+function cleanEnv(value: string | undefined): string | undefined {
+  if (value == null) return undefined;
+  const trimmed = value.trim().replace(/^["']|["']$/g, '').trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 /** Construit la config depuis l'environnement serveur (ou null si la clé manque). */
 export function annuaireConfigFromEnv(): AnnuaireSanteConfig | null {
-  const apiKey = process.env.ANNUAIRE_SANTE_API_KEY;
+  const apiKey = cleanEnv(process.env.ANNUAIRE_SANTE_API_KEY);
   if (!apiKey) return null;
   return {
     apiKey,
-    baseUrl: process.env.ANNUAIRE_SANTE_API_URL,
-    keyHeader: process.env.ANNUAIRE_SANTE_API_KEY_HEADER,
-    rppsSystem: process.env.ANNUAIRE_SANTE_RPPS_SYSTEM,
+    baseUrl: cleanEnv(process.env.ANNUAIRE_SANTE_API_URL),
+    keyHeader: cleanEnv(process.env.ANNUAIRE_SANTE_API_KEY_HEADER),
+    rppsSystem: cleanEnv(process.env.ANNUAIRE_SANTE_RPPS_SYSTEM),
   };
 }
 
@@ -92,12 +103,17 @@ export async function verifyRpps(
       signal: controller.signal,
     });
   } catch (e) {
-    return { status: 'unavailable', reason: e instanceof Error ? e.message : 'réseau' };
+    const reason = e instanceof Error ? e.message : 'réseau';
+    console.error('[annuaireSante] appel ANS échoué (réseau/timeout):', reason);
+    return { status: 'unavailable', reason };
   } finally {
     clearTimeout(timer);
   }
 
   if (!response.ok) {
+    // 401/403 ⇒ clé/abonnement/en-tête invalides (souvent une clé mal collée dans l'env).
+    // Aucune donnée sensible n'est journalisée : seuls le statut HTTP et l'URL de base.
+    console.error(`[annuaireSante] réponse non-OK de l'ANS: HTTP ${response.status} (base=${base})`);
     return { status: 'unavailable', reason: `HTTP ${response.status}` };
   }
 
@@ -105,6 +121,7 @@ export async function verifyRpps(
   try {
     bundle = await response.json();
   } catch {
+    console.error('[annuaireSante] réponse FHIR illisible (JSON invalide)');
     return { status: 'unavailable', reason: 'réponse FHIR illisible' };
   }
 
