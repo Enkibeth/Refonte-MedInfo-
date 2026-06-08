@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Analytics } from '@vercel/analytics/react';
 
 import { MedInfoThemeProvider } from '@/ui/MedInfoThemeProvider';
 import { AuthProvider, useSession } from '@/auth/AuthProvider';
@@ -72,6 +73,7 @@ export default function RootLayout() {
           <RootNavigator />
         </AuthProvider>
         <StatusBar style="auto" />
+        <Analytics />
       </MedInfoThemeProvider>
     </SafeAreaProvider>
   );
