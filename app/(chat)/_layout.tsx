@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
-import { Platform, Text, View, StyleSheet } from 'react-native';
+import { Text, View, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
@@ -26,18 +27,28 @@ function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
 export default function ChatLayout() {
   const { persona, user } = useSession();
   const isAdmin = user ? isAdminUserId(user.id) : false;
+  const insets = useSafeAreaInsets();
 
   const hrefFor = (feature: AppFeatureId) =>
     isFeatureVisible(feature, persona, { isAdmin }) ? undefined : null;
+
+  // Hauteur de la barre = contenu (icône + label) + marge de sécurité système
+  // (encoche / home indicator / barre Safari). Sans cela, les libellés étaient coupés.
+  const bottomInset = Math.max(insets.bottom, tokens.space.sm);
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: tabStyles.bar,
+        tabBarStyle: [
+          tabStyles.bar,
+          { height: TAB_CONTENT_HEIGHT + bottomInset, paddingBottom: bottomInset },
+        ],
+        tabBarItemStyle: tabStyles.item,
         tabBarActiveTintColor: tokens.colors.accent,
         tabBarInactiveTintColor: tokens.colors.textMuted,
         tabBarLabelStyle: tabStyles.label,
+        tabBarActiveBackgroundColor: 'transparent',
       }}
     >
       <Tabs.Screen
@@ -64,38 +75,40 @@ export default function ChatLayout() {
   );
 }
 
+// Hauteur du contenu de la barre (icône + label), hors marge système.
+const TAB_CONTENT_HEIGHT = 58;
+
 const tabStyles = StyleSheet.create({
   bar: {
     backgroundColor: tokens.colors.surface,
     borderTopColor: tokens.colors.border,
     borderTopWidth: 1,
-    height: Platform.OS === 'ios' ? 84 : 64,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 8,
-    paddingTop: 8,
-    ...Platform.select({
-      web: { boxShadow: '0 -1px 0 ' + tokens.colors.border } as any,
-      default: {},
-    }),
+    paddingTop: tokens.space.sm,
+    ...tokens.elevation.md,
   },
+  item: { paddingTop: 2 },
   label: {
     fontFamily: tokens.font.sans,
     fontSize: 11,
     fontWeight: tokens.weight.semibold,
+    marginTop: 2,
   },
   // Pastille d'arrière-plan sur l'outil actif → repère visuel net de la sélection.
   iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 44,
+    minWidth: 52,
     height: 30,
     borderRadius: tokens.radius.pill,
     borderWidth: 1,
     borderColor: 'transparent',
+    ...tokens.motion.transitionWeb,
   },
+  // Sélection « en gros » : pastille teintée pleine + contour accent net.
   iconWrapActive: {
-    backgroundColor: tokens.colors.accentSurface,
-    borderColor: tokens.colors.accentSurfaceStrong,
+    backgroundColor: tokens.colors.accentSurfaceStrong,
+    borderColor: tokens.colors.accent,
   },
-  emoji: { fontSize: 20, opacity: 0.6 },
+  emoji: { fontSize: 20, opacity: 0.55 },
   emojiActive: { opacity: 1 },
 });
