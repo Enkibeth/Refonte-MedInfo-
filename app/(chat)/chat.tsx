@@ -380,36 +380,28 @@ export default function ChatScreen() {
           >
             <Text style={styles.headerIconText}>⚙︎</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.headerIconButton,
-              sourcesOpen && styles.headerIconButtonActive,
-              !hasSources && styles.headerIconButtonDisabled,
-            ]}
-            onPress={() => setSourcesOpen((open) => !open)}
-            disabled={!hasSources}
-            accessibilityRole="button"
-            accessibilityLabel={`Sources (${latestCitations.length})`}
-          >
-            <Icon
-              name="bookOpen"
-              size={18}
-              color={
-                sourcesOpen
-                  ? tokens.colors.onAccent
-                  : hasSources
-                    ? tokens.colors.accentDeep
-                    : tokens.colors.textMuted
-              }
-            />
-            {hasSources ? (
+          {/* Le bouton Sources n'apparaît qu'une fois des citations disponibles :
+              sans réponse sourcée il n'a aucune action et son état désactivé était
+              quasi invisible (bug « on ne voit rien / ça ne marche pas »). */}
+          {hasSources ? (
+            <TouchableOpacity
+              style={[styles.headerIconButton, sourcesOpen && styles.headerIconButtonActive]}
+              onPress={() => setSourcesOpen((open) => !open)}
+              accessibilityRole="button"
+              accessibilityLabel={`Sources (${latestCitations.length})`}
+            >
+              <Icon
+                name="bookOpen"
+                size={18}
+                color={sourcesOpen ? tokens.colors.onAccent : tokens.colors.accentDeep}
+              />
               <View style={[styles.sourcesBadge, sourcesOpen && styles.sourcesBadgeOnAccent]}>
                 <Text style={[styles.sourcesBadgeText, sourcesOpen && styles.sourcesBadgeTextOnAccent]}>
                   {latestCitations.length}
                 </Text>
               </View>
-            ) : null}
-          </TouchableOpacity>
+            </TouchableOpacity>
+          ) : null}
         </View>
       </View>
 
@@ -495,7 +487,7 @@ export default function ChatScreen() {
             canSend && pressed && styles.sendButtonPressed,
           ]}
         >
-          <Icon name="arrowUp" size={20} color={canSend ? tokens.colors.onAccent : tokens.colors.textMuted} />
+          <Icon name="arrowUp" size={20} color={tokens.colors.onAccent} />
         </Pressable>
       </View>
     </KeyboardAvoidingView>
@@ -534,10 +526,6 @@ const styles = StyleSheet.create({
   headerIconButtonActive: {
     backgroundColor: tokens.colors.accent,
     borderColor: tokens.colors.accent,
-  },
-  headerIconButtonDisabled: {
-    backgroundColor: 'transparent',
-    borderColor: tokens.colors.border,
   },
   headerIconText: {
     fontSize: 18,
@@ -800,11 +788,12 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.surface,
     ...tokens.focus.ring,
   },
-  // Bouton d'envoi façon Claude : carré au coin doux, accent MedInfo, états soignés.
+  // Bouton d'envoi classique : pastille ronde pleine, flèche blanche toujours
+  // lisible (y compris désactivé → simple gris doux, jamais une flèche fantôme).
   sendButton: {
     width: tokens.size.controlMd,
     height: tokens.size.controlMd,
-    borderRadius: tokens.radius.md,
+    borderRadius: tokens.radius.pill,
     backgroundColor: tokens.colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
@@ -813,12 +802,10 @@ const styles = StyleSheet.create({
   },
   sendButtonHover: { backgroundColor: tokens.colors.accentStrong, transform: [{ translateY: -1 }], ...tokens.elevation.md },
   sendButtonFocus: tokens.focus.ring,
-  sendButtonPressed: { transform: [{ translateY: 1 }], opacity: 0.92 },
-  // Désactivé : pas de simple opacité — surface enfoncée + flèche atténuée (lisible).
+  sendButtonPressed: { transform: [{ scale: 0.94 }], opacity: 0.95 },
+  // Désactivé : pastille gris doux, la flèche blanche reste nette et visible.
   sendButtonDisabled: {
-    backgroundColor: tokens.colors.surfaceSunken,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.borderStrong,
     ...Platform.select({ web: { boxShadow: 'none' } as object, default: {} }),
   },
 });

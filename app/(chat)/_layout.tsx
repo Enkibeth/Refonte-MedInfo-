@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
-import { Text, View, StyleSheet } from 'react-native';
+import type { ReactNode } from 'react';
+import { Pressable, Text, View, StyleSheet, type GestureResponderEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSession } from '@/auth/AuthProvider';
@@ -8,10 +9,44 @@ import { isFeatureVisible, type AppFeatureId } from '@/ai/routing/featureVisibil
 import { tokens } from '@/ui/tokens';
 
 function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
+  return <Text style={[tabStyles.emoji, focused && tabStyles.emojiActive]}>{emoji}</Text>;
+}
+
+/**
+ * Bouton d'onglet personnalisé : la surbrillance de sélection entoure **tout** le
+ * mode (icône + libellé) au lieu d'une pastille autour de la seule icône — la
+ * sélection « n'entourait pas entièrement le mode ».
+ */
+type TabBarButtonProps = {
+  children?: ReactNode;
+  onPress?: (e: GestureResponderEvent) => void;
+  onLongPress?: (e: GestureResponderEvent) => void;
+  accessibilityState?: { selected?: boolean };
+  accessibilityLabel?: string;
+  testID?: string;
+};
+
+function TabBarButton({
+  children,
+  onPress,
+  onLongPress,
+  accessibilityState,
+  accessibilityLabel,
+  testID,
+}: TabBarButtonProps) {
+  const focused = accessibilityState?.selected ?? false;
   return (
-    <View style={[tabStyles.iconWrap, focused && tabStyles.iconWrapActive]}>
-      <Text style={[tabStyles.emoji, focused && tabStyles.emojiActive]}>{emoji}</Text>
-    </View>
+    <Pressable
+      onPress={onPress}
+      onLongPress={onLongPress}
+      accessibilityRole="tab"
+      accessibilityState={accessibilityState}
+      accessibilityLabel={accessibilityLabel}
+      testID={testID}
+      style={tabStyles.button}
+    >
+      <View style={[tabStyles.pill, focused && tabStyles.pillActive]}>{children}</View>
+    </Pressable>
   );
 }
 
@@ -49,6 +84,9 @@ export default function ChatLayout() {
         tabBarInactiveTintColor: tokens.colors.textMuted,
         tabBarLabelStyle: tabStyles.label,
         tabBarActiveBackgroundColor: 'transparent',
+        // Le type exact (BottomTabBarButtonProps) vient d'une dépendance transitive ;
+        // on n'en consomme qu'un sous-ensemble stable (cf. TabBarButtonProps).
+        tabBarButton: (props) => <TabBarButton {...(props as unknown as TabBarButtonProps)} />,
       }}
     >
       <Tabs.Screen
@@ -93,20 +131,29 @@ const tabStyles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
     marginTop: 2,
   },
-  // Pastille d'arrière-plan sur l'outil actif → repère visuel net de la sélection.
-  iconWrap: {
+  // Conteneur plein de l'onglet : centre le contenu et laisse respirer la pastille.
+  button: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 52,
-    height: 30,
-    borderRadius: tokens.radius.pill,
+    paddingHorizontal: tokens.space.xs,
+  },
+  // Surbrillance qui entoure TOUT le mode (icône + libellé), pas juste l'icône.
+  pill: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'stretch',
+    paddingTop: 4,
+    paddingBottom: 3,
+    paddingHorizontal: tokens.space.sm,
+    borderRadius: tokens.radius.lg,
     borderWidth: 1,
     borderColor: 'transparent',
     ...tokens.motion.transitionWeb,
   },
-  // Sélection « en gros » : pastille teintée pleine + contour accent net.
-  iconWrapActive: {
-    backgroundColor: tokens.colors.accentSurfaceStrong,
+  // Sélection nette : pastille teintée pleine + contour accent englobant le libellé.
+  pillActive: {
+    backgroundColor: tokens.colors.accentSurface,
     borderColor: tokens.colors.accent,
   },
   emoji: { fontSize: 20, opacity: 0.55 },
