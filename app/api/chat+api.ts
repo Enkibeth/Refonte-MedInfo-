@@ -28,6 +28,7 @@ import { CHAT_PERSONAS, resolveChatPersona } from '@/ai/routing/serverPersona';
 import { getActivePrompt } from '@/ai/prompts/index';
 import { buildRefusalChunks } from '@/ai/guardrails/refusalStream';
 import { gateUiMessageStream, type GateReport } from '@/ai/guardrails/streamGate';
+import { guardrailsEnabled } from '@/ai/guardrails/config';
 import { logInteraction } from '@/ai/logging/logInteraction';
 import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
 import { retrieveRagContext, buildRagSystemSection } from '@/rag/retrieval';
@@ -134,10 +135,15 @@ export async function POST(request: Request): Promise<Response> {
   // injecté SI configuré : il relit les tours que le regex ne tranche pas pour réduire les
   // sur-refus `ambiguous` (07_CLASSIFIER §2-4) sans jamais court-circuiter le refus
   // déterministe des marqueurs explicites. Sans clé Gemini → undefined → fail-safe inchangé.
-  const screen = await screenConversation(uiMessages, {
-    allowFictiveEducationalCases: persona === 'student',
-    llmStage2: getStage2Classifier(),
-  });
+  //
+  // INTERRUPTEUR safe-box (ADR-0023) : neutralisée par défaut le temps de stabiliser le
+  // chat (réactivation via MEDINFO_GUARDRAILS=on). Quand off, la couche 1 laisse passer.
+  const screen = guardrailsEnabled()
+    ? await screenConversation(uiMessages, {
+        allowFictiveEducationalCases: persona === 'student',
+        llmStage2: getStage2Classifier(),
+      })
+    : { allowed: true as const, category: 'general_info' as const };
 
   if (!screen.allowed) {
     await logInteraction({
@@ -202,8 +208,12 @@ export async function POST(request: Request): Promise<Response> {
       // par préfixes DÉJÀ validés ; dès qu'un marqueur diagnostique apparaît dans le
       // cumul, on remplace par le refus canonique et on coupe la suite. Décision
       // identique à la validation bufferisée (validateOutput monotone), mais progressive.
+      // INTERRUPTEUR safe-box (ADR-0023) : si off, on diffuse le flux brut sans validation.
       const report: GateReport = { blocked: false, fullText: '' };
-      for await (const chunk of gateUiMessageStream(result.toUIMessageStream(), generateId, report)) {
+      const gated = guardrailsEnabled()
+        ? gateUiMessageStream(result.toUIMessageStream(), generateId, report)
+        : result.toUIMessageStream();
+      for await (const chunk of gated) {
         writer.write(chunk);
       }
 
