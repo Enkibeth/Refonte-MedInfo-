@@ -10,12 +10,19 @@ export function Card({
   children,
   style,
   padded = true,
+  elevation = 'sm',
 }: {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   padded?: boolean;
+  /** Profondeur de la carte (défaut `sm`). `md`/`lg` pour les surfaces mises en avant. */
+  elevation?: 'sm' | 'md' | 'lg';
 }) {
-  return <View style={[styles.card, padded && styles.padded, style]}>{children}</View>;
+  return (
+    <View style={[styles.card, tokens.elevation[elevation], padded && styles.padded, style]}>
+      {children}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -24,7 +31,7 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.surface,
     borderWidth: 1,
     borderColor: tokens.colors.border,
-    ...tokens.elevation.sm,
+    ...tokens.motion.transitionWeb,
   },
   padded: { padding: tokens.space.xl },
 });
