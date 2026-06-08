@@ -10,6 +10,7 @@ import { isAdminUserId } from '@/admin/index';
 import { visibleFeatures } from '@/ai/routing/featureVisibility';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
+import { PersonalInfoForm } from '@/ui/PersonalInfoForm';
 import { Logo } from '@/ui/Logo';
 import { Screen } from '@/ui/Screen';
 import { tokens } from '@/ui/tokens';
@@ -132,6 +133,17 @@ export default function AccountScreen() {
           <Link href="/(billing)/pricing" style={styles.inlineLink}>
             Voir les offres
           </Link>
+        </Card>
+      ) : null}
+
+      {user ? (
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>Mes informations</Text>
+          <Text style={styles.sectionText}>
+            Optionnel. Personnalise l'information générale du chat (registre, dépistages selon
+            l'âge/le sexe). Jamais utilisé pour un diagnostic ni un avis médical individuel.
+          </Text>
+          <PersonalInfoForm />
         </Card>
       ) : null}
 

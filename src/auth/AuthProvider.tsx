@@ -21,6 +21,7 @@ import * as Linking from 'expo-linking';
 
 import { getSupabaseClient } from '@/db/supabase';
 import type { Persona } from '@/ai/prompts/_schema';
+import type { PersonalInfo } from '@/profile/personalInfo';
 
 export function getAuthRedirectTo(): string {
   const configured = process.env.EXPO_PUBLIC_AUTH_REDIRECT_URL?.trim();
@@ -74,6 +75,8 @@ export interface SessionState {
   status: VerificationStatus;
   /** Rôles déjà vérifiés pour ce compte — bascule libre entre leurs chats (migration 0016). */
   verifiedPersonas: Persona[];
+  /** Infos perso de profil (prénom/nom/âge/sexe) — personnalisation du chat (ADR-0021). */
+  personalInfo: PersonalInfo | null;
   loading: boolean;
   /** True après l'ouverture d'un lien de réinitialisation (événement PASSWORD_RECOVERY). */
   passwordRecovery: boolean;
@@ -92,6 +95,8 @@ export interface SessionState {
   updatePassword: (password: string) => Promise<{ error: string | null }>;
   /** Sort du mode récupération (après mise à jour réussie). */
   clearPasswordRecovery: () => void;
+  /** Met à jour les infos perso de profil (own-row RLS). */
+  updatePersonalInfo: (info: PersonalInfo) => Promise<{ error: string | null }>;
   /** Connexion OAuth (Google / Apple), redirection web. */
   signInWithOAuth: (provider: OAuthProvider) => Promise<{ error: string | null }>;
   /** Magic link OTP (option conservée, ADR-0007). */
@@ -113,13 +118,25 @@ interface ProfileState {
   persona: Persona;
   status: VerificationStatus;
   verifiedPersonas: Persona[];
+  personalInfo: PersonalInfo | null;
+}
+
+function rowToPersonalInfo(data: Record<string, unknown> | null | undefined): PersonalInfo | null {
+  if (!data) return null;
+  const info: PersonalInfo = {
+    firstName: (data.first_name as string | null) ?? null,
+    lastName: (data.last_name as string | null) ?? null,
+    age: (data.age as number | null) ?? null,
+    sex: (data.sex as PersonalInfo['sex']) ?? null,
+  };
+  return info;
 }
 
 async function fetchProfile(userId: string): Promise<ProfileState> {
   const supabase = getSupabaseClient();
   const { data } = await supabase
     .from('profiles')
-    .select('persona, status, verified_personas')
+    .select('persona, status, verified_personas, first_name, last_name, age, sex')
     .eq('id', userId)
     .single();
   const persona = (data?.persona as Persona) ?? 'public';
@@ -128,6 +145,7 @@ async function fetchProfile(userId: string): Promise<ProfileState> {
     persona,
     status: (data?.status as VerificationStatus) ?? 'unverified',
     verifiedPersonas: verified.includes('public') ? verified : ['public', ...verified],
+    personalInfo: rowToPersonalInfo(data as Record<string, unknown> | null),
   };
 }
 
@@ -136,6 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [persona, setPersona] = useState<Persona | null>(null);
   const [status, setStatus] = useState<VerificationStatus>('unverified');
   const [verifiedPersonas, setVerifiedPersonas] = useState<Persona[]>(['public']);
+  const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
 
@@ -143,25 +162,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPersona(p?.persona ?? null);
     setStatus(p?.status ?? 'unverified');
     setVerifiedPersonas(p?.verifiedPersonas ?? ['public']);
+    setPersonalInfo(p?.personalInfo ?? null);
   }
 
   useEffect(() => {
     const supabase = getSupabaseClient();
     let active = true;
 
-    supabase.auth.getSession().then(async ({ data }) => {
+    // Charge la session + le profil et garantit que `loading` repasse à false même
+    // si `fetchProfile` échoue (réseau/RLS). Sans ce try/finally, une erreur ici
+    // laissait le spinner tourner indéfiniment (email « Mon compte », écrans <RoleGate>).
+    async function hydrate(next: Session | null) {
       if (!active) return;
-      setSession(data.session);
-      if (data.session?.user) applyProfile(await fetchProfile(data.session.user.id));
-      setLoading(false);
-    });
+      setSession(next);
+      try {
+        applyProfile(next?.user ? await fetchProfile(next.user.id) : null);
+      } catch {
+        // Profil illisible : on retombe sur un état neutre plutôt que de bloquer l'UI.
+        if (active) applyProfile(next?.user ? { persona: 'public', status: 'unverified', verifiedPersonas: ['public'], personalInfo: null } : null);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => hydrate(data.session))
+      .catch(() => {
+        // getSession lui-même peut rejeter (réseau) : ne jamais rester bloqué sur loading.
+        if (active) setLoading(false);
+      });
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, next) => {
       if (!active) return;
       // Lien de réinitialisation ouvert : on bascule en mode récupération (cf garde de route).
       if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
-      setSession(next);
-      applyProfile(next?.user ? await fetchProfile(next.user.id) : null);
+      await hydrate(next);
     });
 
     return () => {
@@ -177,6 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       persona,
       status,
       verifiedPersonas,
+      personalInfo,
       loading,
       passwordRecovery,
       async signInWithPassword(email: string, password: string) {
@@ -246,6 +283,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearPasswordRecovery() {
         setPasswordRecovery(false);
       },
+      async updatePersonalInfo(info: PersonalInfo) {
+        const userId = session?.user?.id;
+        if (!userId) return { error: 'Non authentifié.' };
+        try {
+          const supabase = getSupabaseClient();
+          // Own-row RLS : l'utilisateur n'écrit que SA ligne. Ces colonnes ne sont pas
+          // couvertes par le verrou anti-élévation (persona/status restent serveur-only).
+          const { error } = await supabase
+            .from('profiles')
+            .update({
+              first_name: info.firstName?.trim() || null,
+              last_name: info.lastName?.trim() || null,
+              age: info.age ?? null,
+              sex: info.sex ?? null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', userId);
+          if (error) return { error: toFriendlyAuthError(error.message) };
+          setPersonalInfo({
+            firstName: info.firstName?.trim() || null,
+            lastName: info.lastName?.trim() || null,
+            age: info.age ?? null,
+            sex: info.sex ?? null,
+          });
+          return { error: null };
+        } catch (e) {
+          return { error: toFriendlyAuthError(e) };
+        }
+      },
       async signInWithOAuth(provider: OAuthProvider) {
         try {
           const supabase = getSupabaseClient();
@@ -305,7 +371,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await getSupabaseClient().auth.signOut();
       },
     }),
-    [session, persona, status, verifiedPersonas, loading, passwordRecovery],
+    [session, persona, status, verifiedPersonas, personalInfo, loading, passwordRecovery],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
