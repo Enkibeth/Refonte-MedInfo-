@@ -358,9 +358,13 @@ export default function ChatScreen() {
       keyboardVerticalOffset={80}
     >
       <View style={styles.chatHeader}>
-        <View>
-          <Text style={styles.chatTitle}>{persona === 'student' ? 'Chat étudiant' : 'Chat santé'}</Text>
-          <Text style={styles.chatSubtitle}>Information générale et sourcée</Text>
+        <View style={styles.headerTitleBlock}>
+          <Text style={styles.chatTitle} numberOfLines={1}>
+            {persona === 'student' ? 'Chat étudiant' : 'Chat santé'}
+          </Text>
+          <Text style={styles.chatSubtitle} numberOfLines={1}>
+            Information générale et sourcée
+          </Text>
         </View>
         <View style={styles.headerActions}>
           <ToolsMenu />
@@ -373,14 +377,34 @@ export default function ChatScreen() {
             <Text style={styles.headerIconText}>⚙︎</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.headerSourcesButton, !hasSources && styles.headerSourcesButtonDisabled]}
+            style={[
+              styles.headerIconButton,
+              sourcesOpen && styles.headerIconButtonActive,
+              !hasSources && styles.headerIconButtonDisabled,
+            ]}
             onPress={() => setSourcesOpen((open) => !open)}
             disabled={!hasSources}
             accessibilityRole="button"
+            accessibilityLabel={`Sources (${latestCitations.length})`}
           >
-            <Text style={[styles.headerSourcesText, !hasSources && styles.headerSourcesTextDisabled]}>
-              {sourcesOpen ? 'Masquer' : 'Sources'} · {latestCitations.length}
-            </Text>
+            <Icon
+              name="bookOpen"
+              size={18}
+              color={
+                sourcesOpen
+                  ? tokens.colors.onAccent
+                  : hasSources
+                    ? tokens.colors.accentDeep
+                    : tokens.colors.textMuted
+              }
+            />
+            {hasSources ? (
+              <View style={[styles.sourcesBadge, sourcesOpen && styles.sourcesBadgeOnAccent]}>
+                <Text style={[styles.sourcesBadgeText, sourcesOpen && styles.sourcesBadgeTextOnAccent]}>
+                  {latestCitations.length}
+                </Text>
+              </View>
+            ) : null}
           </TouchableOpacity>
         </View>
       </View>
@@ -482,7 +506,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: tokens.colors.border,
   },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
+  // Bloc titre élastique : se rétracte et tronque (ellipsis) au lieu de pousser
+  // les actions hors de l'écran (bug « Sources » coupé en haut à droite).
+  headerTitleBlock: { flex: 1, flexShrink: 1, minWidth: 0, marginRight: tokens.space.sm },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm, flexShrink: 0 },
   headerIconButton: {
     width: tokens.size.iconButton,
     height: tokens.size.iconButton,
@@ -494,22 +521,42 @@ const styles = StyleSheet.create({
     borderColor: tokens.colors.accentSurfaceStrong,
     ...tokens.motion.transitionWeb,
   },
+  headerIconButtonActive: {
+    backgroundColor: tokens.colors.accent,
+    borderColor: tokens.colors.accent,
+  },
+  headerIconButtonDisabled: {
+    backgroundColor: 'transparent',
+    borderColor: tokens.colors.border,
+  },
   headerIconText: {
     fontSize: 18,
     color: tokens.colors.accentDeep,
   },
-  headerAudioButton: {
+  // Badge de compteur de sources, posé en coin du bouton-icône.
+  sourcesBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 4,
     borderRadius: tokens.radius.pill,
-    paddingHorizontal: tokens.space.lg,
-    paddingVertical: tokens.space.sm,
     backgroundColor: tokens.colors.accent,
+    borderWidth: 1.5,
+    borderColor: tokens.colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  headerAudioText: {
+  sourcesBadgeOnAccent: { backgroundColor: tokens.colors.onAccent, borderColor: tokens.colors.accent },
+  sourcesBadgeText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.onAccent,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.semibold,
+    fontSize: 10,
+    fontWeight: tokens.weight.bold,
+    lineHeight: 13,
   },
+  sourcesBadgeTextOnAccent: { color: tokens.colors.accentDeep },
   chatTitle: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,
@@ -523,22 +570,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     marginTop: 2,
   },
-  headerSourcesButton: {
-    borderRadius: tokens.radius.pill,
-    paddingHorizontal: tokens.space.lg,
-    paddingVertical: tokens.space.sm,
-    backgroundColor: tokens.colors.accentSurface,
-    borderWidth: 1,
-    borderColor: tokens.colors.accentSurfaceStrong,
-  },
-  headerSourcesButtonDisabled: { backgroundColor: 'transparent', borderColor: tokens.colors.border },
-  headerSourcesText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.semibold,
-  },
-  headerSourcesTextDisabled: { color: tokens.colors.textMuted },
   sourcesPane: { paddingHorizontal: tokens.space.lg, paddingVertical: tokens.space.sm, backgroundColor: tokens.colors.surfaceAlt },
   messages: { flex: 1 },
   messagesContent: { padding: tokens.space.lg, gap: tokens.space.md },

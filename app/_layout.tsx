@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { MedInfoThemeProvider } from '@/ui/MedInfoThemeProvider';
 import { AuthProvider, useSession } from '@/auth/AuthProvider';
@@ -65,11 +66,13 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <MedInfoThemeProvider>
-      <AuthProvider>
-        <RootNavigator />
-      </AuthProvider>
-      <StatusBar style="auto" />
-    </MedInfoThemeProvider>
+    <SafeAreaProvider>
+      <MedInfoThemeProvider>
+        <AuthProvider>
+          <RootNavigator />
+        </AuthProvider>
+        <StatusBar style="auto" />
+      </MedInfoThemeProvider>
+    </SafeAreaProvider>
   );
 }
