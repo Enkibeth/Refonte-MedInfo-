@@ -1,7 +1,13 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logInteraction } from '@/ai/logging/logInteraction';
 import { screenConversation } from '@/ai/orchestrator';
+
+// La safe-box (couches 1 & 3) est neutralisée par défaut depuis ADR-0023 ; ces tests
+// portent justement sur le chemin de REFUS de la couche 1 → on force le flag à « on ».
+beforeEach(() => {
+  process.env.MEDINFO_GUARDRAILS = 'on';
+});
 
 vi.mock('@/ai/routing/serverPersona', () => ({
   CHAT_PERSONAS: ['public', 'student'],
@@ -62,6 +68,7 @@ vi.mock('ai', async (importOriginal) => {
 
 afterEach(() => {
   vi.clearAllMocks();
+  delete process.env.MEDINFO_GUARDRAILS;
 });
 
 describe('POST /api/chat — edge cases API', () => {

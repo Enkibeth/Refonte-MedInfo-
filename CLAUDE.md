@@ -7,10 +7,23 @@ owner: Hugo Bettembourg
 scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 ```
 
+## ⚠️ Mode TEMPORAIRE — safe-box du chat neutralisée (ADR-0023, 2026-06-08)
+
+> **Décision Hugo : on stabilise un chat fonctionnel d'abord, on remet la sécurité par-dessus ensuite.**
+>
+> La safe-box du chat (couche 1 classifieur pré-LLM + couche 3 validation de sortie) est
+> **désactivée par défaut** via l'interrupteur `src/ai/guardrails/config.ts` →
+> `guardrailsEnabled()` (env `MEDINFO_GUARDRAILS`, OFF tant que ≠ `on`).
+> Raison : sur-refus massif (« Cours sur l'HTA » → refus canonique). Le code des couches
+> est **conservé** et reste testé (les tests forcent `MEDINFO_GUARDRAILS=on`).
+> **Réactivation** : `MEDINFO_GUARDRAILS=on` (env Vercel), sans redéploiement de code.
+> Restent actifs : disclosure passive, rate-limit, autorisation persona serveur.
+> Tant que ce bandeau est présent, la règle #2 ci-dessous est **relâchée par ADR-0023**.
+
 ## Règles de reprise
 
 1. Lire `START.md`, `.ai-governance.md`, `docs/01_REGULATION.md`, puis `docs/README.md` avant tout changement.
-2. Ne jamais dégrader la safe-box non-MDSW : classifieur avant LLM principal, refus déterministe en cas de doute, RAG cite-or-refuse.
+2. Ne jamais dégrader la safe-box non-MDSW : classifieur avant LLM principal, refus déterministe en cas de doute, RAG cite-or-refuse. **(Relâchée temporairement par ADR-0023 — voir bandeau ci-dessus ; à rétablir à la réactivation de la safe-box.)**
 3. Ne pas implémenter d'historique patient, dossier, triage, diagnostic ou CAT individualisée sans ADR `Proposed` + arbitrage Hugo.
 4. Une feature par branche dédiée ; documentation et ADR doivent accompagner chaque décision structurante.
 

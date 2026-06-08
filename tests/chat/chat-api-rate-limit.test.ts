@@ -35,6 +35,9 @@ describe('POST /api/chat — rate-limit avant couche 1', () => {
   it('public free : le 11e message du même jour renvoie 429 sans appeler le classifieur', async () => {
     vi.stubEnv('SUPABASE_URL', '');
     vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', '');
+    // Ce test porte sur l'interaction rate-limit + couche 1 ; la safe-box étant neutralisée
+    // par défaut (ADR-0023), on la force à « on » pour exercer le court-circuit classifieur.
+    vi.stubEnv('MEDINFO_GUARDRAILS', 'on');
 
     const { POST } = await import('../../app/api/chat+api');
 
