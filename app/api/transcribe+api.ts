@@ -11,6 +11,7 @@
 import { generateText } from 'ai';
 import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
+import { sanitizeMedicalReport } from '@/ai/audio/sanitizeReport';
 
 const MAX_SIZE_BYTES = 25 * 1024 * 1024;
 
@@ -126,7 +127,9 @@ export async function POST(request: Request): Promise<Response> {
       ],
     });
 
-    return Response.json({ transcription: labelledTranscription, report });
+    // Nettoyage : retrait des emojis/symboles décoratifs et normalisation markdown
+    // pour un compte rendu médical sobre, propre et exportable en PDF.
+    return Response.json({ transcription: labelledTranscription, report: sanitizeMedicalReport(report) });
   } catch (e) {
     console.error('Report generation error:', e);
     return Response.json({ transcription: labelledTranscription, report: null });
