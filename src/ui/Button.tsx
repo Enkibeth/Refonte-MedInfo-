@@ -53,11 +53,14 @@ export function Button({
       accessibilityState={{ disabled: isInactive, busy: loading }}
       disabled={isInactive}
       onPress={onPress}
-      style={({ pressed }) => [
+      // react-native-web fournit `hovered` / `focused` au render-prop ; ignorés en natif.
+      style={({ pressed, hovered, focused }: { pressed: boolean; hovered?: boolean; focused?: boolean }) => [
         styles.base,
         size === 'lg' ? styles.lg : styles.md,
         v.container,
         fullWidth && styles.fullWidth,
+        hovered && !isInactive && v.hover,
+        focused && !isInactive && styles.focusRing,
         pressed && !isInactive && styles.pressed,
         isInactive && styles.disabled,
         style,
@@ -93,11 +96,13 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radius.md,
     borderWidth: 1,
     borderColor: 'transparent',
+    ...tokens.motion.transitionWeb,
   },
   fullWidth: { alignSelf: 'stretch' },
-  md: { minHeight: 44, paddingHorizontal: tokens.space.lg },
-  lg: { minHeight: 52, paddingHorizontal: tokens.space.xl },
+  md: { minHeight: tokens.size.controlMd, paddingHorizontal: tokens.space.lg },
+  lg: { minHeight: tokens.size.controlLg, paddingHorizontal: tokens.space.xl },
   pressed: { opacity: 0.92, transform: [{ translateY: 1 }] },
+  focusRing: tokens.focus.ring,
   disabled: { opacity: 0.5 },
   icon: { alignItems: 'center', justifyContent: 'center' },
   label: { fontFamily: tokens.font.sans, fontWeight: tokens.weight.semibold },
@@ -105,31 +110,38 @@ const styles = StyleSheet.create({
   labelLg: { fontSize: tokens.type.bodyLg.fontSize },
 });
 
-const variantStyles: Record<Variant, { container: ViewStyle; label: { color: string } }> = {
+const variantStyles: Record<Variant, { container: ViewStyle; hover: ViewStyle; label: { color: string } }> = {
   primary: {
     container: { backgroundColor: tokens.colors.accent, ...tokens.elevation.sm },
+    // Survol : teinte plus dense + légère élévation/remontée → CTA « vivant » mais sobre.
+    hover: { backgroundColor: tokens.colors.accentStrong, transform: [{ translateY: -1 }], ...tokens.elevation.md },
     label: { color: tokens.colors.onAccent },
   },
   secondary: {
     container: { backgroundColor: tokens.colors.surface, borderColor: tokens.colors.borderStrong },
+    hover: { backgroundColor: tokens.colors.surfaceHover, borderColor: tokens.colors.accent },
     label: { color: tokens.colors.accentDeep },
   },
   ghost: {
     container: { backgroundColor: 'transparent' },
+    hover: { backgroundColor: tokens.colors.accentSurface },
     label: { color: tokens.colors.accent },
   },
   danger: {
     container: { backgroundColor: tokens.colors.danger },
+    hover: { transform: [{ translateY: -1 }], ...tokens.elevation.md },
     label: { color: tokens.colors.onAccent },
   },
   // Pour fonds petrol/sombres (hero) : bouton blanc, texte petrol.
   inverse: {
     container: { backgroundColor: tokens.colors.onAccent, ...tokens.elevation.md },
+    hover: { transform: [{ translateY: -1 }], ...tokens.elevation.lg },
     label: { color: tokens.colors.accentDeep },
   },
   // Contour clair sur fond sombre.
   outlineLight: {
     container: { backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.55)' },
+    hover: { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.85)' },
     label: { color: tokens.colors.onAccent },
   },
 };

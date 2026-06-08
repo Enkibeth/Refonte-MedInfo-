@@ -21,6 +21,7 @@ const ICON_PATHS = {
   bookOpen:
     'M12 7v14 M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z',
   arrowRight: 'M5 12h14 M13 6l6 6-6 6',
+  arrowUp: 'M12 19V5 M5 12l7-7 7 7',
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;
