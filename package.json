@@ -44,6 +44,7 @@
     "@ai-sdk/openai": "^3.0.67",
     "@ai-sdk/react": "^3.0.197",
     "@supabase/supabase-js": "^2.107.0",
+    "@vercel/analytics": "^2.0.1",
     "ai": "^6.0.195",
     "expo": "~56.0.8",
     "expo-audio": "~56.0.11",
