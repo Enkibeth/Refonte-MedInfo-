@@ -23,8 +23,11 @@ import { tokens } from '@/ui/tokens';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
 import { ToolsMenu } from '@/ui/ToolsMenu';
+import { AudioLibrary } from '@/ui/AudioLibrary';
+import { saveAudioDocument } from '@/audio/audioLibrary';
 
 type Mode = 'transcription' | 'report';
+type Tab = 'transcription' | 'report' | 'library';
 type RecordState = 'idle' | 'recording' | 'have-audio' | 'processing' | 'done';
 
 const REPORT_PROMPT = `Tu es un assistant médical expert en rédaction. À partir de la transcription audio ci-dessous (dictée médicale ou consultation), génère un compte rendu médical structuré en français en markdown, avec les sections adaptées au contexte (ex. Motif de consultation, Anamnèse, Examen clinique, Conclusion, Conduite à tenir, Prescription le cas échéant).
@@ -50,16 +53,21 @@ function AudioScreenInner() {
 
 function AudioFeature() {
   const { session } = useSession();
-  const [mode, setMode] = useState<Mode>('transcription');
+  const [tab, setTab] = useState<Tab>('transcription');
+  const mode: Mode = tab === 'report' ? 'report' : 'transcription';
   const [recordState, setRecordState] = useState<RecordState>('idle');
   const [transcription, setTranscription] = useState('');
   const [report, setReport] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [duration, setDuration] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [libraryRefresh, setLibraryRefresh] = useState(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const audioBlobRef = useRef<Blob | null>(null);
+  const mimeTypeRef = useRef<string>('audio/webm');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   if (Platform.OS !== 'web') {
@@ -95,6 +103,7 @@ function AudioFeature() {
 
       const mr = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mr;
+      mimeTypeRef.current = mimeType;
 
       mr.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
@@ -162,6 +171,42 @@ function AudioFeature() {
     setReport('');
     setDuration(0);
     setError(null);
+    setSaved(false);
+  }
+
+  function switchTab(next: Tab) {
+    setTab(next);
+    if (next !== 'library') reset();
+  }
+
+  async function saveToLibrary() {
+    const userId = session?.user?.id;
+    if (!userId || saving) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const now = new Date();
+      const defaultTitle =
+        (mode === 'report' ? 'Compte rendu' : 'Transcription') +
+        ' du ' +
+        now.toLocaleDateString('fr-FR');
+      await saveAudioDocument({
+        userId,
+        title: defaultTitle,
+        kind: mode,
+        transcription,
+        report: mode === 'report' ? report : null,
+        audioBlob: audioBlobRef.current,
+        audioMimeType: mimeTypeRef.current,
+        durationSeconds: duration,
+      });
+      setSaved(true);
+      setLibraryRefresh((n) => n + 1);
+    } catch {
+      setError('Échec de l\'enregistrement dans la bibliothèque.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   const formatTime = (s: number) =>
@@ -176,23 +221,35 @@ function AudioFeature() {
         <Text style={styles.title}>Audio médical</Text>
         <View style={styles.modeSwitcher}>
           <TouchableOpacity
-            style={[styles.modeTab, mode === 'transcription' && styles.modeTabActive]}
-            onPress={() => { setMode('transcription'); reset(); }}
+            style={[styles.modeTab, tab === 'transcription' && styles.modeTabActive]}
+            onPress={() => switchTab('transcription')}
           >
-            <Text style={[styles.modeLabel, mode === 'transcription' && styles.modeLabelActive]}>
+            <Text style={[styles.modeLabel, tab === 'transcription' && styles.modeLabelActive]}>
               Transcription
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.modeTab, mode === 'report' && styles.modeTabActive]}
-            onPress={() => { setMode('report'); reset(); }}
+            style={[styles.modeTab, tab === 'report' && styles.modeTabActive]}
+            onPress={() => switchTab('report')}
           >
-            <Text style={[styles.modeLabel, mode === 'report' && styles.modeLabelActive]}>
+            <Text style={[styles.modeLabel, tab === 'report' && styles.modeLabelActive]}>
               Compte rendu
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modeTab, tab === 'library' && styles.modeTabActive]}
+            onPress={() => switchTab('library')}
+          >
+            <Text style={[styles.modeLabel, tab === 'library' && styles.modeLabelActive]}>
+              Mes documents
             </Text>
           </TouchableOpacity>
         </View>
       </View>
+
+      {tab === 'library' ? (
+        <AudioLibrary refreshToken={libraryRefresh} />
+      ) : (
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         <View style={styles.infoBox}>
@@ -281,7 +338,35 @@ function AudioFeature() {
             </View>
           </View>
         ) : null}
+
+        {transcription && recordState === 'done' ? (
+          saved ? (
+            <View style={styles.savedBox}>
+              <Text style={styles.savedText}>✓ Enregistré dans « Mes documents ».</Text>
+              <TouchableOpacity onPress={() => switchTab('library')}>
+                <Text style={styles.savedLink}>Voir ma bibliothèque</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={saveToLibrary}
+              disabled={saving}
+              accessibilityRole="button"
+            >
+              <Text style={styles.saveButtonText}>
+                {saving ? 'Enregistrement…' : '💾 Enregistrer dans ma bibliothèque'}
+              </Text>
+            </TouchableOpacity>
+          )
+        ) : null}
+
+        <Text style={styles.retentionNote}>
+          L'audio est conservé 24h (réécoute) puis supprimé automatiquement. Vos transcriptions et
+          comptes rendus restent enregistrés tant que vous ne les supprimez pas.
+        </Text>
       </ScrollView>
+      )}
     </View>
   );
 }
@@ -505,6 +590,49 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.body.fontSize,
     lineHeight: tokens.type.body.lineHeight,
     padding: tokens.space.lg,
+  },
+  saveButton: {
+    height: 48,
+    borderRadius: tokens.radius.md,
+    backgroundColor: tokens.colors.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...tokens.elevation.sm,
+  },
+  saveButtonText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.onAccent,
+    fontWeight: tokens.weight.semibold,
+    fontSize: tokens.type.label.fontSize,
+  },
+  savedBox: {
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.success,
+    backgroundColor: tokens.colors.successBackground,
+    padding: tokens.space.md,
+    gap: tokens.space.xs,
+    alignItems: 'center',
+  },
+  savedText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.success,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  savedLink: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accent,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  retentionNote: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+    lineHeight: 17,
+    textAlign: 'center',
+    paddingHorizontal: tokens.space.md,
   },
   disclaimer: {
     padding: tokens.space.md,
