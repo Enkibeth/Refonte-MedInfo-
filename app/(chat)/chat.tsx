@@ -380,36 +380,28 @@ export default function ChatScreen() {
           >
             <Text style={styles.headerIconText}>⚙︎</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.headerIconButton,
-              sourcesOpen && styles.headerIconButtonActive,
-              !hasSources && styles.headerIconButtonDisabled,
-            ]}
-            onPress={() => setSourcesOpen((open) => !open)}
-            disabled={!hasSources}
-            accessibilityRole="button"
-            accessibilityLabel={`Sources (${latestCitations.length})`}
-          >
-            <Icon
-              name="bookOpen"
-              size={18}
-              color={
-                sourcesOpen
-                  ? tokens.colors.onAccent
-                  : hasSources
-                    ? tokens.colors.accentDeep
-                    : tokens.colors.textMuted
-              }
-            />
-            {hasSources ? (
+          {/* Le bouton Sources n'apparaît qu'une fois des citations disponibles :
+              sans réponse sourcée il n'a aucune action et son état désactivé était
+              quasi invisible (bug « on ne voit rien / ça ne marche pas »). */}
+          {hasSources ? (
+            <TouchableOpacity
+              style={[styles.headerIconButton, sourcesOpen && styles.headerIconButtonActive]}
+              onPress={() => setSourcesOpen((open) => !open)}
+              accessibilityRole="button"
+              accessibilityLabel={`Sources (${latestCitations.length})`}
+            >
+              <Icon
+                name="bookOpen"
+                size={18}
+                color={sourcesOpen ? tokens.colors.onAccent : tokens.colors.accentDeep}
+              />
               <View style={[styles.sourcesBadge, sourcesOpen && styles.sourcesBadgeOnAccent]}>
                 <Text style={[styles.sourcesBadgeText, sourcesOpen && styles.sourcesBadgeTextOnAccent]}>
                   {latestCitations.length}
                 </Text>
               </View>
-            ) : null}
-          </TouchableOpacity>
+            </TouchableOpacity>
+          ) : null}
         </View>
       </View>
 
@@ -534,10 +526,6 @@ const styles = StyleSheet.create({
   headerIconButtonActive: {
     backgroundColor: tokens.colors.accent,
     borderColor: tokens.colors.accent,
-  },
-  headerIconButtonDisabled: {
-    backgroundColor: 'transparent',
-    borderColor: tokens.colors.border,
   },
   headerIconText: {
     fontSize: 18,
