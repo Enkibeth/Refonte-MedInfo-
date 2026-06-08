@@ -26,7 +26,7 @@ export function PlaceholderScreen({ title, description }: PlaceholderScreenProps
 
 const styles = StyleSheet.create({
   title: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h1.fontSize,
     lineHeight: tokens.type.h1.lineHeight,

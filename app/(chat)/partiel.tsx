@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
   },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm },
   chip: {
-    borderRadius: tokens.radius.pill,
+    borderRadius: tokens.radius.none,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.xs,
     backgroundColor: tokens.colors.surfaceSunken,

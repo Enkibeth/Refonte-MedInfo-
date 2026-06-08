@@ -138,6 +138,7 @@ export default function SignInScreen() {
       </View>
 
       <Card>
+        <Text style={styles.kicker}>/ ACCÈS — MEDINFO AI</Text>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.body}>
           {mode === 'signin'
@@ -179,7 +180,7 @@ export default function SignInScreen() {
 
             <View style={styles.separatorRow}>
               <View style={styles.separatorLine} />
-              <Text style={styles.separatorText}>ou par email</Text>
+              <Text style={styles.separatorText}>OU PAR EMAIL</Text>
               <View style={styles.separatorLine} />
             </View>
           </>
@@ -297,7 +298,9 @@ export default function SignInScreen() {
       </Card>
 
       <View style={styles.notice}>
-        <View style={styles.noticeAccent} />
+        <View style={styles.noticeBar}>
+          <Text style={styles.noticeBarText}>AVIS IA</Text>
+        </View>
         <Text style={styles.noticeText}>{getAiDisclosure()}</Text>
       </View>
     </Screen>
@@ -306,8 +309,17 @@ export default function SignInScreen() {
 
 const styles = StyleSheet.create({
   logoWrap: { alignItems: 'center', marginBottom: tokens.space.xl },
+  kicker: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.accent,
+    fontSize: tokens.type.mono.fontSize,
+    lineHeight: tokens.type.mono.lineHeight,
+    letterSpacing: tokens.type.mono.letterSpacing,
+    textTransform: 'uppercase',
+    marginBottom: tokens.space.sm,
+  },
   title: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h1.fontSize,
     lineHeight: tokens.type.h1.lineHeight,
@@ -323,19 +335,22 @@ const styles = StyleSheet.create({
   },
   oauthRow: { gap: tokens.space.sm, marginTop: tokens.space.xl },
   separatorRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.md, marginVertical: tokens.space.lg },
-  separatorLine: { flex: 1, height: 1, backgroundColor: tokens.colors.border },
+  separatorLine: { flex: 1, height: tokens.border.hairline, backgroundColor: tokens.colors.border },
   separatorText: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.medium,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    textTransform: 'uppercase',
   },
   form: { gap: tokens.space.sm, marginTop: tokens.space.xs },
   label: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.mono,
     color: tokens.colors.textSubtle,
-    fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.semibold,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    textTransform: 'uppercase',
+    fontWeight: tokens.weight.bold,
   },
   passwordLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   forgotLink: {
@@ -347,10 +362,10 @@ const styles = StyleSheet.create({
   input: {
     width: '100%',
     minHeight: 50,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surfaceSunken,
+    backgroundColor: tokens.colors.surfacePure,
     color: tokens.colors.text,
     fontFamily: tokens.font.sans,
     fontSize: tokens.type.body.fontSize,
@@ -368,25 +383,27 @@ const styles = StyleSheet.create({
   resend: { marginTop: tokens.space.md },
   statusBox: {
     marginTop: tokens.space.lg,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.surfaceAlt,
     padding: tokens.space.lg,
     gap: tokens.space.xs,
   },
   statusLabel: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.semibold,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    textTransform: 'uppercase',
+    fontWeight: tokens.weight.bold,
   },
   statusValue: { fontFamily: tokens.font.sans, color: tokens.colors.text, fontSize: tokens.type.body.fontSize },
   infoBox: {
     marginTop: tokens.space.lg,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
-    borderColor: tokens.colors.accentSurfaceStrong,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.accentSurface,
     padding: tokens.space.lg,
   },
@@ -398,8 +415,10 @@ const styles = StyleSheet.create({
   },
   errorBox: {
     marginTop: tokens.space.lg,
-    borderRadius: tokens.radius.md,
-    borderLeftWidth: 4,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
+    borderLeftWidth: tokens.border.heavy,
     borderLeftColor: tokens.colors.danger,
     backgroundColor: tokens.colors.dangerBackground,
     padding: tokens.space.lg,
@@ -423,15 +442,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     width: '100%',
     marginTop: tokens.space.lg,
-    borderRadius: tokens.radius.md,
-    overflow: 'hidden',
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.warningBackground,
   },
-  noticeAccent: { width: 4, backgroundColor: tokens.colors.warningText },
+  noticeBar: {
+    backgroundColor: tokens.colors.warningText,
+    paddingHorizontal: tokens.space.md,
+    justifyContent: 'center',
+    borderRightWidth: tokens.border.bold,
+    borderRightColor: tokens.colors.border,
+  },
+  noticeBarText: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.onAccent,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    fontWeight: tokens.weight.bold,
+  },
   noticeText: {
     flex: 1,
     fontFamily: tokens.font.sans,
-    color: tokens.colors.warningText,
+    color: tokens.colors.text,
     fontSize: tokens.type.caption.fontSize,
     lineHeight: 19,
     padding: tokens.space.lg,

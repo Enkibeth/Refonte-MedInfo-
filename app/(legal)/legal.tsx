@@ -27,6 +27,7 @@ export default function LegalScreen() {
       <View style={styles.brandHeader}>
         <Logo size="sm" />
       </View>
+      <Text style={styles.kicker}>/ LÉGAL</Text>
       <Text style={styles.title}>Informations légales</Text>
       <Text style={styles.lead}>
         Mentions légales, finalité du service, statut réglementaire, information sur l’IA et
@@ -65,7 +66,9 @@ export default function LegalScreen() {
       <Card style={styles.section}>
         <Text style={styles.h2}>Avertissement médical</Text>
         <View style={styles.disclaimer}>
-          <View style={styles.disclaimerAccent} />
+          <View style={styles.disclaimerBar}>
+            <Text style={styles.disclaimerBarText}>AVERTISSEMENT</Text>
+          </View>
           <Text style={styles.disclaimerText}>{CANONICAL_REFUSAL}</Text>
         </View>
       </Card>
@@ -125,12 +128,19 @@ export default function LegalScreen() {
 
 const styles = StyleSheet.create({
   brandHeader: { marginBottom: tokens.space.lg },
+  kicker: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.accent,
+    fontSize: tokens.type.mono.fontSize,
+    letterSpacing: tokens.type.mono.letterSpacing,
+    marginBottom: tokens.space.sm,
+  },
   title: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
-    fontSize: tokens.type.h1.fontSize,
-    lineHeight: tokens.type.h1.lineHeight,
-    letterSpacing: tokens.type.h1.letterSpacing,
+    fontSize: tokens.type.display.fontSize,
+    lineHeight: tokens.type.display.lineHeight,
+    letterSpacing: tokens.type.display.letterSpacing,
     fontWeight: tokens.weight.bold,
     marginBottom: tokens.space.sm,
   },
@@ -142,7 +152,7 @@ const styles = StyleSheet.create({
   },
   section: { marginTop: tokens.space.lg },
   h2: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
     letterSpacing: tokens.type.h3.letterSpacing,
@@ -150,9 +160,11 @@ const styles = StyleSheet.create({
     marginBottom: tokens.space.sm,
   },
   h3: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.text,
-    fontSize: tokens.type.label.fontSize,
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    textTransform: 'uppercase',
     fontWeight: tokens.weight.bold,
     marginTop: tokens.space.md,
     marginBottom: tokens.space.xs,
@@ -167,11 +179,24 @@ const styles = StyleSheet.create({
   bodyMuted: { fontSize: tokens.type.label.fontSize, lineHeight: 21 },
   disclaimer: {
     flexDirection: 'row',
-    borderRadius: tokens.radius.md,
-    overflow: 'hidden',
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.warningBackground,
   },
-  disclaimerAccent: { width: 4, backgroundColor: tokens.colors.warningText },
+  disclaimerBar: {
+    backgroundColor: tokens.colors.warningText,
+    paddingHorizontal: tokens.space.md,
+    justifyContent: 'center',
+    borderRightWidth: tokens.border.bold,
+    borderRightColor: tokens.colors.border,
+  },
+  disclaimerBarText: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.onAccent,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+  },
   disclaimerText: {
     flex: 1,
     fontFamily: tokens.font.sans,
@@ -182,9 +207,11 @@ const styles = StyleSheet.create({
   },
   footer: { marginTop: tokens.space.xl },
   inlineLink: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.mono,
     color: tokens.colors.accent,
-    fontSize: tokens.type.label.fontSize,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    textTransform: 'uppercase',
     fontWeight: tokens.weight.semibold,
   },
 });

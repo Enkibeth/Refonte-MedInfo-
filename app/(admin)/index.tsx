@@ -89,8 +89,8 @@ interface Config {
 type Tab = 'models' | 'prompts' | 'ecos';
 
 const PROVIDER_COLORS: Record<string, string> = {
-  anthropic: '#C96442',
-  openai:    '#10A37F',
+  anthropic: tokens.colors.personas.pro.accent,
+  openai:    tokens.colors.success,
 };
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -102,7 +102,8 @@ const PROVIDER_LABELS: Record<string, string> = {
 
 function Badge({ text, color }: { text: string; color: string }) {
   return (
-    <View style={[badgeStyles.wrap, { borderColor: color + '40', backgroundColor: color + '15' }]}>
+    <View style={badgeStyles.wrap}>
+      <View style={[badgeStyles.dot, { backgroundColor: color }]} />
       <Text style={[badgeStyles.text, { color }]}>{text}</Text>
     </View>
   );
@@ -899,6 +900,7 @@ export default function AdminScreen() {
           <Text style={styles.backBtnText}>←</Text>
         </TouchableOpacity>
         <View>
+          <Text style={styles.headerKicker}>/ ADMIN</Text>
           <Text style={styles.headerTitle}>Panel Admin IA</Text>
           <Text style={styles.headerSub}>Configuration des modèles et prompts</Text>
         </View>
@@ -971,67 +973,88 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.space.lg,
     paddingTop: tokens.space.xl,
     paddingBottom: tokens.space.md,
-    backgroundColor: tokens.colors.accentDarker,
+    backgroundColor: tokens.colors.ink,
+    borderBottomWidth: tokens.border.bold,
+    borderBottomColor: tokens.colors.border,
   },
-  backBtn: { padding: tokens.space.xs },
-  backBtnText: { color: tokens.colors.onAccent, fontSize: 22 },
+  backBtn: {
+    width: tokens.size.iconButton,
+    height: tokens.size.iconButton,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.onInk,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backBtnText: { color: tokens.colors.onInk, fontSize: 22 },
+  headerKicker: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.accentSurfaceStrong,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    marginBottom: 2,
+  },
   headerTitle: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontSize: tokens.type.h3.fontSize,
+    fontFamily: tokens.font.display,
+    color: tokens.colors.onInk,
+    fontSize: tokens.type.h2.fontSize,
     fontWeight: tokens.weight.bold,
-    letterSpacing: tokens.type.h3.letterSpacing,
+    letterSpacing: tokens.type.h2.letterSpacing,
   },
   headerSub: {
     fontFamily: tokens.font.sans,
-    color: 'rgba(255,255,255,0.6)',
+    color: 'rgba(235,231,220,0.6)',
     fontSize: tokens.type.caption.fontSize,
     marginTop: 2,
   },
   adminBadge: {
     marginLeft: 'auto',
-    borderRadius: tokens.radius.pill,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderRadius: tokens.radius.none,
+    backgroundColor: tokens.colors.accent,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.onInk,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.xs,
   },
   adminBadgeText: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.onAccent,
-    fontSize: 11,
+    fontSize: tokens.type.monoSm.fontSize,
     fontWeight: tokens.weight.bold,
-    letterSpacing: 1,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
   },
   tabs: {
     flexDirection: 'row',
     backgroundColor: tokens.colors.surface,
-    borderBottomWidth: 1,
+    borderBottomWidth: tokens.border.bold,
     borderBottomColor: tokens.colors.border,
   },
   tabBtn: {
     flex: 1,
     paddingVertical: tokens.space.md,
     alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
+    borderRightWidth: tokens.border.hairline,
+    borderRightColor: tokens.colors.border,
   },
-  tabBtnActive: { borderBottomColor: tokens.colors.accent },
+  tabBtnActive: { backgroundColor: tokens.colors.accent },
   tabLabel: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
-    fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.medium,
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.text,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    textTransform: 'uppercase',
+    fontWeight: tokens.weight.bold,
   },
-  tabLabelActive: { color: tokens.colors.accent, fontWeight: tokens.weight.semibold },
+  tabLabelActive: { color: tokens.colors.onAccent },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: tokens.space.lg },
-  loadingText: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.label.fontSize },
+  loadingText: { fontFamily: tokens.font.mono, color: tokens.colors.textMuted, fontSize: tokens.type.monoSm.fontSize, letterSpacing: tokens.type.monoSm.letterSpacing, textTransform: 'uppercase' },
   errorBox: {
     margin: tokens.space.lg,
-    borderRadius: tokens.radius.md,
+    borderRadius: tokens.radius.none,
     backgroundColor: tokens.colors.dangerBackground,
-    borderLeftWidth: 4,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
+    borderLeftWidth: tokens.border.heavy,
     borderLeftColor: tokens.colors.danger,
     padding: tokens.space.lg,
     gap: tokens.space.md,
@@ -1039,28 +1062,32 @@ const styles = StyleSheet.create({
   errorText: { fontFamily: tokens.font.sans, color: tokens.colors.danger, fontSize: tokens.type.label.fontSize },
   retryBtn: {
     alignSelf: 'flex-start',
-    borderRadius: tokens.radius.sm,
+    borderRadius: tokens.radius.none,
     backgroundColor: tokens.colors.danger,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.sm,
   },
-  retryText: { fontFamily: tokens.font.sans, color: tokens.colors.onAccent, fontWeight: tokens.weight.semibold, fontSize: tokens.type.label.fontSize },
-  notAdmin: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: tokens.space.lg },
+  retryText: { fontFamily: tokens.font.sans, color: tokens.colors.onAccent, fontWeight: tokens.weight.bold, textTransform: 'uppercase', letterSpacing: 0.5, fontSize: tokens.type.label.fontSize },
+  notAdmin: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: tokens.space.lg, backgroundColor: tokens.colors.background },
   notAdminText: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.body.fontSize },
-  back: { fontFamily: tokens.font.sans, color: tokens.colors.accent, fontSize: tokens.type.label.fontSize, fontWeight: tokens.weight.semibold },
+  back: { fontFamily: tokens.font.mono, color: tokens.colors.accent, fontSize: tokens.type.monoSm.fontSize, letterSpacing: tokens.type.monoSm.letterSpacing, textTransform: 'uppercase', fontWeight: tokens.weight.bold },
 });
 
 const tabStyles = StyleSheet.create({
   content: { padding: tokens.space.lg, gap: tokens.space.md },
   intro: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
+    color: tokens.colors.accentDeep,
     fontSize: tokens.type.label.fontSize,
     lineHeight: 20,
     backgroundColor: tokens.colors.accentSurface,
-    borderRadius: tokens.radius.md,
+    borderRadius: tokens.radius.none,
     padding: tokens.space.md,
-    borderLeftWidth: 3,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
+    borderLeftWidth: tokens.border.heavy,
     borderLeftColor: tokens.colors.accent,
   },
 });
@@ -1283,7 +1310,7 @@ const promptStyles = StyleSheet.create({
     marginTop: 2,
   },
   badge: {
-    borderRadius: tokens.radius.pill,
+    borderRadius: tokens.radius.none,
     backgroundColor: tokens.colors.surfaceAlt,
     borderWidth: 1,
     borderColor: tokens.colors.border,
@@ -1359,14 +1386,22 @@ const promptStyles = StyleSheet.create({
 
 const badgeStyles = StyleSheet.create({
   wrap: {
-    borderRadius: tokens.radius.pill,
-    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.xs,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surfacePure,
     paddingHorizontal: tokens.space.sm,
-    paddingVertical: 2,
+    paddingVertical: 3,
   },
+  dot: { width: 7, height: 7, borderRadius: tokens.radius.pill },
   text: {
     fontFamily: tokens.font.mono,
-    fontSize: 10,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    textTransform: 'uppercase',
     fontWeight: tokens.weight.bold,
   },
 });
@@ -1415,7 +1450,7 @@ const ecosStyles = StyleSheet.create({
     marginTop: 2,
   },
   statusBadge: {
-    borderRadius: tokens.radius.pill,
+    borderRadius: tokens.radius.none,
     backgroundColor: tokens.colors.surfaceAlt,
     borderWidth: 1,
     borderColor: tokens.colors.border,

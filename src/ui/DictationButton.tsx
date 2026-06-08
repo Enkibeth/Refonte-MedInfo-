@@ -118,11 +118,11 @@ export function DictationButton({
 
 const styles = StyleSheet.create({
   button: {
-    width: 44,
-    height: 44,
-    borderRadius: tokens.radius.lg,
-    backgroundColor: tokens.colors.surfaceSunken,
-    borderWidth: 1,
+    width: tokens.size.controlMd,
+    height: tokens.size.controlMd,
+    borderRadius: tokens.radius.none,
+    backgroundColor: tokens.colors.surfacePure,
+    borderWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
     alignItems: 'center',
     justifyContent: 'center',

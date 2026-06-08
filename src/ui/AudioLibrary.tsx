@@ -177,7 +177,7 @@ export function AudioLibrary({ refreshToken }: { refreshToken: number }) {
                       <View style={styles.cardHeader}>
                         <Text style={styles.cardTitle} numberOfLines={1}>{doc.title}</Text>
                         <View style={[styles.kindBadge, doc.kind === 'report' ? styles.kindReport : styles.kindTrans]}>
-                          <Text style={styles.kindBadgeText}>{doc.kind === 'report' ? 'Compte rendu' : 'Transcription'}</Text>
+                          <Text style={[styles.kindBadgeText, doc.kind === 'report' ? styles.kindReportText : styles.kindTransText]}>{doc.kind === 'report' ? 'Compte rendu' : 'Transcription'}</Text>
                         </View>
                       </View>
                       <Text style={styles.cardMeta}>
@@ -238,34 +238,36 @@ const styles = StyleSheet.create({
   muted: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.body.fontSize },
   mutedSmall: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.caption.fontSize, textAlign: 'center', maxWidth: 320 },
   errorText: { fontFamily: tokens.font.sans, color: tokens.colors.danger, fontSize: tokens.type.label.fontSize },
-  retry: { paddingHorizontal: tokens.space.lg, paddingVertical: tokens.space.sm, borderRadius: tokens.radius.md, backgroundColor: tokens.colors.accent },
-  retryText: { fontFamily: tokens.font.sans, color: tokens.colors.onAccent, fontWeight: tokens.weight.semibold },
+  retry: { paddingHorizontal: tokens.space.lg, paddingVertical: tokens.space.sm, borderRadius: tokens.radius.none, borderWidth: tokens.border.bold, borderColor: tokens.colors.border, backgroundColor: tokens.colors.accent },
+  retryText: { fontFamily: tokens.font.sans, color: tokens.colors.onAccent, fontWeight: tokens.weight.bold, textTransform: 'uppercase', letterSpacing: 0.5 },
   list: { padding: tokens.space.lg, gap: tokens.space.lg },
   group: { gap: tokens.space.sm },
   groupTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.mono,
     color: tokens.colors.textSubtle,
-    fontSize: tokens.type.caption.fontSize,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
     fontWeight: tokens.weight.bold,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   card: {
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
+    backgroundColor: tokens.colors.surfacePure,
     padding: tokens.space.md,
     gap: tokens.space.sm,
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: tokens.space.sm },
-  cardTitle: { flex: 1, fontFamily: tokens.font.sans, color: tokens.colors.text, fontSize: tokens.type.label.fontSize, fontWeight: tokens.weight.semibold },
-  cardMeta: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.caption.fontSize, marginTop: 2 },
-  kindBadge: { borderRadius: tokens.radius.pill, paddingHorizontal: tokens.space.sm, paddingVertical: 2 },
-  kindReport: { backgroundColor: tokens.colors.accentSurface },
-  kindTrans: { backgroundColor: tokens.colors.surfaceSunken },
-  kindBadgeText: { fontFamily: tokens.font.sans, color: tokens.colors.accentDeep, fontSize: 11, fontWeight: tokens.weight.semibold },
-  body: { borderTopWidth: 1, borderTopColor: tokens.colors.border, paddingTop: tokens.space.sm },
+  cardTitle: { flex: 1, fontFamily: tokens.font.display, color: tokens.colors.text, fontSize: tokens.type.h3.fontSize, lineHeight: tokens.type.h3.lineHeight, letterSpacing: tokens.type.h3.letterSpacing, fontWeight: tokens.weight.bold },
+  cardMeta: { fontFamily: tokens.font.mono, color: tokens.colors.textMuted, fontSize: tokens.type.monoSm.fontSize, letterSpacing: tokens.type.monoSm.letterSpacing, textTransform: 'uppercase', marginTop: 2 },
+  kindBadge: { borderRadius: tokens.radius.none, borderWidth: tokens.border.bold, borderColor: tokens.colors.border, paddingHorizontal: tokens.space.sm, paddingVertical: 2 },
+  kindReport: { backgroundColor: tokens.colors.accent },
+  kindTrans: { backgroundColor: tokens.colors.surfacePure },
+  kindBadgeText: { fontFamily: tokens.font.mono, fontSize: tokens.type.monoSm.fontSize, letterSpacing: tokens.type.monoSm.letterSpacing, textTransform: 'uppercase', fontWeight: tokens.weight.bold },
+  kindReportText: { color: tokens.colors.onAccent },
+  kindTransText: { color: tokens.colors.text },
+  body: { borderTopWidth: tokens.border.hairline, borderTopColor: tokens.colors.border, paddingTop: tokens.space.sm },
   transcriptionText: { fontFamily: tokens.font.sans, color: tokens.colors.text, fontSize: tokens.type.body.fontSize, lineHeight: tokens.type.body.lineHeight },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm, borderTopWidth: 1, borderTopColor: tokens.colors.border, paddingTop: tokens.space.sm },
   actionBtn: { paddingHorizontal: tokens.space.md, paddingVertical: tokens.space.xs + 2, borderRadius: tokens.radius.sm, backgroundColor: tokens.colors.surfaceAlt, borderWidth: 1, borderColor: tokens.colors.border },

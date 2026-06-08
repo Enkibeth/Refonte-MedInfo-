@@ -45,13 +45,15 @@ export default function ChooseRoleScreen() {
 
   return (
     <Screen maxWidth={560}>
+      <Text style={styles.sectionIndex}>/ CHOISIR UN RÔLE</Text>
       <Text style={styles.title}>Choisis ton rôle</Text>
       <Text style={styles.body}>
         Le rôle adapte ton expérience.{persona ? ` Rôle actuel : ${ROLES[persona].label}.` : ''}
       </Text>
 
       {/* Public */}
-      <Card style={[styles.roleCard, { borderLeftWidth: 3, borderLeftColor: tokens.colors.personas.public.accent }]}>
+      <Card style={[styles.roleCard, { borderLeftWidth: tokens.border.heavy + 3, borderLeftColor: tokens.colors.personas.public.accent }]}>
+        <Text style={[styles.roleEyebrow, { color: tokens.colors.personas.public.accent }]}>GRAND PUBLIC · 01</Text>
         <Text style={styles.roleTitle}>{ROLES.public.label}</Text>
         <Text style={styles.roleDesc}>{ROLES.public.description}</Text>
         <Button
@@ -64,7 +66,8 @@ export default function ChooseRoleScreen() {
       </Card>
 
       {/* Étudiant */}
-      <Card style={[styles.roleCard, { borderLeftWidth: 3, borderLeftColor: tokens.colors.personas.student.accent }]}>
+      <Card style={[styles.roleCard, { borderLeftWidth: tokens.border.heavy + 3, borderLeftColor: tokens.colors.personas.student.accent }]}>
+        <Text style={[styles.roleEyebrow, { color: tokens.colors.personas.student.accent }]}>ÉTUDIANT · 02</Text>
         <Text style={styles.roleTitle}>{ROLES.student.label}</Text>
         <Text style={styles.roleDesc}>{ROLES.student.description}</Text>
         <TextInput
@@ -92,7 +95,8 @@ export default function ChooseRoleScreen() {
       </Card>
 
       {/* Professionnel */}
-      <Card style={[styles.roleCard, { borderLeftWidth: 3, borderLeftColor: tokens.colors.personas.pro.accent }]}>
+      <Card style={[styles.roleCard, { borderLeftWidth: tokens.border.heavy + 3, borderLeftColor: tokens.colors.personas.pro.accent }]}>
+        <Text style={[styles.roleEyebrow, { color: tokens.colors.personas.pro.accent }]}>PROFESSIONNEL · 03</Text>
         <Text style={styles.roleTitle}>{ROLES.professional.label}</Text>
         <Text style={styles.roleDesc}>{ROLES.professional.description}</Text>
         <TextInput
@@ -134,6 +138,15 @@ export default function ChooseRoleScreen() {
 }
 
 const styles = StyleSheet.create({
+  sectionIndex: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.accent,
+    fontSize: tokens.type.mono.fontSize,
+    lineHeight: tokens.type.mono.lineHeight,
+    letterSpacing: tokens.type.mono.letterSpacing,
+    textTransform: 'uppercase',
+    marginBottom: tokens.space.sm,
+  },
   title: {
     fontFamily: tokens.font.display,
     color: tokens.colors.text,
@@ -151,6 +164,14 @@ const styles = StyleSheet.create({
     marginBottom: tokens.space.sm,
   },
   roleCard: { marginTop: tokens.space.lg, gap: tokens.space.md },
+  roleEyebrow: {
+    fontFamily: tokens.font.mono,
+    fontSize: tokens.type.monoSm.fontSize,
+    lineHeight: tokens.type.monoSm.lineHeight,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    textTransform: 'uppercase',
+    fontWeight: tokens.weight.bold,
+  },
   roleTitle: {
     fontFamily: tokens.font.display,
     color: tokens.colors.text,
@@ -166,10 +187,10 @@ const styles = StyleSheet.create({
   },
   input: {
     minHeight: 48,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surfaceSunken,
+    backgroundColor: tokens.colors.surfacePure,
     color: tokens.colors.text,
     fontFamily: tokens.font.sans,
     fontSize: tokens.type.body.fontSize,
@@ -178,9 +199,9 @@ const styles = StyleSheet.create({
   roleAction: { marginTop: tokens.space.xs },
   infoBox: {
     marginTop: tokens.space.lg,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
-    borderColor: tokens.colors.accentSurfaceStrong,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.accentSurface,
     padding: tokens.space.lg,
   },
@@ -192,8 +213,10 @@ const styles = StyleSheet.create({
   },
   errorBox: {
     marginTop: tokens.space.lg,
-    borderRadius: tokens.radius.md,
-    borderLeftWidth: 4,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
+    borderLeftWidth: tokens.border.heavy,
     borderLeftColor: tokens.colors.danger,
     backgroundColor: tokens.colors.dangerBackground,
     padding: tokens.space.lg,

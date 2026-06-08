@@ -91,15 +91,17 @@ async function fetchPublishedCases(): Promise<EcosCase[]> {
 
 // ── Composants ─────────────────────────────────────────────────────────────
 
-function CaseCard({ cas, onSelect }: { cas: EcosCase; onSelect: () => void }) {
+function CaseCard({ cas, index, onSelect }: { cas: EcosCase; index?: number; onSelect: () => void }) {
+  const idx = typeof index === 'number' ? String(index + 1).padStart(2, '0') : null;
   return (
     <TouchableOpacity style={caseStyles.card} onPress={onSelect} accessibilityRole="button">
       <View style={caseStyles.cardHeader}>
-        <Text style={caseStyles.cardTitle}>{cas.titre}</Text>
+        {idx ? <Text style={caseStyles.cardIndex}>[ {idx} ]</Text> : null}
         <View style={caseStyles.badge}>
-          <Text style={caseStyles.badgeText}>{cas.duree} min</Text>
+          <Text style={caseStyles.badgeText}>{cas.duree} MIN</Text>
         </View>
       </View>
+      <Text style={caseStyles.cardTitle}>{cas.titre}</Text>
       <Text style={caseStyles.cardSpecialite}>{cas.specialite}</Text>
       <Text style={caseStyles.cardConsigne} numberOfLines={2}>
         {cas.consigneCandidat}
@@ -327,6 +329,7 @@ Sois précis, bienveillant et pédagogique.`;
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.selectionContent}>
         <View style={styles.selectionHeader}>
+          <Text style={styles.kicker}>/ ECOS — STATION</Text>
           <Text style={styles.selectionTitle}>Simulation ECOS</Text>
           <Text style={styles.selectionSubtitle}>
             Choisissez un cas clinique pour simuler une consultation avec un patient IA et obtenir
@@ -353,8 +356,8 @@ Sois précis, bienveillant et pédagogique.`;
             </Text>
           </View>
         ) : (
-          cases.map((cas) => (
-            <CaseCard key={cas.id} cas={cas} onSelect={() => selectCase(cas)} />
+          cases.map((cas, i) => (
+            <CaseCard key={cas.id} cas={cas} index={i} onSelect={() => selectCase(cas)} />
           ))
         )}
       </ScrollView>
@@ -369,6 +372,7 @@ Sois précis, bienveillant et pédagogique.`;
           <TouchableOpacity onPress={() => setPhase('selection')} style={styles.backButton}>
             <Text style={styles.backText}>← Retour</Text>
           </TouchableOpacity>
+          <Text style={styles.kicker}>/ ECOS — PRÉPARATION</Text>
           <Text style={styles.prepTitle}>{selectedCase.titre}</Text>
           <View style={styles.prepBadge}>
             <Text style={styles.prepBadgeText}>{selectedCase.specialite}</Text>
@@ -434,8 +438,8 @@ Sois précis, bienveillant et pédagogique.`;
                 m.role === 'user' ? styles.simBubbleUser : styles.simBubblePatient,
               ]}
             >
-              <Text style={styles.simBubbleRole}>
-                {m.role === 'user' ? 'Vous' : 'Patient'}
+              <Text style={[styles.simBubbleRole, m.role !== 'user' && styles.simBubbleRolePatient]}>
+                {m.role === 'user' ? 'VOUS' : 'PATIENT'}
               </Text>
               <Text
                 style={m.role === 'user' ? styles.simTextUser : styles.simTextPatient}
@@ -490,6 +494,7 @@ Sois précis, bienveillant et pédagogique.`;
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.evalContent}>
         <View style={styles.evalHeader}>
+          <Text style={styles.kicker}>/ ECOS — RÉSULTAT</Text>
           <Text style={styles.evalTitle}>Évaluation</Text>
           <Text style={styles.evalSubtitle}>{selectedCase?.titre}</Text>
         </View>
@@ -528,16 +533,25 @@ Sois précis, bienveillant et pédagogique.`;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: tokens.colors.background },
 
+  kicker: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.accent,
+    fontSize: tokens.type.mono.fontSize,
+    letterSpacing: tokens.type.mono.letterSpacing,
+    textTransform: 'uppercase',
+    marginBottom: tokens.space.sm,
+  },
+
   // Selection
   selectionContent: { padding: tokens.space.lg, gap: tokens.space.md },
   selectionHeader: { marginBottom: tokens.space.sm },
   selectionTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
-    fontSize: tokens.type.h2.fontSize,
-    letterSpacing: tokens.type.h2.letterSpacing,
+    fontSize: tokens.type.display.fontSize,
+    letterSpacing: tokens.type.display.letterSpacing,
     fontWeight: tokens.weight.bold,
-    lineHeight: tokens.type.h2.lineHeight,
+    lineHeight: tokens.type.display.lineHeight,
   },
   selectionSubtitle: {
     fontFamily: tokens.font.sans,
@@ -558,16 +572,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   casesRetry: {
-    borderRadius: tokens.radius.md,
+    borderRadius: tokens.radius.none,
     backgroundColor: tokens.colors.accent,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
     paddingHorizontal: tokens.space.xl,
     paddingVertical: tokens.space.sm,
+    ...tokens.elevation.md,
   },
   casesRetryText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.semibold,
+    fontWeight: tokens.weight.bold,
     fontSize: tokens.type.label.fontSize,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 
   // Preparation
@@ -581,43 +600,43 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.medium,
   },
   prepTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
-    fontSize: tokens.type.h2.fontSize,
-    letterSpacing: tokens.type.h2.letterSpacing,
+    fontSize: tokens.type.display.fontSize,
+    lineHeight: tokens.type.display.lineHeight,
+    letterSpacing: tokens.type.display.letterSpacing,
     fontWeight: tokens.weight.bold,
   },
   prepBadge: {
     alignSelf: 'flex-start',
-    borderRadius: tokens.radius.pill,
-    backgroundColor: tokens.colors.accentSurface,
-    borderWidth: 1,
-    borderColor: tokens.colors.accentSurfaceStrong,
+    borderRadius: tokens.radius.none,
+    backgroundColor: tokens.colors.surfacePure,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.xs,
   },
   prepBadgeText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.semibold,
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.text,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    textTransform: 'uppercase',
   },
   consigneCard: {
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
+    backgroundColor: tokens.colors.surfacePure,
     padding: tokens.space.lg,
     gap: tokens.space.sm,
-    ...tokens.elevation.sm,
   },
   consigneLabel: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: 11,
-    fontWeight: tokens.weight.medium,
+    fontSize: tokens.type.mono.fontSize,
+    letterSpacing: tokens.type.mono.letterSpacing,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   consigneText: {
     fontFamily: tokens.font.sans,
@@ -626,8 +645,8 @@ const styles = StyleSheet.create({
     lineHeight: tokens.type.bodyLg.lineHeight,
   },
   prepInfo: {
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.surfaceAlt,
     padding: tokens.space.lg,
@@ -642,18 +661,22 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   startButton: {
-    height: 52,
-    borderRadius: tokens.radius.lg,
+    height: tokens.size.controlLg,
+    borderRadius: tokens.radius.none,
     backgroundColor: tokens.colors.accent,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
     justifyContent: 'center',
     alignItems: 'center',
-    ...tokens.elevation.sm,
+    ...tokens.elevation.md,
   },
   startText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.onAccent,
     fontWeight: tokens.weight.bold,
     fontSize: tokens.type.body.fontSize,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 
   // Simulation
@@ -664,42 +687,50 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.md,
     backgroundColor: tokens.colors.surface,
-    borderBottomWidth: 1,
+    borderBottomWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
   },
   simTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
+    letterSpacing: tokens.type.h3.letterSpacing,
     fontWeight: tokens.weight.bold,
   },
   simSubtitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: tokens.type.caption.fontSize,
-    marginTop: 2,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    textTransform: 'uppercase',
+    marginTop: 3,
   },
   simMessages: { flex: 1 },
   simMessagesContent: { padding: tokens.space.lg, gap: tokens.space.md },
-  simBubble: { maxWidth: '88%', borderRadius: tokens.radius.lg, padding: tokens.space.md, gap: 4 },
+  simBubble: {
+    maxWidth: '88%',
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
+    padding: tokens.space.md,
+    gap: 4,
+  },
   simBubbleUser: {
     alignSelf: 'flex-end',
     backgroundColor: tokens.colors.accent,
-    borderBottomRightRadius: 6,
   },
   simBubblePatient: {
     alignSelf: 'flex-start',
-    backgroundColor: tokens.colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    borderBottomLeftRadius: 6,
+    backgroundColor: tokens.colors.surface,
   },
   simBubbleRole: {
     fontFamily: tokens.font.mono,
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.6)',
-    fontWeight: tokens.weight.medium,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    textTransform: 'uppercase',
+    color: tokens.colors.onAccent,
   },
+  simBubbleRolePatient: { color: tokens.colors.textMuted },
   simTextUser: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.onAccent,
@@ -727,18 +758,18 @@ const styles = StyleSheet.create({
     padding: tokens.space.md,
     gap: tokens.space.sm,
     backgroundColor: tokens.colors.surface,
-    borderTopWidth: 1,
+    borderTopWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
   },
   simInputRow: { flexDirection: 'row', gap: tokens.space.sm, alignItems: 'flex-end' },
   simInput: {
     flex: 1,
-    minHeight: 44,
+    minHeight: tokens.size.controlMd,
     maxHeight: 100,
-    borderRadius: tokens.radius.lg,
-    borderWidth: 1,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surfaceSunken,
+    backgroundColor: tokens.colors.surfacePure,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.md,
     fontFamily: tokens.font.sans,
@@ -746,48 +777,61 @@ const styles = StyleSheet.create({
     color: tokens.colors.text,
   },
   simSend: {
-    width: 44,
-    height: 44,
-    borderRadius: tokens.radius.lg,
+    width: tokens.size.controlMd,
+    height: tokens.size.controlMd,
+    borderRadius: tokens.radius.none,
     backgroundColor: tokens.colors.accent,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
     justifyContent: 'center',
     alignItems: 'center',
+    ...(Platform.select({ web: { boxShadow: '3px 3px 0 0 #16140E' }, default: {} }) as object),
   },
-  simSendDisabled: { opacity: 0.45 },
+  simSendDisabled: {
+    backgroundColor: tokens.colors.surfaceSunken,
+    borderColor: tokens.colors.borderSoft,
+    ...(Platform.select({ web: { boxShadow: 'none' } as object, default: {} })),
+  },
   simSendText: {
     color: tokens.colors.onAccent,
     fontWeight: tokens.weight.bold,
     fontSize: 20,
   },
   finishButton: {
-    height: 40,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderStrong,
+    height: tokens.size.controlMd,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surfacePure,
     justifyContent: 'center',
     alignItems: 'center',
   },
   finishText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textSubtle,
-    fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.medium,
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.text,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    textTransform: 'uppercase',
+    fontWeight: tokens.weight.bold,
   },
 
   // Evaluation
   evalContent: { padding: tokens.space.lg, gap: tokens.space.md },
   evalHeader: { gap: 4 },
   evalTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
-    fontSize: tokens.type.h2.fontSize,
-    letterSpacing: tokens.type.h2.letterSpacing,
+    fontSize: tokens.type.display.fontSize,
+    lineHeight: tokens.type.display.lineHeight,
+    letterSpacing: tokens.type.display.letterSpacing,
     fontWeight: tokens.weight.bold,
   },
   evalSubtitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: tokens.type.label.fontSize,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    textTransform: 'uppercase',
   },
   evalLoading: { alignItems: 'center', gap: tokens.space.lg, padding: tokens.space['2xl'] },
   evalLoadingText: {
@@ -796,36 +840,39 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.label.fontSize,
   },
   evalResult: {
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
+    backgroundColor: tokens.colors.surfacePure,
     padding: tokens.space.lg,
-    ...tokens.elevation.sm,
   },
   retryEcos: {
-    height: 48,
-    borderRadius: tokens.radius.lg,
+    height: tokens.size.controlLg,
+    borderRadius: tokens.radius.none,
     backgroundColor: tokens.colors.accent,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: tokens.space.sm,
-    ...tokens.elevation.sm,
+    ...tokens.elevation.md,
   },
   retryEcosText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.semibold,
+    fontWeight: tokens.weight.bold,
     fontSize: tokens.type.label.fontSize,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 
   // Gate
   gateContainer: { flex: 1, justifyContent: 'center', padding: tokens.space.xl, backgroundColor: tokens.colors.background },
   gateCard: {
-    borderRadius: tokens.radius.lg,
-    borderWidth: 1,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
+    backgroundColor: tokens.colors.surfacePure,
     padding: tokens.space.xl,
     alignItems: 'center',
     gap: tokens.space.md,
@@ -833,11 +880,11 @@ const styles = StyleSheet.create({
   },
   emoji: { fontSize: 40 },
   gateTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
-    fontSize: tokens.type.h3.fontSize,
+    fontSize: tokens.type.h2.fontSize,
     fontWeight: tokens.weight.bold,
-    letterSpacing: tokens.type.h3.letterSpacing,
+    letterSpacing: tokens.type.h2.letterSpacing,
     textAlign: 'center',
   },
   gateText: {
@@ -851,12 +898,16 @@ const styles = StyleSheet.create({
   gateLink: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.semibold,
+    fontWeight: tokens.weight.bold,
     fontSize: tokens.type.label.fontSize,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     backgroundColor: tokens.colors.accent,
     paddingHorizontal: tokens.space.xl,
     paddingVertical: tokens.space.md,
-    borderRadius: tokens.radius.lg,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
     overflow: 'hidden',
     marginTop: tokens.space.sm,
   },
@@ -864,41 +915,52 @@ const styles = StyleSheet.create({
 
 const caseStyles = StyleSheet.create({
   card: {
-    borderRadius: tokens.radius.lg,
-    borderWidth: 1,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
+    backgroundColor: tokens.colors.surfacePure,
     padding: tokens.space.lg,
     gap: tokens.space.xs,
-    ...tokens.elevation.sm,
+    ...tokens.elevation.md,
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  cardIndex: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.mono.fontSize,
+    letterSpacing: tokens.type.mono.letterSpacing,
+  },
   cardTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
-    fontSize: tokens.type.h3.fontSize,
+    fontSize: tokens.type.h2.fontSize,
+    lineHeight: tokens.type.h2.lineHeight,
+    letterSpacing: tokens.type.h2.letterSpacing,
     fontWeight: tokens.weight.bold,
-    flex: 1,
     marginRight: tokens.space.sm,
   },
   badge: {
-    borderRadius: tokens.radius.pill,
-    backgroundColor: tokens.colors.accentSurface,
-    borderWidth: 1,
-    borderColor: tokens.colors.accentSurfaceStrong,
+    borderRadius: tokens.radius.none,
+    backgroundColor: tokens.colors.accent,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
     paddingHorizontal: tokens.space.sm,
     paddingVertical: 2,
   },
   badgeText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.semibold,
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.onAccent,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    textTransform: 'uppercase',
+    fontWeight: tokens.weight.bold,
   },
   cardSpecialite: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: 11,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    textTransform: 'uppercase',
     fontWeight: tokens.weight.medium,
   },
   cardConsigne: {
@@ -912,9 +974,9 @@ const caseStyles = StyleSheet.create({
 
 const timerStyles = StyleSheet.create({
   wrap: {
-    borderRadius: tokens.radius.sm,
-    backgroundColor: tokens.colors.surfaceAlt,
-    borderWidth: 1,
+    borderRadius: tokens.radius.none,
+    backgroundColor: tokens.colors.surfacePure,
+    borderWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.xs,

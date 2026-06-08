@@ -307,7 +307,7 @@ export function MarkdownRenderer({
 const mdStyles = StyleSheet.create({
   container: { gap: 2 },
   h2: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     fontSize: tokens.type.h3.fontSize,
     lineHeight: tokens.type.h3.lineHeight,
     letterSpacing: tokens.type.h3.letterSpacing,
@@ -316,10 +316,10 @@ const mdStyles = StyleSheet.create({
     marginBottom: 2,
   },
   h3: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     fontSize: tokens.type.label.fontSize + 1,
     lineHeight: 22,
-    fontWeight: tokens.weight.semibold,
+    fontWeight: tokens.weight.bold,
     marginTop: 2,
   },
   hr: { height: 1, marginVertical: 6 },
@@ -350,7 +350,7 @@ const inlineStyles = StyleSheet.create({
     fontFamily: tokens.font.mono,
     fontSize: 13,
     backgroundColor: tokens.colors.surfaceSunken,
-    borderRadius: 3,
+    borderRadius: tokens.radius.none,
     paddingHorizontal: 3,
   },
   // Exposant de source : petit numéro accent cliquable (style « ¹ ² »).
@@ -367,11 +367,10 @@ const tableStyles = StyleSheet.create({
   scroll: { marginVertical: tokens.space.sm },
   scrollContent: {},
   table: {
-    borderRadius: tokens.radius.sm,
-    borderWidth: 1,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
     overflow: 'hidden',
-    ...Platform.select({ web: { boxShadow: '0 1px 3px rgba(15,27,34,0.06)' }, default: {} }),
   },
   row: {
     flexDirection: 'row',
@@ -384,7 +383,7 @@ const tableStyles = StyleSheet.create({
     backgroundColor: tokens.colors.surfaceAlt,
   },
   rowBorder: {
-    borderBottomWidth: 1,
+    borderBottomWidth: tokens.border.hairline,
     borderBottomColor: tokens.colors.border,
   },
   cell: {
@@ -394,7 +393,7 @@ const tableStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   cellBorder: {
-    borderRightWidth: 1,
+    borderRightWidth: tokens.border.hairline,
     borderRightColor: tokens.colors.border,
   },
   cellText: {

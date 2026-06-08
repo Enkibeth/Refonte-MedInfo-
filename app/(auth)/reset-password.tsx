@@ -52,6 +52,7 @@ export default function ResetPasswordScreen() {
       </View>
 
       <Card>
+        <Text style={styles.kicker}>/ RÉINITIALISATION</Text>
         <Text style={styles.title}>Nouveau mot de passe</Text>
 
         {done ? (
@@ -129,8 +130,17 @@ export default function ResetPasswordScreen() {
 
 const styles = StyleSheet.create({
   logoWrap: { alignItems: 'center', marginBottom: tokens.space.xl },
+  kicker: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.accent,
+    fontSize: tokens.type.mono.fontSize,
+    lineHeight: tokens.type.mono.lineHeight,
+    letterSpacing: tokens.type.mono.letterSpacing,
+    textTransform: 'uppercase',
+    marginBottom: tokens.space.sm,
+  },
   title: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h1.fontSize,
     lineHeight: tokens.type.h1.lineHeight,
@@ -146,18 +156,20 @@ const styles = StyleSheet.create({
   },
   form: { gap: tokens.space.sm, marginTop: tokens.space.lg },
   label: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.mono,
     color: tokens.colors.textSubtle,
-    fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.semibold,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    textTransform: 'uppercase',
+    fontWeight: tokens.weight.bold,
   },
   input: {
     width: '100%',
     minHeight: 50,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surfaceSunken,
+    backgroundColor: tokens.colors.surfacePure,
     color: tokens.colors.text,
     fontFamily: tokens.font.sans,
     fontSize: tokens.type.body.fontSize,

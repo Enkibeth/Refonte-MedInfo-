@@ -547,7 +547,7 @@ const styles = StyleSheet.create({
     minWidth: 16,
     height: 16,
     paddingHorizontal: 4,
-    borderRadius: tokens.radius.pill,
+    borderRadius: tokens.radius.none,
     backgroundColor: tokens.colors.accent,
     borderWidth: 1.5,
     borderColor: tokens.colors.surface,

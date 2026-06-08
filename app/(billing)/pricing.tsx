@@ -26,6 +26,10 @@ export default function PricingScreen() {
   const webBilling = shouldShowWebBilling(Platform.OS);
   const plans = plansForPersona(persona ?? 'public');
 
+  // Le plan « recommandé » : on met en avant le dernier plan (le plus complet) par un
+  // bloc à ombre dure décalée + bandeau accent, signature brutaliste (pas de dégradé mou).
+  const recommendedIndex = plans.length > 1 ? plans.length - 1 : -1;
+
   async function handleSubscribe(plan: BillingPlanId) {
     if (loadingPlan) return;
     setErrorMessage(null);
@@ -61,10 +65,13 @@ export default function PricingScreen() {
       <View style={styles.brandHeader}>
         <Logo size="sm" />
       </View>
+      <Text style={styles.kicker}>/ TARIFS</Text>
       <Text style={styles.title}>Offres</Text>
 
       <View style={styles.sourcesBox}>
-        <View style={styles.sourcesAccent} />
+        <View style={styles.sourcesBar}>
+          <Text style={styles.sourcesBarText}>GRATUIT</Text>
+        </View>
         <Text style={styles.sourcesText}>
           Les références (HAS, ANSM…) restent gratuites et visibles pour tous, abonné ou non.
           Un abonnement lève seulement la limite de messages et débloque des fonctions avancées.
@@ -80,27 +87,44 @@ export default function PricingScreen() {
         </Card>
       ) : (
         <View style={styles.plans}>
-          {plans.map((plan) => (
-            <Card key={plan.id} style={styles.plan}>
-              <Text style={styles.planLabel}>{plan.label}</Text>
-              <Text style={styles.planPrice}>{plan.priceLabel}</Text>
-              <View style={styles.perks}>
-                {plan.perks.map((perk) => (
-                  <View key={perk} style={styles.perkRow}>
-                    <View style={styles.perkDot} />
-                    <Text style={styles.perk}>{perk}</Text>
+          {plans.map((plan, i) => {
+            const recommended = i === recommendedIndex;
+            return (
+              <View
+                key={plan.id}
+                style={[styles.plan, recommended && styles.planRecommended]}
+              >
+                <View style={[styles.planHeader, recommended && styles.planHeaderRecommended]}>
+                  <Text style={[styles.planLabel, recommended && styles.planLabelRecommended]}>
+                    {plan.label}
+                  </Text>
+                  {recommended ? (
+                    <View style={styles.recoTag}>
+                      <Text style={styles.recoTagText}>RECOMMANDÉ</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <View style={styles.planBody}>
+                  <Text style={styles.planPrice}>{plan.priceLabel}</Text>
+                  <View style={styles.perks}>
+                    {plan.perks.map((perk) => (
+                      <View key={perk} style={styles.perkRow}>
+                        <View style={styles.perkDot} />
+                        <Text style={styles.perk}>{perk}</Text>
+                      </View>
+                    ))}
                   </View>
-                ))}
+                  <Button
+                    label="S'abonner"
+                    loading={loadingPlan === plan.id}
+                    disabled={loadingPlan !== null}
+                    onPress={() => handleSubscribe(plan.id)}
+                    style={styles.planAction}
+                  />
+                </View>
               </View>
-              <Button
-                label="S'abonner"
-                loading={loadingPlan === plan.id}
-                disabled={loadingPlan !== null}
-                onPress={() => handleSubscribe(plan.id)}
-                style={styles.planAction}
-              />
-            </Card>
-          ))}
+            );
+          })}
           {plans.length === 0 ? (
             <Text style={styles.nativeText}>Aucune offre disponible pour ce profil.</Text>
           ) : null}
@@ -125,23 +149,43 @@ export default function PricingScreen() {
 
 const styles = StyleSheet.create({
   brandHeader: { marginBottom: tokens.space.lg },
+  kicker: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.accent,
+    fontSize: tokens.type.mono.fontSize,
+    letterSpacing: tokens.type.mono.letterSpacing,
+    marginBottom: tokens.space.sm,
+  },
   title: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
-    fontSize: tokens.type.h1.fontSize,
-    lineHeight: tokens.type.h1.lineHeight,
-    letterSpacing: tokens.type.h1.letterSpacing,
+    fontSize: tokens.type.display.fontSize,
+    lineHeight: tokens.type.display.lineHeight,
+    letterSpacing: tokens.type.display.letterSpacing,
     fontWeight: tokens.weight.bold,
     marginBottom: tokens.space.lg,
   },
   sourcesBox: {
     flexDirection: 'row',
-    borderRadius: tokens.radius.md,
-    overflow: 'hidden',
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.accentSurface,
     marginBottom: tokens.space.lg,
   },
-  sourcesAccent: { width: 4, backgroundColor: tokens.colors.accent },
+  sourcesBar: {
+    backgroundColor: tokens.colors.accent,
+    paddingHorizontal: tokens.space.md,
+    justifyContent: 'center',
+    borderRightWidth: tokens.border.bold,
+    borderRightColor: tokens.colors.border,
+  },
+  sourcesBarText: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.onAccent,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+  },
   sourcesText: {
     flex: 1,
     fontFamily: tokens.font.sans,
@@ -159,19 +203,52 @@ const styles = StyleSheet.create({
     lineHeight: tokens.type.body.lineHeight,
   },
   plans: { gap: tokens.space.lg },
-  plan: { gap: tokens.space.xs },
+  plan: {
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surfacePure,
+  },
+  planRecommended: { ...tokens.elevation.lg },
+  planHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: tokens.space.sm,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.md,
+    borderBottomWidth: tokens.border.bold,
+    borderBottomColor: tokens.colors.border,
+  },
+  planHeaderRecommended: { backgroundColor: tokens.colors.accent },
   planLabel: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
     letterSpacing: tokens.type.h3.letterSpacing,
     fontWeight: tokens.weight.bold,
   },
-  planPrice: {
-    fontFamily: tokens.font.sans,
+  planLabelRecommended: { color: tokens.colors.onAccent },
+  recoTag: {
+    backgroundColor: tokens.colors.onAccent,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
+    paddingHorizontal: tokens.space.sm,
+    paddingVertical: 2,
+  },
+  recoTagText: {
+    fontFamily: tokens.font.mono,
     color: tokens.colors.accent,
-    fontSize: tokens.type.h1.fontSize,
-    letterSpacing: tokens.type.h1.letterSpacing,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+  },
+  planBody: { padding: tokens.space.lg, gap: tokens.space.xs },
+  planPrice: {
+    fontFamily: tokens.font.display,
+    color: tokens.colors.accent,
+    fontSize: tokens.type.hero.fontSize,
+    lineHeight: tokens.type.hero.lineHeight,
+    letterSpacing: tokens.type.hero.letterSpacing,
     fontWeight: tokens.weight.bold,
     marginTop: tokens.space.xs,
   },
@@ -180,7 +257,7 @@ const styles = StyleSheet.create({
   perkDot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: tokens.radius.none,
     backgroundColor: tokens.colors.accent,
     marginTop: 8,
   },
@@ -193,15 +270,18 @@ const styles = StyleSheet.create({
   },
   planAction: { marginTop: tokens.space.sm },
   vatNote: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: tokens.type.caption.fontSize,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
     marginTop: tokens.space.xs,
   },
   errorBox: {
     marginTop: tokens.space.lg,
-    borderRadius: tokens.radius.md,
-    borderLeftWidth: 4,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
+    borderLeftWidth: tokens.border.heavy,
     borderLeftColor: tokens.colors.danger,
     backgroundColor: tokens.colors.dangerBackground,
     padding: tokens.space.lg,
@@ -214,9 +294,11 @@ const styles = StyleSheet.create({
   },
   footer: { marginTop: tokens.space.xl },
   inlineLink: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.mono,
     color: tokens.colors.accent,
-    fontSize: tokens.type.label.fontSize,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    textTransform: 'uppercase',
     fontWeight: tokens.weight.semibold,
   },
 });
