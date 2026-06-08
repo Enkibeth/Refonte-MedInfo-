@@ -8,7 +8,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
-  Image,
   TextInput,
   ScrollView,
   TouchableOpacity,
@@ -432,17 +431,14 @@ export default function ChatScreen() {
       >
         {messages.length === 0 && !isLoading ? (
           <Reveal style={styles.emptyState}>
-            <Image
-              source={require('../../assets/brand/legacy-illustration.png')}
-              style={styles.emptyIllustration}
-              resizeMode="contain"
-              accessibilityLabel="Illustration MedInfo AI : équipe soignante"
-            />
-            <Text style={styles.emptyTitle}>Posez votre première question</Text>
+            <Text style={styles.emptyKicker}>/ NOUVELLE SESSION</Text>
+            <Text style={styles.emptyTitle}>Posez votre première question.</Text>
             <Text style={styles.emptyText}>
               Réponses claires, appuyées sur des sources (HAS, ANSM…). Information générale,
               jamais un avis médical individuel.
             </Text>
+            <View style={styles.emptyRule} />
+            <Text style={styles.emptySources}>HAS · ANSM · VIDAL · THÉRIAQUE · PUBMED</Text>
           </Reveal>
         ) : null}
 
@@ -513,7 +509,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.md,
     backgroundColor: tokens.colors.surface,
-    borderBottomWidth: 1,
+    borderBottomWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
   },
   // Bloc titre élastique : se rétracte et tronque (ellipsis) au lieu de pousser
@@ -523,21 +519,21 @@ const styles = StyleSheet.create({
   headerIconButton: {
     width: tokens.size.iconButton,
     height: tokens.size.iconButton,
-    borderRadius: tokens.radius.pill,
+    borderRadius: tokens.radius.none,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: tokens.colors.accentSurface,
-    borderWidth: 1,
-    borderColor: tokens.colors.accentSurfaceStrong,
+    backgroundColor: tokens.colors.surfacePure,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
     ...tokens.motion.transitionWeb,
   },
   headerIconButtonActive: {
     backgroundColor: tokens.colors.accent,
-    borderColor: tokens.colors.accent,
+    borderColor: tokens.colors.border,
   },
   headerIconButtonDisabled: {
     backgroundColor: 'transparent',
-    borderColor: tokens.colors.border,
+    borderColor: tokens.colors.borderSoft,
   },
   headerIconText: {
     fontSize: 18,
@@ -575,10 +571,12 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.bold,
   },
   chatSubtitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: tokens.type.caption.fontSize,
-    marginTop: 2,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    textTransform: 'uppercase',
+    marginTop: 3,
   },
   sourcesPane: { paddingHorizontal: tokens.space.lg, paddingVertical: tokens.space.sm, backgroundColor: tokens.colors.surfaceAlt },
   messages: { flex: 1 },
@@ -589,21 +587,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.space.lg,
     gap: tokens.space.sm,
   },
-  emptyIllustration: {
-    width: '100%',
-    maxWidth: 280,
-    height: 180,
-    alignSelf: 'center',
-    borderRadius: tokens.radius.lg,
-    marginBottom: tokens.space.sm,
+  emptyKicker: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.accent,
+    fontSize: tokens.type.mono.fontSize,
+    letterSpacing: tokens.type.mono.letterSpacing,
+    marginBottom: tokens.space.xs,
   },
   emptyTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
-    fontSize: tokens.type.h2.fontSize,
-    lineHeight: tokens.type.h2.lineHeight,
-    letterSpacing: tokens.type.h2.letterSpacing,
+    fontSize: tokens.type.display.fontSize,
+    lineHeight: tokens.type.display.lineHeight,
+    letterSpacing: tokens.type.display.letterSpacing,
     fontWeight: tokens.weight.bold,
+    maxWidth: 420,
   },
   emptyText: {
     fontFamily: tokens.font.sans,
@@ -612,21 +610,36 @@ const styles = StyleSheet.create({
     lineHeight: tokens.type.body.lineHeight,
     maxWidth: 460,
   },
+  emptyRule: {
+    height: tokens.border.bold,
+    width: 64,
+    backgroundColor: tokens.colors.accent,
+    marginTop: tokens.space.md,
+    marginBottom: tokens.space.xs,
+  },
+  emptySources: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+  },
 
-  bubble: { maxWidth: '88%', borderRadius: tokens.radius.lg, padding: tokens.space.md, gap: tokens.space.sm, overflow: 'hidden' },
+  bubble: {
+    maxWidth: '88%',
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
+    padding: tokens.space.md,
+    gap: tokens.space.sm,
+    overflow: 'hidden',
+  },
   bubbleUser: {
     alignSelf: 'flex-end',
     backgroundColor: tokens.colors.accent,
-    borderBottomRightRadius: tokens.radius.xs,
-    ...tokens.elevation.sm,
   },
   bubbleAssistant: {
     alignSelf: 'flex-start',
     backgroundColor: tokens.colors.surface,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    borderBottomLeftRadius: tokens.radius.xs,
-    ...tokens.elevation.sm,
   },
   textUser: {
     fontFamily: tokens.font.sans,
@@ -643,18 +656,18 @@ const styles = StyleSheet.create({
 
   followupContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm, marginTop: tokens.space.xs },
   followupButton: {
-    borderRadius: tokens.radius.pill,
-    paddingHorizontal: tokens.space.lg,
+    borderRadius: tokens.radius.none,
+    paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.sm,
-    backgroundColor: tokens.colors.surface,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderStrong,
+    backgroundColor: tokens.colors.surfacePure,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
   },
   followupText: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
+    color: tokens.colors.text,
     fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.medium,
+    fontWeight: tokens.weight.semibold,
   },
 
   sourcesWrapper: {
@@ -738,8 +751,10 @@ const styles = StyleSheet.create({
   refusalBanner: {
     flexDirection: 'row',
     backgroundColor: tokens.colors.warningBackground,
-    borderRadius: tokens.radius.md,
-    borderLeftWidth: 4,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
+    borderLeftWidth: tokens.space.sm,
     borderLeftColor: tokens.colors.warningText,
     padding: tokens.space.lg,
     marginTop: tokens.space.xs,
@@ -761,14 +776,15 @@ const styles = StyleSheet.create({
   },
 
   disclaimer: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.mono,
     textAlign: 'center',
-    fontSize: tokens.type.caption.fontSize,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
     color: tokens.colors.textMuted,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.sm,
     backgroundColor: tokens.colors.surfaceAlt,
-    borderTopWidth: 1,
+    borderTopWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
   },
   inputRow: {
@@ -776,7 +792,7 @@ const styles = StyleSheet.create({
     padding: tokens.space.md,
     gap: tokens.space.sm,
     backgroundColor: tokens.colors.surface,
-    borderTopWidth: 1,
+    borderTopWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
     alignItems: 'flex-end',
   },
@@ -784,11 +800,11 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: tokens.size.controlMd,
     maxHeight: 120,
-    borderRadius: tokens.radius.lg,
+    borderRadius: tokens.radius.none,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.md,
-    backgroundColor: tokens.colors.surfaceSunken,
-    borderWidth: 1,
+    backgroundColor: tokens.colors.surfacePure,
+    borderWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
     color: tokens.colors.text,
     fontFamily: tokens.font.sans,
@@ -800,25 +816,34 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.surface,
     ...tokens.focus.ring,
   },
-  // Bouton d'envoi façon Claude : carré au coin doux, accent MedInfo, états soignés.
+  // Bouton d'envoi « touche » brutaliste : carré, bordure encre, ombre dure ;
+  // se soulève au survol, s'enfonce à l'appui.
   sendButton: {
     width: tokens.size.controlMd,
     height: tokens.size.controlMd,
-    borderRadius: tokens.radius.md,
+    borderRadius: tokens.radius.none,
     backgroundColor: tokens.colors.accent,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
     justifyContent: 'center',
     alignItems: 'center',
-    ...tokens.elevation.sm,
+    ...(Platform.select({ web: { boxShadow: '3px 3px 0 0 #16140E' }, default: {} }) as object),
     ...tokens.motion.transitionWeb,
   },
-  sendButtonHover: { backgroundColor: tokens.colors.accentStrong, transform: [{ translateY: -1 }], ...tokens.elevation.md },
+  sendButtonHover: {
+    backgroundColor: tokens.colors.accentStrong,
+    transform: [{ translateX: -1 }, { translateY: -1 }],
+    ...(Platform.select({ web: { boxShadow: '5px 5px 0 0 #16140E' }, default: {} }) as object),
+  },
   sendButtonFocus: tokens.focus.ring,
-  sendButtonPressed: { transform: [{ translateY: 1 }], opacity: 0.92 },
-  // Désactivé : pas de simple opacité — surface enfoncée + flèche atténuée (lisible).
+  sendButtonPressed: {
+    transform: [{ translateX: 3 }, { translateY: 3 }],
+    ...(Platform.select({ web: { boxShadow: '0 0 0 0 transparent' }, default: {} }) as object),
+  },
+  // Désactivé : surface enfoncée + flèche atténuée (lisible), sans ombre.
   sendButtonDisabled: {
     backgroundColor: tokens.colors.surfaceSunken,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
+    borderColor: tokens.colors.borderSoft,
     ...Platform.select({ web: { boxShadow: 'none' } as object, default: {} }),
   },
 });
