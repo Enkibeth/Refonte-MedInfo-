@@ -12,12 +12,14 @@ import {
   TextInput,
   ScrollView,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   Animated,
   Easing,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, isTextUIPart, isToolUIPart } from 'ai';
 import type { UIMessage, UIMessagePart, UIDataTypes, UITools } from 'ai';
@@ -315,6 +317,7 @@ export default function ChatScreen() {
   // Persona issue de l'AuthProvider (source profiles/RLS, étape 3). Fallback 'public'
   // tant que la session/le profil charge ou pour un visiteur non authentifié.
   const { persona, personalInfo } = useSession();
+  const insets = useSafeAreaInsets();
   const [input, setInput] = useState('');
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
@@ -328,6 +331,7 @@ export default function ChatScreen() {
   const latestCitations = useMemo(() => collectLatestCitations(messages), [messages]);
   const isLoading = status === 'streaming' || status === 'submitted';
   const hasSources = latestCitations.length > 0;
+  const canSend = !isLoading && input.trim().length > 0;
 
   // Corps de requête dynamique : persona + réglages utilisateur + contexte perso.
   // Passé à chaque envoi (le transport ne capture pas l'état React au fil des rendus).
@@ -357,7 +361,7 @@ export default function ChatScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={80}
     >
-      <View style={styles.chatHeader}>
+      <View style={[styles.chatHeader, { paddingTop: tokens.space.md + insets.top }]}>
         <View style={styles.headerTitleBlock}>
           <Text style={styles.chatTitle} numberOfLines={1}>
             {persona === 'student' ? 'Chat étudiant' : 'Chat santé'}
@@ -478,15 +482,21 @@ export default function ChatScreen() {
           returnKeyType="send"
           onSubmitEditing={handleSend}
         />
-        <TouchableOpacity
-          style={[styles.sendButton, (isLoading || input.trim().length === 0) && styles.sendButtonDisabled]}
+        <Pressable
           onPress={handleSend}
-          disabled={isLoading || input.trim().length === 0}
+          disabled={!canSend}
           accessibilityRole="button"
           accessibilityLabel="Envoyer le message"
+          style={({ pressed, hovered, focused }: { pressed: boolean; hovered?: boolean; focused?: boolean }) => [
+            styles.sendButton,
+            !canSend && styles.sendButtonDisabled,
+            canSend && hovered && styles.sendButtonHover,
+            canSend && focused && styles.sendButtonFocus,
+            canSend && pressed && styles.sendButtonPressed,
+          ]}
         >
-          <Icon name="arrowUp" size={20} color={tokens.colors.onAccent} />
-        </TouchableOpacity>
+          <Icon name="arrowUp" size={20} color={canSend ? tokens.colors.onAccent : tokens.colors.textMuted} />
+        </Pressable>
       </View>
     </KeyboardAvoidingView>
   );
@@ -603,7 +613,7 @@ const styles = StyleSheet.create({
     maxWidth: 460,
   },
 
-  bubble: { maxWidth: '88%', borderRadius: tokens.radius.lg, padding: tokens.space.md, gap: tokens.space.sm },
+  bubble: { maxWidth: '88%', borderRadius: tokens.radius.lg, padding: tokens.space.md, gap: tokens.space.sm, overflow: 'hidden' },
   bubbleUser: {
     alignSelf: 'flex-end',
     backgroundColor: tokens.colors.accent,
@@ -790,15 +800,25 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.surface,
     ...tokens.focus.ring,
   },
+  // Bouton d'envoi façon Claude : carré au coin doux, accent MedInfo, états soignés.
   sendButton: {
     width: tokens.size.controlMd,
     height: tokens.size.controlMd,
-    borderRadius: tokens.radius.pill,
+    borderRadius: tokens.radius.md,
     backgroundColor: tokens.colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
     ...tokens.elevation.sm,
     ...tokens.motion.transitionWeb,
   },
-  sendButtonDisabled: { opacity: 0.45 },
+  sendButtonHover: { backgroundColor: tokens.colors.accentStrong, transform: [{ translateY: -1 }], ...tokens.elevation.md },
+  sendButtonFocus: tokens.focus.ring,
+  sendButtonPressed: { transform: [{ translateY: 1 }], opacity: 0.92 },
+  // Désactivé : pas de simple opacité — surface enfoncée + flèche atténuée (lisible).
+  sendButtonDisabled: {
+    backgroundColor: tokens.colors.surfaceSunken,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    ...Platform.select({ web: { boxShadow: 'none' } as object, default: {} }),
+  },
 });
