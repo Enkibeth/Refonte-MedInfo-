@@ -81,6 +81,10 @@ export const tokens = {
     warningText: palette.amber600,
     warningBackground: palette.amber50,
 
+    // États d'interaction (web : hover/focus). Sobres, dérivés de la rampe existante.
+    surfaceHover: palette.neutral50, // survol d'une surface blanche (boutons, cartes)
+    accentSurfaceHover: palette.petrol100, // survol d'une pastille teintée petrol
+
     // ── Accents par audience (persona) ───────────────────────────────────────
     // Trois publics distincts du design system : pro / étudiant / grand public.
     personas: {
@@ -138,11 +142,19 @@ export const tokens = {
 
   // ── Rayons (mesurés, pas de « tout arrondi ») ───────────────────────────────
   radius: {
+    xs: 6, // coin « pincé » des bulles de chat (queue côté émetteur)
     sm: 8,
     md: 12,
     lg: 16,
     xl: 20,
     pill: 999,
+  },
+
+  // ── Tailles de contrôle (hauteurs unifiées boutons / champs / icônes) ────────
+  size: {
+    controlMd: 44,
+    controlLg: 52,
+    iconButton: 38,
   },
 
   // ── Élévation (ombres discrètes ; web only, ignorées proprement en natif) ───
@@ -161,11 +173,31 @@ export const tokens = {
     }) as object,
   },
 
+  // ── Focus (accessibilité web) ────────────────────────────────────────────────
+  // Anneau de focus visible, contrasté, posé via boxShadow (web only). Sur natif
+  // le focus clavier ne s'applique pas de la même façon → objet vide ignoré.
+  focus: {
+    ring: Platform.select({
+      web: { boxShadow: '0 0 0 3px rgba(18, 113, 147, 0.35)' },
+      default: {},
+    }) as object,
+  },
+
   // ── Mouvement (design system §4) ─────────────────────────────────────────────
   // Pas de bounce ni de spring tape-à-l'œil : fades, translate 4–8 px, scale 0.98→1.
   // Toujours coupé sous prefers-reduced-motion (cf. useReducedMotion).
   motion: {
     duration: { fast: 120, base: 200, slow: 320 },
+    // Transition CSS douce pour les états interactifs (web only ; ignorée en natif
+    // où l'on s'appuie sur Animated / Pressable). Couvre couleur, ombre, transform.
+    transitionWeb: Platform.select({
+      web: {
+        transitionProperty: 'background-color, border-color, box-shadow, transform, opacity',
+        transitionDuration: '160ms',
+        transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+      },
+      default: {},
+    }) as object,
     // Courbes de Bézier (mêmes valeurs côté web CSS, cf. app/+html.tsx).
     easing: {
       standard: [0.4, 0, 0.2, 1] as const, // entrée / interaction

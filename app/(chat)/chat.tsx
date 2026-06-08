@@ -4,7 +4,7 @@
  * show_sources → panneau toggleable, refuse_and_redirect → bannière refus.
  * Disclaimer permanent conforme 01_REGULATION §4.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,8 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
+  Animated,
+  Easing,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -28,6 +29,9 @@ import { DictationButton } from '@/ui/DictationButton';
 import { ToolsMenu } from '@/ui/ToolsMenu';
 import { ChatSettingsSheet } from '@/ui/ChatSettingsSheet';
 import { ReflectionCard } from '@/ui/ReflectionCard';
+import { Reveal } from '@/ui/Reveal';
+import { Icon } from '@/ui/icons';
+import { useReducedMotion } from '@/ui/useReducedMotion';
 import { collectLatestCitations, type Citation } from '@/ai/ui/chatSources';
 import { splitReflection } from '@/ai/ui/reflection';
 import { DEFAULT_GENERATION, type GenerationSettings } from '@/ai/chat/generationSettings';
@@ -148,6 +152,68 @@ function QcmCard({ qcm }: { qcm: QcmPayload }) {
           Réponse : {String.fromCharCode(65 + qcm.correct_index)} — {qcm.explanation}
         </Text>
       ) : null}
+    </View>
+  );
+}
+
+/**
+ * Indicateur de frappe : trois points qui pulsent en cascade, présenté comme une
+ * bulle assistant. Affiché pendant l'attente du premier token (statut `submitted`).
+ * Mouvement sobre (opacité + 2 px), coupé sous prefers-reduced-motion (§4).
+ */
+function TypingDots() {
+  const reduced = useReducedMotion();
+  const d0 = useRef(new Animated.Value(0.45)).current;
+  const d1 = useRef(new Animated.Value(0.45)).current;
+  const d2 = useRef(new Animated.Value(0.45)).current;
+
+  useEffect(() => {
+    if (reduced) return;
+    const pulse = (v: Animated.Value, delay: number) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(v, {
+            toValue: 1,
+            duration: 420,
+            delay,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(v, {
+            toValue: 0.45,
+            duration: 420,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+    const anims = [pulse(d0, 0), pulse(d1, 140), pulse(d2, 280)];
+    anims.forEach((a) => a.start());
+    return () => anims.forEach((a) => a.stop());
+  }, [reduced, d0, d1, d2]);
+
+  return (
+    <View
+      style={[styles.bubble, styles.bubbleAssistant, styles.typingBubble]}
+      accessibilityLabel="Rédaction en cours"
+      accessibilityRole="text"
+    >
+      <View style={styles.typingRow}>
+        {[d0, d1, d2].map((v, i) => (
+          <Animated.View
+            key={i}
+            style={[
+              styles.typingDot,
+              {
+                opacity: v,
+                transform: [
+                  { translateY: v.interpolate({ inputRange: [0.45, 1], outputRange: [1, -2] }) },
+                ],
+              },
+            ]}
+          />
+        ))}
+      </View>
     </View>
   );
 }
@@ -337,7 +403,7 @@ export default function ChatScreen() {
         contentContainerStyle={styles.messagesContent}
       >
         {messages.length === 0 && !isLoading ? (
-          <View style={styles.emptyState}>
+          <Reveal style={styles.emptyState}>
             <Image
               source={require('../../assets/brand/legacy-illustration.png')}
               style={styles.emptyIllustration}
@@ -349,18 +415,15 @@ export default function ChatScreen() {
               Réponses claires, appuyées sur des sources (HAS, ANSM…). Information générale,
               jamais un avis médical individuel.
             </Text>
-          </View>
+          </Reveal>
         ) : null}
 
         {messages.map((m) => (
-          <MessageBubble key={m.id} message={m} onFollowup={handleFollowup} />
+          <Reveal key={m.id}>
+            <MessageBubble message={m} onFollowup={handleFollowup} />
+          </Reveal>
         ))}
-        {isLoading && (
-          <View style={styles.loadingRow}>
-            <ActivityIndicator color={tokens.colors.accent} size="small" />
-            <Text style={styles.loadingText}>Rédaction en cours…</Text>
-          </View>
-        )}
+        {status === 'submitted' && <TypingDots />}
         {error && (
           <View style={styles.refusalBanner}>
             <Text style={styles.refusalText}>Une erreur est survenue. Veuillez réessayer.</Text>
@@ -398,7 +461,7 @@ export default function ChatScreen() {
           accessibilityRole="button"
           accessibilityLabel="Envoyer le message"
         >
-          <Text style={styles.sendText}>Envoyer</Text>
+          <Icon name="arrowUp" size={20} color={tokens.colors.onAccent} />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -421,14 +484,15 @@ const styles = StyleSheet.create({
   },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
   headerIconButton: {
-    width: 38,
-    height: 38,
+    width: tokens.size.iconButton,
+    height: tokens.size.iconButton,
     borderRadius: tokens.radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: tokens.colors.accentSurface,
     borderWidth: 1,
     borderColor: tokens.colors.accentSurfaceStrong,
+    ...tokens.motion.transitionWeb,
   },
   headerIconText: {
     fontSize: 18,
@@ -512,14 +576,16 @@ const styles = StyleSheet.create({
   bubbleUser: {
     alignSelf: 'flex-end',
     backgroundColor: tokens.colors.accent,
-    borderBottomRightRadius: 6,
+    borderBottomRightRadius: tokens.radius.xs,
+    ...tokens.elevation.sm,
   },
   bubbleAssistant: {
     alignSelf: 'flex-start',
-    backgroundColor: tokens.colors.surfaceAlt,
+    backgroundColor: tokens.colors.surface,
     borderWidth: 1,
     borderColor: tokens.colors.border,
-    borderBottomLeftRadius: 6,
+    borderBottomLeftRadius: tokens.radius.xs,
+    ...tokens.elevation.sm,
   },
   textUser: {
     fontFamily: tokens.font.sans,
@@ -644,8 +710,14 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  loadingRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm, padding: tokens.space.sm },
-  loadingText: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.label.fontSize },
+  typingBubble: { paddingVertical: tokens.space.md, paddingHorizontal: tokens.space.lg },
+  typingRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.xs + 2 },
+  typingDot: {
+    width: 7,
+    height: 7,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.textMuted,
+  },
 
   disclaimer: {
     fontFamily: tokens.font.sans,
@@ -669,7 +741,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    minHeight: 44,
+    minHeight: tokens.size.controlMd,
     maxHeight: 120,
     borderRadius: tokens.radius.lg,
     paddingHorizontal: tokens.space.lg,
@@ -680,25 +752,22 @@ const styles = StyleSheet.create({
     color: tokens.colors.text,
     fontFamily: tokens.font.sans,
     fontSize: tokens.type.body.fontSize,
+    ...tokens.motion.transitionWeb,
   },
   inputFocused: {
     borderColor: tokens.colors.accent,
     backgroundColor: tokens.colors.surface,
+    ...tokens.focus.ring,
   },
   sendButton: {
-    height: 44,
-    paddingHorizontal: tokens.space.xl,
-    borderRadius: tokens.radius.lg,
+    width: tokens.size.controlMd,
+    height: tokens.size.controlMd,
+    borderRadius: tokens.radius.pill,
     backgroundColor: tokens.colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
     ...tokens.elevation.sm,
+    ...tokens.motion.transitionWeb,
   },
   sendButtonDisabled: { opacity: 0.45 },
-  sendText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.semibold,
-    fontSize: tokens.type.label.fontSize,
-  },
 });
