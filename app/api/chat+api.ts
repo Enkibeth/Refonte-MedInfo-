@@ -18,7 +18,6 @@ import {
   createUIMessageStream,
   createUIMessageStreamResponse,
   generateId,
-  type UIMessageChunk,
 } from 'ai';
 
 import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
@@ -27,8 +26,8 @@ import { extractUserTexts, screenConversation } from '@/ai/orchestrator';
 import { getStage2Classifier } from '@/ai/classifier/llmStage2';
 import { CHAT_PERSONAS, resolveChatPersona } from '@/ai/routing/serverPersona';
 import { getActivePrompt } from '@/ai/prompts/index';
-import { validateOutput } from '@/ai/guardrails/outputValidator';
 import { buildRefusalChunks } from '@/ai/guardrails/refusalStream';
+import { gateUiMessageStream, type GateReport } from '@/ai/guardrails/streamGate';
 import { logInteraction } from '@/ai/logging/logInteraction';
 import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
 import { retrieveRagContext, buildRagSystemSection } from '@/rag/retrieval';
@@ -199,27 +198,16 @@ export async function POST(request: Request): Promise<Response> {
 
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
-      // On bufferise la réponse complète pour pouvoir la valider AVANT de l'émettre :
-      // la couche 3 doit pouvoir REMPLACER une sortie diagnostique, ce qu'un streaming
-      // token-par-token rendrait impossible (le texte serait déjà parti).
-      const buffered: UIMessageChunk[] = [];
-      let fullText = '';
-      for await (const chunk of result.toUIMessageStream()) {
-        if (chunk.type === 'text-delta') fullText += chunk.delta;
-        buffered.push(chunk);
+      // Couche 3 STREAMING (ADR-0022) : validation incrémentale. On diffuse la réponse
+      // par préfixes DÉJÀ validés ; dès qu'un marqueur diagnostique apparaît dans le
+      // cumul, on remplace par le refus canonique et on coupe la suite. Décision
+      // identique à la validation bufferisée (validateOutput monotone), mais progressive.
+      const report: GateReport = { blocked: false, fullText: '' };
+      for await (const chunk of gateUiMessageStream(result.toUIMessageStream(), generateId, report)) {
+        writer.write(chunk);
       }
 
-      const validation = validateOutput(fullText);
       const usage = await result.usage;
-
-      if (validation.blocked) {
-        // Couche 3 : sortie diagnostique détectée → réponse remplacée par le refus.
-        for (const chunk of buildRefusalChunks('output_validation', generateId)) {
-          writer.write(chunk);
-        }
-      } else {
-        for (const chunk of buffered) writer.write(chunk);
-      }
 
       await logInteraction({
         persona,
@@ -227,8 +215,8 @@ export async function POST(request: Request): Promise<Response> {
         tokens_in: usage?.inputTokens,
         tokens_out: usage?.outputTokens,
         latency_ms: Date.now() - startMs,
-        refusal_triggered: validation.blocked,
-        guardrail_layer: validation.blocked ? 'output_validation' : 'none',
+        refusal_triggered: report.blocked,
+        guardrail_layer: report.blocked ? 'output_validation' : 'none',
         intent_category: 'general_info',
       });
     },
