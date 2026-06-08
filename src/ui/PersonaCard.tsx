@@ -8,14 +8,14 @@ import { useReducedMotion } from './useReducedMotion';
 export type PersonaId = 'pro' | 'student' | 'public';
 
 /**
- * Carte d'audience (design system §7, UI kit PersonaCard). Trois publics, chacun
- * avec son accent (eyebrow pill + pastille d'icône). Interaction sobre :
- *   - web  : survol → lift (-2 px), ombre md, bordure accentuée ;
- *   - natif : appui → léger enfoncement (scale 0.985).
- * `prefers-reduced-motion` respecté via useReducedMotion.
+ * Carte d'audience (refonte « brutalisme structuré »). Bloc bordé encre à angle
+ * vif, index monospace « 01 », pavé d'icône en APLAT couleur persona. Au survol
+ * la carte se décale (-3 px) et révèle une ombre DURE de la couleur persona.
+ * `prefers-reduced-motion` respecté.
  */
 export function PersonaCard({
   persona,
+  index,
   eyebrow,
   title,
   description,
@@ -24,6 +24,7 @@ export function PersonaCard({
   onPress,
 }: {
   persona: PersonaId;
+  index?: number;
   eyebrow: string;
   title: string;
   description: string;
@@ -39,14 +40,14 @@ export function PersonaCard({
     if (reduced) return;
     Animated.timing(lift, {
       toValue: to,
-      duration: tokens.motion.duration.base,
+      duration: tokens.motion.duration.fast,
       easing: Easing.bezier(...tokens.motion.easing.standard),
       useNativeDriver: true,
     }).start();
   };
 
-  const translateY = lift.interpolate({ inputRange: [0, 1], outputRange: [0, -3] });
-  const scale = lift.interpolate({ inputRange: [0, 1], outputRange: [1, 1.004] });
+  const translate = lift.interpolate({ inputRange: [0, 1], outputRange: [0, -3] });
+  const idx = typeof index === 'number' ? String(index + 1).padStart(2, '0') : null;
 
   return (
     <Pressable
@@ -63,25 +64,27 @@ export function PersonaCard({
         <Animated.View
           style={[
             styles.card,
-            { transform: [{ translateY }, { scale }] },
-            hovered ? [styles.cardHover, { borderColor: accent.accent }] : null,
+            { transform: [{ translateX: translate }, { translateY: translate }] },
+            hovered
+              ? (Platform.select({ web: { boxShadow: `6px 6px 0 0 ${accent.accent}` }, default: {} }) as object)
+              : null,
           ]}
         >
           <View style={styles.head}>
-            <View style={[styles.pill, { backgroundColor: accent.soft }]}>
-              <Text style={[styles.pillText, { color: accent.accent }]}>{eyebrow}</Text>
-            </View>
-            <View style={[styles.iconBadge, { backgroundColor: accent.soft }]}>
-              <Icon name={icon} size={22} color={accent.accent} />
+            <Text style={styles.index}>{idx ? `[ ${idx} ]` : eyebrow.toUpperCase()}</Text>
+            <View style={[styles.iconBlock, { backgroundColor: accent.accent }]}>
+              <Icon name={icon} size={22} color={tokens.colors.onAccent} />
             </View>
           </View>
 
+          <Text style={[styles.eyebrow, { color: accent.accent }]}>{eyebrow.toUpperCase()}</Text>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.description}>{description}</Text>
 
+          <View style={styles.rule} />
           <View style={styles.ctaRow}>
-            <Text style={[styles.cta, { color: accent.accent }]}>{cta}</Text>
-            <Icon name="arrowRight" size={16} color={accent.accent} />
+            <Text style={styles.cta}>{cta}</Text>
+            <Icon name="arrowRight" size={18} color={tokens.colors.text} />
           </View>
         </Animated.View>
       )}
@@ -93,41 +96,47 @@ const styles = StyleSheet.create({
   pressable: { flexGrow: 1, flexBasis: 240 },
   card: {
     flex: 1,
-    borderRadius: tokens.radius.lg,
-    backgroundColor: tokens.colors.surface,
-    borderWidth: 1,
+    borderRadius: tokens.radius.none,
+    backgroundColor: tokens.colors.surfacePure,
+    borderWidth: tokens.border.bold,
     borderColor: tokens.colors.border,
     padding: tokens.space.xl,
-    gap: tokens.space.md,
-    ...tokens.elevation.sm,
+    gap: tokens.space.sm,
+    ...tokens.motion.transitionWeb,
   },
-  cardHover: tokens.elevation.md as object,
-  head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  pill: {
-    borderRadius: tokens.radius.pill,
-    paddingHorizontal: tokens.space.md,
-    paddingVertical: 5,
+  head: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: tokens.space.xs,
   },
-  pillText: {
-    fontFamily: tokens.font.sans,
-    fontSize: 11,
-    fontWeight: tokens.weight.semibold,
-    letterSpacing: 0.9,
-    textTransform: 'uppercase',
+  index: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.mono.fontSize,
+    letterSpacing: tokens.type.mono.letterSpacing,
   },
-  iconBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: tokens.radius.md,
+  iconBlock: {
+    width: 48,
+    height: 48,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  eyebrow: {
+    fontFamily: tokens.font.mono,
+    fontSize: tokens.type.monoSm.fontSize,
+    letterSpacing: tokens.type.monoSm.letterSpacing,
+    fontWeight: tokens.weight.bold,
   },
   title: {
     fontFamily: tokens.font.display,
     color: tokens.colors.text,
-    fontSize: tokens.type.h3.fontSize,
-    lineHeight: tokens.type.h3.lineHeight,
-    letterSpacing: tokens.type.h3.letterSpacing,
+    fontSize: tokens.type.h2.fontSize,
+    lineHeight: tokens.type.h2.lineHeight,
+    letterSpacing: tokens.type.h2.letterSpacing,
     fontWeight: tokens.weight.bold,
   },
   description: {
@@ -136,15 +145,23 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.label.fontSize,
     lineHeight: tokens.type.label.lineHeight,
   },
+  rule: {
+    height: tokens.border.hairline,
+    backgroundColor: tokens.colors.border,
+    marginTop: tokens.space.sm,
+  },
   ctaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: tokens.space.xs,
+    justifyContent: 'space-between',
     marginTop: tokens.space.xs,
   },
   cta: {
-    fontFamily: tokens.font.display,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
     fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.semibold,
+    fontWeight: tokens.weight.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });

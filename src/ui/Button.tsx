@@ -1,5 +1,6 @@
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -11,9 +12,11 @@ import {
 import { tokens } from './tokens';
 
 /**
- * Bouton MedInfo — primitive unique pour tous les écrans (05_DESIGN §4).
- * Variantes : primary (CTA petrol), secondary (contour), ghost (texte), danger.
- * États gérés : pressed (translation/opacité sobre), disabled, loading.
+ * Bouton MedInfo — primitive unique (refonte « brutalisme structuré »).
+ * Bloc à angle vif, bordure encre épaisse, ombre DURE décalée au repos ; au survol
+ * il se soulève (-1 px) avec une ombre plus marquée, à l'appui il s'enfonce
+ * (translate +3 px, ombre supprimée) comme une vraie touche.
+ * Variantes : primary, secondary, ghost, danger, inverse, outlineLight.
  */
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'inverse' | 'outlineLight';
 type Size = 'md' | 'lg';
@@ -30,6 +33,9 @@ interface ButtonProps {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
 }
+
+const hardShadow = (offset: number, color: string) =>
+  Platform.select({ web: { boxShadow: `${offset}px ${offset}px 0 0 ${color}` }, default: {} }) as ViewStyle;
 
 export function Button({
   label,
@@ -53,7 +59,6 @@ export function Button({
       accessibilityState={{ disabled: isInactive, busy: loading }}
       disabled={isInactive}
       onPress={onPress}
-      // react-native-web fournit `hovered` / `focused` au render-prop ; ignorés en natif.
       style={({ pressed, hovered, focused }: { pressed: boolean; hovered?: boolean; focused?: boolean }) => [
         styles.base,
         size === 'lg' ? styles.lg : styles.md,
@@ -70,11 +75,9 @@ export function Button({
         <ActivityIndicator
           size="small"
           color={
-            variant === 'inverse'
+            variant === 'inverse' || variant === 'secondary' || variant === 'ghost'
               ? tokens.colors.accent
-              : variant === 'primary' || variant === 'danger' || variant === 'outlineLight'
-                ? tokens.colors.onAccent
-                : tokens.colors.accent
+              : tokens.colors.onAccent
           }
         />
       ) : leftIcon ? (
@@ -93,56 +96,64 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: tokens.space.sm,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
-    borderColor: 'transparent',
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
     ...tokens.motion.transitionWeb,
   },
   fullWidth: { alignSelf: 'stretch' },
   md: { minHeight: tokens.size.controlMd, paddingHorizontal: tokens.space.lg },
   lg: { minHeight: tokens.size.controlLg, paddingHorizontal: tokens.space.xl },
-  pressed: { opacity: 0.92, transform: [{ translateY: 1 }] },
+  // Appui : la touche s'enfonce dans la page (vient se coller à son ombre).
+  pressed: {
+    transform: [{ translateX: 3 }, { translateY: 3 }],
+    ...(Platform.select({ web: { boxShadow: '0 0 0 0 transparent' }, default: {} }) as ViewStyle),
+  },
   focusRing: tokens.focus.ring,
-  disabled: { opacity: 0.5 },
+  disabled: { opacity: 0.45 },
   icon: { alignItems: 'center', justifyContent: 'center' },
-  label: { fontFamily: tokens.font.sans, fontWeight: tokens.weight.semibold },
+  label: {
+    fontFamily: tokens.font.sans,
+    fontWeight: tokens.weight.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   labelMd: { fontSize: tokens.type.label.fontSize },
-  labelLg: { fontSize: tokens.type.bodyLg.fontSize },
+  labelLg: { fontSize: tokens.type.label.fontSize },
 });
 
 const variantStyles: Record<Variant, { container: ViewStyle; hover: ViewStyle; label: { color: string } }> = {
   primary: {
-    container: { backgroundColor: tokens.colors.accent, ...tokens.elevation.sm },
-    // Survol : teinte plus dense + légère élévation/remontée → CTA « vivant » mais sobre.
-    hover: { backgroundColor: tokens.colors.accentStrong, transform: [{ translateY: -1 }], ...tokens.elevation.md },
+    container: { backgroundColor: tokens.colors.accent, ...hardShadow(4, tokens.colors.ink) },
+    hover: { backgroundColor: tokens.colors.accentStrong, transform: [{ translateX: -1 }, { translateY: -1 }], ...hardShadow(6, tokens.colors.ink) },
     label: { color: tokens.colors.onAccent },
   },
   secondary: {
-    container: { backgroundColor: tokens.colors.surface, borderColor: tokens.colors.borderStrong },
-    hover: { backgroundColor: tokens.colors.surfaceHover, borderColor: tokens.colors.accent },
-    label: { color: tokens.colors.accentDeep },
+    container: { backgroundColor: tokens.colors.surfacePure, ...hardShadow(4, tokens.colors.ink) },
+    hover: { backgroundColor: tokens.colors.surface, transform: [{ translateX: -1 }, { translateY: -1 }], ...hardShadow(6, tokens.colors.ink) },
+    label: { color: tokens.colors.text },
   },
   ghost: {
-    container: { backgroundColor: 'transparent' },
+    container: { backgroundColor: 'transparent', borderColor: 'transparent' },
     hover: { backgroundColor: tokens.colors.accentSurface },
     label: { color: tokens.colors.accent },
   },
   danger: {
-    container: { backgroundColor: tokens.colors.danger },
-    hover: { transform: [{ translateY: -1 }], ...tokens.elevation.md },
+    container: { backgroundColor: tokens.colors.danger, ...hardShadow(4, tokens.colors.ink) },
+    hover: { transform: [{ translateX: -1 }, { translateY: -1 }], ...hardShadow(6, tokens.colors.ink) },
     label: { color: tokens.colors.onAccent },
   },
-  // Pour fonds petrol/sombres (hero) : bouton blanc, texte petrol.
+  // Sur fond encre (hero) : bloc papier bordé encre, ombre dure petrol pour le pop.
   inverse: {
-    container: { backgroundColor: tokens.colors.onAccent, ...tokens.elevation.md },
-    hover: { transform: [{ translateY: -1 }], ...tokens.elevation.lg },
-    label: { color: tokens.colors.accentDeep },
+    container: { backgroundColor: tokens.colors.onInk, ...hardShadow(4, tokens.colors.accent) },
+    hover: { transform: [{ translateX: -1 }, { translateY: -1 }], ...hardShadow(6, tokens.colors.accent) },
+    label: { color: tokens.colors.text },
   },
-  // Contour clair sur fond sombre.
+  // Contour clair sur fond encre.
   outlineLight: {
-    container: { backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.55)' },
-    hover: { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.85)' },
-    label: { color: tokens.colors.onAccent },
+    container: { backgroundColor: 'transparent', borderColor: tokens.colors.onInk },
+    hover: { backgroundColor: 'rgba(235,231,220,0.14)' },
+    label: { color: tokens.colors.onInk },
   },
 };
 

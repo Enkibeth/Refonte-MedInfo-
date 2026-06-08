@@ -82,33 +82,34 @@ const tabStyles = StyleSheet.create({
   bar: {
     backgroundColor: tokens.colors.surface,
     borderTopColor: tokens.colors.border,
-    borderTopWidth: 1,
+    borderTopWidth: tokens.border.bold,
     paddingTop: tokens.space.sm,
-    ...tokens.elevation.md,
   },
   item: { paddingTop: 2 },
   label: {
-    fontFamily: tokens.font.sans,
-    fontSize: 11,
+    fontFamily: tokens.font.mono,
+    fontSize: 10,
     fontWeight: tokens.weight.semibold,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
     marginTop: 2,
   },
-  // Pastille d'arrière-plan sur l'outil actif → repère visuel net de la sélection.
+  // Bloc d'arrière-plan sur l'outil actif → repère net, à angle vif.
   iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 52,
     height: 30,
-    borderRadius: tokens.radius.pill,
-    borderWidth: 1,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
     borderColor: 'transparent',
     ...tokens.motion.transitionWeb,
   },
-  // Sélection « en gros » : pastille teintée pleine + contour accent net.
+  // Sélection : aplat teinté plein + contour encre franc.
   iconWrapActive: {
     backgroundColor: tokens.colors.accentSurfaceStrong,
-    borderColor: tokens.colors.accent,
+    borderColor: tokens.colors.border,
   },
-  emoji: { fontSize: 20, opacity: 0.55 },
+  emoji: { fontSize: 20, opacity: 0.5 },
   emojiActive: { opacity: 1 },
 });

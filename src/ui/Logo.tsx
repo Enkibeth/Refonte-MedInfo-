@@ -47,10 +47,11 @@ export function Logo({
 const styles = StyleSheet.create({
   pill: {
     alignSelf: 'flex-start',
-    backgroundColor: tokens.colors.onAccent,
-    borderRadius: tokens.radius.lg,
+    backgroundColor: tokens.colors.surfacePure,
+    borderRadius: tokens.radius.none,
+    borderWidth: tokens.border.bold,
+    borderColor: tokens.colors.border,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.md,
-    ...tokens.elevation.sm,
   },
 });
