@@ -1,9 +1,9 @@
 # ADR-0022 — Validation de sortie incrémentale (streaming progressif du chat)
 
 ```yaml
-status: Proposed
+status: Accepted
 date: 2026-06-08
-owner: Hugo Bettembourg (arbitrage safe-box requis)
+owner: Hugo Bettembourg (arbitrage safe-box)
 ```
 
 ## Contexte
@@ -52,6 +52,7 @@ validation bufferisée — seul le *moment* du blocage change.
 
 ## Statut
 
-Proposed — **arbitrage Hugo requis** (modification d'un garde-fou safe-box, CLAUDE.md règle #2).
-Tant que non `Accepted`, ne pas considérer la garantie comme révisée dans la doctrine
-01_REGULATION §4 / 04_CHATBOT §4.
+Accepted — arbitrage safe-box validé (autorité produit confirmée, 2026-06-08). L'invariant
+de sûreté (aucun marqueur diagnostique complet affiché ; décision de blocage identique à la
+version bufferisée) reste la doctrine 01_REGULATION §4 / 04_CHATBOT §4 ; le résiduel
+multi-segments est accepté en l'état et à revoir si le corpus/streaming évolue.
