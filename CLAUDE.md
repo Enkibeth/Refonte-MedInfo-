@@ -2,28 +2,35 @@
 
 ```yaml
 status: Active
-date: 2026-06-06
+date: 2026-06-10
 owner: Hugo Bettembourg
 scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 ```
 
-## ⚠️ Mode TEMPORAIRE — safe-box du chat neutralisée (ADR-0023, 2026-06-08)
+## ⚠️ Refonte 2026-06 (ADR-0024) : chat direct sans safe-box — sécurité à réintroduire après validation de l'ébauche par Hugo
 
-> **Décision Hugo : on stabilise un chat fonctionnel d'abord, on remet la sécurité par-dessus ensuite.**
+> **Décision Hugo : refonte complète du chat. On valide d'abord une ébauche produit fonctionnelle, on réintroduit les couches de sécurité par-dessus ensuite.**
 >
-> La safe-box du chat (couche 1 classifieur pré-LLM + couche 3 validation de sortie) est
-> **désactivée par défaut** via l'interrupteur `src/ai/guardrails/config.ts` →
-> `guardrailsEnabled()` (env `MEDINFO_GUARDRAILS`, OFF tant que ≠ `on`).
-> Raison : sur-refus massif (« Cours sur l'HTA » → refus canonique). Le code des couches
-> est **conservé** et reste testé (les tests forcent `MEDINFO_GUARDRAILS=on`).
-> **Réactivation** : `MEDINFO_GUARDRAILS=on` (env Vercel), sans redéploiement de code.
-> Restent actifs : disclosure passive, rate-limit, autorisation persona serveur.
-> Tant que ce bandeau est présent, la règle #2 ci-dessous est **relâchée par ADR-0023**.
+> `/api/chat` (`app/api/chat+api.ts`) est désormais un appel LLM **direct** : plus de
+> classifieur pré-LLM, plus de guardrails/validation de sortie, plus de RAG injecté,
+> plus de rate-limit sur le chat. Les modules correspondants sont **supprimés** du dépôt
+> (`src/ai/orchestrator.ts`, `src/ai/classifier/*`, `src/ai/guardrails/*`, `src/ai/skills/*`,
+> `src/ai/ui/*`, anciens prompts v1/v2, tests classifier/guardrails/prompt-regression) —
+> contrairement à l'ADR-0023 qui les conservait derrière un interrupteur.
+> 3 chatbots = 3 prompts produit complets fournis par Hugo (`public.v3`, `student.v3`,
+> `professional.v2`). Le client choisit son chatbot (`body.chatbot`) ; côté serveur,
+> `allowedChatbotsFor(persona vérifiée)` : public → chat public seulement ;
+> étudiant/professionnel → les 3 chats.
+> Restent actifs : disclosure passive, autorisation persona serveur, rate-limit sur
+> `/api/analyze` et `/api/ecos` (`src/ai/rateLimit/`).
+> Tant que ce bandeau est présent, la règle #2 ci-dessous est **relâchée par ADR-0024**
+> (qui remplace ADR-0023). La réintroduction de la sécurité est planifiée après validation
+> de l'ébauche par Hugo (voir « Suivi » de l'ADR-0024).
 
 ## Règles de reprise
 
 1. Lire `START.md`, `.ai-governance.md`, `docs/01_REGULATION.md`, puis `docs/README.md` avant tout changement.
-2. Ne jamais dégrader la safe-box non-MDSW : classifieur avant LLM principal, refus déterministe en cas de doute, RAG cite-or-refuse. **(Relâchée temporairement par ADR-0023 — voir bandeau ci-dessus ; à rétablir à la réactivation de la safe-box.)**
+2. Ne jamais dégrader la safe-box non-MDSW : classifieur avant LLM principal, refus déterministe en cas de doute, RAG cite-or-refuse. **(Relâchée temporairement par ADR-0024 — voir bandeau ci-dessus ; à rétablir lors de la réintroduction de la sécurité après validation de l'ébauche.)**
 3. Ne pas implémenter d'historique patient, dossier, triage, diagnostic ou CAT individualisée sans ADR `Proposed` + arbitrage Hugo.
 4. Une feature par branche dédiée ; documentation et ADR doivent accompagner chaque décision structurante.
 
@@ -31,11 +38,11 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 
 | Feature | Statut | Surface / audience | Source de vérité | Sécurité / conformité | ADR |
 |---|---|---|---|---|---|
-| Chat information générale `public.v2` | Actif | Grand public | `src/ai/prompts/public.v2.ts`, orchestration API chat | Refus canonical pour symptômes personnels/urgence, disclosure AI Act, pas de donnée santé persistée | ADR-0003, ADR-0005 |
-| Chat pédagogique `student.v2` | Actif | Étudiants vérifiés | `src/ai/prompts/student.v2.ts`, routing persona serveur | Cas fictifs EDN/R2C/ECOS autorisés ; patient réel refusé | ADR-0005, ADR-0011 |
-| Classifieur étage 1 regex/lexique | Actif | Tous messages avant LLM | `src/ai/classifier/regexClassifier.ts`, `lexicon.ts` | Déterministe, prioritaire, court-circuite le LLM principal sur urgence/personnel | ADR-0003 |
-| Classifieur étage 2 LLM léger | Actif conditionnel | Messages non tranchés par l'étage 1 | `src/ai/classifier/llmStage2.ts`, variables `CLASSIFIER_STAGE2_ENABLED` / `CLASSIFIER_MODEL_ID` | `temperature=0`, JSON typé, seuil 0,85, fail-closed vers `ambiguous` | ADR-0013, ADR-0015 |
-| RAG HAS/ANSM MVP | Actif lexical, dense prêt | Public + étudiant | `rag_sources`, `rag_chunks`, `match_rag_chunks`, `src/rag/retrieval.ts` | Sources publiques whitelistées, métadonnées validées, source isolation anti prompt-injection | ADR-0014 |
+| Chat direct 3 chatbots (refonte 2026-06) | Actif | Public (chat public) ; étudiant/pro vérifiés (les 3 chats) | `app/api/chat+api.ts`, prompts `src/ai/prompts/public.v3.ts` / `student.v3.ts` / `professional.v2.ts`, contexte profil `src/ai/chat/chatContext.ts` | Appel LLM direct (gpt-5.2, web_search ON) ; pas de classifieur/guardrails/RAG/rate-limit sur le chat (temporaire) ; `allowedChatbotsFor()` serveur ; disclosure AI Act conservée | ADR-0024 |
+| Parseur + rendu interactif des réponses chat | Actif | Tous (chat) | `src/ai/chat/parseAssistantMessage.ts`, `src/ui/chat/AssistantBlocks.tsx` | Parse SOURCES `SRCn::`, badges OFFICIEL/GUIDELINE/ÉTUDE/RCP, APPROFONDISSEMENTS, QUESTIONS_PATIENT, INTERACTION, AUTO-RÉFLEXION, `<!--CALC:…-->`, `[1]+[2]+[3]` étudiant ; rendu 100% client | ADR-0024 |
+| Historique des conversations + export PDF | Actif | Tous (chat) | `src/chat/history.ts`, `src/ui/chat/HistoryPanel.tsx`, `src/ui/chat/ChatbotSwitcher.tsx`, `src/chat/exportChatPdf.ts`, migration `0020_chat_history.sql` | RLS own-row stricte (`chat_conversations`/`chat_messages`), test `tests/rls/chat-history.test.ts` ; contenu potentiellement sensible | ADR-0024 |
+| Titre + catégorie de conversation `chat_meta` | Actif | Tous (chat) | `app/api/chat-meta+api.ts`, défaut `gemini-2.5-flash` (provider google) | Génère uniquement titre/catégorie ; pas de conseil médical ; configurable panel admin | ADR-0024 |
+| RAG HAS/ANSM MVP | Conservé, non branché sur le chat | Documentaire (réutilisation future) | `rag_sources`, `rag_chunks`, `match_rag_chunks`, `src/rag/retrieval.ts` | Sources publiques whitelistées, métadonnées validées ; plus injecté dans `/api/chat` depuis la refonte (ADR-0024) | ADR-0014, ADR-0024 |
 | Embeddings RAG réels | Pipeline livré, peuplement à faire | Retrieval documentaire | `text-embedding-3-small`, `scripts/embeddings/ingest-corpus.mjs` | Zéro pseudo-embedding ; lexical-only si clé/réseau échoue ; EU residency/ZDR à activer avant prod | ADR-0014 |
 | Vérification étudiant | Actif | Choix rôle étudiant | `profiles`, route `app/api/role+api.ts` | E-mail académique / statut serveur, anti-auto-promotion RLS | ADR-0011 |
 | Vérification RPPS / ANS | Configurée côté décision, activation contrôlée | Professionnels de santé | API FHIR Annuaire Santé, statut `pending` tant que clé absente | RPPS = donnée personnelle publique ; pro routable mais features cliniques gelées | ADR-0007, ADR-0011 |
@@ -44,7 +51,7 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 | Cas ECOS en base | Décidé / feature pédagogique | Étudiants vérifiés | Tables de cas/stations pédagogiques versionnées | Cas explicitement fictifs ; aucun patient réel ; séparation du chat médical | ADR-0017 |
 | Analyseur de classement (medoutils) | Actif (v1) | Étudiants vérifiés | `app/(chat)/partiel.tsx`, logique pure `src/lib/classement.ts` | Import CSV/TSV des notes de promo (upload web ou collage) → rang, stats, comparaison par n° étudiant ; calcul 100% client (aucune donnée envoyée, sans IA) | ADR-0019 |
 | Visibilité des outils par rôle + menu d'outils | Actif | Tous (UI adaptée) | `src/ai/routing/featureVisibility.ts`, `src/ui/RoleGate.tsx`, `src/ui/ToolsMenu.tsx`, `app/(chat)/_layout.tsx` | Cloisonnement UI strict par persona ; menu déroulant rôle-aware ; jamais l'unique barrière (autorisation serveur conservée) | ADR-0018 |
-| Dictée vocale (chat/ECOS) | Actif | Tous | `src/ui/DictationButton.tsx`, `/api/transcribe` mode `raw` | Voix → texte (Whisper) dans les saisies ; transcription brute ; le texte repasse par la safe-box de la route cible | ADR-0019 |
+| Dictée vocale (chat/ECOS) | Actif | Tous | `src/ui/DictationButton.tsx`, `/api/transcribe` mode `raw` | Voix → texte (Whisper) dans les saisies ; transcription brute ; le texte repasse par l'autorisation de la route cible (safe-box retirée du chat par ADR-0024) | ADR-0019 |
 
 ## Migrations Supabase — état documentaire
 
@@ -69,6 +76,8 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 | `0017_profile_personal_info.sql` | Infos perso de profil (`first_name`, `last_name`, `age`, `sex`) + contraintes CHECK | Non (données perso, pas de santé) | Own-row (lecture + écriture user) | HORS verrou anti-élévation ; personnalise l'information générale du chat ; jamais diagnostic/anamnèse (ADR-0021) |
 | `0018_ecos_cases_align_schema.sql` | Réconcilie `ecos_cases` (schéma FR dérivé en prod) vers le schéma du dépôt (`title`/`specialty`/`brief` + `patient_profile`/`grading_grid` jsonb) | Non (cas fictifs) | Lecture cas publiés | Corrige « column ecos_cases.title does not exist » ; idempotente, préserve les 16 cas |
 | `0019_audio_documents.sql` | Bibliothèque transcriptions/comptes rendus audio (`title`, `folder`, `transcription`, `report`, `audio_path`, `audio_expires_at`) | Donnée sensible (consultation) | Own-row stricte (CRUD propriétaire) | Texte conservé indéfiniment ; audio ≤24h purgé par `pg_cron` (`supabase/setup/audio_storage_and_purge.sql`, hors harness) ; export PDF ; ADR-0022 |
+| `0020_chat_history.sql` | Historique du chat : `chat_conversations` (chatbot, `title`/`category` générés par `chat_meta`) + `chat_messages` (user/assistant) | Potentiellement sensible (questions de santé) | Own-row stricte (CRUD propriétaire ; insert message vérifié contre la conversation du user) | Test `tests/rls/chat-history.test.ts` ; ADR-0024 |
+| `0021_ai_model_config_refonte.sql` | Seed feature `chat_meta` (gemini-2.5-flash, google) + update `chat` → `gpt-5.2` (openai) avec `web_search = true` | Non | Service role only (hérite du verrou 0011) | Refonte 2026-06 ; le POST admin fait un UPDATE, la ligne `chat_meta` doit préexister ; ADR-0024 |
 
 > Si une migration ci-dessus n'existe pas encore dans `supabase/migrations/`, la documenter comme décision attendue et ne pas modifier le schéma sans tests RLS correspondants.
 > Note : `supabase/setup/` contient le setup Supabase-spécifique (bucket Storage `consultation-audio`, RLS Storage, purge `pg_cron`) NON rejoué par le harness RLS CI ; appliqué directement sur le projet via MCP.
@@ -162,7 +171,7 @@ const [model, systemPrompt] = await Promise.all([
 | `src/ai/providers/featureRuntime.ts` | Construit les options d'appel LLM par feature (température, raisonnement, verbosité, web search) → `getRuntimeForFeature()` |
 
 Tables Supabase (service role only, RLS sans policy) :
-- `ai_model_config` — migration `0011_ai_model_config.sql` (seed des 6 features ; le POST admin fait un UPDATE, les lignes doivent préexister).
+- `ai_model_config` — migrations `0011_ai_model_config.sql` (seed initial) + `0021_ai_model_config_refonte.sql` (seed `chat_meta`, chat → gpt-5.2 + web_search) ; le POST admin fait un UPDATE, les lignes doivent préexister.
 - `ai_prompts` — migration `0012_ai_prompts.sql` (overrides des prompts ; table vide, fallback sur `PROMPT_DEFAULTS`).
 - Réglages de génération par feature — migration `0015_ai_model_params.sql` (colonnes `temperature`, `reasoning_effort`, `verbosity`, `web_search` sur `ai_model_config`).
 
@@ -171,7 +180,7 @@ Chaque feature expose, **selon les capacités du modèle choisi** (`AVAILABLE_MO
 - **Raisonnement** (`reasoning_effort` : minimal/low/medium/high) — OpenAI `reasoningEffort` ; Anthropic → budget *thinking*.
 - **Verbosité** (`verbosity` : low/medium/high) — OpenAI `textVerbosity` (gpt-5.x).
 - **Température** (0–2).
-- **Recherche internet** (`web_search`, OFF par défaut) — outil web du provider (OpenAI / Anthropic). Pour le chat, le RAG *cite-or-refuse* reste prioritaire ; n'activer qu'en connaissance de cause.
+- **Recherche internet** (`web_search`, OFF par défaut sauf `chat`) — outil web du provider (OpenAI / Anthropic / Google). Pour le chat, `web_search` est **ON par défaut** depuis la refonte 2026-06 (migration 0021) : les prompts v3 exigent des sources réelles vérifiables (HAS/ESC/PubMed…).
 
 Les réglages sont appliqués au call LLM par `getRuntimeForFeature()` dans toutes les routes IA.
 
@@ -186,7 +195,8 @@ Pour ajouter un admin : modifier `ADMIN_USER_IDS` dans `src/admin/index.ts`.
 
 | Feature key | Route API | Modèle par défaut | Audience |
 |-------------|-----------|-------------------|----------|
-| `chat` | `/api/chat` | claude-sonnet-4-6 | Tous |
+| `chat` | `/api/chat` | gpt-5.2 (web_search ON) | Tous — 3 chatbots (prompts `public`/`student`/`professional`) ; public → chat public seul, étudiant/pro vérifiés → les 3 |
+| `chat_meta` | `/api/chat-meta` | gemini-2.5-flash | Tous (titre + catégorie d'une conversation) |
 | `analyze` | `/api/analyze` | claude-sonnet-4-6 | Grand public |
 | `ecos_simulate` | `/api/ecos` | claude-sonnet-4-6 | Étudiant |
 | `ecos_evaluate` | `/api/ecos` | claude-sonnet-4-6 | Étudiant |
@@ -196,20 +206,25 @@ Pour ajouter un admin : modifier `ADMIN_USER_IDS` dans `src/admin/index.ts`.
 ## Visibilité des fonctionnalités par rôle (persona)
 
 Chaque rôle ne voit QUE ses outils (le grand public ne voit pas les outils
-étudiant/pro, et inversement). Source de vérité unique :
-`src/ai/routing/featureVisibility.ts` (module pur, testé dans
-`tests/unit/feature-visibility.test.ts`).
+étudiant/pro, et inversement). Le chat est commun à tous, mais les **3 chatbots**
+(public/étudiant/professionnel) ne sont accessibles qu'aux comptes étudiant/pro
+vérifiés et aux admins ; le grand public n'a que le chat public. Source de vérité
+unique : `src/ai/routing/featureVisibility.ts` (module pur, testé dans
+`tests/unit/feature-visibility.test.ts`) ; côté serveur `allowedChatbotsFor()`
+dans `app/api/chat+api.ts`. La navigation utilise des icônes ligne (plus d'emojis).
 
 | Outil | Grand public | Étudiant | Professionnel | Admin |
 |---|:---:|:---:|:---:|:---:|
-| 💬 Chat santé | ✅ | ✅ | ✅ | ✅ |
-| 📄 Analyse de document | ✅ | — | — | ✅ |
-| 🩺 ECOS | — | ✅ | — | ✅ |
-| 📊 Classement (analyseur de promo) | — | ✅ | — | ✅ |
-| 🎤 Audio (compte rendu) | — | — | ✅ | ✅ |
+| Chat santé (3 chatbots) | ✅ (chat public seul) | ✅ (les 3) | ✅ (les 3) | ✅ (les 3) |
+| Analyse de document | ✅ | — | — | ✅ |
+| ECOS | — | ✅ | — | ✅ |
+| Classement (analyseur de promo) | — | ✅ | — | ✅ |
+| Audio (compte rendu) | — | — | ✅ | ✅ |
 
 Application :
 - Barre d'onglets `app/(chat)/_layout.tsx` : onglet masqué via `href: null` si non visible.
+- Accueil rôle-aware : étudiant/pro voient les 3 chats + leurs outils ; le public voit son chat.
+- Switch de chatbot `src/ui/chat/ChatbotSwitcher.tsx` (étudiant/pro/admin uniquement).
 - Menu déroulant d'outils `src/ui/ToolsMenu.tsx` (en-tête) : switch rôle-aware depuis n'importe quel écran.
 - Garde d'écran `<RoleGate feature="…">` (`src/ui/RoleGate.tsx`) sur Document/ECOS/Classement/Audio
   (défense en profondeur contre l'accès direct / deep-link).

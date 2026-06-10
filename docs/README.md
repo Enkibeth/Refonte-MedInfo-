@@ -6,6 +6,8 @@ Base documentaire du projet MedInfo AI v4. **À lire avant toute contribution** 
 `01_REGULATION.md` > `00_CHARTER.md` > tous les autres. La conformité réglementaire prime sur tout.
 
 ## Index
+> ⚠️ **Note de dépréciation (refonte 2026-06, ADR-0024)** : le chat est désormais un appel LLM direct (3 chatbots, prompts v3). Les modules classifieur/guardrails/orchestrateur décrits dans `04_CHATBOT.md` et `07_CLASSIFIER.md` sont **supprimés du code** ; ces docs restent comme référence pour la réintroduction de la sécurité.
+
 | Doc | Rôle |
 |---|---|
 | `STATUS.md` | Statut courant du projet, validation des étapes, limites connues |
@@ -22,6 +24,8 @@ Base documentaire du projet MedInfo AI v4. **À lire avant toute contribution** 
 | `DECISIONS/` | ADRs (1 fichier = 1 décision) — 17 décisions actées |
 
 ## Règle pour les agents IA
+> ⚠️ **Dépréciation partielle (ADR-0024)** : les gates `refusal-regression` et `prompt-contract` ont été retirés avec la refonte du chat ; le script `compliance` = `compliance:grep` + `test:rls` + `validate:rag`.
+
 Toute PR passe 5 gates CI (`03_SECURITY §1`) : `compliance-grep`, `refusal-regression`, `rls-isolation`, `prompt-contract`, `rag-license`. Échec = merge bloqué. La conformité est **testée, pas déclarée**.
 
 ## TDD-conformité

@@ -61,6 +61,8 @@ La Règle 11 classe alors **a minima Classe IIa** (IIb si erreur → détériora
 
 ## 4. Doctrine du refus — defense-in-depth (3 couches)
 
+> ⚠️ **Note de dépréciation temporaire (ADR-0024, refonte 2026-06)** : les couches 1 (classifieur pré-LLM) et 3 (validation de sortie) sont **retirées du code** ; le chat est un appel LLM direct. Cette doctrine reste la cible et sera réintroduite après validation de l'ébauche par Hugo.
+
 Le refus ne repose **jamais** sur le seul prompt. Implémentation dans `04_CHATBOT.md`.
 
 **Couche 1 — Classifieur pré-LLM (déterministe).** Chaque message → catégorie `general_info`/`personal_symptoms`/`emergency`/`out_of_scope`/`ambiguous`. Si `personal_symptoms`/`emergency`/`ambiguous` → refus canonique, **LLM principal jamais appelé**.

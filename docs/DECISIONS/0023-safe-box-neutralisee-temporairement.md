@@ -1,7 +1,7 @@
 # ADR-0023 — Safe-box du chat neutralisée temporairement (interrupteur)
 
 ```yaml
-status: Accepted
+status: Superseded (par ADR-0024 — refonte chat 2026-06)
 date: 2026-06-08
 owner: Hugo Bettembourg (arbitrage produit)
 supersedes: aucun (relâche temporairement la doctrine 01_REGULATION §4 / 04_CHATBOT §4)
