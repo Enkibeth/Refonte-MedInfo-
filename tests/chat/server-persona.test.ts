@@ -72,13 +72,13 @@ describe('resolveChatPersona — persona dérivée du serveur (CC-01)', () => {
     expect(res.attemptedElevation).toBe(false);
   });
 
-  it('token valide, profil professional → public (non servi par le chat MVP)', async () => {
+  it('token valide, profil professional → professional (les 3 chatbots sont ouverts, refonte 2026-06)', async () => {
     const res = await resolveChatPersona(request('tok'), 'student', {
       supabase: fakeSupabase({ userId: 'u3', profile: { persona: 'professional' } }),
     });
 
-    expect(res.persona).toBe('public');
-    expect(res.attemptedElevation).toBe(true);
+    expect(res.persona).toBe('professional');
+    expect(res.attemptedElevation).toBe(false);
   });
 
   it('token invalide → public (jamais d’identité non vérifiée)', async () => {

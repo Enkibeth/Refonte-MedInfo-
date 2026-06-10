@@ -18,8 +18,8 @@ import type { Persona } from '@/ai/prompts/_schema';
 import { resolveVerifiedUserId } from '@/auth/serverIdentity';
 import { createServerSupabaseClient } from '@/db/serverSupabase';
 
-/** Personas réellement servables par la route chat MVP (04_CHATBOT §8). */
-export const CHAT_PERSONAS: Persona[] = ['public', 'student'];
+/** Personas servables par la route chat (refonte 2026-06 : les 3 chatbots sont ouverts). */
+export const CHAT_PERSONAS: Persona[] = ['public', 'student', 'professional'];
 
 export interface ServerPersonaResolution {
   /** Persona effective dérivée du serveur — la SEULE à utiliser pour toute autorisation. */

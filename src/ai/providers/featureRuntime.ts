@@ -11,6 +11,7 @@
  */
 import { anthropic } from '@ai-sdk/anthropic';
 import { openai } from '@ai-sdk/openai';
+import { google } from '@ai-sdk/google';
 import type { LanguageModel } from 'ai';
 import type { FeatureKey } from '@/admin/index';
 import {
@@ -63,6 +64,7 @@ const ANTHROPIC_THINKING_BUDGET: Record<ReasoningEffort, number> = {
 
 function buildModel(modelId: string, provider: string): LanguageModel {
   if (provider === 'openai') return openai(modelId);
+  if (provider === 'google') return google(modelId);
   return anthropic(modelId);
 }
 
@@ -124,6 +126,15 @@ export async function getRuntimeForFeature(
       const t = anthropic as unknown as { tools?: Record<string, (...args: unknown[]) => unknown> };
       try {
         if (t.tools?.webSearch_20250305) tools.web_search = t.tools.webSearch_20250305({ maxUses: 5 });
+      } catch {
+        /* idem */
+      }
+    }
+  } else if (settings.provider === 'google') {
+    if (caps.webSearch && settings.webSearch) {
+      const t = google as unknown as { tools?: Record<string, (...args: unknown[]) => unknown> };
+      try {
+        if (t.tools?.googleSearch) tools.google_search = t.tools.googleSearch({});
       } catch {
         /* idem */
       }

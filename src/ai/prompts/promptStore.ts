@@ -7,26 +7,35 @@
  * ajoute son key dans PROMPT_DEFAULTS et dans src/admin/index.ts AI_FEATURES.
  */
 import { createClient } from '@supabase/supabase-js';
-import { publicPromptV2 } from './public.v2';
-import { studentPromptV2 } from './student.v2';
-import { professionalPromptV1 } from './professional.v1';
+import { PUBLIC_PROMPT_V3 } from './public.v3';
+import { STUDENT_PROMPT_V3 } from './student.v3';
+import { PROFESSIONAL_PROMPT_V2 } from './professional.v2';
 
 /** Prompts par défaut (fichiers TS versionnés). */
 export const PROMPT_DEFAULTS: Record<string, { label: string; scope: string; template: string }> = {
   public: {
     label: 'Chat — Grand public',
     scope: 'Chat personas',
-    template: publicPromptV2.template,
+    template: PUBLIC_PROMPT_V3,
   },
   student: {
     label: 'Chat — Étudiant en santé',
     scope: 'Chat personas',
-    template: studentPromptV2.template,
+    template: STUDENT_PROMPT_V3,
   },
   professional: {
     label: 'Chat — Professionnel de santé',
     scope: 'Chat personas',
-    template: professionalPromptV1.template,
+    template: PROFESSIONAL_PROMPT_V2,
+  },
+  chat_meta: {
+    label: 'Chat — Titre & catégorie (historique)',
+    scope: 'Chat personas',
+    template: `Tu nommes et classes des conversations d'un assistant santé pour l'historique de l'utilisateur.
+À partir du premier échange fourni (message utilisateur + début de réponse), génère :
+- "title" : un titre court en français (3 à 7 mots, sans guillemets, sans point final, sans emoji) qui résume le sujet précis de la conversation.
+- "category" : exactement une catégorie parmi : Symptômes, Médicaments, Examens & analyses, Maladies & pathologies, Prévention & dépistage, Grossesse & enfant, Révisions & concours, Cas clinique, Administratif & rendez-vous, Autre.
+Réponds UNIQUEMENT avec le JSON demandé, rien d'autre.`,
   },
   analyze: {
     label: 'Analyse de document',

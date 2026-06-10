@@ -9,13 +9,17 @@
  */
 import { anthropic } from '@ai-sdk/anthropic';
 import { openai } from '@ai-sdk/openai';
+import { google } from '@ai-sdk/google';
 import { createClient } from '@supabase/supabase-js';
 import type { LanguageModel } from 'ai';
 import type { FeatureKey } from '@/admin/index';
 
 /** Modèles par défaut si Supabase est inaccessible. */
 const FEATURE_DEFAULTS: Record<FeatureKey, { modelId: string; provider: string }> = {
-  chat:          { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
+  // Choix Hugo (refonte 2026-06) : GPT-5.2 par défaut pour le chat (rapport coût/qualité).
+  chat:          { modelId: 'gpt-5.2',           provider: 'openai' },
+  // Titre + catégorie d'historique : modèle flash économique.
+  chat_meta:     { modelId: 'gemini-2.5-flash',  provider: 'google' },
   analyze:       { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   ecos_simulate: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   ecos_evaluate: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
@@ -144,6 +148,19 @@ export const AVAILABLE_MODELS = [
     id: 'gpt-4o-mini', provider: 'openai', label: 'GPT-4o mini',
     capabilities: { temperature: true, reasoning: false, verbosity: false, webSearch: false },
   },
+  // ── Google Gemini ─────────────────────────────────────────────────────────
+  {
+    id: 'gemini-2.5-pro', provider: 'google', label: 'Gemini 2.5 Pro',
+    capabilities: { temperature: true, reasoning: true, verbosity: false, webSearch: true },
+  },
+  {
+    id: 'gemini-2.5-flash', provider: 'google', label: 'Gemini 2.5 Flash',
+    capabilities: { temperature: true, reasoning: true, verbosity: false, webSearch: true },
+  },
+  {
+    id: 'gemini-2.5-flash-lite', provider: 'google', label: 'Gemini 2.5 Flash-Lite',
+    capabilities: { temperature: true, reasoning: false, verbosity: false, webSearch: false },
+  },
 ] as const;
 
 export type ReasoningEffort = 'minimal' | 'low' | 'medium' | 'high';
@@ -225,6 +242,7 @@ export function invalidateConfigCache() {
 
 function buildModel(modelId: string, provider: string): LanguageModel {
   if (provider === 'openai') return openai(modelId);
+  if (provider === 'google') return google(modelId);
   return anthropic(modelId);
 }
 

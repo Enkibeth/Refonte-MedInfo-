@@ -3,11 +3,19 @@
  * Aucune donnée santé identifiable : pas de contenu de message.
  * Utilisé par la route API chat pour chaque interaction (refus ou réponse).
  */
-import type { IntentCategory } from '@/ai/classifier/types';
 import type { Persona } from '@/ai/prompts/_schema';
 import { createServerSupabaseClient } from '@/db/serverSupabase';
 
 export type GuardrailLayer = 'classifier' | 'prompt' | 'output_validation' | 'rag_cite_or_refuse' | 'none';
+
+/** Catégorie d'intention (héritée du schéma ai_interactions ; classifieur retiré, refonte 2026-06). */
+export type IntentCategory =
+  | 'general_info'
+  | 'personal_symptoms'
+  | 'emergency'
+  | 'medication_dosage'
+  | 'educational_case'
+  | 'ambiguous';
 
 export interface InteractionLog {
   user_id?: string;
