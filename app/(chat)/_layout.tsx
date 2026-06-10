@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import type { ReactNode } from 'react';
-import { Pressable, Text, View, StyleSheet, type GestureResponderEvent } from 'react-native';
+import { Pressable, View, StyleSheet, type GestureResponderEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSession } from '@/auth/AuthProvider';
@@ -11,8 +11,8 @@ import { tokens } from '@/ui/tokens';
 
 function TabIcon({ icon, focused }: { icon: IconName; focused: boolean }) {
   return (
-    <View style={!focused && tabStyles.iconInactive}>
-      <Icon name={icon} size={20} color={focused ? tokens.colors.accent : tokens.colors.textMuted} />
+    <View style={[tabStyles.iconChip, focused && tabStyles.iconChipActive]}>
+      <Icon name={icon} size={20} color={focused ? tokens.colors.onAccent : tokens.colors.textMuted} />
     </View>
   );
 }
@@ -143,7 +143,7 @@ const tabStyles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: tokens.space.xs,
   },
-  // Surbrillance qui entoure TOUT le mode (icône + libellé), pas juste l'icône.
+  // Surbrillance qui entoure TOUT le mode (icône + libellé).
   pill: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -152,14 +152,23 @@ const tabStyles = StyleSheet.create({
     paddingBottom: 3,
     paddingHorizontal: tokens.space.sm,
     borderRadius: tokens.radius.lg,
-    borderWidth: 1,
-    borderColor: 'transparent',
     ...tokens.motion.transitionWeb,
   },
-  // Sélection nette : pastille teintée pleine + contour accent englobant le libellé.
   pillActive: {
     backgroundColor: tokens.colors.accentSurface,
-    borderColor: tokens.colors.accent,
   },
-  iconInactive: { opacity: 0.6 },
+  // Pastille d'icône : remplie en accent quand l'onglet est actif (icône blanche),
+  // discrète sinon. Donne un repère visuel net par onglet.
+  iconChip: {
+    width: 38,
+    height: 28,
+    borderRadius: tokens.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...tokens.motion.transitionWeb,
+  },
+  iconChipActive: {
+    backgroundColor: tokens.colors.accent,
+    ...tokens.elevation.sm,
+  },
 });

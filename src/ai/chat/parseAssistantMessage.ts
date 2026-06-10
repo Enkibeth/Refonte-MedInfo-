@@ -17,6 +17,48 @@
 
 export type SourceBadge = 'OFFICIEL' | 'GUIDELINE' | 'ÉTUDE' | 'RCP';
 
+export interface EvidenceLevel {
+  /** Libellé court affiché dans la pastille de la modale. */
+  label: string;
+  /** Explication en une phrase, adaptée au grand public. */
+  description: string;
+}
+
+/** Niveau de preuve associé à un badge de source (pour la modale de détail). */
+export function evidenceLevelFor(badge: SourceBadge | null): EvidenceLevel {
+  switch (badge) {
+    case 'OFFICIEL':
+      return {
+        label: 'Source officielle',
+        description:
+          "Recommandation d'une autorité de santé (HAS, ANSM, OMS…). Niveau de confiance élevé.",
+      };
+    case 'GUIDELINE':
+      return {
+        label: 'Recommandation de société savante',
+        description:
+          "Recommandation d'experts d'une spécialité (ESC, NICE, EULAR…). Niveau de confiance élevé.",
+      };
+    case 'ÉTUDE':
+      return {
+        label: 'Étude scientifique',
+        description:
+          'Essai clinique, méta-analyse ou revue systématique publiée. Niveau de preuve variable selon le type.',
+      };
+    case 'RCP':
+      return {
+        label: 'Notice / RCP officielle',
+        description:
+          "Résumé des caractéristiques du produit ou fiche médicament officielle (ANSM, EMA, FDA).",
+      };
+    default:
+      return {
+        label: 'Référence citée',
+        description: 'Référence fournie à l\'appui de la réponse.',
+      };
+  }
+}
+
 export interface ParsedSource {
   id: string; // SRC1…SRC6
   badge: SourceBadge | null;

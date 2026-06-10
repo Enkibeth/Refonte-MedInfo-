@@ -12,7 +12,7 @@
  *   - [1] + [2] + [3] (étudiant) → boutons d'approfondissement numérotés.
  */
 import { useMemo, useState } from 'react';
-import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import {
   parseAssistantMessage,
@@ -45,46 +45,45 @@ export function SourceBadgePill({ badge }: { badge: SourceBadge }) {
   );
 }
 
-export function SourceCard({ source }: { source: ParsedSource }) {
-  const openUrl = () => {
-    if (source.url) Linking.openURL(source.url).catch(() => {});
-  };
+export function SourceCard({ source, onPress }: { source: ParsedSource; onPress: (s: ParsedSource) => void }) {
   const title = source.title || source.shortLabel || source.org || source.id;
   return (
     <TouchableOpacity
       style={styles.sourceCard}
-      onPress={openUrl}
-      disabled={!source.url}
-      accessibilityRole={source.url ? 'link' : 'text'}
-      accessibilityLabel={`Source ${source.id} : ${title}`}
+      onPress={() => onPress(source)}
+      accessibilityRole="button"
+      accessibilityLabel={`Source ${source.id} : ${title} — voir le détail`}
     >
       <View style={styles.sourceHeader}>
         <Text style={styles.sourceId}>{source.id}</Text>
         {source.badge ? <SourceBadgePill badge={source.badge} /> : null}
         {source.year ? <Text style={styles.sourceYear}>{source.year}</Text> : null}
-        {source.url ? (
-          <View style={styles.sourceLinkIcon}>
-            <Icon name="externalLink" size={14} color={tokens.colors.accent} />
-          </View>
-        ) : null}
+        <View style={styles.sourceLinkIcon}>
+          <Icon name="chevronDown" size={14} color={tokens.colors.textMuted} />
+        </View>
       </View>
       <Text style={styles.sourceTitle}>{title}</Text>
       {source.org && source.org !== source.shortLabel ? (
         <Text style={styles.sourceOrg}>{source.org}</Text>
       ) : null}
       {source.justification ? (
-        <Text style={styles.sourceJustification}>{source.justification}</Text>
-      ) : null}
-      {source.url ? (
-        <Text style={styles.sourceUrl} numberOfLines={1}>
-          {source.url}
+        <Text style={styles.sourceJustification} numberOfLines={2}>
+          {source.justification}
         </Text>
       ) : null}
     </TouchableOpacity>
   );
 }
 
-export function SourcesBlock({ sources, startOpen = false }: { sources: ParsedSource[]; startOpen?: boolean }) {
+export function SourcesBlock({
+  sources,
+  startOpen = false,
+  onOpenSource,
+}: {
+  sources: ParsedSource[];
+  startOpen?: boolean;
+  onOpenSource: (s: ParsedSource) => void;
+}) {
   const [open, setOpen] = useState(startOpen);
   return (
     <View style={styles.sourcesWrapper}>
@@ -103,7 +102,7 @@ export function SourcesBlock({ sources, startOpen = false }: { sources: ParsedSo
       {open ? (
         <View style={styles.sourcesList}>
           {sources.map((s) => (
-            <SourceCard key={s.id + (s.url ?? '')} source={s} />
+            <SourceCard key={s.id + (s.url ?? '')} source={s} onPress={onOpenSource} />
           ))}
         </View>
       ) : null}
@@ -394,10 +393,12 @@ export function AssistantBlocks({
   text,
   onSend,
   disabled,
+  onOpenSource,
 }: {
   text: string;
   onSend: (text: string) => void;
   disabled: boolean;
+  onOpenSource: (s: ParsedSource) => void;
 }) {
   const parsed = useMemo(() => parseAssistantMessage(text), [text]);
 
@@ -408,7 +409,7 @@ export function AssistantBlocks({
           case 'body':
             return <BodyBlock key={i} markdown={block.markdown} />;
           case 'sources':
-            return <SourcesBlock key={i} sources={block.sources} />;
+            return <SourcesBlock key={i} sources={block.sources} onOpenSource={onOpenSource} />;
           case 'deepening':
             return <DeepeningBlock key={i} items={block.items} onSend={onSend} disabled={disabled} />;
           case 'questionsPatient':

@@ -1,51 +1,15 @@
 import { Image } from 'react-native';
 
 import { tokens } from './tokens';
+import { ICON_PATHS, GOOGLE_SVG, APPLE_SVG, type IconName } from './iconPaths';
 
 /**
- * Icônes ligne (style Lucide, design system §6) : stroke 2 px, currentColor.
- * Rendu sans dépendance native via data-URI SVG (web + natif), couleur injectée
- * à la volée. Tailles canoniques : 16 / 20 / 24 / 32.
+ * Icônes ligne (style Lucide) — implémentation NATIVE.
+ * Rendu sans dépendance via data-URI SVG dans <Image>. Sur web, c'est
+ * `icons.web.tsx` (SVG inline) qui est utilisé : le data-URI est peu fiable
+ * dans l'export web de production (icônes invisibles).
  */
-const ICON_PATHS = {
-  stethoscope:
-    'M11 2v2 M5 2v2 M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1 M8 15a6 6 0 0 0 12 0v-3 M20 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z',
-  brain:
-    'M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z',
-  users:
-    'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75',
-  shield:
-    'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z M9 12l2 2 4-4',
-  sparkles:
-    'm12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z',
-  bookOpen:
-    'M12 7v14 M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z',
-  arrowRight: 'M5 12h14 M13 6l6 6-6 6',
-  arrowUp: 'M12 19V5 M5 12l7-7 7 7',
-  clock: 'M12 6v6l4 2 M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z',
-  barChart: 'M3 3v16a2 2 0 0 0 2 2h16 M18 17V9 M13 17V5 M8 17v-3',
-  home: 'M3 9.5 12 3l9 6.5 M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10 M9 21v-6h6v6',
-  userRound: 'M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z M4 21a8 8 0 0 1 16 0',
-  download: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3',
-  plus: 'M5 12h14 M12 5v14',
-  trash: 'M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6 M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2 M10 11v6 M14 11v6',
-  x: 'M18 6 6 18 M6 6l12 12',
-  externalLink: 'M15 3h6v6 M10 14 21 3 M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6',
-  chevronDown: 'm6 9 6 6 6-6',
-  messageCircle: 'M7.9 20A9 9 0 1 0 4 16.1L2 22Z',
-  calculator:
-    'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z M8 7h8 M8 12h.01 M12 12h.01 M16 12h.01 M8 16h.01 M12 16h.01 M16 16h.01',
-  fileText:
-    'M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z M14 2v4a2 2 0 0 0 2 2h4 M16 13H8 M16 17H8 M10 9H8',
-  graduationCap:
-    'M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z M22 10v6 M6 12.5V16a6 3 0 0 0 12 0v-3.5',
-  micVoice:
-    'M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z M19 10v2a7 7 0 0 1-14 0v-2 M12 19v3',
-  settings:
-    'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z',
-} as const;
-
-export type IconName = keyof typeof ICON_PATHS;
+export type { IconName };
 
 export function Icon({
   name,
@@ -70,33 +34,14 @@ export function Icon({
   );
 }
 
-/**
- * Icônes de marque (Google, Apple) pour les boutons OAuth.
- * Rendu via data-URI SVG : net et sans dépendance native supplémentaire (web-first).
- * Les marques imposent leurs logos officiels — ne pas recolorer.
- */
-const GOOGLE_SVG =
-  'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4Ij48cGF0aCBmaWxsPSIjRkZDMTA3IiBkPSJNNDMuNjExIDIwLjA4M0g0MlYyMEgyNHY4aDExLjMwM2MtMS42NDkgNC42NTctNi4wOCA4LTExLjMwMyA4LTYuNjI3IDAtMTItNS4zNzMtMTItMTJzNS4zNzMtMTIgMTItMTJjMy4wNTkgMCA1Ljg0MiAxLjE1NCA3Ljk2MSAzLjAzOWw1LjY1Ny01LjY1N0MzNC4wNDYgNi4wNTMgMjkuMjY4IDQgMjQgNCAxMi45NTUgNCA0IDEyLjk1NSA0IDI0czguOTU1IDIwIDIwIDIwIDIwLTguOTU1IDIwLTIwYzAtMS4zNDEtLjEzOC0yLjY1LS4zODktMy45MTd6Ii8+PHBhdGggZmlsbD0iI0ZGM0QwMCIgZD0iTTYuMzA2IDE0LjY5MWw2LjU3MSA0LjgxOUMxNC42NTUgMTUuMTA4IDE4Ljk2MSAxMiAyNCAxMmMzLjA1OSAwIDUuODQyIDEuMTU0IDcuOTYxIDMuMDM5bDUuNjU3LTUuNjU3QzM0LjA0NiA2LjA1MyAyOS4yNjggNCAyNCA0IDE2LjMxOCA0IDkuNjU2IDguMzM3IDYuMzA2IDE0LjY5MXoiLz48cGF0aCBmaWxsPSIjNENBRjUwIiBkPSJNMjQgNDRjNS4xNjYgMCA5Ljg2LTEuOTc3IDEzLjQwOS01LjE5MmwtNi4xOS01LjIzOEMyOS4yMTEgMzUuMDkxIDI2LjcxNSAzNiAyNCAzNmMtNS4yMDIgMC05LjYxOS0zLjMxNy0xMS4yODMtNy45NDZsLTYuNTIyIDUuMDI1QzkuNTA1IDM5LjU1NiAxNi4yMjcgNDQgMjQgNDR6Ii8+PHBhdGggZmlsbD0iIzE5NzZEMiIgZD0iTTQzLjYxMSAyMC4wODNINDJWMjBIMjR2OGgxMS4zMDNjLS43OTIgMi4yMzctMi4yMzEgNC4xNjYtNC4wODcgNS41NzFsLjAwMy0uMDAyIDYuMTkgNS4yMzhDMzYuOTcxIDM5LjIwNSA0NCAzNCA0NCAyNGMwLTEuMzQxLS4xMzgtMi42NS0uMzg5LTMuOTE3eiIvPjwvc3ZnPgo=';
-
-const APPLE_SVG =
-  'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48cGF0aCBmaWxsPSIjMEYxQjIyIiBkPSJNMTYuMzY1IDEuNDNjMCAxLjE0LS40OTMgMi4yNy0xLjE3NyAzLjA4LS43NDQuOS0xLjk5IDEuNTctMi45ODcgMS41Ny0uMTIgMC0uMjMtLjAyLS4zLS4wMy0uMDEtLjA2LS4wNC0uMjItLjA0LS4zOSAwLTEuMTUuNTcyLTIuMjcgMS4yMDYtMi45OC44MDQtLjk0IDIuMTQyLTEuNjQgMy4yNDgtMS42OC4wMy4xMy4wNS4yOC4wNS40M3ptNC41NjUgMTUuNzFjLS4wMy4wNy0uNDYzIDEuNTgtMS41MTggMy4xMi0uOTQ1IDEuMzQtMS45NCAyLjcxLTMuNDMgMi43NC0xLjUxNy4wMy0yLjAyLS44Ny0zLjcxLS44Ny0xLjY4MyAwLTIuMTguODQtMy42MS45LTEuNDYuMDYtMi42MS0xLjQ2LTMuNjItMi44NC0xLjk3LTIuNy0zLjQ4LTcuNjYtMS40NS0xMS4wMS45ODUtMS42NSAyLjc2LTIuNjkgNC42OS0yLjcyIDEuNDUtLjAzIDIuODEuOTYgMy43MS45Ni45MSAwIDIuNTYtMS4xOCA0LjMyLTEuMDEuNzMuMDMgMi43OS4zIDQuMTEgMi4yNi0uMTA1LjA3LTIuNDU1IDEuNDItMi40MyA0LjI2LjAzIDMuNCAyLjk3IDQuNTIgMyA0LjUzeiIvPjwvc3ZnPgo=';
-
 export function GoogleIcon({ size = 20 }: { size?: number }) {
   return (
-    <Image
-      accessibilityIgnoresInvertColors
-      source={{ uri: GOOGLE_SVG }}
-      style={{ width: size, height: size }}
-    />
+    <Image accessibilityIgnoresInvertColors source={{ uri: GOOGLE_SVG }} style={{ width: size, height: size }} />
   );
 }
 
 export function AppleIcon({ size = 20 }: { size?: number }) {
   return (
-    <Image
-      accessibilityIgnoresInvertColors
-      source={{ uri: APPLE_SVG }}
-      style={{ width: size, height: size }}
-    />
+    <Image accessibilityIgnoresInvertColors source={{ uri: APPLE_SVG }} style={{ width: size, height: size }} />
   );
 }

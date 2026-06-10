@@ -9,9 +9,10 @@
  * Le texte dicté est ensuite traité par la safe-box normale de la route cible.
  */
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, TouchableOpacity } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
+import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
 
 type State = 'idle' | 'recording' | 'transcribing';
@@ -110,7 +111,11 @@ export function DictationButton({
       {busy ? (
         <ActivityIndicator size="small" color={tokens.colors.accent} />
       ) : (
-        <Text style={[styles.icon, recording && styles.iconRecording]}>{recording ? '⏹' : '🎙️'}</Text>
+        <Icon
+          name={recording ? 'stop' : 'micVoice'}
+          size={19}
+          color={recording ? tokens.colors.danger : tokens.colors.accentDeep}
+        />
       )}
     </TouchableOpacity>
   );
@@ -132,6 +137,4 @@ const styles = StyleSheet.create({
     borderColor: tokens.colors.danger,
   },
   buttonDisabled: { opacity: 0.45 },
-  icon: { fontSize: 18 },
-  iconRecording: { fontSize: 16 },
 });

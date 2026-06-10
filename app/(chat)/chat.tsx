@@ -33,7 +33,7 @@ import type { UIMessage } from 'ai';
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
 import type { ChatbotId } from '@/ai/chat/chatContext';
-import { parseAssistantMessage } from '@/ai/chat/parseAssistantMessage';
+import { parseAssistantMessage, type ParsedSource } from '@/ai/chat/parseAssistantMessage';
 import {
   createConversation,
   deleteConversation,
@@ -53,6 +53,7 @@ import { useReducedMotion } from '@/ui/useReducedMotion';
 import { AssistantBlocks, SourcesBlock } from '@/ui/chat/AssistantBlocks';
 import { ChatbotSwitcher, CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
 import { HistoryPanel } from '@/ui/chat/HistoryPanel';
+import { SourceDetailModal } from '@/ui/chat/SourceDetailModal';
 
 // ── Suggestions d'amorce par chatbot (état vide) ───────────────────────────────
 
@@ -80,9 +81,9 @@ const DISCLAIMER: Record<ChatbotId, string> = {
   professional: "Outil d'aide à la décision — la décision finale appartient au clinicien.",
 };
 
-// ── Indicateur de frappe ───────────────────────────────────────────────────────
+// ── Indicateur de statut (réflexion / recherche de sources / rédaction) ──────────
 
-function TypingDots() {
+function PulsingDots() {
   const reduced = useReducedMotion();
   const d0 = useRef(new Animated.Value(0.45)).current;
   const d1 = useRef(new Animated.Value(0.45)).current;
@@ -103,15 +104,38 @@ function TypingDots() {
   }, [reduced, d0, d1, d2]);
 
   return (
-    <View style={[styles.bubble, styles.bubbleAssistant, styles.typingBubble]} accessibilityLabel="Rédaction en cours">
-      <View style={styles.typingRow}>
-        {[d0, d1, d2].map((v, i) => (
-          <Animated.View
-            key={i}
-            style={[styles.typingDot, { opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0.45, 1], outputRange: [1, -2] }) }] }]}
-          />
-        ))}
+    <View style={styles.typingRow}>
+      {[d0, d1, d2].map((v, i) => (
+        <Animated.View
+          key={i}
+          style={[styles.typingDot, { opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0.45, 1], outputRange: [1, -2] }) }] }]}
+        />
+      ))}
+    </View>
+  );
+}
+
+type ChatPhase = 'thinking' | 'searching' | 'writing';
+
+/**
+ * Bulle de statut affichée tant que la réponse n'a pas commencé à s'écrire : rassure
+ * l'utilisateur que ça charge (réflexion, puis recherche de sources le cas échéant).
+ */
+function StatusBubble({ phase }: { phase: ChatPhase }) {
+  const label =
+    phase === 'searching'
+      ? 'Recherche de sources fiables…'
+      : phase === 'writing'
+        ? 'Rédaction de la réponse…'
+        : 'MedInfo réfléchit…';
+  const icon = phase === 'searching' ? 'search' : phase === 'writing' ? 'sparkles' : 'brain';
+  return (
+    <View style={[styles.bubble, styles.bubbleAssistant, styles.statusBubble]} accessibilityLabel={label}>
+      <View style={styles.statusIconWrap}>
+        <Icon name={icon} size={16} color={tokens.colors.accent} />
       </View>
+      <Text style={styles.statusText}>{label}</Text>
+      <PulsingDots />
     </View>
   );
 }
@@ -126,10 +150,12 @@ function MessageBubble({
   message,
   onSend,
   disabled,
+  onOpenSource,
 }: {
   message: UIMessage;
   onSend: (text: string) => void;
   disabled: boolean;
+  onOpenSource: (s: ParsedSource) => void;
 }) {
   const isUser = message.role === 'user';
   const text = messageText(message);
@@ -144,9 +170,18 @@ function MessageBubble({
   }
   return (
     <View style={[styles.bubble, styles.bubbleAssistant]}>
-      <AssistantBlocks text={text} onSend={onSend} disabled={disabled} />
+      <AssistantBlocks text={text} onSend={onSend} disabled={disabled} onOpenSource={onOpenSource} />
     </View>
   );
+}
+
+/** A-t-on un appel d'outil (recherche web) en cours dans le dernier message assistant ? */
+function hasToolActivity(message: UIMessage | undefined): boolean {
+  if (!message) return false;
+  return (message.parts ?? []).some((p) => {
+    const t = (p as { type?: string }).type ?? '';
+    return t.startsWith('tool-') || t === 'dynamic-tool';
+  });
 }
 
 // ── Écran principal ────────────────────────────────────────────────────────────
@@ -168,6 +203,7 @@ export default function ChatScreen() {
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [detailSource, setDetailSource] = useState<ParsedSource | null>(null);
 
   // Le profil charge après le premier rendu : aligne le chatbot par défaut une fois connu.
   // Un paramètre ?bot=… (cartes de l'accueil) prime s'il est autorisé pour ce compte.
@@ -238,12 +274,28 @@ export default function ChatScreen() {
   const isLoading = status === 'streaming' || status === 'submitted';
   const canSend = !isLoading && input.trim().length > 0;
 
+  const lastAssistant = useMemo(
+    () => [...messages].reverse().find((m) => m.role === 'assistant'),
+    [messages],
+  );
+
   // Sources de la dernière réponse (onglet global dans l'en-tête).
-  const latestSources = useMemo(() => {
-    const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
-    if (!lastAssistant) return [];
-    return parseAssistantMessage(messageText(lastAssistant)).sources;
-  }, [messages]);
+  const latestSources = useMemo(
+    () => (lastAssistant ? parseAssistantMessage(messageText(lastAssistant)).sources : []),
+    [lastAssistant],
+  );
+
+  // Phase de chargement : pendant l'attente (submitted) ou tant qu'aucun texte n'est encore
+  // arrivé, on montre une bulle de statut (réflexion → recherche de sources → rédaction).
+  const lastAssistantText = lastAssistant ? messageText(lastAssistant) : '';
+  const showStatus =
+    status === 'submitted' || (status === 'streaming' && lastAssistantText.trim().length === 0);
+  const phase: ChatPhase =
+    status === 'submitted'
+      ? 'thinking'
+      : hasToolActivity(lastAssistant)
+        ? 'searching'
+        : 'writing';
 
   const sendText = useCallback(
     async (text: string) => {
@@ -354,6 +406,29 @@ export default function ChatScreen() {
           </Text>
         </View>
         <View style={styles.headerActions}>
+          {latestSources.length > 0 ? (
+            <TouchableOpacity
+              style={[styles.sourcesPill, sourcesOpen && styles.sourcesPillActive]}
+              onPress={() => setSourcesOpen((o) => !o)}
+              accessibilityRole="button"
+              accessibilityLabel={`Sources (${latestSources.length})`}
+            >
+              <Icon name="bookOpen" size={16} color={sourcesOpen ? tokens.colors.onAccent : tokens.colors.accentDeep} />
+              <Text style={[styles.sourcesPillText, sourcesOpen && styles.sourcesPillTextActive]}>
+                {latestSources.length}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+          {messages.length > 0 ? (
+            <TouchableOpacity
+              style={styles.headerIconButton}
+              onPress={handleExportPdf}
+              accessibilityRole="button"
+              accessibilityLabel="Exporter la conversation en PDF"
+            >
+              <Icon name="download" size={17} color={tokens.colors.accentDeep} />
+            </TouchableOpacity>
+          ) : null}
           {user ? (
             <TouchableOpacity
               style={styles.headerIconButton}
@@ -367,28 +442,11 @@ export default function ChatScreen() {
           {messages.length > 0 ? (
             <TouchableOpacity
               style={styles.headerIconButton}
-              onPress={handleExportPdf}
+              onPress={() => startNewConversation()}
               accessibilityRole="button"
-              accessibilityLabel="Exporter la conversation en PDF"
+              accessibilityLabel="Nouvelle conversation"
             >
-              <Icon name="download" size={17} color={tokens.colors.accentDeep} />
-            </TouchableOpacity>
-          ) : null}
-          {latestSources.length > 0 ? (
-            <TouchableOpacity
-              style={[styles.headerIconButton, sourcesOpen && styles.headerIconButtonActive]}
-              onPress={() => setSourcesOpen((o) => !o)}
-              accessibilityRole="button"
-              accessibilityLabel={`Sources (${latestSources.length})`}
-            >
-              <Icon
-                name="bookOpen"
-                size={17}
-                color={sourcesOpen ? tokens.colors.onAccent : tokens.colors.accentDeep}
-              />
-              <View style={styles.sourcesCountBadge}>
-                <Text style={styles.sourcesCountText}>{latestSources.length}</Text>
-              </View>
+              <Icon name="plus" size={18} color={tokens.colors.accentDeep} />
             </TouchableOpacity>
           ) : null}
           <ToolsMenu />
@@ -409,9 +467,9 @@ export default function ChatScreen() {
 
       {/* ── Onglet sources global ── */}
       {sourcesOpen && latestSources.length > 0 ? (
-        <View style={styles.sourcesPane}>
-          <SourcesBlock sources={latestSources} startOpen />
-        </View>
+        <ScrollView style={styles.sourcesPane} contentContainerStyle={styles.sourcesPaneContent}>
+          <SourcesBlock sources={latestSources} startOpen onOpenSource={setDetailSource} />
+        </ScrollView>
       ) : null}
 
       <HistoryPanel
@@ -455,10 +513,15 @@ export default function ChatScreen() {
 
         {messages.map((m) => (
           <Reveal key={m.id}>
-            <MessageBubble message={m} onSend={(t) => void sendText(t)} disabled={isLoading} />
+            <MessageBubble
+              message={m}
+              onSend={(t) => void sendText(t)}
+              disabled={isLoading}
+              onOpenSource={setDetailSource}
+            />
           </Reveal>
         ))}
-        {status === 'submitted' && <TypingDots />}
+        {showStatus && <StatusBubble phase={phase} />}
         {error && (
           <View style={styles.errorBanner}>
             <Text style={styles.errorText}>Une erreur est survenue. Veuillez réessayer.</Text>
@@ -506,9 +569,11 @@ export default function ChatScreen() {
             canSend && pressed && styles.sendButtonPressed,
           ]}
         >
-          <Icon name="arrowUp" size={20} color={tokens.colors.onAccent} />
+          <Icon name="arrowUp" size={20} color={canSend ? tokens.colors.onAccent : tokens.colors.textMuted} />
         </Pressable>
       </View>
+
+      <SourceDetailModal source={detailSource} onClose={() => setDetailSource(null)} />
     </KeyboardAvoidingView>
   );
 }
@@ -544,27 +609,27 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.accent,
     borderColor: tokens.colors.accent,
   },
-  sourcesCountBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    minWidth: 16,
-    height: 16,
-    paddingHorizontal: 4,
-    borderRadius: tokens.radius.pill,
-    backgroundColor: tokens.colors.accent,
-    borderWidth: 1.5,
-    borderColor: tokens.colors.surface,
+  // Bouton Sources : pastille texte « livre + N » (plus lisible qu'un rond + badge).
+  sourcesPill: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 5,
+    height: tokens.size.iconButton,
+    paddingHorizontal: tokens.space.md,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accentSurface,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    ...tokens.motion.transitionWeb,
   },
-  sourcesCountText: {
+  sourcesPillActive: { backgroundColor: tokens.colors.accent, borderColor: tokens.colors.accent },
+  sourcesPillText: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontSize: 10,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.bold,
-    lineHeight: 13,
   },
+  sourcesPillTextActive: { color: tokens.colors.onAccent },
   chatTitle: {
     fontFamily: tokens.font.display,
     color: tokens.colors.text,
@@ -586,11 +651,12 @@ const styles = StyleSheet.create({
     borderColor: tokens.colors.border,
   },
   sourcesPane: {
-    paddingHorizontal: tokens.space.lg,
-    paddingVertical: tokens.space.sm,
     backgroundColor: tokens.colors.surfaceAlt,
     maxHeight: 360,
+    borderBottomWidth: 1,
+    borderColor: tokens.colors.border,
   },
+  sourcesPaneContent: { paddingHorizontal: tokens.space.lg, paddingVertical: tokens.space.sm },
   messages: { flex: 1 },
   messagesContent: { padding: tokens.space.lg, gap: tokens.space.md },
 
@@ -675,7 +741,27 @@ const styles = StyleSheet.create({
     lineHeight: tokens.type.body.lineHeight,
   },
 
-  typingBubble: { paddingVertical: tokens.space.md, paddingHorizontal: tokens.space.lg },
+  statusBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    paddingVertical: tokens.space.md,
+    paddingHorizontal: tokens.space.lg,
+  },
+  statusIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accentSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textSubtle,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.medium,
+  },
   typingRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.xs + 2 },
   typingDot: {
     width: 7,
