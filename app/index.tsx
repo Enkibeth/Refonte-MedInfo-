@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
+import { isAdminUserId } from '@/admin/index';
 import type { Persona } from '@/ai/prompts/_schema';
+import { visibleFeatures } from '@/ai/routing/featureVisibility';
 import { INTENDED_PURPOSE, getAiDisclosure } from '@/compliance/disclosures';
 import { Button } from '@/ui/Button';
 import { Icon, type IconName } from '@/ui/icons';
@@ -77,27 +78,24 @@ const PERSONAS: {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, verifiedPersonas, persona, requestRole } = useSession();
-  const [switching, setSwitching] = useState<PersonaId | null>(null);
+  const { user, persona } = useSession();
 
   const isAuthed = !!user;
+  const isAdmin = user ? isAdminUserId(user.id) : false;
 
-  // Connecté : on n'affiche QUE les chats auxquels le compte a accès (rôles vérifiés,
-  // `public` toujours acquis). Déconnecté : vitrine des trois usages.
+  // Refonte 2026-06 : étudiants, professionnels et admins accèdent aux 3 chats
+  // (bascule libre dans l'écran chat) ; le grand public au chat public uniquement.
+  const canSwitch = isAdmin || persona === 'student' || persona === 'professional';
+  const availableChats: Persona[] = canSwitch ? ['public', 'student', 'professional'] : ['public'];
+
   const visiblePersonas = isAuthed
-    ? PERSONAS.filter((p) => verifiedPersonas.includes(CARD_PERSONA[p.id]))
+    ? PERSONAS.filter((p) => availableChats.includes(CARD_PERSONA[p.id]))
     : PERSONAS;
 
-  async function openPersonaChat(id: PersonaId) {
-    const target = CARD_PERSONA[id];
-    // Bascule libre entre rôles déjà vérifiés (le serveur ne re-demande pas de preuve).
-    if (target !== persona) {
-      setSwitching(id);
-      const res = await requestRole(target);
-      setSwitching(null);
-      if (res.error) return;
-    }
-    router.push('/(chat)/chat');
+  const myTools = isAuthed ? visibleFeatures(persona, { isAdmin }) : [];
+
+  function openPersonaChat(id: PersonaId) {
+    router.push(`/(chat)/chat?bot=${CARD_PERSONA[id]}` as never);
   }
 
   return (
@@ -177,7 +175,7 @@ export default function HomeScreen() {
                 eyebrow={p.eyebrow}
                 title={p.title}
                 description={p.description}
-                cta={isAuthed ? (switching === p.id ? 'Ouverture…' : 'Ouvrir ce chat') : p.cta}
+                cta={isAuthed ? 'Ouvrir ce chat' : p.cta}
                 icon={p.icon}
                 onPress={() =>
                   isAuthed ? openPersonaChat(p.id) : router.push(p.route as never)
@@ -186,6 +184,40 @@ export default function HomeScreen() {
             </Reveal>
           ))}
         </View>
+
+        {/* Outils du rôle (connecté) : ECOS / Classement / Audio / Document selon le profil */}
+        {isAuthed && myTools.length > 1 ? (
+          <View style={styles.toolsBlock}>
+            <Reveal style={styles.sectionHead}>
+              <Text style={styles.sectionEyebrow}>Mes outils</Text>
+            </Reveal>
+            <View style={styles.toolsGrid}>
+              {myTools
+                .filter((t) => t.id !== 'chat')
+                .map((t, i) => (
+                  <Reveal key={t.id} delay={tokens.motion.revealStagger * i} style={styles.toolCell}>
+                    <TouchableOpacity
+                      style={styles.toolCard}
+                      onPress={() => router.push(t.route as never)}
+                      accessibilityRole="button"
+                      accessibilityLabel={t.label}
+                    >
+                      <View style={styles.toolIcon}>
+                        <Icon name={t.icon} size={20} color={tokens.colors.accent} />
+                      </View>
+                      <View style={styles.toolTextBlock}>
+                        <Text style={styles.toolTitle}>{t.label}</Text>
+                        <Text style={styles.toolText} numberOfLines={2}>
+                          {t.description}
+                        </Text>
+                      </View>
+                      <Icon name="arrowRight" size={16} color={tokens.colors.accent} />
+                    </TouchableOpacity>
+                  </Reveal>
+                ))}
+            </View>
+          </View>
+        ) : null}
       </View>
 
       {/* Bloc confiance sur fond alterné */}
@@ -355,6 +387,45 @@ const styles = StyleSheet.create({
     gap: tokens.space.lg,
   },
   personaCell: { flexGrow: 1, flexBasis: 260, flexDirection: 'row' },
+
+  // ── Outils du rôle ──
+  toolsBlock: { width: '100%', maxWidth: 960, marginTop: tokens.space['2xl'], gap: tokens.space.md },
+  toolsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.md },
+  toolCell: { flexGrow: 1, flexBasis: 280, flexDirection: 'row' },
+  toolCard: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.md,
+    borderRadius: tokens.radius.lg,
+    backgroundColor: tokens.colors.surface,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    padding: tokens.space.lg,
+    ...tokens.elevation.sm,
+    ...tokens.motion.transitionWeb,
+  },
+  toolIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: tokens.radius.md,
+    backgroundColor: tokens.colors.accentSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toolTextBlock: { flex: 1, gap: 2 },
+  toolTitle: {
+    fontFamily: tokens.font.display,
+    color: tokens.colors.text,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.bold,
+  },
+  toolText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+    lineHeight: 17,
+  },
 
   // ── Section claire alternée ──
   sectionAlt: {

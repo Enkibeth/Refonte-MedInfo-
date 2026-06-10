@@ -17,6 +17,9 @@ import type { Persona } from '@/ai/prompts/_schema';
 
 export type AppFeatureId = 'chat' | 'document' | 'ecos' | 'partiel' | 'audio';
 
+/** Nom d'icône (src/ui/icons.tsx) — l'UI n'utilise plus d'emojis (refonte 2026-06). */
+export type AppFeatureIcon = 'messageCircle' | 'fileText' | 'stethoscope' | 'barChart' | 'micVoice';
+
 export interface AppFeatureMeta {
   id: AppFeatureId;
   /** Segment de route Expo Router (groupe (chat)). */
@@ -24,6 +27,8 @@ export interface AppFeatureMeta {
   /** Libellé court (onglet / menu). */
   label: string;
   emoji: string;
+  /** Icône ligne du design system (remplace l'emoji dans l'UI). */
+  icon: AppFeatureIcon;
   /** Description orientée audience. */
   description: string;
   /** Personas qui voient la feature (hors admin, qui voit tout). */
@@ -37,6 +42,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     route: '/(chat)/chat',
     label: 'Chat',
     emoji: '💬',
+    icon: 'messageCircle',
     description: 'Information santé claire et sourcée (HAS, ANSM…).',
     personas: ['public', 'student', 'professional'],
   },
@@ -45,6 +51,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     route: '/(chat)/document',
     label: 'Document',
     emoji: '📄',
+    icon: 'fileText',
     description: 'Résumé patient d’un compte rendu ou d’une ordonnance.',
     personas: ['public'],
   },
@@ -53,6 +60,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     route: '/(chat)/ecos',
     label: 'ECOS',
     emoji: '🩺',
+    icon: 'stethoscope',
     description: 'Simulation patient ECOS + évaluation pédagogique.',
     personas: ['student'],
   },
@@ -61,6 +69,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     route: '/(chat)/partiel',
     label: 'Classement',
     emoji: '📊',
+    icon: 'barChart',
     description: 'Classement de promo : importe les notes et situe-toi (rang, comparaison).',
     personas: ['student'],
   },
@@ -69,6 +78,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     route: '/(chat)/audio',
     label: 'Audio',
     emoji: '🎤',
+    icon: 'micVoice',
     description: 'Compte rendu structuré d’une consultation dictée.',
     personas: ['professional'],
   },

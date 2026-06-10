@@ -6,10 +6,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
 import { isFeatureVisible, type AppFeatureId } from '@/ai/routing/featureVisibility';
+import { Icon, type IconName } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
 
-function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
-  return <Text style={[tabStyles.emoji, focused && tabStyles.emojiActive]}>{emoji}</Text>;
+function TabIcon({ icon, focused }: { icon: IconName; focused: boolean }) {
+  return (
+    <View style={!focused && tabStyles.iconInactive}>
+      <Icon name={icon} size={20} color={focused ? tokens.colors.accent : tokens.colors.textMuted} />
+    </View>
+  );
 }
 
 /**
@@ -91,23 +96,23 @@ export default function ChatLayout() {
     >
       <Tabs.Screen
         name="chat"
-        options={{ title: 'Chat', href: hrefFor('chat'), tabBarIcon: ({ focused }) => <TabIcon emoji="💬" focused={focused} /> }}
+        options={{ title: 'Chat', href: hrefFor('chat'), tabBarIcon: ({ focused }) => <TabIcon icon="messageCircle" focused={focused} /> }}
       />
       <Tabs.Screen
         name="document"
-        options={{ title: 'Document', href: hrefFor('document'), tabBarIcon: ({ focused }) => <TabIcon emoji="📄" focused={focused} /> }}
+        options={{ title: 'Document', href: hrefFor('document'), tabBarIcon: ({ focused }) => <TabIcon icon="fileText" focused={focused} /> }}
       />
       <Tabs.Screen
         name="ecos"
-        options={{ title: 'ECOS', href: hrefFor('ecos'), tabBarIcon: ({ focused }) => <TabIcon emoji="🩺" focused={focused} /> }}
+        options={{ title: 'ECOS', href: hrefFor('ecos'), tabBarIcon: ({ focused }) => <TabIcon icon="stethoscope" focused={focused} /> }}
       />
       <Tabs.Screen
         name="partiel"
-        options={{ title: 'Partiel', href: hrefFor('partiel'), tabBarIcon: ({ focused }) => <TabIcon emoji="📈" focused={focused} /> }}
+        options={{ title: 'Partiel', href: hrefFor('partiel'), tabBarIcon: ({ focused }) => <TabIcon icon="barChart" focused={focused} /> }}
       />
       <Tabs.Screen
         name="audio"
-        options={{ title: 'Audio', href: hrefFor('audio'), tabBarIcon: ({ focused }) => <TabIcon emoji="🎤" focused={focused} /> }}
+        options={{ title: 'Audio', href: hrefFor('audio'), tabBarIcon: ({ focused }) => <TabIcon icon="micVoice" focused={focused} /> }}
       />
     </Tabs>
   );
@@ -156,6 +161,5 @@ const tabStyles = StyleSheet.create({
     backgroundColor: tokens.colors.accentSurface,
     borderColor: tokens.colors.accent,
   },
-  emoji: { fontSize: 20, opacity: 0.55 },
-  emojiActive: { opacity: 1 },
+  iconInactive: { opacity: 0.6 },
 });

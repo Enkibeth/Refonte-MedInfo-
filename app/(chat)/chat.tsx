@@ -24,6 +24,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, isTextUIPart } from 'ai';
@@ -169,14 +170,20 @@ export default function ChatScreen() {
   const [conversationId, setConversationId] = useState<string | null>(null);
 
   // Le profil charge après le premier rendu : aligne le chatbot par défaut une fois connu.
+  // Un paramètre ?bot=… (cartes de l'accueil) prime s'il est autorisé pour ce compte.
+  const { bot } = useLocalSearchParams<{ bot?: string }>();
   const personaInitialized = useRef(false);
   useEffect(() => {
     if (persona && !personaInitialized.current) {
       personaInitialized.current = true;
-      setChatbot(defaultChatbot);
+      const requested = bot as ChatbotId | undefined;
+      const allowed = isAdmin || persona === 'student' || persona === 'professional'
+        ? (['public', 'student', 'professional'] as ChatbotId[])
+        : (['public'] as ChatbotId[]);
+      setChatbot(requested && allowed.includes(requested) ? requested : defaultChatbot);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [persona]);
+  }, [persona, bot]);
 
   // Refs lues par le transport et les callbacks (jamais d'état React capturé périmé).
   const tokenRef = useRef<string | null>(null);

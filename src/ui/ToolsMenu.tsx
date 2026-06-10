@@ -10,12 +10,13 @@ import { useRouter, useSegments } from 'expo-router';
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
 import { visibleFeatures } from '@/ai/routing/featureVisibility';
+import { Icon, type IconName } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
 
 interface MenuItem {
   key: string;
   label: string;
-  emoji: string;
+  icon: IconName;
   route: string;
 }
 
@@ -31,15 +32,15 @@ export function ToolsMenu() {
   const tools: MenuItem[] = visibleFeatures(persona, { isAdmin }).map((f) => ({
     key: f.id,
     label: f.label,
-    emoji: f.emoji,
+    icon: f.icon,
     route: f.route,
   }));
 
   const extras: MenuItem[] = [
-    { key: 'account', label: 'Mon compte', emoji: '👤', route: '/(account)/account' },
-    { key: 'home', label: 'Accueil', emoji: '🏠', route: '/' },
+    { key: 'account', label: 'Mon compte', icon: 'userRound', route: '/(account)/account' },
+    { key: 'home', label: 'Accueil', icon: 'home', route: '/' },
   ];
-  if (isAdmin) extras.push({ key: 'admin', label: 'Panel admin', emoji: '⚙️', route: '/(admin)' });
+  if (isAdmin) extras.push({ key: 'admin', label: 'Panel admin', icon: 'settings', route: '/(admin)' });
 
   const go = (route: string) => {
     setOpen(false);
@@ -72,7 +73,9 @@ export function ToolsMenu() {
                     accessibilityRole="button"
                     style={[styles.item, active && styles.itemActive]}
                   >
-                    <Text style={styles.itemEmoji}>{item.emoji}</Text>
+                    <View style={styles.itemIcon}>
+                      <Icon name={item.icon} size={17} color={active ? tokens.colors.accentDeep : tokens.colors.textSubtle} />
+                    </View>
                     <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>{item.label}</Text>
                     {active ? <Text style={styles.itemDot}>•</Text> : null}
                   </Pressable>
@@ -86,7 +89,9 @@ export function ToolsMenu() {
                   accessibilityRole="button"
                   style={styles.item}
                 >
-                  <Text style={styles.itemEmoji}>{item.emoji}</Text>
+                  <View style={styles.itemIcon}>
+                    <Icon name={item.icon} size={17} color={tokens.colors.textSubtle} />
+                  </View>
                   <Text style={styles.itemLabel}>{item.label}</Text>
                 </Pressable>
               ))}
@@ -154,7 +159,7 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radius.md,
   },
   itemActive: { backgroundColor: tokens.colors.accentSurface },
-  itemEmoji: { fontSize: 18 },
+  itemIcon: { width: 22, alignItems: 'center' },
   itemLabel: {
     flex: 1,
     fontFamily: tokens.font.sans,
