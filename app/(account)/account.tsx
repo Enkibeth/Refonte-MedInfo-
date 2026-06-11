@@ -282,12 +282,12 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   brandHeader: { marginBottom: tokens.space.lg },
   title: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.serif,
     color: tokens.colors.text,
     fontSize: tokens.type.h1.fontSize,
     lineHeight: tokens.type.h1.lineHeight,
     letterSpacing: tokens.type.h1.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
     marginBottom: tokens.space.sm,
   },
   body: {

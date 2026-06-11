@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
@@ -7,6 +7,7 @@ import type { Persona } from '@/ai/prompts/_schema';
 import { visibleFeatures } from '@/ai/routing/featureVisibility';
 import { INTENDED_PURPOSE, getAiDisclosure } from '@/compliance/disclosures';
 import { Button } from '@/ui/Button';
+import { HeroBackdrop } from '@/ui/HeroBackdrop';
 import { Icon, type IconName } from '@/ui/icons';
 import { Logo } from '@/ui/Logo';
 import { PersonaCard, type PersonaId } from '@/ui/PersonaCard';
@@ -100,18 +101,16 @@ export default function HomeScreen() {
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      {/* Hero plein écran, fort contraste (petrol profond / blanc) */}
+      {/* Hero plein écran, fort contraste (petrol profond / blanc).
+          Fond : grille millimétrée + tracé ECG dessiné au chargement (HeroBackdrop). */}
       <View style={styles.hero}>
-        <View style={styles.heroGlow} />
-        <View style={styles.heroGlowSecondary} />
+        <HeroBackdrop />
         <View style={styles.heroInner}>
           <Reveal>
             <Logo size="lg" tone="light" />
           </Reveal>
           <Reveal delay={tokens.motion.revealStagger}>
-            <View style={styles.eyebrowPill}>
-              <Text style={styles.eyebrowText}>Information médicale de référence</Text>
-            </View>
+            <Text style={styles.eyebrowText}>Information médicale de référence</Text>
           </Reveal>
           <Reveal delay={tokens.motion.revealStagger * 2}>
             <Text style={styles.headline}>
@@ -141,22 +140,12 @@ export default function HomeScreen() {
               />
             )}
           </Reveal>
-
-          <Reveal delay={tokens.motion.revealStagger * 5}>
-            <Image
-              source={require('../assets/brand/legacy-illustration.png')}
-              style={styles.heroIllustration}
-              resizeMode="contain"
-              accessibilityLabel="Illustration MedInfo AI : équipe soignante"
-            />
-          </Reveal>
         </View>
       </View>
 
       {/* Trois audiences — cartes persona */}
       <View style={styles.section}>
         <Reveal style={styles.sectionHead}>
-          <Text style={styles.sectionEyebrow}>{isAuthed ? 'Mes accès' : 'Pour qui ?'}</Text>
           <Text style={styles.sectionTitle}>
             {isAuthed ? 'Tes chats disponibles' : 'Une IA médicale, trois usages'}
           </Text>
@@ -189,7 +178,7 @@ export default function HomeScreen() {
         {isAuthed && myTools.length > 1 ? (
           <View style={styles.toolsBlock}>
             <Reveal style={styles.sectionHead}>
-              <Text style={styles.sectionEyebrow}>Mes outils</Text>
+              <Text style={styles.sectionTitleSm}>Mes outils</Text>
             </Reveal>
             <View style={styles.toolsGrid}>
               {myTools
@@ -220,21 +209,23 @@ export default function HomeScreen() {
         ) : null}
       </View>
 
-      {/* Bloc confiance sur fond alterné */}
+      {/* Bloc confiance sur fond alterné : un seul panneau, trois rangées
+          (icône à côté du titre — pas une grille de cartes identiques). */}
       <View style={styles.sectionAlt}>
-        <View style={styles.trustGrid}>
+        <Reveal style={styles.trustPanel}>
+          <Text style={styles.trustPanelTitle}>Conçu pour être vérifié</Text>
           {TRUST_POINTS.map((p, i) => (
-            <Reveal key={p.title} delay={tokens.motion.revealStagger * i} style={styles.trustCell}>
-              <View style={styles.trustCard}>
-                <View style={styles.trustIcon}>
-                  <Icon name={p.icon} size={20} color={tokens.colors.accent} />
-                </View>
+            <View key={p.title} style={[styles.trustRow, i > 0 && styles.trustRowDivided]}>
+              <View style={styles.trustIcon}>
+                <Icon name={p.icon} size={20} color={tokens.colors.accent} />
+              </View>
+              <View style={styles.trustTextBlock}>
                 <Text style={styles.trustTitle}>{p.title}</Text>
                 <Text style={styles.trustText}>{p.text}</Text>
               </View>
-            </Reveal>
+            </View>
           ))}
-        </View>
+        </Reveal>
 
         <Reveal style={styles.purpose}>
           <Text style={styles.purposeLabel}>Finalité prévue</Text>
@@ -278,38 +269,10 @@ const styles = StyleSheet.create({
     paddingBottom: tokens.space['3xl'],
     alignItems: 'center',
   },
-  heroGlow: {
-    position: 'absolute',
-    top: -160,
-    right: -120,
-    width: 360,
-    height: 360,
-    borderRadius: 999,
-    backgroundColor: tokens.colors.accent,
-    opacity: 0.35,
-  },
-  heroGlowSecondary: {
-    position: 'absolute',
-    bottom: -200,
-    left: -140,
-    width: 320,
-    height: 320,
-    borderRadius: 999,
-    backgroundColor: tokens.colors.accentStrong,
-    opacity: 0.18,
-  },
   heroInner: { width: '100%', maxWidth: 720, gap: tokens.space.md },
-  eyebrowPill: {
-    alignSelf: 'flex-start',
-    marginTop: tokens.space.xl,
-    borderRadius: tokens.radius.pill,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
-    paddingHorizontal: tokens.space.md,
-    paddingVertical: 6,
-  },
+  // Kicker unique du hero : petites capitales sans pastille (sobre, une seule fois).
   eyebrowText: {
+    marginTop: tokens.space.xl,
     fontFamily: tokens.font.sans,
     color: tokens.colors.accentSurfaceStrong,
     fontSize: tokens.type.caption.fontSize,
@@ -317,13 +280,14 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
+  // Titre en Fraunces (serif éditoriale) : signature typographique de la marque.
   headline: {
-    fontFamily: tokens.font.display,
+    fontFamily: tokens.font.serif,
     color: tokens.colors.onAccent,
-    fontSize: tokens.type.display.fontSize,
-    lineHeight: tokens.type.display.lineHeight,
-    letterSpacing: tokens.type.display.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    fontSize: 44,
+    lineHeight: 52,
+    letterSpacing: -0.6,
+    fontWeight: tokens.weight.semibold,
   },
   subhead: {
     fontFamily: tokens.font.sans,
@@ -339,14 +303,6 @@ const styles = StyleSheet.create({
     marginTop: tokens.space.lg,
     maxWidth: 420,
   },
-  heroIllustration: {
-    width: '100%',
-    maxWidth: 320,
-    height: 220,
-    marginTop: tokens.space.xl,
-    alignSelf: 'center',
-  },
-
   // ── Section personas ──
   section: {
     paddingHorizontal: tokens.space.xl,
@@ -355,21 +311,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sectionHead: { width: '100%', maxWidth: 960, gap: tokens.space.xs, marginBottom: tokens.space.xl },
-  sectionEyebrow: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.accent,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.semibold,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
   sectionTitle: {
-    fontFamily: tokens.font.display,
+    fontFamily: tokens.font.serif,
     color: tokens.colors.text,
     fontSize: tokens.type.h1.fontSize,
     lineHeight: tokens.type.h1.lineHeight,
     letterSpacing: tokens.type.h1.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
+  },
+  sectionTitleSm: {
+    fontFamily: tokens.font.serif,
+    color: tokens.colors.text,
+    fontSize: tokens.type.h2.fontSize,
+    lineHeight: tokens.type.h2.lineHeight,
+    letterSpacing: tokens.type.h2.letterSpacing,
+    fontWeight: tokens.weight.semibold,
   },
   sectionSubtitle: {
     fontFamily: tokens.font.sans,
@@ -437,23 +393,34 @@ const styles = StyleSheet.create({
     paddingBottom: tokens.space['3xl'],
     alignItems: 'center',
   },
-  trustGrid: {
+  trustPanel: {
     width: '100%',
     maxWidth: 720,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: tokens.space.md,
-  },
-  trustCell: { flexGrow: 1, flexBasis: 200, flexDirection: 'row' },
-  trustCard: {
-    flex: 1,
     borderRadius: tokens.radius.lg,
     backgroundColor: tokens.colors.surface,
     borderWidth: 1,
     borderColor: tokens.colors.border,
-    padding: tokens.space.lg,
-    gap: tokens.space.xs,
+    padding: tokens.space.xl,
     ...tokens.elevation.sm,
+  },
+  trustPanelTitle: {
+    fontFamily: tokens.font.serif,
+    color: tokens.colors.text,
+    fontSize: tokens.type.h2.fontSize,
+    lineHeight: tokens.type.h2.lineHeight,
+    letterSpacing: tokens.type.h2.letterSpacing,
+    fontWeight: tokens.weight.semibold,
+    marginBottom: tokens.space.lg,
+  },
+  trustRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: tokens.space.lg,
+    paddingVertical: tokens.space.lg,
+  },
+  trustRowDivided: {
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.border,
   },
   trustIcon: {
     width: 36,
@@ -462,8 +429,8 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.accentSurface,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: tokens.space.xs,
   },
+  trustTextBlock: { flex: 1, gap: 2 },
   trustTitle: {
     fontFamily: tokens.font.display,
     color: tokens.colors.text,

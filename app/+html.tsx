@@ -21,7 +21,7 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500&display=swap"
         />
 
         <ScrollViewStyleReset />
@@ -48,6 +48,13 @@ body { overflow-x: hidden; }
 }
 ::selection { background-color: rgba(10, 77, 104, 0.16); }
 
+/* Barre de défilement fine et neutre : signe d'attention au détail, jamais criarde. */
+* { scrollbar-width: thin; scrollbar-color: #C4CCD2 transparent; }
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background-color: #C4CCD2; border-radius: 999px; }
+*::-webkit-scrollbar-thumb:hover { background-color: #697880; }
+
 /* Mouvement (design system §4). Courbes partagées avec tokens.motion.easing.
    L'entrée par défaut : fade + remontée 8 px, easing « standard ». */
 @keyframes medinfo-reveal {
@@ -56,6 +63,28 @@ body { overflow-x: hidden; }
 }
 .medinfo-reveal {
   animation: medinfo-reveal 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Tracé ECG du hero : la ligne se dessine une fois au chargement, puis reste
+   statique (mouvement narratif, pas décoratif — design system §4). */
+@keyframes medinfo-ecg-draw {
+  from { stroke-dashoffset: 1700; }
+  to   { stroke-dashoffset: 0; }
+}
+.medinfo-ecg-path {
+  stroke-dasharray: 1700;
+  animation: medinfo-ecg-draw 2400ms cubic-bezier(0.4, 0, 0.2, 1) 300ms both;
+}
+
+/* Shimmer de chargement (squelettes) : balayage discret gauche → droite. */
+@keyframes medinfo-shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position: 200% 0; }
+}
+.medinfo-shimmer {
+  background-image: linear-gradient(90deg, rgba(222,227,232,0) 0%, rgba(222,227,232,0.7) 50%, rgba(222,227,232,0) 100%);
+  background-size: 200% 100%;
+  animation: medinfo-shimmer 1600ms linear infinite;
 }
 
 /* Respect strict de prefers-reduced-motion : on neutralise toute animation/transition. */
@@ -67,5 +96,7 @@ body { overflow-x: hidden; }
     scroll-behavior: auto !important;
   }
   .medinfo-reveal { animation: none !important; }
+  .medinfo-ecg-path { animation: none !important; stroke-dasharray: none; }
+  .medinfo-shimmer { animation: none !important; }
 }
 `;

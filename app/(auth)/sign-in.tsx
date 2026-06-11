@@ -307,12 +307,12 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   logoWrap: { alignItems: 'center', marginBottom: tokens.space.xl },
   title: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.serif,
     color: tokens.colors.text,
     fontSize: tokens.type.h1.fontSize,
     lineHeight: tokens.type.h1.lineHeight,
     letterSpacing: tokens.type.h1.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
     marginBottom: tokens.space.sm,
   },
   body: {

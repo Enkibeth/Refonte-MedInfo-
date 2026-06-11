@@ -101,7 +101,8 @@ const styles = StyleSheet.create({
   fullWidth: { alignSelf: 'stretch' },
   md: { minHeight: tokens.size.controlMd, paddingHorizontal: tokens.space.lg },
   lg: { minHeight: tokens.size.controlLg, paddingHorizontal: tokens.space.xl },
-  pressed: { opacity: 0.92, transform: [{ translateY: 1 }] },
+  // Appui : léger enfoncement (scale 0.98) — retour tactile net, sans rebond.
+  pressed: { opacity: 0.95, transform: [{ scale: 0.98 }] },
   focusRing: tokens.focus.ring,
   disabled: { opacity: 0.5 },
   icon: { alignItems: 'center', justifyContent: 'center' },
