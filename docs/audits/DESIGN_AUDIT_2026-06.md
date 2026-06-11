@@ -64,11 +64,16 @@ Le socle (tokens.ts, palette petrol, neutres cliniques, échelle modulaire, redu
 - `npm run test:unit` : 20 fichiers / 149 tests OK.
 - `npx expo export -p web` : OK (export production).
 
+### Finitions complémentaires (appliquées)
+
+- `src/ui/Skeleton.tsx` : squelette de chargement pulsé (Animated, cross-platform,
+  statique sous reduced-motion) ; utilisé par le panneau historique pendant le
+  premier chargement des conversations.
+- Panneau historique : transition d'ouverture (glissement -20 px + fade, ease-out).
+
 ### Reste à faire (suggestions hors scope)
 
-- Squelettes shimmer dans HistoryPanel / chargements de listes (classe `medinfo-shimmer` prête).
 - Auto-héberger les polices (latence + RGPD Google Fonts).
-- Panneau historique : transition d'ouverture (translate + fade).
 
 ## Sources
 
