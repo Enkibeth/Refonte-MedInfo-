@@ -2,9 +2,13 @@
  * Panneau d'historique des conversations (refonte 2026-06).
  * Liste les conversations classées par CATÉGORIE (générée par IA — feature chat_meta),
  * avec titre IA, date et chatbot d'origine. Sélection, suppression, nouvelle conversation.
+ * Ouverture : glissement latéral sobre (translateX + fade, design system §4) ;
+ * chargement : squelettes pulsés. Reduced-motion respecté.
  */
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
+  Animated,
+  Easing,
   Modal,
   Pressable,
   ScrollView,
@@ -17,7 +21,9 @@ import {
 import type { ChatConversation } from '@/chat/history';
 import { CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
 import { Icon } from '@/ui/icons';
+import { Skeleton } from '@/ui/Skeleton';
 import { tokens } from '@/ui/tokens';
+import { useReducedMotion } from '@/ui/useReducedMotion';
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -35,6 +41,7 @@ export function HistoryPanel({
   onSelect,
   onDelete,
   onNew,
+  loading = false,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -43,7 +50,28 @@ export function HistoryPanel({
   onSelect: (c: ChatConversation) => void;
   onDelete: (id: string) => void;
   onNew: () => void;
+  loading?: boolean;
 }) {
+  const reduced = useReducedMotion();
+  const slide = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!visible) return;
+    if (reduced) {
+      slide.setValue(1);
+      return;
+    }
+    slide.setValue(0);
+    const anim = Animated.timing(slide, {
+      toValue: 1,
+      duration: tokens.motion.duration.base,
+      easing: Easing.bezier(...tokens.motion.easing.out),
+      useNativeDriver: true,
+    });
+    anim.start();
+    return () => anim.stop();
+  }, [visible, reduced, slide]);
+
   const grouped = useMemo(() => {
     const map = new Map<string, ChatConversation[]>();
     for (const c of conversations) {
@@ -58,6 +86,17 @@ export function HistoryPanel({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
+        <Animated.View
+          style={[
+            styles.panelSlide,
+            {
+              opacity: slide,
+              transform: [
+                { translateX: slide.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) },
+              ],
+            },
+          ]}
+        >
         <Pressable style={styles.panel} onPress={(e) => e.stopPropagation()}>
           <View style={styles.header}>
             <Icon name="clock" size={18} color={tokens.colors.accentDeep} />
@@ -78,7 +117,23 @@ export function HistoryPanel({
           </TouchableOpacity>
 
           <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
-            {conversations.length === 0 ? (
+            {loading && conversations.length === 0 ? (
+              <View style={styles.skeletonGroup}>
+                <Skeleton width={90} height={11} />
+                <View style={styles.skeletonItem}>
+                  <Skeleton width="78%" height={13} />
+                  <Skeleton width="42%" height={10} />
+                </View>
+                <View style={styles.skeletonItem}>
+                  <Skeleton width="64%" height={13} />
+                  <Skeleton width="38%" height={10} />
+                </View>
+                <View style={styles.skeletonItem}>
+                  <Skeleton width="71%" height={13} />
+                  <Skeleton width="45%" height={10} />
+                </View>
+              </View>
+            ) : conversations.length === 0 ? (
               <Text style={styles.empty}>
                 Aucune conversation enregistrée pour l'instant. Vos échanges apparaîtront ici,
                 classés automatiquement par thème.
@@ -120,6 +175,7 @@ export function HistoryPanel({
             )}
           </ScrollView>
         </Pressable>
+        </Animated.View>
       </Pressable>
     </Modal>
   );
@@ -131,11 +187,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(6, 43, 61, 0.35)',
     flexDirection: 'row',
   },
+  panelSlide: { height: '100%', width: 340, maxWidth: '88%' },
   panel: {
-    width: 340,
-    maxWidth: '88%',
+    flex: 1,
     backgroundColor: tokens.colors.surface,
-    height: '100%',
     paddingTop: tokens.space.xl,
     paddingHorizontal: tokens.space.lg,
     gap: tokens.space.md,
@@ -175,6 +230,14 @@ const styles = StyleSheet.create({
   },
   list: { flex: 1 },
   listContent: { gap: tokens.space.lg, paddingBottom: tokens.space['2xl'] },
+  skeletonGroup: { gap: tokens.space.md, marginTop: tokens.space.sm },
+  skeletonItem: {
+    gap: tokens.space.sm,
+    borderRadius: tokens.radius.md,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.md,
+    backgroundColor: tokens.colors.surface,
+  },
   empty: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,

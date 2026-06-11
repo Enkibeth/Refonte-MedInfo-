@@ -26,12 +26,12 @@ export function PlaceholderScreen({ title, description }: PlaceholderScreenProps
 
 const styles = StyleSheet.create({
   title: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.serif,
     color: tokens.colors.text,
     fontSize: tokens.type.h1.fontSize,
     lineHeight: tokens.type.h1.lineHeight,
     letterSpacing: tokens.type.h1.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
     marginBottom: tokens.space.md,
   },
   description: {

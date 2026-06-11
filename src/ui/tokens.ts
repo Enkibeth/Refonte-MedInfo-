@@ -1,5 +1,5 @@
 /**
- * Design system MedInfo AI — source unique (05_DESIGN §2, §3, §8).
+ * Design system MedInfo AI — source unique (05_DESIGN §2, §3, §4, §9).
  *
  * Identité « bleu pétrole » conservée et étoffée : rampe petrol complète, neutres
  * cliniques (gris froids non boueux), sémantiques sobres, échelle typographique
@@ -106,6 +106,13 @@ export const tokens = {
       web: "'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       default: 'System',
     }) as string,
+    // Fraunces — serif éditoriale pour les grands titres (hero, têtes de section).
+    // Signature typographique de la marque : évite le combo Inter/sans générique
+    // omniprésent. Réservée aux niveaux display/h1 ; jamais en corps de texte.
+    serif: Platform.select({
+      web: "'Fraunces', 'Georgia', 'Times New Roman', serif",
+      default: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    }) as string,
     mono: Platform.select({
       web: "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
       default: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
@@ -158,17 +165,19 @@ export const tokens = {
   },
 
   // ── Élévation (ombres discrètes ; web only, ignorées proprement en natif) ───
+  // Ombres en deux couches (contact + diffusion) : profondeur crédible sans halo
+  // « template ». Une seule grande ombre floue est un tell de design générique.
   elevation: {
     sm: Platform.select({
-      web: { boxShadow: '0 1px 2px rgba(15, 27, 34, 0.06)' },
+      web: { boxShadow: '0 1px 2px rgba(15, 27, 34, 0.05), 0 1px 1px rgba(15, 27, 34, 0.04)' },
       default: {},
     }) as object,
     md: Platform.select({
-      web: { boxShadow: '0 4px 16px -4px rgba(15, 27, 34, 0.10)' },
+      web: { boxShadow: '0 2px 4px rgba(15, 27, 34, 0.05), 0 8px 20px -6px rgba(15, 27, 34, 0.10)' },
       default: {},
     }) as object,
     lg: Platform.select({
-      web: { boxShadow: '0 12px 32px -8px rgba(8, 59, 82, 0.16)' },
+      web: { boxShadow: '0 4px 8px rgba(8, 59, 82, 0.06), 0 16px 40px -12px rgba(8, 59, 82, 0.18)' },
       default: {},
     }) as object,
   },
@@ -193,8 +202,9 @@ export const tokens = {
     transitionWeb: Platform.select({
       web: {
         transitionProperty: 'background-color, border-color, box-shadow, transform, opacity',
-        transitionDuration: '160ms',
-        transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+        transitionDuration: '180ms',
+        // Ease-out : l'interface répond vite puis se pose — jamais de bounce.
+        transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
       },
       default: {},
     }) as object,

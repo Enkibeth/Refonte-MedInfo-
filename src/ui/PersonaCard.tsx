@@ -68,8 +68,9 @@ export function PersonaCard({
           ]}
         >
           <View style={styles.head}>
-            <View style={[styles.pill, { backgroundColor: accent.soft }]}>
-              <Text style={[styles.pillText, { color: accent.accent }]}>{eyebrow}</Text>
+            <View style={styles.marker}>
+              <View style={[styles.markerDot, { backgroundColor: accent.accent }]} />
+              <Text style={[styles.markerText, { color: accent.accent }]}>{eyebrow}</Text>
             </View>
             <View style={[styles.iconBadge, { backgroundColor: accent.soft }]}>
               <Icon name={icon} size={22} color={accent.accent} />
@@ -103,17 +104,15 @@ const styles = StyleSheet.create({
   },
   cardHover: tokens.elevation.md as object,
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  pill: {
-    borderRadius: tokens.radius.pill,
-    paddingHorizontal: tokens.space.md,
-    paddingVertical: 5,
-  },
-  pillText: {
+  // Marqueur d'audience : point coloré + libellé en casse normale. Plus discret
+  // (et moins « template ») que l'ancienne pastille uppercase.
+  marker: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
+  markerDot: { width: 6, height: 6, borderRadius: 3 },
+  markerText: {
     fontFamily: tokens.font.sans,
-    fontSize: 11,
+    fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
-    letterSpacing: 0.9,
-    textTransform: 'uppercase',
+    letterSpacing: 0.2,
   },
   iconBadge: {
     width: 44,

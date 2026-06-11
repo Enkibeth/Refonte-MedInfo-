@@ -3,7 +3,7 @@ import { View, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import { tokens } from './tokens';
 
 /**
- * Carte de contenu (05_DESIGN §4). Surface surélevée discrète : bordure fine +
+ * Carte de contenu (05_DESIGN §5). Surface surélevée discrète : bordure fine +
  * ombre légère plutôt qu'un gros rayon « template ». Rayon mesuré (lg = 16).
  */
 export function Card({

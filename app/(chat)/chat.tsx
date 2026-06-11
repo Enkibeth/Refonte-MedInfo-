@@ -202,6 +202,7 @@ export default function ChatScreen() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
+  const [conversationsLoading, setConversationsLoading] = useState(true);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [detailSource, setDetailSource] = useState<ParsedSource | null>(null);
 
@@ -247,8 +248,12 @@ export default function ChatScreen() {
   );
 
   const refreshConversations = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setConversationsLoading(false);
+      return;
+    }
     setConversations(await listConversations(user.id));
+    setConversationsLoading(false);
   }, [user]);
 
   useEffect(() => {
@@ -480,6 +485,7 @@ export default function ChatScreen() {
         onSelect={(c) => void openConversation(c)}
         onDelete={(id) => void handleDeleteConversation(id)}
         onNew={() => startNewConversation()}
+        loading={conversationsLoading}
       />
 
       {/* ── Fil de messages ── */}

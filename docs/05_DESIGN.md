@@ -2,11 +2,11 @@
 
 ```yaml
 title: Design System
-version: 1.0.0
+version: 1.1.0
 owner: Hugo Bettembourg
 status: Active
-date: 2026-06-02
-linked_to: [02_ARCHITECTURE.md, 04_CHATBOT.md]
+date: 2026-06-11
+linked_to: [02_ARCHITECTURE.md, 04_CHATBOT.md, audits/DESIGN_AUDIT_2026-06.md]
 ```
 
 > Reprend l'identité existante (logo, palette petrol blue validée). Minimalisme assumé : une seule page d'entrée, login obligatoire, puis chat épuré routé par audience.
@@ -19,6 +19,9 @@ linked_to: [02_ARCHITECTURE.md, 04_CHATBOT.md]
 - **Cohérence cross-platform.** Mêmes tokens web/iOS/Android (NativeWind ou Tamagui).
 - **Lisibilité avant tout.** Contraste WCAG AA minimum (texte médical = pas d'ambiguïté).
 - **Confiance.** Le design signale rigueur et sérieux, jamais gadget.
+- **Anti-générique.** Bannir les « tells » du design IA : kickers uppercase répétés, orbes
+  de dégradés, grilles de cartes identiques, fade-in uniforme au montage, illustrations
+  stock. Référence et checklist : `docs/audits/DESIGN_AUDIT_2026-06.md`.
 
 ---
 
@@ -48,7 +51,8 @@ Source unique : `src/ui/tokens.ts` (clés `tokens.colors.*`).
 | `warningText` | `#9A6516` | texte vigilance |
 
 Sémantiques fournies avec leur fond doux (`successBackground`, `dangerBackground`,
-`warningBackground`). Élévations discrètes via `tokens.elevation.{sm,md,lg}` (web).
+`warningBackground`). Élévations via `tokens.elevation.{sm,md,lg}` (web) : ombres en
+**deux couches** (contact + diffusion) — jamais un seul grand halo flou « template ».
 
 **Phase 1 : monochrome petrol.** Accents par audience (public/étudiant/pro) **différés en Phase 2** — ne pas fragmenter l'identité au lancement.
 
@@ -56,22 +60,50 @@ Sémantiques fournies avec leur fond doux (`successBackground`, `dangerBackgroun
 
 ## 3. Typographie
 
-| Rôle | Police | Poids | Taille (base) |
+| Rôle | Police | Token | Poids |
 |---|---|---|---|
-| Titres | Inter / system-ui | 600-700 | 24-32 px |
-| Corps | Inter / system-ui | 400 | 16 px |
-| UI / labels | Inter / system-ui | 500 | 14 px |
-| Mono (code, items EDN) | JetBrains Mono / monospace | 400 | 14 px |
+| Titres de page (hero, H1, têtes de section) | **Fraunces** (serif éditoriale) / Georgia | `tokens.font.serif` | 600 |
+| Titres UI (cartes, panneaux, modales) | DM Sans / system-ui | `tokens.font.display` | 600-700 |
+| Corps, labels | Inter / system-ui | `tokens.font.sans` | 400-600 |
+| Mono (code, items EDN) | JetBrains Mono / monospace | `tokens.font.mono` | 400 |
+
+**Fraunces est la signature typographique de la marque** (audit 2026-06) : elle évite le
+combo Inter/sans générique omniprésent dans les UIs générées. Strictement réservée aux
+niveaux display/H1 — jamais en corps de texte ni sur les petits titres UI.
 
 Hiérarchie claire display>H1>H2>H3>corps via `tokens.type.*` (échelle modulaire ~1.2,
 letter-spacing négatif sur les grands titres = rendu « dessiné »). Poids via
 `tokens.weight.*` (400/500/600/700 — on évite le 800 omniprésent). Interligne corps 1.5.
-**Inter** chargé sur web (`app/+html.tsx`, avec lissage anti-aliasing), police système
-en natif ; mono JetBrains Mono (items EDN). Familles via `tokens.font.{sans,mono}`.
+Polices chargées sur web via `app/+html.tsx` (Google Fonts, lissage anti-aliasing),
+polices système en natif. Auto-hébergement des polices noté en reste-à-faire (audit).
 
 ---
 
-## 4. Composants clés
+## 4. Mouvement & micro-interactions
+
+Le mouvement a toujours une fonction (guider, signaler un état, raconter) — jamais de
+décor. Tokens : `tokens.motion.*` ; CSS global (keyframes, scrollbar) : `app/+html.tsx`.
+
+- **Durées** : fast 120 ms, base 200 ms, slow 320 ms. **Easing** : ease-out
+  `cubic-bezier(0.16,1,0.3,1)` pour les entrées/transitions, standard `(0.4,0,0.2,1)`
+  en interaction. **Jamais de bounce/spring** sur des éléments d'interface.
+- **Propriétés animées** : `transform` et `opacity` uniquement (pas de layout thrashing).
+- **`Reveal`** (`src/ui/Reveal.tsx`) : fade + remontée 8 px ; sur web, déclenché **au
+  scroll** (IntersectionObserver sur une sentinelle View 1×1 — ⚠️ piège : la ref
+  d'`Animated.View` n'expose PAS le nœud DOM sur react-native-web). Une seule fois par
+  bloc ; bloc déjà visible = entrée immédiate. Stagger 70 ms (`revealStagger`).
+- **Micro-interactions** : bouton appui scale 0.98, hover lift -1 px + ombre md ;
+  cartes persona lift -3 px au survol ; transitions CSS 180 ms ease-out (`transitionWeb`).
+- **`HeroBackdrop`** (`src/ui/HeroBackdrop.tsx` + `.web.tsx`) : grille millimétrée,
+  source de lumière petrol unique, tracé ECG en battement lent (cycle 9 s, keyframes
+  `medinfo-ecg-draw`) — motif métier, pas décor générique.
+- **`Skeleton`** (`src/ui/Skeleton.tsx`) : chargements en pulse d'opacité sobre.
+- **`prefers-reduced-motion` strict** : tout est coupé (hook `useReducedMotion` côté RN,
+  media query côté CSS) — contenu affiché à l'état final, ECG statique.
+
+---
+
+## 5. Composants clés
 
 | Composant | Spécif |
 |---|---|
@@ -85,7 +117,7 @@ en natif ; mono JetBrains Mono (items EDN). Familles via `tokens.font.{sans,mono
 
 ---
 
-## 5. Layout
+## 6. Layout
 
 - **Page d'entrée unique** : logo, value prop courte, CTA login/signup. Rien d'autre.
 - **Post-login** : routing audience (sélection au 1ᵉʳ login, modifiable en réglages) → chat plein écran épuré.
@@ -95,7 +127,7 @@ en natif ; mono JetBrains Mono (items EDN). Familles via `tokens.font.{sans,mono
 
 ---
 
-## 6. Iconographie & assets
+## 7. Iconographie & assets
 
 - Logo existant repris tel quel. Décliné en favicon, app icon (iOS/Android), splash.
 - Set d'icônes cohérent (lucide-react / phosphor — open, léger).
@@ -104,7 +136,7 @@ en natif ; mono JetBrains Mono (items EDN). Familles via `tokens.font.{sans,mono
 
 ---
 
-## 7. Accessibilité (non négociable pour médical)
+## 8. Accessibilité (non négociable pour médical)
 
 - Contraste WCAG AA min (AAA visé sur le corps de texte).
 - Tailles de police ajustables (respect réglages système).
@@ -114,16 +146,20 @@ en natif ; mono JetBrains Mono (items EDN). Familles via `tokens.font.{sans,mono
 
 ---
 
-## 8. Tokens — implémentation
+## 9. Tokens — implémentation
 
-Tokens centralisés dans `src/ui/tokens.ts` : `colors`, `font`, `weight`, `type` (échelle
-typo), `space` (base 4), `radius` (8/12/16/20/pill — pas de « tout arrondi »), `elevation`.
+Tokens centralisés dans `src/ui/tokens.ts` : `colors`, `font` (`sans`/`display`/`serif`/
+`mono`), `weight`, `type` (échelle typo), `space` (base 4), `radius` (8/12/16/20/pill —
+pas de « tout arrondi »), `elevation` (ombres 2 couches), `motion`, `focus`.
 Source unique : tout changement de couleur/typo/espacement passe par ce fichier, jamais de
 valeur hex en dur dans les composants (vérifiable par lint custom si besoin).
 
 Primitives UI partagées (consommatrices exclusives des tokens) :
-- `src/ui/Button.tsx` — variantes `primary | secondary | ghost | danger`, tailles `md | lg`,
-  états pressed/disabled/loading.
+- `src/ui/Button.tsx` — variantes `primary | secondary | ghost | danger | inverse |
+  outlineLight`, tailles `md | lg`, états pressed (scale 0.98)/hover/disabled/loading.
 - `src/ui/Card.tsx` — surface surélevée (bordure fine + ombre légère, rayon mesuré).
 - `src/ui/Screen.tsx` — conteneur d'écran (fond d'app, colonne centrée à largeur mesurée,
   alignée haut — on évite la carte « flottante au centre vertical » des templates).
+- `src/ui/Reveal.tsx` — entrée au scroll (sentinelle DOM, cf. §4).
+- `src/ui/Skeleton.tsx` — squelette de chargement pulsé.
+- `src/ui/HeroBackdrop.tsx` / `.web.tsx` — fond de hero (grille + ECG, cf. §4).
