@@ -39,7 +39,7 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 | Feature | Statut | Surface / audience | Source de vérité | Sécurité / conformité | ADR |
 |---|---|---|---|---|---|
 | Chat direct 3 chatbots (refonte 2026-06) | Actif | Public (chat public) ; étudiant/pro vérifiés (les 3 chats) | `app/api/chat+api.ts`, prompts `src/ai/prompts/public.v3.ts` / `student.v3.ts` / `professional.v2.ts`, contexte profil `src/ai/chat/chatContext.ts` | Appel LLM direct (gpt-5.2, web_search ON) ; pas de classifieur/guardrails/RAG/rate-limit sur le chat (temporaire) ; `allowedChatbotsFor()` serveur ; disclosure AI Act conservée | ADR-0024 |
-| Parseur + rendu interactif des réponses chat | Actif | Tous (chat) | `src/ai/chat/parseAssistantMessage.ts`, `src/ui/chat/AssistantBlocks.tsx` | Parse SOURCES `SRCn::`, badges OFFICIEL/GUIDELINE/ÉTUDE/RCP, APPROFONDISSEMENTS, QUESTIONS_PATIENT, INTERACTION, AUTO-RÉFLEXION, `<!--CALC:…-->`, `[1]+[2]+[3]` étudiant ; rendu 100% client | ADR-0024 |
+| Parseur + rendu interactif des réponses chat | Actif | Tous (chat) | `src/ai/chat/parseAssistantMessage.ts`, `src/ui/chat/AssistantBlocks.tsx`, `src/ui/chat/SourceDetailModal.tsx` | Parse SOURCES `SRCn::`, badges OFFICIEL/GUIDELINE/ÉTUDE/RCP, APPROFONDISSEMENTS, QUESTIONS_PATIENT, INTERACTION, AUTO-RÉFLEXION, `<!--CALC:…-->`, `[1]+[2]+[3]` étudiant ; clic sur une source → modale niveau de preuve + bouton « Accéder à la source » (jamais d'ouverture directe du lien) ; bulle de statut pendant la génération (réfléchit / recherche de sources / rédige, via l'activité d'outil du stream) ; rendu 100% client | ADR-0024 |
 | Historique des conversations + export PDF | Actif | Tous (chat) | `src/chat/history.ts`, `src/ui/chat/HistoryPanel.tsx`, `src/ui/chat/ChatbotSwitcher.tsx`, `src/chat/exportChatPdf.ts`, migration `0020_chat_history.sql` | RLS own-row stricte (`chat_conversations`/`chat_messages`), test `tests/rls/chat-history.test.ts` ; contenu potentiellement sensible | ADR-0024 |
 | Titre + catégorie de conversation `chat_meta` | Actif | Tous (chat) | `app/api/chat-meta+api.ts`, défaut `gemini-2.5-flash` (provider google) | Génère uniquement titre/catégorie ; pas de conseil médical ; configurable panel admin | ADR-0024 |
 | RAG HAS/ANSM MVP | Conservé, non branché sur le chat | Documentaire (réutilisation future) | `rag_sources`, `rag_chunks`, `match_rag_chunks`, `src/rag/retrieval.ts` | Sources publiques whitelistées, métadonnées validées ; plus injecté dans `/api/chat` depuis la refonte (ADR-0024) | ADR-0014, ADR-0024 |
@@ -83,6 +83,8 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 > Note : `supabase/setup/` contient le setup Supabase-spécifique (bucket Storage `consultation-audio`, RLS Storage, purge `pg_cron`) NON rejoué par le harness RLS CI ; appliqué directement sur le projet via MCP.
 
 ## Points de vigilance
+
+- `chat_meta` (titre/catégorie d'historique) requiert `GOOGLE_GENERATIVE_AI_API_KEY` côté serveur (Vercel) ; sans clé, repli déterministe sur les premiers mots de la question (l'archivage fonctionne quand même).
 
 - Les features professionnelles cliniques restent gelées par ADR-0006 même si le RPPS devient vérifié.
 - Les cas ECOS doivent rester des vignettes pédagogiques fictives ; un cas réel anonymisé reste refusé.
@@ -212,6 +214,12 @@ vérifiés et aux admins ; le grand public n'a que le chat public. Source de vé
 unique : `src/ai/routing/featureVisibility.ts` (module pur, testé dans
 `tests/unit/feature-visibility.test.ts`) ; côté serveur `allowedChatbotsFor()`
 dans `app/api/chat+api.ts`. La navigation utilise des icônes ligne (plus d'emojis).
+
+> **⚠️ Icônes (piège connu)** : les chemins SVG vivent dans `src/ui/iconPaths.ts`, avec DEUX
+> implémentations de `<Icon>` : `src/ui/icons.tsx` (natif, `<Image>` data-URI) et
+> `src/ui/icons.web.tsx` (web, `<svg>` inline, résolu automatiquement par Metro). Les data-URI
+> SVG dans `<Image>` sont INVISIBLES sur l'export web de production — toujours passer par
+> `icons.web.tsx` pour le web, et ajouter les nouveaux chemins dans `iconPaths.ts`.
 
 | Outil | Grand public | Étudiant | Professionnel | Admin |
 |---|:---:|:---:|:---:|:---:|
