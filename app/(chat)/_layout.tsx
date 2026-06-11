@@ -65,12 +65,14 @@ function TabBarButton({
  *  - Admin        : tout.
  */
 export default function ChatLayout() {
-  const { persona, user } = useSession();
+  const { persona, user, session } = useSession();
   const isAdmin = user ? isAdminUserId(user.id) : false;
+  // Visiteur non connecté (essai sans inscription) : seul l'onglet Chat est visible.
+  const isGuest = !session;
   const insets = useSafeAreaInsets();
 
   const hrefFor = (feature: AppFeatureId) =>
-    isFeatureVisible(feature, persona, { isAdmin }) ? undefined : null;
+    isFeatureVisible(feature, persona, { isAdmin, isGuest }) ? undefined : null;
 
   // Hauteur de la barre = contenu (icône + label) + marge de sécurité système
   // (encoche / home indicator / barre Safari). Sans cela, les libellés étaient coupés.

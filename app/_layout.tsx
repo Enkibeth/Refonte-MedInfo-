@@ -22,10 +22,12 @@ function useProtectedRoute() {
   useEffect(() => {
     if (loading) return;
     const inAuthGroup = segments[0] === '(auth)';
-    // Groupes publics accessibles sans session : accueil (landing/hero), authentification et
-    // pages légales (LCEN art. 6 : mentions légales accessibles à tous ; la landing avec ses
-    // CTA « Se connecter »/« Ouvrir le chat » doit rester visible déconnecté).
-    const inPublicGroup = inAuthGroup || segments[0] === undefined || segments[0] === '(legal)';
+    // Groupes publics accessibles sans session : accueil (landing/hero), authentification,
+    // pages légales (LCEN art. 6 : mentions légales accessibles à tous) et le groupe (chat) —
+    // essai sans inscription (2026-06) : un visiteur peut envoyer UN message gratuit dans le
+    // chat ; les autres écrans du groupe restent verrouillés par <RoleGate> (isGuest).
+    const inPublicGroup =
+      inAuthGroup || segments[0] === undefined || segments[0] === '(legal)' || segments[0] === '(chat)';
 
     // Mode récupération de mot de passe : prioritaire sur toute autre redirection.
     if (passwordRecovery) {

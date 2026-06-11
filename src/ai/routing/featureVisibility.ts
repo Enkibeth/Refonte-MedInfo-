@@ -87,6 +87,11 @@ export const APP_FEATURES: AppFeatureMeta[] = [
 export interface VisibilityContext {
   /** Un admin voit toutes les fonctionnalités (gestion / test). */
   isAdmin?: boolean;
+  /**
+   * Visiteur non connecté (essai sans inscription, 2026-06) : il ne voit QUE le chat.
+   * Aucun autre outil ne doit lui être visible.
+   */
+  isGuest?: boolean;
 }
 
 /** Persona effective par défaut quand le profil n'est pas (encore) chargé. */
@@ -103,6 +108,8 @@ export function isFeatureVisible(
   ctx: VisibilityContext = {},
 ): boolean {
   if (ctx.isAdmin) return true;
+  // Visiteur non connecté : seul le chat est accessible (essai 1 message gratuit).
+  if (ctx.isGuest) return id === 'chat';
   const meta = getFeatureMeta(id);
   if (!meta) return false;
   return meta.personas.includes(persona ?? FALLBACK_PERSONA);

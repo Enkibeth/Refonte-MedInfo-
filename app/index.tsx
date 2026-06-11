@@ -125,7 +125,11 @@ export default function HomeScreen() {
           </Reveal>
 
           <Reveal delay={tokens.motion.revealStagger * 4} style={styles.actions}>
-            <Button label="Ouvrir le chat" variant="inverse" onPress={() => router.push('/(chat)/chat')} />
+            <Button
+              label={isAuthed ? 'Ouvrir le chat' : 'Essayer sans inscription'}
+              variant="inverse"
+              onPress={() => router.push('/(chat)/chat')}
+            />
             {isAuthed ? (
               <Button
                 label="Mon compte"
@@ -140,6 +144,13 @@ export default function HomeScreen() {
               />
             )}
           </Reveal>
+          {!isAuthed ? (
+            <Reveal delay={tokens.motion.revealStagger * 5}>
+              <Text style={styles.trialHint}>
+                Testez et envoyez votre premier message sans inscription — 1 message gratuit.
+              </Text>
+            </Reveal>
+          ) : null}
         </View>
       </View>
 
@@ -166,9 +177,9 @@ export default function HomeScreen() {
                 description={p.description}
                 cta={isAuthed ? 'Ouvrir ce chat' : p.cta}
                 icon={p.icon}
-                onPress={() =>
-                  isAuthed ? openPersonaChat(p.id) : router.push(p.route as never)
-                }
+                // Essai sans inscription : les cartes ouvrent directement le chat sur le
+                // bon onglet, connecté ou non (1 message gratuit pour les visiteurs).
+                onPress={() => openPersonaChat(p.id)}
               />
             </Reveal>
           ))}
@@ -302,6 +313,12 @@ const styles = StyleSheet.create({
     gap: tokens.space.md,
     marginTop: tokens.space.lg,
     maxWidth: 420,
+  },
+  trialHint: {
+    fontFamily: tokens.font.sans,
+    color: 'rgba(255,255,255,0.72)',
+    fontSize: tokens.type.caption.fontSize,
+    marginTop: tokens.space.sm,
   },
   // ── Section personas ──
   section: {

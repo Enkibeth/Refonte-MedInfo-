@@ -24,7 +24,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, isTextUIPart } from 'ai';
@@ -34,6 +34,12 @@ import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
 import type { ChatbotId } from '@/ai/chat/chatContext';
 import { parseAssistantMessage, type ParsedSource } from '@/ai/chat/parseAssistantMessage';
+import {
+  STARTER_SUGGESTIONS,
+  SUGGESTIONS_ROTATION_MS,
+  suggestionWindow,
+} from '@/ai/chat/starterSuggestions';
+import { isGuestMessageUsed, markGuestMessageUsed } from '@/chat/guestTrial';
 import {
   createConversation,
   deleteConversation,
@@ -55,25 +61,8 @@ import { ChatbotSwitcher, CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
 import { HistoryPanel } from '@/ui/chat/HistoryPanel';
 import { SourceDetailModal } from '@/ui/chat/SourceDetailModal';
 
-// ── Suggestions d'amorce par chatbot (état vide) ───────────────────────────────
-
-const STARTER_SUGGESTIONS: Record<ChatbotId, string[]> = {
-  public: [
-    'Que signifie une TSH élevée sur une prise de sang ?',
-    "J'ai mal à la gorge depuis 3 jours, que faire ?",
-    'Comment préparer ma consultation chez le cardiologue ?',
-  ],
-  student: [
-    "Explique-moi la physiopathologie de l'insuffisance cardiaque",
-    'Fais-moi un cours sur la pyélonéphrite aiguë (item 161)',
-    'Quels sont les critères diagnostiques de la maladie de Horton ?',
-  ],
-  professional: [
-    'Anticoagulation en FA chez le sujet âgé insuffisant rénal ?',
-    "Stratégie diagnostique devant une suspicion d'EP chez la femme enceinte",
-    'Relais AVK → DOAC : modalités pratiques ?',
-  ],
-};
+// Suggestions d'amorce (état vide) : 50 questions par chatbot, rotation 3 par 3
+// toutes les 30 s — voir src/ai/chat/starterSuggestions.ts.
 
 const DISCLAIMER: Record<ChatbotId, string> = {
   public: 'Information générale — ne remplace pas un avis médical individuel.',
@@ -187,12 +176,24 @@ function hasToolActivity(message: UIMessage | undefined): boolean {
 // ── Écran principal ────────────────────────────────────────────────────────────
 
 export default function ChatScreen() {
-  const { user, session, persona, personalInfo } = useSession();
+  const { user, session, persona, personalInfo, loading: authLoading } = useSession();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const isAdmin = user ? isAdminUserId(user.id) : false;
 
+  // Essai sans inscription (2026-06) : un visiteur non connecté découvre les 3 onglets
+  // de chatbot et dispose d'UN message gratuit (indicateur 1/1 → 0/1), puis l'UI
+  // propose inscription / connexion. Verrou serveur correspondant dans /api/chat.
+  const isGuest = !authLoading && !session;
+  const [guestUsed, setGuestUsed] = useState(false);
+  useEffect(() => {
+    if (isGuest) setGuestUsed(isGuestMessageUsed());
+  }, [isGuest]);
+  const guestLocked = isGuest && guestUsed;
+
   const canSwitch = isAdmin || persona === 'student' || persona === 'professional';
-  const availableChatbots: ChatbotId[] = canSwitch ? ['public', 'student', 'professional'] : ['public'];
+  const availableChatbots: ChatbotId[] =
+    canSwitch || isGuest ? ['public', 'student', 'professional'] : ['public'];
   const defaultChatbot: ChatbotId =
     persona === 'student' || persona === 'professional' ? persona : 'public';
 
@@ -211,16 +212,16 @@ export default function ChatScreen() {
   const { bot } = useLocalSearchParams<{ bot?: string }>();
   const personaInitialized = useRef(false);
   useEffect(() => {
-    if (persona && !personaInitialized.current) {
+    if ((persona || isGuest) && !personaInitialized.current) {
       personaInitialized.current = true;
       const requested = bot as ChatbotId | undefined;
-      const allowed = isAdmin || persona === 'student' || persona === 'professional'
+      const allowed = isGuest || isAdmin || persona === 'student' || persona === 'professional'
         ? (['public', 'student', 'professional'] as ChatbotId[])
         : (['public'] as ChatbotId[]);
       setChatbot(requested && allowed.includes(requested) ? requested : defaultChatbot);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [persona, bot]);
+  }, [persona, isGuest, bot]);
 
   // Refs lues par le transport et les callbacks (jamais d'état React capturé périmé).
   const tokenRef = useRef<string | null>(null);
@@ -277,7 +278,21 @@ export default function ChatScreen() {
   });
 
   const isLoading = status === 'streaming' || status === 'submitted';
-  const canSend = !isLoading && input.trim().length > 0;
+  const canSend = !isLoading && input.trim().length > 0 && !guestLocked;
+
+  // Rotation des suggestions d'amorce : 3 questions à la fois, renouvelées toutes
+  // les 30 s tant que l'état vide est affiché (50 questions par chatbot).
+  const [suggestionTick, setSuggestionTick] = useState(0);
+  const showEmptyState = messages.length === 0 && !isLoading;
+  useEffect(() => {
+    if (!showEmptyState) return;
+    const id = setInterval(() => setSuggestionTick((t) => t + 1), SUGGESTIONS_ROTATION_MS);
+    return () => clearInterval(id);
+  }, [showEmptyState]);
+  const starters = useMemo(
+    () => suggestionWindow(STARTER_SUGGESTIONS[chatbot], suggestionTick),
+    [chatbot, suggestionTick],
+  );
 
   const lastAssistant = useMemo(
     () => [...messages].reverse().find((m) => m.role === 'assistant'),
@@ -307,6 +322,13 @@ export default function ChatScreen() {
       const trimmed = text.trim();
       if (!trimmed) return;
 
+      // Essai sans inscription : un seul message gratuit, l'indicateur passe à 0/1.
+      if (isGuest) {
+        if (guestUsed) return;
+        markGuestMessageUsed();
+        setGuestUsed(true);
+      }
+
       // Historique : crée la conversation au premier message (comptes connectés).
       if (user && !conversationIdRef.current) {
         const id = await createConversation(user.id, chatbotRef.current);
@@ -322,7 +344,7 @@ export default function ChatScreen() {
       }
       sendMessage({ text: trimmed });
     },
-    [sendMessage, user],
+    [sendMessage, user, isGuest, guestUsed],
   );
 
   const handleSend = () => {
@@ -470,6 +492,23 @@ export default function ChatScreen() {
         </View>
       ) : null}
 
+      {/* ── Bandeau essai sans inscription (1 message gratuit) ── */}
+      {isGuest ? (
+        <View style={styles.guestBanner}>
+          <Icon name="sparkles" size={15} color={tokens.colors.accentDeep} />
+          <Text style={styles.guestBannerText} numberOfLines={2}>
+            {guestUsed
+              ? 'Message d’essai utilisé — créez un compte gratuit pour continuer.'
+              : 'Testez MedInfo AI : envoyez votre premier message sans inscription.'}
+          </Text>
+          <View style={[styles.guestBadge, guestUsed && styles.guestBadgeUsed]}>
+            <Text style={[styles.guestBadgeText, guestUsed && styles.guestBadgeTextUsed]}>
+              {guestUsed ? '0/1' : '1/1'}
+            </Text>
+          </View>
+        </View>
+      ) : null}
+
       {/* ── Onglet sources global ── */}
       {sourcesOpen && latestSources.length > 0 ? (
         <ScrollView style={styles.sourcesPane} contentContainerStyle={styles.sourcesPaneContent}>
@@ -502,11 +541,12 @@ export default function ChatScreen() {
             </Text>
             <Text style={styles.emptyText}>{meta.description}.</Text>
             <View style={styles.starterColumn}>
-              {STARTER_SUGGESTIONS[chatbot].map((s) => (
+              {starters.map((s) => (
                 <TouchableOpacity
                   key={s}
                   style={styles.starterChip}
                   onPress={() => void sendText(s)}
+                  disabled={guestLocked}
                   accessibilityRole="button"
                 >
                   <Text style={styles.starterChipText}>{s}</Text>
@@ -528,6 +568,38 @@ export default function ChatScreen() {
           </Reveal>
         ))}
         {showStatus && <StatusBubble phase={phase} />}
+
+        {/* ── Proposition d'inscription / connexion en fin d'essai gratuit ── */}
+        {guestLocked && !isLoading ? (
+          <Reveal>
+            <View style={styles.guestCtaCard}>
+              <Text style={styles.guestCtaTitle}>Continuez la conversation</Text>
+              <Text style={styles.guestCtaText}>
+                Votre message d’essai gratuit a été utilisé (0/1). Créez un compte gratuit ou
+                connectez-vous pour poser toutes vos questions et retrouver votre historique.
+              </Text>
+              <View style={styles.guestCtaActions}>
+                <TouchableOpacity
+                  style={styles.guestCtaPrimary}
+                  onPress={() => router.push('/(auth)/sign-in?mode=signup' as never)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Créer un compte gratuit"
+                >
+                  <Text style={styles.guestCtaPrimaryText}>Créer un compte gratuit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.guestCtaSecondary}
+                  onPress={() => router.push('/(auth)/sign-in' as never)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Se connecter"
+                >
+                  <Text style={styles.guestCtaSecondaryText}>Se connecter</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Reveal>
+        ) : null}
+
         {error && (
           <View style={styles.errorBanner}>
             <Text style={styles.errorText}>Une erreur est survenue. Veuillez réessayer.</Text>
@@ -539,10 +611,12 @@ export default function ChatScreen() {
 
       {/* ── Saisie ── */}
       <View style={styles.inputRow}>
-        <DictationButton
-          onTranscript={(text) => setInput((prev) => (prev.trim() ? `${prev.trim()} ${text}` : text))}
-          disabled={isLoading}
-        />
+        {!isGuest ? (
+          <DictationButton
+            onTranscript={(text) => setInput((prev) => (prev.trim() ? `${prev.trim()} ${text}` : text))}
+            disabled={isLoading}
+          />
+        ) : null}
         <TextInput
           style={[styles.input, inputFocused && styles.inputFocused]}
           value={input}
@@ -550,15 +624,17 @@ export default function ChatScreen() {
           onFocus={() => setInputFocused(true)}
           onBlur={() => setInputFocused(false)}
           placeholder={
-            chatbot === 'student'
-              ? 'Une notion, un item EDN, un mécanisme…'
-              : chatbot === 'professional'
-                ? 'Votre question clinique…'
-                : 'Posez une question sur la santé…'
+            guestLocked
+              ? 'Créez un compte gratuit pour continuer…'
+              : chatbot === 'student'
+                ? 'Une notion, un item EDN, un mécanisme…'
+                : chatbot === 'professional'
+                  ? 'Votre question clinique…'
+                  : 'Posez une question sur la santé…'
           }
           placeholderTextColor={tokens.colors.textMuted}
           multiline
-          editable={!isLoading}
+          editable={!isLoading && !guestLocked}
           returnKeyType="send"
           onSubmitEditing={handleSend}
         />
@@ -656,6 +732,99 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: tokens.colors.border,
   },
+  // ── Essai sans inscription (bandeau + indicateur 1/1 → 0/1) ──
+  guestBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm,
+    backgroundColor: tokens.colors.accentSurface,
+    borderBottomWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+  },
+  guestBannerText: {
+    flex: 1,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.medium,
+  },
+  guestBadge: {
+    borderRadius: tokens.radius.pill,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: 3,
+    backgroundColor: tokens.colors.accent,
+  },
+  guestBadgeUsed: { backgroundColor: tokens.colors.borderStrong },
+  guestBadgeText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.onAccent,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.bold,
+  },
+  guestBadgeTextUsed: { color: tokens.colors.textSubtle },
+
+  // ── Carte d'invitation inscription / connexion (fin d'essai) ──
+  guestCtaCard: {
+    alignSelf: 'stretch',
+    borderRadius: tokens.radius.lg,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    backgroundColor: tokens.colors.accentSurface,
+    padding: tokens.space.lg,
+    gap: tokens.space.sm,
+    marginTop: tokens.space.sm,
+  },
+  guestCtaTitle: {
+    fontFamily: tokens.font.display,
+    color: tokens.colors.text,
+    fontSize: tokens.type.h3.fontSize,
+    letterSpacing: tokens.type.h3.letterSpacing,
+    fontWeight: tokens.weight.bold,
+  },
+  guestCtaText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textSubtle,
+    fontSize: tokens.type.label.fontSize,
+    lineHeight: tokens.type.label.lineHeight,
+  },
+  guestCtaActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: tokens.space.sm,
+    marginTop: tokens.space.xs,
+  },
+  guestCtaPrimary: {
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accent,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm + 2,
+    ...tokens.elevation.sm,
+    ...tokens.motion.transitionWeb,
+  },
+  guestCtaPrimaryText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.onAccent,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  guestCtaSecondary: {
+    borderRadius: tokens.radius.pill,
+    borderWidth: 1,
+    borderColor: tokens.colors.accent,
+    backgroundColor: tokens.colors.surface,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm + 2,
+    ...tokens.motion.transitionWeb,
+  },
+  guestCtaSecondaryText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+
   sourcesPane: {
     backgroundColor: tokens.colors.surfaceAlt,
     maxHeight: 360,

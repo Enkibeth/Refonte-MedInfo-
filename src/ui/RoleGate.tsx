@@ -34,7 +34,7 @@ export function RoleGate({
   feature: AppFeatureId;
   children: ReactNode;
 }) {
-  const { persona, user, loading } = useSession();
+  const { persona, user, session, loading } = useSession();
 
   if (loading) {
     return (
@@ -45,19 +45,23 @@ export function RoleGate({
   }
 
   const isAdmin = user ? isAdminUserId(user.id) : false;
-  if (isFeatureVisible(feature, persona, { isAdmin })) {
+  // Visiteur non connecté : seul le chat lui est ouvert (essai sans inscription).
+  const isGuest = !session;
+  if (isFeatureVisible(feature, persona, { isAdmin, isGuest })) {
     return <>{children}</>;
   }
 
-  return <RoleUnavailable feature={feature} persona={persona} />;
+  return <RoleUnavailable feature={feature} persona={persona} guest={isGuest} />;
 }
 
 function RoleUnavailable({
   feature,
   persona,
+  guest,
 }: {
   feature: AppFeatureId;
   persona: string | null | undefined;
+  guest?: boolean;
 }) {
   const meta = getFeatureMeta(feature);
   const roleLabel = persona ? PERSONA_LABELS[persona] ?? persona : 'ton rôle';
@@ -68,11 +72,15 @@ function RoleUnavailable({
         <Text style={styles.emoji}>{meta?.emoji ?? '🔒'}</Text>
         <Text style={styles.title}>{meta?.label ?? 'Fonctionnalité'}</Text>
         <Text style={styles.text}>
-          Cet outil n’est pas disponible pour ton rôle actuel ({roleLabel}).
-          {meta ? ` ${meta.description}` : ''}
+          {guest
+            ? `Cet outil est réservé aux comptes MedInfo AI. Créez un compte gratuit pour y accéder.${meta ? ` ${meta.description}` : ''}`
+            : `Cet outil n’est pas disponible pour ton rôle actuel (${roleLabel}).${meta ? ` ${meta.description}` : ''}`}
         </Text>
-        <Link href="/(account)/choose-role" style={styles.primaryLink}>
-          Changer de rôle
+        <Link
+          href={guest ? '/(auth)/sign-in?mode=signup' : '/(account)/choose-role'}
+          style={styles.primaryLink}
+        >
+          {guest ? 'Créer un compte' : 'Changer de rôle'}
         </Link>
         <Link href="/(chat)/chat" style={styles.secondaryLink}>
           Retour au chat

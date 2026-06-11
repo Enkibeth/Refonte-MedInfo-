@@ -23,23 +23,30 @@ interface MenuItem {
 export function ToolsMenu() {
   const router = useRouter();
   const segments = useSegments();
-  const { persona, user } = useSession();
+  const { persona, user, session } = useSession();
   const [open, setOpen] = useState(false);
 
   const isAdmin = user ? isAdminUserId(user.id) : false;
+  // Visiteur non connecté (essai sans inscription) : seul le chat apparaît dans le menu.
+  const isGuest = !session;
   const current = (segments as string[])[segments.length - 1];
 
-  const tools: MenuItem[] = visibleFeatures(persona, { isAdmin }).map((f) => ({
+  const tools: MenuItem[] = visibleFeatures(persona, { isAdmin, isGuest }).map((f) => ({
     key: f.id,
     label: f.label,
     icon: f.icon,
     route: f.route,
   }));
 
-  const extras: MenuItem[] = [
-    { key: 'account', label: 'Mon compte', icon: 'userRound', route: '/(account)/account' },
-    { key: 'home', label: 'Accueil', icon: 'home', route: '/' },
-  ];
+  const extras: MenuItem[] = isGuest
+    ? [
+        { key: 'home', label: 'Accueil', icon: 'home', route: '/' },
+        { key: 'signin', label: 'Se connecter / Créer un compte', icon: 'userRound', route: '/(auth)/sign-in' },
+      ]
+    : [
+        { key: 'account', label: 'Mon compte', icon: 'userRound', route: '/(account)/account' },
+        { key: 'home', label: 'Accueil', icon: 'home', route: '/' },
+      ];
   if (isAdmin) extras.push({ key: 'admin', label: 'Panel admin', icon: 'settings', route: '/(admin)' });
 
   const go = (route: string) => {

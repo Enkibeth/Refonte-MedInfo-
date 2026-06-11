@@ -28,13 +28,23 @@ import {
 } from '@/ai/chat/chatContext';
 import type { Persona } from '@/ai/prompts/_schema';
 
-/** Chatbots autorisés selon la persona vérifiée du compte. */
-export function allowedChatbotsFor(persona: Persona | null): ChatbotId[] {
-  if (persona === 'student' || persona === 'professional') {
+/**
+ * Chatbots autorisés selon la persona vérifiée du compte.
+ * Essai sans inscription (2026-06) : un visiteur anonyme découvre les 3 chatbots
+ * (`guestTrial`), mais il est limité à UN message utilisateur (voir POST ci-dessous).
+ */
+export function allowedChatbotsFor(
+  persona: Persona | null,
+  opts: { guestTrial?: boolean } = {},
+): ChatbotId[] {
+  if (opts.guestTrial || persona === 'student' || persona === 'professional') {
     return ['public', 'student', 'professional'];
   }
   return ['public'];
 }
+
+/** Nombre maximal de messages utilisateur d'une conversation anonyme (essai gratuit). */
+export const GUEST_TRIAL_MAX_USER_MESSAGES = 1;
 
 export async function POST(request: Request): Promise<Response> {
   const startMs = Date.now();
@@ -56,8 +66,27 @@ export async function POST(request: Request): Promise<Response> {
   // Persona vérifiée côté serveur (token → profil). Le body ne donne JAMAIS de droits :
   // il exprime seulement quel chatbot l'utilisateur veut utiliser, parmi ceux autorisés.
   const resolution = await resolveChatPersona(request, body.chatbot);
+
+  // Essai sans inscription : un appel anonyme n'a droit qu'à UN message utilisateur.
+  // L'indicateur 1/1 → 0/1 vit côté client ; ce verrou serveur empêche de poursuivre
+  // une conversation anonyme en rejouant la requête avec un historique plus long.
+  if (!resolution.verified) {
+    const userMessageCount = uiMessages.filter(
+      (m) => (m as { role?: unknown }).role === 'user',
+    ).length;
+    if (userMessageCount > GUEST_TRIAL_MAX_USER_MESSAGES) {
+      return new Response(
+        JSON.stringify({
+          error: 'signup_required',
+          message: 'Créez un compte gratuit ou connectez-vous pour continuer la conversation.',
+        }),
+        { status: 401, headers: { 'content-type': 'application/json' } },
+      );
+    }
+  }
+
   const requestedChatbot = coerceChatbot(body.chatbot);
-  const allowed = allowedChatbotsFor(resolution.persona);
+  const allowed = allowedChatbotsFor(resolution.persona, { guestTrial: !resolution.verified });
   const chatbot: ChatbotId = allowed.includes(requestedChatbot) ? requestedChatbot : 'public';
 
   const [template, runtime] = await Promise.all([
