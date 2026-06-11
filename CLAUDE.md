@@ -38,7 +38,8 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 
 | Feature | Statut | Surface / audience | Source de vérité | Sécurité / conformité | ADR |
 |---|---|---|---|---|---|
-| Chat direct 3 chatbots (refonte 2026-06) | Actif | Public (chat public) ; étudiant/pro vérifiés (les 3 chats) | `app/api/chat+api.ts`, prompts `src/ai/prompts/public.v3.ts` / `student.v3.ts` / `professional.v2.ts`, contexte profil `src/ai/chat/chatContext.ts` | Appel LLM direct (gpt-5.2, web_search ON) ; pas de classifieur/guardrails/RAG/rate-limit sur le chat (temporaire) ; `allowedChatbotsFor()` serveur ; disclosure AI Act conservée | ADR-0024 |
+| Chat direct 3 chatbots (refonte 2026-06) | Actif | Public (chat public) ; étudiant/pro vérifiés (les 3 chats) ; **visiteur non connecté : essai 1 message gratuit sur les 3 chatbots** | `app/api/chat+api.ts`, prompts `src/ai/prompts/public.v3.ts` / `student.v3.ts` / `professional.v2.ts`, contexte profil `src/ai/chat/chatContext.ts`, essai invité `src/chat/guestTrial.ts` | Appel LLM direct (gpt-5.2, web_search ON) ; pas de classifieur/guardrails/RAG/rate-limit sur le chat (temporaire) ; `allowedChatbotsFor()` serveur (`guestTrial` pour les anonymes) + refus serveur (401 `signup_required`) de toute conversation anonyme > 1 message utilisateur (`GUEST_TRIAL_MAX_USER_MESSAGES`) ; indicateur client 1/1 → 0/1 (localStorage) puis CTA inscription/connexion ; disclosure AI Act conservée | ADR-0024 |
+| Suggestions d'amorce rotatives | Actif | Tous (chat, état vide) | `src/ai/chat/starterSuggestions.ts` (50 questions par chatbot), test `tests/unit/starter-suggestions.test.ts` | Affichage 3 par 3, rotation toutes les 30 s côté client (`suggestionWindow`) ; questions d'information générale uniquement | ADR-0024 |
 | Parseur + rendu interactif des réponses chat | Actif | Tous (chat) | `src/ai/chat/parseAssistantMessage.ts`, `src/ui/chat/AssistantBlocks.tsx`, `src/ui/chat/SourceDetailModal.tsx` | Parse SOURCES `SRCn::`, badges OFFICIEL/GUIDELINE/ÉTUDE/RCP, APPROFONDISSEMENTS, QUESTIONS_PATIENT, INTERACTION, AUTO-RÉFLEXION, `<!--CALC:…-->`, `[1]+[2]+[3]` étudiant ; clic sur une source → modale niveau de preuve + bouton « Accéder à la source » (jamais d'ouverture directe du lien) ; bulle de statut pendant la génération (réfléchit / recherche de sources / rédige, via l'activité d'outil du stream) ; rendu 100% client | ADR-0024 |
 | Historique des conversations + export PDF | Actif | Tous (chat) | `src/chat/history.ts`, `src/ui/chat/HistoryPanel.tsx`, `src/ui/chat/ChatbotSwitcher.tsx`, `src/chat/exportChatPdf.ts`, migration `0020_chat_history.sql` | RLS own-row stricte (`chat_conversations`/`chat_messages`), test `tests/rls/chat-history.test.ts` ; contenu potentiellement sensible | ADR-0024 |
 | Titre + catégorie de conversation `chat_meta` | Actif | Tous (chat) | `app/api/chat-meta+api.ts`, défaut `gemini-2.5-flash` (provider google) | Génère uniquement titre/catégorie ; pas de conseil médical ; configurable panel admin | ADR-0024 |
@@ -214,6 +215,14 @@ vérifiés et aux admins ; le grand public n'a que le chat public. Source de vé
 unique : `src/ai/routing/featureVisibility.ts` (module pur, testé dans
 `tests/unit/feature-visibility.test.ts`) ; côté serveur `allowedChatbotsFor()`
 dans `app/api/chat+api.ts`. La navigation utilise des icônes ligne (plus d'emojis).
+
+**Visiteur non connecté (essai sans inscription, 2026-06)** : le groupe `(chat)` est
+accessible sans session (`app/_layout.tsx`), mais `isGuest` dans `featureVisibility.ts`
+ne montre QUE le chat (onglets, ToolsMenu, RoleGate). L'invité voit les 3 onglets de
+chatbot, dispose d'UN message gratuit (indicateur 1/1 → 0/1, `src/chat/guestTrial.ts`,
+localStorage) puis une carte propose inscription/connexion ; côté serveur, `/api/chat`
+ouvre les 3 chatbots aux anonymes (`guestTrial`) mais refuse (401 `signup_required`)
+toute conversation anonyme contenant plus d'un message utilisateur.
 
 > **⚠️ Icônes (piège connu)** : les chemins SVG vivent dans `src/ui/iconPaths.ts`, avec DEUX
 > implémentations de `<Icon>` : `src/ui/icons.tsx` (natif, `<Image>` data-URI) et

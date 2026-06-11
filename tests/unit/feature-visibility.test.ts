@@ -56,3 +56,20 @@ describe('featureVisibility — cloisonnement inter-rôles', () => {
     expect(isFeatureVisible('audio', 'public', { isAdmin: true })).toBe(true);
   });
 });
+
+describe('featureVisibility — visiteur non connecté (essai sans inscription)', () => {
+  it('le visiteur ne voit QUE le chat, aucun autre outil', () => {
+    expect(visibleFeatures(null, { isGuest: true }).map((f) => f.id)).toEqual(['chat']);
+  });
+
+  it('chaque outil hors chat est invisible pour le visiteur', () => {
+    for (const feature of APP_FEATURES.filter((f) => f.id !== 'chat')) {
+      expect(isFeatureVisible(feature.id, null, { isGuest: true })).toBe(false);
+      expect(isFeatureVisible(feature.id, 'public', { isGuest: true })).toBe(false);
+    }
+  });
+
+  it('le chat reste visible pour le visiteur', () => {
+    expect(isFeatureVisible('chat', null, { isGuest: true })).toBe(true);
+  });
+});

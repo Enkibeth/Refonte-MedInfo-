@@ -37,11 +37,15 @@ jobs:
           fi
       - name: "Gate 1 — compliance-grep"
         run: npm run compliance:grep
-      - name: "Gate 2 — refusal-regression"
-        run: npm run test:prompt-regression
+      # Refonte 2026-06 (ADR-0024) : les anciens gates « refusal-regression »
+      # (test:prompt-regression) et « prompt-contract » (validate:prompts) reposaient
+      # sur la safe-box v1/v2 supprimée du dépôt — leurs scripts n'existent plus, ce
+      # qui cassait la CI sur chaque PR. Gate 2 pointe désormais sur la suite
+      # unitaire ; les gates safe-box seront réintroduits avec les couches de
+      # sécurité (suivi ADR-0024).
+      - name: "Gate 2 — tests unitaires"
+        run: npm run test:unit
       - name: "Gate 3 — rls-isolation (vrai Postgres, isolation cross-user)"
         run: npm run test:rls
-      - name: "Gate 4 — prompt-contract"
-        run: npm run validate:prompts
-      - name: "Gate 5 — rag-license"
+      - name: "Gate 4 — rag-license"
         run: npm run validate:rag

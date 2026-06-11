@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -43,7 +43,9 @@ export default function SignInScreen() {
     sendPasswordReset,
     signInWithOAuth,
   } = useSession();
-  const [mode, setMode] = useState<Mode>('signin');
+  // `?mode=signup` (CTA fin d'essai sans inscription) ouvre directement la création de compte.
+  const { mode: modeParam } = useLocalSearchParams<{ mode?: string }>();
+  const [mode, setMode] = useState<Mode>(modeParam === 'signup' ? 'signup' : 'signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);

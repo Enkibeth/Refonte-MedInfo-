@@ -16,6 +16,8 @@ let docA: string;
 
 beforeAll(async () => {
   db = await startRlsHarness();
+  // ⚠️ asUser() annule sa transaction à la fin (ROLLBACK, cf pgHarness) : le document
+  // partagé entre tests est créé via asService (persisté).
   await db.asService(async (q) => {
     await q('INSERT INTO auth.users (id, email) VALUES ($1, $2), ($3, $4)', [
       USER_A,
@@ -23,6 +25,11 @@ beforeAll(async () => {
       USER_B,
       'b@medinfo.test',
     ]);
+    const doc = await q(
+      "INSERT INTO audio_documents (user_id, title, kind, transcription) VALUES ($1, 'CR fixture', 'report', 'texte') RETURNING id",
+      [USER_A],
+    );
+    docA = doc.rows[0].id;
   });
 }, 60_000);
 
@@ -32,6 +39,8 @@ afterAll(async () => {
 
 describe('audio_documents — isolation own-row', () => {
   it('user A crée SON document', async () => {
+    // Vérifie la policy INSERT own-row (ligne annulée par le ROLLBACK du harness ;
+    // la fixture persistante docA vient du beforeAll).
     const { rows } = await db.asUser(USER_A, (q) =>
       q(
         "INSERT INTO audio_documents (user_id, title, kind, transcription) VALUES ($1, 'CR test', 'report', 'texte') RETURNING id",
@@ -39,7 +48,6 @@ describe('audio_documents — isolation own-row', () => {
       ),
     );
     expect(rows).toHaveLength(1);
-    docA = rows[0].id;
   });
 
   it('user B NE PEUT PAS lire le document de user A', async () => {
@@ -75,13 +83,12 @@ describe('audio_documents — isolation own-row', () => {
   });
 
   it('user A lit puis supprime SON document', async () => {
-    const read = await db.asUser(USER_A, (q) =>
-      q('SELECT id FROM audio_documents WHERE id = $1', [docA]),
-    );
-    expect(read.rows).toHaveLength(1);
-    const del = await db.asUser(USER_A, (q) =>
-      q('DELETE FROM audio_documents WHERE id = $1', [docA]),
-    );
-    expect(del.rowCount).toBe(1);
+    // Lecture + suppression dans la MÊME transaction asUser (le harness annule à la fin).
+    await db.asUser(USER_A, async (q) => {
+      const read = await q('SELECT id FROM audio_documents WHERE id = $1', [docA]);
+      expect(read.rows).toHaveLength(1);
+      const del = await q('DELETE FROM audio_documents WHERE id = $1', [docA]);
+      expect(del.rowCount).toBe(1);
+    });
   });
 });

@@ -18,6 +18,8 @@ let msgA: string;
 
 beforeAll(async () => {
   db = await startRlsHarness();
+  // ⚠️ asUser() annule sa transaction à la fin (ROLLBACK, cf pgHarness) : les fixtures
+  // partagées entre tests doivent être créées via asService (persistées).
   await db.asService(async (q) => {
     await q('INSERT INTO auth.users (id, email) VALUES ($1, $2), ($3, $4)', [
       USER_A,
@@ -25,6 +27,16 @@ beforeAll(async () => {
       USER_B,
       'b@medinfo.test',
     ]);
+    const conv = await q(
+      "INSERT INTO chat_conversations (user_id, chatbot, title, category) VALUES ($1, 'public', 'Conversation A', 'Autre') RETURNING id",
+      [USER_A],
+    );
+    convA = conv.rows[0].id;
+    const msg = await q(
+      "INSERT INTO chat_messages (conversation_id, user_id, role, content) VALUES ($1, $2, 'user', 'Bonjour') RETURNING id",
+      [convA, USER_A],
+    );
+    msgA = msg.rows[0].id;
   });
 }, 60_000);
 
@@ -34,6 +46,8 @@ afterAll(async () => {
 
 describe('chat_conversations — isolation own-row', () => {
   it('user A crée SA conversation', async () => {
+    // Vérifie la policy INSERT own-row (la ligne est annulée par le ROLLBACK du harness ;
+    // la fixture persistante convA vient du beforeAll).
     const { rows } = await db.asUser(USER_A, (q) =>
       q(
         "INSERT INTO chat_conversations (user_id, chatbot, title, category) VALUES ($1, 'public', 'Titre test', 'Autre') RETURNING id",
@@ -41,7 +55,6 @@ describe('chat_conversations — isolation own-row', () => {
       ),
     );
     expect(rows).toHaveLength(1);
-    convA = rows[0].id;
   });
 
   it('user A NE PEUT PAS créer une conversation au nom de user B', async () => {
@@ -78,12 +91,11 @@ describe('chat_messages — isolation own-row', () => {
   it('user A écrit un message dans SA conversation', async () => {
     const { rows } = await db.asUser(USER_A, (q) =>
       q(
-        "INSERT INTO chat_messages (conversation_id, user_id, role, content) VALUES ($1, $2, 'user', 'Bonjour') RETURNING id",
+        "INSERT INTO chat_messages (conversation_id, user_id, role, content) VALUES ($1, $2, 'user', 'Deuxième message') RETURNING id",
         [convA, USER_A],
       ),
     );
     expect(rows).toHaveLength(1);
-    msgA = rows[0].id;
   });
 
   it('user B NE PEUT PAS lire les messages de user A', async () => {

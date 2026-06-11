@@ -124,8 +124,12 @@ describe('profiles — isolation cross-user', () => {
   });
 
   it('verified_personas vaut [public] par défaut à la création du profil', async () => {
+    // Cast en text[] : node-pg ne sait pas parser un tableau d'enum custom (persona[])
+    // et renverrait la chaîne brute '{public}'.
     const { rows } = await db.asService((q) =>
-      q('SELECT verified_personas FROM profiles WHERE id = $1', [USER_B]),
+      q('SELECT verified_personas::text[] AS verified_personas FROM profiles WHERE id = $1', [
+        USER_B,
+      ]),
     );
     expect(rows[0].verified_personas).toEqual(['public']);
   });
@@ -156,9 +160,10 @@ describe('ai_interactions — service_role only (jamais accessible au client)', 
 
 
 describe('ai_model_config — service_role only (config admin, jamais exposée au client)', () => {
-  it('le seed a bien créé les 6 lignes de fonctionnalités', async () => {
+  it('le seed a bien créé les 7 lignes de fonctionnalités (6 initiales + chat_meta, migration 0021)', async () => {
     const { rows } = await db.asService((q) => q('SELECT key FROM ai_model_config'));
-    expect(rows).toHaveLength(6);
+    expect(rows).toHaveLength(7);
+    expect(rows.map((r: { key: string }) => r.key)).toContain('chat_meta');
   });
 
   it('un client authentifié NE PEUT PAS lire ai_model_config', async () => {
