@@ -11,7 +11,7 @@ import {
 import { tokens } from './tokens';
 
 /**
- * Bouton MedInfo — primitive unique pour tous les écrans (05_DESIGN §4).
+ * Bouton MedInfo — primitive unique pour tous les écrans (05_DESIGN §5).
  * Variantes : primary (CTA petrol), secondary (contour), ghost (texte), danger.
  * États gérés : pressed (translation/opacité sobre), disabled, loading.
  */

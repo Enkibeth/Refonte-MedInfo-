@@ -221,6 +221,13 @@ dans `app/api/chat+api.ts`. La navigation utilise des icônes ligne (plus d'emoj
 > SVG dans `<Image>` sont INVISIBLES sur l'export web de production — toujours passer par
 > `icons.web.tsx` pour le web, et ajouter les nouveaux chemins dans `iconPaths.ts`.
 
+> **⚠️ Design / animations (pièges connus, audit 2026-06)** : design system documenté dans
+> `docs/05_DESIGN.md` (+ rapport `docs/audits/DESIGN_AUDIT_2026-06.md`). Sur react-native-web,
+> la ref d'`Animated.View` n'expose PAS le nœud DOM : un `IntersectionObserver` posé dessus ne
+> s'attache jamais (échec silencieux) — observer une sentinelle `View` 1×1 à la place (cf.
+> `src/ui/Reveal.tsx`). Titres de page en Fraunces (`tokens.font.serif`), jamais en corps de
+> texte. Tout mouvement doit rester coupé sous `prefers-reduced-motion`.
+
 | Outil | Grand public | Étudiant | Professionnel | Admin |
 |---|:---:|:---:|:---:|:---:|
 | Chat santé (3 chatbots) | ✅ (chat public seul) | ✅ (les 3) | ✅ (les 3) | ✅ (les 3) |

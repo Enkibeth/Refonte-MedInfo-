@@ -1,5 +1,5 @@
 /**
- * Design system MedInfo AI — source unique (05_DESIGN §2, §3, §8).
+ * Design system MedInfo AI — source unique (05_DESIGN §2, §3, §4, §9).
  *
  * Identité « bleu pétrole » conservée et étoffée : rampe petrol complète, neutres
  * cliniques (gris froids non boueux), sémantiques sobres, échelle typographique
