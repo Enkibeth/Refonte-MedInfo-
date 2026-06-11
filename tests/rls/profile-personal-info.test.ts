@@ -33,17 +33,22 @@ afterAll(async () => {
 
 describe('profiles — infos perso own-row', () => {
   it('user A renseigne SES infos perso', async () => {
-    const { rowCount } = await db.asUser(USER_A, (q) =>
-      q("UPDATE profiles SET first_name = 'Hugo', age = 34, sex = 'masculin' WHERE id = $1", [USER_A]),
-    );
-    expect(rowCount).toBe(1);
+    // Écriture + relecture dans la MÊME transaction asUser : le harness annule (ROLLBACK)
+    // chaque appel asUser, une relecture séparée ne verrait pas l'update.
+    await db.asUser(USER_A, async (q) => {
+      const { rowCount } = await q(
+        "UPDATE profiles SET first_name = 'Hugo', age = 34, sex = 'masculin' WHERE id = $1",
+        [USER_A],
+      );
+      expect(rowCount).toBe(1);
 
-    const { rows } = await db.asUser(USER_A, (q) =>
-      q('SELECT first_name, age, sex, persona FROM profiles WHERE id = $1', [USER_A]),
-    );
-    expect(rows[0]).toMatchObject({ first_name: 'Hugo', age: 34, sex: 'masculin' });
-    // Mettre à jour les infos perso ne change pas la persona (verrou anti-élévation non déclenché).
-    expect(rows[0].persona).toBe('public');
+      const { rows } = await q('SELECT first_name, age, sex, persona FROM profiles WHERE id = $1', [
+        USER_A,
+      ]);
+      expect(rows[0]).toMatchObject({ first_name: 'Hugo', age: 34, sex: 'masculin' });
+      // Mettre à jour les infos perso ne change pas la persona (verrou anti-élévation non déclenché).
+      expect(rows[0].persona).toBe('public');
+    });
   });
 
   it('user A NE PEUT PAS écrire les infos perso de user B', async () => {
