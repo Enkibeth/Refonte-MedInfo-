@@ -20,6 +20,12 @@ const palette = {
   petrol100: '#DCEAF1', // fond teinté discret
   petrol50: '#EFF5F9',
 
+  // Bleu vif — essai 2026-06 (audit landing, repris du site actuel medinfo-ai.com).
+  // Réservé aux CTA primaires et accents d'action ; jamais en grandes surfaces
+  // (fonds, hero) où la rampe petrol reste la base.
+  blue600: '#0067FF',
+  blue700: '#0052D6', // hover / actif
+
   // Neutres cliniques — gris froids légèrement désaturés, jamais bleu criard.
   white: '#FFFFFF',
   neutral25: '#FAFBFC', // fond d'app (off-white, moins « plat » que blanc pur)
@@ -72,6 +78,8 @@ export const tokens = {
     accentDarker: palette.petrol900, // fond hero, profondeur maximale
     accentSurface: palette.petrol50, // fond teinté très léger
     accentSurfaceStrong: palette.petrol100,
+    accentVivid: palette.blue600, // CTA primaires (essai bleu vif 2026-06)
+    accentVividStrong: palette.blue700, // hover des CTA vifs
 
     // États
     success: palette.green600,

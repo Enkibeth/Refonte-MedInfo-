@@ -113,9 +113,11 @@ const styles = StyleSheet.create({
 
 const variantStyles: Record<Variant, { container: ViewStyle; hover: ViewStyle; label: { color: string } }> = {
   primary: {
-    container: { backgroundColor: tokens.colors.accent, ...tokens.elevation.sm },
+    // Essai 2026-06 : CTA en bleu vif (tokens.colors.accentVivid) — revenir à
+    // tokens.colors.accent / accentStrong pour retrouver le petrol d'origine.
+    container: { backgroundColor: tokens.colors.accentVivid, ...tokens.elevation.sm },
     // Survol : teinte plus dense + légère élévation/remontée → CTA « vivant » mais sobre.
-    hover: { backgroundColor: tokens.colors.accentStrong, transform: [{ translateY: -1 }], ...tokens.elevation.md },
+    hover: { backgroundColor: tokens.colors.accentVividStrong, transform: [{ translateY: -1 }], ...tokens.elevation.md },
     label: { color: tokens.colors.onAccent },
   },
   secondary: {
