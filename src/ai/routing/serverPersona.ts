@@ -26,6 +26,8 @@ export interface ServerPersonaResolution {
   persona: Persona;
   /** true si un token valide a identifié un profil. */
   verified: boolean;
+  /** Id du compte vérifié (null pour un appel anonyme) — pour les écritures serveur own-row. */
+  userId: string | null;
   /** Persona demandée par le client (intention déclarée, jamais une autorisation). */
   requested: Persona;
   /** true si le client a demandé une persona plus privilégiée que celle accordée. */
@@ -79,6 +81,7 @@ export async function resolveChatPersona(
     return {
       persona: 'public',
       verified: false,
+      userId: null,
       requested,
       attemptedElevation: PRIVILEGE[requested] > PRIVILEGE.public,
     };
@@ -93,6 +96,7 @@ export async function resolveChatPersona(
   return {
     persona,
     verified: true,
+    userId,
     requested,
     attemptedElevation: PRIVILEGE[requested] > PRIVILEGE[persona],
   };
