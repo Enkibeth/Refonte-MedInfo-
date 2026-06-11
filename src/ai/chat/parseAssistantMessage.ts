@@ -404,6 +404,45 @@ export function parseAssistantMessage(text: string): ParsedAssistantMessage {
   return { blocks, sources: allSources };
 }
 
+// ── Références inline (SRCx) → appels de note en exposant ────────────────────
+
+const SUPERSCRIPT_DIGITS = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹'] as const;
+
+function superscriptOf(num: string): string {
+  return [...num].map((d) => SUPERSCRIPT_DIGITS[Number(d)] ?? d).join('');
+}
+
+/**
+ * Remplace les références inline imposées par les prompts — `(SRC1)`, `(SRC1, SRC2)`,
+ * `(Classe I · SRC1)`, `SRC3` isolé — par des appels de note en exposant : ¹, ¹ ²,
+ * (Classe I)¹… Les cartes de la section SOURCES restent la légende de ces numéros.
+ * Les lignes de légende `SRCn :: …` (présentes dans l'export PDF, jamais dans le
+ * corps rendu) gardent leur contenu mais prennent le même numéro en exposant.
+ */
+export function formatInlineCitations(markdown: string): string {
+  return markdown
+    .split('\n')
+    .map((line) => {
+      const legend = line.match(SRC_LINE_RE);
+      if (legend) return `${superscriptOf(legend[1])} ${legend[2]}`;
+      // Groupes parenthésés contenant au moins une référence SRCn.
+      let out = line.replace(/([ \t]*)\(([^()]*SRC\d[^()]*)\)/g, (_full, space: string, inner: string) => {
+        const sup = [...inner.matchAll(/SRC(\d+)/g)].map((m) => superscriptOf(m[1])).join(' ');
+        const rest = inner
+          .replace(/SRC\d+/g, '')
+          .replace(/\s{2,}/g, ' ')
+          .replace(/^[\s,·:;–—-]+|[\s,·:;–—-]+$/g, '')
+          .trim();
+        // Sans texte restant, l'appel de note se colle au mot précédent (« dysphagie.¹ ² »).
+        return rest ? `${space}(${rest})${sup}` : sup;
+      });
+      // Références SRCn isolées hors parenthèses.
+      out = out.replace(/\bSRC(\d+)\b/g, (_m, n: string) => superscriptOf(n));
+      return out;
+    })
+    .join('\n');
+}
+
 // ── Découpage du corps en sections MAJUSCULES (rendu) ─────────────────────────
 
 export interface BodySection {
