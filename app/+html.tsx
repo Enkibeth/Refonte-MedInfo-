@@ -65,15 +65,19 @@ body { overflow-x: hidden; }
   animation: medinfo-reveal 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Tracé ECG du hero : la ligne se dessine une fois au chargement, puis reste
-   statique (mouvement narratif, pas décoratif — design system §4). */
+/* Tracé ECG du hero : la ligne se dessine, tient, puis s'efface et recommence —
+   battement lent (cycle 9 s), assez discret pour ne jamais voler le premier rôle.
+   La réinitialisation du tracé se fait pendant que la ligne est invisible. */
 @keyframes medinfo-ecg-draw {
-  from { stroke-dashoffset: 1700; }
-  to   { stroke-dashoffset: 0; }
+  0%   { stroke-dashoffset: 1700; opacity: 1; }
+  30%  { stroke-dashoffset: 0; opacity: 1; }
+  80%  { stroke-dashoffset: 0; opacity: 1; }
+  90%  { stroke-dashoffset: 0; opacity: 0; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
 }
 .medinfo-ecg-path {
   stroke-dasharray: 1700;
-  animation: medinfo-ecg-draw 2400ms cubic-bezier(0.4, 0, 0.2, 1) 300ms both;
+  animation: medinfo-ecg-draw 9000ms cubic-bezier(0.4, 0, 0.2, 1) 300ms infinite;
 }
 
 /* Shimmer de chargement (squelettes) : balayage discret gauche → droite. */

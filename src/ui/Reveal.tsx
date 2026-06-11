@@ -1,5 +1,13 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, Platform, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  Animated,
+  Easing,
+  Platform,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
 import { tokens } from './tokens';
 import { useReducedMotion } from './useReducedMotion';
@@ -9,9 +17,12 @@ import { useReducedMotion } from './useReducedMotion';
  * easing « sortie douce ». Pas de bounce, pas de spring. Utilisable en séquence
  * via `delay` (cf. tokens.motion.revealStagger).
  *
- * Sur le web, l'entrée est déclenchée au scroll (IntersectionObserver) : un bloc
- * sous la ligne de flottaison se révèle quand il entre dans le viewport, pas au
- * montage. Une seule fois par bloc — jamais de re-animation en remontant.
+ * Sur le web, l'entrée est déclenchée au scroll : un bloc sous la ligne de
+ * flottaison se révèle quand il entre dans le viewport, une seule fois. Le
+ * déclencheur observe une sentinelle DOM 1×1 posée en haut du bloc — la ref
+ * d'un View RNW est un vrai nœud DOM, contrairement à celle d'Animated.View
+ * (piège vérifié : l'observer ne s'attache jamais dessus). Un bloc déjà
+ * visible au chargement entre immédiatement.
  *
  * Respecte `prefers-reduced-motion` : si l'utilisateur l'a demandé, le contenu
  * apparaît immédiatement à son état final, sans transition.
@@ -29,8 +40,7 @@ export function Reveal({
 }) {
   const reduced = useReducedMotion();
   const progress = useRef(new Animated.Value(reduced ? 1 : 0)).current;
-  const hostRef = useRef<React.ComponentRef<typeof Animated.View> | null>(null);
-  const startedRef = useRef(false);
+  const sentinelRef = useRef<View | null>(null);
 
   useEffect(() => {
     if (reduced) {
@@ -39,9 +49,10 @@ export function Reveal({
     }
 
     let anim: Animated.CompositeAnimation | null = null;
+    let started = false;
     const start = () => {
-      if (startedRef.current) return;
-      startedRef.current = true;
+      if (started) return;
+      started = true;
       anim = Animated.timing(progress, {
         toValue: 1,
         duration: tokens.motion.duration.slow + 140,
@@ -52,14 +63,20 @@ export function Reveal({
       anim.start();
     };
 
-    // Web : sur RN-web, la ref d'Animated.View expose le nœud DOM → observable.
-    const node = hostRef.current as unknown as Element | null;
+    const node = sentinelRef.current as unknown as Element | null;
     if (
       Platform.OS === 'web' &&
       typeof IntersectionObserver !== 'undefined' &&
+      typeof window !== 'undefined' &&
       node &&
-      typeof (node as { nodeType?: number }).nodeType === 'number'
+      typeof node.getBoundingClientRect === 'function'
     ) {
+      // Bloc déjà dans (ou au-dessus de) la fenêtre : entrée immédiate — couvre
+      // le premier écran et un rechargement en milieu de page.
+      if (node.getBoundingClientRect().top < window.innerHeight) {
+        start();
+        return () => anim?.stop();
+      }
       const observer = new IntersectionObserver(
         (entries) => {
           if (entries.some((e) => e.isIntersecting)) {
@@ -67,7 +84,8 @@ export function Reveal({
             observer.disconnect();
           }
         },
-        { threshold: 0.1 },
+        // Déclenche quand le haut du bloc dépasse de 40 px la ligne basse du viewport.
+        { rootMargin: '0px 0px -40px 0px' },
       );
       observer.observe(node);
       return () => {
@@ -83,7 +101,6 @@ export function Reveal({
 
   return (
     <Animated.View
-      ref={hostRef}
       style={[
         {
           opacity: progress,
@@ -99,7 +116,14 @@ export function Reveal({
         style,
       ]}
     >
+      {Platform.OS === 'web' ? (
+        <View ref={sentinelRef} pointerEvents="none" style={styles.sentinel} />
+      ) : null}
       {children}
     </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  sentinel: { position: 'absolute', top: 0, left: 0, width: 1, height: 1, opacity: 0 },
+});
