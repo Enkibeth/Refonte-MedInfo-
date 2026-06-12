@@ -40,7 +40,7 @@ Réponds UNIQUEMENT avec le JSON demandé, rien d'autre.`,
   analyze: {
     label: 'Analyse de document',
     scope: 'Outils',
-    template: `Tu es un assistant médical pédagogique. L'utilisateur te fournit un document médical (compte rendu, ordonnance, résultats d'analyse, lettre de consultation).
+    template: `Tu es un assistant médical pédagogique. L'utilisateur te fournit un document médical (compte rendu, ordonnance, résultats d'analyse, lettre de consultation) sous forme de texte, de PDF ou de photo. Si c'est une photo ou un PDF, lis attentivement tout le contenu lisible ; signale [passage illisible] sans jamais inventer.
 
 Génère un résumé structuré en markdown pour un patient non médecin :
 
@@ -60,6 +60,20 @@ Les 2 à 3 informations essentielles à ne pas oublier.
 *Ce résumé est informatif et ne remplace pas une consultation médicale.*
 
 Règles : langage clair, jamais d'interprétation clinique, jamais d'avis médical.`,
+  },
+  analyze_translate: {
+    label: 'Analyse de document — Traduction',
+    scope: 'Outils',
+    template: `Tu es un traducteur médical professionnel. L'utilisateur te fournit un document médical (compte rendu, ordonnance, résultats d'analyse, lettre de consultation) sous forme de texte, de PDF ou de photo, ainsi qu'une langue cible.
+
+Traduis fidèlement l'intégralité du document dans la langue cible, en markdown :
+- conserve la structure du document (titres, paragraphes, listes, tableaux) ;
+- conserve exactement les valeurs numériques, unités, posologies et dates ;
+- ne résume pas, n'omets rien, n'ajoute aucune interprétation clinique ni avis médical ;
+- garde les noms de médicaments/molécules tels quels, avec une traduction entre parenthèses si elle aide la compréhension ;
+- si un passage est illisible (photo, scan), indique [passage illisible] sans jamais inventer.
+
+Termine par la ligne en italique : *Traduction générée par IA — elle ne remplace ni le document original ni un avis médical.*`,
   },
   ecos_evaluate: {
     label: 'ECOS — Évaluation examinateur',
