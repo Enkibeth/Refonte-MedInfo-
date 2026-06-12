@@ -25,6 +25,7 @@ import { useRouter } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId, AI_FEATURES } from '@/admin/index';
+import { BlogEditorModal } from '@/ui/admin/BlogEditorModal';
 import { tokens } from '@/ui/tokens';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -864,6 +865,7 @@ function BlogTab({ session }: { session: { access_token: string } | null }) {
   const [error, setError] = useState<string | null>(null);
   const [topic, setTopic] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const authHeaders = useCallback(
     () => ({
@@ -936,8 +938,10 @@ function BlogTab({ session }: { session: { access_token: string } | null }) {
       <Text style={tabStyles.intro}>
         Génère un article santé complet (titre, chapeau, sections « ## » pour le sommaire
         cliquable, image de couverture si la clé OpenAI est configurée). L'article arrive en
-        brouillon : relis-le sur sa page puis publie-le — seuls les articles publiés sont
-        visibles sur le blog public.
+        brouillon : ouvre-le avec « Modifier » pour le relire en aperçu, ajuster le texte et
+        les images (remplacer la couverture par une vraie photo, en insérer dans le corps),
+        puis publie-le — seuls les articles publiés sont visibles sur le blog public. Un
+        article reste modifiable après publication.
       </Text>
 
       <View style={blogStyles.generateCard}>
@@ -995,12 +999,21 @@ function BlogTab({ session }: { session: { access_token: string } | null }) {
               </Text>
             </View>
             <View style={blogStyles.postActions}>
-              <TouchableOpacity
-                style={blogStyles.actionBtn}
-                onPress={() => router.push(`/(marketing)/blog/${p.slug}` as never)}
-              >
-                <Text style={blogStyles.actionText}>Voir</Text>
+              {/* La page publique ne voit que les articles publiés (RLS) : pour un
+                  brouillon, la relecture passe par l'aperçu de l'éditeur admin. */}
+              <TouchableOpacity style={blogStyles.actionBtn} onPress={() => setEditingId(p.id)}>
+                <Text style={blogStyles.actionText}>
+                  {p.status === 'published' ? 'Modifier' : 'Relire / modifier'}
+                </Text>
               </TouchableOpacity>
+              {p.status === 'published' ? (
+                <TouchableOpacity
+                  style={blogStyles.actionBtn}
+                  onPress={() => router.push(`/(marketing)/blog/${p.slug}` as never)}
+                >
+                  <Text style={blogStyles.actionText}>Voir en ligne</Text>
+                </TouchableOpacity>
+              ) : null}
               <TouchableOpacity style={blogStyles.actionBtn} onPress={() => togglePublish(p)}>
                 <Text style={blogStyles.actionText}>
                   {p.status === 'published' ? 'Dépublier' : 'Publier'}
@@ -1015,6 +1028,17 @@ function BlogTab({ session }: { session: { access_token: string } | null }) {
       )}
       {!loading && posts.length === 0 ? (
         <Text style={blogStyles.empty}>Aucun article pour l'instant — génère le premier !</Text>
+      ) : null}
+
+      {editingId && session?.access_token ? (
+        <BlogEditorModal
+          postId={editingId}
+          accessToken={session.access_token}
+          onClose={(changed) => {
+            setEditingId(null);
+            if (changed) load();
+          }}
+        />
       ) : null}
     </ScrollView>
   );

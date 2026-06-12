@@ -1,7 +1,15 @@
 /**
- * GET    /api/admin/blog — liste TOUS les articles (brouillons compris).
+ * GET    /api/admin/blog — liste TOUS les articles (brouillons compris) ;
+ *                          `?id=<uuid>` renvoie un article complet (content_md inclus),
+ *                          brouillon ou publié — c'est l'aperçu/édition admin, la page
+ *                          publique ne voyant que les articles publiés (RLS).
  * POST   /api/admin/blog — { action: 'generate', topic? } génère un article IA (brouillon) ;
- *                          { action: 'publish', id, publish } publie / dépublie.
+ *                          { action: 'publish', id, publish } publie / dépublie ;
+ *                          { action: 'update', id, title?, summary?, category?, content_md?,
+ *                            cover_image_url? } modifie un article (avant ou après publication) ;
+ *                          { action: 'upload_image', id, dataBase64, contentType, target }
+ *                          téléverse une image (target 'cover' remplace la couverture,
+ *                          'inline' renvoie l'URL publique à insérer dans le markdown).
  * DELETE /api/admin/blog — { id } supprime un article.
  *
  * Accès restreint aux comptes admin (requireAdmin). Écritures en service role :
@@ -104,6 +112,18 @@ export async function GET(request: Request): Promise<Response> {
   const auth = await requireAdmin(request);
   if (!auth.ok) return auth.response;
 
+  const id = new URL(request.url).searchParams.get('id');
+  if (id) {
+    const { data, error } = await serviceClient()
+      .from('blog_posts')
+      .select('id, slug, title, summary, category, cover_image_url, content_md, status, created_at, published_at')
+      .eq('id', id)
+      .maybeSingle();
+    if (error) return Response.json({ error: error.message }, { status: 500 });
+    if (!data) return Response.json({ error: 'Article introuvable.' }, { status: 404 });
+    return Response.json({ post: data });
+  }
+
   const { data, error } = await serviceClient()
     .from('blog_posts')
     .select('id, slug, title, summary, category, cover_image_url, status, created_at, published_at')
@@ -117,7 +137,20 @@ export async function POST(request: Request): Promise<Response> {
   const auth = await requireAdmin(request);
   if (!auth.ok) return auth.response;
 
-  let body: { action?: string; topic?: string; id?: string; publish?: boolean };
+  let body: {
+    action?: string;
+    topic?: string;
+    id?: string;
+    publish?: boolean;
+    title?: string;
+    summary?: string;
+    category?: string;
+    content_md?: string;
+    cover_image_url?: string | null;
+    dataBase64?: string;
+    contentType?: string;
+    target?: string;
+  };
   try {
     body = await request.json();
   } catch {
@@ -125,6 +158,77 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const db = serviceClient();
+
+  if (body.action === 'update') {
+    if (!body.id) return Response.json({ error: 'id requis.' }, { status: 400 });
+    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (typeof body.title === 'string' && body.title.trim()) patch.title = body.title.trim().slice(0, 300);
+    if (typeof body.summary === 'string') patch.summary = body.summary.trim().slice(0, 1000) || null;
+    if (typeof body.category === 'string') patch.category = body.category.trim().slice(0, 80) || null;
+    if (typeof body.content_md === 'string' && body.content_md.trim()) patch.content_md = body.content_md;
+    if (body.cover_image_url === null) patch.cover_image_url = null;
+    else if (typeof body.cover_image_url === 'string') {
+      const url = body.cover_image_url.trim();
+      if (url && !/^https:\/\//.test(url)) {
+        return Response.json({ error: "L'URL de l'image doit être en https://" }, { status: 400 });
+      }
+      patch.cover_image_url = url || null;
+    }
+    const { error } = await db.from('blog_posts').update(patch).eq('id', body.id);
+    if (error) return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ ok: true });
+  }
+
+  if (body.action === 'upload_image') {
+    if (!body.id) return Response.json({ error: 'id requis.' }, { status: 400 });
+    const target = body.target === 'inline' ? 'inline' : 'cover';
+    const extByType: Record<string, string> = {
+      'image/png': 'png',
+      'image/jpeg': 'jpg',
+      'image/webp': 'webp',
+    };
+    const ext = extByType[body.contentType ?? ''];
+    if (!ext) {
+      return Response.json({ error: 'Format accepté : PNG, JPEG ou WebP.' }, { status: 400 });
+    }
+    if (typeof body.dataBase64 !== 'string' || !body.dataBase64) {
+      return Response.json({ error: 'Image manquante.' }, { status: 400 });
+    }
+    let bytes: Uint8Array;
+    try {
+      bytes = Uint8Array.from(atob(body.dataBase64), (c) => c.charCodeAt(0));
+    } catch {
+      return Response.json({ error: 'Image illisible (base64 invalide).' }, { status: 400 });
+    }
+    if (bytes.length > 4 * 1024 * 1024) {
+      return Response.json({ error: 'Image trop lourde (4 Mo max).' }, { status: 413 });
+    }
+
+    const { data: post, error: postError } = await db
+      .from('blog_posts')
+      .select('slug')
+      .eq('id', body.id)
+      .maybeSingle();
+    if (postError || !post) return Response.json({ error: 'Article introuvable.' }, { status: 404 });
+
+    const rand = Math.random().toString(36).slice(2, 8);
+    const path =
+      target === 'cover' ? `${post.slug}-cover-${rand}.${ext}` : `inline/${post.slug}-${rand}.${ext}`;
+    const { error: uploadError } = await db.storage
+      .from('blog-covers')
+      .upload(path, bytes, { contentType: body.contentType, upsert: true });
+    if (uploadError) return Response.json({ error: uploadError.message }, { status: 500 });
+    const url = db.storage.from('blog-covers').getPublicUrl(path).data.publicUrl;
+
+    if (target === 'cover') {
+      const { error } = await db
+        .from('blog_posts')
+        .update({ cover_image_url: url, updated_at: new Date().toISOString() })
+        .eq('id', body.id);
+      if (error) return Response.json({ error: error.message }, { status: 500 });
+    }
+    return Response.json({ ok: true, url });
+  }
 
   if (body.action === 'publish') {
     if (!body.id) return Response.json({ error: 'id requis.' }, { status: 400 });
