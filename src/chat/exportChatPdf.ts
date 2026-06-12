@@ -2,6 +2,7 @@
  * Export PDF d'une conversation de chat via la fenêtre d'impression du navigateur
  * (même approche sans dépendance que src/audio/exportPdf.ts).
  */
+import { formatInlineCitations } from '@/ai/chat/parseAssistantMessage';
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -70,7 +71,7 @@ export function exportChatToPdf({
     .map((m) =>
       m.role === 'user'
         ? `<div class="q"><div class="who">Question</div>${markdownToHtml(m.content)}</div>`
-        : `<div class="a"><div class="who">Réponse — ${escapeHtml(chatbotLabel)}</div>${markdownToHtml(m.content)}</div>`,
+        : `<div class="a"><div class="who">Réponse — ${escapeHtml(chatbotLabel)}</div>${markdownToHtml(formatInlineCitations(m.content))}</div>`,
     )
     .join('\n');
 

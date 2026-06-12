@@ -135,6 +135,15 @@ export const AI_FEATURES = [
     promptKeys: ['audio_report'],
     providers: ['openai', 'anthropic'],
   },
+  {
+    key: 'blog_generate',
+    emoji: '📰',
+    label: 'Blog — Génération d\'article',
+    description: 'Rédige un article santé innovant (titre, sommaire, sections) pour le blog public',
+    apiRoute: '/api/admin/blog',
+    promptKeys: ['blog_generate'],
+    providers: ['anthropic', 'openai', 'google'],
+  },
 ] as const;
 
 export type FeatureKey = (typeof AI_FEATURES)[number]['key'];

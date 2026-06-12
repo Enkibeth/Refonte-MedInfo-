@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  formatInlineCitations,
   parseAssistantMessage,
   splitBodySections,
   isUppercaseHeading,
@@ -263,6 +264,44 @@ describe('isUppercaseHeading', () => {
     expect(isUppercaseHeading('Une phrase normale')).toBe(false);
     expect(isUppercaseHeading('https://www.has-sante.fr')).toBe(false);
     expect(isUppercaseHeading('')).toBe(false);
+  });
+});
+
+describe('formatInlineCitations — (SRCx) → appels de note en exposant', () => {
+  it('remplace une référence simple collée au mot précédent', () => {
+    expect(formatInlineCitations('Red flag : dysphagie progressive. (SRC1)')).toBe(
+      'Red flag : dysphagie progressive.¹',
+    );
+  });
+
+  it('remplace une référence multiple', () => {
+    expect(formatInlineCitations('plan de contrôle à court terme. (SRC1, SRC2)')).toBe(
+      'plan de contrôle à court terme.¹ ²',
+    );
+  });
+
+  it('conserve le badge de grade et ajoute l’exposant après la parenthèse', () => {
+    expect(
+      formatInlineCitations('L’anticoagulation est recommandée. (Classe I · SRC1)'),
+    ).toBe('L’anticoagulation est recommandée. (Classe I)¹');
+    expect(formatInlineCitations('La cible est < 7%. (grade A · SRC5)')).toBe(
+      'La cible est < 7%. (grade A)⁵',
+    );
+  });
+
+  it('remplace une référence SRCn isolée hors parenthèses', () => {
+    expect(formatInlineCitations('ou signes de sténose. SRC3')).toBe('ou signes de sténose. ³');
+  });
+
+  it('numérote la légende SRCn :: sans casser son contenu (export PDF)', () => {
+    expect(formatInlineCitations('SRC1 :: ESC AF 2024 :: ESC :: Guidelines :: 2024')).toBe(
+      '¹ ESC AF 2024 :: ESC :: Guidelines :: 2024',
+    );
+  });
+
+  it('laisse intact un texte sans référence', () => {
+    const text = 'Réponse normale (avec parenthèses) et **du gras**.';
+    expect(formatInlineCitations(text)).toBe(text);
   });
 });
 

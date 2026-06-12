@@ -20,6 +20,8 @@ import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { resolveChatPersona } from '@/ai/routing/serverPersona';
 import { logInteraction } from '@/ai/logging/logInteraction';
+import { coerceConversationId, saveAssistantMessageServer } from '@/chat/serverHistory';
+import { createServerSupabaseClient } from '@/db/serverSupabase';
 import {
   buildUserContextSection,
   coerceChatbot,
@@ -53,6 +55,7 @@ export async function POST(request: Request): Promise<Response> {
     messages?: unknown[];
     chatbot?: unknown;
     personalInfo?: unknown;
+    conversationId?: unknown;
   };
   try {
     body = await request.json();
@@ -100,13 +103,28 @@ export async function POST(request: Request): Promise<Response> {
   const modelMessages = await convertToModelMessages(uiMessages as any);
   const { tools: webTools, ...callOptions } = runtime.options;
 
+  // Résilience hors-ligne (2026-06) : la réponse est archivée CÔTÉ SERVEUR en fin de
+  // génération (et non plus par le client) — la propriété de la conversation est
+  // vérifiée contre le user du token, jamais le body (src/chat/serverHistory.ts).
+  const conversationId = resolution.verified && resolution.userId ? coerceConversationId(body.conversationId) : null;
+
   const result = streamText({
     model: runtime.model,
     system,
     messages: modelMessages,
     ...(webTools ? { tools: webTools } : {}),
     ...callOptions,
-    onFinish: async ({ usage }) => {
+    onFinish: async ({ text, usage }) => {
+      if (conversationId && resolution.userId) {
+        const supabase = createServerSupabaseClient();
+        if (supabase) {
+          await saveAssistantMessageServer(supabase, {
+            conversationId,
+            userId: resolution.userId,
+            content: text,
+          });
+        }
+      }
       await logInteraction({
         persona: chatbot,
         model_used: runtime.modelId,
@@ -119,6 +137,11 @@ export async function POST(request: Request): Promise<Response> {
       });
     },
   });
+
+  // Si le client se déconnecte en plein stream (page suspendue par iOS, réseau coupé),
+  // la génération va quand même au bout : onFinish archive la réponse, que l'utilisateur
+  // retrouvera dans son historique au retour dans l'app.
+  void result.consumeStream();
 
   return result.toUIMessageStreamResponse();
 }

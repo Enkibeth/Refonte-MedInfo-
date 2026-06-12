@@ -15,6 +15,7 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import {
+  formatInlineCitations,
   parseAssistantMessage,
   splitBodySections,
   type DeepeningItem,
@@ -364,7 +365,7 @@ function ReflectionBlock({ markdown }: { markdown: string }) {
       </TouchableOpacity>
       {open ? (
         <View style={styles.reflectionBody}>
-          <MarkdownRenderer text={markdown} />
+          <MarkdownRenderer text={formatInlineCitations(markdown)} />
         </View>
       ) : null}
     </View>
@@ -374,13 +375,17 @@ function ReflectionBlock({ markdown }: { markdown: string }) {
 // ── Corps avec titres MAJUSCULES ──────────────────────────────────────────────
 
 function BodyBlock({ markdown }: { markdown: string }) {
+  // (SRCx) → appels de note en exposant, APRÈS le découpage en sections : un titre
+  // MAJUSCULES contenant une référence resterait sinon non détecté (¹ hors classe).
   const sections = useMemo(() => splitBodySections(markdown), [markdown]);
   return (
     <View style={styles.bodyWrapper}>
       {sections.map((section, i) => (
         <View key={i} style={styles.bodySection}>
-          {section.heading ? <Text style={styles.sectionHeading}>{section.heading}</Text> : null}
-          {section.markdown ? <MarkdownRenderer text={section.markdown} /> : null}
+          {section.heading ? (
+            <Text style={styles.sectionHeading}>{formatInlineCitations(section.heading)}</Text>
+          ) : null}
+          {section.markdown ? <MarkdownRenderer text={formatInlineCitations(section.markdown)} /> : null}
         </View>
       ))}
     </View>

@@ -9,7 +9,7 @@ import { INTENDED_PURPOSE, getAiDisclosure } from '@/compliance/disclosures';
 import { Button } from '@/ui/Button';
 import { HeroBackdrop } from '@/ui/HeroBackdrop';
 import { Icon, type IconName } from '@/ui/icons';
-import { Logo } from '@/ui/Logo';
+import { LandingHeader } from '@/ui/LandingHeader';
 import { PersonaCard, type PersonaId } from '@/ui/PersonaCard';
 import { Reveal } from '@/ui/Reveal';
 import { tokens } from '@/ui/tokens';
@@ -100,31 +100,32 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+    <View style={styles.screen}>
+      {/* Header de navigation (audit 2026-06) : logo + Tarifs / connexion / CTA,
+          hors du ScrollView → reste visible pendant le défilement. */}
+      <LandingHeader />
+      <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       {/* Hero plein écran, fort contraste (petrol profond / blanc).
           Fond : grille millimétrée + tracé ECG dessiné au chargement (HeroBackdrop). */}
       <View style={styles.hero}>
         <HeroBackdrop />
         <View style={styles.heroInner}>
           <Reveal>
-            <Logo size="lg" tone="light" />
-          </Reveal>
-          <Reveal delay={tokens.motion.revealStagger}>
             <Text style={styles.eyebrowText}>Information médicale de référence</Text>
           </Reveal>
-          <Reveal delay={tokens.motion.revealStagger * 2}>
+          <Reveal delay={tokens.motion.revealStagger}>
             <Text style={styles.headline}>
               Des réponses santé claires,{'\n'}sourcées et sans détour.
             </Text>
           </Reveal>
-          <Reveal delay={tokens.motion.revealStagger * 3}>
+          <Reveal delay={tokens.motion.revealStagger * 2}>
             <Text style={styles.subhead}>
               Posez vos questions médicales et pharmacologiques. MedInfo AI répond à partir de la
               littérature française et européenne — information générale, jamais un avis individuel.
             </Text>
           </Reveal>
 
-          <Reveal delay={tokens.motion.revealStagger * 4} style={styles.actions}>
+          <Reveal delay={tokens.motion.revealStagger * 3} style={styles.actions}>
             <Button
               label={isAuthed ? 'Ouvrir le chat' : 'Essayer sans inscription'}
               variant="inverse"
@@ -145,7 +146,7 @@ export default function HomeScreen() {
             )}
           </Reveal>
           {!isAuthed ? (
-            <Reveal delay={tokens.motion.revealStagger * 5}>
+            <Reveal delay={tokens.motion.revealStagger * 4}>
               <Text style={styles.trialHint}>
                 Testez et envoyez votre premier message sans inscription — 1 message gratuit.
               </Text>
@@ -263,11 +264,13 @@ export default function HomeScreen() {
           />
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: tokens.colors.background },
   root: { flex: 1, backgroundColor: tokens.colors.background },
   content: { flexGrow: 1 },
 
@@ -283,7 +286,6 @@ const styles = StyleSheet.create({
   heroInner: { width: '100%', maxWidth: 720, gap: tokens.space.md },
   // Kicker unique du hero : petites capitales sans pastille (sobre, une seule fois).
   eyebrowText: {
-    marginTop: tokens.space.xl,
     fontFamily: tokens.font.sans,
     color: tokens.colors.accentSurfaceStrong,
     fontSize: tokens.type.caption.fontSize,

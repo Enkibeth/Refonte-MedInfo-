@@ -104,7 +104,7 @@ function PulsingDots() {
   );
 }
 
-type ChatPhase = 'thinking' | 'searching' | 'writing';
+type ChatPhase = 'thinking' | 'searching' | 'writing' | 'recovering';
 
 /**
  * Bulle de statut affichée tant que la réponse n'a pas commencé à s'écrire : rassure
@@ -116,8 +116,11 @@ function StatusBubble({ phase }: { phase: ChatPhase }) {
       ? 'Recherche de sources fiables…'
       : phase === 'writing'
         ? 'Rédaction de la réponse…'
-        : 'MedInfo réfléchit…';
-  const icon = phase === 'searching' ? 'search' : phase === 'writing' ? 'sparkles' : 'brain';
+        : phase === 'recovering'
+          ? 'Récupération de la réponse…'
+          : 'MedInfo réfléchit…';
+  const icon =
+    phase === 'searching' ? 'search' : phase === 'writing' ? 'sparkles' : phase === 'recovering' ? 'clock' : 'brain';
   return (
     <View style={[styles.bubble, styles.bubbleAssistant, styles.statusBubble]} accessibilityLabel={label}>
       <View style={styles.statusIconWrap}>
@@ -243,6 +246,9 @@ export default function ChatScreen() {
         body: () => ({
           chatbot: chatbotRef.current,
           personalInfo: personalInfoRef.current ?? undefined,
+          // Résilience hors-ligne : le serveur archive la réponse dans cette conversation
+          // même si la page est suspendue pendant le streaming (voir /api/chat).
+          conversationId: conversationIdRef.current ?? undefined,
         }),
       }),
     [],
@@ -261,14 +267,19 @@ export default function ChatScreen() {
     void refreshConversations();
   }, [refreshConversations]);
 
-  const { messages, sendMessage, status, error, setMessages } = useChat({
+  // Une réponse est-elle attendue (envoyée mais pas encore archivée/affichée en entier) ?
+  // Sert à la reprise après suspension de la page (iOS coupe le flux quand on quitte Safari).
+  const awaitingRef = useRef(false);
+
+  const { messages, sendMessage, status, error, setMessages, regenerate, clearError } = useChat({
     transport,
     onFinish: async ({ message }) => {
+      awaitingRef.current = false;
       const text = messageText(message);
       const convId = conversationIdRef.current;
-      const uid = user?.id;
-      if (!convId || !uid || !text.trim()) return;
-      await saveMessage(convId, uid, 'assistant', text);
+      if (!convId || !user?.id || !text.trim()) return;
+      // La réponse est archivée par le SERVEUR (/api/chat onFinish) — le client ne
+      // sauvegarde plus que le titre/catégorie et rafraîchit la liste.
       if (!titleGeneratedRef.current && tokenRef.current) {
         titleGeneratedRef.current = true;
         await generateConversationMeta(convId, tokenRef.current, firstUserTextRef.current, text.slice(0, 1500));
@@ -277,8 +288,84 @@ export default function ChatScreen() {
     },
   });
 
+  const statusRef = useRef(status);
+  statusRef.current = status;
+
   const isLoading = status === 'streaming' || status === 'submitted';
   const canSend = !isLoading && input.trim().length > 0 && !guestLocked;
+
+  // ── Reprise après coupure (page suspendue / réseau) ────────────────────────────
+  // La génération continue côté serveur et la réponse est archivée dans l'historique :
+  // on la récupère depuis Supabase au lieu de la perdre.
+  const [recovering, setRecovering] = useState(false);
+
+  const recoverFromHistory = useCallback(async (): Promise<boolean> => {
+    const convId = conversationIdRef.current;
+    if (!convId) return false;
+    const stored = await loadMessages(convId);
+    const last = stored[stored.length - 1];
+    if (!last || last.role !== 'assistant') return false;
+    setMessages(
+      stored.map((m) => ({
+        id: m.id,
+        role: m.role,
+        parts: [{ type: 'text' as const, text: m.content }],
+      })),
+    );
+    clearError();
+    awaitingRef.current = false;
+    return true;
+  }, [setMessages, clearError]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    // Poll l'historique (~1 min) : la génération serveur peut encore être en cours.
+    const poll = async (attempt: number) => {
+      if (cancelled || !awaitingRef.current) {
+        setRecovering(false);
+        return;
+      }
+      const busy = statusRef.current === 'streaming' || statusRef.current === 'submitted';
+      if (!busy && (await recoverFromHistory())) {
+        setRecovering(false);
+        return;
+      }
+      if (attempt >= 15) {
+        setRecovering(false);
+        return;
+      }
+      timer = setTimeout(() => void poll(attempt + 1), 4000);
+    };
+
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (!awaitingRef.current || !conversationIdRef.current) return;
+      setRecovering(true);
+      void poll(0);
+    };
+
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [recoverFromHistory]);
+
+  // Réessayer après erreur : la réponse a pu aboutir côté serveur malgré la coupure —
+  // on vérifie d'abord l'historique, sinon on renvoie la même requête (sans re-saisie).
+  const handleRetry = useCallback(async () => {
+    setRecovering(true);
+    const recovered = await recoverFromHistory();
+    setRecovering(false);
+    if (recovered) return;
+    clearError();
+    awaitingRef.current = true;
+    void regenerate();
+  }, [recoverFromHistory, clearError, regenerate]);
 
   // Rotation des suggestions d'amorce : 3 questions à la fois, renouvelées toutes
   // les 30 s tant que l'état vide est affiché (50 questions par chatbot).
@@ -342,6 +429,7 @@ export default function ChatScreen() {
       if (user && conversationIdRef.current) {
         void saveMessage(conversationIdRef.current, user.id, 'user', trimmed);
       }
+      awaitingRef.current = true;
       sendMessage({ text: trimmed });
     },
     [sendMessage, user, isGuest, guestUsed],
@@ -567,7 +655,7 @@ export default function ChatScreen() {
             />
           </Reveal>
         ))}
-        {showStatus && <StatusBubble phase={phase} />}
+        {(showStatus || recovering) && <StatusBubble phase={recovering ? 'recovering' : phase} />}
 
         {/* ── Proposition d'inscription / connexion en fin d'essai gratuit ── */}
         {guestLocked && !isLoading ? (
@@ -600,9 +688,20 @@ export default function ChatScreen() {
           </Reveal>
         ) : null}
 
-        {error && (
+        {error && !recovering && (
           <View style={styles.errorBanner}>
-            <Text style={styles.errorText}>Une erreur est survenue. Veuillez réessayer.</Text>
+            <Text style={styles.errorText}>
+              Une erreur est survenue — la réponse a peut-être été interrompue.
+            </Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={() => void handleRetry()}
+              accessibilityRole="button"
+              accessibilityLabel="Réessayer la dernière question"
+            >
+              <Icon name="refresh" size={14} color={tokens.colors.onAccent} />
+              <Text style={styles.retryButtonText}>Réessayer</Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
@@ -956,6 +1055,24 @@ const styles = StyleSheet.create({
     fontFamily: tokens.font.sans,
     color: tokens.colors.danger,
     fontSize: tokens.type.label.fontSize,
+  },
+  retryButton: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    marginTop: tokens.space.md,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accent,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm,
+    ...tokens.motion.transitionWeb,
+  },
+  retryButtonText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.onAccent,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
   },
 
   disclaimer: {

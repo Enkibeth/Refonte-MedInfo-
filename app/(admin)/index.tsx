@@ -86,7 +86,7 @@ interface Config {
   prompts: PromptRow[];
 }
 
-type Tab = 'models' | 'prompts' | 'ecos';
+type Tab = 'models' | 'prompts' | 'ecos' | 'blog';
 
 const PROVIDER_COLORS: Record<string, string> = {
   anthropic: '#C96442',
@@ -843,6 +843,282 @@ function EcosInput({
   );
 }
 
+// ── Blog : génération d'articles IA + publication (audit landing 2026-06) ─────
+
+interface BlogPostRow {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string | null;
+  category: string | null;
+  cover_image_url: string | null;
+  status: 'draft' | 'published';
+  created_at: string;
+  published_at: string | null;
+}
+
+function BlogTab({ session }: { session: { access_token: string } | null }) {
+  const router = useRouter();
+  const [posts, setPosts] = useState<BlogPostRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [topic, setTopic] = useState('');
+  const [generating, setGenerating] = useState(false);
+
+  const authHeaders = useCallback(
+    () => ({
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session?.access_token}`,
+    }),
+    [session?.access_token],
+  );
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/blog', {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? 'Erreur');
+      setPosts((await res.json()).posts ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erreur de chargement.');
+    } finally {
+      setLoading(false);
+    }
+  }, [session?.access_token]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function generate() {
+    setGenerating(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/blog', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ action: 'generate', topic: topic.trim() || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Échec de la génération.');
+      setTopic('');
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Échec de la génération.');
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function togglePublish(row: BlogPostRow) {
+    await fetch('/api/admin/blog', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ action: 'publish', id: row.id, publish: row.status !== 'published' }),
+    });
+    load();
+  }
+
+  async function remove(row: BlogPostRow) {
+    await fetch('/api/admin/blog', {
+      method: 'DELETE',
+      headers: authHeaders(),
+      body: JSON.stringify({ id: row.id }),
+    });
+    load();
+  }
+
+  return (
+    <ScrollView contentContainerStyle={tabStyles.content}>
+      <Text style={tabStyles.intro}>
+        Génère un article santé complet (titre, chapeau, sections « ## » pour le sommaire
+        cliquable, image de couverture si la clé OpenAI est configurée). L'article arrive en
+        brouillon : relis-le sur sa page puis publie-le — seuls les articles publiés sont
+        visibles sur le blog public.
+      </Text>
+
+      <View style={blogStyles.generateCard}>
+        <Text style={blogStyles.generateLabel}>Sujet (optionnel — sinon l'IA choisit)</Text>
+        <TextInput
+          style={blogStyles.topicInput}
+          value={topic}
+          onChangeText={setTopic}
+          placeholder="ex. Le microbiote intestinal, les vaccins ARNm, le sommeil des ados…"
+          placeholderTextColor={tokens.colors.textMuted}
+          editable={!generating}
+        />
+        <TouchableOpacity
+          style={[blogStyles.generateBtn, generating && blogStyles.generateBtnDisabled]}
+          onPress={generate}
+          disabled={generating}
+          accessibilityRole="button"
+        >
+          {generating ? <ActivityIndicator size="small" color={tokens.colors.onAccent} /> : null}
+          <Text style={blogStyles.generateBtnText}>
+            {generating ? 'Génération en cours (1 à 2 min)…' : '📰 Générer un article'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {error ? <Text style={blogStyles.error}>{error}</Text> : null}
+
+      {loading ? (
+        <ActivityIndicator color={tokens.colors.accent} style={{ marginTop: tokens.space.lg }} />
+      ) : (
+        posts.map((p) => (
+          <View key={p.id} style={blogStyles.postRow}>
+            <View style={blogStyles.postInfo}>
+              <View style={blogStyles.postMetaRow}>
+                <View
+                  style={[
+                    blogStyles.statusPill,
+                    p.status === 'published' ? blogStyles.statusPublished : blogStyles.statusDraft,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      blogStyles.statusText,
+                      p.status === 'published' ? blogStyles.statusTextPublished : blogStyles.statusTextDraft,
+                    ]}
+                  >
+                    {p.status === 'published' ? 'Publié' : 'Brouillon'}
+                  </Text>
+                </View>
+                {p.category ? <Text style={blogStyles.postCategory}>{p.category}</Text> : null}
+                {!p.cover_image_url ? <Text style={blogStyles.noCover}>sans image</Text> : null}
+              </View>
+              <Text style={blogStyles.postTitle} numberOfLines={2}>
+                {p.title}
+              </Text>
+            </View>
+            <View style={blogStyles.postActions}>
+              <TouchableOpacity
+                style={blogStyles.actionBtn}
+                onPress={() => router.push(`/(marketing)/blog/${p.slug}` as never)}
+              >
+                <Text style={blogStyles.actionText}>Voir</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={blogStyles.actionBtn} onPress={() => togglePublish(p)}>
+                <Text style={blogStyles.actionText}>
+                  {p.status === 'published' ? 'Dépublier' : 'Publier'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={blogStyles.actionBtn} onPress={() => remove(p)}>
+                <Text style={blogStyles.actionDanger}>Supprimer</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))
+      )}
+      {!loading && posts.length === 0 ? (
+        <Text style={blogStyles.empty}>Aucun article pour l'instant — génère le premier !</Text>
+      ) : null}
+    </ScrollView>
+  );
+}
+
+const blogStyles = StyleSheet.create({
+  generateCard: {
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surface,
+    padding: tokens.space.lg,
+    gap: tokens.space.sm,
+  },
+  generateLabel: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textSubtle,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  topicInput: {
+    borderRadius: tokens.radius.sm,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surfaceSunken,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.sm + 2,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.label.fontSize,
+  },
+  generateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: tokens.space.sm,
+    alignSelf: 'flex-start',
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accentVivid,
+    paddingHorizontal: tokens.space.xl,
+    paddingVertical: tokens.space.sm + 2,
+  },
+  generateBtnDisabled: { opacity: 0.7 },
+  generateBtnText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.onAccent,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  error: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.danger,
+    fontSize: tokens.type.label.fontSize,
+    marginTop: tokens.space.sm,
+  },
+  postRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.md,
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surface,
+    padding: tokens.space.md,
+    marginTop: tokens.space.sm,
+  },
+  postInfo: { flex: 1, gap: 4 },
+  postMetaRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm, flexWrap: 'wrap' },
+  statusPill: { borderRadius: tokens.radius.pill, paddingHorizontal: tokens.space.sm, paddingVertical: 2 },
+  statusPublished: { backgroundColor: tokens.colors.successBackground },
+  statusDraft: { backgroundColor: tokens.colors.warningBackground },
+  statusText: { fontFamily: tokens.font.sans, fontSize: 11, fontWeight: tokens.weight.bold },
+  statusTextPublished: { color: tokens.colors.success },
+  statusTextDraft: { color: tokens.colors.warningText },
+  postCategory: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: 11.5 },
+  noCover: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: 11.5, fontStyle: 'italic' },
+  postTitle: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  postActions: { gap: 4, alignItems: 'flex-end' },
+  actionBtn: { paddingVertical: 2, paddingHorizontal: tokens.space.sm },
+  actionText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accent,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  actionDanger: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.danger,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  empty: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.label.fontSize,
+    marginTop: tokens.space.lg,
+  },
+});
+
 // ── Écran principal ───────────────────────────────────────────────────────────
 
 export default function AdminScreen() {
@@ -933,10 +1209,20 @@ export default function AdminScreen() {
             🩺 Cas ECOS
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tabBtn, tab === 'blog' && styles.tabBtnActive]}
+          onPress={() => setTab('blog')}
+        >
+          <Text style={[styles.tabLabel, tab === 'blog' && styles.tabLabelActive]}>
+            📰 Blog
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {tab === 'ecos' ? (
         <EcosTab session={session} />
+      ) : tab === 'blog' ? (
+        <BlogTab session={session} />
       ) : loading ? (
         <View style={styles.loading}>
           <ActivityIndicator color={tokens.colors.accent} size="large" />

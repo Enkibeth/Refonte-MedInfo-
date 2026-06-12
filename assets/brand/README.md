@@ -10,6 +10,7 @@ Le logo affiché dans l'app est désormais une **image officielle** (et non plus
 |---|---|---|
 | `logo-wordmark.png` | Wordmark complet, rendu par `src/ui/Logo.tsx` | 1024×297, transparent (ratio h/L ≈ 0.29) |
 | `legacy-illustration.png` | Illustration de marque (accueil), **transitoire** | 1200×1200 |
+| `team-illustration.png` | Illustration de l'équipe (header public, pastille ronde dans `src/ui/LandingHeader.tsx`) | 512×512 |
 | `../icon.png` | Icône d'app (symbole croix+cervelet, fond blanc) | 1024×1024 |
 | `../favicon.png` | Favicon web | 256×256 |
 | `../splash-icon.png` | Splash (symbole blanc, transparent → fond petrol) | 1024×1024 |
