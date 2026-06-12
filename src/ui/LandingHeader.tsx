@@ -66,12 +66,14 @@ export function LandingHeader() {
   return (
     <View style={styles.bar}>
       <View style={styles.inner}>
-        <View style={styles.brandRow}>
-          <Pressable onPress={() => go('/')} accessibilityRole="link" accessibilityLabel="Accueil MedInfo AI">
-            <Logo size="sm" />
-          </Pressable>
-          {/* Illustration de l'équipe (demande Hugo 2026-06) — pastille ronde à côté du logo.
-              Asset : assets/brand/team-illustration.png (chemin relatif, cf. piège alias @/). */}
+        <Pressable
+          style={styles.brandRow}
+          onPress={() => go('/')}
+          accessibilityRole="link"
+          accessibilityLabel="Accueil MedInfo AI"
+        >
+          {/* Illustration de l'équipe (demande Hugo 2026-06) — dans le coin haut gauche,
+              le logo MedInfo à sa droite. Asset relatif (cf. piège alias @/). */}
           <Image
             source={require('../../assets/brand/team-illustration.png')}
             style={styles.teamBadge}
@@ -79,13 +81,14 @@ export function LandingHeader() {
             accessibilityRole="image"
             accessibilityLabel="L'équipe MedInfo AI"
           />
-        </View>
+          <Logo size="sm" />
+        </Pressable>
 
         <View style={styles.nav}>
           {!compact ? (
             <View>
               <NavLink
-                label="Chatbots"
+                label="Services"
                 chevron
                 active={openMenu === 'chatbots'}
                 onPress={() => setOpenMenu((m) => (m === 'chatbots' ? null : 'chatbots'))}
