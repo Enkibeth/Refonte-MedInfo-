@@ -94,9 +94,9 @@ export const AI_FEATURES = [
     key: 'analyze',
     emoji: '📄',
     label: 'Analyse de document',
-    description: 'Résumé patient d\'un document médical (CR, ordonnance…)',
+    description: 'Résumé patient ou traduction d\'un document médical (texte, PDF, photo)',
     apiRoute: '/api/analyze',
-    promptKeys: ['analyze'],
+    promptKeys: ['analyze', 'analyze_translate'],
     providers: ['anthropic', 'openai'],
   },
   {

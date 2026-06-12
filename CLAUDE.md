@@ -83,6 +83,7 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 | `0020_chat_history.sql` | Historique du chat : `chat_conversations` (chatbot, `title`/`category` générés par `chat_meta`) + `chat_messages` (user/assistant) | Potentiellement sensible (questions de santé) | Own-row stricte (CRUD propriétaire ; insert message vérifié contre la conversation du user) | Test `tests/rls/chat-history.test.ts` ; ADR-0024 |
 | `0021_ai_model_config_refonte.sql` | Seed feature `chat_meta` (gemini-2.5-flash, google) + update `chat` → `gpt-5.2` (openai) avec `web_search = true` | Non | Service role only (hérite du verrou 0011) | Refonte 2026-06 ; le POST admin fait un UPDATE, la ligne `chat_meta` doit préexister ; ADR-0024 |
 | `0022_blog_posts.sql` | Blog public : table `blog_posts` (slug, titre, sommaire via `## `, `cover_image_url`, statut draft/published) + seed `blog_generate` dans `ai_model_config` | Non (articles d'information générale) | Lecture publiée seule (anon + authenticated) ; écriture service role only | Test `tests/rls/blog-posts.test.ts` ; GRANTs `supabase/policies/blog_posts.sql` ; bucket Storage public `blog-covers` via `supabase/setup/blog_covers_bucket.sql` (hors harness) |
+| `0023_document_analyses.sql` | Historique des analyses de documents (`mode` analyse/traduction, `source_name`, `target_language`, `result`) | Résultat potentiellement sensible ; **le document source n'est jamais stocké** | Own-row stricte (select/insert/delete propriétaire) ; archivage serveur via service role (`/api/analyze` onFinish) | Test `tests/rls/document-analyses.test.ts` |
 
 > Si une migration ci-dessus n'existe pas encore dans `supabase/migrations/`, la documenter comme décision attendue et ne pas modifier le schéma sans tests RLS correspondants.
 > Note : `supabase/setup/` contient le setup Supabase-spécifique (bucket Storage `consultation-audio`, RLS Storage, purge `pg_cron`) NON rejoué par le harness RLS CI ; appliqué directement sur le projet via MCP.
@@ -204,7 +205,7 @@ Pour ajouter un admin : modifier `ADMIN_USER_IDS` dans `src/admin/index.ts`.
 |-------------|-----------|-------------------|----------|
 | `chat` | `/api/chat` | gpt-5.2 (web_search ON) | Tous — 3 chatbots (prompts `public`/`student`/`professional`) ; public → chat public seul, étudiant/pro vérifiés → les 3 |
 | `chat_meta` | `/api/chat-meta` | gemini-2.5-flash | Tous (titre + catégorie d'une conversation) |
-| `analyze` | `/api/analyze` | claude-sonnet-4-6 | Grand public |
+| `analyze` | `/api/analyze` | claude-sonnet-4-6 | Grand public — texte collé, PDF ou photo ; modes analyse (`analyze`) et traduction (`analyze_translate`) |
 | `ecos_simulate` | `/api/ecos` | claude-sonnet-4-6 | Étudiant |
 | `ecos_evaluate` | `/api/ecos` | claude-sonnet-4-6 | Étudiant |
 | `audio_diarize` | `/api/transcribe` | gpt-4o-mini | Professionnel |
