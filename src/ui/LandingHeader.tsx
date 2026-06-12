@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
@@ -66,9 +66,20 @@ export function LandingHeader() {
   return (
     <View style={styles.bar}>
       <View style={styles.inner}>
-        <Pressable onPress={() => go('/')} accessibilityRole="link" accessibilityLabel="Accueil MedInfo AI">
-          <Logo size="sm" />
-        </Pressable>
+        <View style={styles.brandRow}>
+          <Pressable onPress={() => go('/')} accessibilityRole="link" accessibilityLabel="Accueil MedInfo AI">
+            <Logo size="sm" />
+          </Pressable>
+          {/* Illustration de l'équipe (demande Hugo 2026-06) — pastille ronde à côté du logo.
+              Asset : assets/brand/team-illustration.png (chemin relatif, cf. piège alias @/). */}
+          <Image
+            source={require('../../assets/brand/team-illustration.png')}
+            style={styles.teamBadge}
+            resizeMode="cover"
+            accessibilityRole="image"
+            accessibilityLabel="L'équipe MedInfo AI"
+          />
+        </View>
 
         <View style={styles.nav}>
           {!compact ? (
@@ -192,6 +203,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: tokens.space.md,
     gap: tokens.space.md,
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.md,
+  },
+  teamBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: tokens.radius.pill,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surfaceAlt,
   },
   nav: {
     flexDirection: 'row',
