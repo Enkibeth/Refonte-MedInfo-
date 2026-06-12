@@ -27,7 +27,12 @@ function useProtectedRoute() {
     // essai sans inscription (2026-06) : un visiteur peut envoyer UN message gratuit dans le
     // chat ; les autres écrans du groupe restent verrouillés par <RoleGate> (isGuest).
     const inPublicGroup =
-      inAuthGroup || segments[0] === undefined || segments[0] === '(legal)' || segments[0] === '(chat)';
+      inAuthGroup ||
+      segments[0] === undefined ||
+      segments[0] === '(legal)' ||
+      segments[0] === '(chat)' ||
+      // Pages marketing publiques (audit landing 2026-06) : à propos, contact, blog.
+      segments[0] === '(marketing)';
 
     // Mode récupération de mot de passe : prioritaire sur toute autre redirection.
     if (passwordRecovery) {
@@ -61,6 +66,7 @@ function RootNavigator() {
       <Stack.Screen name="(account)" />
       <Stack.Screen name="(billing)" />
       <Stack.Screen name="(legal)" />
+      <Stack.Screen name="(marketing)" />
       <Stack.Screen name="(admin)" />
     </Stack>
   );
