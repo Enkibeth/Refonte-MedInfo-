@@ -5,7 +5,7 @@
  * No external dependency — uses React Native primitives + design tokens.
  */
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Platform, Linking } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Platform, Linking, Image } from 'react-native';
 import { tokens } from './tokens';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -18,6 +18,7 @@ type Block =
   | { kind: 'hr' }
   | { kind: 'listItem'; text: string; ordered: boolean; index: number }
   | { kind: 'table'; rows: TableRow[] }
+  | { kind: 'image'; url: string; caption: string }
   | { kind: 'paragraph'; text: string }
   | { kind: 'spacer' };
 
@@ -123,6 +124,15 @@ function parseBlocks(text: string): Block[] {
 
     if (trimmed.startsWith('## ')) {
       blocks.push({ kind: 'h2', text: trimmed.slice(3) });
+      orderedCounter = 0;
+      i++;
+      continue;
+    }
+
+    // Image seule sur sa ligne : ![légende](https://…) (articles de blog)
+    const imageMatch = trimmed.match(/^!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)$/);
+    if (imageMatch) {
+      blocks.push({ kind: 'image', url: imageMatch[2], caption: imageMatch[1] });
       orderedCounter = 0;
       i++;
       continue;
@@ -291,6 +301,21 @@ export function MarkdownRenderer({
           case 'table':
             return <TableBlock key={i} rows={block.rows} />;
 
+          case 'image':
+            return (
+              <View key={i} style={mdStyles.figure}>
+                <Image
+                  source={{ uri: block.url }}
+                  style={mdStyles.figureImage}
+                  resizeMode="cover"
+                  accessibilityLabel={block.caption || 'Illustration'}
+                />
+                {block.caption ? (
+                  <Text style={[mdStyles.figureCaption, { color: mutedColor }]}>{block.caption}</Text>
+                ) : null}
+              </View>
+            );
+
           case 'paragraph':
             return parseInline(block.text, { ...mdStyles.paragraph, color: textColor }, footnotes, String(i));
 
@@ -342,6 +367,19 @@ const mdStyles = StyleSheet.create({
     lineHeight: tokens.type.body.lineHeight,
   },
   spacer: { height: 6 },
+  figure: { marginVertical: tokens.space.sm, gap: 4 },
+  figureImage: {
+    width: '100%',
+    height: 240,
+    borderRadius: tokens.radius.md,
+    backgroundColor: tokens.colors.surfaceAlt,
+  },
+  figureCaption: {
+    fontFamily: tokens.font.sans,
+    fontSize: tokens.type.caption.fontSize,
+    fontStyle: 'italic',
+    textAlign: 'center',
+  },
 });
 
 const inlineStyles = StyleSheet.create({
