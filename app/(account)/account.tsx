@@ -1,6 +1,6 @@
 import { Link, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import type { Persona } from '@/ai/prompts/_schema';
 import { useSession } from '@/auth/AuthProvider';
@@ -10,6 +10,7 @@ import { isAdminUserId } from '@/admin/index';
 import { visibleFeatures } from '@/ai/routing/featureVisibility';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
+import { Icon } from '@/ui/icons';
 import { PersonalInfoForm } from '@/ui/PersonalInfoForm';
 import { Logo } from '@/ui/Logo';
 import { Screen } from '@/ui/Screen';
@@ -155,9 +156,19 @@ export default function AccountScreen() {
           </Text>
           <View style={styles.toolList}>
             {visibleFeatures(persona, { isAdmin }).map((f) => (
-              <Link key={f.id} href={f.route as never} style={styles.toolItem}>
-                {f.emoji} {f.label}
-              </Link>
+              <TouchableOpacity
+                key={f.id}
+                style={styles.toolItem}
+                onPress={() => router.push(f.route as never)}
+                accessibilityRole="link"
+                accessibilityLabel={f.label}
+              >
+                <View style={styles.toolItemIcon}>
+                  <Icon name={f.icon} size={16} color={tokens.colors.accent} />
+                </View>
+                <Text style={styles.toolItemLabel}>{f.label}</Text>
+                <Icon name="arrowRight" size={14} color={tokens.colors.accent} />
+              </TouchableOpacity>
             ))}
           </View>
         </Card>
@@ -404,17 +415,30 @@ const styles = StyleSheet.create({
   },
   toolList: { gap: tokens.space.sm },
   toolItem: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
-    fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.semibold,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.md,
     backgroundColor: tokens.colors.accentSurface,
     borderWidth: 1,
     borderColor: tokens.colors.accentSurfaceStrong,
     borderRadius: tokens.radius.md,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.sm + 2,
-    overflow: 'hidden',
+  },
+  toolItemIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: tokens.radius.sm,
+    backgroundColor: tokens.colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toolItemLabel: {
+    flex: 1,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
   },
   signOut: { marginTop: tokens.space.xl },
   errorBox: {
