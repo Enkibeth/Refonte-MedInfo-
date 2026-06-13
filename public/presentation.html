@@ -66,6 +66,25 @@ button { font-family: inherit; }
 .mip-btn-sm { padding: 5px 9px; font-size: 12px; }
 .mip-btn-danger:hover { border-color: var(--danger); color: var(--danger); }
 
+/* ---------- Cloud (autosave + bibliothèque) ---------- */
+.mip-cloud { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mip-save { font-size: 12px; color: var(--ink-3); min-width: 96px; text-align: right; }
+.mip-save[data-st="saved"] { color: #1e8e3e; }
+.mip-save[data-st="saving"] { color: var(--accent); }
+.mip-save[data-st="error"] { color: var(--danger); }
+.mip-save[data-st="offline"] { color: var(--ink-3); }
+.mip-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.mip-modal { width: 100%; max-width: 520px; max-height: 80vh; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; box-shadow: 0 14px 40px -12px rgba(0,0,0,.3); overflow: hidden; }
+.mip-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--rule); }
+.mip-modal-head h3 { font-family: var(--brand-serif); font-weight: 600; font-size: 16px; margin: 0; }
+.mip-lib-list { overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+.mip-lib-row { display: flex; align-items: center; gap: 6px; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+.mip-lib-row.is-active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.mip-lib-open { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; background: transparent; border: 0; cursor: pointer; padding: 10px 12px; text-align: left; min-width: 0; }
+.mip-lib-title { font-size: 13.5px; font-weight: 600; color: var(--ink); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mip-lib-meta { font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .3px; }
+.mip-lib-row .mip-iconbtn { margin-right: 6px; }
+
 /* ---------- Settings bar ---------- */
 .mip-settings { background: var(--surface); border-bottom: 1px solid var(--rule); padding: 14px 20px; }
 .mip-settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px 20px; }
@@ -189,7 +208,7 @@ let authToken = null;
 window.addEventListener("message", (event) => {
   if (event.origin !== window.location.origin) return;
   const data = event.data || {};
-  if (data.type === "medinfo:auth") authToken = data.token || null;
+  if (data.type === "medinfo:auth") onTokenReceived(data.token || null);
 });
 // Demande le token dès le chargement (course parent/iframe).
 try { window.parent.postMessage({ type: "medinfo:auth-request" }, window.location.origin); } catch (e) {}
@@ -533,7 +552,7 @@ async function callAI({ history, deck, options }) {
 }
 
 /* ================================ UI ===================================== */
-const state = { deck: normalizeDeck(createBlankDeck("v2")), tab: "manuel", sel: 0, slideCount: 10, aiHistory: [], aiBusy: false };
+const state = { deck: normalizeDeck(createBlankDeck("v2")), tab: "manuel", sel: 0, slideCount: 10, aiHistory: [], aiBusy: false, deckId: null, library: [], libraryLoaded: false, libraryOpen: false, saveStatus: "idle" };
 const app = document.getElementById("app");
 const h = (tag, attrs = {}, ...kids) => {
   const el = document.createElement(tag);
@@ -770,7 +789,7 @@ async function exportPptx(btn) {
 /* ----- Config ----- */
 function configEl() {
   const meta = state.deck.meta, opt = state.deck.options;
-  const setMeta = (k) => (e) => { meta[k] = e.target.value; if (k !== "title") render(); };
+  const setMeta = (k) => (e) => { meta[k] = e.target.value; if (k !== "title") render(); else scheduleAutosave(); };
   const field = (label, key, ph) => h("div", { class: "mip-field" }, h("label", {}, label), h("input", { class: "mip-input", value: meta[key] || "", placeholder: ph || "", oninput: setMeta(key) }));
   const themeChips = THEME_LIST.map((t) => {
     const a = THEMES[t.id].c;
@@ -787,7 +806,118 @@ function configEl() {
     h("div", { class: "mip-field" }, h("label", {}, "Thème"), h("div", { class: "mip-themes" }, ...themeChips)),
     h("div", { class: "mip-field" }, h("label", {}, "Densité du texte"), h("div", { class: "mip-seg" }, ...densBtns)),
     h("div", { class: "mip-field" }, h("label", {}, "Nombre de slides visé (IA)"), h("input", { class: "mip-input", type: "number", min: 4, max: 40, value: state.slideCount, oninput: (e) => { state.slideCount = parseInt(e.target.value || "10", 10) || 10; } })),
-    h("div", { class: "mip-field" }, h("label", {}, "Public visé (IA)"), h("input", { class: "mip-input", value: opt.audience || "", placeholder: "Co-internes, staff…", oninput: (e) => { opt.audience = e.target.value; } }))));
+    h("div", { class: "mip-field" }, h("label", {}, "Public visé (IA)"), h("input", { class: "mip-input", value: opt.audience || "", placeholder: "Co-internes, staff…", oninput: (e) => { opt.audience = e.target.value; scheduleAutosave(); } }))));
+}
+
+/* ----- Historique cloud (autosave + bibliothèque) ----- */
+const SAVE_LABELS = { idle: "", saving: "Enregistrement…", saved: "Enregistré ✓", error: "Échec de l'enregistrement", offline: "Hors connexion" };
+let lastSavedContent = "";
+let autosaveTimer = null;
+let saving = false;
+
+function currentContent() { return JSON.stringify({ deck: state.deck, ai: state.aiHistory }); }
+function isDirty() { return !!authToken && currentContent() !== lastSavedContent; }
+function fmtDate(s) { try { return new Date(s).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } }
+
+async function apiFetch(path, opts) {
+  opts = opts || {};
+  const headers = Object.assign({ "Content-Type": "application/json" }, opts.headers || {});
+  if (authToken) headers.Authorization = "Bearer " + authToken;
+  return fetch(path, Object.assign({}, opts, { headers }));
+}
+// Met à jour l'indicateur SANS re-rendre (préserve le focus pendant la saisie).
+function setSaveStatus(s) {
+  state.saveStatus = s;
+  const el = document.getElementById("mip-save-status");
+  if (el) { el.textContent = SAVE_LABELS[s] || ""; el.setAttribute("data-st", s); }
+}
+function scheduleAutosave() {
+  if (!authToken) { setSaveStatus("offline"); return; }
+  if (autosaveTimer) clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => saveDeck(), 1200);
+}
+function autosaveTick() { if (isDirty() && !saving) saveDeck(); }
+
+async function saveDeck(opts) {
+  opts = opts || {};
+  if (!authToken) { setSaveStatus("offline"); return; }
+  if (saving) return;
+  const content = currentContent();
+  if (state.deckId && content === lastSavedContent) { setSaveStatus("saved"); return; }
+  saving = true; setSaveStatus("saving");
+  try {
+    const payload = { id: state.deckId, title: state.deck.meta.title, theme: state.deck.theme, deck: state.deck, aiHistory: state.aiHistory };
+    const res = await apiFetch("/api/presentations", { method: "POST", body: JSON.stringify(payload), keepalive: !!opts.keepalive });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    state.deckId = data.id || state.deckId;
+    lastSavedContent = content;
+    setSaveStatus("saved");
+  } catch (e) { setSaveStatus("error"); }
+  finally { saving = false; }
+}
+
+async function refreshLibrary() {
+  if (!authToken) return;
+  try {
+    const res = await apiFetch("/api/presentations");
+    if (!res.ok) return;
+    const data = await res.json();
+    state.library = Array.isArray(data.items) ? data.items : [];
+    state.libraryLoaded = true;
+    if (state.libraryOpen) render();
+    const cnt = document.getElementById("mip-lib-count");
+    if (cnt) cnt.textContent = state.library.length ? " (" + state.library.length + ")" : "";
+  } catch (e) {}
+}
+async function loadDeck(id) {
+  if (!authToken) return;
+  setSaveStatus("saving");
+  try {
+    const res = await apiFetch("/api/presentations?id=" + encodeURIComponent(id));
+    if (!res.ok) throw new Error();
+    const row = (await res.json()).deck;
+    state.deck = normalizeDeck(row.deck);
+    state.aiHistory = Array.isArray(row.ai_history) ? row.ai_history : [];
+    state.deckId = row.id; state.sel = 0; state.libraryOpen = false;
+    lastSavedContent = currentContent();
+    setSaveStatus("saved"); render();
+  } catch (e) { setSaveStatus("error"); }
+}
+async function deleteDeck(id) {
+  if (!authToken) return;
+  try {
+    const res = await apiFetch("/api/presentations?id=" + encodeURIComponent(id), { method: "DELETE" });
+    if (!res.ok) return;
+    if (state.deckId === id) { state.deckId = null; }
+    await refreshLibrary(); render();
+  } catch (e) {}
+}
+function newDeck() {
+  state.deck = normalizeDeck(createBlankDeck("v2"));
+  state.aiHistory = []; state.deckId = null; state.sel = 0; state.libraryOpen = false;
+  lastSavedContent = currentContent(); // un deck vierge n'est pas sauvegardé tant qu'il n'est pas édité
+  setSaveStatus("idle"); render();
+}
+function onTokenReceived(token) {
+  authToken = token || null;
+  if (authToken) { refreshLibrary(); if (isDirty()) scheduleAutosave(); else setSaveStatus("idle"); }
+  else setSaveStatus("offline");
+}
+
+function libraryModal() {
+  const items = state.library || [];
+  const list = items.length
+    ? items.map((it) => h("div", { class: "mip-lib-row" + (it.id === state.deckId ? " is-active" : "") },
+        h("button", { class: "mip-lib-open", onclick: () => loadDeck(it.id) },
+          h("span", { class: "mip-lib-title" }, it.title || "Sans titre"),
+          h("span", { class: "mip-lib-meta" }, (it.theme || "") + " · " + fmtDate(it.updated_at))),
+        h("button", { class: "mip-iconbtn mip-btn-danger", title: "Supprimer", onclick: () => deleteDeck(it.id) }, "✕")))
+    : [h("p", { class: "mip-hint", style: "padding:10px" }, state.libraryLoaded ? "Aucune présentation enregistrée pour l'instant. Ton travail est sauvegardé automatiquement dès que tu modifies le deck." : "Chargement…")];
+  return h("div", { class: "mip-modal-backdrop", onclick: () => { state.libraryOpen = false; render(); } },
+    h("div", { class: "mip-modal", onclick: (e) => e.stopPropagation() },
+      h("div", { class: "mip-modal-head" }, h("h3", {}, "Mes présentations"), h("button", { class: "mip-iconbtn", onclick: () => { state.libraryOpen = false; render(); } }, "✕")),
+      h("div", { class: "mip-lib-list" }, ...list)));
 }
 
 /* ----- Render ----- */
@@ -795,18 +925,29 @@ function render() {
   app.innerHTML = "";
   const exportBtn = h("button", { class: "mip-btn mip-btn-primary" }, "⤓ Exporter en PPTX");
   exportBtn.addEventListener("click", () => exportPptx(exportBtn));
+  const cloudBar = h("div", { class: "mip-cloud" },
+    h("span", { id: "mip-save-status", class: "mip-save", "data-st": state.saveStatus }, SAVE_LABELS[state.saveStatus] || ""),
+    h("button", { class: "mip-btn mip-btn-sm", onclick: () => { state.libraryOpen = true; refreshLibrary(); render(); } }, "Mes présentations", h("span", { id: "mip-lib-count" }, state.library.length ? " (" + state.library.length + ")" : "")),
+    h("button", { class: "mip-btn mip-btn-sm", onclick: newDeck }, "Nouveau"));
   const header = h("header", { class: "mip-header" },
     h("div", { class: "mip-brand" }, h("b", {}, "Générateur de présentations"), h("span", {}, "Slides médicales prêtes pour Keynote · export PPTX")),
     h("div", { class: "mip-tabs" },
       h("button", { class: "mip-tab" + (state.tab === "manuel" ? " is-active" : ""), onclick: () => { state.tab = "manuel"; render(); } }, "Mode manuel"),
       h("button", { class: "mip-tab" + (state.tab === "ia" ? " is-active" : ""), onclick: () => { state.tab = "ia"; render(); } }, "Mode IA")),
-    h("div", { class: "mip-spacer" }), exportBtn);
+    h("div", { class: "mip-spacer" }), cloudBar, exportBtn);
   const left = h("div", { class: "mip-left" });
   if (state.tab === "manuel") left.append(slideListEl(), editorEl()); else left.append(aiChatEl());
   const main = h("div", { class: "mip-main" }, left, h("div", { class: "mip-right" }, previewEl()));
   app.append(header, configEl(), main);
+  if (state.libraryOpen) app.append(libraryModal());
+  scheduleAutosave();
 }
 render();
+// Sauvegarde de secours : périodique + au départ de la page (fermeture/onglet).
+lastSavedContent = currentContent();
+setInterval(autosaveTick, 4000);
+window.addEventListener("pagehide", () => { if (isDirty()) saveDeck({ keepalive: true }); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && isDirty()) saveDeck({ keepalive: true }); });
 </script>
 </body>
 </html>
