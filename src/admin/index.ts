@@ -144,6 +144,24 @@ export const AI_FEATURES = [
     promptKeys: ['blog_generate'],
     providers: ['anthropic', 'openai', 'google'],
   },
+  {
+    key: 'blog_topic',
+    emoji: '🗓️',
+    label: 'Blog — Choix du sujet hebdo',
+    description: 'Agent hebdomadaire : choisit le sujet de la semaine en évitant les doublons',
+    apiRoute: '/api/cron/weekly-blog',
+    promptKeys: ['blog_topic'],
+    providers: ['anthropic', 'openai', 'google'],
+  },
+  {
+    key: 'blog_review',
+    emoji: '🔎',
+    label: 'Blog — Relecture avant publication',
+    description: 'Agent hebdomadaire : relit l\'article (publish / revise / reject) avant publication automatique',
+    apiRoute: '/api/cron/weekly-blog',
+    promptKeys: ['blog_review'],
+    providers: ['anthropic', 'openai', 'google'],
+  },
 ] as const;
 
 export type FeatureKey = (typeof AI_FEATURES)[number]['key'];

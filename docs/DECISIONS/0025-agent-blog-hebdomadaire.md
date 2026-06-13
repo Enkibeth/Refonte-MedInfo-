@@ -1,0 +1,75 @@
+# ADR-0025 — Agent éditorial hebdomadaire du blog (sujet → rédaction → relecture → publication)
+
+```yaml
+status: Accepted
+date: 2026-06-13
+owner: Hugo Bettembourg (demande produit)
+extends: ADR-0024 (blog santé + génération d'articles IA)
+```
+
+## Contexte
+
+Le blog santé (migration `0022_blog_posts.sql`, ADR-0024) repose sur une génération
+manuelle depuis le panel admin : un admin déclenche `blog_generate`, relit le
+brouillon dans l'éditeur, puis publie. Hugo souhaite **une publication automatique
+par semaine, pour tous**, sans intervention manuelle : un agent choisit un sujet
+médical intéressant, le transmet à un agent rédacteur, puis à un relecteur, et
+l'article est publié sur le blog.
+
+## Décision
+
+1. **Pipeline en 3 étapes IA** (`src/blog/weeklyAgent.ts`), déclenché par un
+   **cron Vercel hebdomadaire** (lundi 06:00 UTC, `vercel.json` → `crons`) sur la
+   route `GET /api/cron/weekly-blog` :
+   - **Choix du sujet** — feature `blog_topic` (web_search ON par défaut : actualité
+     santé, saison). Reçoit les 40 derniers titres/catégories du blog pour éviter
+     les doublons et varier les catégories. En cas de réponse inexploitable, le
+     rédacteur choisit librement (comme la génération manuelle sans sujet).
+   - **Rédaction** — feature `blog_generate`, **logique partagée** avec la
+     génération manuelle admin (`src/blog/serverGeneration.ts` → `writeArticle()`),
+     même prompt, même exigence de fond (information générale, jamais de conseil
+     individuel, disclaimer final).
+   - **Relecture** — feature `blog_review` : vérifie sécurité (pas de conseil
+     individuel/posologie/diagnostic), exactitude (HAS/ANSM/OMS, pas de source
+     inventée) et forme (structure `##`, disclaimer). Verdict :
+     `publish` → publication immédiate ; `revise` → publication de la version
+     corrigée renvoyée en entier ; `reject` (ou réponse inexploitable, ou `revise`
+     sans article corrigé) → l'article reste en **brouillon** pour arbitrage humain
+     dans le panel admin. **Fail-closed : on ne publie jamais sans relecture
+     exploitable.**
+2. **Auto-publication encadrée.** La publication « manuelle admin » (ADR-0024)
+   reste la règle pour les articles créés depuis le panel ; l'agent hebdomadaire
+   est la seule exception, gardée par le relecteur IA. Les admins gardent la main
+   a posteriori : dépublication, édition et suppression inchangées dans l'onglet
+   Blog du panel admin.
+3. **Traçabilité + anti-doublon.** Migration `0024_weekly_blog_agent.sql` :
+   colonne `blog_posts.source` (`'admin'` | `'weekly_agent'`, défaut `'admin'`).
+   La route saute l'exécution si un article `weekly_agent` a été créé dans les
+   6 derniers jours (re-déclenchements sans effet). RLS inchangée (lecture
+   publique des publiés uniquement, zéro écriture client).
+4. **Sécurité de la route.** `GET /api/cron/weekly-blog` accepte :
+   le cron Vercel (`Authorization: Bearer ${CRON_SECRET}` — refusé si la variable
+   n'est pas configurée, fail-closed) ; ou un token admin Supabase (`requireAdmin`)
+   pour les tests manuels (`?force=1` saute la garde anti-doublon).
+5. **Convention admin respectée** : `blog_topic` et `blog_review` sont déclarées
+   dans `AI_FEATURES`, `FEATURE_DEFAULTS` (claude-sonnet-4-6, anthropic),
+   `PROMPT_DEFAULTS` et seedées dans `ai_model_config` (migration 0024) —
+   modèles, réglages et prompts modifiables depuis le panel admin.
+
+## Conséquences
+
+- Un article d'information générale est publié chaque semaine sans intervention,
+  avec le même disclaimer et les mêmes exigences que la génération manuelle.
+- Les articles rejetés par le relecteur apparaissent en brouillon dans le panel
+  admin (l'onglet Blog existant suffit pour les arbitrer).
+- `vercel.json` : `maxDuration: 300` sur la fonction API (3 appels LLM + image
+  de couverture best-effort dépassent les 60 s par défaut).
+- **Action requise (Vercel)** : définir `CRON_SECRET` dans les variables
+  d'environnement du projet, sinon le déclenchement automatique est refusé.
+
+## Suivi
+
+- Si la qualité des publications automatiques déçoit, repasser `publish` →
+  brouillon + notification admin (changer une ligne dans `weeklyAgent.ts`).
+- Optionnel plus tard : stocker les notes du relecteur (colonne dédiée) et les
+  afficher dans l'éditeur admin.
