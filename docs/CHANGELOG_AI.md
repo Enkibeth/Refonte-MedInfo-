@@ -18,6 +18,33 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-06-13] – Claude (Agent éditorial hebdomadaire du blog — ADR-0025)
+### Files modified
+- src/blog/articleJson.ts (nouveau : parseurs purs article/sujet/relecture + slugify)
+- src/blog/serverGeneration.ts (nouveau : writeArticle + generateCoverImage partagés admin/agent)
+- src/blog/weeklyAgent.ts (nouveau : pipeline sujet → rédaction → relecture → publication)
+- app/api/cron/weekly-blog+api.ts (nouvelle route, auth CRON_SECRET ou token admin)
+- app/api/admin/blog+api.ts (refactor : réutilise les modules partagés, comportement inchangé)
+- src/admin/index.ts, src/ai/providers/featureModel.ts, src/ai/prompts/promptStore.ts (features blog_topic + blog_review)
+- supabase/migrations/0024_weekly_blog_agent.sql (colonne blog_posts.source + seeds ai_model_config)
+- vercel.json (cron lundi 06:00 UTC + maxDuration 300)
+- tests/unit/blog-agent.test.ts (nouveau, 9 tests)
+- CLAUDE.md, docs/DECISIONS/0025-agent-blog-hebdomadaire.md, docs/CHANGELOG_AI.md
+### Purpose
+Publier automatiquement un article de blog par semaine : un agent choisit un sujet médical
+(actualité, anti-doublon avec les articles existants), un agent rédacteur écrit l'article
+(même prompt que la génération admin), un agent relecteur valide/corrige/rejette ;
+publication immédiate si approuvé, brouillon pour arbitrage humain sinon (fail-closed).
+### Regulatory impact
+Potential — publication automatique de contenu santé grand public ; mitigé par : mêmes
+exigences et disclaimer que la génération manuelle (information générale uniquement),
+relecture IA obligatoire avant publication (reject → brouillon), édition/dépublication
+admin inchangées, RLS blog_posts inchangée.
+### Rollback plan
+Retirer l'entrée `crons` de vercel.json (l'agent ne se déclenche plus jamais) ; la colonne
+`blog_posts.source` (défaut 'admin') et les seeds ai_model_config sont inertes sans la route.
+
+
 ## [2026-06-07] – Claude (Analyseur de classement de promo — v1, client-side)
 ### Files modified
 - src/lib/classement.ts (nouveau : parsing CSV/TSV FR + détection colonnes + rang/stats, pur/testé)
