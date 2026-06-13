@@ -25,6 +25,8 @@ const FEATURE_DEFAULTS: Record<FeatureKey, { modelId: string; provider: string }
   ecos_evaluate: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   audio_diarize: { modelId: 'gpt-4o-mini',       provider: 'openai' },
   audio_report:  { modelId: 'gpt-4o-mini',       provider: 'openai' },
+  // Générateur de présentations (étudiant/pro) : raisonnement structuré + JSON fiable.
+  presentation_generate: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   // Blog public : articles longs et structurés (audit landing 2026-06).
   blog_generate: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   // Agent hebdo du blog (ADR-0025) : choix du sujet + relecture avant publication.

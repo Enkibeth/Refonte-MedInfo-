@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Générateur de présentations — MedInfo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700&family=Public+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<!-- pptxgenjs (UMD) → window.PptxGenJS -->
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<style>
+/* ============================================================
+   Générateur de présentations MedInfo — page autonome (iframe).
+   Chrome aux couleurs MedInfo (bleu clinique, Fraunces / Public Sans).
+   Aperçu de slide (.pv-*) en Georgia : fidèle au rendu PPTX (Keynote).
+   ============================================================ */
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #202124;
+  --ink-2: #3c4043;
+  --ink-3: #80868b;
+  --rule: #e8eaed;
+  --rule-2: #dadce0;
+  --accent: #1a6fd4;
+  --accent-deep: #14589f;
+  --accent-soft: #e8f0fe;
+  --danger: #c5221f;
+  --warn-bg: #fff7ed;
+  --warn-line: #fed7aa;
+  --warn-ink: #9a3412;
+  --radius: 10px;
+  --serif: Georgia, "Times New Roman", serif;      /* aperçu = rendu PPTX */
+  --brand-serif: "Fraunces", Georgia, serif;        /* titres chrome MedInfo */
+  --sans: "Public Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+* , *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: var(--sans); color: var(--ink); background: var(--bg);
+  line-height: 1.5; font-size: 14px; -webkit-font-smoothing: antialiased;
+}
+button { font-family: inherit; }
+
+/* ---------- Header ---------- */
+.mip-header {
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 20px; background: var(--surface);
+  border-bottom: 1px solid var(--rule); position: sticky; top: 0; z-index: 20; flex-wrap: wrap;
+}
+.mip-brand { display: flex; flex-direction: column; }
+.mip-brand b { font-family: var(--brand-serif); font-size: 19px; font-weight: 600; letter-spacing: -.01em; }
+.mip-brand span { font-size: 11px; color: var(--ink-3); letter-spacing: .3px; }
+.mip-tabs { display: flex; gap: 4px; background: var(--bg); padding: 4px; border-radius: var(--radius); }
+.mip-tab { border: 0; background: transparent; padding: 8px 16px; border-radius: 7px; font-size: 13px; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+.mip-tab.is-active { background: var(--surface); color: var(--accent-deep); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.mip-spacer { flex: 1; }
+
+/* ---------- Buttons ---------- */
+.mip-btn { border: 1px solid var(--rule-2); background: var(--surface); color: var(--ink); padding: 9px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.mip-btn:hover { border-color: var(--ink-3); }
+.mip-btn:disabled { opacity: .5; cursor: not-allowed; }
+.mip-btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.mip-btn-primary:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+.mip-btn-sm { padding: 5px 9px; font-size: 12px; }
+.mip-btn-danger:hover { border-color: var(--danger); color: var(--danger); }
+
+/* ---------- Settings bar ---------- */
+.mip-settings { background: var(--surface); border-bottom: 1px solid var(--rule); padding: 14px 20px; }
+.mip-settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px 20px; }
+.mip-field { display: flex; flex-direction: column; gap: 5px; }
+.mip-field > label { font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--ink-3); }
+.mip-input, .mip-textarea, .mip-select { border: 1px solid var(--rule-2); border-radius: 7px; padding: 8px 10px; font-size: 13px; font-family: inherit; color: var(--ink); background: var(--surface); width: 100%; }
+.mip-textarea { resize: vertical; min-height: 64px; line-height: 1.4; }
+.mip-input:focus, .mip-textarea:focus, .mip-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.mip-hint { font-size: 11px; color: var(--ink-3); }
+
+.mip-themes { display: flex; gap: 8px; flex-wrap: wrap; }
+.mip-theme-chip { border: 1.5px solid var(--rule-2); border-radius: 8px; padding: 8px 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; background: var(--surface); font-size: 12px; font-weight: 600; }
+.mip-theme-chip.is-active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.mip-swatch { width: 26px; height: 18px; border-radius: 4px; display: inline-flex; overflow: hidden; border: 1px solid rgba(0,0,0,.1); }
+.mip-swatch i { display: block; height: 100%; }
+
+.mip-seg { display: inline-flex; border: 1px solid var(--rule-2); border-radius: 7px; overflow: hidden; }
+.mip-seg button { border: 0; background: var(--surface); padding: 8px 12px; font-size: 12px; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+.mip-seg button.is-active { background: var(--accent); color: #fff; }
+.mip-seg button + button { border-left: 1px solid var(--rule-2); }
+
+/* ---------- Main layout ---------- */
+.mip-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 500px); gap: 0; align-items: start; }
+@media (max-width: 980px) { .mip-main { grid-template-columns: 1fr; } }
+.mip-left { padding: 18px 20px; min-width: 0; }
+.mip-right { padding: 18px 20px; position: sticky; top: 64px; }
+
+/* ---------- Slide list ---------- */
+.mip-section-title { font-family: var(--brand-serif); font-size: 17px; margin: 0 0 10px; font-weight: 600; }
+.mip-slidelist { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+.mip-slide-row { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); cursor: pointer; }
+.mip-slide-row.is-active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.mip-slide-num { font-size: 11px; color: var(--ink-3); width: 22px; font-variant-numeric: tabular-nums; }
+.mip-slide-type { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--accent); }
+.mip-slide-label { font-size: 13px; color: var(--ink); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mip-slide-actions { display: flex; gap: 2px; }
+.mip-iconbtn { border: 0; background: transparent; cursor: pointer; color: var(--ink-3); padding: 4px 6px; border-radius: 6px; font-size: 13px; line-height: 1; }
+.mip-iconbtn:hover { background: var(--bg); color: var(--ink); }
+.mip-iconbtn:disabled { opacity: .35; cursor: not-allowed; }
+.mip-addrow { display: flex; gap: 8px; align-items: center; margin-bottom: 18px; }
+
+/* ---------- Editor ---------- */
+.mip-editor { border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); padding: 16px; }
+.mip-editor-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+.mip-editor-head h3 { font-family: var(--brand-serif); font-weight: 600; font-size: 16px; margin: 0; }
+.mip-editor-hint { font-size: 11px; color: var(--ink-3); max-width: 60%; text-align: right; }
+.mip-fields { display: flex; flex-direction: column; gap: 14px; }
+.mip-list-item, .mip-stat-item { display: flex; gap: 8px; align-items: flex-start; }
+.mip-list-item { margin-bottom: 6px; }
+
+/* ---------- AI chat ---------- */
+.mip-chat { display: flex; flex-direction: column; height: calc(100vh - 250px); min-height: 380px; }
+.mip-chat-log { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; }
+.mip-msg { padding: 11px 13px; border-radius: 12px; font-size: 13.5px; max-width: 92%; white-space: pre-wrap; }
+.mip-msg-user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 3px; }
+.mip-msg-ai { align-self: flex-start; background: var(--surface); border: 1px solid var(--rule); border-bottom-left-radius: 3px; }
+.mip-msg-meta { font-size: 10px; opacity: .7; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .4px; }
+.mip-msg-deck { margin-top: 8px; font-size: 11px; color: var(--accent-deep); font-weight: 700; display: inline-flex; gap: 6px; align-items: center; }
+.mip-chat-input { display: flex; gap: 8px; margin-top: 12px; }
+.mip-chat-input .mip-textarea { min-height: 48px; }
+.mip-chat-empty { color: var(--ink-2); font-size: 13.5px; background: var(--surface); border: 1px dashed var(--rule-2); border-radius: 10px; padding: 16px; }
+.mip-chat-empty b { font-family: var(--brand-serif); font-weight: 600; }
+.mip-quick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.mip-quick button { font-size: 12px; padding: 6px 10px; border: 1px solid var(--rule-2); border-radius: 999px; background: var(--surface); cursor: pointer; color: var(--ink-2); }
+.mip-quick button:hover { border-color: var(--accent); color: var(--accent); }
+.mip-quick button:disabled { opacity: .5; cursor: not-allowed; }
+.mip-disclaimer { font-size: 11px; color: var(--ink-3); margin-top: 10px; line-height: 1.5; }
+
+.mip-banner { font-size: 12px; padding: 9px 12px; border-radius: 8px; margin-bottom: 12px; }
+.mip-banner-warn { background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--warn-ink); }
+.mip-banner-info { background: var(--accent-soft); border: 1px solid #c5dbf8; color: var(--accent-deep); }
+
+/* ---------- Preview ---------- */
+.mip-preview-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.mip-preview-head h3 { font-family: var(--brand-serif); font-weight: 600; font-size: 16px; margin: 0; }
+.mip-thumbs { display: flex; flex-direction: column; gap: 12px; max-height: calc(100vh - 150px); overflow-y: auto; padding: 2px; }
+
+.mip-slide { position: relative; width: 100%; aspect-ratio: 13.3 / 7.5; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.12); border: 1px solid rgba(0,0,0,.06); container-type: inline-size; }
+.mip-slide .pv { position: absolute; inset: 0; padding: 5.2cqw 5.2cqw; display: flex; flex-direction: column; }
+.mip-slide .pv-kicker { font-size: 2.2cqw; letter-spacing: .35em; font-weight: 700; }
+.mip-slide .pv-title { font-family: var(--serif); font-size: 5.6cqw; line-height: 1.1; }
+.mip-slide .pv-sub { font-family: var(--serif); font-style: italic; font-size: 3cqw; }
+.mip-slide .pv-label { font-size: 2.3cqw; font-weight: 700; letter-spacing: .25em; text-transform: uppercase; }
+.mip-slide .pv-h { font-family: var(--serif); font-size: 4.6cqw; line-height: 1.12; }
+.mip-slide .pv-body { font-size: 2.7cqw; line-height: 1.35; }
+.mip-slide .pv-tick { width: 6cqw; height: .9cqw; border-radius: 1px; }
+.mip-slide .pv-rule { height: 1px; width: 100%; }
+.mip-slide ul.pv-ul { margin: 0; padding-left: 3.2cqw; }
+.mip-slide ul.pv-ul li { font-size: 2.7cqw; line-height: 1.5; }
+.mip-slide ol.pv-ul { margin: 0; padding-left: 3.2cqw; }
+.mip-slide .pv-footer { position: absolute; left: 5.2cqw; right: 5.2cqw; bottom: 3cqw; display: flex; justify-content: space-between; font-size: 1.9cqw; }
+.mip-slide .pv-big { font-family: var(--serif); font-size: 24cqw; line-height: .9; }
+.mip-slide .pv-statrow { display: flex; gap: 3cqw; align-items: flex-start; }
+.mip-slide .pv-stat { flex: 1; text-align: center; }
+.mip-slide .pv-stat b { font-family: var(--serif); font-size: 9cqw; font-weight: 400; display: block; }
+.mip-slide .pv-stat span { font-size: 2cqw; letter-spacing: .15em; text-transform: uppercase; }
+.mip-slide .pv-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2.6cqw; flex: 1; }
+.mip-slide .pv-card { border-radius: 3px; padding: 2.6cqw; position: relative; overflow: hidden; }
+.mip-slide .pv-card .bar { position: absolute; left: 0; top: 0; bottom: 0; width: 1cqw; }
+.mip-slide .pv-card b { font-family: var(--serif); font-size: 3.2cqw; font-weight: 400; display: block; margin-bottom: 1cqw; }
+.mip-slide .pv-card p { font-size: 2.2cqw; margin: 0; }
+.mip-slide table.pv-table { border-collapse: collapse; width: 100%; font-size: 2.2cqw; }
+.mip-slide table.pv-table td { padding: 1.4cqw 1.6cqw; }
+.mip-slide .pv-ph { flex: 1; border: 1.5px dashed; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 2.2cqw; letter-spacing: .2em; text-transform: uppercase; }
+.mip-slide .pv-numwm { position: absolute; right: 4cqw; bottom: -2cqw; font-family: var(--serif); font-style: italic; font-size: 48cqw; opacity: .18; line-height: 1; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+"use strict";
+/* ============================================================================
+ * MODULE INLINÉ — Générateur de présentations MedInfo.
+ * Source : medinfo-generateur-presentations (Hugo Bettembourg), porté en page
+ * autonome self-contained pour intégration en iframe dans l'app Expo/RN-Web.
+ * ========================================================================== */
+
+/* ---------------- Token d'auth (transmis par le parent, même origine) -------- */
+let authToken = null;
+window.addEventListener("message", (event) => {
+  if (event.origin !== window.location.origin) return;
+  const data = event.data || {};
+  if (data.type === "medinfo:auth") authToken = data.token || null;
+});
+// Demande le token dès le chargement (course parent/iframe).
+try { window.parent.postMessage({ type: "medinfo:auth-request" }, window.location.origin); } catch (e) {}
+
+/* ============================== CANVAS / THEMES ============================= */
+const CANVAS = { W: 13.3, H: 7.5, MARGIN: 0.7 };
+const FONTS_DEFAULT = { serif: "Georgia", sans: "Helvetica Neue" };
+
+const THEMES = {
+  v1: {
+    meta: { id: "v1", name: "V1 — Ivoire / Bordeaux", mode: "light", description: "Éditorial scientifique sobre, esprit NEJM print." },
+    fonts: { ...FONTS_DEFAULT },
+    c: { pageBg: "F8F6F0", ink: "1B2838", inkSecondary: "5A6470", inkMuted: "9CA5AF", accent: "8B1E2D", accentSoft: "C9A9A0", card: "EFEBE2", cardSoft: "F2EEE6", rule: "D8D2C5", white: "FFFFFF", onAccent: "FFFFFF" },
+    section: { bg: "1B2838", ink: "F8F6F0", inkSecondary: "B8C2CE", inkMuted: "8090A0", accent: "B5485A", rule: "3A4A5C" },
+  },
+  v2: {
+    meta: { id: "v2", name: "V2 — Ivoire / Sarcelle (hero)", mode: "light", description: "Éditorial enrichi de patterns hero. Le plus polyvalent." },
+    fonts: { ...FONTS_DEFAULT },
+    c: { pageBg: "F8F6F0", ink: "1B2838", inkSecondary: "5A6470", inkMuted: "9CA5AF", accent: "1B5E5E", accentSoft: "B5D4D2", card: "EFEBE2", cardSoft: "F2EEE6", rule: "D8D2C5", white: "FFFFFF", onAccent: "FFFFFF" },
+    section: { bg: "1B2838", ink: "F8F6F0", inkSecondary: "B8C2CE", inkMuted: "8090A0", accent: "2A6F6F", rule: "3A4A5C" },
+  },
+  v3: {
+    meta: { id: "v3", name: "V3 — Sombre / Mandarine", mode: "dark", description: "Fond bleu nuit, accents mandarine. Conférence en salle obscure." },
+    fonts: { ...FONTS_DEFAULT },
+    c: { pageBg: "0F1A2A", ink: "F5F1E8", inkSecondary: "B8C2CE", inkMuted: "6B7A8A", accent: "E89B5C", accentSoft: "8B6F50", card: "1A2A3D", cardSoft: "223349", rule: "2C3E54", white: "F5F1E8", onAccent: "0F1A2A", inverted: "F5F1E8", inkOnLight: "0F1A2A" },
+    section: { bg: "0B1422", ink: "F5F1E8", inkSecondary: "B8C2CE", inkMuted: "6B7A8A", accent: "E89B5C", rule: "2C3E54" },
+  },
+};
+const THEME_LIST = Object.values(THEMES).map((t) => t.meta);
+const getTheme = (id) => THEMES[id] || THEMES.v2;
+const resolveFonts = (theme, options = {}) => ({ serif: options.fontSerif || theme.fonts.serif, sans: options.fontSans || theme.fonts.sans });
+
+/* ================================ SCHEMA =================================== */
+const SLIDE_TYPES = {
+  cover: { label: "Couverture", hint: "Titre principal, sous-titre, bloc auteur. Toujours en première position.", fields: [
+    { key: "kicker", kind: "text", label: "Sur-titre (kicker)", placeholder: "PRÉSENTATION MÉDICALE" },
+    { key: "title", kind: "textarea", label: "Titre principal", placeholder: "Titre de la présentation" },
+    { key: "subtitle", kind: "textarea", label: "Sous-titre", placeholder: "Une phrase qui situe le sujet" },
+    { key: "typeLabel", kind: "text", label: "Type (bas droite)", placeholder: "Cas clinique · Recherche · Topo" },
+  ], blank: () => ({ type: "cover", kicker: "PRÉSENTATION MÉDICALE", title: "Titre de la présentation", subtitle: "Sous-titre — précision sur le sujet, le contexte ou la question traitée.", typeLabel: "Cas clinique · Recherche · Topo" }) },
+  section: { label: "Intercalaire", hint: "Séparateur de partie : grand numéro, titre de section. Fond sombre.", fields: [
+    { key: "numeral", kind: "text", label: "Numéro / chiffre romain", placeholder: "I" },
+    { key: "title", kind: "textarea", label: "Titre de section", placeholder: "Cas clinique" },
+    { key: "subtitle", kind: "textarea", label: "Sous-titre (option.)", placeholder: "Présentation et raisonnement" },
+  ], blank: () => ({ type: "section", numeral: "I", title: "Titre de section", subtitle: "" }) },
+  agenda: { label: "Plan / sommaire", hint: "Liste des sections, en colonnes.", fields: [
+    { key: "title", kind: "text", label: "Titre", placeholder: "Plan de la présentation" },
+    { key: "subtitle", kind: "text", label: "Sous-titre (option.)", placeholder: "Trois temps clairs." },
+    { key: "items", kind: "list", label: "Sections (une par ligne)" },
+  ], blank: () => ({ type: "agenda", title: "Plan de la présentation", subtitle: "Trois temps clairs. Un message principal par section.", items: ["Le cas — présentation et raisonnement", "Les données — ce que dit la littérature", "Synthèse — implications pratiques"] }) },
+  bullets: { label: "Puces (action title)", hint: "Titre = conclusion de la slide. 3 à 6 puces denses.", fields: [
+    { key: "label", kind: "text", label: "Étiquette de section", placeholder: "Cas · Examen" },
+    { key: "title", kind: "textarea", label: "Titre (action title)", placeholder: "Ce que la slide démontre" },
+    { key: "items", kind: "list", label: "Puces (une par ligne)" },
+    { key: "source", kind: "text", label: "Source (footer, option.)", placeholder: "Auteur, Journal, année" },
+  ], blank: () => ({ type: "bullets", label: "Section", title: "Titre qui énonce la conclusion de la slide", items: ["Premier point dense et précis", "Deuxième point", "Troisième point"], source: "" }) },
+  prose: { label: "Texte rédigé", hint: "Mode phrases : un titre + un ou deux paragraphes.", fields: [
+    { key: "label", kind: "text", label: "Étiquette de section", placeholder: "Contexte" },
+    { key: "title", kind: "textarea", label: "Titre (action title)", placeholder: "Idée principale" },
+    { key: "body", kind: "textarea", label: "Texte (paragraphes)", placeholder: "Rédigé, fluide, dense." },
+    { key: "source", kind: "text", label: "Source (footer, option.)", placeholder: "" },
+  ], blank: () => ({ type: "prose", label: "Section", title: "Titre qui énonce l'idée principale", body: "Un paragraphe rédigé, dense et précis, qui développe l'idée sans liste à puces.", source: "" }) },
+  twoColumn: { label: "Deux colonnes", hint: "Forces / limites, arguments pour / contre, avant / après…", fields: [
+    { key: "label", kind: "text", label: "Étiquette de section", placeholder: "Discussion" },
+    { key: "title", kind: "textarea", label: "Titre", placeholder: "Mise en balance" },
+    { key: "left", kind: "column", label: "Colonne gauche" },
+    { key: "right", kind: "column", label: "Colonne droite" },
+    { key: "source", kind: "text", label: "Source (footer, option.)", placeholder: "" },
+  ], blank: () => ({ type: "twoColumn", label: "Section", title: "Mise en balance des deux versants", left: { label: "Forces", items: ["Point fort 1", "Point fort 2"] }, right: { label: "Limites", items: ["Limite 1", "Limite 2"] }, source: "" }) },
+  quote: { label: "Manifeste / citation hero", hint: "Une grande phrase centrale. Fort impact, peu de texte.", fields: [
+    { key: "text", kind: "textarea", label: "Phrase centrale", placeholder: "Une idée forte, en une phrase." },
+    { key: "attribution", kind: "text", label: "Attribution (option.)", placeholder: "Source ou auteur" },
+  ], blank: () => ({ type: "quote", text: "Une phrase manifeste, percutante, qui porte le message.", attribution: "" }) },
+  statTrio: { label: "Trio de chiffres (hero)", hint: "Trois grands chiffres avec leur libellé (N inclus, suivi, centres…).", fields: [
+    { key: "label", kind: "text", label: "Étiquette de section", placeholder: "L'étude en chiffres" },
+    { key: "title", kind: "textarea", label: "Titre (option.)", placeholder: "" },
+    { key: "stats", kind: "stats", label: "Chiffres (valeur + libellé)" },
+    { key: "source", kind: "text", label: "Source (footer, option.)", placeholder: "" },
+  ], blank: () => ({ type: "statTrio", label: "En chiffres", title: "", stats: [{ value: "4 744", label: "patients inclus" }, { value: "18 mois", label: "suivi médian" }, { value: "20", label: "pays" }], source: "" }) },
+  bigNumber: { label: "Un grand chiffre (hero)", hint: "Un chiffre géant (HR, OR, NNT…) + contexte minimal.", fields: [
+    { key: "label", kind: "text", label: "Étiquette de section", placeholder: "Résultat principal" },
+    { key: "value", kind: "text", label: "Chiffre géant", placeholder: "0,74" },
+    { key: "unit", kind: "text", label: "Unité / suffixe (option.)", placeholder: "HR" },
+    { key: "caption", kind: "textarea", label: "Contexte", placeholder: "IC 95 % 0,65–0,85 · p < 0,001" },
+    { key: "source", kind: "text", label: "Source (footer, option.)", placeholder: "" },
+  ], blank: () => ({ type: "bigNumber", label: "Résultat principal", value: "0,74", unit: "HR", caption: "IC 95 % 0,65–0,85 · p < 0,001 sur le critère de jugement principal", source: "" }) },
+  steps: { label: "Étapes numérotées", hint: "Physiopathologie en 4-5 étapes, CAT immédiat/court/long terme…", fields: [
+    { key: "label", kind: "text", label: "Étiquette de section", placeholder: "Mécanisme" },
+    { key: "title", kind: "textarea", label: "Titre", placeholder: "Enchaînement physiopathologique" },
+    { key: "items", kind: "list", label: "Étapes (une par ligne)" },
+    { key: "source", kind: "text", label: "Source (footer, option.)", placeholder: "" },
+  ], blank: () => ({ type: "steps", label: "Mécanisme", title: "Enchaînement en quelques étapes claires", items: ["Étape 1", "Étape 2", "Étape 3", "Étape 4"], source: "" }) },
+  table: { label: "Tableau (Keynote-safe)", hint: "Tableau rendu en zones de texte positionnées (évite le débordement Keynote).", fields: [
+    { key: "label", kind: "text", label: "Étiquette de section", placeholder: "Comparaison" },
+    { key: "title", kind: "textarea", label: "Titre", placeholder: "Comparaison structurée" },
+    { key: "table", kind: "table", label: "Tableau" },
+    { key: "source", kind: "text", label: "Source (footer, option.)", placeholder: "" },
+  ], blank: () => ({ type: "table", label: "Comparaison", title: "Comparaison structurée", table: { header: ["Critère", "Option A", "Option B"], rows: [["Mécanisme", "…", "…"], ["Indication", "…", "…"], ["Effets indésirables", "…", "…"], ["Niveau de preuve", "…", "…"]] }, source: "" }) },
+  matrix: { label: "Matrice 2×2", hint: "Stratification clinique, classification en 4 quadrants.", fields: [
+    { key: "label", kind: "text", label: "Étiquette de section", placeholder: "Stratification" },
+    { key: "title", kind: "textarea", label: "Titre", placeholder: "Quatre profils, quatre conduites" },
+    { key: "cells", kind: "matrix", label: "Quatre quadrants" },
+    { key: "source", kind: "text", label: "Source (footer, option.)", placeholder: "" },
+  ], blank: () => ({ type: "matrix", label: "Stratification", title: "Quatre profils, quatre conduites", cells: [{ label: "Quadrant 1", text: "Description" }, { label: "Quadrant 2", text: "Description" }, { label: "Quadrant 3", text: "Description" }, { label: "Quadrant 4", text: "Description" }], source: "" }) },
+  image: { label: "Image / placeholder", hint: "Emplacement pour ECG, imagerie, figure. Colle une URL/dataURI ou insère l'image dans Keynote.", fields: [
+    { key: "label", kind: "text", label: "Étiquette de section", placeholder: "Imagerie" },
+    { key: "title", kind: "textarea", label: "Titre", placeholder: "Ce que montre l'image" },
+    { key: "image", kind: "text", label: "URL ou dataURI (option.)", placeholder: "Laisser vide = placeholder" },
+    { key: "caption", kind: "textarea", label: "Légende", placeholder: "Légende et flèches d'interprétation" },
+    { key: "source", kind: "text", label: "Source (footer, option.)", placeholder: "" },
+  ], blank: () => ({ type: "image", label: "Imagerie", title: "Titre qui énonce l'interprétation de l'image", image: "", caption: "Légende précise : ce qu'il faut regarder et pourquoi.", source: "" }) },
+  takeaway: { label: "À retenir / conclusion", hint: "Phrase manifeste + 3 points opérationnels (max 3).", fields: [
+    { key: "headline", kind: "textarea", label: "Phrase de synthèse", placeholder: "L'idée à retenir en une ligne" },
+    { key: "items", kind: "list", label: "Points (3 max)" },
+  ], blank: () => ({ type: "takeaway", headline: "Une phrase synthétique unique, percutante, qui résume tout le propos.", items: ["Premier point opérationnel pour la pratique.", "Deuxième élément de vigilance.", "Troisième idée — perspective ou question ouverte."] }) },
+  references: { label: "Références + contact", hint: "Références numérotées + carte contact. Dernière slide.", fields: [
+    { key: "title", kind: "text", label: "Titre", placeholder: "Sources · contact · remerciements" },
+    { key: "refs", kind: "list", label: "Références (une par ligne)" },
+    { key: "acknowledgements", kind: "textarea", label: "Remerciements (option.)", placeholder: "" },
+  ], blank: () => ({ type: "references", title: "Sources · contact · remerciements", refs: ["Auteur AB, et al. Titre. Journal. Année;Vol(Iss):pages.", "Société savante. Recommandations 20XX. URL/DOI."], acknowledgements: "Service, encadrant, équipe." }) },
+};
+const SLIDE_TYPE_LIST = Object.entries(SLIDE_TYPES).map(([id, def]) => ({ id, label: def.label, hint: def.hint }));
+const DEFAULT_META = { title: "Titre de la présentation", subtitle: "Sous-titre du sujet", author: "", affiliation: "", contact: "", context: "", date: "" };
+const DEFAULT_OPTIONS = { density: "bullets", audience: "", fontSans: "", fontSerif: "", showFooter: true, showSlideNumbers: true };
+
+function createSlide(type) { const def = SLIDE_TYPES[type]; if (!def) throw new Error("Type inconnu : " + type); return def.blank(); }
+function createBlankDeck(theme = "v2") { return { meta: { ...DEFAULT_META }, theme, options: { ...DEFAULT_OPTIONS }, slides: [createSlide("cover"), createSlide("agenda"), createSlide("bullets"), createSlide("takeaway"), createSlide("references")] }; }
+function normalizeDeck(input) {
+  const deck = input && typeof input === "object" ? input : {};
+  const meta = { ...DEFAULT_META, ...(deck.meta || {}) };
+  const options = { ...DEFAULT_OPTIONS, ...(deck.options || {}) };
+  const theme = ["v1", "v2", "v3"].includes(deck.theme) ? deck.theme : "v2";
+  let slides = Array.isArray(deck.slides) ? deck.slides : [];
+  slides = slides.filter((s) => s && SLIDE_TYPES[s.type]).map((s) => ({ ...SLIDE_TYPES[s.type].blank(), ...s, type: s.type }));
+  if (slides.length === 0) slides = [createSlide("cover")];
+  return { meta, theme, options, slides };
+}
+function slideTextLength(slide) {
+  const parts = [];
+  const push = (v) => { if (typeof v === "string") parts.push(v); else if (Array.isArray(v)) v.forEach(push); else if (v && typeof v === "object") Object.values(v).forEach(push); };
+  Object.entries(slide).forEach(([k, v]) => { if (k !== "type") push(v); });
+  return parts.join(" ").trim().split(/\s+/).filter(Boolean).length;
+}
+
+/* ============================ SLIDE RENDERERS ============================== */
+const { W, H, MARGIN } = CANVAS;
+function makeContext(pres, theme, fonts, options) {
+  const c = theme.c, section = theme.section, F = fonts;
+  const ctx = { pres, c, section, F, theme, options };
+  ctx.rect = (s, x, y, w, h, fill, lineOpt) => s.addShape("rect", { x, y, w, h, fill: fill ? { color: fill } : { type: "none" }, line: lineOpt || { type: "none" } });
+  ctx.line = (s, x, y, w, h, color, width = 0.5, dashType) => s.addShape("line", { x, y, w, h, line: { color, width, dashType } });
+  ctx.sectionLabel = (s, label, num) => {
+    if (label) { ctx.rect(s, MARGIN, 0.55, 0.18, 0.05, c.accent); s.addText(String(label).toUpperCase(), { x: MARGIN + 0.28, y: 0.42, w: 8, h: 0.3, fontFace: F.sans, fontSize: 9, color: c.inkSecondary, bold: true, charSpacing: 6, margin: 0 }); }
+    if (num) s.addText(num, { x: W - MARGIN - 1.5, y: 0.42, w: 1.5, h: 0.3, fontFace: F.sans, fontSize: 9, color: c.inkMuted, align: "right", charSpacing: 4, margin: 0 });
+  };
+  ctx.title = (s, text, opt = {}) => s.addText(text || "", { x: MARGIN, y: opt.y ?? 0.95, w: opt.w ?? W - 2 * MARGIN, h: opt.h ?? 0.95, fontFace: F.serif, fontSize: opt.size ?? 27, color: opt.color ?? c.ink, bold: false, valign: "top", margin: 0 });
+  ctx.footer = (s, idx, total, source) => {
+    if (!options.showFooter) return;
+    ctx.line(s, MARGIN, H - 0.45, W - 2 * MARGIN, 0, c.rule, 0.5);
+    if (source) s.addText("Source — " + source, { x: MARGIN, y: H - 0.4, w: W - 2 * MARGIN - 2, h: 0.25, fontFace: F.sans, fontSize: 8, color: c.inkMuted, italic: true, margin: 0 });
+    if (options.showSlideNumbers) s.addText(String(idx).padStart(2, "0") + " / " + String(total).padStart(2, "0"), { x: W - MARGIN - 2, y: H - 0.4, w: 2, h: 0.25, fontFace: F.sans, fontSize: 8, color: c.inkMuted, align: "right", charSpacing: 2, margin: 0 });
+  };
+  ctx.card = (s, x, y, w, h, fill) => ctx.rect(s, x, y, w, h, fill || c.card);
+  ctx.accentCard = (s, x, y, w, h) => { ctx.rect(s, x, y, w, h, c.card); ctx.rect(s, x, y, 0.06, h, c.accent); };
+  ctx.cardLabel = (s, label, x, y, w) => s.addText(String(label).toUpperCase(), { x, y, w, h: 0.25, fontFace: F.sans, fontSize: 8.5, color: c.accent, bold: true, charSpacing: 5, margin: 0 });
+  ctx.bullets = (s, items, x, y, w, h, opt = {}) => {
+    const arr = (items || []).map((it) => ({ text: it, options: { bullet: { indent: 14 }, breakLine: true, paraSpaceAfter: opt.gap ?? 8 } }));
+    s.addText(arr.length ? arr : [{ text: "" }], { x, y, w, h, fontFace: F.sans, fontSize: opt.size ?? 12.5, color: opt.color ?? c.ink, valign: "top", margin: 0 });
+  };
+  ctx.placeholder = (s, x, y, w, h, label) => {
+    const fill = theme.meta.mode === "dark" ? c.cardSoft : c.white;
+    ctx.rect(s, x, y, w, h, fill, { color: c.inkMuted, width: 0.75, dashType: "dash" });
+    s.addText(label || "INSÉRER VISUEL", { x, y, w, h, fontFace: F.sans, fontSize: 10, color: c.inkMuted, align: "center", valign: "middle", charSpacing: 4, bold: true });
+  };
+  ctx.table = (s, table, x, y, w, hAvail) => {
+    const header = (table && table.header) || [], rows = (table && table.rows) || [];
+    const nCols = Math.max(header.length, ...(rows.map((r) => r.length) || [0]), 1);
+    const nLines = 1 + rows.length;
+    const rowH = Math.min(0.55, Math.max(0.34, hAvail / nLines));
+    const fontSize = rowH < 0.42 ? 10 : 11;
+    const colW = [];
+    if (nCols === 1) colW.push(w); else { const first = w * 0.32, rest = (w - first) / (nCols - 1); colW.push(first); for (let i = 1; i < nCols; i++) colW.push(rest); }
+    const colX = [x]; for (let i = 1; i < nCols; i++) colX.push(colX[i - 1] + colW[i - 1]);
+    ctx.rect(s, x, y, w, rowH, c.card);
+    header.forEach((cell, i) => s.addText(String(cell ?? ""), { x: colX[i] + 0.12, y, w: colW[i] - 0.24, h: rowH, fontFace: F.sans, fontSize, bold: true, color: c.ink, valign: "middle", margin: 0 }));
+    ctx.line(s, x, y + rowH, w, 0, c.accent, 1.25);
+    rows.forEach((row, r) => {
+      const ry = y + rowH * (r + 1);
+      if (r % 2 === 1) ctx.rect(s, x, ry, w, rowH, c.cardSoft);
+      for (let i = 0; i < nCols; i++) s.addText(String(row[i] ?? ""), { x: colX[i] + 0.12, y: ry, w: colW[i] - 0.24, h: rowH, fontFace: F.sans, fontSize, color: i === 0 ? c.ink : c.inkSecondary, bold: i === 0, valign: "middle", margin: 0 });
+      ctx.line(s, x, ry + rowH, w, 0, c.rule, 0.5);
+    });
+  };
+  return ctx;
+}
+
+function rCover(ctx, s, slide, meta) {
+  const { c, F } = ctx; s.background = { color: c.pageBg };
+  ctx.rect(s, MARGIN, MARGIN, 0.6, 0.06, c.accent);
+  s.addText((slide.kicker || "PRÉSENTATION MÉDICALE").toUpperCase(), { x: MARGIN, y: MARGIN + 0.18, w: 8, h: 0.3, fontFace: F.sans, fontSize: 10, color: c.inkSecondary, bold: true, charSpacing: 8, margin: 0 });
+  s.addText(slide.title || meta.title, { x: MARGIN, y: 2.3, w: 10.5, h: 2.3, fontFace: F.serif, fontSize: 46, color: c.ink, valign: "top", margin: 0 });
+  s.addText(slide.subtitle || meta.subtitle || "", { x: MARGIN, y: 4.75, w: 9.5, h: 0.9, fontFace: F.serif, fontSize: 16, color: c.inkSecondary, italic: true, valign: "top", margin: 0 });
+  ctx.line(s, MARGIN, 6.3, 4, 0, c.rule, 0.5);
+  s.addText([{ text: meta.author || "", options: { bold: true, breakLine: true } }, { text: meta.affiliation || "", options: { breakLine: true } }, { text: [meta.context, meta.date].filter(Boolean).join(" — "), options: { color: c.inkMuted } }], { x: MARGIN, y: 6.45, w: 7, h: 0.95, fontFace: F.sans, fontSize: 10, color: c.ink, valign: "top", paraSpaceAfter: 2, margin: 0 });
+  if (slide.typeLabel) s.addText([{ text: "TYPE DE PRÉSENTATION", options: { color: c.accent, bold: true, charSpacing: 4, breakLine: true } }, { text: slide.typeLabel, options: { color: c.inkSecondary } }], { x: W - MARGIN - 5, y: 6.45, w: 5, h: 0.95, fontFace: F.sans, fontSize: 9, align: "right", valign: "top", paraSpaceAfter: 4, margin: 0 });
+}
+function rSection(ctx, s, slide) {
+  const sec = ctx.section, { F } = ctx; s.background = { color: sec.bg };
+  if (slide.numeral) s.addText(String(slide.numeral), { x: W - 5.5, y: 0.5, w: 5, h: 6.5, fontFace: F.serif, fontSize: 320, color: sec.accent, italic: true, align: "right", valign: "middle", margin: 0, transparency: 78 });
+  ctx.rect(s, MARGIN, 3.0, 0.7, 0.07, sec.accent);
+  s.addText(slide.title || "", { x: MARGIN, y: 3.25, w: 9, h: 1.6, fontFace: F.serif, fontSize: 40, color: sec.ink, valign: "top", margin: 0 });
+  if (slide.subtitle) s.addText(slide.subtitle, { x: MARGIN, y: 4.9, w: 8.5, h: 0.8, fontFace: F.serif, fontSize: 16, color: sec.inkSecondary, italic: true, valign: "top", margin: 0 });
+}
+function rAgenda(ctx, s, slide) {
+  const { c, F } = ctx; s.background = { color: c.pageBg };
+  ctx.sectionLabel(s, "Plan", null); ctx.title(s, slide.title || "Plan");
+  if (slide.subtitle) s.addText(slide.subtitle, { x: MARGIN, y: 1.85, w: W - 2 * MARGIN, h: 0.4, fontFace: F.serif, fontSize: 14, color: c.inkSecondary, italic: true, margin: 0 });
+  const items = slide.items || [];
+  if (items.length <= 4 && items.length > 0) {
+    const gap = 0.5, n = items.length, colW = (W - 2 * MARGIN - gap * (n - 1)) / n, y = 2.7, hCol = 3.5;
+    items.forEach((it, i) => { const x = MARGIN + i * (colW + gap); s.addText(String(i + 1).padStart(2, "0"), { x, y, w: colW, h: 0.7, fontFace: F.serif, fontSize: 30, color: c.accent, italic: true, margin: 0 }); ctx.line(s, x, y + 0.85, colW - 0.2, 0, c.rule, 0.5); s.addText(it, { x, y: y + 1.0, w: colW - 0.2, h: hCol - 1.0, fontFace: F.serif, fontSize: 16, color: c.ink, valign: "top", margin: 0 }); });
+  } else {
+    items.forEach((it, i) => { const y = 2.5 + i * 0.62; s.addText(String(i + 1).padStart(2, "0"), { x: MARGIN, y, w: 0.6, h: 0.45, fontFace: F.sans, fontSize: 12, color: c.accent, bold: true, charSpacing: 2, margin: 0 }); s.addText(it, { x: MARGIN + 0.8, y, w: W - 2 * MARGIN - 0.8, h: 0.5, fontFace: F.serif, fontSize: 16, color: c.ink, valign: "top", margin: 0 }); });
+  }
+}
+function rBullets(ctx, s, slide, idx, total) { const { c } = ctx; s.background = { color: c.pageBg }; ctx.sectionLabel(s, slide.label, String(idx).padStart(2, "0")); ctx.title(s, slide.title); ctx.bullets(s, slide.items, MARGIN, 2.25, W - 2 * MARGIN, H - 3.0, { size: 13.5, gap: 10 }); ctx.footer(s, idx, total, slide.source); }
+function rProse(ctx, s, slide, idx, total) { const { c, F } = ctx; s.background = { color: c.pageBg }; ctx.sectionLabel(s, slide.label, String(idx).padStart(2, "0")); ctx.title(s, slide.title); s.addText(slide.body || "", { x: MARGIN, y: 2.3, w: W - 2 * MARGIN, h: H - 3.1, fontFace: F.sans, fontSize: 13.5, color: c.ink, valign: "top", margin: 0, paraSpaceAfter: 10, lineSpacingMultiple: 1.15 }); ctx.footer(s, idx, total, slide.source); }
+function rTwoColumn(ctx, s, slide, idx, total) {
+  const { c } = ctx; s.background = { color: c.pageBg }; ctx.sectionLabel(s, slide.label, String(idx).padStart(2, "0")); ctx.title(s, slide.title);
+  const gap = 0.5, colW = (W - 2 * MARGIN - gap) / 2, y = 2.4, hCol = H - 3.1;
+  [slide.left, slide.right].forEach((col, i) => { const x = MARGIN + i * (colW + gap); ctx.accentCard(s, x, y, colW, hCol); ctx.cardLabel(s, (col && col.label) || "", x + 0.35, y + 0.3, colW - 0.6); ctx.bullets(s, (col && col.items) || [], x + 0.35, y + 0.75, colW - 0.7, hCol - 1.0, { size: 12, gap: 8 }); });
+  ctx.footer(s, idx, total, slide.source);
+}
+function rQuote(ctx, s, slide) { const { c, F } = ctx; s.background = { color: c.pageBg }; ctx.rect(s, MARGIN, 2.4, 0.7, 0.07, c.accent); s.addText(slide.text || "", { x: MARGIN, y: 2.7, w: W - 2 * MARGIN, h: 2.6, fontFace: F.serif, fontSize: 34, color: c.ink, italic: true, valign: "top", margin: 0, lineSpacingMultiple: 1.05 }); if (slide.attribution) s.addText("— " + slide.attribution, { x: MARGIN, y: 5.5, w: W - 2 * MARGIN, h: 0.5, fontFace: F.sans, fontSize: 12, color: c.inkSecondary, margin: 0 }); }
+function rStatTrio(ctx, s, slide, idx, total) {
+  const { c, F } = ctx; s.background = { color: c.pageBg }; ctx.sectionLabel(s, slide.label, String(idx).padStart(2, "0")); if (slide.title) ctx.title(s, slide.title);
+  const stats = (slide.stats || []).slice(0, 3), n = Math.max(stats.length, 1), gap = 0.4, colW = (W - 2 * MARGIN - gap * (n - 1)) / n, y = slide.title ? 3.0 : 2.6;
+  stats.forEach((st, i) => { const x = MARGIN + i * (colW + gap); if (i > 0) ctx.line(s, x - gap / 2, y + 0.3, 0, 2.4, c.rule, 0.5); s.addText(String(st.value ?? ""), { x, y, w: colW, h: 1.5, fontFace: F.serif, fontSize: 60, color: c.accent, align: "center", valign: "middle", margin: 0 }); s.addText(String(st.label ?? "").toUpperCase(), { x, y: y + 1.6, w: colW, h: 0.8, fontFace: F.sans, fontSize: 11, color: c.inkSecondary, align: "center", valign: "top", charSpacing: 3, margin: 0 }); });
+  ctx.footer(s, idx, total, slide.source);
+}
+function rBigNumber(ctx, s, slide, idx, total) {
+  const { c, F } = ctx; s.background = { color: c.pageBg }; ctx.sectionLabel(s, slide.label, String(idx).padStart(2, "0"));
+  s.addText([{ text: String(slide.value ?? ""), options: { fontSize: 150, color: c.accent } }, ...(slide.unit ? [{ text: " " + slide.unit, options: { fontSize: 40, color: c.inkSecondary } }] : [])], { x: MARGIN, y: 1.9, w: W - 2 * MARGIN, h: 3.0, fontFace: F.serif, valign: "middle", margin: 0 });
+  ctx.rect(s, MARGIN, 5.1, 0.7, 0.06, c.accent);
+  s.addText(slide.caption || "", { x: MARGIN, y: 5.3, w: W - 2 * MARGIN, h: 1.2, fontFace: F.serif, fontSize: 18, color: c.ink, italic: true, valign: "top", margin: 0 });
+  ctx.footer(s, idx, total, slide.source);
+}
+function rSteps(ctx, s, slide, idx, total) {
+  const { c, F } = ctx; s.background = { color: c.pageBg }; ctx.sectionLabel(s, slide.label, String(idx).padStart(2, "0")); ctx.title(s, slide.title);
+  const items = slide.items || [], y0 = 2.4, hAvail = H - 3.1, stepH = Math.min(1.0, hAvail / Math.max(items.length, 1));
+  items.forEach((it, i) => { const y = y0 + i * stepH; s.addText(String(i + 1).padStart(2, "0"), { x: MARGIN, y, w: 0.7, h: stepH, fontFace: F.serif, fontSize: 24, color: c.accent, italic: true, valign: "top", margin: 0 }); if (i < items.length - 1) ctx.line(s, MARGIN + 0.22, y + 0.5, 0, stepH - 0.45, c.rule, 0.75); s.addText(it, { x: MARGIN + 0.95, y, w: W - 2 * MARGIN - 0.95, h: stepH, fontFace: F.sans, fontSize: 13, color: c.ink, valign: "top", margin: 0 }); });
+  ctx.footer(s, idx, total, slide.source);
+}
+function rTable(ctx, s, slide, idx, total) { const { c } = ctx; s.background = { color: c.pageBg }; ctx.sectionLabel(s, slide.label, String(idx).padStart(2, "0")); ctx.title(s, slide.title); ctx.table(s, slide.table, MARGIN, 2.35, W - 2 * MARGIN, H - 3.1); ctx.footer(s, idx, total, slide.source); }
+function rMatrix(ctx, s, slide, idx, total) {
+  const { c, F } = ctx; s.background = { color: c.pageBg }; ctx.sectionLabel(s, slide.label, String(idx).padStart(2, "0")); ctx.title(s, slide.title);
+  const cells = (slide.cells || []).slice(0, 4), gap = 0.4, gW = (W - 2 * MARGIN - gap) / 2, gH = (H - 3.1 - gap) / 2, gx0 = MARGIN, gy0 = 2.4;
+  cells.forEach((cell, i) => { const col = i % 2, row = Math.floor(i / 2), x = gx0 + col * (gW + gap), y = gy0 + row * (gH + gap); ctx.accentCard(s, x, y, gW, gH); s.addText(String(cell.label ?? ""), { x: x + 0.35, y: y + 0.28, w: gW - 0.6, h: 0.5, fontFace: F.serif, fontSize: 16, color: c.ink, margin: 0 }); s.addText(String(cell.text ?? ""), { x: x + 0.35, y: y + 0.85, w: gW - 0.6, h: gH - 1.1, fontFace: F.sans, fontSize: 11.5, color: c.inkSecondary, valign: "top", margin: 0 }); });
+  ctx.footer(s, idx, total, slide.source);
+}
+function rImage(ctx, s, slide, idx, total) {
+  const { c } = ctx; s.background = { color: c.pageBg }; ctx.sectionLabel(s, slide.label, String(idx).padStart(2, "0")); ctx.title(s, slide.title);
+  const imgX = MARGIN, imgY = 2.35, imgW = W * 0.6, imgH = H - 3.1;
+  if (slide.image) { try { const opt = { x: imgX, y: imgY, w: imgW, h: imgH, sizing: { type: "contain", w: imgW, h: imgH } }; if (/^data:/.test(slide.image)) opt.data = slide.image; else opt.path = slide.image; s.addImage(opt); } catch (e) { ctx.placeholder(s, imgX, imgY, imgW, imgH, "IMAGE NON CHARGÉE"); } }
+  else ctx.placeholder(s, imgX, imgY, imgW, imgH, "INSÉRER LE VISUEL (ECG / imagerie / figure)");
+  const capX = imgX + imgW + 0.4, capW = W - MARGIN - capX;
+  ctx.cardLabel(s, "Légende", capX, imgY + 0.05, capW);
+  s.addText(slide.caption || "", { x: capX, y: imgY + 0.45, w: capW, h: imgH - 0.5, fontFace: ctx.F.sans, fontSize: 12, color: c.ink, valign: "top", margin: 0, paraSpaceAfter: 8 });
+  ctx.footer(s, idx, total, slide.source);
+}
+function rTakeaway(ctx, s, slide, idx, total) {
+  const { c, F } = ctx; s.background = { color: c.pageBg }; ctx.sectionLabel(s, "Conclusion", String(idx).padStart(2, "0")); ctx.title(s, "À retenir");
+  s.addText(slide.headline || "", { x: MARGIN, y: 2.3, w: W - 2 * MARGIN, h: 1.5, fontFace: F.serif, fontSize: 28, color: c.ink, italic: true, valign: "top", margin: 0 });
+  ctx.rect(s, MARGIN, 4.0, 0.6, 0.06, c.accent);
+  (slide.items || []).slice(0, 3).forEach((l, i) => { const y = 4.45 + i * 0.6; s.addText(String(i + 1).padStart(2, "0"), { x: MARGIN, y, w: 0.6, h: 0.45, fontFace: F.sans, fontSize: 11, color: c.accent, bold: true, charSpacing: 3, margin: 0 }); s.addText(l, { x: MARGIN + 0.7, y, w: W - 2 * MARGIN - 0.7, h: 0.5, fontFace: F.sans, fontSize: 13, color: c.ink, valign: "top", margin: 0 }); });
+  ctx.footer(s, idx, total, null);
+}
+function rReferences(ctx, s, slide, idx, total, meta) {
+  const { c, F } = ctx; s.background = { color: c.pageBg }; ctx.sectionLabel(s, "Références · Contact", String(idx).padStart(2, "0")); ctx.title(s, slide.title || "Sources · contact · remerciements");
+  const refW = 8.0; ctx.cardLabel(s, "Références", MARGIN, 2.45, refW); ctx.line(s, MARGIN, 2.8, refW, 0, c.rule, 0.5);
+  (slide.refs || []).forEach((r, i) => { const y = 3.0 + i * 0.55; s.addText("[" + (i + 1) + "]", { x: MARGIN, y, w: 0.5, h: 0.4, fontFace: F.sans, fontSize: 10, color: c.accent, bold: true, valign: "top", margin: 0 }); s.addText(r, { x: MARGIN + 0.5, y, w: refW - 0.5, h: 0.5, fontFace: F.sans, fontSize: 10, color: c.inkSecondary, italic: true, valign: "top", margin: 0 }); });
+  const cx = MARGIN + refW + 0.4, cw = W - MARGIN - cx;
+  ctx.accentCard(s, cx, 2.45, cw, 2.0); ctx.cardLabel(s, "Contact", cx + 0.35, 2.65, cw - 0.5);
+  s.addText([{ text: meta.author || "", options: { bold: true, breakLine: true } }, { text: meta.affiliation || "", options: { color: c.inkSecondary, breakLine: true } }, { text: meta.contact || "", options: { color: c.accent } }], { x: cx + 0.35, y: 3.0, w: cw - 0.5, h: 1.4, fontFace: F.sans, fontSize: 11, color: c.ink, valign: "top", paraSpaceAfter: 3, margin: 0 });
+  if (slide.acknowledgements) { ctx.card(s, cx, 4.65, cw, H - 0.6 - 4.65); ctx.cardLabel(s, "Remerciements", cx + 0.35, 4.85, cw - 0.5); s.addText(slide.acknowledgements, { x: cx + 0.35, y: 5.2, w: cw - 0.5, h: 1.4, fontFace: F.sans, fontSize: 11, color: c.inkSecondary, valign: "top", margin: 0 }); }
+  ctx.footer(s, idx, total, null);
+}
+const RENDERERS = {
+  cover: (ctx, s, slide, idx, total, meta) => rCover(ctx, s, slide, meta),
+  section: (ctx, s, slide) => rSection(ctx, s, slide),
+  agenda: (ctx, s, slide) => rAgenda(ctx, s, slide),
+  bullets: rBullets, prose: rProse, twoColumn: rTwoColumn,
+  quote: (ctx, s, slide) => rQuote(ctx, s, slide),
+  statTrio: rStatTrio, bigNumber: rBigNumber, steps: rSteps, table: rTable, matrix: rMatrix, image: rImage, takeaway: rTakeaway,
+  references: (ctx, s, slide, idx, total, meta) => rReferences(ctx, s, slide, idx, total, meta),
+};
+function renderSlide(ctx, slide, idx, total, meta) { const s = ctx.pres.addSlide(); const fn = RENDERERS[slide.type]; if (fn) fn(ctx, s, slide, idx, total, meta); return s; }
+
+/* ============================== RENDERER ================================== */
+function buildPres(PptxGenJS, deckInput) {
+  const deck = normalizeDeck(deckInput), theme = getTheme(deck.theme), fonts = resolveFonts(theme, deck.options);
+  const pres = new PptxGenJS();
+  pres.layout = "LAYOUT_WIDE";
+  pres.author = deck.meta.author || ""; pres.company = deck.meta.affiliation || ""; pres.title = deck.meta.title || "Présentation";
+  const ctx = makeContext(pres, theme, fonts, deck.options), total = deck.slides.length;
+  deck.slides.forEach((slide, i) => renderSlide(ctx, slide, i + 1, total, deck.meta));
+  return pres;
+}
+function safeFileName(deck) {
+  const t = ((deck && deck.meta && deck.meta.title) || "presentation").trim();
+  const base = t.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 60) || "presentation";
+  return base + ".pptx";
+}
+async function downloadPptx(PptxGenJS, deckInput) { const deck = normalizeDeck(deckInput); const pres = buildPres(PptxGenJS, deck); await pres.writeFile({ fileName: safeFileName(deck) }); return safeFileName(deck); }
+
+/* ============================== AI CLIENT ================================= */
+const FENCE_RE = /```(?:json)?\s*([\s\S]*?)```/i;
+function parseAIResponse(text) {
+  if (!text || typeof text !== "string") return { message: "", deck: null };
+  const m = text.match(FENCE_RE);
+  if (m) { const jsonStr = m[1].trim(); const message = text.replace(m[0], "").trim(); try { return { message, deck: JSON.parse(jsonStr) }; } catch (e) { return { message: message || text.trim(), deck: null, parseError: e.message }; } }
+  const trimmed = text.trim();
+  if (trimmed.startsWith("{")) { try { return { message: "", deck: JSON.parse(trimmed) }; } catch (e) {} }
+  return { message: trimmed, deck: null };
+}
+async function callAI({ history, deck, options }) {
+  const headers = { "Content-Type": "application/json" };
+  if (authToken) headers.Authorization = "Bearer " + authToken;
+  const res = await fetch("/api/presentation", { method: "POST", headers, body: JSON.stringify({ messages: history, deck, options }) });
+  if (!res.ok) {
+    let detail = "";
+    try { const j = await res.json(); detail = j.error || j.message || ""; } catch (e) {}
+    if (res.status === 401) throw new Error("Connecte-toi à MedInfo pour utiliser le mode IA.");
+    if (res.status === 403) throw new Error("Le mode IA est réservé aux comptes vérifiés étudiant ou professionnel de santé.");
+    if (res.status === 429) throw new Error("Limite de générations atteinte pour aujourd'hui. Réessaie demain.");
+    throw new Error(detail || ("Erreur serveur (" + res.status + ")."));
+  }
+  const data = await res.json();
+  const text = typeof data.text === "string" ? data.text : "";
+  return { ...parseAIResponse(text), raw: text };
+}
+
+/* ================================ UI ===================================== */
+const state = { deck: normalizeDeck(createBlankDeck("v2")), tab: "manuel", sel: 0, slideCount: 10, aiHistory: [], aiBusy: false };
+const app = document.getElementById("app");
+const h = (tag, attrs = {}, ...kids) => {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") el.className = v;
+    else if (k === "style") el.setAttribute("style", v);
+    else if (k.startsWith("on") && typeof v === "function") el.addEventListener(k.slice(2), v);
+    else if (v !== null && v !== undefined && v !== false) el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat()) { if (kid == null || kid === false) continue; el.append(kid.nodeType ? kid : document.createTextNode(String(kid))); }
+  return el;
+};
+const linesToList = (s) => s.split("\n").map((l) => l.trim()).filter(Boolean);
+const listToLines = (a) => (Array.isArray(a) ? a.join("\n") : "");
+const rowText = (c) => (Array.isArray(c) ? c.join(" | ") : "");
+const textRow = (s) => s.split("|").map((c) => c.trim());
+const hx = (v) => "#" + v;
+function setSlide(i, next) { state.deck.slides[i] = next; render(); }
+
+function fieldEl(field, slide, onChange) {
+  const v = slide[field.key];
+  const lab = (txt) => h("label", {}, txt);
+  const wrap = (...kids) => h("div", { class: "mip-field" }, lab(field.label), ...kids);
+  if (field.kind === "text" || field.kind === "number") return wrap(h("input", { class: "mip-input", type: field.kind === "number" ? "number" : "text", value: v ?? "", placeholder: field.placeholder || "", oninput: (e) => onChange(e.target.value) }));
+  if (field.kind === "textarea") { const ta = h("textarea", { class: "mip-textarea", placeholder: field.placeholder || "" }); ta.value = v || ""; ta.addEventListener("input", (e) => onChange(e.target.value)); return wrap(ta); }
+  if (field.kind === "list") { const ta = h("textarea", { class: "mip-textarea", placeholder: "Un élément par ligne" }); ta.value = listToLines(v); ta.addEventListener("input", (e) => onChange(linesToList(e.target.value))); return wrap(ta, h("span", { class: "mip-hint" }, "Un élément par ligne.")); }
+  if (field.kind === "column") {
+    const col = v && typeof v === "object" ? v : { label: "", items: [] };
+    const inp = h("input", { class: "mip-input", value: col.label || "", placeholder: "Intitulé de la colonne", oninput: (e) => onChange({ ...col, label: e.target.value }) });
+    const ta = h("textarea", { class: "mip-textarea", style: "margin-top:6px", placeholder: "Un point par ligne" }); ta.value = listToLines(col.items); ta.addEventListener("input", (e) => onChange({ ...col, items: linesToList(e.target.value) }));
+    return wrap(inp, ta);
+  }
+  if (field.kind === "stats") {
+    const stats = Array.isArray(v) ? v : [];
+    const rows = stats.map((s, i) => h("div", { class: "mip-stat-item" },
+      h("input", { class: "mip-input", style: "flex:0 0 38%", value: s.value || "", placeholder: "Valeur", oninput: (e) => { stats[i] = { ...s, value: e.target.value }; onChange([...stats]); } }),
+      h("input", { class: "mip-input", value: s.label || "", placeholder: "Libellé", oninput: (e) => { stats[i] = { ...s, label: e.target.value }; onChange([...stats]); } }),
+      h("button", { class: "mip-iconbtn", onclick: () => onChange(stats.filter((_, j) => j !== i)) }, "✕")));
+    return wrap(...rows, h("div", { class: "mip-addrow" }, h("button", { class: "mip-btn mip-btn-sm", onclick: () => onChange([...stats, { value: "", label: "" }]) }, "+ Ajouter un chiffre")));
+  }
+  if (field.kind === "matrix") {
+    const base = [0, 1, 2, 3].map((i) => (Array.isArray(v) && v[i]) || { label: "", text: "" });
+    const cells = base.map((c, i) => { const ta = h("textarea", { class: "mip-textarea", style: "margin-top:6px;min-height:48px", placeholder: "Description" }); ta.value = c.text || ""; ta.addEventListener("input", (e) => { base[i] = { ...base[i], text: e.target.value }; onChange([...base]); }); return h("div", { style: "border:1px solid var(--rule-2);border-radius:6px;padding:8px" }, h("input", { class: "mip-input", value: c.label || "", placeholder: "Titre quadrant " + (i + 1), oninput: (e) => { base[i] = { ...base[i], label: e.target.value }; onChange([...base]); } }), ta); });
+    return wrap(h("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:8px" }, ...cells));
+  }
+  if (field.kind === "table") {
+    const tbl = v && typeof v === "object" ? v : { header: [], rows: [] };
+    const header = Array.isArray(tbl.header) ? tbl.header : [], rows = Array.isArray(tbl.rows) ? tbl.rows : [];
+    const headerInput = h("input", { class: "mip-input", style: "margin-top:6px;font-weight:700", value: rowText(header), placeholder: "Critère | Option A | Option B", oninput: (e) => onChange({ ...tbl, header: textRow(e.target.value) }) });
+    const rowEls = rows.map((r, i) => h("div", { class: "mip-list-item", style: "margin-top:6px" }, h("input", { class: "mip-input", value: rowText(r), placeholder: "Cellule | Cellule | Cellule", oninput: (e) => { const rr = [...rows]; rr[i] = textRow(e.target.value); onChange({ ...tbl, rows: rr }); } }), h("button", { class: "mip-iconbtn", onclick: () => onChange({ ...tbl, rows: rows.filter((_, j) => j !== i) }) }, "✕")));
+    const addBtn = h("div", { class: "mip-addrow" }, h("button", { class: "mip-btn mip-btn-sm", onclick: () => onChange({ ...tbl, rows: [...rows, header.map(() => "…")] }) }, "+ Ajouter une ligne"));
+    return wrap(h("span", { class: "mip-hint" }, "Cellules séparées par « | ». 1re ligne = en-tête."), headerInput, ...rowEls, addBtn);
+  }
+  return wrap(h("input", { class: "mip-input", value: typeof v === "string" ? v : "", oninput: (e) => onChange(e.target.value) }));
+}
+function editorEl() {
+  const slide = state.deck.slides[state.sel];
+  if (!slide) return h("div", { class: "mip-editor" }, h("p", { class: "mip-hint" }, "Aucune slide."));
+  const def = SLIDE_TYPES[slide.type], words = slideTextLength(slide);
+  const onField = (key) => (val) => { slide[key] = val; setSlide(state.sel, { ...slide }); };
+  return h("div", { class: "mip-editor" },
+    h("div", { class: "mip-editor-head" }, h("h3", {}, "Slide " + (state.sel + 1) + " · " + def.label), h("span", { class: "mip-editor-hint" }, def.hint)),
+    words > 90 ? h("div", { class: "mip-banner mip-banner-warn" }, "Slide dense (~" + words + " mots).") : null,
+    h("div", { class: "mip-fields" }, ...def.fields.map((f) => fieldEl(f, slide, onField(f.key)))));
+}
+
+/* ----- Aperçu ----- */
+function paletteFor(theme, slide) {
+  const t = THEMES[theme] || THEMES.v2;
+  if (slide.type === "section") { const s = t.section; return { bg: s.bg, ink: s.ink, ink2: s.inkSecondary, ink3: s.inkMuted, accent: s.accent, rule: s.rule, card: t.c.card, onAccent: t.c.onAccent }; }
+  const c = t.c; return { bg: c.pageBg, ink: c.ink, ink2: c.inkSecondary, ink3: c.inkMuted, accent: c.accent, rule: c.rule, card: c.card, cardSoft: c.cardSoft, onAccent: c.onAccent };
+}
+const footer = (p, meta, idx, total, source) => h("div", { class: "pv-footer", style: "color:" + hx(p.ink3) }, h("span", {}, source || meta.author || ""), h("span", {}, idx + " / " + total));
+function slidePreview(slide, theme, meta, idx, total) {
+  const p = paletteFor(theme, slide);
+  const slideEl = (...kids) => h("div", { class: "mip-slide", style: "background:" + hx(p.bg) }, ...kids);
+  const pv = (...kids) => h("div", { class: "pv" }, ...kids);
+  const t = slide.type;
+  if (t === "cover") return slideEl(pv(
+    h("div", { class: "pv-kicker", style: "color:" + hx(p.accent) }, slide.kicker || ""),
+    h("div", { class: "pv-tick", style: "background:" + hx(p.accent) + ";margin-top:2.4cqw" }),
+    h("div", { class: "pv-title", style: "color:" + hx(p.ink) + ";margin-top:2.4cqw" }, slide.title || ""),
+    h("div", { class: "pv-sub", style: "color:" + hx(p.ink2) + ";margin-top:1.6cqw" }, slide.subtitle || ""),
+    h("div", { style: "flex:1" }),
+    h("div", { class: "pv-rule", style: "background:" + hx(p.rule) }),
+    h("div", { style: "display:flex;justify-content:space-between;margin-top:1.6cqw;font-size:2cqw;color:" + hx(p.ink2) },
+      h("span", {}, (meta.author || "") + (meta.affiliation ? " · " + meta.affiliation : "")),
+      h("span", { style: "color:" + hx(p.accent) + ";font-weight:700" }, slide.typeLabel || ""))));
+  if (t === "section") return slideEl(
+    h("div", { class: "pv-numwm", style: "color:" + hx(p.accent) }, slide.numeral || ""),
+    pv(h("div", { style: "flex:1" }), h("div", { class: "pv-label", style: "color:" + hx(p.accent) }, "Partie " + (slide.numeral || "")),
+      h("div", { class: "pv-title", style: "color:" + hx(p.ink) + ";margin-top:1.4cqw" }, slide.title || ""),
+      slide.subtitle ? h("div", { class: "pv-sub", style: "color:" + hx(p.ink2) + ";margin-top:1cqw" }, slide.subtitle) : null,
+      h("div", { style: "flex:1" })));
+  if (t === "quote") return slideEl(h("div", { class: "pv", style: "justify-content:center" },
+    h("div", { class: "pv-h", style: "color:" + hx(p.ink) + ";font-size:5cqw;text-align:center" }, "« " + (slide.text || "") + " »"),
+    slide.attribution ? h("div", { class: "pv-label", style: "color:" + hx(p.accent) + ";text-align:center;margin-top:2.4cqw" }, slide.attribution) : null));
+  if (t === "bigNumber") return slideEl(
+    pv(h("div", { class: "pv-label", style: "color:" + hx(p.accent) }, slide.label || ""),
+      h("div", { style: "flex:1;display:flex;align-items:center;gap:2cqw" }, h("span", { class: "pv-big", style: "color:" + hx(p.accent) }, slide.value || ""), slide.unit ? h("span", { class: "pv-h", style: "color:" + hx(p.ink2) }, slide.unit) : null),
+      h("div", { class: "pv-body", style: "color:" + hx(p.ink2) }, slide.caption || "")),
+    footer(p, meta, idx, total, slide.source));
+  if (t === "statTrio") { const stats = Array.isArray(slide.stats) ? slide.stats : []; return slideEl(
+    pv(h("div", { class: "pv-label", style: "color:" + hx(p.accent) }, slide.label || ""),
+      slide.title ? h("div", { class: "pv-h", style: "color:" + hx(p.ink) + ";margin-top:1cqw" }, slide.title) : null,
+      h("div", { style: "flex:1" }),
+      h("div", { class: "pv-statrow" }, ...stats.map((s) => h("div", { class: "pv-stat" }, h("b", { style: "color:" + hx(p.accent) }, s.value), h("span", { style: "color:" + hx(p.ink2) }, s.label)))),
+      h("div", { style: "flex:1" })),
+    footer(p, meta, idx, total, slide.source)); }
+  if (t === "twoColumn" || t === "matrix") {
+    const cards = t === "twoColumn" ? [slide.left, slide.right].map((c) => c || { label: "", items: [] }) : (Array.isArray(slide.cells) ? slide.cells : []).slice(0, 4);
+    return slideEl(pv(h("div", { class: "pv-label", style: "color:" + hx(p.accent) }, slide.label || ""),
+      h("div", { class: "pv-h", style: "color:" + hx(p.ink) + ";margin:1cqw 0 2cqw" }, slide.title || ""),
+      h("div", { class: "pv-grid2" }, ...cards.map((c) => h("div", { class: "pv-card", style: "background:" + hx(p.cardSoft || p.card) },
+        h("i", { class: "bar", style: "background:" + hx(p.accent) }), h("b", { style: "color:" + hx(p.ink) }, c.label || c.title || ""),
+        Array.isArray(c.items) ? h("ul", { class: "pv-ul", style: "color:" + hx(p.ink2) }, ...c.items.map((it) => h("li", {}, it))) : h("p", { style: "color:" + hx(p.ink2) }, c.text || ""))))),
+      footer(p, meta, idx, total, slide.source));
+  }
+  if (t === "table") {
+    const tbl = slide.table || { header: [], rows: [] };
+    const header = Array.isArray(tbl.header) ? tbl.header : [], rows = Array.isArray(tbl.rows) ? tbl.rows : [];
+    const trHead = header.length ? h("tr", { style: "background:" + hx(p.accent) }, ...header.map((hh) => h("td", { style: "color:" + hx(p.onAccent) + ";font-weight:700" }, hh))) : null;
+    const trRows = rows.map((r, i) => h("tr", { style: "background:" + (i % 2 ? hx(p.cardSoft || p.card) : "transparent") + ";border-bottom:1px solid " + hx(p.rule) }, ...r.map((c, j) => h("td", { style: "color:" + (j === 0 ? hx(p.ink) : hx(p.ink2)) + ";font-weight:" + (j === 0 ? 700 : 400) }, c))));
+    return slideEl(pv(h("div", { class: "pv-label", style: "color:" + hx(p.accent) }, slide.label || ""), h("div", { class: "pv-h", style: "color:" + hx(p.ink) + ";margin:1cqw 0 2cqw" }, slide.title || ""), h("table", { class: "pv-table" }, h("tbody", {}, trHead, ...trRows))), footer(p, meta, idx, total, slide.source));
+  }
+  if (t === "image") {
+    const hasImg = slide.image && /^(data:|https?:)/.test(slide.image);
+    return slideEl(pv(h("div", { class: "pv-label", style: "color:" + hx(p.accent) }, slide.label || ""),
+      h("div", { class: "pv-h", style: "color:" + hx(p.ink) + ";margin:1cqw 0 1.6cqw" }, slide.title || ""),
+      hasImg ? h("div", { style: "flex:1;background:center/contain no-repeat url(" + slide.image + ");border-radius:3px" }) : h("div", { class: "pv-ph", style: "border-color:" + hx(p.rule) + ";color:" + hx(p.ink3) }, "Image · ECG · imagerie"),
+      h("div", { class: "pv-body", style: "color:" + hx(p.ink2) + ";margin-top:1.4cqw" }, slide.caption || "")),
+      footer(p, meta, idx, total, slide.source));
+  }
+  if (t === "takeaway") { const items = Array.isArray(slide.items) ? slide.items : []; return slideEl(
+    pv(h("div", { class: "pv-label", style: "color:" + hx(p.accent) }, "À retenir"),
+      h("div", { class: "pv-h", style: "color:" + hx(p.ink) + ";margin:1.2cqw 0 2cqw;font-size:5cqw" }, slide.headline || ""),
+      h("ul", { class: "pv-ul", style: "color:" + hx(p.ink2) }, ...items.map((it) => h("li", {}, it)))),
+    footer(p, meta, idx, total, "")); }
+  if (t === "references") { const refs = Array.isArray(slide.refs) ? slide.refs : []; return slideEl(pv(
+    h("div", { class: "pv-h", style: "color:" + hx(p.ink) + ";margin-bottom:1.6cqw" }, slide.title || "Références"),
+    h("ol", { class: "pv-ul", style: "color:" + hx(p.ink2) + ";font-size:2.1cqw" }, ...refs.map((r) => h("li", { style: "font-size:2.1cqw" }, r))),
+    h("div", { style: "flex:1" }), h("div", { class: "pv-rule", style: "background:" + hx(p.rule) }),
+    h("div", { style: "font-size:2cqw;color:" + hx(p.ink2) + ";margin-top:1.2cqw" }, (meta.author || "") + (meta.contact ? " · " + meta.contact : "")))); }
+  const items = Array.isArray(slide.items) ? slide.items : [];
+  return slideEl(pv(h("div", { class: "pv-label", style: "color:" + hx(p.accent) }, slide.label || (t === "agenda" ? "Plan" : "")),
+    h("div", { class: "pv-h", style: "color:" + hx(p.ink) + ";margin:1cqw 0 1.6cqw" }, slide.title || ""),
+    t === "prose" ? h("div", { class: "pv-body", style: "color:" + hx(p.ink2) }, slide.body || "") : h("ul", { class: "pv-ul", style: "color:" + hx(p.ink2) }, ...items.map((it, i) => h("li", {}, t === "steps" ? (i + 1) + ". " + it : it)))),
+    footer(p, meta, idx, total, slide.source));
+}
+function previewEl() {
+  const slides = state.deck.slides;
+  const thumbs = slides.map((s, i) => h("div", { style: "cursor:pointer;outline:" + (i === state.sel ? "2px solid var(--accent)" : "none") + ";outline-offset:2px;border-radius:6px", onclick: () => { state.sel = i; render(); } }, slidePreview(s, state.deck.theme, state.deck.meta, i + 1, slides.length)));
+  return h("div", {}, h("div", { class: "mip-preview-head" }, h("h3", {}, "Aperçu"), h("span", { class: "mip-hint" }, slides.length + " slides · approximation")), h("div", { class: "mip-thumbs" }, ...thumbs));
+}
+
+/* ----- Liste de slides ----- */
+let addType = "bullets";
+function slideListEl() {
+  const slides = state.deck.slides;
+  const rows = slides.map((s, i) => {
+    const def = SLIDE_TYPES[s.type] || { label: s.type };
+    const title = s.title || s.headline || s.text || def.label;
+    const actions = h("span", { class: "mip-slide-actions", onclick: (e) => e.stopPropagation() },
+      h("button", { class: "mip-iconbtn", title: "Monter", onclick: () => move(i, -1), disabled: i === 0 }, "↑"),
+      h("button", { class: "mip-iconbtn", title: "Descendre", onclick: () => move(i, 1), disabled: i === slides.length - 1 }, "↓"),
+      h("button", { class: "mip-iconbtn mip-btn-danger", title: "Supprimer", onclick: () => del(i) }, "✕"));
+    return h("div", { class: "mip-slide-row" + (i === state.sel ? " is-active" : ""), onclick: () => { state.sel = i; render(); } }, h("span", { class: "mip-slide-num" }, i + 1), h("span", { class: "mip-slide-type" }, def.label), h("span", { class: "mip-slide-label" }, title), actions);
+  });
+  const sel = h("select", { class: "mip-select", style: "max-width:220px", onchange: (e) => { addType = e.target.value; } }, ...SLIDE_TYPE_LIST.map((t) => h("option", { value: t.id, selected: t.id === addType }, t.label)));
+  return h("div", {}, h("h2", { class: "mip-section-title" }, "Slides"), h("div", { class: "mip-slidelist" }, ...rows), h("div", { class: "mip-addrow" }, sel, h("button", { class: "mip-btn mip-btn-sm", onclick: () => add(addType) }, "+ Ajouter la slide")));
+}
+function add(type) { const at = Math.min(state.sel + 1, state.deck.slides.length); state.deck.slides.splice(at, 0, createSlide(type)); state.sel = at; render(); }
+function del(i) { if (state.deck.slides.length <= 1) return; state.deck.slides.splice(i, 1); state.sel = Math.max(0, Math.min(state.sel, state.deck.slides.length - 1)); render(); }
+function move(i, dir) { const j = i + dir; if (j < 0 || j >= state.deck.slides.length) return; const s = state.deck.slides; [s[i], s[j]] = [s[j], s[i]]; state.sel = j; render(); }
+
+/* ----- Mode IA ----- */
+let aiDraft = "";
+function aiChatEl() {
+  const log = h("div", { class: "mip-chat-log" });
+  if (state.aiHistory.length === 0) {
+    log.append(h("div", { class: "mip-chat-empty" },
+      h("b", {}, "Co-construction avec un médecin senior."),
+      h("p", { style: "margin:8px 0 0" }, "Décris le sujet, le format et le temps de parole. Le modèle propose une structure complète (action titles, sources, take-home), puis tu l'affines tour par tour."),
+      h("p", { style: "margin:8px 0 0;font-size:12px;color:var(--ink-3)" }, "Le deck généré reste éditable dans le mode manuel.")));
+  } else {
+    for (const m of state.aiHistory) {
+      const msg = h("div", { class: "mip-msg " + (m.role === "user" ? "mip-msg-user" : "mip-msg-ai") }, h("div", { class: "mip-msg-meta" }, m.role === "user" ? "Vous" : "Co-auteur"), m.content);
+      if (m.deckUpdated) msg.append(h("div", { class: "mip-msg-deck" }, "↻ Deck régénéré et appliqué"));
+      log.append(msg);
+    }
+  }
+  if (state.aiBusy) log.append(h("div", { class: "mip-msg mip-msg-ai" }, h("div", { class: "mip-msg-meta" }, "Co-auteur"), "Rédaction en cours…"));
+  const ta = h("textarea", { class: "mip-textarea", placeholder: "Décris ou affine la présentation… (Ctrl/⌘+Entrée pour envoyer)", disabled: state.aiBusy });
+  ta.value = aiDraft; ta.addEventListener("input", (e) => { aiDraft = e.target.value; });
+  ta.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sendAI(aiDraft); } });
+  const quick = ["Génère une première version sur ce sujet.", "Resserre chaque slide.", "Ajoute une slide de limites méthodologiques.", "Vérifie les sources et signale ce qui est à vérifier."];
+  const quickRow = h("div", { class: "mip-quick" }, ...quick.map((q) => h("button", { onclick: () => sendAI(q), disabled: state.aiBusy }, q)));
+  return h("div", {},
+    h("div", { class: "mip-banner mip-banner-info" }, "Le mode IA construit le plan et le contenu, et cite les sources. Il ne remplace pas ta vérification : contrôle toujours les données chiffrées et les références avant diffusion."),
+    h("div", { class: "mip-chat" }, log, quickRow,
+      h("div", { class: "mip-chat-input" }, ta, h("button", { class: "mip-btn mip-btn-primary", onclick: () => sendAI(aiDraft), disabled: state.aiBusy }, "Envoyer")),
+      h("div", { class: "mip-disclaimer" }, "Réponses générées par une IA — information médicale générale destinée à des professionnels/étudiants. Vérifie chaque donnée et chaque référence.")));
+}
+async function sendAI(text) {
+  const content = (text || "").trim();
+  if (!content || state.aiBusy) return;
+  aiDraft = "";
+  state.aiHistory.push({ role: "user", content });
+  state.aiBusy = true; render();
+  const cover = state.deck.slides.find((s) => s.type === "cover");
+  const aiOptions = { theme: state.deck.theme, slideCount: state.slideCount, density: state.deck.options.density, audience: state.deck.options.audience || "", presentationType: (cover && cover.typeLabel) || "" };
+  try {
+    const { message, deck: newDeck, parseError, raw } = await callAI({ history: state.aiHistory, deck: state.deck, options: aiOptions });
+    if (newDeck) { state.deck = normalizeDeck(newDeck); state.sel = Math.min(state.sel, state.deck.slides.length - 1); }
+    let msg = message || (newDeck ? "Deck mis à jour." : raw || "(réponse vide)");
+    if (parseError) msg += "\n\n⚠︎ JSON invalide (" + parseError + "). Deck inchangé.";
+    state.aiHistory.push({ role: "assistant", content: msg, deckUpdated: !!newDeck });
+  } catch (e) {
+    state.aiHistory.push({ role: "assistant", content: "Échec de l'appel IA : " + (e.message || e) });
+  } finally {
+    state.aiBusy = false; render();
+  }
+}
+
+/* ----- Export ----- */
+async function exportPptx(btn) {
+  if (!window.PptxGenJS) { alert("pptxgenjs n'est pas chargé (CDN bloqué ?)."); return; }
+  const old = btn.textContent; btn.textContent = "Génération…"; btn.disabled = true;
+  try { await downloadPptx(window.PptxGenJS, state.deck); }
+  catch (e) { alert("Export impossible : " + (e.message || e)); }
+  finally { btn.textContent = old; btn.disabled = false; }
+}
+
+/* ----- Config ----- */
+function configEl() {
+  const meta = state.deck.meta, opt = state.deck.options;
+  const setMeta = (k) => (e) => { meta[k] = e.target.value; if (k !== "title") render(); };
+  const field = (label, key, ph) => h("div", { class: "mip-field" }, h("label", {}, label), h("input", { class: "mip-input", value: meta[key] || "", placeholder: ph || "", oninput: setMeta(key) }));
+  const themeChips = THEME_LIST.map((t) => {
+    const a = THEMES[t.id].c;
+    const sw = h("span", { class: "mip-swatch" }, h("i", { style: "background:#" + a.pageBg + ";width:33.34%" }), h("i", { style: "background:#" + a.ink + ";width:33.34%" }), h("i", { style: "background:#" + a.accent + ";width:33.34%" }));
+    return h("button", { class: "mip-theme-chip" + (state.deck.theme === t.id ? " is-active" : ""), title: t.description, onclick: () => { state.deck.theme = t.id; render(); } }, sw, t.name);
+  });
+  const densBtns = [["bullets", "Puces"], ["prose", "Phrases"], ["mixed", "Mixte"]].map(([id, lab]) => h("button", { class: opt.density === id ? "is-active" : "", onclick: () => { opt.density = id; render(); } }, lab));
+  return h("div", { class: "mip-settings" }, h("div", { class: "mip-settings-grid" },
+    field("Titre", "title", "Titre de la présentation"),
+    field("Sous-titre", "subtitle", "Précision sur le sujet"),
+    field("Auteur", "author", "Prénom Nom"),
+    field("Affiliation", "affiliation", "Service · Faculté"),
+    field("Contact", "contact", "prenom.nom@…"),
+    h("div", { class: "mip-field" }, h("label", {}, "Thème"), h("div", { class: "mip-themes" }, ...themeChips)),
+    h("div", { class: "mip-field" }, h("label", {}, "Densité du texte"), h("div", { class: "mip-seg" }, ...densBtns)),
+    h("div", { class: "mip-field" }, h("label", {}, "Nombre de slides visé (IA)"), h("input", { class: "mip-input", type: "number", min: 4, max: 40, value: state.slideCount, oninput: (e) => { state.slideCount = parseInt(e.target.value || "10", 10) || 10; } })),
+    h("div", { class: "mip-field" }, h("label", {}, "Public visé (IA)"), h("input", { class: "mip-input", value: opt.audience || "", placeholder: "Co-internes, staff…", oninput: (e) => { opt.audience = e.target.value; } }))));
+}
+
+/* ----- Render ----- */
+function render() {
+  app.innerHTML = "";
+  const exportBtn = h("button", { class: "mip-btn mip-btn-primary" }, "⤓ Exporter en PPTX");
+  exportBtn.addEventListener("click", () => exportPptx(exportBtn));
+  const header = h("header", { class: "mip-header" },
+    h("div", { class: "mip-brand" }, h("b", {}, "Générateur de présentations"), h("span", {}, "Slides médicales prêtes pour Keynote · export PPTX")),
+    h("div", { class: "mip-tabs" },
+      h("button", { class: "mip-tab" + (state.tab === "manuel" ? " is-active" : ""), onclick: () => { state.tab = "manuel"; render(); } }, "Mode manuel"),
+      h("button", { class: "mip-tab" + (state.tab === "ia" ? " is-active" : ""), onclick: () => { state.tab = "ia"; render(); } }, "Mode IA")),
+    h("div", { class: "mip-spacer" }), exportBtn);
+  const left = h("div", { class: "mip-left" });
+  if (state.tab === "manuel") left.append(slideListEl(), editorEl()); else left.append(aiChatEl());
+  const main = h("div", { class: "mip-main" }, left, h("div", { class: "mip-right" }, previewEl()));
+  app.append(header, configEl(), main);
+}
+render();
+</script>
+</body>
+</html>

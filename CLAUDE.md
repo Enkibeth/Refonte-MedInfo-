@@ -57,6 +57,7 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 | Analyse des partiels (medoutils) | Actif (v2, 2026-06) | Étudiants vérifiés | Page autonome `public/partiel.html` (servie statiquement par l'export web), embarquée en iframe par `app/(chat)/partiel.tsx` (RoleGate conservé) | Import .xlsx/.xls/.csv/.pdf (pdf.js) → stats par épreuve, quantiles, distributions interactives, radar, comparaison A/B, export PDF ; détection auto colonne identifiant + échelle /20 ou /100 (vote majoritaire) + virgules décimales FR + mentions ABS/DEF ; calcul 100% client (aucune donnée envoyée, sans IA) ; bloc « sauvegarde cloud » de la maquette retiré (exigerait table `analyses` + RLS + ADR, et passait des tokens en URL) ; ancien `src/lib/classement.ts` supprimé | ADR-0019 |
 | Visibilité des outils par rôle + menu d'outils | Actif | Tous (UI adaptée) | `src/ai/routing/featureVisibility.ts`, `src/ui/RoleGate.tsx`, `src/ui/ToolsMenu.tsx`, `app/(chat)/_layout.tsx` | Cloisonnement UI strict par persona ; menu déroulant rôle-aware ; jamais l'unique barrière (autorisation serveur conservée) | ADR-0018 |
 | Dictée vocale (chat/ECOS) | Actif | Tous | `src/ui/DictationButton.tsx`, `/api/transcribe` mode `raw` | Voix → texte (Whisper) dans les saisies ; transcription brute ; le texte repasse par l'autorisation de la route cible (safe-box retirée du chat par ADR-0024) | ADR-0019 |
+| Générateur de présentations (manuel + IA) | Actif | Étudiants + professionnels vérifiés (et admins) | Page autonome `public/presentation.html` (éditeur, aperçu, export PPTX Keynote-safe via pptxgenjs), embarquée en iframe par `app/(chat)/presentation.tsx` (RoleGate + token de session par postMessage) ; mode IA `app/api/presentation+api.ts`, prompt `presentation_generate` (`src/ai/prompts/promptStore.ts`), contexte serveur pur `src/ai/presentation/presentationPrompt.ts` (test `tests/unit/presentation-prompt.test.ts`), migration `0025` | Mode manuel 100% client (export PPTX dans le navigateur, aucune donnée envoyée, aucune persistance) ; mode IA = appel LLM (deck spec JSON régénéré à chaque tour), garde persona serveur étudiant/pro/admin (`serverPersona` + `isAdminUserId`, refus 403 sinon — jamais le body), rate-limit (compteur étudiant), aucun archivage serveur ; le « médecin senior » n'invente jamais de référence ([à vérifier]) ; disclosure IA conservée | ADR-0018, ADR-0019 |
 
 ## Migrations Supabase — état documentaire
 
@@ -86,6 +87,7 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 | `0022_blog_posts.sql` | Blog public : table `blog_posts` (slug, titre, sommaire via `## `, `cover_image_url`, statut draft/published) + seed `blog_generate` dans `ai_model_config` | Non (articles d'information générale) | Lecture publiée seule (anon + authenticated) ; écriture service role only | Test `tests/rls/blog-posts.test.ts` ; GRANTs `supabase/policies/blog_posts.sql` ; bucket Storage public `blog-covers` via `supabase/setup/blog_covers_bucket.sql` (hors harness) |
 | `0023_document_analyses.sql` | Historique des analyses de documents (`mode` analyse/traduction, `source_name`, `target_language`, `result`) | Résultat potentiellement sensible ; **le document source n'est jamais stocké** | Own-row stricte (select/insert/delete propriétaire) ; archivage serveur via service role (`/api/analyze` onFinish) | Test `tests/rls/document-analyses.test.ts` |
 | `0024_weekly_blog_agent.sql` | Agent hebdo du blog : colonne `blog_posts.source` (`admin`/`weekly_agent`) + seed `ai_model_config` des features `blog_topic` (web_search ON) et `blog_review` | Non (articles d'information générale) | Inchangé (lecture publiée seule ; écriture service role only) | Garde anti-doublon + traçabilité ; ADR-0025 |
+| `0025_presentation_generator.sql` | Générateur de présentations : seed `ai_model_config` de la feature `presentation_generate` (claude-sonnet-4-6, anthropic). Aucune table : mode manuel 100% client, mode IA sans archivage | Non (support de présentation = information médicale générale, jamais un dossier patient) | Service role only (hérite du verrou 0011) | Le POST admin fait un UPDATE, la ligne doit préexister (convention 0011) ; ADR-0018 |
 
 > Si une migration ci-dessus n'existe pas encore dans `supabase/migrations/`, la documenter comme décision attendue et ne pas modifier le schéma sans tests RLS correspondants.
 > Note : `supabase/setup/` contient le setup Supabase-spécifique (bucket Storage `consultation-audio`, RLS Storage, purge `pg_cron`) NON rejoué par le harness RLS CI ; appliqué directement sur le projet via MCP.
@@ -213,6 +215,7 @@ Pour ajouter un admin : modifier `ADMIN_USER_IDS` dans `src/admin/index.ts`.
 | `ecos_evaluate` | `/api/ecos` | claude-sonnet-4-6 | Étudiant |
 | `audio_diarize` | `/api/transcribe` | gpt-4o-mini | Professionnel |
 | `audio_report` | `/api/transcribe` | gpt-4o-mini | Professionnel |
+| `presentation_generate` | `/api/presentation` | claude-sonnet-4-6 | Étudiant + Professionnel (mode IA du générateur de présentations) |
 | `blog_generate` | `/api/admin/blog` | claude-sonnet-4-6 | Admin (articles publiés visibles de tous) ; aussi appelé par l'agent hebdo |
 | `blog_topic` | `/api/cron/weekly-blog` | claude-sonnet-4-6 (web_search ON) | Cron hebdo (choix du sujet de la semaine) |
 | `blog_review` | `/api/cron/weekly-blog` | claude-sonnet-4-6 | Cron hebdo (relecture publish/revise/reject avant publication) |
@@ -255,6 +258,7 @@ toute conversation anonyme contenant plus d'un message utilisateur.
 | ECOS | — | ✅ | — | ✅ |
 | Classement (analyseur de promo) | — | ✅ | — | ✅ |
 | Audio (compte rendu) | — | — | ✅ | ✅ |
+| Générateur de présentations | — | ✅ | ✅ | ✅ |
 
 Application :
 - Barre d'onglets `app/(chat)/_layout.tsx` : onglet masqué via `href: null` si non visible.

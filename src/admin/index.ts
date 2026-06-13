@@ -136,6 +136,15 @@ export const AI_FEATURES = [
     providers: ['openai', 'anthropic'],
   },
   {
+    key: 'presentation_generate',
+    emoji: '🖥️',
+    label: 'Présentations — Co-construction',
+    description: 'Médecin senior qui co-construit une présentation médicale (deck JSON) pour étudiants/pros',
+    apiRoute: '/api/presentation',
+    promptKeys: ['presentation_generate'],
+    providers: ['anthropic', 'openai', 'google'],
+  },
+  {
     key: 'blog_generate',
     emoji: '📰',
     label: 'Blog — Génération d\'article',

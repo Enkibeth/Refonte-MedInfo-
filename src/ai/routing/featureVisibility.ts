@@ -4,8 +4,8 @@
  * Objectif produit : chaque rôle ne voit QUE les outils qui le concernent
  * (le grand public ne voit pas les outils étudiant/pro, et inversement).
  *  - Grand public : Chat + Analyse de document (résumé patient).
- *  - Étudiant     : Chat + ECOS + Analyseur de partiel.
- *  - Professionnel: Chat + Audio (compte rendu de consultation).
+ *  - Étudiant     : Chat + ECOS + Analyseur de partiel + Générateur de présentations.
+ *  - Professionnel: Chat + Audio (compte rendu de consultation) + Générateur de présentations.
  *  - Admin        : tout (gestion / test).
  *
  * ⚠️ Module PUR et testable : aucune dépendance réseau, aucune donnée de santé.
@@ -15,10 +15,16 @@
  */
 import type { Persona } from '@/ai/prompts/_schema';
 
-export type AppFeatureId = 'chat' | 'document' | 'ecos' | 'partiel' | 'audio';
+export type AppFeatureId = 'chat' | 'document' | 'ecos' | 'partiel' | 'audio' | 'presentation';
 
 /** Nom d'icône (src/ui/icons.tsx) — l'UI n'utilise plus d'emojis (refonte 2026-06). */
-export type AppFeatureIcon = 'messageCircle' | 'fileText' | 'stethoscope' | 'barChart' | 'micVoice';
+export type AppFeatureIcon =
+  | 'messageCircle'
+  | 'fileText'
+  | 'stethoscope'
+  | 'barChart'
+  | 'micVoice'
+  | 'presentation';
 
 export interface AppFeatureMeta {
   id: AppFeatureId;
@@ -81,6 +87,15 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     icon: 'micVoice',
     description: 'Compte rendu structuré d’une consultation dictée.',
     personas: ['professional'],
+  },
+  {
+    id: 'presentation',
+    route: '/(chat)/presentation',
+    label: 'Présentations',
+    emoji: '🖥️',
+    icon: 'presentation',
+    description: 'Slides médicales prêtes pour Keynote (manuel ou IA) — export PPTX.',
+    personas: ['student', 'professional'],
   },
 ];
 
