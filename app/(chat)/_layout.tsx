@@ -60,7 +60,7 @@ function TabBarButton({
  * (cf src/ai/routing/featureVisibility.ts). Un onglet non autorisé est retiré de la
  * barre via `href: null` ; l'écran reste protégé par <RoleGate> en défense en profondeur.
  *  - Grand public : Chat + Document.
- *  - Étudiant     : Chat + ECOS + Partiel + Présentations.
+ *  - Étudiant     : Chat + ECOS + Partiel + Révisions + Présentations.
  *  - Professionnel: Chat + Audio + Présentations.
  *  - Admin        : tout.
  */
@@ -111,6 +111,10 @@ export default function ChatLayout() {
       <Tabs.Screen
         name="partiel"
         options={{ title: 'Partiel', href: hrefFor('partiel'), tabBarIcon: ({ focused }) => <TabIcon icon="barChart" focused={focused} /> }}
+      />
+      <Tabs.Screen
+        name="revision"
+        options={{ title: 'Révisions', href: hrefFor('revision'), tabBarIcon: ({ focused }) => <TabIcon icon="calendarCheck" focused={focused} /> }}
       />
       <Tabs.Screen
         name="audio"

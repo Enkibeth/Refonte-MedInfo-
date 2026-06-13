@@ -59,6 +59,7 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 | Dictée vocale (chat/ECOS) | Actif | Tous | `src/ui/DictationButton.tsx`, `/api/transcribe` mode `raw` | Voix → texte (Whisper) dans les saisies ; transcription brute ; le texte repasse par l'autorisation de la route cible (safe-box retirée du chat par ADR-0024) | ADR-0019 |
 | Générateur de présentations (manuel + IA) | Actif | Étudiants + professionnels vérifiés (et admins) | Page autonome `public/presentation.html` (éditeur, aperçu, export PPTX Keynote-safe via pptxgenjs), embarquée en iframe par `app/(chat)/presentation.tsx` (RoleGate + token de session par postMessage) ; mode IA `app/api/presentation+api.ts`, prompt `presentation_generate` (`src/ai/prompts/promptStore.ts`), contexte serveur pur `src/ai/presentation/presentationPrompt.ts` (test `tests/unit/presentation-prompt.test.ts`), migration `0025` | Mode manuel 100% client (export PPTX dans le navigateur) ; mode IA = appel LLM (deck spec JSON régénéré à chaque tour), garde persona serveur étudiant/pro/admin (`serverPersona` + `isAdminUserId`, refus 403 sinon — jamais le body), rate-limit (compteur étudiant) ; le « médecin senior » n'invente jamais de référence ([à vérifier]) ; disclosure IA conservée | ADR-0018, ADR-0019 |
 | Historique cloud des présentations (2026-06) | Actif | Étudiants + professionnels (propriétaire) | Table `presentation_decks` (migration `0026`), CRUD `app/api/presentations+api.ts` (client Supabase scopé au token → RLS), validation pure `src/presentation/decks.ts` (test `tests/unit/presentation-decks.test.ts`), autosave + panneau « Mes présentations » dans `public/presentation.html` | RLS own-row stricte (test `tests/rls/presentation-decks.test.ts`) ; conserve `deck` + `ai_history` (information médicale générale, jamais un dossier patient) ; autosave (debounce + tick + `pagehide` keepalive) anti-perte au changement de page ; un deck vierge n'est pas enregistré tant qu'il n'est pas édité | ADR-0026 |
+| Planificateur de révisions étudiant (2026-06) | Actif (MVP, IA différée) | Étudiants vérifiés (+ admins) | Écran natif `app/(chat)/revision.tsx` (RoleGate `revision`), moteur déterministe pur `src/features/revision/engine/` (`workload`/`riskScoring`/`planner`/`dates`), bornage `src/features/revision/plans.ts`, client `src/features/revision/api.ts`, UI `RevisionDashboard.tsx`/`PlanEditor.tsx`, route CRUD `app/api/revision+api.ts`, tables `revision_plans` + `revision_plan_items` (migration `0027`) | **Safe-box non-MDSW** : données PÉDAGOGIQUES uniquement (volumes pages/chapitres/QCM, dates, rythme déclaré, progression) — jamais symptôme/cas patient/diagnostic/CAT. **Aucune IA dans le MVP** (cœur 100 % déterministe ; tout chiffre vient de l'utilisateur ou d'un calcul explicite). RLS own-row stricte (test `tests/rls/revision-plans.test.ts`) ; route scopée au token. Tâches quotidiennes **dérivées** (non stockées). AI Boost + base de référentiels (sans contenu copyrighté) **différés** (ADR-0027 « Suivi ») | ADR-0027 |
 
 ## Migrations Supabase — état documentaire
 
@@ -90,6 +91,7 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 | `0024_weekly_blog_agent.sql` | Agent hebdo du blog : colonne `blog_posts.source` (`admin`/`weekly_agent`) + seed `ai_model_config` des features `blog_topic` (web_search ON) et `blog_review` | Non (articles d'information générale) | Inchangé (lecture publiée seule ; écriture service role only) | Garde anti-doublon + traçabilité ; ADR-0025 |
 | `0025_presentation_generator.sql` | Générateur de présentations : seed `ai_model_config` de la feature `presentation_generate` (claude-sonnet-4-6, anthropic). Aucune table : mode manuel 100% client, mode IA sans archivage | Non (support de présentation = information médicale générale, jamais un dossier patient) | Service role only (hérite du verrou 0011) | Le POST admin fait un UPDATE, la ligne doit préexister (convention 0011) ; ADR-0018 |
 | `0026_presentation_decks.sql` | Historique cloud des présentations : table `presentation_decks` (`title`, `theme`, `deck` jsonb, `ai_history` jsonb) | Non (support de présentation = information médicale générale, jamais un dossier patient) | Own-row stricte (CRUD propriétaire via client scopé au token, route `/api/presentations`) | Test `tests/rls/presentation-decks.test.ts` ; ADR-0026 |
+| `0027_revision_plans.sql` | Planificateur de révisions : `revision_plans` (dates, plafond/jour, vitesse perso, ratio tampon, repos/indispos) + `revision_plan_items` (blocs de travail : volumes pages/chapitres/QCM, `completed_*`, priorité, maîtrise) | Non (données pédagogiques d'organisation du travail ; jamais de santé) | Own-row stricte (CRUD propriétaire via client scopé au token, route `/api/revision`) ; items : insert vérifié contre un plan du même user | Tâches quotidiennes **dérivées** (moteur déterministe, non stockées) ; test `tests/rls/revision-plans.test.ts` ; ADR-0027 |
 
 > Si une migration ci-dessus n'existe pas encore dans `supabase/migrations/`, la documenter comme décision attendue et ne pas modifier le schéma sans tests RLS correspondants.
 > Note : `supabase/setup/` contient le setup Supabase-spécifique (bucket Storage `consultation-audio`, RLS Storage, purge `pg_cron`) NON rejoué par le harness RLS CI ; appliqué directement sur le projet via MCP.
@@ -259,6 +261,7 @@ toute conversation anonyme contenant plus d'un message utilisateur.
 | Analyse de document | ✅ | — | — | ✅ |
 | ECOS | — | ✅ | — | ✅ |
 | Classement (analyseur de promo) | — | ✅ | — | ✅ |
+| Planificateur de révisions | — | ✅ | — | ✅ |
 | Audio (compte rendu) | — | — | ✅ | ✅ |
 | Générateur de présentations | — | ✅ | ✅ | ✅ |
 
@@ -267,7 +270,7 @@ Application :
 - Accueil rôle-aware : étudiant/pro voient les 3 chats + leurs outils ; le public voit son chat.
 - Switch de chatbot `src/ui/chat/ChatbotSwitcher.tsx` (étudiant/pro/admin uniquement).
 - Menu déroulant d'outils `src/ui/ToolsMenu.tsx` (en-tête) : switch rôle-aware depuis n'importe quel écran.
-- Garde d'écran `<RoleGate feature="…">` (`src/ui/RoleGate.tsx`) sur Document/ECOS/Classement/Audio
+- Garde d'écran `<RoleGate feature="…">` (`src/ui/RoleGate.tsx`) sur Document/ECOS/Classement/Révisions/Audio
   (défense en profondeur contre l'accès direct / deep-link).
 - Écran Compte : section « Mes outils » listant les outils du rôle courant.
 - Dictée vocale `src/ui/DictationButton.tsx` (Whisper, `/api/transcribe` mode `raw`) dans les saisies de chat/ECOS.

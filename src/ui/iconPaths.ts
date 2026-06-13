@@ -22,6 +22,8 @@ export const ICON_PATHS = {
   refresh: 'M21 12a9 9 0 1 1-2.64-6.36 M21 3v6h-6',
   clock: 'M12 6v6l4 2 M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z',
   barChart: 'M3 3v16a2 2 0 0 0 2 2h16 M18 17V9 M13 17V5 M8 17v-3',
+  calendarCheck:
+    'M8 2v4 M16 2v4 M3 10h18 M21 13V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8 M16 19l2 2 4-4',
   home: 'M3 9.5 12 3l9 6.5 M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10 M9 21v-6h6v6',
   userRound: 'M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z M4 21a8 8 0 0 1 16 0',
   download: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3',

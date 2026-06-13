@@ -18,6 +18,37 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-06-13] – Claude (Planificateur de révisions étudiant — ADR-0027)
+### Files modified
+- src/features/revision/engine/{types,dates,workload,riskScoring,planner}.ts (nouveau : moteur déterministe pur, sans IA)
+- src/features/revision/plans.ts (nouveau : bornage/validation pur du payload)
+- src/features/revision/api.ts (nouveau : client fetch + mapping snake_case ↔ camelCase)
+- src/features/revision/components/{RevisionDashboard,PlanEditor}.tsx (nouveau : UI native)
+- app/(chat)/revision.tsx (nouvel écran, RoleGate feature="revision")
+- app/api/revision+api.ts (nouvelle route CRUD scopée au token, AUCUN LLM)
+- supabase/migrations/0027_revision_plans.sql (tables revision_plans + revision_plan_items, RLS own-row)
+- src/ai/routing/featureVisibility.ts (feature 'revision', persona student), app/(chat)/_layout.tsx (onglet), src/ui/iconPaths.ts (icône calendarCheck)
+- tests/unit/revision-planner.test.ts (13), tests/unit/revision-workload.test.ts (7), tests/unit/revision-plans-payload.test.ts (6), tests/rls/revision-plans.test.ts (9)
+- tests/unit/feature-visibility.test.ts (attendu étudiant mis à jour)
+- CLAUDE.md, docs/DECISIONS/0027-planificateur-revisions-etudiant.md, docs/CHANGELOG_AI.md
+### Purpose
+Outil étudiant (persona student) qui transforme un programme de révisions (matières,
+chapitres, pages, QCM + rythme personnel + disponibilités) en charge quotidienne réaliste
+et visuelle : statut vert/orange/rouge, tâches du jour cochables, timeline, jours tampon,
+recalcul après retard. Cœur = moteur DÉTERMINISTE testé (aucune IA dans le MVP) ; l'« AI
+Boost » et la base de référentiels sont différés (voir ADR-0027 « Suivi »).
+### Regulatory impact
+None — données pédagogiques et d'organisation du travail uniquement (volumes, dates,
+progression d'apprentissage). Aucun symptôme, cas patient, diagnostic, conduite à tenir ni
+donnée de santé. Hors qualification dispositif médical. RLS own-row + test d'isolation.
+### Rollback plan
+Masquer la feature dans featureVisibility.ts (personas: []) ou retirer la Tabs.Screen
+`revision` + désactiver /api/revision. Tables conservables inertes ou supprimées par
+migration descendante. Aucune autre feature n'en dépend.
+
+---
+
+
 ## [2026-06-13] – Claude (Agent éditorial hebdomadaire du blog — ADR-0025)
 ### Files modified
 - src/blog/articleJson.ts (nouveau : parseurs purs article/sujet/relecture + slugify)
