@@ -290,16 +290,16 @@ const styles = StyleSheet.create({
     color: tokens.colors.accentSurfaceStrong,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
-    letterSpacing: 1.2,
+    letterSpacing: tokens.tracking.capsWide,
     textTransform: 'uppercase',
   },
   // Titre en Fraunces (serif éditoriale) : signature typographique de la marque.
   headline: {
     fontFamily: tokens.font.serif,
     color: tokens.colors.onAccent,
-    fontSize: 44,
-    lineHeight: 52,
-    letterSpacing: -0.6,
+    fontSize: tokens.type.hero.fontSize,
+    lineHeight: tokens.type.hero.lineHeight,
+    letterSpacing: tokens.type.hero.letterSpacing,
     fontWeight: tokens.weight.semibold,
   },
   subhead: {
@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: tokens.tracking.caps,
   },
   purposeText: {
     fontFamily: tokens.font.sans,

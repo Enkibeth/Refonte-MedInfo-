@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   categoryText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.accentDeep,
-    fontSize: 11.5,
+    fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.semibold,
   },
   date: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.caption.fontSize },
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: tokens.tracking.caps,
     marginBottom: tokens.space.xs,
   },
   tocRow: {
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   tocIndex: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.accentVivid,
-    fontSize: 12,
+    fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
   },
   tocText: {

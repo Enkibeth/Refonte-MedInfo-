@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: tokens.tracking.caps,
   },
   card: {
     borderRadius: tokens.radius.md,
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   kindBadge: { borderRadius: tokens.radius.pill, paddingHorizontal: tokens.space.sm, paddingVertical: 2 },
   kindReport: { backgroundColor: tokens.colors.accentSurface },
   kindTrans: { backgroundColor: tokens.colors.surfaceSunken },
-  kindBadgeText: { fontFamily: tokens.font.sans, color: tokens.colors.accentDeep, fontSize: 11, fontWeight: tokens.weight.semibold },
+  kindBadgeText: { fontFamily: tokens.font.sans, color: tokens.colors.accentDeep, fontSize: tokens.type.micro.fontSize, fontWeight: tokens.weight.semibold },
   body: { borderTopWidth: 1, borderTopColor: tokens.colors.border, paddingTop: tokens.space.sm },
   transcriptionText: { fontFamily: tokens.font.sans, color: tokens.colors.text, fontSize: tokens.type.body.fontSize, lineHeight: tokens.type.body.lineHeight },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm, borderTopWidth: 1, borderTopColor: tokens.colors.border, paddingTop: tokens.space.sm },

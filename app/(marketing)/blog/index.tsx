@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.accentVivid,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
-    letterSpacing: 1.2,
+    letterSpacing: tokens.tracking.capsWide,
     textTransform: 'uppercase',
     marginBottom: tokens.space.sm,
   },
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   categoryText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.accentDeep,
-    fontSize: 11.5,
+    fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.semibold,
   },
   date: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.caption.fontSize },

@@ -19,6 +19,7 @@ import {
 import { Link } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
+import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
@@ -74,7 +75,9 @@ function AudioFeature() {
     return (
       <View style={styles.container}>
         <View style={styles.centeredBox}>
-          <Text style={styles.emoji}>📱</Text>
+          <View style={styles.iconBadge}>
+            <Icon name="monitor" size={26} color={tokens.colors.accentDeep} />
+          </View>
           <Text style={styles.infoTitle}>Disponible sur le web</Text>
           <Text style={styles.infoText}>
             L'enregistrement audio est actuellement disponible sur la version web de MedInfo.
@@ -264,7 +267,7 @@ function AudioFeature() {
         <View style={styles.recorder}>
           {recordState === 'idle' && (
             <TouchableOpacity style={styles.recordButton} onPress={startRecording}>
-              <Text style={styles.recordEmoji}>🎤</Text>
+              <Icon name="micVoice" size={44} color={tokens.colors.accent} />
               <Text style={styles.recordLabel}>Démarrer l'enregistrement</Text>
             </TouchableOpacity>
           )}
@@ -274,7 +277,7 @@ function AudioFeature() {
               <View style={styles.recordingIndicator} />
               <Text style={styles.recordingTime}>{formatTime(duration)}</Text>
               <TouchableOpacity style={styles.stopButton} onPress={stopRecording}>
-                <Text style={styles.stopEmoji}>⏹</Text>
+                <Icon name="stop" size={22} color={tokens.colors.danger} />
                 <Text style={styles.stopLabel}>Arrêter</Text>
               </TouchableOpacity>
             </View>
@@ -375,7 +378,9 @@ function PremiumGate() {
   return (
     <View style={styles.gateContainer}>
       <View style={styles.gateCard}>
-        <Text style={styles.emoji}>🎤</Text>
+        <View style={styles.iconBadge}>
+          <Icon name="micVoice" size={26} color={tokens.colors.accentDeep} />
+        </View>
         <Text style={styles.gateTitle}>Fonctions audio</Text>
         <Text style={styles.gateText}>
           Transcription d'enregistrements et rédaction de comptes rendus médicaux automatisée.
@@ -401,11 +406,11 @@ const styles = StyleSheet.create({
   },
   headerTop: { flexDirection: 'row', justifyContent: 'flex-end', paddingTop: tokens.space.sm },
   title: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.serif,
     color: tokens.colors.text,
-    fontSize: tokens.type.h3.fontSize,
-    letterSpacing: tokens.type.h3.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    fontSize: tokens.type.h2.fontSize,
+    letterSpacing: tokens.type.h2.letterSpacing,
+    fontWeight: tokens.weight.semibold,
     marginBottom: tokens.space.md,
   },
   modeSwitcher: {
@@ -458,7 +463,6 @@ const styles = StyleSheet.create({
     gap: tokens.space.sm,
     padding: tokens.space.lg,
   },
-  recordEmoji: { fontSize: 48 },
   recordLabel: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.accent,
@@ -475,7 +479,7 @@ const styles = StyleSheet.create({
   recordingTime: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.text,
-    fontSize: 32,
+    fontSize: tokens.type.h1.fontSize,
     fontWeight: tokens.weight.bold,
   },
   stopButton: {
@@ -487,7 +491,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: tokens.colors.danger,
   },
-  stopEmoji: { fontSize: 24 },
   stopLabel: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.danger,
@@ -658,12 +661,19 @@ const styles = StyleSheet.create({
     gap: tokens.space.md,
     ...tokens.elevation.md,
   },
-  emoji: { fontSize: 40 },
+  iconBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accentSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   gateTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
     letterSpacing: tokens.type.h3.letterSpacing,
     textAlign: 'center',
   },
@@ -689,10 +699,10 @@ const styles = StyleSheet.create({
   },
   centeredBox: { alignItems: 'center', gap: tokens.space.lg, padding: tokens.space.xl },
   infoTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
     textAlign: 'center',
   },
   infoText: {

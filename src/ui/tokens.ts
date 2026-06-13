@@ -28,7 +28,7 @@ const palette = {
 
   // Neutres cliniques — gris froids légèrement désaturés, jamais bleu criard.
   white: '#FFFFFF',
-  neutral25: '#FAFBFC', // fond d'app (off-white, moins « plat » que blanc pur)
+  neutral25: '#F7FAFB', // fond d'app (off-white teinté petrol, moins « plat » que blanc pur)
   neutral50: '#F4F6F8', // surfaces alt, cartes
   neutral100: '#ECEFF2',
   neutral200: '#DEE3E8', // bordures
@@ -132,8 +132,16 @@ export const tokens = {
     semibold: '600',
     bold: '700',
   },
+  // ── Tracking des libellés UPPERCASE (deux crans seulement) ──────────────────
+  // caps : étiquettes UI (badges, labels de section/champ, méta) ;
+  // capsWide : eyebrows éditoriaux du marketing/hero. Jamais d'autre valeur.
+  tracking: {
+    caps: 0.8,
+    capsWide: 1.2,
+  },
   // Échelle modulaire (~1.2). Letter-spacing négatif sur les grands titres = rendu « dessiné ».
   type: {
+    hero: { fontSize: 44, lineHeight: 52, letterSpacing: -0.6 }, // headline du hero landing uniquement
     display: { fontSize: 40, lineHeight: 46, letterSpacing: -0.8 },
     h1: { fontSize: 30, lineHeight: 38, letterSpacing: -0.5 },
     h2: { fontSize: 22, lineHeight: 30, letterSpacing: -0.3 },
@@ -142,6 +150,7 @@ export const tokens = {
     body: { fontSize: 15, lineHeight: 24, letterSpacing: 0 },
     label: { fontSize: 14, lineHeight: 20, letterSpacing: 0 },
     caption: { fontSize: 12.5, lineHeight: 18, letterSpacing: 0.1 },
+    micro: { fontSize: 11, lineHeight: 15, letterSpacing: 0.2 }, // badges, méta, onglets — plus petit cran autorisé
   },
 
   // ── Espacement (base 4) ──────────────────────────────────────────────────────
@@ -181,7 +190,7 @@ export const tokens = {
       default: {},
     }) as object,
     md: Platform.select({
-      web: { boxShadow: '0 2px 4px rgba(15, 27, 34, 0.05), 0 8px 20px -6px rgba(15, 27, 34, 0.10)' },
+      web: { boxShadow: '0 2px 4px rgba(8, 59, 82, 0.05), 0 8px 20px -6px rgba(8, 59, 82, 0.10)' },
       default: {},
     }) as object,
     lg: Platform.select({

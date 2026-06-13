@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
-    letterSpacing: 0.4,
+    letterSpacing: tokens.tracking.caps,
     textTransform: 'uppercase',
     marginBottom: 2,
   },

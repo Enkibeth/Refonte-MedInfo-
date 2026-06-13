@@ -134,7 +134,7 @@ const tabStyles = StyleSheet.create({
   item: { paddingTop: 2 },
   label: {
     fontFamily: tokens.font.sans,
-    fontSize: 11,
+    fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.semibold,
     marginTop: 2,
   },

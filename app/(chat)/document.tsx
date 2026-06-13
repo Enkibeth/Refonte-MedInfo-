@@ -22,6 +22,7 @@ import {
 import { Link } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
+import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
@@ -252,7 +253,7 @@ function DocumentScreenInner() {
                     accessibilityLabel="Supprimer cette analyse"
                     style={styles.historyDelete}
                   >
-                    <Text style={styles.historyDeleteText}>✕</Text>
+                    <Icon name="x" size={15} color={tokens.colors.textMuted} />
                   </TouchableOpacity>
                 </View>
               ))
@@ -303,8 +304,9 @@ function DocumentScreenInner() {
         {Platform.OS === 'web' ? (
           pickedFile ? (
             <View style={styles.fileChip}>
+              <Icon name="fileText" size={16} color={tokens.colors.accentDeep} />
               <Text style={styles.fileChipName} numberOfLines={1}>
-                📎 {pickedFile.name}
+                {pickedFile.name}
               </Text>
               <Text style={styles.fileChipSize}>{formatSize(pickedFile.size)}</Text>
               <TouchableOpacity
@@ -312,8 +314,9 @@ function DocumentScreenInner() {
                 disabled={loading}
                 accessibilityRole="button"
                 accessibilityLabel="Retirer le fichier"
+                style={styles.fileChipRemove}
               >
-                <Text style={styles.fileChipRemove}>✕</Text>
+                <Icon name="x" size={15} color={tokens.colors.textMuted} />
               </TouchableOpacity>
             </View>
           ) : (
@@ -389,7 +392,9 @@ function PremiumGate({ feature }: { feature: string }) {
   return (
     <View style={styles.gateContainer}>
       <View style={styles.gateCard}>
-        <Text style={styles.gateEmoji}>🔒</Text>
+        <View style={styles.iconBadge}>
+          <Icon name="lock" size={26} color={tokens.colors.accentDeep} />
+        </View>
         <Text style={styles.gateTitle}>{feature}</Text>
         <Text style={styles.gateText}>
           Cette fonctionnalité est réservée aux abonnés MedInfo Premium. Elle vous permet
@@ -416,11 +421,11 @@ const styles = StyleSheet.create({
   },
   headerTop: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: tokens.space.sm },
   title: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.serif,
     color: tokens.colors.text,
-    fontSize: tokens.type.h3.fontSize,
-    letterSpacing: tokens.type.h3.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    fontSize: tokens.type.h2.fontSize,
+    letterSpacing: tokens.type.h2.letterSpacing,
+    fontWeight: tokens.weight.semibold,
   },
   subtitle: {
     fontFamily: tokens.font.sans,
@@ -472,7 +477,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   historyDelete: { padding: tokens.space.sm },
-  historyDeleteText: { color: tokens.colors.textMuted, fontSize: 14 },
   historyNote: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
@@ -564,7 +568,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
   },
-  fileChipRemove: { color: tokens.colors.textMuted, fontSize: 14, padding: 4 },
+  fileChipRemove: { padding: 4 },
   textArea: {
     minHeight: 160,
     borderRadius: tokens.radius.md,
@@ -657,12 +661,19 @@ const styles = StyleSheet.create({
     gap: tokens.space.md,
     ...tokens.elevation.md,
   },
-  gateEmoji: { fontSize: 40 },
+  iconBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accentSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   gateTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
     letterSpacing: tokens.type.h3.letterSpacing,
     textAlign: 'center',
   },

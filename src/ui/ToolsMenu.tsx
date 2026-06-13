@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: tokens.colors.accentSurfaceStrong,
   },
-  triggerIcon: { fontSize: 18, lineHeight: 18, color: tokens.colors.accentDeep, fontWeight: tokens.weight.bold },
+  triggerIcon: { fontSize: tokens.type.h3.fontSize, lineHeight: tokens.type.h3.fontSize, color: tokens.colors.accentDeep, fontWeight: tokens.weight.bold },
   triggerLabel: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.accentDeep,
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: tokens.tracking.caps,
     paddingHorizontal: tokens.space.sm,
     paddingVertical: tokens.space.xs,
   },
@@ -175,6 +175,6 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.medium,
   },
   itemLabelActive: { color: tokens.colors.accentDeep, fontWeight: tokens.weight.semibold },
-  itemDot: { color: tokens.colors.accent, fontSize: 20 },
+  itemDot: { color: tokens.colors.accent, fontSize: tokens.type.h3.fontSize },
   separator: { height: 1, backgroundColor: tokens.colors.border, marginVertical: tokens.space.xs },
 });

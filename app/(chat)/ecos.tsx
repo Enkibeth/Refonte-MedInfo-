@@ -19,6 +19,7 @@ import { Link } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
 import { getSupabaseClient } from '@/db/supabase';
+import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
@@ -188,7 +189,9 @@ function EcosScreenInner() {
     return (
       <View style={styles.gateContainer}>
         <View style={styles.gateCard}>
-          <Text style={styles.emoji}>🩺</Text>
+          <View style={styles.iconBadge}>
+            <Icon name="stethoscope" size={26} color={tokens.colors.accentDeep} />
+          </View>
           <Text style={styles.gateTitle}>Réservé aux étudiants</Text>
           <Text style={styles.gateText}>
             Le module ECOS est conçu pour les étudiants en santé. Changez votre profil en
@@ -382,15 +385,15 @@ Sois précis, bienveillant et pédagogique.`;
 
         <View style={styles.prepInfo}>
           <View style={styles.prepInfoItem}>
-            <Text style={styles.prepInfoEmoji}>⏱</Text>
+            <Icon name="clock" size={18} color={tokens.colors.accentDeep} />
             <Text style={styles.prepInfoText}>Durée : {selectedCase.duree} min</Text>
           </View>
           <View style={styles.prepInfoItem}>
-            <Text style={styles.prepInfoEmoji}>📋</Text>
+            <Icon name="fileText" size={18} color={tokens.colors.accentDeep} />
             <Text style={styles.prepInfoText}>Évaluation sur grille à la fin</Text>
           </View>
           <View style={styles.prepInfoItem}>
-            <Text style={styles.prepInfoEmoji}>🤖</Text>
+            <Icon name="sparkles" size={18} color={tokens.colors.accentDeep} />
             <Text style={styles.prepInfoText}>Le patient est joué par l'IA</Text>
           </View>
         </View>
@@ -532,11 +535,11 @@ const styles = StyleSheet.create({
   selectionContent: { padding: tokens.space.lg, gap: tokens.space.md },
   selectionHeader: { marginBottom: tokens.space.sm },
   selectionTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.serif,
     color: tokens.colors.text,
     fontSize: tokens.type.h2.fontSize,
     letterSpacing: tokens.type.h2.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
     lineHeight: tokens.type.h2.lineHeight,
   },
   selectionSubtitle: {
@@ -581,11 +584,11 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.medium,
   },
   prepTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.serif,
     color: tokens.colors.text,
     fontSize: tokens.type.h2.fontSize,
     letterSpacing: tokens.type.h2.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
   },
   prepBadge: {
     alignSelf: 'flex-start',
@@ -614,10 +617,10 @@ const styles = StyleSheet.create({
   consigneLabel: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: 11,
+    fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.medium,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: tokens.tracking.caps,
   },
   consigneText: {
     fontFamily: tokens.font.sans,
@@ -634,7 +637,6 @@ const styles = StyleSheet.create({
     gap: tokens.space.sm,
   },
   prepInfoItem: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
-  prepInfoEmoji: { fontSize: 18 },
   prepInfoText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textSubtle,
@@ -668,10 +670,11 @@ const styles = StyleSheet.create({
     borderColor: tokens.colors.border,
   },
   simTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
-    fontWeight: tokens.weight.bold,
+    letterSpacing: tokens.type.h3.letterSpacing,
+    fontWeight: tokens.weight.semibold,
   },
   simSubtitle: {
     fontFamily: tokens.font.sans,
@@ -696,7 +699,7 @@ const styles = StyleSheet.create({
   },
   simBubbleRole: {
     fontFamily: tokens.font.mono,
-    fontSize: 10,
+    fontSize: tokens.type.micro.fontSize,
     color: 'rgba(255,255,255,0.6)',
     fontWeight: tokens.weight.medium,
   },
@@ -757,7 +760,7 @@ const styles = StyleSheet.create({
   simSendText: {
     color: tokens.colors.onAccent,
     fontWeight: tokens.weight.bold,
-    fontSize: 20,
+    fontSize: tokens.type.h3.fontSize,
   },
   finishButton: {
     height: 40,
@@ -778,11 +781,11 @@ const styles = StyleSheet.create({
   evalContent: { padding: tokens.space.lg, gap: tokens.space.md },
   evalHeader: { gap: 4 },
   evalTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.serif,
     color: tokens.colors.text,
     fontSize: tokens.type.h2.fontSize,
     letterSpacing: tokens.type.h2.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
   },
   evalSubtitle: {
     fontFamily: tokens.font.sans,
@@ -831,12 +834,19 @@ const styles = StyleSheet.create({
     gap: tokens.space.md,
     ...tokens.elevation.md,
   },
-  emoji: { fontSize: 40 },
+  iconBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accentSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   gateTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
     letterSpacing: tokens.type.h3.letterSpacing,
     textAlign: 'center',
   },
@@ -874,10 +884,11 @@ const caseStyles = StyleSheet.create({
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   cardTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
-    fontWeight: tokens.weight.bold,
+    letterSpacing: tokens.type.h3.letterSpacing,
+    fontWeight: tokens.weight.semibold,
     flex: 1,
     marginRight: tokens.space.sm,
   },
@@ -898,7 +909,7 @@ const caseStyles = StyleSheet.create({
   cardSpecialite: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: 11,
+    fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.medium,
   },
   cardConsigne: {

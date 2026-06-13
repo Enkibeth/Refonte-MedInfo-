@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textSubtle,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
-    letterSpacing: 0.3,
+    letterSpacing: tokens.tracking.caps,
     textTransform: 'uppercase',
   },
 
@@ -471,9 +471,9 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontFamily: tokens.font.sans,
-    fontSize: 10.5,
+    fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
-    letterSpacing: 0.4,
+    letterSpacing: tokens.tracking.caps,
   },
 
   sourcesWrapper: {
@@ -510,10 +510,10 @@ const styles = StyleSheet.create({
   sourceId: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: 11,
+    fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
   },
-  sourceYear: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: 12 },
+  sourceYear: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.caption.fontSize },
   sourceLinkIcon: { marginLeft: 'auto' },
   sourceTitle: {
     fontFamily: tokens.font.sans,
@@ -522,14 +522,14 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
     lineHeight: 19,
   },
-  sourceOrg: { fontFamily: tokens.font.sans, color: tokens.colors.textSubtle, fontSize: 12.5 },
+  sourceOrg: { fontFamily: tokens.font.sans, color: tokens.colors.textSubtle, fontSize: tokens.type.caption.fontSize },
   sourceJustification: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
-    fontSize: 12.5,
+    fontSize: tokens.type.caption.fontSize,
     lineHeight: 17,
   },
-  sourceUrl: { fontFamily: tokens.font.sans, color: tokens.colors.accent, fontSize: 11.5 },
+  sourceUrl: { fontFamily: tokens.font.sans, color: tokens.colors.accent, fontSize: tokens.type.micro.fontSize },
 
   deepeningWrapper: { gap: tokens.space.sm, marginTop: tokens.space.xs },
   deepeningButton: {
@@ -569,7 +569,7 @@ const styles = StyleSheet.create({
   followupIndexText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.onAccent,
-    fontSize: 12,
+    fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
   },
   followupQuestion: {

@@ -19,6 +19,7 @@ import {
   isFeatureVisible,
   type AppFeatureId,
 } from '@/ai/routing/featureVisibility';
+import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
 
 const PERSONA_LABELS: Record<string, string> = {
@@ -69,7 +70,9 @@ function RoleUnavailable({
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.emoji}>{meta?.emoji ?? '🔒'}</Text>
+        <View style={styles.iconBadge}>
+          <Icon name={meta?.icon ?? 'lock'} size={26} color={tokens.colors.accentDeep} />
+        </View>
         <Text style={styles.title}>{meta?.label ?? 'Fonctionnalité'}</Text>
         <Text style={styles.text}>
           {guest
@@ -108,7 +111,14 @@ const styles = StyleSheet.create({
     gap: tokens.space.md,
     ...tokens.elevation.md,
   },
-  emoji: { fontSize: 40 },
+  iconBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accentSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: {
     fontFamily: tokens.font.display,
     color: tokens.colors.text,

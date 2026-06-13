@@ -2,10 +2,10 @@
 
 ```yaml
 title: Design System
-version: 1.1.0
+version: 1.2.0
 owner: Hugo Bettembourg
 status: Active
-date: 2026-06-11
+date: 2026-06-13
 linked_to: [02_ARCHITECTURE.md, 04_CHATBOT.md, audits/DESIGN_AUDIT_2026-06.md]
 ```
 
@@ -38,7 +38,7 @@ Source unique : `src/ui/tokens.ts` (clés `tokens.colors.*`).
 | `accentDeep` | `#083B52` | texte accent sur fond clair, profondeur |
 | `accentSurface` | `#EFF5F9` | fond teinté léger (encarts, badges) |
 | `accentSurfaceStrong` | `#DCEAF1` | bordure des fonds teintés |
-| `background` | `#FAFBFC` | fond d'app (off-white, moins plat que blanc pur) |
+| `background` | `#F7FAFB` | fond d'app (off-white teinté petrol, moins plat que blanc pur) |
 | `surface` | `#FFFFFF` | cartes/panneaux surélevés |
 | `surfaceAlt` | `#F4F6F8` | bulles IA, zones secondaires |
 | `surfaceSunken` | `#ECEFF2` | champs de saisie, fonds enfoncés |
@@ -69,11 +69,28 @@ Sémantiques fournies avec leur fond doux (`successBackground`, `dangerBackgroun
 
 **Fraunces est la signature typographique de la marque** (audit 2026-06) : elle évite le
 combo Inter/sans générique omniprésent dans les UIs générées. Strictement réservée aux
-niveaux display/H1 — jamais en corps de texte ni sur les petits titres UI.
+titres de page — jamais en corps de texte ni sur les petits titres UI.
 
-Hiérarchie claire display>H1>H2>H3>corps via `tokens.type.*` (échelle modulaire ~1.2,
-letter-spacing négatif sur les grands titres = rendu « dessiné »). Poids via
-`tokens.weight.*` (400/500/600/700 — on évite le 800 omniprésent). Interligne corps 1.5.
+**Règle d'application (uniformisation 2026-06)** — vérifiée sur toutes les pages :
+- **Titre de page / d'écran** (un par écran : hero, H1 des pages pleines, en-tête des
+  pages outils Audio/Document/ECOS/Partiels, états « sélection/préparation/évaluation »
+  d'ECOS, état vide du chat, pages légales) : `tokens.font.serif`, poids **600**
+  (`semibold`), taille `h1` sur page pleine, `h2` en en-tête d'outil compact.
+- **Titres UI** (cartes, sections, modales, panneaux, gates) : `tokens.font.display`,
+  poids 600.
+- **Corps, labels, méta** : `tokens.font.sans`. **Aucun titre en `font.sans`.**
+- **Zéro `fontSize` numérique en dur** : tout passe par `tokens.type.*` (seule exception :
+  la taille des pictogrammes emoji décoratifs). Crans ajoutés : `hero` (44, headline de la
+  landing uniquement) et `micro` (11 — badges, méta, onglets ; plus petit cran autorisé).
+
+**Tracking des libellés uppercase** : deux crans seulement via `tokens.tracking.*` —
+`caps` (0.8, étiquettes UI : badges, labels de section/champ, méta) et `capsWide`
+(1.2, eyebrows éditoriaux marketing/hero/pages pleines). Jamais de valeur ad hoc.
+
+Hiérarchie claire hero>display>H1>H2>H3>corps>label>caption>micro via `tokens.type.*`
+(échelle modulaire ~1.2, letter-spacing négatif sur les grands titres = rendu « dessiné »).
+Poids via `tokens.weight.*` (400/500/600/700 — on évite le 800 omniprésent ; les titres
+sont en 600, jamais en chaîne littérale `'800'`). Interligne corps 1.5.
 Polices chargées sur web via `app/+html.tsx` (Google Fonts, lissage anti-aliasing),
 polices système en natif. Auto-hébergement des polices noté en reste-à-faire (audit).
 
@@ -130,7 +147,12 @@ décor. Tokens : `tokens.motion.*` ; CSS global (keyframes, scrollbar) : `app/+h
 ## 7. Iconographie & assets
 
 - Logo existant repris tel quel. Décliné en favicon, app icon (iOS/Android), splash.
-- Set d'icônes cohérent (lucide-react / phosphor — open, léger).
+- Set d'icônes cohérent (chemins style Lucide dans `src/ui/iconPaths.ts`, rendus par
+  `<Icon>` — `icons.web.tsx` sur web, `icons.tsx` en natif).
+- **Plus aucun emoji dans l'UI** (2026-06) : états vides, gates d'accès et listes de
+  préparation utilisent des icônes ligne dans une pastille `accentSurface` (56 px,
+  icône 26 px `accentDeep`). Les emojis du registre `AI_FEATURES` (panel admin) restent
+  une convention interne du registre, pas un élément d'UI publique.
 - Pas d'images DALL·E ; visuels sobres ou illustrations cohérentes si besoin.
 - App icon : fond petrol + monogramme/logo, conforme guidelines Apple/Google.
 

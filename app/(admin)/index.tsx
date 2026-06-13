@@ -1110,11 +1110,11 @@ const blogStyles = StyleSheet.create({
   statusPill: { borderRadius: tokens.radius.pill, paddingHorizontal: tokens.space.sm, paddingVertical: 2 },
   statusPublished: { backgroundColor: tokens.colors.successBackground },
   statusDraft: { backgroundColor: tokens.colors.warningBackground },
-  statusText: { fontFamily: tokens.font.sans, fontSize: 11, fontWeight: tokens.weight.bold },
+  statusText: { fontFamily: tokens.font.sans, fontSize: tokens.type.micro.fontSize, fontWeight: tokens.weight.bold },
   statusTextPublished: { color: tokens.colors.success },
   statusTextDraft: { color: tokens.colors.warningText },
-  postCategory: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: 11.5 },
-  noCover: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: 11.5, fontStyle: 'italic' },
+  postCategory: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.micro.fontSize },
+  noCover: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.micro.fontSize, fontStyle: 'italic' },
   postTitle: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,
@@ -1284,12 +1284,12 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.accentDarker,
   },
   backBtn: { padding: tokens.space.xs },
-  backBtnText: { color: tokens.colors.onAccent, fontSize: 22 },
+  backBtnText: { color: tokens.colors.onAccent, fontSize: tokens.type.h2.fontSize },
   headerTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.onAccent,
     fontSize: tokens.type.h3.fontSize,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
     letterSpacing: tokens.type.h3.letterSpacing,
   },
   headerSub: {
@@ -1310,9 +1310,9 @@ const styles = StyleSheet.create({
   adminBadgeText: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.onAccent,
-    fontSize: 11,
+    fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
-    letterSpacing: 1,
+    letterSpacing: tokens.tracking.caps,
   },
   tabs: {
     flexDirection: 'row',
@@ -1384,10 +1384,10 @@ const sectionStyles = StyleSheet.create({
   title: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: 11,
+    fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: tokens.tracking.caps,
   },
 });
 
@@ -1418,7 +1418,7 @@ const cardStyles = StyleSheet.create({
   cardDesc: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
-    fontSize: 12,
+    fontSize: tokens.type.caption.fontSize,
     lineHeight: 17,
     marginTop: 2,
   },
@@ -1478,7 +1478,7 @@ const modelStyles = StyleSheet.create({
   provider: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: 11,
+    fontSize: tokens.type.micro.fontSize,
     marginTop: 1,
   },
 });
@@ -1495,10 +1495,10 @@ const paramStyles = StyleSheet.create({
   sectionTitle: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: 11,
+    fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: tokens.tracking.caps,
     marginBottom: 2,
   },
   row: { gap: tokens.space.xs },
@@ -1528,7 +1528,7 @@ const paramStyles = StyleSheet.create({
   segmentText: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: 12,
+    fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.medium,
   },
   segmentTextActive: { color: tokens.colors.accentDeep, fontWeight: tokens.weight.semibold },
@@ -1541,7 +1541,7 @@ const paramStyles = StyleSheet.create({
   toggleHint: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
-    fontSize: 11,
+    fontSize: tokens.type.micro.fontSize,
     lineHeight: 15,
     marginTop: 2,
   },
@@ -1589,7 +1589,7 @@ const promptStyles = StyleSheet.create({
   meta: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
-    fontSize: 11,
+    fontSize: tokens.type.micro.fontSize,
     marginTop: 2,
   },
   badge: {
@@ -1607,10 +1607,10 @@ const promptStyles = StyleSheet.create({
   badgeText: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: 10,
+    fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.semibold,
   },
-  chevron: { color: tokens.colors.textMuted, fontSize: 12 },
+  chevron: { color: tokens.colors.textMuted, fontSize: tokens.type.caption.fontSize },
   editor: {
     borderTopWidth: 1,
     borderTopColor: tokens.colors.border,
@@ -1618,7 +1618,7 @@ const promptStyles = StyleSheet.create({
   },
   textarea: {
     fontFamily: tokens.font.mono,
-    fontSize: 13,
+    fontSize: tokens.type.caption.fontSize,
     color: tokens.colors.text,
     lineHeight: 20,
     padding: tokens.space.lg,
@@ -1676,7 +1676,7 @@ const badgeStyles = StyleSheet.create({
   },
   text: {
     fontFamily: tokens.font.mono,
-    fontSize: 10,
+    fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
   },
 });
@@ -1721,7 +1721,7 @@ const ecosStyles = StyleSheet.create({
   cardMeta: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: 11,
+    fontSize: tokens.type.micro.fontSize,
     marginTop: 2,
   },
   statusBadge: {
@@ -1739,7 +1739,7 @@ const ecosStyles = StyleSheet.create({
   statusText: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: 10,
+    fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.semibold,
   },
   statusTextOn: { color: tokens.colors.accentDeep },
@@ -1766,10 +1766,10 @@ const ecosStyles = StyleSheet.create({
   inputLabel: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: 11,
+    fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.medium,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: tokens.tracking.caps,
   },
   input: {
     borderRadius: tokens.radius.sm,
@@ -1796,7 +1796,7 @@ const ecosStyles = StyleSheet.create({
     alignItems: 'center',
   },
   checkboxOn: { backgroundColor: tokens.colors.accent, borderColor: tokens.colors.accent },
-  checkboxMark: { color: tokens.colors.onAccent, fontSize: 14, fontWeight: tokens.weight.bold },
+  checkboxMark: { color: tokens.colors.onAccent, fontSize: tokens.type.label.fontSize, fontWeight: tokens.weight.bold },
   publishLabel: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,
