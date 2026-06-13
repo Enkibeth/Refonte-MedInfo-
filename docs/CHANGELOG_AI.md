@@ -18,6 +18,34 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-06-13] – Claude (Révisions : AI Boost + visualisations + UX — ADR-0027 suivi)
+### Files modified
+- src/features/revision/boost.ts (nouveau : cœur pur — contexte, parser fail-closed, apply déterministe)
+- app/api/revision-boost+api.ts (nouvelle route IA, persona serveur + rate-limit + lecture RLS)
+- src/features/revision/components/AiBoostPanel.tsx, RevisionCalendar.tsx, BurnDownChart.tsx, AnimatedBits.tsx, PlanHealthGauge.tsx (nouveaux)
+- src/features/revision/components/RevisionDashboard.tsx (onPlanChange, annulation, journalisation partielle, switch de visualisation, AI Boost)
+- src/features/revision/api.ts (requestBoost), app/(chat)/revision.tsx (token, sauvegarde débouncée, Skeleton, confirmation suppression)
+- src/admin/index.ts, src/ai/providers/featureModel.ts, src/ai/prompts/promptStore.ts (feature revision_boost)
+- supabase/migrations/0028_revision_boost.sql (seed ai_model_config)
+- src/ui/iconPaths.ts (arrowLeft, check), src/features/revision/components/PlanEditor.tsx (Button)
+- tests/unit/revision-boost.test.ts (12), CLAUDE.md, docs/DECISIONS/0027-planificateur-revisions-etudiant.md
+### Purpose
+AI Boost du planificateur : un coach d'ORGANISATION propose des ajustements BORNÉS du plan
+(tampon, repos, plafond, révision espacée, priorité d'un bloc existant) ; l'étudiant applique
+ou ignore — rien n'est automatique. Plus : visualisations semaine/mois/burn-down, annulation
+des tâches, journalisation partielle par bloc, sauvegarde débouncée, passe design/animations.
+### Regulatory impact
+None — données pédagogiques uniquement. L'IA ne peut choisir que dans un vocabulaire d'actions
+borné, ne référence que des blocs existants, n'invente aucun volume/source, refuse toute sortie
+clinique (parser fail-closed, chiffres recalculés serveur). RLS own-row + persona serveur +
+rate-limit. Disclosure AI Act affichée.
+### Rollback plan
+Retirer la section AI Boost de RevisionDashboard + désactiver /api/revision-boost (la ligne
+ai_model_config peut rester inerte). Le reste de la feature reste fonctionnel.
+
+---
+
+
 ## [2026-06-13] – Claude (Planificateur de révisions étudiant — ADR-0027)
 ### Files modified
 - src/features/revision/engine/{types,dates,workload,riskScoring,planner}.ts (nouveau : moteur déterministe pur, sans IA)

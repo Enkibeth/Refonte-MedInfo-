@@ -145,6 +145,15 @@ export const AI_FEATURES = [
     providers: ['anthropic', 'openai', 'google'],
   },
   {
+    key: 'revision_boost',
+    emoji: '🚀',
+    label: 'Révisions — AI Boost',
+    description: 'Coach d\'organisation : propose des ajustements bornés du plan de révision (l\'étudiant valide)',
+    apiRoute: '/api/revision-boost',
+    promptKeys: ['revision_boost'],
+    providers: ['anthropic', 'openai', 'google'],
+  },
+  {
     key: 'blog_generate',
     emoji: '📰',
     label: 'Blog — Génération d\'article',

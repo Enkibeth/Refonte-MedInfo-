@@ -9,7 +9,7 @@
  * ⚠️ Safe-box non-MDSW : données pédagogiques uniquement. Aucun symptôme, cas patient,
  * diagnostic ni conduite à tenir. Voir docs/01_REGULATION.md.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
@@ -29,7 +29,6 @@ import {
   type PlanDraft,
   type PlanSummary,
 } from '@/features/revision/api';
-import type { RevisionItem } from '@/features/revision/engine/types';
 import { RevisionDashboard } from '@/features/revision/components/RevisionDashboard';
 import { PlanEditor } from '@/features/revision/components/PlanEditor';
 import { PressableScale } from '@/features/revision/components/AnimatedBits';
@@ -126,16 +125,33 @@ function RevisionInner() {
     }
   }
 
-  // Cocher une tâche : on met à jour l'état local immédiatement puis on persiste.
-  async function handleItemsChange(items: RevisionItem[]) {
-    if (!current || !token) return;
-    const next = { ...current, items };
-    setCurrent(next);
-    try {
-      await savePlan(token, next);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Sauvegarde de la progression impossible.');
+  // Modifs depuis le tableau de bord (tâche cochée, progression, suggestion appliquée) :
+  // application LOCALE immédiate + persistance DÉBOUNCÉE (~700 ms) pour éviter un POST
+  // par clic. La dernière version gagne ; on flush au démontage.
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingPlan = useRef<FullPlan | null>(null);
+
+  const flushSave = useCallback(() => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
     }
+    const toSave = pendingPlan.current;
+    pendingPlan.current = null;
+    if (toSave && token) {
+      savePlan(token, toSave).catch((e) =>
+        setError(e instanceof Error ? e.message : 'Sauvegarde de la progression impossible.'),
+      );
+    }
+  }, [token]);
+
+  useEffect(() => () => flushSave(), [flushSave]);
+
+  function handlePlanChange(next: FullPlan) {
+    setCurrent(next);
+    pendingPlan.current = next;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(flushSave, 700);
   }
 
   async function handleDelete(id: string) {
@@ -180,9 +196,14 @@ function RevisionInner() {
       <RevisionDashboard
         plan={current}
         today={todayIso()}
-        onItemsChange={handleItemsChange}
-        onEdit={() => setView('editor')}
+        token={token}
+        onPlanChange={handlePlanChange}
+        onEdit={() => {
+          flushSave();
+          setView('editor');
+        }}
         onBack={() => {
+          flushSave();
           setCurrent(null);
           void refresh();
         }}

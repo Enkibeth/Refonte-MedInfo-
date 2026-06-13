@@ -4,7 +4,7 @@
 status: Accepted
 date: 2026-06-13
 owner: Hugo Bettembourg
-linked_to: [ADR-0003, ADR-0011, ADR-0016, ADR-0018, 0027_revision_plans.sql]
+linked_to: [ADR-0003, ADR-0011, ADR-0016, ADR-0018, 0027_revision_plans.sql, 0028_revision_boost.sql]
 ```
 
 ## Contexte
@@ -62,10 +62,27 @@ qualification dispositif médical (finalité purement organisationnelle/éducati
 - Quotas/abonnement (gratuit vs premium étudiant) : **non décidés**, à brancher via la
   matrice d'entitlements (ADR-0016) si besoin — non bloquant pour l'ébauche.
 
-## Suivi (différé, hors de cet ADR)
-- **AI Boost** (optimiser/rééquilibrer/expliquer un plan) : outil IA **borné** qui *propose*
-  sans jamais modifier sans validation, n'invente aucun volume/source, ne donne aucun conseil
-  médical. À introduire derrière un prompt versionné dédié + registre `AI_FEATURES`.
+## AI Boost (livré — 2026-06-13)
+Feature IA `revision_boost` (route `/api/revision-boost`, migration `0028`, prompt versionné
+`revision_boost`, registre `AI_FEATURES`). L'IA **propose seulement** ; l'utilisateur applique
+ou ignore chaque suggestion — rien n'est modifié automatiquement. Garde-fous (cœur pur
+`src/features/revision/boost.ts`, test `tests/unit/revision-boost.test.ts`) :
+- **Vocabulaire d'actions BORNÉ** : `set_buffer_ratio`, `enable_spaced_repetition`,
+  `set_rest_weekends`, `increase_daily_max`, `set_block_priority` (bloc EXISTANT). Aucune autre
+  action n'est acceptée (parser fail-closed).
+- **Anti-invention** : les chiffres viennent du moteur recalculé **côté serveur** (jamais du
+  body) ; un `set_block_priority` n'est accepté que pour un id de bloc existant ; aucune création
+  de volume/bloc/source.
+- **Non-MDSW** : prompt qui refuse toute sortie clinique (`refused: true`) ; aucun conseil
+  médical. Réservé étudiant vérifié/admin (persona serveur), rate-limit (compteur étudiant).
+
+## Visualisations (livré — 2026-06-13)
+Bascule semaine (barres) / mois (calendrier `RevisionCalendar`) / **burn-down**
+(`BurnDownChart`, charge restante projetée → 0 à l'examen). Toutes dérivées du moteur.
+Tâches du jour cochables **avec annulation** ; journalisation **partielle** par bloc
+(steppers `completed_*`) ; persistance **débouncée** (un seul POST par rafale de clics).
+
+## Suivi (toujours différé)
 - **Base de référentiels** (items EDN, collèges, rangs A/B/C, pages) pour pré-remplir les
   blocs : **aucune ingestion de contenu copyrighté** ; uniquement taxonomie/métadonnées/liens
   + statut de licence. ADR + pipeline d'import séparés.

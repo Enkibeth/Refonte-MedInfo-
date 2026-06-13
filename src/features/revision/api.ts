@@ -6,6 +6,7 @@
  * les lignes snake_case de Supabase vers les types camelCase du moteur. Aucune donnée de santé.
  */
 import type { ExamType, RevisionItem } from './engine/types';
+import type { BoostResponse } from './boost';
 
 export interface PlanSummary {
   id: string;
@@ -121,4 +122,18 @@ export async function deletePlan(token: string, id: string): Promise<void> {
     headers: authHeaders(token),
   });
   if (!res.ok) throw new Error('Suppression impossible.');
+}
+
+/** AI Boost : suggestions d'organisation bornées (l'utilisateur valide ensuite). */
+export async function requestBoost(token: string, planId: string): Promise<BoostResponse> {
+  const res = await fetch('/api/revision-boost', {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ id: planId }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.error ?? 'Suggestions indisponibles pour le moment.');
+  }
+  return res.json();
 }

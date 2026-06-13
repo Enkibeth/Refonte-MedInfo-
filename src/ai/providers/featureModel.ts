@@ -27,6 +27,8 @@ const FEATURE_DEFAULTS: Record<FeatureKey, { modelId: string; provider: string }
   audio_report:  { modelId: 'gpt-4o-mini',       provider: 'openai' },
   // Générateur de présentations (étudiant/pro) : raisonnement structuré + JSON fiable.
   presentation_generate: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
+  // AI Boost du planificateur de révisions (étudiant) : suggestions JSON bornées.
+  revision_boost: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   // Blog public : articles longs et structurés (audit landing 2026-06).
   blog_generate: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   // Agent hebdo du blog (ADR-0025) : choix du sujet + relecture avant publication.
