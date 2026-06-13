@@ -4,9 +4,16 @@
   "functions": {
     "api/index.js": {
       "runtime": "@vercel/node@5.1.8",
-      "includeFiles": "dist/server/**"
+      "includeFiles": "dist/server/**",
+      "maxDuration": 300
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/weekly-blog",
+      "schedule": "0 6 * * 1"
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",

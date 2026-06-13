@@ -27,6 +27,9 @@ const FEATURE_DEFAULTS: Record<FeatureKey, { modelId: string; provider: string }
   audio_report:  { modelId: 'gpt-4o-mini',       provider: 'openai' },
   // Blog public : articles longs et structurés (audit landing 2026-06).
   blog_generate: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
+  // Agent hebdo du blog (ADR-0025) : choix du sujet + relecture avant publication.
+  blog_topic:    { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
+  blog_review:   { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
 };
 
 /**
