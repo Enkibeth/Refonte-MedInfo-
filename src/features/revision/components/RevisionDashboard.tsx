@@ -2,26 +2,27 @@
  * Tableau de bord d'un plan de révision (feature étudiant, ADR-0027).
  *
  * 100 % piloté par le moteur DÉTERMINISTE (src/features/revision/engine) : tout chiffre
- * affiché vient d'un calcul explicite, jamais d'une IA. « Anti-panique » : statut couleur,
+ * affiché vient d'un calcul explicite, jamais d'une IA. « Anti-panique » : jauge de santé,
  * charge quotidienne, jours tampon, progression, tâches du jour cochables.
+ *
+ * Animations sobres (design system §4) : entrées en cascade (Reveal), barres qui
+ * croissent, count-up — toutes coupées sous prefers-reduced-motion.
  *
  * ⚠️ Données pédagogiques uniquement (volumes, dates, progression d'apprentissage).
  */
-import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Icon } from '@/ui/icons';
+import { Reveal } from '@/ui/Reveal';
 import { tokens } from '@/ui/tokens';
+import { useReducedMotion } from '@/ui/useReducedMotion';
 import { buildPlan, formatMinutes, tasksForDate } from '../engine/planner';
 import { itemRemaining } from '../engine/workload';
-import type { PlannedTask, RevisionItem, RiskLevel } from '../engine/types';
+import type { PlannedTask, RevisionItem } from '../engine/types';
 import type { FullPlan } from '../api';
-
-const RISK_THEME: Record<RiskLevel, { label: string; fg: string; bg: string }> = {
-  green: { label: 'Dans les temps', fg: tokens.colors.success, bg: tokens.colors.successBackground },
-  orange: { label: 'Tendu', fg: tokens.colors.warningText, bg: tokens.colors.warningBackground },
-  red: { label: 'Critique', fg: tokens.colors.danger, bg: tokens.colors.dangerBackground },
-};
+import { PlanHealthGauge } from './PlanHealthGauge';
+import { ProgressBar, PressableScale } from './AnimatedBits';
 
 const EXAM_LABELS: Record<string, string> = {
   pass_las: 'PASS / LAS',
@@ -32,6 +33,7 @@ const EXAM_LABELS: Record<string, string> = {
 };
 
 const WEEKDAY_SHORT = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+const TIMELINE_HEIGHT = 64;
 
 export interface RevisionDashboardProps {
   plan: FullPlan;
@@ -42,13 +44,7 @@ export interface RevisionDashboardProps {
   onBack: () => void;
 }
 
-export function RevisionDashboard({
-  plan,
-  today,
-  onItemsChange,
-  onEdit,
-  onBack,
-}: RevisionDashboardProps) {
+export function RevisionDashboard({ plan, today, onItemsChange, onEdit, onBack }: RevisionDashboardProps) {
   const result = useMemo(
     () =>
       buildPlan({
@@ -72,7 +68,16 @@ export function RevisionDashboard({
     [plan, today],
   );
 
-  const risk = RISK_THEME[result.risk.level];
+  // Tâches du jour déjà cochées dans cette session (état éphémère) : on garde la trace
+  // pour les afficher « faites » et éviter de re-logger la même session (le moteur, lui,
+  // re-dérive le restant à chaque coche). Réinitialisé au changement de plan / de jour.
+  const [doneIds, setDoneIds] = useState<Set<string>>(() => new Set());
+  const [doneList, setDoneList] = useState<PlannedTask[]>([]);
+  useEffect(() => {
+    setDoneIds(new Set());
+    setDoneList([]);
+  }, [plan.id, today]);
+
   const remaining = plan.items.reduce(
     (acc, it) => {
       const r = itemRemaining(it);
@@ -81,169 +86,226 @@ export function RevisionDashboard({
     { pages: 0, chapters: 0, qcm: 0 },
   );
 
-  const todayTasks = tasksForDate(result, today).filter((t) => t.kind === 'study');
+  const allTodayTasks = tasksForDate(result, today).filter((t) => t.kind === 'study');
+  // Une carte par bloc : on fusionne les tranches du même bloc planifiées le même jour.
+  const activeTasks = useMemo(() => {
+    const byItem = new Map<string, PlannedTask>();
+    for (const t of allTodayTasks) {
+      if (doneIds.has(t.itemId)) continue;
+      const ex = byItem.get(t.itemId);
+      byItem.set(
+        t.itemId,
+        ex
+          ? { ...ex, pages: ex.pages + t.pages, chapters: ex.chapters + t.chapters, qcm: ex.qcm + t.qcm, minutes: ex.minutes + t.minutes }
+          : { ...t },
+      );
+    }
+    return [...byItem.values()];
+  }, [allTodayTasks, doneIds]);
   const timeline = result.byDay.slice(0, 14);
   const maxDayMinutes = Math.max(plan.dailyMaxMinutes, ...timeline.map((d) => d.minutes), 1);
 
-  // Cocher une tâche du jour = ajouter ses volumes aux compteurs « faits » du bloc concerné.
+  // Cocher « fait » crédite TOUTE la charge du jour pour ce bloc (un jour peut contenir
+  // plusieurs tranches du même bloc), puis le masque pour aujourd'hui (état éphémère).
   function completeTask(task: PlannedTask) {
+    const sum = allTodayTasks
+      .filter((t) => t.itemId === task.itemId)
+      .reduce(
+        (acc, t) => ({ pages: acc.pages + t.pages, chapters: acc.chapters + t.chapters, qcm: acc.qcm + t.qcm, minutes: acc.minutes + t.minutes }),
+        { pages: 0, chapters: 0, qcm: 0, minutes: 0 },
+      );
+    setDoneIds((prev) => new Set(prev).add(task.itemId));
+    setDoneList((prev) => [...prev, { ...task, ...sum }]);
     onItemsChange(
       plan.items.map((it) =>
         it.id === task.itemId
           ? {
               ...it,
-              completedPages: Math.min(it.pages, it.completedPages + task.pages),
-              completedChapters: Math.min(it.chapters, it.completedChapters + task.chapters),
-              completedQcm: Math.min(it.qcm, it.completedQcm + task.qcm),
+              completedPages: Math.min(it.pages, it.completedPages + sum.pages),
+              completedChapters: Math.min(it.chapters, it.completedChapters + sum.chapters),
+              completedQcm: Math.min(it.qcm, it.completedQcm + sum.qcm),
             }
           : it,
       ),
     );
   }
 
+  const taskAmounts = (t: PlannedTask) =>
+    [
+      t.pages > 0 ? `${t.pages} p.` : null,
+      t.chapters > 0 ? `${t.chapters} chap.` : null,
+      t.qcm > 0 ? `${t.qcm} QCM` : null,
+    ]
+      .filter(Boolean)
+      .join(' · ');
+
+  const stagger = tokens.motion.revealStagger;
+
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.headerRow}>
-        <Pressable onPress={onBack} accessibilityRole="button" style={styles.iconBtn}>
-          <Icon name="arrowRight" size={18} color={tokens.colors.textSubtle} />
+        <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Retour à mes plans" style={styles.iconBtn}>
+          <Icon name="arrowLeft" size={18} color={tokens.colors.textSubtle} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={styles.title} numberOfLines={1}>
             {plan.title || 'Plan de révision'}
           </Text>
-          <Text style={styles.subtitle}>
-            {EXAM_LABELS[plan.examType] ?? plan.examType} · examen dans {result.daysUntilExam} jour
-            {result.daysUntilExam > 1 ? 's' : ''}
-          </Text>
+          <Text style={styles.subtitle}>{EXAM_LABELS[plan.examType] ?? plan.examType}</Text>
         </View>
-        <Pressable onPress={onEdit} accessibilityRole="button" style={styles.editBtn}>
+        <PressableScale onPress={onEdit} accessibilityLabel="Modifier le plan" style={styles.editBtn}>
           <Icon name="settings" size={16} color={tokens.colors.accentDeep} />
           <Text style={styles.editBtnText}>Modifier</Text>
-        </Pressable>
+        </PressableScale>
       </View>
 
-      {/* Bandeau de statut « anti-panique » */}
-      <View style={[styles.riskBanner, { backgroundColor: risk.bg }]}>
-        <Text style={[styles.riskLabel, { color: risk.fg }]}>{risk.label}</Text>
-        <Text style={styles.riskReason}>{result.risk.reason}</Text>
-        <View style={styles.progressTrack}>
-          <View
-            style={[styles.progressFill, { width: `${result.progressPercent}%`, backgroundColor: risk.fg }]}
-          />
-        </View>
-        <Text style={styles.progressText}>{result.progressPercent}% du programme déjà couvert</Text>
-      </View>
+      <Reveal delay={0}>
+        <PlanHealthGauge result={result} examDate={plan.examDate} />
+      </Reveal>
 
       {/* Cartes de charge */}
-      <View style={styles.cardsGrid}>
-        <Stat label="Charge / jour" value={formatMinutes(result.dailyAverageMinutes)} hint={`plafond ${formatMinutes(plan.dailyMaxMinutes)}`} />
-        <Stat label="Cette semaine" value={formatMinutes(result.weeklyAverageMinutes)} hint="estimé" />
-        <Stat label="Temps restant" value={formatMinutes(result.totalRemainingMinutes)} hint="à planifier" />
-        <Stat label="Pages restantes" value={String(remaining.pages)} hint={`${remaining.chapters} chap. · ${remaining.qcm} QCM`} />
-        <Stat label="Jours tampon" value={String(result.bufferDays)} hint={`${result.schedulingDays} jours de travail`} />
-        <Stat
-          label="Débordement"
-          value={result.overflowMinutes > 0 ? formatMinutes(result.overflowMinutes) : '—'}
-          hint={result.overflowMinutes > 0 ? 'ne tient pas' : 'tout tient'}
-          danger={result.overflowMinutes > 0}
-        />
-      </View>
+      <Reveal delay={stagger}>
+        <View style={styles.cardsGrid}>
+          <Stat label="Charge / jour" value={formatMinutes(result.dailyAverageMinutes)} hint={`plafond ${formatMinutes(plan.dailyMaxMinutes)}`} />
+          <Stat label="Cette semaine" value={formatMinutes(result.weeklyAverageMinutes)} hint="estimé" />
+          <Stat label="Temps restant" value={formatMinutes(result.totalRemainingMinutes)} hint="à planifier" />
+          <Stat label="Pages restantes" value={String(remaining.pages)} hint={`${remaining.chapters} chap. · ${remaining.qcm} QCM`} />
+          <Stat label="Jours tampon" value={String(result.bufferDays)} hint={`${result.schedulingDays} j. de travail`} />
+          <Stat
+            label="Débordement"
+            value={result.overflowMinutes > 0 ? formatMinutes(result.overflowMinutes) : '—'}
+            hint={result.overflowMinutes > 0 ? 'ne tient pas' : 'tout tient'}
+            danger={result.overflowMinutes > 0}
+          />
+        </View>
+      </Reveal>
 
       {/* Aujourd'hui */}
-      <Text style={styles.sectionTitle}>Aujourd’hui</Text>
-      <View style={styles.card}>
-        {todayTasks.length === 0 ? (
-          <Text style={styles.muted}>
-            Rien de planifié aujourd’hui (jour de repos, hors période, ou tout est fait).
-          </Text>
-        ) : (
-          todayTasks.map((task, i) => (
-            <Pressable
-              key={`${task.itemId}-${i}`}
-              onPress={() => completeTask(task)}
-              accessibilityRole="button"
-              style={styles.taskRow}
-            >
-              <View style={styles.checkbox}>
-                <Icon name="plus" size={14} color={tokens.colors.accentDeep} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.taskTitle}>{task.title}</Text>
-                <Text style={styles.taskMeta}>
-                  {[
-                    task.pages > 0 ? `${task.pages} p.` : null,
-                    task.chapters > 0 ? `${task.chapters} chap.` : null,
-                    task.qcm > 0 ? `${task.qcm} QCM` : null,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}{' '}
-                  · {formatMinutes(task.minutes)}
-                </Text>
-              </View>
-              <Text style={styles.taskDone}>Fait</Text>
-            </Pressable>
-          ))
-        )}
-      </View>
+      <Reveal delay={stagger * 2}>
+        <Text style={styles.sectionTitle}>Aujourd’hui</Text>
+        <View style={styles.card}>
+          {activeTasks.length === 0 && doneList.length === 0 ? (
+            <Text style={styles.muted}>
+              Rien de planifié aujourd’hui (jour de repos, hors période, ou tout est fait).
+            </Text>
+          ) : (
+            <>
+              {activeTasks.map((task, i) => (
+                <PressableScale
+                  key={`${task.itemId}-${i}`}
+                  onPress={() => completeTask(task)}
+                  accessibilityLabel={`Marquer fait : ${task.title}, ${taskAmounts(task)}, ${formatMinutes(task.minutes)}`}
+                  style={styles.taskRow}
+                >
+                  <View style={styles.checkbox}>
+                    <Icon name="check" size={14} color={tokens.colors.accentDeep} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.taskTitle}>{task.title}</Text>
+                    <Text style={styles.taskMeta}>
+                      {taskAmounts(task)} · {formatMinutes(task.minutes)}
+                    </Text>
+                  </View>
+                  <Text style={styles.taskCta}>Fait</Text>
+                </PressableScale>
+              ))}
+              {doneList.map((task, i) => (
+                <View key={`done-${task.itemId}-${i}`} style={styles.taskRow}>
+                  <View style={styles.checkboxDone}>
+                    <Icon name="check" size={14} color={tokens.colors.onAccent} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.taskTitle, styles.taskTitleDone]}>{task.title}</Text>
+                    <Text style={styles.taskMeta}>{taskAmounts(task)} · fait</Text>
+                  </View>
+                </View>
+              ))}
+              {activeTasks.length === 0 && doneList.length > 0 ? (
+                <Text style={styles.muted}>Journée terminée — beau travail.</Text>
+              ) : null}
+            </>
+          )}
+        </View>
+      </Reveal>
 
       {/* Timeline (charge des 14 prochains jours utilisables) */}
-      <Text style={styles.sectionTitle}>Prochains jours</Text>
-      <View style={styles.card}>
-        {timeline.length === 0 ? (
-          <Text style={styles.muted}>Aucun jour planifiable avant l’examen.</Text>
-        ) : (
-          <View style={styles.timelineRow}>
-            {timeline.map((day) => {
-              const h = Math.round((day.minutes / maxDayMinutes) * 64);
-              const over = day.minutes > plan.dailyMaxMinutes;
-              const barColor = day.buffer
-                ? tokens.colors.borderStrong
-                : over
-                  ? tokens.colors.danger
-                  : tokens.colors.accent;
-              return (
-                <View key={day.date} style={styles.timelineCol}>
-                  <View style={styles.timelineBarTrack}>
-                    <View style={[styles.timelineBar, { height: Math.max(2, h), backgroundColor: barColor }]} />
+      <Reveal delay={stagger * 3}>
+        <Text style={styles.sectionTitle}>Prochains jours</Text>
+        <View style={styles.card}>
+          {timeline.length === 0 ? (
+            <Text style={styles.muted}>Aucun jour planifiable avant l’examen.</Text>
+          ) : (
+            <View style={styles.timelineRow}>
+              {timeline.map((day) => {
+                const over = day.minutes > plan.dailyMaxMinutes;
+                const isToday = day.date === today;
+                const barColor = day.buffer
+                  ? tokens.colors.borderStrong
+                  : over
+                    ? tokens.colors.danger
+                    : tokens.colors.accent;
+                return (
+                  <View key={day.date} style={styles.timelineCol}>
+                    <View style={styles.timelineBarTrack}>
+                      <TimelineBar minutes={day.minutes} maxMinutes={maxDayMinutes} color={barColor} />
+                    </View>
+                    <Text style={[styles.timelineDay, isToday && styles.timelineTodayText]}>
+                      {WEEKDAY_SHORT[day.weekday]}
+                    </Text>
+                    <View style={isToday ? styles.timelineTodayPill : undefined}>
+                      <Text style={[styles.timelineDate, isToday && styles.timelineTodayText]}>
+                        {day.date.slice(8, 10)}
+                      </Text>
+                    </View>
                   </View>
-                  <Text style={styles.timelineDay}>{WEEKDAY_SHORT[day.weekday]}</Text>
-                  <Text style={styles.timelineDate}>{day.date.slice(8, 10)}</Text>
-                </View>
-              );
-            })}
-          </View>
-        )}
-      </View>
+                );
+              })}
+            </View>
+          )}
+        </View>
+      </Reveal>
 
       {/* Blocs de travail */}
-      <Text style={styles.sectionTitle}>Blocs de travail</Text>
-      <View style={styles.card}>
-        {plan.items.length === 0 ? (
-          <Text style={styles.muted}>Aucun bloc. Ajoute des matières / chapitres en modifiant le plan.</Text>
-        ) : (
-          plan.items.map((it) => {
-            const r = itemRemaining(it);
-            const total = it.pages + it.chapters + it.qcm;
-            const done = it.completedPages + it.completedChapters + it.completedQcm;
-            const pct = total > 0 ? Math.round((done / total) * 100) : 100;
-            return (
-              <View key={it.id} style={styles.itemRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.itemTitle}>{it.title}</Text>
-                  <Text style={styles.itemMeta}>
-                    {it.subject ? `${it.subject} · ` : ''}
-                    {r.pages} p. · {r.chapters} chap. · {r.qcm} QCM restants
-                  </Text>
+      <Reveal delay={stagger * 4}>
+        <Text style={styles.sectionTitle}>Blocs de travail</Text>
+        <View style={styles.card}>
+          {plan.items.length === 0 ? (
+            <Text style={styles.muted}>Aucun bloc. Ajoute des matières / chapitres en modifiant le plan.</Text>
+          ) : (
+            plan.items.map((it, i) => {
+              const r = itemRemaining(it);
+              const total = it.pages + it.chapters + it.qcm;
+              const done = it.completedPages + it.completedChapters + it.completedQcm;
+              const pct = total > 0 ? Math.round((done / total) * 100) : 100;
+              return (
+                <View key={it.id} style={styles.itemRow}>
+                  <View style={styles.itemTop}>
+                    <View style={{ flex: 1 }}>
+                      <View style={styles.itemTitleRow}>
+                        <View style={priorityDotStyle(it.priority)} />
+                        <Text style={styles.itemTitle} numberOfLines={1}>
+                          {it.title}
+                        </Text>
+                      </View>
+                      <Text style={styles.itemMeta}>
+                        {it.subject ? `${it.subject} · ` : ''}
+                        {r.pages} p. · {r.chapters} chap. · {r.qcm} QCM restants
+                      </Text>
+                    </View>
+                    <Text style={styles.itemPct}>{pct}%</Text>
+                  </View>
+                  <ProgressBar
+                    pct={pct}
+                    color={pct >= 100 ? tokens.colors.success : tokens.colors.accent}
+                    height={6}
+                    delay={i * 40}
+                  />
                 </View>
-                <View style={styles.itemPctWrap}>
-                  <Text style={styles.itemPct}>{pct}%</Text>
-                  <View style={priorityDotStyle(it.priority)} />
-                </View>
-              </View>
-            );
-          })
-        )}
-      </View>
+              );
+            })
+          )}
+        </View>
+      </Reveal>
 
       <Text style={styles.disclaimer}>
         Outil pédagogique d’organisation des révisions. Ne fournit aucun conseil médical, diagnostic
@@ -253,17 +315,29 @@ export function RevisionDashboard({
   );
 }
 
-function Stat({
-  label,
-  value,
-  hint,
-  danger,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-  danger?: boolean;
-}) {
+/** Barre de timeline qui croît du bas vers sa hauteur cible au montage. */
+function TimelineBar({ minutes, maxMinutes, color }: { minutes: number; maxMinutes: number; color: string }) {
+  const reduced = useReducedMotion();
+  const target = Math.max(2, Math.round((minutes / maxMinutes) * TIMELINE_HEIGHT));
+  const h = useRef(new Animated.Value(reduced ? target : 2)).current;
+  useEffect(() => {
+    if (reduced) {
+      h.setValue(target);
+      return;
+    }
+    const anim = Animated.timing(h, {
+      toValue: target,
+      duration: tokens.motion.duration.slow,
+      easing: Easing.bezier(...tokens.motion.easing.out),
+      useNativeDriver: false,
+    });
+    anim.start();
+    return () => anim.stop();
+  }, [target, reduced, h]);
+  return <Animated.View style={[styles.timelineBar, { height: h, backgroundColor: color }]} />;
+}
+
+function Stat({ label, value, hint, danger }: { label: string; value: string; hint?: string; danger?: boolean }) {
   return (
     <View style={styles.statCard}>
       <Text style={styles.statLabel}>{label}</Text>
@@ -295,7 +369,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: tokens.colors.surfaceAlt,
-    transform: [{ scaleX: -1 }],
   },
   title: {
     fontFamily: tokens.font.serif,
@@ -304,12 +377,7 @@ const styles = StyleSheet.create({
     letterSpacing: tokens.type.h2.letterSpacing,
     fontWeight: tokens.weight.semibold,
   },
-  subtitle: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
-    fontSize: tokens.type.caption.fontSize,
-    marginTop: 2,
-  },
+  subtitle: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.caption.fontSize, marginTop: 2 },
   editBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -318,40 +386,9 @@ const styles = StyleSheet.create({
     paddingVertical: tokens.space.sm,
     borderRadius: tokens.radius.pill,
     backgroundColor: tokens.colors.accentSurface,
+    ...tokens.motion.transitionWeb,
   },
-  editBtnText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.semibold,
-  },
-  riskBanner: { borderRadius: tokens.radius.lg, padding: tokens.space.lg, gap: 6 },
-  riskLabel: {
-    fontFamily: tokens.font.sans,
-    fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.bold,
-    textTransform: 'uppercase',
-    letterSpacing: tokens.tracking.caps,
-  },
-  riskReason: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.text,
-    fontSize: tokens.type.body.fontSize,
-    lineHeight: tokens.type.body.lineHeight,
-  },
-  progressTrack: {
-    height: 8,
-    borderRadius: tokens.radius.pill,
-    backgroundColor: 'rgba(15,27,34,0.10)',
-    overflow: 'hidden',
-    marginTop: 4,
-  },
-  progressFill: { height: 8, borderRadius: tokens.radius.pill },
-  progressText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
-    fontSize: tokens.type.caption.fontSize,
-  },
+  editBtnText: { fontFamily: tokens.font.sans, color: tokens.colors.accentDeep, fontSize: tokens.type.caption.fontSize, fontWeight: tokens.weight.semibold },
   cardsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm },
   statCard: {
     flexGrow: 1,
@@ -363,6 +400,7 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.surface,
     padding: tokens.space.md,
     gap: 2,
+    ...tokens.elevation.sm,
   },
   statLabel: {
     fontFamily: tokens.font.sans,
@@ -371,19 +409,15 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: tokens.tracking.caps,
   },
-  statValue: {
-    fontFamily: tokens.font.display,
-    color: tokens.colors.text,
-    fontSize: tokens.type.h3.fontSize,
-    fontWeight: tokens.weight.bold,
-  },
+  statValue: { fontFamily: tokens.font.display, color: tokens.colors.text, fontSize: tokens.type.h3.fontSize, fontWeight: tokens.weight.bold },
   statHint: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.micro.fontSize },
   sectionTitle: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.bold,
-    marginTop: tokens.space.sm,
+    marginBottom: tokens.space.sm,
+    marginTop: tokens.space.xs,
   },
   card: {
     borderRadius: tokens.radius.lg,
@@ -394,40 +428,54 @@ const styles = StyleSheet.create({
     gap: tokens.space.sm,
   },
   muted: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.body.fontSize },
-  taskRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.md },
+  taskRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.md,
+    paddingVertical: tokens.space.xs,
+  },
   checkbox: {
-    width: 26,
-    height: 26,
+    width: 28,
+    height: 28,
     borderRadius: tokens.radius.sm,
     borderWidth: 1,
     borderColor: tokens.colors.accentSurfaceStrong,
     backgroundColor: tokens.colors.accentSurface,
     alignItems: 'center',
     justifyContent: 'center',
+    ...tokens.motion.transitionWeb,
   },
-  taskTitle: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.text,
-    fontSize: tokens.type.body.fontSize,
-    fontWeight: tokens.weight.medium,
+  checkboxDone: {
+    width: 28,
+    height: 28,
+    borderRadius: tokens.radius.sm,
+    backgroundColor: tokens.colors.success,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  taskTitle: { fontFamily: tokens.font.sans, color: tokens.colors.text, fontSize: tokens.type.body.fontSize, fontWeight: tokens.weight.medium },
+  taskTitleDone: { color: tokens.colors.textMuted, textDecorationLine: 'line-through' },
   taskMeta: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.caption.fontSize },
-  taskDone: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.accent,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.semibold,
-  },
+  taskCta: { fontFamily: tokens.font.sans, color: tokens.colors.accent, fontSize: tokens.type.caption.fontSize, fontWeight: tokens.weight.semibold },
   timelineRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   timelineCol: { alignItems: 'center', gap: 3, flex: 1 },
-  timelineBarTrack: { height: 64, justifyContent: 'flex-end' },
+  timelineBarTrack: { height: TIMELINE_HEIGHT, justifyContent: 'flex-end' },
   timelineBar: { width: 14, borderRadius: tokens.radius.xs },
   timelineDay: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.micro.fontSize },
   timelineDate: { fontFamily: tokens.font.sans, color: tokens.colors.textSubtle, fontSize: tokens.type.micro.fontSize, fontWeight: tokens.weight.semibold },
-  itemRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.md },
-  itemTitle: { fontFamily: tokens.font.sans, color: tokens.colors.text, fontSize: tokens.type.body.fontSize, fontWeight: tokens.weight.medium },
-  itemMeta: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.caption.fontSize },
-  itemPctWrap: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
+  timelineTodayText: { color: tokens.colors.onAccent },
+  timelineTodayPill: {
+    backgroundColor: tokens.colors.accent,
+    borderRadius: tokens.radius.pill,
+    paddingHorizontal: 6,
+    minWidth: 20,
+    alignItems: 'center',
+  },
+  itemRow: { gap: tokens.space.sm, paddingVertical: tokens.space.xs },
+  itemTop: { flexDirection: 'row', alignItems: 'flex-start', gap: tokens.space.md },
+  itemTitleRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
+  itemTitle: { flex: 1, fontFamily: tokens.font.sans, color: tokens.colors.text, fontSize: tokens.type.body.fontSize, fontWeight: tokens.weight.medium },
+  itemMeta: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.caption.fontSize, marginTop: 2 },
   itemPct: { fontFamily: tokens.font.display, color: tokens.colors.text, fontSize: tokens.type.label.fontSize, fontWeight: tokens.weight.bold },
   disclaimer: {
     fontFamily: tokens.font.sans,

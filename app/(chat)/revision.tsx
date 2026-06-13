@@ -10,11 +10,14 @@
  * diagnostic ni conduite à tenir. Voir docs/01_REGULATION.md.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
+import { Button } from '@/ui/Button';
 import { Icon } from '@/ui/icons';
+import { Reveal } from '@/ui/Reveal';
 import { RoleGate } from '@/ui/RoleGate';
+import { Skeleton } from '@/ui/Skeleton';
 import { ToolsMenu } from '@/ui/ToolsMenu';
 import { tokens } from '@/ui/tokens';
 import {
@@ -29,6 +32,21 @@ import {
 import type { RevisionItem } from '@/features/revision/engine/types';
 import { RevisionDashboard } from '@/features/revision/components/RevisionDashboard';
 import { PlanEditor } from '@/features/revision/components/PlanEditor';
+import { PressableScale } from '@/features/revision/components/AnimatedBits';
+
+/** Confirmation cross-plateforme avant une suppression (action destructive). */
+function confirmDelete(title: string, onConfirm: () => void) {
+  if (Platform.OS === 'web') {
+    if (typeof window !== 'undefined' && window.confirm(`Supprimer « ${title} » ? Cette action est définitive.`)) {
+      onConfirm();
+    }
+    return;
+  }
+  Alert.alert('Supprimer ce plan ?', `« ${title} » sera définitivement supprimé.`, [
+    { text: 'Annuler', style: 'cancel' },
+    { text: 'Supprimer', style: 'destructive', onPress: onConfirm },
+  ]);
+}
 
 type ViewMode = 'loading' | 'list' | 'editor' | 'dashboard';
 
@@ -133,8 +151,14 @@ function RevisionInner() {
 
   if (view === 'loading') {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator color={tokens.colors.accent} />
+      <View style={styles.skeletonWrap}>
+        <Skeleton height={150} radius={tokens.radius.xl} />
+        <View style={styles.skeletonGrid}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} height={68} width="31%" radius={tokens.radius.md} />
+          ))}
+        </View>
+        <Skeleton height={96} radius={tokens.radius.lg} />
       </View>
     );
   }
@@ -168,39 +192,55 @@ function RevisionInner() {
 
   // Liste des plans
   return (
-    <ScrollView contentContainerStyle={styles.listContent}>
+    <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
       <Text style={styles.listTitle}>Mes plans de révision</Text>
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {plans.length === 0 ? (
-        <Text style={styles.muted}>Aucun plan pour l’instant.</Text>
+        <View style={styles.emptyCard}>
+          <View style={styles.emptyIcon}>
+            <Icon name="calendarCheck" size={26} color={tokens.colors.accentDeep} />
+          </View>
+          <Text style={styles.emptyText}>
+            Aucun plan pour l’instant. Crée ton premier plan pour transformer ton programme en
+            charge quotidienne réaliste.
+          </Text>
+        </View>
       ) : (
-        plans.map((p) => (
-          <Pressable key={p.id} onPress={() => openPlan(p.id)} style={styles.planRow}>
-            <View style={styles.planIcon}>
-              <Icon name="calendarCheck" size={18} color={tokens.colors.accentDeep} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.planName}>{p.title || 'Plan de révision'}</Text>
-              <Text style={styles.planMeta}>
-                {EXAM_LABELS[p.examType] ?? p.examType} · examen le {p.examDate}
-              </Text>
-            </View>
-            <Pressable onPress={() => handleDelete(p.id)} style={styles.deleteBtn} accessibilityLabel="Supprimer">
-              <Icon name="trash" size={16} color={tokens.colors.danger} />
-            </Pressable>
-          </Pressable>
+        plans.map((p, i) => (
+          <Reveal key={p.id} delay={i * tokens.motion.revealStagger}>
+            <PressableScale onPress={() => openPlan(p.id)} accessibilityLabel={`Ouvrir ${p.title || 'le plan'}`} style={styles.planRow}>
+              <View style={styles.planIcon}>
+                <Icon name="calendarCheck" size={18} color={tokens.colors.accentDeep} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.planName}>{p.title || 'Plan de révision'}</Text>
+                <Text style={styles.planMeta}>
+                  {EXAM_LABELS[p.examType] ?? p.examType} · examen le {p.examDate}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => confirmDelete(p.title || 'Plan de révision', () => handleDelete(p.id))}
+                style={styles.deleteBtn}
+                accessibilityLabel={`Supprimer ${p.title || 'le plan'}`}
+                hitSlop={8}
+              >
+                <Icon name="trash" size={16} color={tokens.colors.danger} />
+              </Pressable>
+            </PressableScale>
+          </Reveal>
         ))
       )}
-      <Pressable
-        onPress={() => {
-          setCurrent(null);
-          setView('editor');
-        }}
-        style={styles.newBtn}
-      >
-        <Icon name="plus" size={16} color={tokens.colors.onAccent} />
-        <Text style={styles.newBtnText}>Nouveau plan</Text>
-      </Pressable>
+      <View style={styles.newBtnWrap}>
+        <Button
+          label="Nouveau plan"
+          variant="primary"
+          leftIcon={<Icon name="plus" size={16} color={tokens.colors.onAccent} />}
+          onPress={() => {
+            setCurrent(null);
+            setView('editor');
+          }}
+        />
+      </View>
     </ScrollView>
   );
 }
@@ -249,8 +289,35 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginTop: 4,
   },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  skeletonWrap: { padding: tokens.space.lg, gap: tokens.space.md },
+  skeletonGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm },
   listContent: { padding: tokens.space.lg, gap: tokens.space.sm },
+  emptyCard: {
+    alignItems: 'center',
+    gap: tokens.space.md,
+    padding: tokens.space.xl,
+    borderRadius: tokens.radius.lg,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: tokens.colors.borderStrong,
+    backgroundColor: tokens.colors.surface,
+  },
+  emptyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accentSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.body.fontSize,
+    lineHeight: tokens.type.body.lineHeight,
+    textAlign: 'center',
+    maxWidth: 360,
+  },
   listTitle: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,
@@ -268,6 +335,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.surface,
+    ...tokens.elevation.sm,
   },
   planIcon: {
     width: 38,
@@ -287,15 +355,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: tokens.colors.dangerBackground,
   },
-  newBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: tokens.space.md,
-    borderRadius: tokens.radius.lg,
-    backgroundColor: tokens.colors.accent,
-    marginTop: tokens.space.sm,
-  },
-  newBtnText: { fontFamily: tokens.font.sans, color: tokens.colors.onAccent, fontSize: tokens.type.label.fontSize, fontWeight: tokens.weight.semibold },
+  newBtnWrap: { marginTop: tokens.space.sm },
 });

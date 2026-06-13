@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 
+import { Button } from '@/ui/Button';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
 import type { ExamType, RevisionItem } from '../engine/types';
@@ -260,12 +261,12 @@ export function PlanEditor({ initial, saving, error, onSave, onCancel }: PlanEdi
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <View style={styles.actions}>
-        <Pressable onPress={onCancel} style={styles.cancelBtn}>
-          <Text style={styles.cancelText}>Annuler</Text>
-        </Pressable>
-        <Pressable onPress={submit} disabled={saving} style={[styles.saveBtn, saving && { opacity: 0.6 }]}>
-          <Text style={styles.saveText}>{saving ? 'Enregistrement…' : 'Enregistrer le plan'}</Text>
-        </Pressable>
+        <View style={styles.cancelWrap}>
+          <Button label="Annuler" variant="secondary" onPress={onCancel} />
+        </View>
+        <View style={styles.saveWrap}>
+          <Button label="Enregistrer le plan" variant="primary" loading={saving} onPress={submit} />
+        </View>
       </View>
     </ScrollView>
   );
@@ -382,21 +383,6 @@ const styles = StyleSheet.create({
   addBtnText: { fontFamily: tokens.font.sans, color: tokens.colors.accentDeep, fontSize: tokens.type.label.fontSize, fontWeight: tokens.weight.semibold },
   error: { fontFamily: tokens.font.sans, color: tokens.colors.danger, fontSize: tokens.type.caption.fontSize },
   actions: { flexDirection: 'row', gap: tokens.space.sm, marginTop: tokens.space.sm },
-  cancelBtn: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: tokens.space.md,
-    borderRadius: tokens.radius.lg,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-  },
-  cancelText: { fontFamily: tokens.font.sans, color: tokens.colors.textSubtle, fontSize: tokens.type.label.fontSize, fontWeight: tokens.weight.semibold },
-  saveBtn: {
-    flex: 2,
-    alignItems: 'center',
-    paddingVertical: tokens.space.md,
-    borderRadius: tokens.radius.lg,
-    backgroundColor: tokens.colors.accent,
-  },
-  saveText: { fontFamily: tokens.font.sans, color: tokens.colors.onAccent, fontSize: tokens.type.label.fontSize, fontWeight: tokens.weight.semibold },
+  cancelWrap: { flex: 1 },
+  saveWrap: { flex: 2 },
 });
