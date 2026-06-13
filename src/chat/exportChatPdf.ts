@@ -8,6 +8,11 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+/** Retire les marqueurs techniques (<!--IMG:…-->, <!--CALC:…-->) du rendu imprimé. */
+function stripMarkers(md: string): string {
+  return md.replace(/<!--\s*(?:IMG|CALC)\s*:?[^>]*-->/gi, '').replace(/\n{3,}/g, '\n\n');
+}
+
 /** Mini markdown → HTML (titres, gras, listes) — suffisant pour une réponse de chat. */
 function markdownToHtml(md: string): string {
   const lines = md.split('\n');
@@ -71,7 +76,7 @@ export function exportChatToPdf({
     .map((m) =>
       m.role === 'user'
         ? `<div class="q"><div class="who">Question</div>${markdownToHtml(m.content)}</div>`
-        : `<div class="a"><div class="who">Réponse — ${escapeHtml(chatbotLabel)}</div>${markdownToHtml(formatInlineCitations(m.content))}</div>`,
+        : `<div class="a"><div class="who">Réponse — ${escapeHtml(chatbotLabel)}</div>${markdownToHtml(formatInlineCitations(stripMarkers(m.content)))}</div>`,
     )
     .join('\n');
 

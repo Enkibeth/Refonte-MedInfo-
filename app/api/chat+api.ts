@@ -28,6 +28,7 @@ import {
   coercePersonalInfo,
   type ChatbotId,
 } from '@/ai/chat/chatContext';
+import { buildIllustrationSection } from '@/ai/chat/imageSearch';
 import type { Persona } from '@/ai/prompts/_schema';
 
 /**
@@ -99,7 +100,10 @@ export async function POST(request: Request): Promise<Response> {
     getRuntimeForFeature('chat', { webSearch: true }),
   ]);
 
-  const system = `${template}${buildUserContextSection(personalInfo)}`;
+  // Illustrations : section ajoutée seulement si la recherche d'images Google est
+  // configurée (GOOGLE_SEARCH_API_KEY + GOOGLE_SEARCH_ENGINE_ID) — sans clé, le
+  // modèle n'émet jamais de marqueur <!--IMG:…--> (src/ai/chat/imageSearch.ts).
+  const system = `${template}${buildIllustrationSection()}${buildUserContextSection(personalInfo)}`;
   const modelMessages = await convertToModelMessages(uiMessages as any);
   const { tools: webTools, ...callOptions } = runtime.options;
 

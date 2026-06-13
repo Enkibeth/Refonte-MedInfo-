@@ -9,6 +9,7 @@
  *   - INTERACTION → boutons d'action rapide (format public et pro) ;
  *   - AUTO-RÉFLEXION → carte repliable discrète ;
  *   - <!--CALC:…--> → puces de scores cliniques ;
+ *   - <!--IMG:requête|légende--> → image d'illustration (Google via /api/image-search) ;
  *   - [1] + [2] + [3] (étudiant) → boutons d'approfondissement numérotés.
  */
 import { useMemo, useState } from 'react';
@@ -24,6 +25,7 @@ import {
   type PatientQuestion,
   type SourceBadge,
 } from '@/ai/chat/parseAssistantMessage';
+import { ChatIllustration } from '@/ui/chat/ChatIllustration';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
@@ -427,6 +429,8 @@ export function AssistantBlocks({
             return <ReflectionBlock key={i} markdown={block.markdown} />;
           case 'calc':
             return <CalcBlock key={i} ids={block.ids} onSend={onSend} disabled={disabled} />;
+          case 'image':
+            return <ChatIllustration key={i} query={block.query} caption={block.caption} />;
           case 'followups':
             return <FollowupsBlock key={i} questions={block.questions} onSend={onSend} disabled={disabled} />;
           default:

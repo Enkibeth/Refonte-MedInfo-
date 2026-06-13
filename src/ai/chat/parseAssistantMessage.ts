@@ -9,6 +9,7 @@
  *   - INTERACTION        → boutons d'action `[Option]` (public) ou `Question ? [A]+[B]+[C]` (pro) ;
  *   - AUTO-RÉFLEXION     → carte repliable de fin de réponse ;
  *   - <!--CALC:ids-->    → puces de scores cliniques suggérés ;
+ *   - <!--IMG:requête|légende--> → image d'illustration (résolue via /api/image-search) ;
  *   - étudiant           → 3 questions numérotées + ligne `[1] + [2] + [3]` → 3 boutons.
  *
  * Module PUR (aucune dépendance UI/réseau) : testé dans tests/unit/parse-assistant-message.test.ts.
@@ -98,6 +99,7 @@ export type ParsedBlock =
   | { type: 'interaction'; groups: InteractionGroup[] }
   | { type: 'reflection'; markdown: string }
   | { type: 'calc'; ids: string[] }
+  | { type: 'image'; query: string; caption: string }
   | { type: 'followups'; questions: string[] };
 
 export interface ParsedAssistantMessage {
@@ -131,6 +133,10 @@ export function isUppercaseHeading(line: string): boolean {
 }
 
 const CALC_RE = /<!--\s*CALC:([a-z0-9_,\s]+)\s*-->/i;
+const IMG_RE = /<!--\s*IMG\s*:\s*([^|>]+?)\s*(?:\|\s*([^>]*?))?\s*-->/i;
+// Marqueur HTML-comment encore incomplet (streaming) : la ligne est masquée du corps
+// le temps que `-->` arrive, pour ne jamais afficher de marqueur brut à l'écran.
+const PARTIAL_MARKER_RE = /^\s*<!--(?!.*-->)/;
 const SRC_LINE_RE = /^SRC(\d+)\s*::\s*(.+)$/;
 const BADGE_RE = /^\[(OFFICIEL|GUIDELINE|ÉTUDE|ETUDE|RCP)\]\s*/i;
 const URL_RE = /^https?:\/\/\S+$/;
@@ -352,6 +358,20 @@ export function parseAssistantMessage(text: string): ParsedAssistantMessage {
 
   for (const rawLine of rawLines) {
     const line = rawLine;
+
+    // Marqueur image d'illustration — bloc autonome, où qu'il apparaisse.
+    const img = line.match(IMG_RE);
+    if (img) {
+      flushSection();
+      flushBody();
+      const query = img[1].trim();
+      const caption = (img[2] ?? '').trim();
+      if (query) blocks.push({ type: 'image', query, caption: caption || query });
+      continue;
+    }
+
+    // Marqueur en cours de streaming (ex. `<!--IMG: genou` sans `-->`) : on attend.
+    if (PARTIAL_MARKER_RE.test(line)) continue;
 
     // Marqueur calculateur (pro) — bloc autonome, où qu'il apparaisse.
     const calc = line.match(CALC_RE);

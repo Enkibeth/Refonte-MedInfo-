@@ -305,6 +305,48 @@ describe('formatInlineCitations — (SRCx) → appels de note en exposant', () =
   });
 });
 
+describe('parseAssistantMessage — marqueur <!--IMG:…--> (illustrations)', () => {
+  it('extrait requête + légende en bloc image, hors du corps', () => {
+    const parsed = parseAssistantMessage(
+      `L'articulation du genou comporte deux ménisques.\n\n` +
+        `<!--IMG: knee joint anatomy diagram | Anatomie de l'articulation du genou -->\n\n` +
+        `Ils amortissent les contraintes.`,
+    );
+    const block = parsed.blocks.find((b) => b.type === 'image');
+    expect(block).toBeDefined();
+    if (block?.type !== 'image') return;
+    expect(block.query).toBe('knee joint anatomy diagram');
+    expect(block.caption).toBe("Anatomie de l'articulation du genou");
+    const all = parsed.blocks
+      .filter((b) => b.type === 'body')
+      .map((b) => (b.type === 'body' ? b.markdown : ''))
+      .join('\n');
+    expect(all).not.toContain('<!--IMG');
+    expect(all).toContain('ménisques');
+    expect(all).toContain('amortissent');
+  });
+
+  it('reprend la requête comme légende si la légende est absente', () => {
+    const parsed = parseAssistantMessage('<!--IMG: heimlich maneuver illustration -->');
+    const block = parsed.blocks.find((b) => b.type === 'image');
+    expect(block).toBeDefined();
+    if (block?.type !== 'image') return;
+    expect(block.query).toBe('heimlich maneuver illustration');
+    expect(block.caption).toBe('heimlich maneuver illustration');
+  });
+
+  it("masque un marqueur incomplet pendant le streaming (jamais de marqueur brut à l'écran)", () => {
+    const parsed = parseAssistantMessage('Début de réponse.\n<!--IMG: knee joint anat');
+    expect(parsed.blocks.some((b) => b.type === 'image')).toBe(false);
+    const all = parsed.blocks
+      .filter((b) => b.type === 'body')
+      .map((b) => (b.type === 'body' ? b.markdown : ''))
+      .join('\n');
+    expect(all).not.toContain('<!--');
+    expect(all).toContain('Début de réponse.');
+  });
+});
+
 describe('streaming partiel', () => {
   it('ne plante pas sur un texte tronqué en pleine section', () => {
     const partial = 'RÉSUMÉ\nDébut de réponse…\n\nSOURCES\n\nSRC1 :: [OFFICIEL] HAS :: HAS :: Tit';
