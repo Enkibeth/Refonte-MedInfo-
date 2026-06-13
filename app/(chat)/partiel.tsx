@@ -30,7 +30,7 @@ function PartielInner() {
         <iframe
           src="/partiel.html"
           title="Analyse des partiels"
-          style={{ flex: 1, width: '100%', border: 'none', backgroundColor: '#ffffff' }}
+          style={{ flex: 1, width: '100%', border: 'none', backgroundColor: tokens.colors.surface }}
         />
       ) : (
         <View style={styles.fallback}>
@@ -64,11 +64,11 @@ const styles = StyleSheet.create({
   },
   headerTop: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: tokens.space.sm },
   title: {
-    fontFamily: tokens.font.display,
+    fontFamily: tokens.font.serif,
     color: tokens.colors.text,
-    fontSize: tokens.type.h3.fontSize,
-    letterSpacing: tokens.type.h3.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    fontSize: tokens.type.h2.fontSize,
+    letterSpacing: tokens.type.h2.letterSpacing,
+    fontWeight: tokens.weight.semibold,
   },
   subtitle: {
     fontFamily: tokens.font.sans,

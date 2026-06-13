@@ -33,7 +33,7 @@ export default function Root({ children }: PropsWithChildren) {
 }
 
 const baseStyle = `
-html, body { background-color: #FAFBFC; }
+html, body { background-color: #F7FAFB; }
 /* Hauteur dynamique (dvh) : sur Safari mobile, la barre d'outils du navigateur ne
    recouvre plus le contenu → la barre d'onglets du bas reste entièrement visible.
    overflow-x masqué : un token très long (URL) ne crée plus de défilement horizontal

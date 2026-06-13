@@ -344,11 +344,11 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
   sectionTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
     letterSpacing: tokens.type.h3.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
     marginBottom: tokens.space.xs,
   },
   roleStatusList: { gap: tokens.space.sm, marginBottom: tokens.space.md },

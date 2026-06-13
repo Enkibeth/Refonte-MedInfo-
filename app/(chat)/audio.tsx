@@ -401,11 +401,11 @@ const styles = StyleSheet.create({
   },
   headerTop: { flexDirection: 'row', justifyContent: 'flex-end', paddingTop: tokens.space.sm },
   title: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.serif,
     color: tokens.colors.text,
-    fontSize: tokens.type.h3.fontSize,
-    letterSpacing: tokens.type.h3.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    fontSize: tokens.type.h2.fontSize,
+    letterSpacing: tokens.type.h2.letterSpacing,
+    fontWeight: tokens.weight.semibold,
     marginBottom: tokens.space.md,
   },
   modeSwitcher: {
@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
   recordingTime: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.text,
-    fontSize: 32,
+    fontSize: tokens.type.h1.fontSize,
     fontWeight: tokens.weight.bold,
   },
   stopButton: {
@@ -660,10 +660,10 @@ const styles = StyleSheet.create({
   },
   emoji: { fontSize: 40 },
   gateTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
     letterSpacing: tokens.type.h3.letterSpacing,
     textAlign: 'center',
   },
@@ -689,10 +689,10 @@ const styles = StyleSheet.create({
   },
   centeredBox: { alignItems: 'center', gap: tokens.space.lg, padding: tokens.space.xl },
   infoTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
     textAlign: 'center',
   },
   infoText: {

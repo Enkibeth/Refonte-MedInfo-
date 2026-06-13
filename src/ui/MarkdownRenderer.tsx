@@ -332,11 +332,11 @@ export function MarkdownRenderer({
 const mdStyles = StyleSheet.create({
   container: { gap: 2 },
   h2: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     fontSize: tokens.type.h3.fontSize,
     lineHeight: tokens.type.h3.lineHeight,
     letterSpacing: tokens.type.h3.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
     marginTop: 4,
     marginBottom: 2,
   },
@@ -386,7 +386,7 @@ const inlineStyles = StyleSheet.create({
   bold: { fontWeight: tokens.weight.bold },
   code: {
     fontFamily: tokens.font.mono,
-    fontSize: 13,
+    fontSize: tokens.type.caption.fontSize,
     backgroundColor: tokens.colors.surfaceSunken,
     borderRadius: 3,
     paddingHorizontal: 3,
@@ -394,7 +394,7 @@ const inlineStyles = StyleSheet.create({
   // Exposant de source : petit numéro accent cliquable (style « ¹ ² »).
   footnote: {
     fontFamily: tokens.font.sans,
-    fontSize: 11,
+    fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
     color: tokens.colors.accent,
     ...Platform.select({ web: { verticalAlign: 'super' } as object, default: {} }),

@@ -297,9 +297,9 @@ const styles = StyleSheet.create({
   headline: {
     fontFamily: tokens.font.serif,
     color: tokens.colors.onAccent,
-    fontSize: 44,
-    lineHeight: 52,
-    letterSpacing: -0.6,
+    fontSize: tokens.type.hero.fontSize,
+    lineHeight: tokens.type.hero.lineHeight,
+    letterSpacing: tokens.type.hero.letterSpacing,
     fontWeight: tokens.weight.semibold,
   },
   subhead: {

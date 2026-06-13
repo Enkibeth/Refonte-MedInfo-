@@ -532,11 +532,11 @@ const styles = StyleSheet.create({
   selectionContent: { padding: tokens.space.lg, gap: tokens.space.md },
   selectionHeader: { marginBottom: tokens.space.sm },
   selectionTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.serif,
     color: tokens.colors.text,
     fontSize: tokens.type.h2.fontSize,
     letterSpacing: tokens.type.h2.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
     lineHeight: tokens.type.h2.lineHeight,
   },
   selectionSubtitle: {
@@ -581,11 +581,11 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.medium,
   },
   prepTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.serif,
     color: tokens.colors.text,
     fontSize: tokens.type.h2.fontSize,
     letterSpacing: tokens.type.h2.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
   },
   prepBadge: {
     alignSelf: 'flex-start',
@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
   consigneLabel: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: 11,
+    fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.medium,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -668,10 +668,11 @@ const styles = StyleSheet.create({
     borderColor: tokens.colors.border,
   },
   simTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
-    fontWeight: tokens.weight.bold,
+    letterSpacing: tokens.type.h3.letterSpacing,
+    fontWeight: tokens.weight.semibold,
   },
   simSubtitle: {
     fontFamily: tokens.font.sans,
@@ -696,7 +697,7 @@ const styles = StyleSheet.create({
   },
   simBubbleRole: {
     fontFamily: tokens.font.mono,
-    fontSize: 10,
+    fontSize: tokens.type.micro.fontSize,
     color: 'rgba(255,255,255,0.6)',
     fontWeight: tokens.weight.medium,
   },
@@ -757,7 +758,7 @@ const styles = StyleSheet.create({
   simSendText: {
     color: tokens.colors.onAccent,
     fontWeight: tokens.weight.bold,
-    fontSize: 20,
+    fontSize: tokens.type.h3.fontSize,
   },
   finishButton: {
     height: 40,
@@ -778,11 +779,11 @@ const styles = StyleSheet.create({
   evalContent: { padding: tokens.space.lg, gap: tokens.space.md },
   evalHeader: { gap: 4 },
   evalTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.serif,
     color: tokens.colors.text,
     fontSize: tokens.type.h2.fontSize,
     letterSpacing: tokens.type.h2.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
   },
   evalSubtitle: {
     fontFamily: tokens.font.sans,
@@ -833,10 +834,10 @@ const styles = StyleSheet.create({
   },
   emoji: { fontSize: 40 },
   gateTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
     letterSpacing: tokens.type.h3.letterSpacing,
     textAlign: 'center',
   },
@@ -874,10 +875,11 @@ const caseStyles = StyleSheet.create({
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   cardTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
-    fontWeight: tokens.weight.bold,
+    letterSpacing: tokens.type.h3.letterSpacing,
+    fontWeight: tokens.weight.semibold,
     flex: 1,
     marginRight: tokens.space.sm,
   },
@@ -898,7 +900,7 @@ const caseStyles = StyleSheet.create({
   cardSpecialite: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: 11,
+    fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.medium,
   },
   cardConsigne: {

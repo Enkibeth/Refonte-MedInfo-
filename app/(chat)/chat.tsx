@@ -816,7 +816,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
     letterSpacing: tokens.type.h3.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
   },
   chatSubtitle: {
     fontFamily: tokens.font.sans,
@@ -952,7 +952,7 @@ const styles = StyleSheet.create({
     marginBottom: tokens.space.xs,
   },
   emptyTitle: {
-    fontFamily: tokens.font.display,
+    fontFamily: tokens.font.serif,
     color: tokens.colors.text,
     fontSize: tokens.type.h2.fontSize,
     lineHeight: tokens.type.h2.lineHeight,

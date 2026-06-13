@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
-    fontSize: 11,
+    fontSize: tokens.type.micro.fontSize,
     textAlign: 'center',
   },
   scaleLabelActive: { color: tokens.colors.accentDeep, fontWeight: tokens.weight.semibold },

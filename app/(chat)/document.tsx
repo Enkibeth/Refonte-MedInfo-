@@ -416,11 +416,11 @@ const styles = StyleSheet.create({
   },
   headerTop: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: tokens.space.sm },
   title: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.serif,
     color: tokens.colors.text,
-    fontSize: tokens.type.h3.fontSize,
-    letterSpacing: tokens.type.h3.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    fontSize: tokens.type.h2.fontSize,
+    letterSpacing: tokens.type.h2.letterSpacing,
+    fontWeight: tokens.weight.semibold,
   },
   subtitle: {
     fontFamily: tokens.font.sans,
@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   historyDelete: { padding: tokens.space.sm },
-  historyDeleteText: { color: tokens.colors.textMuted, fontSize: 14 },
+  historyDeleteText: { color: tokens.colors.textMuted, fontSize: tokens.type.label.fontSize },
   historyNote: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
   },
-  fileChipRemove: { color: tokens.colors.textMuted, fontSize: 14, padding: 4 },
+  fileChipRemove: { color: tokens.colors.textMuted, fontSize: tokens.type.label.fontSize, padding: 4 },
   textArea: {
     minHeight: 160,
     borderRadius: tokens.radius.md,
@@ -659,10 +659,10 @@ const styles = StyleSheet.create({
   },
   gateEmoji: { fontSize: 40 },
   gateTitle: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
-    fontWeight: tokens.weight.bold,
+    fontWeight: tokens.weight.semibold,
     letterSpacing: tokens.type.h3.letterSpacing,
     textAlign: 'center',
   },

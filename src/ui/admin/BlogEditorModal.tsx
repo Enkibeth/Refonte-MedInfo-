@@ -552,14 +552,14 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.surface,
   },
   closeBtn: { padding: tokens.space.sm },
-  closeBtnText: { fontFamily: tokens.font.sans, fontSize: 18, color: tokens.colors.textSubtle },
+  closeBtnText: { fontFamily: tokens.font.sans, fontSize: tokens.type.h3.fontSize, color: tokens.colors.textSubtle },
   headerTitle: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.semibold,
   },
-  statusLabel: { fontFamily: tokens.font.sans, fontSize: 11.5, marginTop: 1 },
+  statusLabel: { fontFamily: tokens.font.sans, fontSize: tokens.type.micro.fontSize, marginTop: 1 },
   statusPub: { color: tokens.colors.success },
   statusDraft: { color: tokens.colors.warningText },
   modeSwitch: {
@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
   categoryText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.accentDeep,
-    fontSize: 11.5,
+    fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.semibold,
   },
   previewTitle: {
@@ -711,7 +711,7 @@ const styles = StyleSheet.create({
   toolBtnText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textSubtle,
-    fontSize: 12,
+    fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
   },
   contentInput: {
@@ -723,7 +723,7 @@ const styles = StyleSheet.create({
     paddingVertical: tokens.space.md,
     fontFamily: tokens.font.mono,
     color: tokens.colors.text,
-    fontSize: 13,
+    fontSize: tokens.type.caption.fontSize,
     lineHeight: 20,
     minHeight: 420,
     textAlignVertical: 'top',

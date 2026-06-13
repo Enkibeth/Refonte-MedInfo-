@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   srcId: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.textMuted,
-    fontSize: 12,
+    fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
   },
   closeButton: {

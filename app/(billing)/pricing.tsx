@@ -161,14 +161,14 @@ const styles = StyleSheet.create({
   plans: { gap: tokens.space.lg },
   plan: { gap: tokens.space.xs },
   planLabel: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
     letterSpacing: tokens.type.h3.letterSpacing,
     fontWeight: tokens.weight.bold,
   },
   planPrice: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     color: tokens.colors.accent,
     fontSize: tokens.type.h1.fontSize,
     letterSpacing: tokens.type.h1.letterSpacing,
