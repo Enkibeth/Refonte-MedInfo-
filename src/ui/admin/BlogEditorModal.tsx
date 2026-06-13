@@ -27,6 +27,7 @@ import {
 } from 'react-native';
 
 import { splitArticleSections } from '@/blog/toc';
+import { Icon } from '@/ui/icons';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { tokens } from '@/ui/tokens';
 
@@ -304,7 +305,7 @@ export function BlogEditorModal({
             accessibilityRole="button"
             accessibilityLabel="Fermer l'éditeur"
           >
-            <Text style={styles.closeBtnText}>✕</Text>
+            <Icon name="x" size={18} color={tokens.colors.textSubtle} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={styles.headerTitle} numberOfLines={1}>
@@ -552,7 +553,6 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.surface,
   },
   closeBtn: { padding: tokens.space.sm },
-  closeBtnText: { fontFamily: tokens.font.sans, fontSize: tokens.type.h3.fontSize, color: tokens.colors.textSubtle },
   headerTitle: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,
@@ -655,7 +655,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
     textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    letterSpacing: tokens.tracking.caps,
   },
   fieldHint: {
     fontFamily: tokens.font.sans,

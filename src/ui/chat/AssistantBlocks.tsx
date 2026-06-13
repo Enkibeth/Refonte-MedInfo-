@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textSubtle,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
-    letterSpacing: 0.3,
+    letterSpacing: tokens.tracking.caps,
     textTransform: 'uppercase',
   },
 
@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
     fontFamily: tokens.font.sans,
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
-    letterSpacing: 0.4,
+    letterSpacing: tokens.tracking.caps,
   },
 
   sourcesWrapper: {

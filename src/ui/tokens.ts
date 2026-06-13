@@ -132,6 +132,13 @@ export const tokens = {
     semibold: '600',
     bold: '700',
   },
+  // ── Tracking des libellés UPPERCASE (deux crans seulement) ──────────────────
+  // caps : étiquettes UI (badges, labels de section/champ, méta) ;
+  // capsWide : eyebrows éditoriaux du marketing/hero. Jamais d'autre valeur.
+  tracking: {
+    caps: 0.8,
+    capsWide: 1.2,
+  },
   // Échelle modulaire (~1.2). Letter-spacing négatif sur les grands titres = rendu « dessiné ».
   type: {
     hero: { fontSize: 44, lineHeight: 52, letterSpacing: -0.6 }, // headline du hero landing uniquement

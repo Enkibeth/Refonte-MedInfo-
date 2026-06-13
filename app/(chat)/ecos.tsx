@@ -19,6 +19,7 @@ import { Link } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
 import { getSupabaseClient } from '@/db/supabase';
+import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
@@ -188,7 +189,9 @@ function EcosScreenInner() {
     return (
       <View style={styles.gateContainer}>
         <View style={styles.gateCard}>
-          <Text style={styles.emoji}>🩺</Text>
+          <View style={styles.iconBadge}>
+            <Icon name="stethoscope" size={26} color={tokens.colors.accentDeep} />
+          </View>
           <Text style={styles.gateTitle}>Réservé aux étudiants</Text>
           <Text style={styles.gateText}>
             Le module ECOS est conçu pour les étudiants en santé. Changez votre profil en
@@ -382,15 +385,15 @@ Sois précis, bienveillant et pédagogique.`;
 
         <View style={styles.prepInfo}>
           <View style={styles.prepInfoItem}>
-            <Text style={styles.prepInfoEmoji}>⏱</Text>
+            <Icon name="clock" size={18} color={tokens.colors.accentDeep} />
             <Text style={styles.prepInfoText}>Durée : {selectedCase.duree} min</Text>
           </View>
           <View style={styles.prepInfoItem}>
-            <Text style={styles.prepInfoEmoji}>📋</Text>
+            <Icon name="fileText" size={18} color={tokens.colors.accentDeep} />
             <Text style={styles.prepInfoText}>Évaluation sur grille à la fin</Text>
           </View>
           <View style={styles.prepInfoItem}>
-            <Text style={styles.prepInfoEmoji}>🤖</Text>
+            <Icon name="sparkles" size={18} color={tokens.colors.accentDeep} />
             <Text style={styles.prepInfoText}>Le patient est joué par l'IA</Text>
           </View>
         </View>
@@ -617,7 +620,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.medium,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: tokens.tracking.caps,
   },
   consigneText: {
     fontFamily: tokens.font.sans,
@@ -634,7 +637,6 @@ const styles = StyleSheet.create({
     gap: tokens.space.sm,
   },
   prepInfoItem: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
-  prepInfoEmoji: { fontSize: 18 },
   prepInfoText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textSubtle,
@@ -832,7 +834,14 @@ const styles = StyleSheet.create({
     gap: tokens.space.md,
     ...tokens.elevation.md,
   },
-  emoji: { fontSize: 40 },
+  iconBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accentSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   gateTitle: {
     fontFamily: tokens.font.display,
     color: tokens.colors.text,

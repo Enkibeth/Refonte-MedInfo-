@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: tokens.tracking.capsWide,
     marginBottom: tokens.space.md,
   },
   title: {

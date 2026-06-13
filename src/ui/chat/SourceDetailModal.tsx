@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'uppercase',
-    letterSpacing: 0.4,
+    letterSpacing: tokens.tracking.caps,
   },
   sectionText: {
     fontFamily: tokens.font.sans,

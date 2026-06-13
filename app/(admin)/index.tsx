@@ -1312,7 +1312,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.onAccent,
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
-    letterSpacing: 1,
+    letterSpacing: tokens.tracking.caps,
   },
   tabs: {
     flexDirection: 'row',
@@ -1387,7 +1387,7 @@ const sectionStyles = StyleSheet.create({
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: tokens.tracking.caps,
   },
 });
 
@@ -1498,7 +1498,7 @@ const paramStyles = StyleSheet.create({
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: tokens.tracking.caps,
     marginBottom: 2,
   },
   row: { gap: tokens.space.xs },
@@ -1769,7 +1769,7 @@ const ecosStyles = StyleSheet.create({
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.medium,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: tokens.tracking.caps,
   },
   input: {
     borderRadius: tokens.radius.sm,

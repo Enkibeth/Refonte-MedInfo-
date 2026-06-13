@@ -83,6 +83,10 @@ titres de page — jamais en corps de texte ni sur les petits titres UI.
   la taille des pictogrammes emoji décoratifs). Crans ajoutés : `hero` (44, headline de la
   landing uniquement) et `micro` (11 — badges, méta, onglets ; plus petit cran autorisé).
 
+**Tracking des libellés uppercase** : deux crans seulement via `tokens.tracking.*` —
+`caps` (0.8, étiquettes UI : badges, labels de section/champ, méta) et `capsWide`
+(1.2, eyebrows éditoriaux marketing/hero/pages pleines). Jamais de valeur ad hoc.
+
 Hiérarchie claire hero>display>H1>H2>H3>corps>label>caption>micro via `tokens.type.*`
 (échelle modulaire ~1.2, letter-spacing négatif sur les grands titres = rendu « dessiné »).
 Poids via `tokens.weight.*` (400/500/600/700 — on évite le 800 omniprésent ; les titres
@@ -143,7 +147,12 @@ décor. Tokens : `tokens.motion.*` ; CSS global (keyframes, scrollbar) : `app/+h
 ## 7. Iconographie & assets
 
 - Logo existant repris tel quel. Décliné en favicon, app icon (iOS/Android), splash.
-- Set d'icônes cohérent (lucide-react / phosphor — open, léger).
+- Set d'icônes cohérent (chemins style Lucide dans `src/ui/iconPaths.ts`, rendus par
+  `<Icon>` — `icons.web.tsx` sur web, `icons.tsx` en natif).
+- **Plus aucun emoji dans l'UI** (2026-06) : états vides, gates d'accès et listes de
+  préparation utilisent des icônes ligne dans une pastille `accentSurface` (56 px,
+  icône 26 px `accentDeep`). Les emojis du registre `AI_FEATURES` (panel admin) restent
+  une convention interne du registre, pas un élément d'UI publique.
 - Pas d'images DALL·E ; visuels sobres ou illustrations cohérentes si besoin.
 - App icon : fond petrol + monogramme/logo, conforme guidelines Apple/Google.
 

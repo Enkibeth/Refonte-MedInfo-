@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.accentVivid,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
-    letterSpacing: 1.2,
+    letterSpacing: tokens.tracking.capsWide,
     textTransform: 'uppercase',
     marginBottom: tokens.space.sm,
   },

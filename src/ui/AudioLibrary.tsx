@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: tokens.tracking.caps,
   },
   card: {
     borderRadius: tokens.radius.md,

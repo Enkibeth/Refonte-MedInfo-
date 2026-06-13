@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: tokens.tracking.caps,
     marginBottom: tokens.space.xs,
   },
   tocRow: {
