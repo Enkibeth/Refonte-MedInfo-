@@ -13,11 +13,11 @@
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { coerceUuid } from '@/db/ids';
 
 /** Valide un id de conversation transmis par le client (uuid, sinon null). */
 export function coerceConversationId(value: unknown): string | null {
-  return typeof value === 'string' && UUID_RE.test(value) ? value : null;
+  return coerceUuid(value);
 }
 
 /**

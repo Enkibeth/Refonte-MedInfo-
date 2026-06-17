@@ -25,27 +25,11 @@ import {
   buildPresentationContextSection,
   coercePresentationOptions,
 } from '@/ai/presentation/presentationPrompt';
-
-interface PresentationMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
+import { coerceHistoryMessages } from '@/presentation/decks';
 
 /** Garde-fous de payload (le contenu reste de l'information médicale générale). */
 const MAX_MESSAGES = 40;
 const MAX_MESSAGE_CHARS = 8_000;
-
-function coerceMessages(raw: unknown): PresentationMessage[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .filter((m): m is { role?: unknown; content?: unknown } => !!m && typeof m === 'object')
-    .map((m) => ({
-      role: m.role === 'assistant' ? ('assistant' as const) : ('user' as const),
-      content: typeof m.content === 'string' ? m.content.slice(0, MAX_MESSAGE_CHARS) : '',
-    }))
-    .filter((m) => m.content.length > 0)
-    .slice(-MAX_MESSAGES);
-}
 
 export async function POST(request: Request): Promise<Response> {
   // Quota technique (réutilise le compteur étudiant) — aucune donnée de message stockée.
@@ -72,7 +56,10 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: 'JSON invalide.' }, { status: 400 });
   }
 
-  const messages = coerceMessages(body.messages);
+  const messages = coerceHistoryMessages(body.messages, {
+    maxMessages: MAX_MESSAGES,
+    maxChars: MAX_MESSAGE_CHARS,
+  });
   if (messages.length === 0) {
     return Response.json({ error: 'Aucun message.' }, { status: 400 });
   }

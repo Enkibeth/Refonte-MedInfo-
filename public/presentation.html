@@ -496,14 +496,16 @@ function rReferences(ctx, s, slide, idx, total, meta) {
   if (slide.acknowledgements) { ctx.card(s, cx, 4.65, cw, H - 0.6 - 4.65); ctx.cardLabel(s, "Remerciements", cx + 0.35, 4.85, cw - 0.5); s.addText(slide.acknowledgements, { x: cx + 0.35, y: 5.2, w: cw - 0.5, h: 1.4, fontFace: F.sans, fontSize: 11, color: c.inkSecondary, valign: "top", margin: 0 }); }
   ctx.footer(s, idx, total, null);
 }
+// cover réordonne ses args (meta en 4e position) → wrapper requis ; les autres ont une
+// signature préfixe de (ctx, s, slide, idx, total, meta), donc une référence directe suffit
+// (les args en trop sont ignorés).
 const RENDERERS = {
   cover: (ctx, s, slide, idx, total, meta) => rCover(ctx, s, slide, meta),
-  section: (ctx, s, slide) => rSection(ctx, s, slide),
-  agenda: (ctx, s, slide) => rAgenda(ctx, s, slide),
+  section: rSection, agenda: rAgenda,
   bullets: rBullets, prose: rProse, twoColumn: rTwoColumn,
-  quote: (ctx, s, slide) => rQuote(ctx, s, slide),
+  quote: rQuote,
   statTrio: rStatTrio, bigNumber: rBigNumber, steps: rSteps, table: rTable, matrix: rMatrix, image: rImage, takeaway: rTakeaway,
-  references: (ctx, s, slide, idx, total, meta) => rReferences(ctx, s, slide, idx, total, meta),
+  references: rReferences,
 };
 function renderSlide(ctx, slide, idx, total, meta) { const s = ctx.pres.addSlide(); const fn = RENDERERS[slide.type]; if (fn) fn(ctx, s, slide, idx, total, meta); return s; }
 
@@ -836,7 +838,8 @@ function scheduleAutosave() {
   if (autosaveTimer) clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(() => saveDeck(), 1200);
 }
-function autosaveTick() { if (isDirty() && !saving) saveDeck(); }
+// Filet périodique — inutile (et la sérialisation du deck est coûteuse) tant que l'onglet/iframe est masqué.
+function autosaveTick() { if (document.visibilityState === "visible" && isDirty() && !saving) saveDeck(); }
 
 async function saveDeck(opts) {
   opts = opts || {};

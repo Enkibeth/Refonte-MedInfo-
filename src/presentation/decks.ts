@@ -6,7 +6,7 @@
  * identifiable (un deck = un support d'information médicale générale).
  */
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { coerceUuid } from '@/db/ids';
 
 /** Garde-fous de taille (un deck riche reste petit ; on borne large mais fini). */
 export const MAX_TITLE_CHARS = 200;
@@ -32,7 +32,7 @@ export type SanitizeResult = { ok: true; value: DeckPayload } | { ok: false; err
 
 /** Id de présentation transmis par le client (uuid, sinon null). */
 export function coerceDeckId(value: unknown): string | null {
-  return typeof value === 'string' && UUID_RE.test(value) ? value : null;
+  return coerceUuid(value);
 }
 
 export function coerceTheme(value: unknown): DeckTheme {
@@ -52,16 +52,28 @@ function jsonSize(value: unknown): number {
   }
 }
 
-function coerceAiHistory(value: unknown): DeckHistoryMessage[] {
+/**
+ * Normalise un tableau de messages `{role, content}` inconnu : ne garde que les rôles
+ * user/assistant au contenu non vide, borne optionnellement la longueur de chaque
+ * message (`maxChars`), puis conserve les `maxMessages` derniers. Partagé avec
+ * `/api/presentation` (même forme `{role, content}`).
+ */
+export function coerceHistoryMessages(
+  value: unknown,
+  { maxMessages, maxChars }: { maxMessages: number; maxChars?: number },
+): DeckHistoryMessage[] {
   if (!Array.isArray(value)) return [];
   return value
     .filter((m): m is { role?: unknown; content?: unknown } => !!m && typeof m === 'object')
-    .map((m) => ({
-      role: m.role === 'assistant' ? ('assistant' as const) : ('user' as const),
-      content: typeof m.content === 'string' ? m.content : '',
-    }))
+    .map((m) => {
+      const content = typeof m.content === 'string' ? m.content : '';
+      return {
+        role: m.role === 'assistant' ? ('assistant' as const) : ('user' as const),
+        content: maxChars ? content.slice(0, maxChars) : content,
+      };
+    })
     .filter((m) => m.content.length > 0)
-    .slice(-MAX_AI_HISTORY_MESSAGES);
+    .slice(-maxMessages);
 }
 
 /**
@@ -79,7 +91,7 @@ export function sanitizeDeckPayload(body: unknown): SanitizeResult {
     return { ok: false, error: 'deck trop volumineux.' };
   }
 
-  const aiHistory = coerceAiHistory(b.aiHistory);
+  const aiHistory = coerceHistoryMessages(b.aiHistory, { maxMessages: MAX_AI_HISTORY_MESSAGES });
   if (jsonSize(aiHistory) > MAX_AI_HISTORY_JSON_CHARS) {
     return { ok: false, error: 'historique trop volumineux.' };
   }
