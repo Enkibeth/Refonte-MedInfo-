@@ -583,6 +583,15 @@ const rowText = (c) => (Array.isArray(c) ? c.join(" | ") : "");
 const textRow = (s) => s.split("|").map((c) => c.trim());
 const hx = (v) => "#" + v;
 function setSlide(i, next) { state.deck.slides[i] = next; render(); }
+// Aperçu seul (panneau droit) sans reconstruire l'éditeur → préserve le focus/caret pendant la
+// frappe des champs simples. Repli sur un render complet si le panneau n'est pas (encore) présent.
+function refreshPreview() {
+  const right = document.getElementById("mip-right");
+  if (!right) { render(); return; }
+  right.innerHTML = "";
+  right.append(previewEl());
+  scheduleAutosave();
+}
 
 function fieldEl(field, slide, onChange) {
   const v = slide[field.key];
@@ -624,11 +633,14 @@ function editorEl() {
   const slide = state.deck.slides[state.sel];
   if (!slide) return h("div", { class: "mip-editor" }, h("p", { class: "mip-hint" }, "Aucune slide."));
   const def = SLIDE_TYPES[slide.type], words = slideTextLength(slide);
-  const onField = (key) => (val) => { slide[key] = val; setSlide(state.sel, { ...slide }); };
+  // Champs simples → MAJ aperçu seule (focus conservé) ; champs composés (items à plusieurs
+  // sous-champs) → render complet pour garder la cohérence des sous-champs entre deux frappes.
+  const STRUCTURAL = new Set(["stats", "table", "matrix", "column"]);
+  const onField = (f) => (val) => { slide[f.key] = val; state.deck.slides[state.sel] = { ...slide }; if (STRUCTURAL.has(f.kind)) render(); else refreshPreview(); };
   return h("div", { class: "mip-editor" },
     h("div", { class: "mip-editor-head" }, h("h3", {}, "Slide " + (state.sel + 1) + " · " + def.label), h("span", { class: "mip-editor-hint" }, def.hint)),
     words > 90 ? h("div", { class: "mip-banner mip-banner-warn" }, "Slide dense (~" + words + " mots).") : null,
-    h("div", { class: "mip-fields" }, ...def.fields.map((f) => fieldEl(f, slide, onField(f.key)))));
+    h("div", { class: "mip-fields" }, ...def.fields.map((f) => fieldEl(f, slide, onField(f)))));
 }
 
 /* ----- Aperçu ----- */
@@ -801,7 +813,9 @@ async function exportPptx(btn) {
 /* ----- Config ----- */
 function configEl() {
   const meta = state.deck.meta, opt = state.deck.options;
-  const setMeta = (k) => (e) => { meta[k] = e.target.value; if (k !== "title") render(); else scheduleAutosave(); };
+  // MAJ aperçu seule pour TOUS les champs méta (titre inclus) : l'aperçu suit la frappe sans
+  // reconstruire la barre de config, donc sans perte de focus (l'ancien cas spécial titre saute).
+  const setMeta = (k) => (e) => { meta[k] = e.target.value; refreshPreview(); };
   const field = (label, key, ph) => h("div", { class: "mip-field" }, h("label", {}, label), h("input", { class: "mip-input", value: meta[key] || "", placeholder: ph || "", oninput: setMeta(key) }));
   const themeChips = THEME_LIST.map((t) => {
     const a = THEMES[t.id].c;
@@ -955,7 +969,7 @@ function render() {
     h("div", { class: "mip-spacer" }), cloudBar, exportBtn);
   const left = h("div", { class: "mip-left" });
   if (state.tab === "manuel") left.append(slideListEl(), editorEl()); else left.append(aiChatEl());
-  const main = h("div", { class: "mip-main" }, left, h("div", { class: "mip-right" }, previewEl()));
+  const main = h("div", { class: "mip-main" }, left, h("div", { class: "mip-right", id: "mip-right" }, previewEl()));
   app.append(header, configEl(), main);
   if (state.libraryOpen) app.append(libraryModal());
   scheduleAutosave();
