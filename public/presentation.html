@@ -817,7 +817,7 @@ function configEl() {
     field("Contact", "contact", "prenom.nom@…"),
     h("div", { class: "mip-field" }, h("label", {}, "Thème"), h("div", { class: "mip-themes" }, ...themeChips)),
     h("div", { class: "mip-field" }, h("label", {}, "Densité du texte"), h("div", { class: "mip-seg" }, ...densBtns)),
-    h("div", { class: "mip-field" }, h("label", {}, "Nombre de slides visé (IA)"), h("input", { class: "mip-input", type: "number", min: 4, max: 40, value: state.slideCount, oninput: (e) => { state.slideCount = parseInt(e.target.value || "10", 10) || 10; } })),
+    h("div", { class: "mip-field" }, h("label", {}, "Nombre de slides visé (IA)"), h("input", { class: "mip-input", type: "number", min: 4, max: 40, value: state.slideCount, oninput: (e) => { const n = parseInt(e.target.value, 10); state.slideCount = Number.isFinite(n) ? n : 10; } })),
     h("div", { class: "mip-field" }, h("label", {}, "Public visé (IA)"), h("input", { class: "mip-input", value: opt.audience || "", placeholder: "Co-internes, staff…", oninput: (e) => { opt.audience = e.target.value; scheduleAutosave(); } }))));
 }
 
