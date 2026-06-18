@@ -6,7 +6,7 @@
  * AI_FEATURES ci-dessous. Ne pas oublier de déclarer le feature key dans
  * featureModel.ts et d'insérer une ligne dans ai_model_config (migration SQL).
  */
-import { createClient } from '@supabase/supabase-js';
+import { createUserScopedClient } from '@/auth/serverIdentity';
 
 /** IDs des comptes administrateurs (jamais exposés côté client). */
 export const ADMIN_USER_IDS = new Set([
@@ -25,44 +25,17 @@ export function isAdminUserId(userId: string): boolean {
 export async function requireAdmin(request: Request): Promise<
   { ok: true; userId: string } | { ok: false; response: Response }
 > {
-  const url = process.env.SUPABASE_URL ?? process.env.EXPO_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anonKey) {
-    return {
-      ok: false,
-      response: Response.json({ error: 'Backend non configuré.' }, { status: 503 }),
-    };
-  }
+  const auth = await createUserScopedClient(request);
+  if ('response' in auth) return { ok: false, response: auth.response };
 
-  const token = (request.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
-  if (!token) {
-    return {
-      ok: false,
-      response: Response.json({ error: 'Non authentifié.' }, { status: 401 }),
-    };
-  }
-
-  const client = createClient(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${token}` } },
-    auth: { persistSession: false },
-  });
-
-  const { data, error } = await client.auth.getUser();
-  if (error || !data.user) {
-    return {
-      ok: false,
-      response: Response.json({ error: 'Session invalide.' }, { status: 401 }),
-    };
-  }
-
-  if (!isAdminUserId(data.user.id)) {
+  if (!isAdminUserId(auth.userId)) {
     return {
       ok: false,
       response: Response.json({ error: 'Accès refusé.' }, { status: 403 }),
     };
   }
 
-  return { ok: true, userId: data.user.id };
+  return { ok: true, userId: auth.userId };
 }
 
 /**

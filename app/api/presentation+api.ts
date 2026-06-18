@@ -19,7 +19,7 @@ import { generateText } from 'ai';
 import { isAdminUserId } from '@/admin/index';
 import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
-import { resolveChatPersona } from '@/ai/routing/serverPersona';
+import { resolveChatPersona, isVerifiedToolPersona } from '@/ai/routing/serverPersona';
 import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
 import {
   buildPresentationContextSection,
@@ -32,17 +32,20 @@ const MAX_MESSAGES = 40;
 const MAX_MESSAGE_CHARS = 8_000;
 
 export async function POST(request: Request): Promise<Response> {
-  // Quota technique (réutilise le compteur étudiant) — aucune donnée de message stockée.
-  const rateLimit = await checkChatRateLimit(request, 'student');
+  // Quota dédié à l'outil (compteur 'presentation' isolé du chat/ECOS, palier 20/j pour tous les
+  // comptes autorisés) et autorisation persona sont indépendants → résolus en parallèle.
+  // Aucune donnée de message stockée.
+  const [rateLimit, resolution] = await Promise.all([
+    checkChatRateLimit(request, 'student', 'presentation'),
+    resolveChatPersona(request, null),
+  ]);
   if (!rateLimit.allowed) {
     return Response.json({ error: 'Limite de générations atteinte pour aujourd\'hui.' }, { status: 429 });
   }
 
-  // Persona EFFECTIVE dérivée du profil vérifié (jamais du body) — réservé étudiant/pro/admin.
-  const resolution = await resolveChatPersona(request, null);
+  // Autorisation dérivée du profil vérifié (jamais du body) — réservé étudiant/pro/admin.
   const isAdmin = resolution.userId ? isAdminUserId(resolution.userId) : false;
-  const allowed = isAdmin || resolution.persona === 'student' || resolution.persona === 'professional';
-  if (!allowed) {
+  if (!isVerifiedToolPersona(resolution, isAdmin)) {
     return Response.json(
       { error: 'Outil réservé aux comptes vérifiés étudiant ou professionnel de santé.' },
       { status: 403 },

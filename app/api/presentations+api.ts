@@ -12,39 +12,13 @@
  *
  * Pas d'appel LLM ici (ce n'est pas une feature IA) : la génération vit dans /api/presentation.
  */
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-
-import { getBearerToken } from '@/auth/serverIdentity';
+import { createUserScopedClient } from '@/auth/serverIdentity';
 import { coerceDeckId, sanitizeDeckPayload } from '@/presentation/decks';
 
 const LIST_LIMIT = 100;
 
-type Authed = { client: SupabaseClient; userId: string };
-
-async function authenticate(request: Request): Promise<Authed | { response: Response }> {
-  const url = process.env.SUPABASE_URL ?? process.env.EXPO_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anonKey) {
-    return { response: Response.json({ error: 'Backend non configuré.' }, { status: 503 }) };
-  }
-  const token = getBearerToken(request);
-  if (!token) {
-    return { response: Response.json({ error: 'Non authentifié.' }, { status: 401 }) };
-  }
-  // Client scopé au token → RLS appliquée (own-row). Jamais le service_role ici.
-  const client = createClient(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${token}` } },
-    auth: { persistSession: false },
-  });
-  const { data, error } = await client.auth.getUser();
-  if (error || !data.user) {
-    return { response: Response.json({ error: 'Session invalide.' }, { status: 401 }) };
-  }
-  return { client, userId: data.user.id };
-}
-
 export async function GET(request: Request): Promise<Response> {
-  const auth = await authenticate(request);
+  const auth = await createUserScopedClient(request);
   if ('response' in auth) return auth.response;
 
   const id = coerceDeckId(new URL(request.url).searchParams.get('id'));
@@ -70,7 +44,7 @@ export async function GET(request: Request): Promise<Response> {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const auth = await authenticate(request);
+  const auth = await createUserScopedClient(request);
   if ('response' in auth) return auth.response;
 
   let body: unknown;
@@ -110,7 +84,7 @@ export async function POST(request: Request): Promise<Response> {
 }
 
 export async function DELETE(request: Request): Promise<Response> {
-  const auth = await authenticate(request);
+  const auth = await createUserScopedClient(request);
   if ('response' in auth) return auth.response;
 
   const id = coerceDeckId(new URL(request.url).searchParams.get('id'));

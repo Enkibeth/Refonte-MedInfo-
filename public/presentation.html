@@ -534,12 +534,22 @@ function parseAIResponse(text) {
   if (m) { const jsonStr = m[1].trim(); const message = text.replace(m[0], "").trim(); try { return { message, deck: JSON.parse(jsonStr) }; } catch (e) { return { message: message || text.trim(), deck: null, parseError: e.message }; } }
   const trimmed = text.trim();
   if (trimmed.startsWith("{")) { try { return { message: "", deck: JSON.parse(trimmed) }; } catch (e) {} }
+  // Repli (fence non fermée si le flux est tronqué, ou JSON noyé dans le texte) : tente le plus grand
+  // bloc {…} et ne l'accepte que s'il ressemble à un deck (slides/meta), sinon on rend le texte tel quel.
+  const first = text.indexOf("{"), last = text.lastIndexOf("}");
+  if (first !== -1 && last > first) {
+    try {
+      const parsed = JSON.parse(text.slice(first, last + 1));
+      if (parsed && typeof parsed === "object" && (Array.isArray(parsed.slides) || parsed.meta)) {
+        const message = (text.slice(0, first) + text.slice(last + 1)).replace(/```(?:json)?/gi, "").trim();
+        return { message, deck: parsed };
+      }
+    } catch (e) {}
+  }
   return { message: trimmed, deck: null };
 }
 async function callAI({ history, deck, options }) {
-  const headers = { "Content-Type": "application/json" };
-  if (authToken) headers.Authorization = "Bearer " + authToken;
-  const res = await fetch("/api/presentation", { method: "POST", headers, body: JSON.stringify({ messages: history, deck, options }) });
+  const res = await apiFetch("/api/presentation", { method: "POST", body: JSON.stringify({ messages: history, deck, options }) });
   if (!res.ok) {
     let detail = "";
     try { const j = await res.json(); detail = j.error || j.message || ""; } catch (e) {}
@@ -838,19 +848,24 @@ function scheduleAutosave() {
   if (autosaveTimer) clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(() => saveDeck(), 1200);
 }
-// Filet périodique — inutile (et la sérialisation du deck est coûteuse) tant que l'onglet/iframe est masqué.
-function autosaveTick() { if (document.visibilityState === "visible" && isDirty() && !saving) saveDeck(); }
+// Filet de sécurité périodique : réessaie tant qu'il reste des modifications non enregistrées
+// (y compris onglet masqué, pour rattraper une sauvegarde échouée avant une fermeture brutale).
+function autosaveTick() { if (isDirty() && !saving) saveDeck(); }
 
 async function saveDeck(opts) {
   opts = opts || {};
   if (!authToken) { setSaveStatus("offline"); return; }
   if (saving) return;
   const content = currentContent();
-  if (state.deckId && content === lastSavedContent) { setSaveStatus("saved"); return; }
+  if (content === lastSavedContent) { setSaveStatus(state.deckId ? "saved" : "idle"); return; }
   saving = true; setSaveStatus("saving");
   try {
     const payload = { id: state.deckId, title: state.deck.meta.title, theme: state.deck.theme, deck: state.deck, aiHistory: state.aiHistory };
-    const res = await apiFetch("/api/presentations", { method: "POST", body: JSON.stringify(payload), keepalive: !!opts.keepalive });
+    const body = JSON.stringify(payload);
+    // keepalive (sauvegarde au départ de la page) est plafonné à ~64 Ko par la spec Fetch :
+    // au-delà, on retombe sur un envoi normal plutôt que de lever une exception silencieuse (perte du deck).
+    const useKeepalive = !!opts.keepalive && body.length < 60000;
+    const res = await apiFetch("/api/presentations", { method: "POST", body, keepalive: useKeepalive });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
     state.deckId = data.id || state.deckId;
@@ -893,7 +908,7 @@ async function deleteDeck(id) {
     const res = await apiFetch("/api/presentations?id=" + encodeURIComponent(id), { method: "DELETE" });
     if (!res.ok) return;
     if (state.deckId === id) { state.deckId = null; }
-    await refreshLibrary(); render();
+    await refreshLibrary(); // refreshLibrary re-render déjà la modale ouverte
   } catch (e) {}
 }
 function newDeck() {

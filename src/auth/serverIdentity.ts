@@ -8,7 +8,7 @@
  * Ce module ne lit jamais le body de la requête : il ne fait que résoudre l'utilisateur
  * authentifié (ou `null` pour un appel anonyme).
  */
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 /** Extrait le token d'un header `Authorization: Bearer <token>`. `null` si absent/malformé. */
 export function getBearerToken(request: Request): string | null {
@@ -16,6 +16,43 @@ export function getBearerToken(request: Request): string | null {
   if (!header) return null;
   const match = header.match(/^Bearer\s+(.+)$/i);
   return match?.[1]?.trim() || null;
+}
+
+export interface UserScopedClient {
+  /** Client Supabase scopé au token de la requête → la RLS own-row s'applique. */
+  client: SupabaseClient;
+  /** Id de l'utilisateur vérifié (jamais dérivé du body). */
+  userId: string;
+}
+
+/**
+ * Crée un client Supabase SCOPÉ AU TOKEN (clé anon + `Authorization` de la requête) de sorte
+ * que la RLS soit la barrière réelle — jamais le `service_role`. Retourne soit `{ client, userId }`
+ * vérifié, soit `{ response }` (503 backend absent / 401 token manquant ou invalide) prêt à renvoyer.
+ *
+ * Source unique pour toutes les routes qui ont besoin d'un client RLS au nom de l'utilisateur.
+ */
+export async function createUserScopedClient(
+  request: Request,
+): Promise<UserScopedClient | { response: Response }> {
+  const url = process.env.SUPABASE_URL ?? process.env.EXPO_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anonKey) {
+    return { response: Response.json({ error: 'Backend non configuré.' }, { status: 503 }) };
+  }
+  const token = getBearerToken(request);
+  if (!token) {
+    return { response: Response.json({ error: 'Non authentifié.' }, { status: 401 }) };
+  }
+  const client = createClient(url, anonKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false },
+  });
+  const { data, error } = await client.auth.getUser();
+  if (error || !data.user) {
+    return { response: Response.json({ error: 'Session invalide.' }, { status: 401 }) };
+  }
+  return { client, userId: data.user.id };
 }
 
 /**

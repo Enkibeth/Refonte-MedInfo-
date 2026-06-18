@@ -31,7 +31,7 @@ const DENSITY_RULES: Record<PresentationOptions['density'], string> = {
 };
 
 /** Taille maximale du deck sérialisé injecté dans le prompt (garde-fou payload). */
-export const MAX_DECK_JSON_CHARS = 60_000;
+export const MAX_DECK_PROMPT_CHARS = 60_000;
 
 function clampString(value: unknown, max: number): string {
   return typeof value === 'string' ? value.slice(0, max).trim() : '';
@@ -87,7 +87,7 @@ export function buildPresentationContextSection(
     } catch {
       serialized = '';
     }
-    if (serialized && serialized.length <= MAX_DECK_JSON_CHARS) {
+    if (serialized && serialized.length <= MAX_DECK_PROMPT_CHARS) {
       lines.push('');
       lines.push(
         '# ÉTAT ACTUEL DU DECK (peut avoir été édité manuellement par l\'utilisateur — pars de cet état)',

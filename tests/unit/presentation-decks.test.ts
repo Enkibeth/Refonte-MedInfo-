@@ -5,7 +5,7 @@ import {
   coerceTheme,
   coerceTitle,
   sanitizeDeckPayload,
-  MAX_DECK_JSON_CHARS,
+  MAX_DECK_STORAGE_CHARS,
   MAX_TITLE_CHARS,
 } from '@/presentation/decks';
 
@@ -74,7 +74,7 @@ describe('sanitizeDeckPayload', () => {
   });
 
   it('rejette un deck trop volumineux (garde-fou payload)', () => {
-    const huge = { meta: { title: 'T' }, blob: 'x'.repeat(MAX_DECK_JSON_CHARS + 10) };
+    const huge = { meta: { title: 'T' }, blob: 'x'.repeat(MAX_DECK_STORAGE_CHARS + 10) };
     expect(sanitizeDeckPayload({ deck: huge }).ok).toBe(false);
   });
 });

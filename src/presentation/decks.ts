@@ -10,7 +10,7 @@ import { coerceUuid } from '@/db/ids';
 
 /** Garde-fous de taille (un deck riche reste petit ; on borne large mais fini). */
 export const MAX_TITLE_CHARS = 200;
-export const MAX_DECK_JSON_CHARS = 200_000;
+export const MAX_DECK_STORAGE_CHARS = 200_000;
 export const MAX_AI_HISTORY_JSON_CHARS = 200_000;
 export const MAX_AI_HISTORY_MESSAGES = 80;
 
@@ -87,7 +87,7 @@ export function sanitizeDeckPayload(body: unknown): SanitizeResult {
   if (!b.deck || typeof b.deck !== 'object' || Array.isArray(b.deck)) {
     return { ok: false, error: 'deck requis (objet).' };
   }
-  if (jsonSize(b.deck) > MAX_DECK_JSON_CHARS) {
+  if (jsonSize(b.deck) > MAX_DECK_STORAGE_CHARS) {
     return { ok: false, error: 'deck trop volumineux.' };
   }
 

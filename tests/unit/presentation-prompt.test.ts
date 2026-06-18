@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import {
   buildPresentationContextSection,
   coercePresentationOptions,
-  MAX_DECK_JSON_CHARS,
+  MAX_DECK_PROMPT_CHARS,
 } from '@/ai/presentation/presentationPrompt';
 
 describe('coercePresentationOptions', () => {
@@ -63,7 +63,7 @@ describe('buildPresentationContextSection', () => {
   });
 
   it('n\'injecte pas un deck trop volumineux (garde-fou payload)', () => {
-    const huge = { blob: 'x'.repeat(MAX_DECK_JSON_CHARS + 100) };
+    const huge = { blob: 'x'.repeat(MAX_DECK_PROMPT_CHARS + 100) };
     const section = buildPresentationContextSection(coercePresentationOptions({}), huge);
     expect(section).not.toContain('# ÉTAT ACTUEL DU DECK');
   });

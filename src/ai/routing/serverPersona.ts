@@ -6,8 +6,9 @@
  *
  * - Appel anonyme (pas de token valide) → toujours `public`, quel que soit `body.persona`.
  * - Appel authentifié → persona lue dans `profiles.persona` (écrite côté serveur uniquement,
- *   après vérification, ADR-0011). `professional` n'étant pas servi par la route chat MVP
- *   (04_CHATBOT §8, gel ADR-0006), il est ramené à `public`.
+ *   après vérification, ADR-0011). Depuis la refonte 2026-06 (ADR-0024), les 3 personas
+ *   (`public`/`student`/`professional`) sont servies ; toute valeur hors `CHAT_PERSONAS`
+ *   est ramenée à `public` (fail-safe).
  *
  * Le champ `body.persona` n'est conservé que comme intention déclarée (audit) : toute demande
  * d'une persona plus privilégiée que celle accordée est signalée (`attemptedElevation`).
@@ -39,8 +40,17 @@ export interface ResolveChatPersonaDeps {
   supabase?: SupabaseClient | null;
 }
 
-/** Niveau de privilège (public < student). `professional` non servi par le chat MVP. */
+/** Niveau de privilège (public < student < professional). */
 const PRIVILEGE: Record<Persona, number> = { public: 0, student: 1, professional: 2 };
+
+/**
+ * Outils réservés aux comptes VÉRIFIÉS (étudiant/professionnel) et aux admins — dérivé de la
+ * persona effective serveur, jamais du body. Source unique pour les routes d'outils vérifiés
+ * (générateur de présentations, etc.) afin que la règle ne se duplique pas dans chaque route.
+ */
+export function isVerifiedToolPersona(resolution: ServerPersonaResolution, isAdmin: boolean): boolean {
+  return isAdmin || resolution.persona === 'student' || resolution.persona === 'professional';
+}
 
 function coerceRequestedPersona(value: unknown): Persona {
   if (value === 'student') return 'student';
@@ -88,7 +98,7 @@ export async function resolveChatPersona(
   }
 
   const profilePersona = await fetchProfilePersona(supabase, userId);
-  // `professional` n'est pas servi par le chat MVP → ramené à `public`.
+  // Toute valeur hors CHAT_PERSONAS (cas improbable) est ramenée à `public` (fail-safe).
   const persona: Persona = (CHAT_PERSONAS as string[]).includes(profilePersona)
     ? profilePersona
     : 'public';

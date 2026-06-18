@@ -130,14 +130,20 @@ function incrementInMemory(params: {
   };
 }
 
-export async function checkChatRateLimit(request: Request, persona: Persona): Promise<ChatRateLimitResult> {
+/**
+ * `scope` (optionnel) isole le compteur d'un outil donné : sans lui, chat/ECOS/etc. partagent
+ * un compteur unique par identité (comportement historique) ; avec `scope: 'presentation'`, l'outil
+ * dispose de son propre quota journalier et ne starve plus — n'est pas starvé par — les autres.
+ */
+export async function checkChatRateLimit(request: Request, persona: Persona, scope?: string): Promise<ChatRateLimitResult> {
   const dailyLimit = DAILY_LIMITS[persona];
   const windowDate = todayUtc();
   const supabase = getServiceClient();
   const userId = supabase ? await resolveVerifiedUserId(request, supabase) : null;
   const identityType: 'user' | 'ip' = userId ? 'user' : 'ip';
   const ipHash = userId ? null : hashIdentifier(clientIp(request));
-  const counterKey = userId ? `user:${userId}` : `ip:${ipHash}`;
+  const prefix = scope ? `${scope}:` : '';
+  const counterKey = userId ? `${prefix}user:${userId}` : `${prefix}ip:${ipHash}`;
 
   if (!supabase) {
     return incrementInMemory({ counterKey, persona, dailyLimit, windowDate, identityType });
