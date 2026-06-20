@@ -405,6 +405,13 @@ function makeContext(pres, theme, fonts, options) {
   return ctx;
 }
 
+// Préambule commun des slides « contenu » : fond de page + étiquette de section + titre.
+// (cover/section/agenda/quote/statTrio/bigNumber/takeaway/references ont un en-tête spécifique.)
+function contentHead(ctx, s, slide, idx) {
+  s.background = { color: ctx.c.pageBg };
+  ctx.sectionLabel(s, slide.label, String(idx).padStart(2, "0"));
+  ctx.title(s, slide.title);
+}
 function rCover(ctx, s, slide, meta) {
   const { c, F } = ctx; s.background = { color: c.pageBg };
   ctx.rect(s, MARGIN, MARGIN, 0.6, 0.06, c.accent);
@@ -434,10 +441,10 @@ function rAgenda(ctx, s, slide) {
     items.forEach((it, i) => { const y = 2.5 + i * 0.62; s.addText(String(i + 1).padStart(2, "0"), { x: MARGIN, y, w: 0.6, h: 0.45, fontFace: F.sans, fontSize: 12, color: c.accent, bold: true, charSpacing: 2, margin: 0 }); s.addText(it, { x: MARGIN + 0.8, y, w: W - 2 * MARGIN - 0.8, h: 0.5, fontFace: F.serif, fontSize: 16, color: c.ink, valign: "top", margin: 0 }); });
   }
 }
-function rBullets(ctx, s, slide, idx, total) { const { c } = ctx; s.background = { color: c.pageBg }; ctx.sectionLabel(s, slide.label, String(idx).padStart(2, "0")); ctx.title(s, slide.title); ctx.bullets(s, slide.items, MARGIN, 2.25, W - 2 * MARGIN, H - 3.0, { size: 13.5, gap: 10 }); ctx.footer(s, idx, total, slide.source); }
-function rProse(ctx, s, slide, idx, total) { const { c, F } = ctx; s.background = { color: c.pageBg }; ctx.sectionLabel(s, slide.label, String(idx).padStart(2, "0")); ctx.title(s, slide.title); s.addText(slide.body || "", { x: MARGIN, y: 2.3, w: W - 2 * MARGIN, h: H - 3.1, fontFace: F.sans, fontSize: 13.5, color: c.ink, valign: "top", margin: 0, paraSpaceAfter: 10, lineSpacingMultiple: 1.15 }); ctx.footer(s, idx, total, slide.source); }
+function rBullets(ctx, s, slide, idx, total) { contentHead(ctx, s, slide, idx); ctx.bullets(s, slide.items, MARGIN, 2.25, W - 2 * MARGIN, H - 3.0, { size: 13.5, gap: 10 }); ctx.footer(s, idx, total, slide.source); }
+function rProse(ctx, s, slide, idx, total) { const { c, F } = ctx; contentHead(ctx, s, slide, idx); s.addText(slide.body || "", { x: MARGIN, y: 2.3, w: W - 2 * MARGIN, h: H - 3.1, fontFace: F.sans, fontSize: 13.5, color: c.ink, valign: "top", margin: 0, paraSpaceAfter: 10, lineSpacingMultiple: 1.15 }); ctx.footer(s, idx, total, slide.source); }
 function rTwoColumn(ctx, s, slide, idx, total) {
-  const { c } = ctx; s.background = { color: c.pageBg }; ctx.sectionLabel(s, slide.label, String(idx).padStart(2, "0")); ctx.title(s, slide.title);
+  contentHead(ctx, s, slide, idx);
   const gap = 0.5, colW = (W - 2 * MARGIN - gap) / 2, y = 2.4, hCol = H - 3.1;
   [slide.left, slide.right].forEach((col, i) => { const x = MARGIN + i * (colW + gap); ctx.accentCard(s, x, y, colW, hCol); ctx.cardLabel(s, (col && col.label) || "", x + 0.35, y + 0.3, colW - 0.6); ctx.bullets(s, (col && col.items) || [], x + 0.35, y + 0.75, colW - 0.7, hCol - 1.0, { size: 12, gap: 8 }); });
   ctx.footer(s, idx, total, slide.source);
@@ -457,20 +464,20 @@ function rBigNumber(ctx, s, slide, idx, total) {
   ctx.footer(s, idx, total, slide.source);
 }
 function rSteps(ctx, s, slide, idx, total) {
-  const { c, F } = ctx; s.background = { color: c.pageBg }; ctx.sectionLabel(s, slide.label, String(idx).padStart(2, "0")); ctx.title(s, slide.title);
+  const { c, F } = ctx; contentHead(ctx, s, slide, idx);
   const items = slide.items || [], y0 = 2.4, hAvail = H - 3.1, stepH = Math.min(1.0, hAvail / Math.max(items.length, 1));
   items.forEach((it, i) => { const y = y0 + i * stepH; s.addText(String(i + 1).padStart(2, "0"), { x: MARGIN, y, w: 0.7, h: stepH, fontFace: F.serif, fontSize: 24, color: c.accent, italic: true, valign: "top", margin: 0 }); if (i < items.length - 1) ctx.line(s, MARGIN + 0.22, y + 0.5, 0, stepH - 0.45, c.rule, 0.75); s.addText(it, { x: MARGIN + 0.95, y, w: W - 2 * MARGIN - 0.95, h: stepH, fontFace: F.sans, fontSize: 13, color: c.ink, valign: "top", margin: 0 }); });
   ctx.footer(s, idx, total, slide.source);
 }
-function rTable(ctx, s, slide, idx, total) { const { c } = ctx; s.background = { color: c.pageBg }; ctx.sectionLabel(s, slide.label, String(idx).padStart(2, "0")); ctx.title(s, slide.title); ctx.table(s, slide.table, MARGIN, 2.35, W - 2 * MARGIN, H - 3.1); ctx.footer(s, idx, total, slide.source); }
+function rTable(ctx, s, slide, idx, total) { contentHead(ctx, s, slide, idx); ctx.table(s, slide.table, MARGIN, 2.35, W - 2 * MARGIN, H - 3.1); ctx.footer(s, idx, total, slide.source); }
 function rMatrix(ctx, s, slide, idx, total) {
-  const { c, F } = ctx; s.background = { color: c.pageBg }; ctx.sectionLabel(s, slide.label, String(idx).padStart(2, "0")); ctx.title(s, slide.title);
+  const { c, F } = ctx; contentHead(ctx, s, slide, idx);
   const cells = (slide.cells || []).slice(0, 4), gap = 0.4, gW = (W - 2 * MARGIN - gap) / 2, gH = (H - 3.1 - gap) / 2, gx0 = MARGIN, gy0 = 2.4;
   cells.forEach((cell, i) => { const col = i % 2, row = Math.floor(i / 2), x = gx0 + col * (gW + gap), y = gy0 + row * (gH + gap); ctx.accentCard(s, x, y, gW, gH); s.addText(String(cell.label ?? ""), { x: x + 0.35, y: y + 0.28, w: gW - 0.6, h: 0.5, fontFace: F.serif, fontSize: 16, color: c.ink, margin: 0 }); s.addText(String(cell.text ?? ""), { x: x + 0.35, y: y + 0.85, w: gW - 0.6, h: gH - 1.1, fontFace: F.sans, fontSize: 11.5, color: c.inkSecondary, valign: "top", margin: 0 }); });
   ctx.footer(s, idx, total, slide.source);
 }
 function rImage(ctx, s, slide, idx, total) {
-  const { c } = ctx; s.background = { color: c.pageBg }; ctx.sectionLabel(s, slide.label, String(idx).padStart(2, "0")); ctx.title(s, slide.title);
+  const { c } = ctx; contentHead(ctx, s, slide, idx);
   const imgX = MARGIN, imgY = 2.35, imgW = W * 0.6, imgH = H - 3.1;
   if (slide.image) { try { const opt = { x: imgX, y: imgY, w: imgW, h: imgH, sizing: { type: "contain", w: imgW, h: imgH } }; if (/^data:/.test(slide.image)) opt.data = slide.image; else opt.path = slide.image; s.addImage(opt); } catch (e) { ctx.placeholder(s, imgX, imgY, imgW, imgH, "IMAGE NON CHARGÉE"); } }
   else ctx.placeholder(s, imgX, imgY, imgW, imgH, "INSÉRER LE VISUEL (ECG / imagerie / figure)");

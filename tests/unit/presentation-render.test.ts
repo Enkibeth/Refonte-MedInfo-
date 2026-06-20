@@ -98,3 +98,39 @@ describe('cohérence aperçu/PPTX (#12 — anti-divergence)', () => {
     expect(() => MIP.buildPres(FakePptx, deck)).not.toThrow();
   });
 });
+
+// Tests de CARACTÉRISATION : figent la sortie EXACTE des deux moteurs pour permettre une
+// factorisation sûre (toute différence d'appel PPTX ou de HTML d'aperçu casse le snapshot).
+describe('consolidation sûre — sortie figée (caractérisation)', () => {
+  const META = {
+    title: 'Titre deck', subtitle: 'Sous-titre', author: 'Dr Exemple',
+    affiliation: 'CHU', contact: 'a@b.fr', context: 'Staff', date: '2026',
+  };
+  const allSlides = () => Object.keys(MIP.SLIDE_TYPES).map((t) => MIP.createSlide(t));
+
+  it('séquence d’appels PptxGenJS identique pour tous les types', () => {
+    const log: unknown[] = [];
+    class RecSlide {
+      set background(v: unknown) { log.push(['bg', v]); }
+      addText(...a: unknown[]) { log.push(['addText', ...a]); return this; }
+      addShape(...a: unknown[]) { log.push(['addShape', ...a]); return this; }
+      addImage(...a: unknown[]) { log.push(['addImage', ...a]); return this; }
+    }
+    class RecPptx {
+      set layout(v: unknown) { log.push(['layout', v]); }
+      set author(v: unknown) { log.push(['author', v]); }
+      set company(v: unknown) { log.push(['company', v]); }
+      set title(v: unknown) { log.push(['title', v]); }
+      addSlide() { log.push(['addSlide']); return new RecSlide(); }
+    }
+    MIP.buildPres(RecPptx, { meta: META, theme: 'v2', options: { showFooter: true, showSlideNumbers: true }, slides: allSlides() });
+    expect(log).toMatchSnapshot();
+  });
+
+  it('HTML d’aperçu identique pour tous les types', () => {
+    const html = Object.keys(MIP.SLIDE_TYPES).map(
+      (t) => (MIP.slidePreview(MIP.createSlide(t), 'v2', META, 1, 3) as { outerHTML: string }).outerHTML,
+    );
+    expect(html).toMatchSnapshot();
+  });
+});
