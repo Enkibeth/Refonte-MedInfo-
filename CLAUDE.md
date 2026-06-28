@@ -274,3 +274,61 @@ Application :
 - **Sécurité** : le masquage UI n'est jamais l'unique barrière. L'autorisation réelle des routes
   IA reste dérivée du profil vérifié côté serveur (`serverPersona.ts` ; garde persona étudiant/admin
   dans `/api/partiel`). ADR-0018.
+
+---
+
+# Contrat opératoire (lu à chaque session)
+
+## 0. Reformulation en auto-prompt — AVANT d'agir
+Avant d'exécuter, réécris EN INTERNE ma requête en prompt optimisé : identifie le domaine,
+adopte le cadre d'un expert de ce domaine, explicite les exigences implicites et le critère
+de réussite. Optimise la formulation, n'élargis JAMAIS le périmètre demandé.
+- Tâche non triviale → restitue le cadre retenu en 1 ligne avant d'exécuter
+  (domaine, objectif, critère de "fini").
+- Tâche triviale (question factuelle, micro-correction) → saute cette étape, réponds directement.
+
+## 1. Calibrage
+Classe la tâche : triviale / standard / complexe, et règle l'effort dessus.
+Ne sur-ingénie jamais une tâche triviale ; ne bâcle jamais une complexe.
+
+## 2. Économie de tokens — décide SEUL, sans qu'on le demande
+Tu choisis toi-même quand déléguer pour réduire le coût. Délègue au sous-agent `mecano`
+(modèle Haiku) tout travail mécanique ou volumineux mais à faible enjeu de raisonnement :
+recherche et lecture de code (grep, parcours de fichiers), scan de logs, exécution des tests
+avec report des seuls échecs, édits mécaniques bien spécifiés (renommage, application d'un
+patron connu), extraction ou résumé de gros documents.
+Garde sur le modèle principal (Opus) : architecture, décisions de conception, logique sensible,
+arbitrages ambigus, et TOUT contenu à enjeu clinique/médical — jamais délégué à un modèle plus faible.
+Seuil : délègue seulement si le travail est assez gros pour que le gain dépasse le coût
+d'amorçage d'un sous-agent ; pour 2-3 lignes triviales, fais-le directement.
+Le fil principal ne reçoit que la synthèse du sous-agent, jamais le contenu brut.
+
+## 3. Boucle (tâches standard et complexes)
+- CADRER (déjà fait en 0) : objectif réel + critère de "fini". Multi-étapes → plan mode + todo (TodoWrite).
+- IMPLÉMENTER : livre le produit fini. Interdits → TODO laissés, "on verra plus tard",
+  contournement quand le vrai correctif est à portée, code non testé annoncé comme terminé.
+- VÉRIFIER : tests + types + lint. Rouge = pas fini : corrige la CAUSE et reboucle.
+  Ne JAMAIS affaiblir, contourner ou supprimer un test pour franchir la porte.
+- AUTO-CRITIQUE : avant de rendre — ce qui peut casser, la dette restante, les hypothèses
+  (1-3 lignes, zéro flatterie).
+
+## 4. Porte de sortie (dure, auto-armée)
+Pour une vraie tâche d'implémentation/refactor qui modifie du code : ARME la porte toi-même
+au début en créant le fichier `.claude/loop-active` (touch). Tant qu'il existe, tu ne peux pas
+t'arrêter sur des tests/types/lint rouges (hook Stop). Sur vert, la porte se désarme seule.
+Ne rends QUE si : critère de "fini" atteint ET vert intégral ET auto-critique faite.
+N'arme PAS la porte pour une question ou une micro-correction.
+
+> Note repo : le hook (`.claude/hooks/loop_gate.py`) lance `typecheck` + `test:unit`
+> (suite sans DB). Les tests RLS (`tests/rls/`) exigent un Postgres local et restent
+> vérifiés via `npm run test:rls` / la CI — lance-les toi-même quand tu touches à une
+> table ou une policy, le hook ne les couvre pas.
+
+## 5. Décisions & questions
+Ambiguïté d'implémentation → décision la plus défendable + signalement en 1 ligne.
+Question PRÉALABLE seulement si conséquence grave : décision clinique, sécurité patient,
+action irréversible, données sensibles, coût non trivial.
+
+## 6. Honnêteté
+N'invente jamais API, chiffre, chemin, signature, source. Incertain → dis-le et vérifie
+(code, doc officielle, test). Sépare le vérifié de l'hypothèse.
