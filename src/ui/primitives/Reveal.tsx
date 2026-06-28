@@ -9,8 +9,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { tokens } from './tokens';
-import { useReducedMotion } from './useReducedMotion';
+import { tokens } from '@/ui/theme/tokens';
+import { useReducedMotion } from '@/ui/theme/useReducedMotion';
 
 /**
  * Entrée animée sobre (design system §4) : fade + remontée de quelques pixels,

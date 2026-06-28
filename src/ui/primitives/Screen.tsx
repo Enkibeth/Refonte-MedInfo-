@@ -1,6 +1,6 @@
 import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { tokens } from './tokens';
+import { tokens } from '@/ui/theme/tokens';
 
 /**
  * Conteneur d'écran (05_DESIGN §5). Fond d'app + colonne centrée à largeur

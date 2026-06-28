@@ -16,8 +16,8 @@ import {
   View,
 } from 'react-native';
 
-import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
-import { tokens } from '@/ui/tokens';
+import { MarkdownRenderer } from '@/ui/primitives/MarkdownRenderer';
+import { tokens } from '@/ui/theme/tokens';
 import {
   deleteAudioDocument,
   getAudioSignedUrl,

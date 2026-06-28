@@ -4,7 +4,7 @@ import {
   buildPresentationContextSection,
   coercePresentationOptions,
   MAX_DECK_JSON_CHARS,
-} from '@/ai/presentation/presentationPrompt';
+} from '@/presentation/presentationPrompt';
 
 describe('coercePresentationOptions', () => {
   it('applique des valeurs par défaut sûres pour une entrée vide', () => {

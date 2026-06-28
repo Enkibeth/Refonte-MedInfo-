@@ -11,11 +11,11 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { getPostBySlug, type BlogPost } from '@/blog/posts';
 import { splitArticleSections } from '@/blog/toc';
-import { LandingHeader } from '@/ui/LandingHeader';
-import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
-import { Icon } from '@/ui/icons';
-import { Skeleton } from '@/ui/Skeleton';
-import { tokens } from '@/ui/tokens';
+import { LandingHeader } from '@/ui/components/LandingHeader';
+import { MarkdownRenderer } from '@/ui/primitives/MarkdownRenderer';
+import { Icon } from '@/ui/icons/icons';
+import { Skeleton } from '@/ui/primitives/Skeleton';
+import { tokens } from '@/ui/theme/tokens';
 
 function formatDate(iso: string | null): string {
   if (!iso) return '';

@@ -1,6 +1,6 @@
 import { View, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
-import { tokens } from './tokens';
+import { tokens } from '@/ui/theme/tokens';
 
 /**
  * Carte de contenu (05_DESIGN §5). Surface surélevée discrète : bordure fine +

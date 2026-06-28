@@ -6,7 +6,7 @@
 import { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { tokens } from '@/ui/tokens';
+import { tokens } from '@/ui/theme/tokens';
 
 export interface SegmentedSliderOption<T extends string> {
   value: T;

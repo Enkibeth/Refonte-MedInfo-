@@ -5,9 +5,9 @@
  */
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import type { ChatbotId } from '@/ai/chat/chatContext';
-import { Icon, type IconName } from '@/ui/icons';
-import { tokens } from '@/ui/tokens';
+import type { ChatbotId } from '@/chat/chatContext';
+import { Icon, type IconName } from '@/ui/icons/icons';
+import { tokens } from '@/ui/theme/tokens';
 
 export const CHATBOT_META: Record<ChatbotId, { label: string; shortLabel: string; icon: IconName; description: string }> = {
   public: {

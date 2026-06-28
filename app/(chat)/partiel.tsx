@@ -8,9 +8,9 @@
  */
 import { View, Text, StyleSheet, Platform } from 'react-native';
 
-import { tokens } from '@/ui/tokens';
-import { RoleGate } from '@/ui/RoleGate';
-import { ToolsMenu } from '@/ui/ToolsMenu';
+import { tokens } from '@/ui/theme/tokens';
+import { RoleGate } from '@/ui/components/RoleGate';
+import { ToolsMenu } from '@/ui/components/ToolsMenu';
 
 function PartielInner() {
   return (

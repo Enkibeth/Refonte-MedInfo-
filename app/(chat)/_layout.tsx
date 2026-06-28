@@ -6,8 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
 import { isFeatureVisible, type AppFeatureId } from '@/ai/routing/featureVisibility';
-import { Icon, type IconName } from '@/ui/icons';
-import { tokens } from '@/ui/tokens';
+import { Icon, type IconName } from '@/ui/icons/icons';
+import { tokens } from '@/ui/theme/tokens';
 
 function TabIcon({ icon, focused }: { icon: IconName; focused: boolean }) {
   return (

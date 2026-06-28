@@ -12,7 +12,7 @@ date: 2026-06-06
 
 - **Réconciliation `main` ↔ `dev`** : merge de `origin/dev` (refonte design #59 + fix CI #62) dans la
   branche de session, qui contenait déjà le branding `main` (#60/#61). Conflits limités à `app/index.tsx`
-  et `src/ui/Logo.tsx`, résolus en faveur de `dev` (Logo wordmark code `size`+`tone`, hero design system) ;
+  et `src/ui/primitives/Logo.tsx`, résolus en faveur de `dev` (Logo wordmark code `size`+`tone`, hero design system) ;
   branding des écrans Compte/Tarifs/Légal/Chat + assets conservés. Typecheck vert.
 - **Visibilité des outils par rôle (grosse modif)** : matrice stricte par persona
   (`src/ai/routing/featureVisibility.ts`) — grand public : Chat + Document ; étudiant : Chat + ECOS +
@@ -29,9 +29,9 @@ date: 2026-06-06
 
 ### Itération 2 (même jour) — dictée, menu d'outils, correction partiel, nettoyage PR
 
-- **Dictée vocale** dans les saisies chat + ECOS (`src/ui/DictationButton.tsx`) : voix → texte via
+- **Dictée vocale** dans les saisies chat + ECOS (`src/ui/components/DictationButton.tsx`) : voix → texte via
   Whisper (`/api/transcribe`, nouveau mode `raw` sans diarisation). Le texte repasse par la safe-box.
-- **Menu déroulant d'outils** (`src/ui/ToolsMenu.tsx`) dans les en-têtes (chat/document/audio) : switch
+- **Menu déroulant d'outils** (`src/ui/components/ToolsMenu.tsx`) dans les en-têtes (chat/document/audio) : switch
   rôle-aware bien visible, complète la barre d'onglets du bas.
 - **Analyseur de « partiel » corrigé** : la 1re version (coach de révision LLM) était erronée. La vraie
   feature (medoutils) est un **analyseur de classement de promo** (import des notes → rang + comparaison),
@@ -335,7 +335,7 @@ Validations : `npm run typecheck` ✅ · `npm run test` (88) ✅ · `npm run com
   `CLASSIFIER_MODEL_ID` sans changement de code.
 - **Pages légales** publiques ajoutées : mentions légales (LCEN), politique de confidentialité (RGPD),
   CGU/CGV. Contenu dans `src/compliance/legal.ts` (source unique, réutilise INTENDED_PURPOSE /
-  getAiDisclosure / CANONICAL_REFUSAL), rendu par `src/ui/LegalScreen.tsx`, routes `app/(legal)/`,
+  getAiDisclosure / CANONICAL_REFUSAL), rendu par `src/ui/components/LegalScreen.tsx`, routes `app/(legal)/`,
   liens en pied de page (accueil + compte). Champs propres à l'éditeur en placeholder « [À COMPLÉTER] »
   (action Hugo : raison sociale, SIREN, adresse, directeur de publication, e-mail DPO).
 - Validations locales : `npm run typecheck` OK · tests hors-RLS **189 verts** (+18) · `compliance:grep`,

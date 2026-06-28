@@ -19,8 +19,8 @@ import {
   isFeatureVisible,
   type AppFeatureId,
 } from '@/ai/routing/featureVisibility';
-import { Icon } from '@/ui/icons';
-import { tokens } from '@/ui/tokens';
+import { Icon } from '@/ui/icons/icons';
+import { tokens } from '@/ui/theme/tokens';
 
 const PERSONA_LABELS: Record<string, string> = {
   public: 'Grand public',

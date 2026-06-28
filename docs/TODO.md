@@ -30,7 +30,7 @@
 aucune attribution pro non vérifiée). Statut code : ✅ prêt, stub en place (ADR-0011).
 
 ## 4. Logo image + ancien visuel (déposer 2 fichiers)
-Le logo est pour l'instant **rendu en code** (`src/ui/Logo.tsx`). Pour passer aux vraies images :
+Le logo est pour l'instant **rendu en code** (`src/ui/primitives/Logo.tsx`). Pour passer aux vraies images :
 - Déposer `assets/brand/logo-wordmark.png` (logo MedInfo AI fourni).
 - Déposer `assets/brand/legacy-illustration.png` (ancien visuel à afficher « pour le moment »).
 - Puis branchement (cf `assets/brand/README.md`) : basculer `Logo` sur `<Image>` + afficher

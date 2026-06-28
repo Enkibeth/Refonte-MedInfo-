@@ -6,13 +6,13 @@ import { isAdminUserId } from '@/admin/index';
 import type { Persona } from '@/ai/prompts/_schema';
 import { visibleFeatures } from '@/ai/routing/featureVisibility';
 import { INTENDED_PURPOSE, getAiDisclosure } from '@/compliance/disclosures';
-import { Button } from '@/ui/Button';
-import { HeroBackdrop } from '@/ui/HeroBackdrop';
-import { Icon, type IconName } from '@/ui/icons';
-import { LandingHeader } from '@/ui/LandingHeader';
-import { PersonaCard, type PersonaId } from '@/ui/PersonaCard';
-import { Reveal } from '@/ui/Reveal';
-import { tokens } from '@/ui/tokens';
+import { Button } from '@/ui/primitives/Button';
+import { HeroBackdrop } from '@/ui/primitives/HeroBackdrop';
+import { Icon, type IconName } from '@/ui/icons/icons';
+import { LandingHeader } from '@/ui/components/LandingHeader';
+import { PersonaCard, type PersonaId } from '@/ui/components/PersonaCard';
+import { Reveal } from '@/ui/primitives/Reveal';
+import { tokens } from '@/ui/theme/tokens';
 
 /** Persona « santé » ciblée par une carte d'accueil (la carte `pro` → 'professional'). */
 const CARD_PERSONA: Record<PersonaId, Persona> = {

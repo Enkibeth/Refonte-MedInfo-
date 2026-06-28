@@ -5,10 +5,10 @@ import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSession } from '@/auth/AuthProvider';
 import { ROLES } from '@/auth/roles';
 import type { Persona } from '@/ai/prompts/_schema';
-import { Button } from '@/ui/Button';
-import { Card } from '@/ui/Card';
-import { Screen } from '@/ui/Screen';
-import { tokens } from '@/ui/tokens';
+import { Button } from '@/ui/primitives/Button';
+import { Card } from '@/ui/primitives/Card';
+import { Screen } from '@/ui/primitives/Screen';
+import { tokens } from '@/ui/theme/tokens';
 
 /**
  * Sélection de rôle (ADR-0011). Le rôle vérifié est attribué côté serveur (/api/role) :

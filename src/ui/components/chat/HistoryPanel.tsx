@@ -19,11 +19,11 @@ import {
 } from 'react-native';
 
 import type { ChatConversation } from '@/chat/history';
-import { CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
-import { Icon } from '@/ui/icons';
-import { Skeleton } from '@/ui/Skeleton';
-import { tokens } from '@/ui/tokens';
-import { useReducedMotion } from '@/ui/useReducedMotion';
+import { CHATBOT_META } from '@/ui/components/chat/ChatbotSwitcher';
+import { Icon } from '@/ui/icons/icons';
+import { Skeleton } from '@/ui/primitives/Skeleton';
+import { tokens } from '@/ui/theme/tokens';
+import { useReducedMotion } from '@/ui/theme/useReducedMotion';
 
 function formatDate(iso: string): string {
   const d = new Date(iso);

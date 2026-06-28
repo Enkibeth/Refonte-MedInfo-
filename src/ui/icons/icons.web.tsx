@@ -1,4 +1,4 @@
-import { tokens } from './tokens';
+import { tokens } from '@/ui/theme/tokens';
 import { ICON_PATHS, GOOGLE_SVG, APPLE_SVG, type IconName } from './iconPaths';
 
 /**

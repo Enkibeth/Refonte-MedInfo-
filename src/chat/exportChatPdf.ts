@@ -2,7 +2,7 @@
  * Export PDF d'une conversation de chat via la fenêtre d'impression du navigateur
  * (même approche sans dépendance que src/audio/exportPdf.ts).
  */
-import { formatInlineCitations } from '@/ai/chat/parseAssistantMessage';
+import { formatInlineCitations } from '@/chat/parseAssistantMessage';
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

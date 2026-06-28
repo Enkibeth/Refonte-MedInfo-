@@ -29,7 +29,7 @@ linked_to: [02_ARCHITECTURE.md, 04_CHATBOT.md, audits/DESIGN_AUDIT_2026-06.md]
 
 Identité petrol conservée, déclinée en rampe pour la profondeur et les fonds teintés ;
 neutres cliniques (gris froids désaturés) pour éviter l'aspect « template plat ».
-Source unique : `src/ui/tokens.ts` (clés `tokens.colors.*`).
+Source unique : `src/ui/theme/tokens.ts` (clés `tokens.colors.*`).
 
 | Token (tokens.colors) | Hex | Usage |
 |---|---|---|
@@ -105,16 +105,16 @@ décor. Tokens : `tokens.motion.*` ; CSS global (keyframes, scrollbar) : `app/+h
   `cubic-bezier(0.16,1,0.3,1)` pour les entrées/transitions, standard `(0.4,0,0.2,1)`
   en interaction. **Jamais de bounce/spring** sur des éléments d'interface.
 - **Propriétés animées** : `transform` et `opacity` uniquement (pas de layout thrashing).
-- **`Reveal`** (`src/ui/Reveal.tsx`) : fade + remontée 8 px ; sur web, déclenché **au
+- **`Reveal`** (`src/ui/primitives/Reveal.tsx`) : fade + remontée 8 px ; sur web, déclenché **au
   scroll** (IntersectionObserver sur une sentinelle View 1×1 — ⚠️ piège : la ref
   d'`Animated.View` n'expose PAS le nœud DOM sur react-native-web). Une seule fois par
   bloc ; bloc déjà visible = entrée immédiate. Stagger 70 ms (`revealStagger`).
 - **Micro-interactions** : bouton appui scale 0.98, hover lift -1 px + ombre md ;
   cartes persona lift -3 px au survol ; transitions CSS 180 ms ease-out (`transitionWeb`).
-- **`HeroBackdrop`** (`src/ui/HeroBackdrop.tsx` + `.web.tsx`) : grille millimétrée,
+- **`HeroBackdrop`** (`src/ui/primitives/HeroBackdrop.tsx` + `.web.tsx`) : grille millimétrée,
   source de lumière petrol unique, tracé ECG en battement lent (cycle 9 s, keyframes
   `medinfo-ecg-draw`) — motif métier, pas décor générique.
-- **`Skeleton`** (`src/ui/Skeleton.tsx`) : chargements en pulse d'opacité sobre.
+- **`Skeleton`** (`src/ui/primitives/Skeleton.tsx`) : chargements en pulse d'opacité sobre.
 - **`prefers-reduced-motion` strict** : tout est coupé (hook `useReducedMotion` côté RN,
   media query côté CSS) — contenu affiché à l'état final, ECG statique.
 
@@ -147,7 +147,7 @@ décor. Tokens : `tokens.motion.*` ; CSS global (keyframes, scrollbar) : `app/+h
 ## 7. Iconographie & assets
 
 - Logo existant repris tel quel. Décliné en favicon, app icon (iOS/Android), splash.
-- Set d'icônes cohérent (chemins style Lucide dans `src/ui/iconPaths.ts`, rendus par
+- Set d'icônes cohérent (chemins style Lucide dans `src/ui/icons/iconPaths.ts`, rendus par
   `<Icon>` — `icons.web.tsx` sur web, `icons.tsx` en natif).
 - **Plus aucun emoji dans l'UI** (2026-06) : états vides, gates d'accès et listes de
   préparation utilisent des icônes ligne dans une pastille `accentSurface` (56 px,
@@ -170,18 +170,18 @@ décor. Tokens : `tokens.motion.*` ; CSS global (keyframes, scrollbar) : `app/+h
 
 ## 9. Tokens — implémentation
 
-Tokens centralisés dans `src/ui/tokens.ts` : `colors`, `font` (`sans`/`display`/`serif`/
+Tokens centralisés dans `src/ui/theme/tokens.ts` : `colors`, `font` (`sans`/`display`/`serif`/
 `mono`), `weight`, `type` (échelle typo), `space` (base 4), `radius` (8/12/16/20/pill —
 pas de « tout arrondi »), `elevation` (ombres 2 couches), `motion`, `focus`.
 Source unique : tout changement de couleur/typo/espacement passe par ce fichier, jamais de
 valeur hex en dur dans les composants (vérifiable par lint custom si besoin).
 
 Primitives UI partagées (consommatrices exclusives des tokens) :
-- `src/ui/Button.tsx` — variantes `primary | secondary | ghost | danger | inverse |
+- `src/ui/primitives/Button.tsx` — variantes `primary | secondary | ghost | danger | inverse |
   outlineLight`, tailles `md | lg`, états pressed (scale 0.98)/hover/disabled/loading.
-- `src/ui/Card.tsx` — surface surélevée (bordure fine + ombre légère, rayon mesuré).
-- `src/ui/Screen.tsx` — conteneur d'écran (fond d'app, colonne centrée à largeur mesurée,
+- `src/ui/primitives/Card.tsx` — surface surélevée (bordure fine + ombre légère, rayon mesuré).
+- `src/ui/primitives/Screen.tsx` — conteneur d'écran (fond d'app, colonne centrée à largeur mesurée,
   alignée haut — on évite la carte « flottante au centre vertical » des templates).
-- `src/ui/Reveal.tsx` — entrée au scroll (sentinelle DOM, cf. §4).
-- `src/ui/Skeleton.tsx` — squelette de chargement pulsé.
-- `src/ui/HeroBackdrop.tsx` / `.web.tsx` — fond de hero (grille + ECG, cf. §4).
+- `src/ui/primitives/Reveal.tsx` — entrée au scroll (sentinelle DOM, cf. §4).
+- `src/ui/primitives/Skeleton.tsx` — squelette de chargement pulsé.
+- `src/ui/primitives/HeroBackdrop.tsx` / `.web.tsx` — fond de hero (grille + ECG, cf. §4).

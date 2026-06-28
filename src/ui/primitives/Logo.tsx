@@ -1,6 +1,6 @@
 import { Image, StyleSheet, View } from 'react-native';
 
-import { tokens } from './tokens';
+import { tokens } from '@/ui/theme/tokens';
 
 /**
  * Logo MedInfo AI — image officielle (croix médicale + cervelet « circuit » + wordmark),
@@ -30,7 +30,7 @@ export function Logo({
 
   const image = (
     <Image
-      source={require('../../assets/brand/logo-wordmark.png')}
+      source={require('../../../assets/brand/logo-wordmark.png')}
       style={{ width, height }}
       resizeMode="contain"
       accessibilityRole="image"

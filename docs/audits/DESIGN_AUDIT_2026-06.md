@@ -48,7 +48,7 @@ Le socle (tokens.ts, palette petrol, neutres cliniques, échelle modulaire, redu
 
 5. **`Reveal` déclenché au scroll (web)** — IntersectionObserver : chaque bloc se révèle à l'entrée du viewport, une seule fois ; comportement au montage conservé en natif ; reduced-motion respecté. API inchangée.
 6. **Bouton** — appui : scale 0.98 net (remplace l'opacité+translateY) ; hover lift conservé.
-7. **Hero animé avec sens** — `HeroBackdrop` (`src/ui/HeroBackdrop.tsx` natif / `.web.tsx` web) : grille millimétrée estompée, une seule source de lumière petrol, tracé ECG qui se dessine une fois au chargement (motif métier, pas décor générique).
+7. **Hero animé avec sens** — `HeroBackdrop` (`src/ui/primitives/HeroBackdrop.tsx` natif / `.web.tsx` web) : grille millimétrée estompée, une seule source de lumière petrol, tracé ECG qui se dessine une fois au chargement (motif métier, pas décor générique).
 
 ### Dé-sloppification de la landing (`app/index.tsx`)
 
@@ -66,7 +66,7 @@ Le socle (tokens.ts, palette petrol, neutres cliniques, échelle modulaire, redu
 
 ### Finitions complémentaires (appliquées)
 
-- `src/ui/Skeleton.tsx` : squelette de chargement pulsé (Animated, cross-platform,
+- `src/ui/primitives/Skeleton.tsx` : squelette de chargement pulsé (Animated, cross-platform,
   statique sous reduced-motion) ; utilisé par le panneau historique pendant le
   premier chargement des conversations.
 - Panneau historique : transition d'ouverture (glissement -20 px + fade, ease-out).

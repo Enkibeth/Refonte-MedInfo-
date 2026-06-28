@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { sanitizeMedicalReport } from '@/ai/audio/sanitizeReport';
+import { sanitizeMedicalReport } from '@/audio/sanitizeReport';
 
 describe('sanitizeMedicalReport', () => {
   it('retire les emojis et pictogrammes décoratifs', () => {

@@ -27,9 +27,9 @@ import {
 } from 'react-native';
 
 import { splitArticleSections } from '@/blog/toc';
-import { Icon } from '@/ui/icons';
-import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
-import { tokens } from '@/ui/tokens';
+import { Icon } from '@/ui/icons/icons';
+import { MarkdownRenderer } from '@/ui/primitives/MarkdownRenderer';
+import { tokens } from '@/ui/theme/tokens';
 
 interface EditorPost {
   id: string;

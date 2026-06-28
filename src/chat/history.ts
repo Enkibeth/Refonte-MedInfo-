@@ -6,7 +6,7 @@
  * /api/chat-meta (feature "chat_meta", défaut Gemini 2.5 Flash) après le premier échange.
  */
 import { getSupabaseClient } from '@/db/supabase';
-import type { ChatbotId } from '@/ai/chat/chatContext';
+import type { ChatbotId } from '@/chat/chatContext';
 
 export interface ChatConversation {
   id: string;

@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import type { LegalDocument } from '@/compliance/legal';
 import { legalLinks } from '@/compliance/legal';
-import { tokens } from '@/ui/tokens';
+import { tokens } from '@/ui/theme/tokens';
 
 /**
  * Rendu générique d'un document légal (mentions légales, confidentialité, CGU/CGV).
