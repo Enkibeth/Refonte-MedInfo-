@@ -75,7 +75,7 @@ export function LandingHeader() {
           {/* Illustration de l'équipe (demande Hugo 2026-06) — dans le coin haut gauche,
               le logo MedInfo à sa droite. Asset relatif (cf. piège alias @/). */}
           <Image
-            source={require('../../assets/brand/team-illustration.png')}
+            source={require('../../../assets/brand/team-illustration.png')}
             style={styles.teamBadge}
             resizeMode="cover"
             accessibilityRole="image"

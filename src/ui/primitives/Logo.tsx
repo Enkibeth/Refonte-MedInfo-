@@ -30,7 +30,7 @@ export function Logo({
 
   const image = (
     <Image
-      source={require('../../assets/brand/logo-wordmark.png')}
+      source={require('../../../assets/brand/logo-wordmark.png')}
       style={{ width, height }}
       resizeMode="contain"
       accessibilityRole="image"
