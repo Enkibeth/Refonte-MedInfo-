@@ -6,10 +6,10 @@
  */
 import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { evidenceLevelFor, type ParsedSource } from '@/ai/chat/parseAssistantMessage';
-import { SourceBadgePill } from '@/ui/chat/AssistantBlocks';
-import { Icon } from '@/ui/icons';
-import { tokens } from '@/ui/tokens';
+import { evidenceLevelFor, type ParsedSource } from '@/chat/parseAssistantMessage';
+import { SourceBadgePill } from '@/ui/components/chat/AssistantBlocks';
+import { Icon } from '@/ui/icons/icons';
+import { tokens } from '@/ui/theme/tokens';
 
 export function SourceDetailModal({
   source,

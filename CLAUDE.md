@@ -7,6 +7,53 @@ owner: Hugo Bettembourg
 scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 ```
 
+## 🗺️ Carte des dossiers (lecture rapide en début de session)
+
+Conventions de rangement (réorg 2026-06) :
+- **`app/`** = routes Expo Router uniquement (file-based). Écrans groupés `app/(groupe)/`
+  + routes serveur `app/api/**`. **Ne pas réorganiser** : la structure est dictée par le routeur.
+- **`src/<domaine>/`** = un seul foyer par domaine produit. Toute la logique d'un domaine
+  (UI mise à part) y vit, y compris sa logique IA spécifique.
+- **`src/ai/`** = plomberie IA **transverse** seulement (pas de logique liée à un seul produit).
+- **`src/ui/`** = design system, découpé en 4 couches (voir ci-dessous).
+
+```txt
+app/                  Routes Expo Router (écrans (groupes) + app/api/** serveur)
+src/
+  ai/                 Plomberie IA transverse
+    prompts/          System prompts (public.v3 / student.v3 / professional.v2) + promptStore
+    providers/        Sélection modèle + runtime par feature (featureModel, featureRuntime)
+    routing/          persona / serverPersona / featureVisibility
+    rateLimit/        Rate-limit analyze/ecos
+    logging/          Audit technique des interactions IA
+  chat/               Domaine chat : chatContext · parseAssistantMessage · starterSuggestions
+                      · history · serverHistory · guestTrial · exportChatPdf
+  presentation/       decks · presentationPrompt
+  audio/              audioLibrary · exportPdf · sanitizeReport
+  auth/               AuthProvider · roles · serverIdentity · annuaireSante
+  billing/            createCheckoutSession · entitlements · plans · stripeSignature · webhookHandler · surface
+  blog/               posts · toc · serverGeneration · weeklyAgent · articleJson
+  document/           analysisHistory · serverAnalysisHistory
+  profile/            personalInfo
+  compliance/         disclosures · legal
+  db/                 supabase (client) · serverSupabase (service role)
+  rag/                retrieval · embeddings · types · corpus/
+  admin/              Registre AI_FEATURES + ADMIN_USER_IDS
+  ui/                 Design system
+    theme/            tokens · MedInfoThemeProvider · useReducedMotion
+    icons/            icons(.web) · iconPaths   (paire plateforme co-localisée)
+    primitives/       Button · Card · Screen · Skeleton · SegmentedSlider · Reveal · Logo
+                      · MarkdownRenderer · HeroBackdrop(.web) · PlaceholderScreen
+    components/       Composants métier (LandingHeader · ToolsMenu · RoleGate · DictationButton
+                      · AudioLibrary · PersonaCard · PersonalInfoForm · LegalScreen)
+                      + chat/ (AssistantBlocks · ChatbotSwitcher · HistoryPanel · SourceDetailModal)
+                      + admin/ (BlogEditorModal)
+```
+
+> Où ranger un nouveau fichier ? Logique d'un produit → `src/<domaine>/`. Plomberie IA
+> réutilisable par plusieurs produits → `src/ai/`. Composant générique réutilisable →
+> `src/ui/primitives/` ; composant lié à une feature → `src/ui/components/`.
+
 ## ⚠️ Refonte 2026-06 (ADR-0024) : chat direct sans safe-box — sécurité à réintroduire après validation de l'ébauche par Hugo
 
 > **Décision Hugo : refonte complète du chat. On valide d'abord une ébauche produit fonctionnelle, on réintroduit les couches de sécurité par-dessus ensuite.**
@@ -38,10 +85,10 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 
 | Feature | Statut | Surface / audience | Source de vérité | Sécurité / conformité | ADR |
 |---|---|---|---|---|---|
-| Chat direct 3 chatbots (refonte 2026-06) | Actif | Public (chat public) ; étudiant/pro vérifiés (les 3 chats) ; **visiteur non connecté : essai 1 message gratuit sur les 3 chatbots** | `app/api/chat+api.ts`, prompts `src/ai/prompts/public.v3.ts` / `student.v3.ts` / `professional.v2.ts`, contexte profil `src/ai/chat/chatContext.ts`, essai invité `src/chat/guestTrial.ts` | Appel LLM direct (gpt-5.2, web_search ON) ; pas de classifieur/guardrails/RAG/rate-limit sur le chat (temporaire) ; `allowedChatbotsFor()` serveur (`guestTrial` pour les anonymes) + refus serveur (401 `signup_required`) de toute conversation anonyme > 1 message utilisateur (`GUEST_TRIAL_MAX_USER_MESSAGES`) ; indicateur client 1/1 → 0/1 (localStorage) puis CTA inscription/connexion ; disclosure AI Act conservée | ADR-0024 |
-| Suggestions d'amorce rotatives | Actif | Tous (chat, état vide) | `src/ai/chat/starterSuggestions.ts` (50 questions par chatbot), test `tests/unit/starter-suggestions.test.ts` | Affichage 3 par 3, rotation toutes les 30 s côté client (`suggestionWindow`) ; questions d'information générale uniquement | ADR-0024 |
-| Parseur + rendu interactif des réponses chat | Actif | Tous (chat) | `src/ai/chat/parseAssistantMessage.ts`, `src/ui/chat/AssistantBlocks.tsx`, `src/ui/chat/SourceDetailModal.tsx` | Parse SOURCES `SRCn::`, badges OFFICIEL/GUIDELINE/ÉTUDE/RCP, APPROFONDISSEMENTS, QUESTIONS_PATIENT, INTERACTION, AUTO-RÉFLEXION, `<!--CALC:…-->`, `[1]+[2]+[3]` étudiant ; références inline `(SRCx)` rendues en appels de note ¹ ² (`formatInlineCitations` — jamais de marqueur brut à l'écran ni dans le PDF) ; clic sur une source → modale niveau de preuve + bouton « Accéder à la source » (jamais d'ouverture directe du lien) ; bulle de statut pendant la génération (réfléchit / recherche de sources / rédige, via l'activité d'outil du stream) ; rendu 100% client | ADR-0024 |
-| Historique des conversations + export PDF | Actif | Tous (chat) | `src/chat/history.ts` (CRUD client), `src/chat/serverHistory.ts` (archivage serveur), `src/ui/chat/HistoryPanel.tsx`, `src/ui/chat/ChatbotSwitcher.tsx`, `src/chat/exportChatPdf.ts`, migration `0020_chat_history.sql` | RLS own-row stricte (`chat_conversations`/`chat_messages`), test `tests/rls/chat-history.test.ts` ; contenu potentiellement sensible ; depuis 2026-06 la réponse assistant est archivée par `/api/chat` (service role, propriété de la conversation vérifiée contre le user du token, jamais le body) | ADR-0024 |
+| Chat direct 3 chatbots (refonte 2026-06) | Actif | Public (chat public) ; étudiant/pro vérifiés (les 3 chats) ; **visiteur non connecté : essai 1 message gratuit sur les 3 chatbots** | `app/api/chat+api.ts`, prompts `src/ai/prompts/public.v3.ts` / `student.v3.ts` / `professional.v2.ts`, contexte profil `src/chat/chatContext.ts`, essai invité `src/chat/guestTrial.ts` | Appel LLM direct (gpt-5.2, web_search ON) ; pas de classifieur/guardrails/RAG/rate-limit sur le chat (temporaire) ; `allowedChatbotsFor()` serveur (`guestTrial` pour les anonymes) + refus serveur (401 `signup_required`) de toute conversation anonyme > 1 message utilisateur (`GUEST_TRIAL_MAX_USER_MESSAGES`) ; indicateur client 1/1 → 0/1 (localStorage) puis CTA inscription/connexion ; disclosure AI Act conservée | ADR-0024 |
+| Suggestions d'amorce rotatives | Actif | Tous (chat, état vide) | `src/chat/starterSuggestions.ts` (50 questions par chatbot), test `tests/unit/starter-suggestions.test.ts` | Affichage 3 par 3, rotation toutes les 30 s côté client (`suggestionWindow`) ; questions d'information générale uniquement | ADR-0024 |
+| Parseur + rendu interactif des réponses chat | Actif | Tous (chat) | `src/chat/parseAssistantMessage.ts`, `src/ui/components/chat/AssistantBlocks.tsx`, `src/ui/components/chat/SourceDetailModal.tsx` | Parse SOURCES `SRCn::`, badges OFFICIEL/GUIDELINE/ÉTUDE/RCP, APPROFONDISSEMENTS, QUESTIONS_PATIENT, INTERACTION, AUTO-RÉFLEXION, `<!--CALC:…-->`, `[1]+[2]+[3]` étudiant ; références inline `(SRCx)` rendues en appels de note ¹ ² (`formatInlineCitations` — jamais de marqueur brut à l'écran ni dans le PDF) ; clic sur une source → modale niveau de preuve + bouton « Accéder à la source » (jamais d'ouverture directe du lien) ; bulle de statut pendant la génération (réfléchit / recherche de sources / rédige, via l'activité d'outil du stream) ; rendu 100% client | ADR-0024 |
+| Historique des conversations + export PDF | Actif | Tous (chat) | `src/chat/history.ts` (CRUD client), `src/chat/serverHistory.ts` (archivage serveur), `src/ui/components/chat/HistoryPanel.tsx`, `src/ui/components/chat/ChatbotSwitcher.tsx`, `src/chat/exportChatPdf.ts`, migration `0020_chat_history.sql` | RLS own-row stricte (`chat_conversations`/`chat_messages`), test `tests/rls/chat-history.test.ts` ; contenu potentiellement sensible ; depuis 2026-06 la réponse assistant est archivée par `/api/chat` (service role, propriété de la conversation vérifiée contre le user du token, jamais le body) | ADR-0024 |
 | Résilience hors-ligne du chat (2026-06) | Actif | Tous (chat) | `/api/chat` (`consumeStream` + archivage serveur `onFinish`), reprise + bouton « Réessayer » dans `app/(chat)/chat.tsx` | Page suspendue pendant le streaming (iOS coupe le flux en quittant Safari) → la génération va au bout côté serveur et la réponse est archivée ; au retour, le client la récupère depuis l'historique (poll ~1 min, bulle « Récupération de la réponse… ») ; en cas d'erreur, « Réessayer » vérifie d'abord l'historique avant de relancer la requête | ADR-0024 |
 | Titre + catégorie de conversation `chat_meta` | Actif | Tous (chat) | `app/api/chat-meta+api.ts`, défaut `gemini-2.5-flash` (provider google) | Génère uniquement titre/catégorie ; pas de conseil médical ; configurable panel admin | ADR-0024 |
 | RAG HAS/ANSM MVP | Conservé, non branché sur le chat | Documentaire (réutilisation future) | `rag_sources`, `rag_chunks`, `match_rag_chunks`, `src/rag/retrieval.ts` | Sources publiques whitelistées, métadonnées validées ; plus injecté dans `/api/chat` depuis la refonte (ADR-0024) | ADR-0014, ADR-0024 |
@@ -51,13 +98,13 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 | Facturation Stripe | Actif web-first | Plans public + étudiant | `subscriptions`, `billing_events`, webhook Stripe | Paywall = volume/features uniquement ; ne gate jamais les sources | ADR-0012 |
 | Quotas par feature | Décidé / à maintenir côté serveur | Chat, ECOS, exports, transcriptions | Tables de limites/compteurs techniques, entitlements serveur | Quota découplé des sources ; service_role only ; aucune auto-promotion client | ADR-0016 |
 | Cas ECOS en base | Décidé / feature pédagogique | Étudiants vérifiés | Tables de cas/stations pédagogiques versionnées | Cas explicitement fictifs ; aucun patient réel ; séparation du chat médical | ADR-0017 |
-| Pages marketing + header public (2026-06) | Actif | Tous (public) | `src/ui/LandingHeader.tsx` (logo, menu Chatbots rôle-aware, Blog/À propos/Contact/Tarifs, CTA), `app/(marketing)/` (`a-propos.tsx`, `contact.tsx`, `blog/`), groupe public dans `app/_layout.tsx` | Pages statiques sans données ; le menu Chatbots reflète `allowedChatbotsFor` (jamais l'unique barrière) ; liens en bleu vif `accentVivid` | ADR-0024 |
-| Blog santé + génération d'articles IA | Actif | Lecture publique ; génération + édition admin | Table `blog_posts` (migration `0022_blog_posts.sql`, lecture publiée seule), `src/blog/posts.ts` + `src/blog/toc.ts` (sommaire cliquable, test `tests/unit/blog-toc.test.ts`), pages `app/(marketing)/blog/`, API `app/api/admin/blog+api.ts` (feature `blog_generate` ; actions `update`/`upload_image`, `GET ?id=` pour relire un brouillon), éditeur admin `src/ui/admin/BlogEditorModal.tsx` (aperçu fidèle avant publication, édition titre/chapeau/catégorie/contenu avant ET après publication, barre d'outils markdown, remplacement de la couverture par une vraie photo — upload PNG/JPEG/WebP ≤ 4 Mo ou URL https — et insertion d'images dans le corps, rendues par `MarkdownRenderer` `![légende](url)`), onglet Blog du panel admin | RLS lecture publiée uniquement + zéro écriture client (test `tests/rls/blog-posts.test.ts`, GRANTs `supabase/policies/blog_posts.sql`) ; articles = information générale avec disclaimer, brouillon par défaut, relecture brouillon via l'éditeur admin (la page publique ne voit pas les brouillons — c'était le bug « article introuvable »), publication manuelle admin ; image de couverture best-effort (OpenAI Images → bucket public `blog-covers`, setup `supabase/setup/blog_covers_bucket.sql` hors harness) | ADR-0024 |
+| Pages marketing + header public (2026-06) | Actif | Tous (public) | `src/ui/components/LandingHeader.tsx` (logo, menu Chatbots rôle-aware, Blog/À propos/Contact/Tarifs, CTA), `app/(marketing)/` (`a-propos.tsx`, `contact.tsx`, `blog/`), groupe public dans `app/_layout.tsx` | Pages statiques sans données ; le menu Chatbots reflète `allowedChatbotsFor` (jamais l'unique barrière) ; liens en bleu vif `accentVivid` | ADR-0024 |
+| Blog santé + génération d'articles IA | Actif | Lecture publique ; génération + édition admin | Table `blog_posts` (migration `0022_blog_posts.sql`, lecture publiée seule), `src/blog/posts.ts` + `src/blog/toc.ts` (sommaire cliquable, test `tests/unit/blog-toc.test.ts`), pages `app/(marketing)/blog/`, API `app/api/admin/blog+api.ts` (feature `blog_generate` ; actions `update`/`upload_image`, `GET ?id=` pour relire un brouillon), éditeur admin `src/ui/components/admin/BlogEditorModal.tsx` (aperçu fidèle avant publication, édition titre/chapeau/catégorie/contenu avant ET après publication, barre d'outils markdown, remplacement de la couverture par une vraie photo — upload PNG/JPEG/WebP ≤ 4 Mo ou URL https — et insertion d'images dans le corps, rendues par `MarkdownRenderer` `![légende](url)`), onglet Blog du panel admin | RLS lecture publiée uniquement + zéro écriture client (test `tests/rls/blog-posts.test.ts`, GRANTs `supabase/policies/blog_posts.sql`) ; articles = information générale avec disclaimer, brouillon par défaut, relecture brouillon via l'éditeur admin (la page publique ne voit pas les brouillons — c'était le bug « article introuvable »), publication manuelle admin ; image de couverture best-effort (OpenAI Images → bucket public `blog-covers`, setup `supabase/setup/blog_covers_bucket.sql` hors harness) | ADR-0024 |
 | Agent éditorial hebdo du blog (2026-06) | Actif | Publication automatique 1×/semaine (lecture publique) | Cron Vercel lundi 06:00 UTC (`vercel.json` crons) → `app/api/cron/weekly-blog+api.ts` → pipeline `src/blog/weeklyAgent.ts` : sujet (`blog_topic`, web_search ON, anti-doublon sur les 40 derniers titres) → rédaction (`blog_generate`, logique partagée avec l'admin via `src/blog/serverGeneration.ts`) → relecture (`blog_review` : publish/revise/reject) ; parseurs purs `src/blog/articleJson.ts` (test `tests/unit/blog-agent.test.ts`) | Fail-closed : reject ou relecture inexploitable → l'article reste en brouillon pour arbitrage admin ; route protégée par `CRON_SECRET` (cron Vercel) ou token admin (`?force=1` pour tester) ; garde anti-doublon 6 jours via `blog_posts.source = 'weekly_agent'` (migration `0024_weekly_blog_agent.sql`) ; RLS blog inchangée ; **requiert `CRON_SECRET` sur Vercel** | ADR-0025 |
 | Analyse des partiels (medoutils) | Actif (v2, 2026-06) | Étudiants vérifiés | Page autonome `public/partiel.html` (servie statiquement par l'export web), embarquée en iframe par `app/(chat)/partiel.tsx` (RoleGate conservé) | Import .xlsx/.xls/.csv/.pdf (pdf.js) → stats par épreuve, quantiles, distributions interactives, radar, comparaison A/B, export PDF ; détection auto colonne identifiant + échelle /20 ou /100 (vote majoritaire) + virgules décimales FR + mentions ABS/DEF ; calcul 100% client (aucune donnée envoyée, sans IA) ; bloc « sauvegarde cloud » de la maquette retiré (exigerait table `analyses` + RLS + ADR, et passait des tokens en URL) ; ancien `src/lib/classement.ts` supprimé | ADR-0019 |
-| Visibilité des outils par rôle + menu d'outils | Actif | Tous (UI adaptée) | `src/ai/routing/featureVisibility.ts`, `src/ui/RoleGate.tsx`, `src/ui/ToolsMenu.tsx`, `app/(chat)/_layout.tsx` | Cloisonnement UI strict par persona ; menu déroulant rôle-aware ; jamais l'unique barrière (autorisation serveur conservée) | ADR-0018 |
-| Dictée vocale (chat/ECOS) | Actif | Tous | `src/ui/DictationButton.tsx`, `/api/transcribe` mode `raw` | Voix → texte (Whisper) dans les saisies ; transcription brute ; le texte repasse par l'autorisation de la route cible (safe-box retirée du chat par ADR-0024) | ADR-0019 |
-| Générateur de présentations (manuel + IA) | Actif | Étudiants + professionnels vérifiés (et admins) | Page autonome `public/presentation.html` (éditeur, aperçu, export PPTX Keynote-safe via pptxgenjs), embarquée en iframe par `app/(chat)/presentation.tsx` (RoleGate + token de session par postMessage) ; mode IA `app/api/presentation+api.ts`, prompt `presentation_generate` (`src/ai/prompts/promptStore.ts`), contexte serveur pur `src/ai/presentation/presentationPrompt.ts` (test `tests/unit/presentation-prompt.test.ts`), migration `0025` | Mode manuel 100% client (export PPTX dans le navigateur) ; mode IA = appel LLM (deck spec JSON régénéré à chaque tour), garde persona serveur étudiant/pro/admin (`serverPersona` + `isAdminUserId`, refus 403 sinon — jamais le body), rate-limit (compteur étudiant) ; le « médecin senior » n'invente jamais de référence ([à vérifier]) ; disclosure IA conservée | ADR-0018, ADR-0019 |
+| Visibilité des outils par rôle + menu d'outils | Actif | Tous (UI adaptée) | `src/ai/routing/featureVisibility.ts`, `src/ui/components/RoleGate.tsx`, `src/ui/components/ToolsMenu.tsx`, `app/(chat)/_layout.tsx` | Cloisonnement UI strict par persona ; menu déroulant rôle-aware ; jamais l'unique barrière (autorisation serveur conservée) | ADR-0018 |
+| Dictée vocale (chat/ECOS) | Actif | Tous | `src/ui/components/DictationButton.tsx`, `/api/transcribe` mode `raw` | Voix → texte (Whisper) dans les saisies ; transcription brute ; le texte repasse par l'autorisation de la route cible (safe-box retirée du chat par ADR-0024) | ADR-0019 |
+| Générateur de présentations (manuel + IA) | Actif | Étudiants + professionnels vérifiés (et admins) | Page autonome `public/presentation.html` (éditeur, aperçu, export PPTX Keynote-safe via pptxgenjs), embarquée en iframe par `app/(chat)/presentation.tsx` (RoleGate + token de session par postMessage) ; mode IA `app/api/presentation+api.ts`, prompt `presentation_generate` (`src/ai/prompts/promptStore.ts`), contexte serveur pur `src/presentation/presentationPrompt.ts` (test `tests/unit/presentation-prompt.test.ts`), migration `0025` | Mode manuel 100% client (export PPTX dans le navigateur) ; mode IA = appel LLM (deck spec JSON régénéré à chaque tour), garde persona serveur étudiant/pro/admin (`serverPersona` + `isAdminUserId`, refus 403 sinon — jamais le body), rate-limit (compteur étudiant) ; le « médecin senior » n'invente jamais de référence ([à vérifier]) ; disclosure IA conservée | ADR-0018, ADR-0019 |
 | Historique cloud des présentations (2026-06) | Actif | Étudiants + professionnels (propriétaire) | Table `presentation_decks` (migration `0026`), CRUD `app/api/presentations+api.ts` (client Supabase scopé au token → RLS), validation pure `src/presentation/decks.ts` (test `tests/unit/presentation-decks.test.ts`), autosave + panneau « Mes présentations » dans `public/presentation.html` | RLS own-row stricte (test `tests/rls/presentation-decks.test.ts`) ; conserve `deck` + `ai_history` (information médicale générale, jamais un dossier patient) ; autosave (debounce + tick + `pagehide` keepalive) anti-perte au changement de page ; un deck vierge n'est pas enregistré tant qu'il n'est pas édité | ADR-0026 |
 
 ## Migrations Supabase — état documentaire
@@ -240,9 +287,9 @@ localStorage) puis une carte propose inscription/connexion ; côté serveur, `/a
 ouvre les 3 chatbots aux anonymes (`guestTrial`) mais refuse (401 `signup_required`)
 toute conversation anonyme contenant plus d'un message utilisateur.
 
-> **⚠️ Icônes (piège connu)** : les chemins SVG vivent dans `src/ui/iconPaths.ts`, avec DEUX
-> implémentations de `<Icon>` : `src/ui/icons.tsx` (natif, `<Image>` data-URI) et
-> `src/ui/icons.web.tsx` (web, `<svg>` inline, résolu automatiquement par Metro). Les data-URI
+> **⚠️ Icônes (piège connu)** : les chemins SVG vivent dans `src/ui/icons/iconPaths.ts`, avec DEUX
+> implémentations de `<Icon>` : `src/ui/icons/icons.tsx` (natif, `<Image>` data-URI) et
+> `src/ui/icons/icons.web.tsx` (web, `<svg>` inline, résolu automatiquement par Metro). Les data-URI
 > SVG dans `<Image>` sont INVISIBLES sur l'export web de production — toujours passer par
 > `icons.web.tsx` pour le web, et ajouter les nouveaux chemins dans `iconPaths.ts`.
 
@@ -250,7 +297,7 @@ toute conversation anonyme contenant plus d'un message utilisateur.
 > `docs/05_DESIGN.md` (+ rapport `docs/audits/DESIGN_AUDIT_2026-06.md`). Sur react-native-web,
 > la ref d'`Animated.View` n'expose PAS le nœud DOM : un `IntersectionObserver` posé dessus ne
 > s'attache jamais (échec silencieux) — observer une sentinelle `View` 1×1 à la place (cf.
-> `src/ui/Reveal.tsx`). Titres de page en Fraunces (`tokens.font.serif`), jamais en corps de
+> `src/ui/primitives/Reveal.tsx`). Titres de page en Fraunces (`tokens.font.serif`), jamais en corps de
 > texte. Tout mouvement doit rester coupé sous `prefers-reduced-motion`.
 
 | Outil | Grand public | Étudiant | Professionnel | Admin |
@@ -265,12 +312,12 @@ toute conversation anonyme contenant plus d'un message utilisateur.
 Application :
 - Barre d'onglets `app/(chat)/_layout.tsx` : onglet masqué via `href: null` si non visible.
 - Accueil rôle-aware : étudiant/pro voient les 3 chats + leurs outils ; le public voit son chat.
-- Switch de chatbot `src/ui/chat/ChatbotSwitcher.tsx` (étudiant/pro/admin uniquement).
-- Menu déroulant d'outils `src/ui/ToolsMenu.tsx` (en-tête) : switch rôle-aware depuis n'importe quel écran.
-- Garde d'écran `<RoleGate feature="…">` (`src/ui/RoleGate.tsx`) sur Document/ECOS/Classement/Audio
+- Switch de chatbot `src/ui/components/chat/ChatbotSwitcher.tsx` (étudiant/pro/admin uniquement).
+- Menu déroulant d'outils `src/ui/components/ToolsMenu.tsx` (en-tête) : switch rôle-aware depuis n'importe quel écran.
+- Garde d'écran `<RoleGate feature="…">` (`src/ui/components/RoleGate.tsx`) sur Document/ECOS/Classement/Audio
   (défense en profondeur contre l'accès direct / deep-link).
 - Écran Compte : section « Mes outils » listant les outils du rôle courant.
-- Dictée vocale `src/ui/DictationButton.tsx` (Whisper, `/api/transcribe` mode `raw`) dans les saisies de chat/ECOS.
+- Dictée vocale `src/ui/components/DictationButton.tsx` (Whisper, `/api/transcribe` mode `raw`) dans les saisies de chat/ECOS.
 - **Sécurité** : le masquage UI n'est jamais l'unique barrière. L'autorisation réelle des routes
   IA reste dérivée du profil vérifié côté serveur (`serverPersona.ts` ; garde persona étudiant/admin
   dans `/api/partiel`). ADR-0018.

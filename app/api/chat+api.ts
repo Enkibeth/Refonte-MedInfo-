@@ -27,7 +27,7 @@ import {
   coerceChatbot,
   coercePersonalInfo,
   type ChatbotId,
-} from '@/ai/chat/chatContext';
+} from '@/chat/chatContext';
 import type { Persona } from '@/ai/prompts/_schema';
 
 /**

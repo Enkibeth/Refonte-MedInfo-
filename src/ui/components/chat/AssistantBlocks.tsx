@@ -23,10 +23,10 @@ import {
   type ParsedSource,
   type PatientQuestion,
   type SourceBadge,
-} from '@/ai/chat/parseAssistantMessage';
-import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
-import { Icon } from '@/ui/icons';
-import { tokens } from '@/ui/tokens';
+} from '@/chat/parseAssistantMessage';
+import { MarkdownRenderer } from '@/ui/primitives/MarkdownRenderer';
+import { Icon } from '@/ui/icons/icons';
+import { tokens } from '@/ui/theme/tokens';
 
 // ── Sources ───────────────────────────────────────────────────────────────────
 

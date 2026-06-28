@@ -25,8 +25,8 @@ import { useRouter } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId, AI_FEATURES } from '@/admin/index';
-import { BlogEditorModal } from '@/ui/admin/BlogEditorModal';
-import { tokens } from '@/ui/tokens';
+import { BlogEditorModal } from '@/ui/components/admin/BlogEditorModal';
+import { tokens } from '@/ui/theme/tokens';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

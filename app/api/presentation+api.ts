@@ -24,7 +24,7 @@ import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
 import {
   buildPresentationContextSection,
   coercePresentationOptions,
-} from '@/ai/presentation/presentationPrompt';
+} from '@/presentation/presentationPrompt';
 
 interface PresentationMessage {
   role: 'user' | 'assistant';

@@ -8,7 +8,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { tokens } from './tokens';
+import { tokens } from '@/ui/theme/tokens';
 
 /**
  * Bouton MedInfo — primitive unique pour tous les écrans (05_DESIGN §5).

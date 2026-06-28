@@ -10,8 +10,8 @@ import { useRouter, useSegments } from 'expo-router';
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
 import { visibleFeatures } from '@/ai/routing/featureVisibility';
-import { Icon, type IconName } from '@/ui/icons';
-import { tokens } from '@/ui/tokens';
+import { Icon, type IconName } from '@/ui/icons/icons';
+import { tokens } from '@/ui/theme/tokens';
 
 interface MenuItem {
   key: string;

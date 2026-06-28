@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { Animated, type StyleProp, type ViewStyle } from 'react-native';
 
-import { tokens } from './tokens';
-import { useReducedMotion } from './useReducedMotion';
+import { tokens } from '@/ui/theme/tokens';
+import { useReducedMotion } from '@/ui/theme/useReducedMotion';
 
 /**
  * Squelette de chargement (design system §4) : bloc neutre qui pulse doucement

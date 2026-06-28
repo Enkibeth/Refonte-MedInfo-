@@ -4,12 +4,12 @@ import { Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useSession, toFriendlyAuthError, type OAuthProvider } from '@/auth/AuthProvider';
 import { getAiDisclosure } from '@/compliance/disclosures';
-import { Button } from '@/ui/Button';
-import { Card } from '@/ui/Card';
-import { GoogleIcon, AppleIcon } from '@/ui/icons';
-import { Logo } from '@/ui/Logo';
-import { Screen } from '@/ui/Screen';
-import { tokens } from '@/ui/tokens';
+import { Button } from '@/ui/primitives/Button';
+import { Card } from '@/ui/primitives/Card';
+import { GoogleIcon, AppleIcon } from '@/ui/icons/icons';
+import { Logo } from '@/ui/primitives/Logo';
+import { Screen } from '@/ui/primitives/Screen';
+import { tokens } from '@/ui/theme/tokens';
 
 /**
  * Connexion MedInfo AI (ADR-0010) : email + mot de passe (connexion / inscription),

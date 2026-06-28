@@ -32,13 +32,13 @@ import type { UIMessage } from 'ai';
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
-import type { ChatbotId } from '@/ai/chat/chatContext';
-import { parseAssistantMessage, type ParsedSource } from '@/ai/chat/parseAssistantMessage';
+import type { ChatbotId } from '@/chat/chatContext';
+import { parseAssistantMessage, type ParsedSource } from '@/chat/parseAssistantMessage';
 import {
   STARTER_SUGGESTIONS,
   SUGGESTIONS_ROTATION_MS,
   suggestionWindow,
-} from '@/ai/chat/starterSuggestions';
+} from '@/chat/starterSuggestions';
 import { isGuestMessageUsed, markGuestMessageUsed } from '@/chat/guestTrial';
 import {
   createConversation,
@@ -50,16 +50,16 @@ import {
   type ChatConversation,
 } from '@/chat/history';
 import { exportChatToPdf } from '@/chat/exportChatPdf';
-import { tokens } from '@/ui/tokens';
-import { DictationButton } from '@/ui/DictationButton';
-import { ToolsMenu } from '@/ui/ToolsMenu';
-import { Icon } from '@/ui/icons';
-import { Reveal } from '@/ui/Reveal';
-import { useReducedMotion } from '@/ui/useReducedMotion';
-import { AssistantBlocks, SourcesBlock } from '@/ui/chat/AssistantBlocks';
-import { ChatbotSwitcher, CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
-import { HistoryPanel } from '@/ui/chat/HistoryPanel';
-import { SourceDetailModal } from '@/ui/chat/SourceDetailModal';
+import { tokens } from '@/ui/theme/tokens';
+import { DictationButton } from '@/ui/components/DictationButton';
+import { ToolsMenu } from '@/ui/components/ToolsMenu';
+import { Icon } from '@/ui/icons/icons';
+import { Reveal } from '@/ui/primitives/Reveal';
+import { useReducedMotion } from '@/ui/theme/useReducedMotion';
+import { AssistantBlocks, SourcesBlock } from '@/ui/components/chat/AssistantBlocks';
+import { ChatbotSwitcher, CHATBOT_META } from '@/ui/components/chat/ChatbotSwitcher';
+import { HistoryPanel } from '@/ui/components/chat/HistoryPanel';
+import { SourceDetailModal } from '@/ui/components/chat/SourceDetailModal';
 
 // Suggestions d'amorce (état vide) : 50 questions par chatbot, rotation 3 par 3
 // toutes les 30 s — voir src/ai/chat/starterSuggestions.ts.

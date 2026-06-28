@@ -53,17 +53,26 @@ npm run compliance
 ## Organisation
 
 ```txt
-app/                     Routes Expo Router
-src/ai/                  Prompts, guardrails, routing, skills, orchestrator
+app/                     Routes Expo Router (écrans groupés + app/api routes serveur)
+src/ai/                  Plomberie IA transverse : prompts, providers, routing, rateLimit, logging
+src/chat/                Domaine chat : contexte, parseur, suggestions, historique, export PDF
+src/presentation/        Domaine présentations : decks + prompt IA
+src/audio/               Domaine audio : bibliothèque, export PDF, sanitize report
+src/auth/                Auth, rôles, identité serveur, annuaire santé
+src/billing/             Stripe : checkout, entitlements, plans, webhook
+src/blog/                Blog : posts, sommaire, génération, agent hebdo
+src/document/            Analyse de documents : historique client + serveur
+src/profile/             Infos perso de profil
 src/compliance/          Disclosures, refus canonique, règles transversales
-src/db/                  Client Supabase et futurs helpers DB
-src/rag/                 Pipeline RAG futur
-src/ui/                  Tokens et composants UI partagés
+src/db/                  Clients Supabase (client + service role)
+src/rag/                 Pipeline RAG (retrieval, embeddings, corpus)
+src/admin/               Registre des features IA + contrôle accès admin
+src/ui/                  Design system : theme/ · icons/ · primitives/ · components/
 supabase/                Migrations, policies, seeds
 scripts/                 Ingestion, embeddings, évaluation, compliance
 tests/                   Unit, RLS, prompt regression, prompt eval
 docs/                    Documentation fondatrice, STATUS et ADRs
-CLAUDE.md                Mémo de reprise agents : features IA + migrations
+CLAUDE.md                Mémo de reprise agents : carte des dossiers + features IA + migrations
 .github/workflows/       Gates CI
 ```
 

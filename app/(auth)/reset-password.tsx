@@ -3,11 +3,11 @@ import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
-import { Button } from '@/ui/Button';
-import { Card } from '@/ui/Card';
-import { Logo } from '@/ui/Logo';
-import { Screen } from '@/ui/Screen';
-import { tokens } from '@/ui/tokens';
+import { Button } from '@/ui/primitives/Button';
+import { Card } from '@/ui/primitives/Card';
+import { Logo } from '@/ui/primitives/Logo';
+import { Screen } from '@/ui/primitives/Screen';
+import { tokens } from '@/ui/theme/tokens';
 
 /**
  * Réinitialisation du mot de passe (ADR-0010). Atteint après ouverture du lien email :

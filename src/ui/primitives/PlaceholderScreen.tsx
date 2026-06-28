@@ -4,7 +4,7 @@ import { StyleSheet, Text } from 'react-native';
 import { Button } from './Button';
 import { Card } from './Card';
 import { Screen } from './Screen';
-import { tokens } from './tokens';
+import { tokens } from '@/ui/theme/tokens';
 
 type PlaceholderScreenProps = {
   title: string;

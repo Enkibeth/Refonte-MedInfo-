@@ -19,11 +19,11 @@ import { Link } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
 import { getSupabaseClient } from '@/db/supabase';
-import { Icon } from '@/ui/icons';
-import { tokens } from '@/ui/tokens';
-import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
-import { RoleGate } from '@/ui/RoleGate';
-import { DictationButton } from '@/ui/DictationButton';
+import { Icon } from '@/ui/icons/icons';
+import { tokens } from '@/ui/theme/tokens';
+import { MarkdownRenderer } from '@/ui/primitives/MarkdownRenderer';
+import { RoleGate } from '@/ui/components/RoleGate';
+import { DictationButton } from '@/ui/components/DictationButton';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

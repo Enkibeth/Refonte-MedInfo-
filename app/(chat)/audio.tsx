@@ -19,12 +19,12 @@ import {
 import { Link } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
-import { Icon } from '@/ui/icons';
-import { tokens } from '@/ui/tokens';
-import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
-import { RoleGate } from '@/ui/RoleGate';
-import { ToolsMenu } from '@/ui/ToolsMenu';
-import { AudioLibrary } from '@/ui/AudioLibrary';
+import { Icon } from '@/ui/icons/icons';
+import { tokens } from '@/ui/theme/tokens';
+import { MarkdownRenderer } from '@/ui/primitives/MarkdownRenderer';
+import { RoleGate } from '@/ui/components/RoleGate';
+import { ToolsMenu } from '@/ui/components/ToolsMenu';
+import { AudioLibrary } from '@/ui/components/AudioLibrary';
 import { saveAudioDocument } from '@/audio/audioLibrary';
 
 type Mode = 'transcription' | 'report';

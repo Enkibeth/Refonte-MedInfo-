@@ -6,7 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 
-import { MedInfoThemeProvider } from '@/ui/MedInfoThemeProvider';
+import { MedInfoThemeProvider } from '@/ui/theme/MedInfoThemeProvider';
 import { AuthProvider, useSession } from '@/auth/AuthProvider';
 import { resolvePersonaRoute } from '@/ai/routing/persona';
 

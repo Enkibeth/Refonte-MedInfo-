@@ -4,7 +4,7 @@ import {
   STARTER_SUGGESTIONS,
   SUGGESTIONS_VISIBLE_COUNT,
   suggestionWindow,
-} from '@/ai/chat/starterSuggestions';
+} from '@/chat/starterSuggestions';
 
 const CHATBOTS = ['public', 'student', 'professional'] as const;
 

@@ -12,8 +12,8 @@ import { useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, TouchableOpacity } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
-import { Icon } from '@/ui/icons';
-import { tokens } from '@/ui/tokens';
+import { Icon } from '@/ui/icons/icons';
+import { tokens } from '@/ui/theme/tokens';
 
 type State = 'idle' | 'recording' | 'transcribing';
 

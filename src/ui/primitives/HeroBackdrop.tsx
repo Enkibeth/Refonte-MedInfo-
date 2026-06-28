@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { tokens } from './tokens';
+import { tokens } from '@/ui/theme/tokens';
 
 /**
  * Fond du hero — implémentation NATIVE (repli sobre).

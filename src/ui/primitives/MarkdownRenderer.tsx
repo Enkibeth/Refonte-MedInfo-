@@ -6,7 +6,7 @@
  */
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Platform, Linking, Image } from 'react-native';
-import { tokens } from './tokens';
+import { tokens } from '@/ui/theme/tokens';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

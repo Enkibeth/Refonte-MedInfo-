@@ -6,10 +6,10 @@ import {
   INTENDED_PURPOSE,
   getAiDisclosure,
 } from '@/compliance/disclosures';
-import { Card } from '@/ui/Card';
-import { Logo } from '@/ui/Logo';
-import { Screen } from '@/ui/Screen';
-import { tokens } from '@/ui/tokens';
+import { Card } from '@/ui/primitives/Card';
+import { Logo } from '@/ui/primitives/Logo';
+import { Screen } from '@/ui/primitives/Screen';
+import { tokens } from '@/ui/theme/tokens';
 
 /**
  * Informations légales (01_REGULATION §8 — mentions obligatoires).

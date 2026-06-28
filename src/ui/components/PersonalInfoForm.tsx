@@ -10,8 +10,8 @@ import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-nativ
 
 import { useSession } from '@/auth/AuthProvider';
 import { SEX_OPTIONS, type PersonalInfo, type Sex } from '@/profile/personalInfo';
-import { Button } from '@/ui/Button';
-import { tokens } from '@/ui/tokens';
+import { Button } from '@/ui/primitives/Button';
+import { tokens } from '@/ui/theme/tokens';
 
 export function PersonalInfoForm() {
   const { user, personalInfo, updatePersonalInfo } = useSession();

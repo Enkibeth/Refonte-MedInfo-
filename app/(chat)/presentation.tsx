@@ -14,9 +14,9 @@ import { useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
-import { tokens } from '@/ui/tokens';
-import { RoleGate } from '@/ui/RoleGate';
-import { ToolsMenu } from '@/ui/ToolsMenu';
+import { tokens } from '@/ui/theme/tokens';
+import { RoleGate } from '@/ui/components/RoleGate';
+import { ToolsMenu } from '@/ui/components/ToolsMenu';
 
 function PresentationInner() {
   const { session } = useSession();

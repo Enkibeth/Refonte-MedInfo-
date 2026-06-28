@@ -4,12 +4,12 @@ import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View, useWindowDi
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
-import type { ChatbotId } from '@/ai/chat/chatContext';
-import { Button } from '@/ui/Button';
-import { Icon } from '@/ui/icons';
-import { Logo } from '@/ui/Logo';
-import { CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
-import { tokens } from '@/ui/tokens';
+import type { ChatbotId } from '@/chat/chatContext';
+import { Button } from '@/ui/primitives/Button';
+import { Icon } from '@/ui/icons/icons';
+import { Logo } from '@/ui/primitives/Logo';
+import { CHATBOT_META } from '@/ui/components/chat/ChatbotSwitcher';
+import { tokens } from '@/ui/theme/tokens';
 
 /**
  * Header de navigation des pages publiques (audit landing 2026-06) : logo MedInfo à

@@ -5,7 +5,7 @@
  * ⚠️ Module PUR et testable : aucune dépendance réseau, aucune donnée de santé
  * individuelle — uniquement des questions d'information générale.
  */
-import type { ChatbotId } from '@/ai/chat/chatContext';
+import type { ChatbotId } from '@/chat/chatContext';
 
 /** Nombre de questions affichées simultanément. */
 export const SUGGESTIONS_VISIBLE_COUNT = 3;

@@ -1,9 +1,9 @@
 import { useRef } from 'react';
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Icon, type IconName } from './icons';
-import { tokens } from './tokens';
-import { useReducedMotion } from './useReducedMotion';
+import { Icon, type IconName } from '@/ui/icons/icons';
+import { tokens } from '@/ui/theme/tokens';
+import { useReducedMotion } from '@/ui/theme/useReducedMotion';
 
 export type PersonaId = 'pro' | 'student' | 'public';
 

@@ -6,10 +6,10 @@
 import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { LandingHeader } from '@/ui/LandingHeader';
-import { Icon, type IconName } from '@/ui/icons';
-import { Reveal } from '@/ui/Reveal';
-import { tokens } from '@/ui/tokens';
+import { LandingHeader } from '@/ui/components/LandingHeader';
+import { Icon, type IconName } from '@/ui/icons/icons';
+import { Reveal } from '@/ui/primitives/Reveal';
+import { tokens } from '@/ui/theme/tokens';
 
 const CONTACT_EMAIL = 'medaifr1@gmail.com';
 

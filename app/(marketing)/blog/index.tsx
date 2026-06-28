@@ -8,10 +8,10 @@ import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { useRouter } from 'expo-router';
 
 import { listPublishedPosts, type BlogPost } from '@/blog/posts';
-import { LandingHeader } from '@/ui/LandingHeader';
-import { Reveal } from '@/ui/Reveal';
-import { Skeleton } from '@/ui/Skeleton';
-import { tokens } from '@/ui/tokens';
+import { LandingHeader } from '@/ui/components/LandingHeader';
+import { Reveal } from '@/ui/primitives/Reveal';
+import { Skeleton } from '@/ui/primitives/Skeleton';
+import { tokens } from '@/ui/theme/tokens';
 
 function formatDate(iso: string | null): string {
   if (!iso) return '';

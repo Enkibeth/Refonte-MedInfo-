@@ -5,11 +5,11 @@ import { Linking, Platform, StyleSheet, Text, View } from 'react-native';
 import { useSession } from '@/auth/AuthProvider';
 import { plansForPersona, type BillingPlanId } from '@/billing/plans';
 import { shouldShowWebBilling } from '@/billing/surface';
-import { Button } from '@/ui/Button';
-import { Card } from '@/ui/Card';
-import { Logo } from '@/ui/Logo';
-import { Screen } from '@/ui/Screen';
-import { tokens } from '@/ui/tokens';
+import { Button } from '@/ui/primitives/Button';
+import { Card } from '@/ui/primitives/Card';
+import { Logo } from '@/ui/primitives/Logo';
+import { Screen } from '@/ui/primitives/Screen';
+import { tokens } from '@/ui/theme/tokens';
 
 /**
  * Offres (06_BILLING §1, §3, §5).

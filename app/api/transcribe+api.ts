@@ -11,7 +11,7 @@
 import { generateText } from 'ai';
 import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
-import { sanitizeMedicalReport } from '@/ai/audio/sanitizeReport';
+import { sanitizeMedicalReport } from '@/audio/sanitizeReport';
 
 const MAX_SIZE_BYTES = 25 * 1024 * 1024;
 

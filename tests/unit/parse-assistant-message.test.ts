@@ -9,7 +9,7 @@ import {
   parseAssistantMessage,
   splitBodySections,
   isUppercaseHeading,
-} from '@/ai/chat/parseAssistantMessage';
+} from '@/chat/parseAssistantMessage';
 
 const PUBLIC_ANSWER = `MAUX DE TÊTE FRÉQUENTS
 

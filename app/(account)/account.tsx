@@ -8,13 +8,13 @@ import { getSupabaseClient } from '@/db/supabase';
 import { INTENDED_PURPOSE } from '@/compliance/disclosures';
 import { isAdminUserId } from '@/admin/index';
 import { visibleFeatures } from '@/ai/routing/featureVisibility';
-import { Button } from '@/ui/Button';
-import { Card } from '@/ui/Card';
-import { Icon } from '@/ui/icons';
-import { PersonalInfoForm } from '@/ui/PersonalInfoForm';
-import { Logo } from '@/ui/Logo';
-import { Screen } from '@/ui/Screen';
-import { tokens } from '@/ui/tokens';
+import { Button } from '@/ui/primitives/Button';
+import { Card } from '@/ui/primitives/Card';
+import { Icon } from '@/ui/icons/icons';
+import { PersonalInfoForm } from '@/ui/components/PersonalInfoForm';
+import { Logo } from '@/ui/primitives/Logo';
+import { Screen } from '@/ui/primitives/Screen';
+import { tokens } from '@/ui/theme/tokens';
 
 /**
  * Compte — email + persona (lue depuis profiles via RLS). UI polie (scaffold Codex

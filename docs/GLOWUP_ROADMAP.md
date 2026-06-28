@@ -16,19 +16,19 @@ Légende : ✅ fait · 🟡 en cours / partiel · ⬜ à faire.
 | Item | Statut | Détail |
 |---|:---:|---|
 | Refonte design (DM Sans, tokens, mouvement) | ✅ | PR #59 — `tokens.ts`, `Reveal`, `useReducedMotion`, accents persona, `+html.tsx` (DM Sans + reveal + `prefers-reduced-motion`) |
-| Logo / branding | ✅ | Logo wordmark code (`src/ui/Logo.tsx`, `size`+`tone`) ; en-tête Compte/Tarifs/Légal ; hero landing |
+| Logo / branding | ✅ | Logo wordmark code (`src/ui/primitives/Logo.tsx`, `size`+`tone`) ; en-tête Compte/Tarifs/Légal ; hero landing |
 | Landing « hero » + cartes persona | ✅ | `app/index.tsx` : hero petrol, `PersonaCard`, bloc confiance, finalité + disclosure AI Act |
 | Réconciliation `main` ↔ `dev` | ✅ | Branding (#60/#61) + design system (#59) fusionnés sans perte (cette passe) |
 | Thème sombre | ⬜ | Tokens prêts pour étendre ; non priorisé |
-| Icônes complètes / illustrations cohérentes | 🟡 | `src/ui/icons.tsx` (set partiel) ; illustration chat conservée |
+| Icônes complètes / illustrations cohérentes | 🟡 | `src/ui/icons/icons.tsx` (set partiel) ; illustration chat conservée |
 
 ## 2. Expérience par rôle (persona)
 
 | Item | Statut | Détail |
 |---|:---:|---|
 | Visibilité stricte des outils par rôle | ✅ | `featureVisibility.ts` + `RoleGate` + onglets adaptés (ADR-0018) |
-| Menu déroulant d'outils (rôle-aware) | ✅ | `src/ui/ToolsMenu.tsx` dans les en-têtes (chat/document/audio) |
-| Dictée vocale (voix → texte) chat + ECOS | ✅ | `src/ui/DictationButton.tsx` + `/api/transcribe` mode `raw` (Whisper) |
+| Menu déroulant d'outils (rôle-aware) | ✅ | `src/ui/components/ToolsMenu.tsx` dans les en-têtes (chat/document/audio) |
+| Dictée vocale (voix → texte) chat + ECOS | ✅ | `src/ui/components/DictationButton.tsx` + `/api/transcribe` mode `raw` (Whisper) |
 | Section « Mes outils » (Compte) | ✅ | Liste les outils du rôle courant |
 | Sélection / changement de rôle | ✅ | `choose-role` (email étudiant, RPPS pro) — vérif serveur |
 | Mode switcher in-chat (public/étudiant/pro) | ⬜ | Était dans PR #49 (fermée) — à refaire si voulu |
