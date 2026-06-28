@@ -26,3 +26,7 @@ supabase/.temp/
 # Logs
 *.log
 npm-debug.*
+
+# Boucle opératoire autonome (marqueur transitoire + pyc du hook)
+.claude/loop-active
+.claude/hooks/__pycache__/
