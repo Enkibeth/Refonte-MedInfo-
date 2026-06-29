@@ -160,13 +160,14 @@ describe('ai_interactions — service_role only (jamais accessible au client)', 
 
 
 describe('ai_model_config — service_role only (config admin, jamais exposée au client)', () => {
-  it('le seed a bien créé les 10 lignes de fonctionnalités (6 initiales + chat_meta 0021 + blog_generate 0022 + blog_topic/blog_review 0024)', async () => {
+  it('le seed a bien créé les 11 lignes de fonctionnalités (6 initiales + chat_meta 0021 + blog_generate 0022 + blog_topic/blog_review 0024 + presentation_generate 0025)', async () => {
     const { rows } = await db.asService((q) => q('SELECT key FROM ai_model_config'));
-    expect(rows).toHaveLength(10);
+    expect(rows).toHaveLength(11);
     expect(rows.map((r: { key: string }) => r.key)).toContain('chat_meta');
     expect(rows.map((r: { key: string }) => r.key)).toContain('blog_generate');
     expect(rows.map((r: { key: string }) => r.key)).toContain('blog_topic');
     expect(rows.map((r: { key: string }) => r.key)).toContain('blog_review');
+    expect(rows.map((r: { key: string }) => r.key)).toContain('presentation_generate');
   });
 
   it('un client authentifié NE PEUT PAS lire ai_model_config', async () => {

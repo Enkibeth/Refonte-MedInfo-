@@ -1,16 +1,16 @@
 # ADR-0027 — Dashboard de révision étudiant (planificateur déterministe)
 
 ```yaml
-status: Proposed
-date: 2026-06-28
+status: Accepted
+date: 2026-06-29
 owner: Hugo Bettembourg
-linked_to: [ADR-0003, ADR-0018, ADR-0019, ADR-0026]
+linked_to: [ADR-0003, ADR-0018, ADR-0019, ADR-0026, 0027_student_revision.sql]
 ```
 
-> Statut `Proposed` : décision soumise à l'arbitrage Hugo **avant** tout changement de
-> schéma Supabase (règle #4 de CLAUDE.md). Le moteur déterministe et ses tests sont déjà
-> livrés (logique pure, sans table) ; la persistance et l'UI ne seront branchées qu'après
-> acceptation.
+> Accepté après livraison du moteur déterministe (logique pure + tests) puis arbitrage :
+> persistance et UI branchées. **Simplification retenue à l'implémentation** : une SEULE
+> table `revision_plans` (plan complet en JSONB, comme un deck de présentation) au lieu de
+> 3 tables — CRUD client direct via la RLS own-row (pas de route API ni de table enfant).
 
 ## Contexte
 Les étudiants (en particulier PASS/LAS) échouent souvent non par manque de motivation mais
@@ -40,12 +40,16 @@ cas patient, pas de diagnostic, pas de CAT, pas de donnée de santé (RGPD/CNIL)
 3. **Dataviz native** (composants React Native token-driven : jauge, charge du jour,
    barres de progression) — pas d'iframe HTML autonome (web-only + token en URL, smell
    retiré de l'analyseur de partiel, ADR-0019).
-4. **Persistance (à arbitrer)** : migration `0027_student_revision.sql`, RLS **own-row
-   stricte**, tables MVP `revision_plans` / `revision_plan_resources` / `revision_tasks`
-   (le rythme personnel vit dans `revision_plans.settings` jsonb plutôt qu'une table
-   dédiée). CRUD via client Supabase **scopé au token** (RLS = barrière réelle), comme
-   `/api/presentations` (ADR-0026). Test `tests/rls/revision.test.ts` **obligatoire avant
-   merge**. Autosave type `presentation_decks` (debounce + `pagehide` keepalive).
+4. **Persistance (implémentée, simplifiée)** : migration `0027_student_revision.sql`, RLS
+   **own-row stricte**, table UNIQUE `revision_plans` — le plan complet (dates, capacité,
+   rythme, blocs de travail + avancement) est conservé en `plan jsonb` ; `exam_type` /
+   `exam_date` / `title` en colonnes pour l'affichage de la liste. Un plan est un document
+   pédagogique autonome que le moteur recalcule côté client : aucune requête SQL par bloc,
+   donc pas de table enfant ni de jointure. CRUD client direct via le client Supabase anon
+   (`getSupabaseClient`, la RLS own-row fait le cloisonnement), comme
+   `src/document/analysisHistory.ts` — pas de route API (l'écran est natif, pas une iframe).
+   Validation/bornage pur `src/revision/db/plans.ts` (test `tests/unit/revision-plans.test.ts`) ;
+   isolation `tests/rls/revision.test.ts`.
 5. **AI boost = PHASE 2**, optionnel et borné : nouvel appel LLM ⇒ respect intégral de la
    convention IA admin (feature key `revision_plan_assist` dans `AI_FEATURES`,
    `FEATURE_DEFAULTS`, seed `ai_model_config`, `PROMPT_DEFAULTS`, `getModelForFeature` +
@@ -73,5 +77,6 @@ jours tampon, niveau de risque ; cocher/reporter une tâche recalcule le plan. *
   une bascule MDSW interdite (ADR-0003).
 
 ## Statut
-Proposed — en attente d'arbitrage Hugo pour la phase persistance (migration 0027 + RLS) et
-l'UI. Le moteur déterministe + tests unitaires sont livrés indépendamment.
+Accepted — MVP livré : moteur déterministe + persistance own-row (migration 0027 + RLS) +
+UI (onglet étudiant `(chat)/revision`). Phases suivantes (ADR séparés) : AI boost borné
+(convention IA admin) et base de référentiels EDN (sans ingestion de contenu copyrighté).

@@ -113,6 +113,10 @@ export default function ChatLayout() {
         options={{ title: 'Partiel', href: hrefFor('partiel'), tabBarIcon: ({ focused }) => <TabIcon icon="barChart" focused={focused} /> }}
       />
       <Tabs.Screen
+        name="revision"
+        options={{ title: 'Révisions', href: hrefFor('revision'), tabBarIcon: ({ focused }) => <TabIcon icon="calendarCheck" focused={focused} /> }}
+      />
+      <Tabs.Screen
         name="audio"
         options={{ title: 'Audio', href: hrefFor('audio'), tabBarIcon: ({ focused }) => <TabIcon icon="micVoice" focused={focused} /> }}
       />

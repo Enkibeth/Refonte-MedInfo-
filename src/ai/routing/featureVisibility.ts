@@ -15,7 +15,7 @@
  */
 import type { Persona } from '@/ai/prompts/_schema';
 
-export type AppFeatureId = 'chat' | 'document' | 'ecos' | 'partiel' | 'audio' | 'presentation';
+export type AppFeatureId = 'chat' | 'document' | 'ecos' | 'partiel' | 'revision' | 'audio' | 'presentation';
 
 /** Nom d'icône (src/ui/icons.tsx) — l'UI n'utilise plus d'emojis (refonte 2026-06). */
 export type AppFeatureIcon =
@@ -23,6 +23,7 @@ export type AppFeatureIcon =
   | 'fileText'
   | 'stethoscope'
   | 'barChart'
+  | 'calendarCheck'
   | 'micVoice'
   | 'presentation';
 
@@ -77,6 +78,15 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     emoji: '📊',
     icon: 'barChart',
     description: 'Classement de promo : importe les notes et situe-toi (rang, comparaison).',
+    personas: ['student'],
+  },
+  {
+    id: 'revision',
+    route: '/(chat)/revision',
+    label: 'Révisions',
+    emoji: '🗓️',
+    icon: 'calendarCheck',
+    description: 'Planifie tes révisions : charge quotidienne réaliste, suivi et jauge de risque.',
     personas: ['student'],
   },
   {
