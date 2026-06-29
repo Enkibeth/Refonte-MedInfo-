@@ -18,6 +18,33 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-06-29] – Claude (Dashboard de révision étudiant — ADR-0027)
+### Files modified
+- src/revision/types.ts (nouveau : types du domaine)
+- src/revision/engine/{dates,workload,riskScoring,planner,redistribution}.ts (nouveau : moteur déterministe pur)
+- src/revision/db/{plans,queries}.ts (nouveau : validation pure + CRUD client RLS)
+- src/ui/revision/RevisionWidgets.tsx (nouveau : jauge/tuiles/barres natives token-driven)
+- app/(chat)/revision.tsx (nouveau : écran étudiant, RoleGate `revision`)
+- src/ai/routing/featureVisibility.ts, app/(chat)/_layout.tsx, src/ui/iconPaths.ts (onglet + icône `calendarCheck`, persona `student`)
+- supabase/migrations/0027_student_revision.sql, supabase/policies/revision.sql (table `revision_plans`, RLS own-row)
+- tests/unit/{revision-planner,revision-plans}.test.ts, tests/rls/revision.test.ts (nouveaux)
+- tests/unit/feature-visibility.test.ts (ordre étudiant mis à jour)
+- tests/rls/isolation.test.ts (correctif périmé : ai_model_config 10 → 11 depuis 0025 presentation_generate)
+- docs/DECISIONS/0027-dashboard-revision-etudiant.md, CLAUDE.md (table features + migrations + matrice rôle)
+### Purpose
+Planificateur de révisions PÉDAGOGIQUE pour étudiants (PASS/LAS, EDN…) : transforme un
+programme (pages/chapitres/QCM) en charge quotidienne réaliste avec jauge de risque
+anti-panique et suivi. Cœur déterministe (aucune IA en MVP, aucun chiffre inventé) ;
+persistance own-row (un plan = un document JSONB, comme un deck de présentation).
+### Regulatory impact
+None — données pédagogiques uniquement (volumes/planning), jamais de symptôme, cas patient,
+diagnostic, CAT ou donnée de santé. Safe-box non-MDSW préservée ; RLS own-row + test RLS.
+### Rollback plan
+Retirer l'onglet/écran `revision` (featureVisibility + _layout + app/(chat)/revision.tsx) ;
+la table `revision_plans` peut rester (inerte) ou être supprimée via une migration descendante.
+AI boost et base de référentiels EDN non inclus (phases suivantes, ADR séparés).
+
+
 ## [2026-06-13] – Claude (Agent éditorial hebdomadaire du blog — ADR-0025)
 ### Files modified
 - src/blog/articleJson.ts (nouveau : parseurs purs article/sujet/relecture + slugify)

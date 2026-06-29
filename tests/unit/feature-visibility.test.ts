@@ -16,8 +16,8 @@ describe('featureVisibility — matrice stricte par rôle', () => {
     expect(idsFor('public')).toEqual(['chat', 'document']);
   });
 
-  it("l'étudiant voit Chat + ECOS + Partiel + Présentations (pas Document ni Audio)", () => {
-    expect(idsFor('student')).toEqual(['chat', 'ecos', 'partiel', 'presentation']);
+  it("l'étudiant voit Chat + ECOS + Partiel + Révisions + Présentations (pas Document ni Audio)", () => {
+    expect(idsFor('student')).toEqual(['chat', 'ecos', 'partiel', 'revision', 'presentation']);
   });
 
   it('le professionnel voit Chat + Audio + Présentations (pas ECOS/Partiel/Document)', () => {
