@@ -8,6 +8,7 @@
  * du moteur déterministe (`@/revision/engine`).
  */
 import type {
+  DistributionMode,
   ExamType,
   PlanInput,
   RevisionResource,
@@ -37,6 +38,7 @@ export interface StoredPlan {
   unavailableDays: string[];
   dailyMaxMinutes: number;
   bufferRatio: number;
+  distributionMode: DistributionMode;
   speed: SpeedProfile;
   resources: StoredResource[];
 }
@@ -130,6 +132,7 @@ export function sanitizeStoredPlan(value: unknown): StoredPlan {
     unavailableDays,
     dailyMaxMinutes: clamp(Math.round(num(p.dailyMaxMinutes, 120)), 5, 24 * 60),
     bufferRatio: clamp(num(p.bufferRatio, 0.1), 0, 1),
+    distributionMode: p.distributionMode === 'frontload' ? 'frontload' : 'smooth',
     speed: coerceSpeed(p.speed),
     resources,
   };
@@ -143,6 +146,7 @@ export function storedPlanToInput(stored: StoredPlan): PlanInput {
     unavailableDays: stored.unavailableDays,
     dailyMaxMinutes: stored.dailyMaxMinutes,
     bufferRatio: stored.bufferRatio,
+    distributionMode: stored.distributionMode,
     speed: stored.speed,
     resources: stored.resources.map<RevisionResource>((r) => ({
       id: r.id,

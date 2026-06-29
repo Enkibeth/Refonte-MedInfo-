@@ -81,6 +81,24 @@ describe('planRevision — cas nominal (anti-panique, charge lissée)', () => {
   });
 });
 
+describe('planRevision — mode de répartition', () => {
+  it('smooth (défaut) répartit la charge également sur tous les jours', () => {
+    const plan = planRevision(planInput());
+    expect(plan.dailyLoads[0].minutes).toBeCloseTo(60, 5);
+    expect(plan.dailyLoads[9].minutes).toBeCloseTo(60, 5);
+  });
+
+  it('frontload remplit les premiers jours au max et allège la fin', () => {
+    const plan = planRevision(planInput({ distributionMode: 'frontload' }));
+    // 600 min à 120/jour → 5 jours pleins, puis jours vides.
+    expect(plan.dailyLoads[0].minutes).toBeCloseTo(120, 5);
+    expect(plan.dailyLoads[4].minutes).toBeCloseTo(120, 5);
+    expect(plan.dailyLoads[9].minutes).toBe(0);
+    // La charge totale reste conservée quel que soit le mode.
+    expect(sum(plan.tasks.map((t) => t.minutes))).toBeCloseTo(600, 5);
+  });
+});
+
 describe('planRevision — jours indisponibles', () => {
   it('exclut les jours indispo de la fenêtre et du planning', () => {
     const plan = planRevision(planInput({ unavailableDays: ['2026-01-03', '2026-01-04'] }));

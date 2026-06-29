@@ -145,6 +145,15 @@ export const AI_FEATURES = [
     providers: ['anthropic', 'openai', 'google'],
   },
   {
+    key: 'revision_plan_assist',
+    emoji: '🗓️',
+    label: 'Révisions — Coup de pouce planning',
+    description: 'Propose des ajustements de planning (reprioriser, alléger, rappels) — pédagogique, jamais médical',
+    apiRoute: '/api/revision',
+    promptKeys: ['revision_plan_assist'],
+    providers: ['anthropic', 'openai', 'google'],
+  },
+  {
     key: 'blog_generate',
     emoji: '📰',
     label: 'Blog — Génération d\'article',
