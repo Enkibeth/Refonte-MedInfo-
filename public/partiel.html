@@ -357,21 +357,12 @@ input.f:focus{border-color:var(--a1);box-shadow:0 0 0 3px rgba(26,111,212,.14);}
 
 </main>
 <script>
-const sa=a=>[...a].sort((x,y)=>x-y);
-const avg=a=>a.reduce((s,x)=>s+x,0)/a.length;
-function Q(s,q){const n=s.length;if(!n)return NaN;if(n===1)return s[0];const h=(n-1)*q,lo=Math.floor(h),hi=Math.ceil(h);return lo===hi?s[lo]:s[lo]+(h-lo)*(s[hi]-s[lo]);}
-function SD(a){if(a.length<2)return 0;const m=avg(a);return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1));}
-function CS(arr){const c=arr.filter(v=>typeof v==='number'&&!isNaN(v));if(!c.length)return null;const s=sa(c);return{n:s.length,mean:avg(s),stdev:SD(s),min:s[0],max:s[s.length-1],p10:Q(s,.1),q1:Q(s,.25),median:Q(s,.5),q3:Q(s,.75),p90:Q(s,.9),sorted:s};}
-function RK(v,s){let a=0;for(const x of s)if(x>v)a++;return a+1;}
-function PC(v,s){const n=s.length;if(!n)return NaN;let b=0,e=0;for(const x of s){if(x<v)b++;else if(x===v)e++;}return((b+.5*e)/n)*100;}
-const fm=(x,d=2)=>x==null||(typeof x==='number'&&isNaN(x))?'—':typeof x!=='number'?String(x):x.toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d});
-const fi=x=>x==null||(typeof x==='number'&&isNaN(x))?'—':Math.round(x).toLocaleString('fr-FR');
-const fp=x=>x==null||isNaN(x)?'—':`${x.toFixed(1).replace('.',',')} %`;
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* @partiel-logic:start
+   Logique pure (sans DOM ni réseau) de détection/normalisation des fichiers.
+   Testée dans tests/unit/partiel-parse.test.ts (extraction du bloc + exécution vm).
+   Ce bloc ne doit RIEN référencer du DOM : il est exécuté hors navigateur par les tests. */
 
-const S={fileName:'',headers:[],rawBody:null,idColIdx:0,subjects:[],rows:null,excluded:new Set(),subStats:{},overall:null,scaleMax:20,tabsCount:1,activeTab:0,ids:['',''],generated:false,stu1:null,stu2:null,selSub:null,reportDate:null};
-
-/* ---------- Détection & normalisation des notes ---------- */
+const median=arr=>{if(!arr||!arr.length)return 0;const s=[...arr].sort((a,b)=>a-b);const m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2;};
 
 // Mentions d'absence / défaillance courantes des exports de scolarité.
 const ABSENT_RE=/^(abs(ent|ente|\.)?|abi|abj|def(aillant|\.)?|nv|n\.?\s?val(id[ée]e?)?|excl(u|ue|us)?|disp(ens[ée]e?)?|-|–|—|n\/a|na)$/i;
@@ -449,10 +440,152 @@ function parseBody(body,hdrs,idCol){
   return{subjects:subs.map(s=>s.name),students};
 }
 
-/* ---------- Extraction PDF ---------- */
+// Reconstruit un tableau 2D [[...],[...]] depuis des items {x,y,str} (typiquement
+// extraits d'un PDF par pdf.js). Robuste aux colonnes inégalement espacées et aux
+// lignes de titre : les lignes sont regroupées par Y (tolérance adaptative) et les
+// colonnes par clustering X sur la structure de ligne la PLUS FRÉQUENTE (modale),
+// ce qui évite qu'un en-tête sur 2 lignes ou une ligne de titre ne fausse le découpage.
+function reconstructTableFromItems(items){
+  const pts=(items||[]).filter(it=>it&&it.str!=null&&String(it.str).trim()!=='')
+    .map(it=>({x:+it.x,y:+it.y,str:String(it.str).trim()}));
+  if(!pts.length)return [];
+  // Regroupement en lignes — tolérance Y = fraction de l'écart médian entre lignes.
+  pts.sort((a,b)=>a.y-b.y||a.x-b.x);
+  const ys=[...new Set(pts.map(p=>Math.round(p.y)))].sort((a,b)=>a-b);
+  const ygaps=[];for(let i=1;i<ys.length;i++){const g=ys[i]-ys[i-1];if(g>0)ygaps.push(g);}
+  ygaps.sort((a,b)=>a-b);
+  const medGap=ygaps.length?ygaps[Math.floor(ygaps.length/2)]:8;
+  const yTol=Math.max(2,medGap*0.45);
+  const lines=[];let cur=[];let lastY=null;
+  for(const p of pts){
+    if(lastY===null||Math.abs(p.y-lastY)<=yTol)cur.push(p);
+    else{lines.push(cur);cur=[p];}
+    lastY=p.y;
+  }
+  if(cur.length)lines.push(cur);
+  for(const l of lines)l.sort((a,b)=>a.x-b.x);
+  // Nombre de colonnes = longueur de ligne la plus fréquente (≥2 items).
+  const lens=lines.map(l=>l.length).filter(n=>n>=2);
+  let L=1;
+  if(lens.length){
+    const freq={};for(const n of lens)freq[n]=(freq[n]||0)+1;
+    L=+Object.keys(freq).reduce((a,b)=>(freq[b]>freq[a]||(freq[b]===freq[a]&&+b>+a))?b:a);
+  }
+  let refLines=lines.filter(l=>l.length===L);
+  if(refLines.length<2)refLines=lines.filter(l=>l.length>=Math.max(2,L));
+  if(!refLines.length)refLines=lines;
+  // Centres de colonnes : on coupe le nuage de X aux (L-1) plus grands écarts.
+  const xs=[];for(const l of refLines)for(const p of l)xs.push(p.x);
+  xs.sort((a,b)=>a-b);
+  let centers;
+  if(L<=1||xs.length<=1){
+    centers=[median(xs)];
+  }else{
+    const gi=[];for(let i=1;i<xs.length;i++)gi.push({i,g:xs[i]-xs[i-1]});
+    gi.sort((a,b)=>b.g-a.g);
+    const cuts=gi.slice(0,L-1).map(o=>o.i).sort((a,b)=>a-b);
+    const groups=[];let start=0;
+    for(const c of cuts){groups.push(xs.slice(start,c));start=c;}
+    groups.push(xs.slice(start));
+    centers=groups.map(g=>median(g)).sort((a,b)=>a-b);
+  }
+  const assign=x=>{let best=0,bd=Infinity;for(let c=0;c<centers.length;c++){const d=Math.abs(x-centers[c]);if(d<bd){bd=d;best=c;}}return best;};
+  const rows=[];
+  for(const l of lines){
+    const row=new Array(centers.length).fill(null);
+    for(const p of l){const c=assign(p.x);row[c]=row[c]?row[c]+' '+p.str:p.str;}
+    if(row.some(v=>v!=null&&v!==''))rows.push(row);
+  }
+  return rows;
+}
 
-// Extrait un tableau 2D [[h1,h2,...], [v1,v2,...], ...] depuis un PDF.
-// Reconstruit les lignes par regroupement Y, et les colonnes par clustering X.
+// Sépare en-têtes / corps en sautant les lignes de titre/préambule (logo, faculté,
+// année universitaire…) AVANT le vrai en-tête. Marche pour tous les formats.
+function normalizeTable(all){
+  const rows=(all||[]).map(r=>Array.isArray(r)?r:[r]).filter(r=>r.some(v=>v!=null&&String(v).trim()!==''));
+  if(!rows.length)return {hdrs:[],body:[]};
+  const ncol=Math.max(...rows.map(r=>r.length));
+  const widthOf=r=>r.filter(v=>v!=null&&String(v).trim()!=='').length;
+  const widths=rows.map(widthOf);
+  const wf={};for(const w of widths)wf[w]=(wf[w]||0)+1;
+  const modalW=+Object.keys(wf).reduce((a,b)=>(wf[b]>wf[a]||(wf[b]===wf[a]&&+b>+a))?b:a);
+  // Début du tableau = 1re ligne aussi large que la structure modale (saute les titres).
+  let start=widths.findIndex(w=>w>=modalW);
+  if(start<0)start=0;
+  const isHeaderRow=r=>{
+    const cells=r.map(coerceCell).filter(v=>v!=null);
+    if(!cells.length)return false;
+    return cells.filter(v=>typeof v!=='number').length>=cells.length*0.5;
+  };
+  let hdrs,bodyStart;
+  if(isHeaderRow(rows[start])){
+    const hr=rows[start];
+    hdrs=Array.from({length:ncol},(_,i)=>{const h=hr[i];return h==null||String(h).trim()===''?`Col. ${i+1}`:String(h).trim();});
+    bodyStart=start+1;
+  }else{
+    hdrs=Array.from({length:ncol},(_,i)=>`Col. ${i+1}`);
+    bodyStart=start;
+  }
+  const body=rows.slice(bodyStart).map(r=>Array.from({length:ncol},(_,i)=>coerceCell(r[i]==null?null:r[i])));
+  return {hdrs,body};
+}
+
+// Une colonne « séquentielle » (place, rang, n° d'ordre 1..n) n'est PAS une note.
+function isLikelySequence(vals){
+  const nums=(vals||[]).filter(v=>typeof v==='number');
+  if(nums.length<4||nums.length<(vals||[]).length)return false;
+  if(!nums.every(n=>Number.isInteger(n)))return false;
+  const s=[...nums].sort((a,b)=>a-b);
+  if(s[0]>1)return false; // un rang/place commence à 0 ou 1
+  const uniq=[...new Set(s)];
+  if(uniq.length<nums.length*0.9)return false; // trop d'ex æquo → ce n'est pas un index
+  const span=uniq[uniq.length-1]-uniq[0];
+  return span>=uniq.length-1&&span<=uniq.length+1;
+}
+
+// Sous-ensemble des « épreuves » qui ressemblent vraiment à des notes :
+// dans l'échelle, dispersées, et pas une simple séquence (place/rang).
+function gradeColumnsOf(subjects,students,scaleMax){
+  const out=[];const hi=(scaleMax||20)*1.05;
+  for(const s of subjects){
+    const nums=students.map(r=>r.grades[s]).filter(v=>typeof v==='number');
+    if(nums.length<3)continue;
+    if(isLikelySequence(nums))continue;
+    if(nums.filter(v=>v>=-0.001&&v<=hi).length<nums.length*0.8)continue;
+    if(new Set(nums.map(v=>Math.round(v*100))).size<2)continue;
+    out.push(s);
+  }
+  return out;
+}
+
+if(typeof module!=='undefined'&&module.exports){
+  module.exports={coerceCell,ABSENT_RE,detectIdCol,ID_HEADER_RE,rawScale,parseBody,
+    reconstructTableFromItems,normalizeTable,isLikelySequence,gradeColumnsOf,median};
+}
+/* @partiel-logic:end */
+</script>
+<script>
+const sa=a=>[...a].sort((x,y)=>x-y);
+const avg=a=>a.reduce((s,x)=>s+x,0)/a.length;
+function Q(s,q){const n=s.length;if(!n)return NaN;if(n===1)return s[0];const h=(n-1)*q,lo=Math.floor(h),hi=Math.ceil(h);return lo===hi?s[lo]:s[lo]+(h-lo)*(s[hi]-s[lo]);}
+function SD(a){if(a.length<2)return 0;const m=avg(a);return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1));}
+function CS(arr){const c=arr.filter(v=>typeof v==='number'&&!isNaN(v));if(!c.length)return null;const s=sa(c);return{n:s.length,mean:avg(s),stdev:SD(s),min:s[0],max:s[s.length-1],p10:Q(s,.1),q1:Q(s,.25),median:Q(s,.5),q3:Q(s,.75),p90:Q(s,.9),sorted:s};}
+function RK(v,s){let a=0;for(const x of s)if(x>v)a++;return a+1;}
+function PC(v,s){const n=s.length;if(!n)return NaN;let b=0,e=0;for(const x of s){if(x<v)b++;else if(x===v)e++;}return((b+.5*e)/n)*100;}
+const fm=(x,d=2)=>x==null||(typeof x==='number'&&isNaN(x))?'—':typeof x!=='number'?String(x):x.toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fi=x=>x==null||(typeof x==='number'&&isNaN(x))?'—':Math.round(x).toLocaleString('fr-FR');
+const fp=x=>x==null||isNaN(x)?'—':`${x.toFixed(1).replace('.',',')} %`;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const S={fileName:'',headers:[],rawBody:null,idColIdx:0,subjects:[],rows:null,excluded:new Set(),subStats:{},overall:null,scaleMax:20,tabsCount:1,activeTab:0,ids:['',''],generated:false,stu1:null,stu2:null,selSub:null,reportDate:null};
+
+/* ---------- Extraction PDF ----------
+   Les fonctions pures de détection/normalisation (coerceCell, detectIdCol,
+   rawScale, parseBody, reconstructTableFromItems, normalizeTable,
+   isLikelySequence, gradeColumnsOf) vivent dans le bloc @partiel-logic ci-dessus
+   (testé hors navigateur). Ici on ne fait que l'I/O (pdf.js / SheetJS) + UI. */
+
+// Extrait les items texte positionnés d'un PDF (pdf.js) puis reconstruit le tableau.
 async function extractRowsFromPdf(file){
   if(!window.pdfjsLib)throw new Error('pdf.js non chargé');
   const buf=await file.arrayBuffer();
@@ -473,43 +606,7 @@ async function extractRowsFromPdf(file){
     yOffset+=vp.height+10;
   }
   if(!allItems.length)throw new Error('PDF sans texte sélectionnable (scanné ?). Convertis-le en .xlsx ou utilise un OCR avant.');
-  // Regroupement par lignes : tolérance Y de 4 px
-  allItems.sort((a,b)=>a.y-b.y||a.x-b.x);
-  const lines=[];let cur=[];let lastY=null;
-  for(const it of allItems){
-    if(lastY===null||Math.abs(it.y-lastY)<=4)cur.push(it);
-    else{if(cur.length)lines.push(cur);cur=[it];}
-    lastY=it.y;
-  }
-  if(cur.length)lines.push(cur);
-  // Centres de colonnes : médiane des positions X sur les lignes les plus longues
-  // (plus robuste qu'une seule ligne de référence : un en-tête sur deux lignes ou
-  // une ligne de titre ne fausse plus le découpage).
-  const maxLen=Math.max(...lines.map(l=>l.length));
-  const refLines=lines.filter(l=>l.length>=Math.max(2,maxLen-1));
-  const reference=refLines[0]||lines[0];
-  const colCenters=reference.map(it=>it.x).sort((a,b)=>a-b);
-  if(colCenters.length<2)throw new Error('Impossible de détecter les colonnes du PDF.');
-  const avgGap=(colCenters[colCenters.length-1]-colCenters[0])/(colCenters.length-1)||50;
-  const assignCol=(x)=>{
-    let best=0,bestD=Infinity;
-    for(let c=0;c<colCenters.length;c++){
-      const d=Math.abs(x-colCenters[c]);
-      if(d<bestD){bestD=d;best=c;}
-    }
-    return bestD<avgGap*0.7?best:-1;
-  };
-  const rows=[];
-  for(const line of lines){
-    line.sort((a,b)=>a.x-b.x);
-    const row=new Array(colCenters.length).fill(null);
-    for(const it of line){
-      const c=assignCol(it.x);
-      if(c<0)continue;
-      row[c]=row[c]?(row[c]+' '+it.str):it.str;
-    }
-    if(row.some(v=>v!=null&&v!==''))rows.push(row);
-  }
+  const rows=reconstructTableFromItems(allItems);
   if(rows.length<2)throw new Error('PDF parsé mais moins de 2 lignes utiles trouvées.');
   return rows;
 }
@@ -530,20 +627,21 @@ async function handleFile(file){
       all=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,blankrows:false});
     }
     if(!all||all.length<2)throw new Error('Fichier vide ou sans ligne de données.');
-    // Ligne d'en-têtes : si la 1re ligne est majoritairement numérique, le fichier
-    // n'a pas d'en-têtes — on en synthétise pour ne pas perdre la 1re ligne de notes.
-    const firstCoerced=all[0].map(coerceCell);
-    const numericFirst=firstCoerced.filter(v=>typeof v==='number').length;
-    const hasHeader=numericFirst<all[0].length/2;
-    const hdrs=hasHeader
-      ?all[0].map((h,i)=>h==null||String(h).trim()===''?`Col. ${i+1}`:String(h).trim())
-      :all[0].map((_,i)=>`Col. ${i+1}`);
-    // Coercition de toutes les cellules : « 12,5 » → 12.5, « ABS » → null, etc.
-    const body=(hasHeader?all.slice(1):all).map(r=>(r||[]).map(coerceCell));
+    // Saute les lignes de titre/préambule et identifie le vrai en-tête (tous formats).
+    const{hdrs,body}=normalizeTable(all);
+    if(!body.length)throw new Error("Aucune ligne de données exploitable après l'en-tête.");
     const det=detectIdCol(body,hdrs);
     const{subjects:subs,students}=parseBody(body,hdrs,det);
-    if(!subs.length)throw new Error('Aucune colonne de notes détectée. Vérifie le format du fichier.');
-    S.fileName=file.name;S.headers=hdrs;S.rawBody=body;S.idColIdx=det;S.subjects=subs;S.rows=students;S.excluded=new Set();S.scaleMax=rawScale(body,hdrs,det);S.generated=false;S.selSub=subs[0]||null;
+    if(!subs.length)throw new Error('Aucune colonne de notes détectée. Vérifie le format du fichier (1re colonne = identifiants, suivantes = épreuves).');
+    const scaleMax=rawScale(body,hdrs,det);
+    // Garde-fou : un fichier sans vraie colonne de notes (liste d'affichage : n°,
+    // salle, place…) ne doit pas être « analysé » comme un relevé de notes.
+    const grades=gradeColumnsOf(subs,students,scaleMax);
+    if(!grades.length)throw new Error("Aucune colonne de notes exploitable détectée. Ce fichier ressemble à une liste (n° étudiant, salle, place…) plutôt qu'à un relevé de notes : importe le relevé de notes/résultats de la promo (.xlsx, .csv ou PDF des notes).");
+    S.fileName=file.name;S.headers=hdrs;S.rawBody=body;S.idColIdx=det;S.subjects=subs;S.rows=students;
+    // Pré-exclut les colonnes numériques qui ne sont pas des notes (rang/place/index).
+    S.excluded=new Set(subs.filter(s=>!grades.includes(s)));
+    S.scaleMax=scaleMax;S.generated=false;S.selSub=grades[0]||subs[0]||null;
     recomp();renderAll();
   }catch(e){showErr(e.message||'Erreur de lecture.');S.rows=null;renderAll();}
 }
