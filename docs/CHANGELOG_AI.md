@@ -18,6 +18,29 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-06-29] – Claude (Révisions : améliorations + coup de pouce IA — ADR-0027 phase 2)
+### Files modified
+- src/revision/engine/{planner,redistribution}.ts, src/revision/types.ts, src/revision/db/plans.ts (mode de répartition lissé/charge-en-avance)
+- src/ui/revision/DateField.tsx + DateField.web.tsx (nouveaux : date-pickers natifs, paire plateforme)
+- app/(chat)/revision.tsx (autosave debouncé, toggle de répartition, date-pickers, panneau coup de pouce IA + disclosure)
+- src/revision/ai/revisionPrompt.ts (nouveau : contexte serveur pur, chiffres recalculés par le moteur)
+- app/api/revision+api.ts (nouvelle route, garde persona serveur étudiant/admin, convention IA)
+- src/admin/index.ts, src/ai/providers/featureModel.ts, src/ai/prompts/promptStore.ts (feature revision_plan_assist)
+- supabase/migrations/0028_revision_ai_boost.sql (seed ai_model_config)
+- tests/unit/{revision-planner,revision-ai}.test.ts (modes + contexte IA), tests/rls/isolation.test.ts (11 → 12)
+- CLAUDE.md, docs/DECISIONS/0027-dashboard-revision-etudiant.md
+### Purpose
+Suite des améliorations du dashboard de révision : date-pickers natifs, autosave debouncé,
+mode « charge en avance » (en plus du lissé), et coup de pouce IA borné (`revision_plan_assist`)
+qui propose des ajustements d'organisation à partir des métriques RECALCULÉES par le moteur.
+### Regulatory impact
+None — l'IA ne donne que des conseils d'ORGANISATION (jamais médical, n'invente aucun volume) ;
+garde persona serveur (étudiant/admin), disclosure AI Act, aucun archivage. Données pédagogiques.
+### Rollback plan
+Retirer le panneau + la route /api/revision et le seed 0028 (revision_plan_assist) ; le reste
+du dashboard (moteur + persistance) reste fonctionnel sans le coup de pouce IA.
+
+
 ## [2026-06-29] – Claude (Dashboard de révision étudiant — ADR-0027)
 ### Files modified
 - src/revision/types.ts (nouveau : types du domaine)

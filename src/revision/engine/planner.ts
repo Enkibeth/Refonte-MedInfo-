@@ -10,6 +10,7 @@
  */
 import type {
   DailyLoad,
+  DistributionMode,
   PlanInput,
   PlanResult,
   PlannedTask,
@@ -98,6 +99,20 @@ export function smoothingTarget(totalMinutes: number, dayCount: number): number 
   return dayCount > 0 ? totalMinutes / dayCount : 0;
 }
 
+/**
+ * Cible quotidienne selon le mode de répartition :
+ *  - `smooth`    : charge ÷ jours (chaque jour ~identique) ;
+ *  - `frontload` : capacité quotidienne (remplit les premiers jours au max, fin allégée).
+ */
+export function targetForMode(
+  mode: DistributionMode,
+  totalMinutes: number,
+  dayCount: number,
+  dailyMaxMinutes: number,
+): number {
+  return mode === 'frontload' ? dailyMaxMinutes : smoothingTarget(totalMinutes, dayCount);
+}
+
 function makeTask(date: string, bucket: WorkBucket, minutes: number): PlannedTask {
   return {
     date,
@@ -144,7 +159,8 @@ export function planRevision(input: PlanInput, today?: string): PlanResult {
   const days = usableStudyDays(input, today);
   const total = withBuffer(totalWorkloadMinutes(input.resources, input.speed), input.bufferRatio);
   const buckets = bucketsFromResources(input);
-  const tasks = distribute(buckets, days, smoothingTarget(total, days.length));
+  const target = targetForMode(input.distributionMode ?? 'smooth', total, days.length, input.dailyMaxMinutes);
+  const tasks = distribute(buckets, days, target);
   const dailyLoads = aggregateDailyLoads(tasks, days, input.dailyMaxMinutes);
   const risk = assessRisk({
     totalMinutes: total,

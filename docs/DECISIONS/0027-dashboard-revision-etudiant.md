@@ -77,6 +77,9 @@ jours tampon, niveau de risque ; cocher/reporter une tâche recalcule le plan. *
   une bascule MDSW interdite (ADR-0003).
 
 ## Statut
-Accepted — MVP livré : moteur déterministe + persistance own-row (migration 0027 + RLS) +
-UI (onglet étudiant `(chat)/revision`). Phases suivantes (ADR séparés) : AI boost borné
-(convention IA admin) et base de référentiels EDN (sans ingestion de contenu copyrighté).
+Accepted — livré : moteur déterministe (modes lissé / charge-en-avance) + persistance own-row
+(migration 0027 + RLS) + UI (onglet étudiant `(chat)/revision`, autosave, date-pickers natifs)
++ **coup de pouce IA borné** `revision_plan_assist` (`/api/revision`, migration 0028, garde
+persona serveur + disclosure, l'IA ne propose que de l'organisation et n'invente aucun chiffre).
+Phase suivante (ADR séparé) : base de référentiels EDN (sans ingestion de contenu copyrighté),
+qui permettra à l'IA de pré-remplir des métadonnées existantes.

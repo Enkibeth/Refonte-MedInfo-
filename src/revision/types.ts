@@ -18,6 +18,14 @@ export type TaskStatus = 'pending' | 'done' | 'deferred';
 /** Niveau de risque du plan (jauge anti-panique vert / orange / rouge). */
 export type RiskLevel = 'green' | 'orange' | 'red';
 
+/**
+ * Répartition de la charge sur les jours :
+ *  - `smooth`     : lissée (≈ charge totale ÷ jours) — par défaut, anti-panique ;
+ *  - `frontload`  : « charge en avance » (remplit chaque jour jusqu'à la capacité,
+ *                   garde des jours libres en fin de période).
+ */
+export type DistributionMode = 'smooth' | 'frontload';
+
 /** Rythme personnel de l'étudiant (jamais inventé par l'IA — saisi par l'utilisateur). */
 export interface SpeedProfile {
   pagesPerHour: number;
@@ -51,6 +59,8 @@ export interface PlanInput {
   dailyMaxMinutes: number;
   /** Marge de sécurité ajoutée à la charge (0.1 = +10 %). */
   bufferRatio: number;
+  /** Répartition de la charge (défaut `smooth`). */
+  distributionMode?: DistributionMode;
   resources: RevisionResource[];
   speed: SpeedProfile;
 }

@@ -24,6 +24,9 @@ import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
 import { RoleGate } from '@/ui/RoleGate';
 import { ToolsMenu } from '@/ui/ToolsMenu';
+import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
+import { DateField } from '@/ui/revision/DateField';
+import { getAiDisclosure } from '@/compliance/disclosures';
 import { redistribute } from '@/revision/engine/redistribution';
 import { daysBetween } from '@/revision/engine/dates';
 import {
@@ -78,11 +81,20 @@ function newDraft(): { title: string; examType: ExamType; stored: StoredPlan } {
       unavailableDays: [],
       dailyMaxMinutes: 120,
       bufferRatio: 0.1,
+      distributionMode: 'smooth',
       speed: { ...DEFAULT_SPEED },
       resources: [],
     },
   };
 }
+
+const BOOST_INTENTS = [
+  { key: 'optimize', label: 'Optimiser' },
+  { key: 'realistic', label: 'Réaliste ?' },
+  { key: 'rebalance', label: 'Rééquilibrer' },
+  { key: 'reminders', label: 'Rappels espacés' },
+] as const;
+type BoostIntent = (typeof BOOST_INTENTS)[number]['key'];
 
 export default function RevisionScreen() {
   return (
@@ -109,6 +121,9 @@ function RevisionScreenInner() {
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [boostLoading, setBoostLoading] = useState(false);
+  const [boostText, setBoostText] = useState<string | null>(null);
+  const [boostError, setBoostError] = useState<string | null>(null);
 
   const refreshPlans = useCallback(async () => {
     if (!userId) return;
@@ -199,6 +214,43 @@ function RevisionScreenInner() {
     },
     [userId, planId, refreshPlans],
   );
+
+  // Autosave : enregistre ~1,2 s après une modification. On n'enregistre pas un brouillon
+  // vide (nouveau plan sans bloc) ; un plan déjà existant est toujours synchronisé.
+  useEffect(() => {
+    if (!dirty || !userId || saving) return;
+    if (planId === null && stored.resources.length === 0) return;
+    const t = setTimeout(() => void persist(stored, title, examType), 1200);
+    return () => clearTimeout(t);
+  }, [dirty, saving, userId, planId, stored, title, examType, persist]);
+
+  async function runBoost(intent: BoostIntent) {
+    if (stored.resources.length === 0) {
+      setBoostError('Ajoute au moins un bloc de travail avant de demander un coup de pouce.');
+      return;
+    }
+    setBoostLoading(true);
+    setBoostError(null);
+    setBoostText(null);
+    try {
+      const token = session?.access_token;
+      const res = await fetch('/api/revision', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ intent, plan: stored }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { text?: string; error?: string };
+      if (!res.ok) throw new Error(data.error ?? 'Échec du coup de pouce.');
+      setBoostText(typeof data.text === 'string' ? data.text : '');
+    } catch (e) {
+      setBoostError(e instanceof Error ? e.message : 'Erreur réseau.');
+    } finally {
+      setBoostLoading(false);
+    }
+  }
 
   async function loadPlan(id: string) {
     setError(null);
@@ -362,26 +414,36 @@ function RevisionScreenInner() {
           </View>
 
           <View style={styles.dualRow}>
-            <Field label="Début (AAAA-MM-JJ)">
-              <TextInput
-                style={styles.input}
-                defaultValue={stored.startDate}
-                onChangeText={(t) => patchStored({ startDate: t.trim() })}
-                placeholder="2026-01-01"
-                placeholderTextColor={tokens.colors.textMuted}
-                autoCapitalize="none"
-              />
+            <Field label="Début">
+              <DateField value={stored.startDate} onChange={(d) => patchStored({ startDate: d })} />
             </Field>
-            <Field label="Examen (AAAA-MM-JJ)">
-              <TextInput
-                style={styles.input}
-                defaultValue={stored.examDate}
-                onChangeText={(t) => patchStored({ examDate: t.trim() })}
-                placeholder="2026-06-01"
-                placeholderTextColor={tokens.colors.textMuted}
-                autoCapitalize="none"
-              />
+            <Field label="Date d'examen">
+              <DateField value={stored.examDate} onChange={(d) => patchStored({ examDate: d })} />
             </Field>
+          </View>
+
+          <Text style={styles.fieldLabel}>Répartition de la charge</Text>
+          <View style={styles.examRow}>
+            {([
+              ['smooth', 'Lissée (régulier)'],
+              ['frontload', 'En avance (fin allégée)'],
+            ] as const).map(([mode, label]) => (
+              <TouchableOpacity
+                key={mode}
+                style={[styles.examChip, stored.distributionMode === mode && styles.examChipActive]}
+                onPress={() => patchStored({ distributionMode: mode })}
+                accessibilityRole="button"
+              >
+                <Text
+                  style={[
+                    styles.examChipText,
+                    stored.distributionMode === mode && styles.examChipTextActive,
+                  ]}
+                >
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
           <View style={styles.dualRow}>
@@ -542,6 +604,35 @@ function RevisionScreenInner() {
               {result.dailyLoads.length === 0 ? (
                 <Text style={styles.hint}>Aucun jour disponible avant la date d'examen.</Text>
               ) : null}
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Coup de pouce IA</Text>
+              <Text style={styles.hint}>
+                Conseils d'organisation à partir de TON plan. L'IA ne modifie rien et n'invente
+                aucun volume — tu restes décideur.
+              </Text>
+              <View style={styles.boostRow}>
+                {BOOST_INTENTS.map((b) => (
+                  <TouchableOpacity
+                    key={b.key}
+                    style={[styles.boostChip, boostLoading && styles.boostChipDisabled]}
+                    onPress={() => void runBoost(b.key)}
+                    disabled={boostLoading}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.boostChipText}>{b.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              {boostLoading ? <ActivityIndicator color={tokens.colors.accent} /> : null}
+              {boostError ? <Text style={styles.boostErrorText}>{boostError}</Text> : null}
+              {boostText ? (
+                <View style={styles.boostResult}>
+                  <MarkdownRenderer text={boostText} />
+                </View>
+              ) : null}
+              <Text style={styles.boostDisclosure}>{getAiDisclosure()}</Text>
             </View>
           </>
         ) : null}
@@ -827,6 +918,41 @@ const styles = StyleSheet.create({
     color: tokens.colors.success,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
+  },
+  boostRow: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm },
+  boostChip: {
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.sm,
+    borderRadius: tokens.radius.pill,
+    borderWidth: 1,
+    borderColor: tokens.colors.accent,
+    backgroundColor: tokens.colors.accentSurface,
+  },
+  boostChipDisabled: { opacity: 0.5 },
+  boostChipText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  boostErrorText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.danger,
+    fontSize: tokens.type.caption.fontSize,
+  },
+  boostResult: {
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surfaceAlt,
+    padding: tokens.space.md,
+  },
+  boostDisclosure: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.micro.fontSize,
+    fontStyle: 'italic',
+    marginTop: tokens.space.xs,
   },
   footerNote: {
     fontFamily: tokens.font.sans,

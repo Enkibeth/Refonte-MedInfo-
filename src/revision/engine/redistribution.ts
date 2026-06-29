@@ -12,7 +12,7 @@ import {
   aggregateDailyLoads,
   bucketsFromResources,
   distribute,
-  smoothingTarget,
+  targetForMode,
   usableStudyDays,
   type WorkBucket,
 } from '@/revision/engine/planner';
@@ -51,7 +51,13 @@ export function redistribute(input: PlanInput, options: RedistributeOptions = {}
   const doneTotal = Math.min(originalTotal, Math.max(0, originalTotal - remainingTotal));
 
   const days = usableStudyDays(input, today);
-  const tasks = distribute(remainingBuckets, days, smoothingTarget(remainingTotal, days.length));
+  const target = targetForMode(
+    input.distributionMode ?? 'smooth',
+    remainingTotal,
+    days.length,
+    input.dailyMaxMinutes,
+  );
+  const tasks = distribute(remainingBuckets, days, target);
   const dailyLoads = aggregateDailyLoads(tasks, days, input.dailyMaxMinutes);
   const risk = assessRisk({
     totalMinutes: remainingTotal,
