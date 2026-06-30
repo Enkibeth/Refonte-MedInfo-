@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Créateur de CV — MedInfo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --accent: #0a4d68;        /* petrol700 */
+    --accent-deep: #083b52;   /* petrol800 */
+    --accent-soft: #eff5f9;   /* petrol50 */
+    --accent-tint: #dceaf1;   /* petrol100 */
+    --vivid: #0067ff;         /* blue600 (CTA) */
+    --vivid-deep: #0052d6;
+    --ink: #0f1b22;
+    --ink2: #3a474e;
+    --muted: #697880;
+    --surface: #ffffff;
+    --bg: #f7fafb;
+    --line: #dee3e8;
+    --line-fine: #eceff2;
+    --danger: #c42233;
+    --danger-soft: #fbeaec;
+    --success: #157f50;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Public Sans', system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  h1, h2, h3 { margin: 0; }
+  button { font-family: inherit; cursor: pointer; }
+
+  /* ── Top toolbar ───────────────────────────────────────────── */
+  .toolbar {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    padding: 10px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+  .toolbar .grow { flex: 1; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: var(--radius-sm);
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink2);
+    font-size: 13px; font-weight: 600; white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary { background: var(--vivid); border-color: var(--vivid); color: #fff; }
+  .btn-primary:hover { background: var(--vivid-deep); border-color: var(--vivid-deep); color: #fff; }
+  .btn-accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-accent:hover { background: var(--accent-deep); border-color: var(--accent-deep); color: #fff; }
+  .btn-ghost { border-color: transparent; background: transparent; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .status { font-size: 12px; color: var(--muted); margin-left: 4px; }
+
+  /* ── Two-pane layout ───────────────────────────────────────── */
+  .layout { display: grid; grid-template-columns: minmax(360px, 460px) 1fr; gap: 0; height: calc(100vh - 57px); }
+  .editor { overflow-y: auto; padding: 16px; border-right: 1px solid var(--line); background: var(--bg); }
+  .previewWrap { overflow-y: auto; padding: 24px; background: #e9edf0; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; height: auto; }
+    .editor { border-right: none; border-bottom: 1px solid var(--line); }
+    .previewWrap { transform-origin: top center; }
+  }
+
+  /* ── Editor cards ──────────────────────────────────────────── */
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 14px; overflow: hidden; }
+  .card > summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; color: var(--accent-deep); }
+  .card > summary::-webkit-details-marker { display: none; }
+  .card > summary::after { content: '⌄'; margin-left: auto; color: var(--muted); font-size: 16px; transition: transform .15s; }
+  .card[open] > summary::after { transform: rotate(180deg); }
+  .card .body { padding: 0 14px 14px; }
+  .field { margin-bottom: 10px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--ink2); margin-bottom: 4px; }
+  .field input, .field textarea, .field select {
+    width: 100%; padding: 8px 10px; font-family: inherit; font-size: 13px; color: var(--ink);
+    border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface);
+  }
+  .field input:focus, .field textarea:focus { outline: none; border-color: var(--vivid); }
+  .field textarea { resize: vertical; min-height: 64px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .checkline { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink2); }
+  .checkline input { width: auto; }
+  .item { border: 1px solid var(--line-fine); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 10px; background: #fcfdfe; }
+  .item-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .item-head .ttl { font-weight: 700; font-size: 12px; color: var(--muted); flex: 1; }
+  .iconbtn { border: 1px solid var(--line); background: var(--surface); border-radius: 6px; width: 28px; height: 28px; line-height: 1; color: var(--ink2); font-size: 14px; }
+  .iconbtn:hover { border-color: var(--accent); color: var(--accent); }
+  .iconbtn.danger:hover { border-color: var(--danger); color: var(--danger); }
+  .bullets .bl { display: flex; gap: 6px; margin-bottom: 6px; }
+  .bullets .bl input { flex: 1; }
+  .addrow { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--vivid); background: none; border: none; padding: 4px 0; }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
+  .photoPrev { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; border: 1px solid var(--line); }
+
+  /* ── A4 preview ────────────────────────────────────────────── */
+  .sheet {
+    width: 210mm; min-height: 297mm; background: #fff; color: var(--ink);
+    box-shadow: 0 6px 28px rgba(8,40,60,.18); display: flex; overflow: hidden;
+  }
+  .cv-side { width: 64mm; background: var(--accent); color: #eaf2f6; padding: 14mm 9mm; }
+  .cv-main { flex: 1; padding: 14mm 12mm; }
+  .cv-photo { width: 38mm; height: 38mm; border-radius: 50%; object-fit: cover; display: block; margin: 0 auto 8mm; border: 3px solid rgba(255,255,255,.5); }
+  .cv-side h3, .cv-main h2 { font-family: 'Fraunces', Georgia, serif; }
+  .cv-side h3 { font-size: 11pt; letter-spacing: .04em; text-transform: uppercase; color: #fff; margin: 0 0 4mm; padding-bottom: 2mm; border-bottom: 1px solid rgba(255,255,255,.28); }
+  .cv-side .blk { margin-bottom: 9mm; }
+  .cv-side .row { margin-bottom: 3mm; font-size: 8.6pt; line-height: 1.45; }
+  .cv-side .row b { display: block; color: #fff; font-weight: 600; }
+  .cv-lang { margin-bottom: 3mm; }
+  .cv-lang .nm { font-size: 8.6pt; display: flex; justify-content: space-between; }
+  .cv-bar { height: 3px; background: rgba(255,255,255,.25); border-radius: 2px; margin-top: 2px; }
+  .cv-bar > i { display: block; height: 100%; background: #fff; border-radius: 2px; }
+  .cv-name { font-family: 'Fraunces', Georgia, serif; font-size: 22pt; line-height: 1.05; color: var(--accent-deep); }
+  .cv-headline { font-size: 11pt; color: var(--muted); margin-top: 1mm; margin-bottom: 7mm; }
+  .cv-main h2 { font-size: 12pt; color: var(--accent); text-transform: uppercase; letter-spacing: .03em; margin: 0 0 3mm; padding-bottom: 1.5mm; border-bottom: 2px solid var(--accent-tint); }
+  .cv-section { margin-bottom: 7mm; }
+  .cv-entry { margin-bottom: 4.5mm; break-inside: avoid; }
+  .cv-entry .er { display: flex; justify-content: space-between; gap: 6mm; }
+  .cv-entry .ti { font-weight: 700; font-size: 9.6pt; color: var(--ink); }
+  .cv-entry .inst { font-size: 9pt; color: var(--ink2); }
+  .cv-entry .dt { font-size: 8.4pt; color: var(--muted); white-space: nowrap; }
+  .cv-entry ul { margin: 1.5mm 0 0; padding-left: 4mm; }
+  .cv-entry li { font-size: 8.8pt; line-height: 1.4; margin-bottom: .8mm; }
+  .cv-entry p.desc { font-size: 8.8pt; line-height: 1.4; margin: 1mm 0 0; color: var(--ink2); }
+  .empty-ph { color: #b7c0c6; font-style: italic; }
+
+  /* ── AI review panel ───────────────────────────────────────── */
+  .drawer { position: fixed; top: 0; right: 0; height: 100vh; width: 380px; max-width: 92vw; background: var(--surface); border-left: 1px solid var(--line); box-shadow: -8px 0 28px rgba(8,40,60,.14); transform: translateX(100%); transition: transform .22s ease; z-index: 40; display: flex; flex-direction: column; }
+  .drawer.open { transform: translateX(0); }
+  .drawer header { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; }
+  .drawer header h2 { font-family: 'Fraunces', Georgia, serif; font-size: 16px; color: var(--accent-deep); }
+  .drawer .scroll { flex: 1; overflow-y: auto; padding: 14px 16px; }
+  .scorebar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .scoreval { font-family: 'Fraunces', serif; font-size: 30px; color: var(--accent); }
+  .sugg { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px; margin-bottom: 10px; }
+  .sugg .tags { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+  .tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 2px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-deep); }
+  .tag.high { background: var(--danger-soft); color: var(--danger); }
+  .tag.sec { background: var(--line-fine); color: var(--muted); }
+  .sugg .ot { font-size: 12px; color: var(--muted); text-decoration: line-through; margin-bottom: 3px; }
+  .sugg .st { font-size: 12.5px; color: var(--ink); background: #f0f7f2; border-left: 2px solid var(--success); padding: 4px 7px; border-radius: 4px; }
+  .sugg .ex { font-size: 11px; color: var(--muted); margin-top: 5px; }
+  .sugg .acts { display: flex; gap: 6px; margin-top: 8px; }
+  .sugg .acts .btn { padding: 5px 10px; font-size: 12px; }
+  .issue { border-left: 3px solid var(--danger); background: var(--danger-soft); padding: 8px 10px; border-radius: 4px; margin-bottom: 8px; font-size: 12px; }
+  .privacy { font-size: 11px; color: var(--muted); background: var(--accent-soft); border-radius: 8px; padding: 8px 10px; margin-bottom: 12px; line-height: 1.5; }
+  .overlay { position: fixed; inset: 0; background: rgba(15,27,34,.35); z-index: 35; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .overlay.open { opacity: 1; pointer-events: auto; }
+  .spinner { width: 16px; height: 16px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* history modal */
+  .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 50; }
+  .modal.open { display: flex; }
+  .modal .sheet2 { background: #fff; border-radius: var(--radius); width: 460px; max-width: 92vw; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 18px 50px rgba(8,40,60,.3); }
+  .modal header { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; }
+  .modal header h2 { font-family: 'Fraunces', serif; font-size: 16px; color: var(--accent-deep); flex: 1; }
+  .modal .list { overflow-y: auto; padding: 8px; }
+  .histrow { display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: 8px; }
+  .histrow:hover { background: var(--accent-soft); }
+  .histrow .nm { flex: 1; font-weight: 600; font-size: 13px; }
+  .histrow .dt { font-size: 11px; color: var(--muted); }
+
+  /* ── Print : seul le CV ──────────────────────────────────── */
+  @media print {
+    @page { size: A4; margin: 0; }
+    .toolbar, .editor, .drawer, .overlay, .modal, .previewWrap > .printNote { display: none !important; }
+    .layout { display: block; height: auto; }
+    .previewWrap { padding: 0; background: #fff; display: block; }
+    .sheet { box-shadow: none; width: 210mm; min-height: 297mm; margin: 0; }
+  }
+  .printNote { font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <button class="btn" id="btn-new">＋ Nouveau</button>
+    <button class="btn" id="btn-example">Charger un exemple</button>
+    <button class="btn" id="btn-history">Mes CV</button>
+    <button class="btn" id="btn-save">Sauvegarder</button>
+    <span class="grow"></span>
+    <span class="status" id="status"></span>
+    <button class="btn btn-accent" id="btn-ai">✦ Relire avec IA</button>
+    <button class="btn btn-primary" id="btn-pdf">⤓ Télécharger PDF</button>
+  </div>
+
+  <div class="layout">
+    <aside class="editor" id="editor"></aside>
+    <main class="previewWrap">
+      <div class="printNote">Aperçu A4 — le PDF reprend exactement cette feuille (texte sélectionnable).</div>
+      <div class="sheet" id="sheet"></div>
+    </main>
+  </div>
+
+  <!-- AI drawer -->
+  <div class="overlay" id="overlay"></div>
+  <aside class="drawer" id="drawer">
+    <header>
+      <h2>Relecture IA</h2>
+      <span class="grow" style="flex:1"></span>
+      <button class="iconbtn" id="ai-close">✕</button>
+    </header>
+    <div class="scroll" id="ai-body"></div>
+  </aside>
+
+  <!-- history modal -->
+  <div class="modal" id="histModal">
+    <div class="sheet2">
+      <header><h2>Mes CV enregistrés</h2><button class="iconbtn" id="hist-close">✕</button></header>
+      <div class="list" id="histList"></div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── Session token (postMessage depuis le wrapper natif) ──────────────────
+  var authToken = null;
+  window.addEventListener('message', function (e) {
+    if (e.origin !== window.location.origin) return;
+    var d = e.data || {};
+    if (d.type === 'medinfo:auth') authToken = d.token || null;
+  });
+  try { window.parent.postMessage({ type: 'medinfo:auth-request' }, window.location.origin); } catch (_) {}
+
+  // ── État ────────────────────────────────────────────────────────────────
+  var LS_KEY = 'medinfo:cv:draft';
+  var uid = function () { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var r = Math.random() * 16 | 0; var v = c === 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }); };
+  var serverId = null;       // id Supabase du CV courant (cloud)
+  var dirty = false;
+
+  function blankCv() {
+    return {
+      personalInfo: { firstName: '', lastName: '', headline: '', email: '', phone: '', city: '', country: '', nationality: '', website: '', photoUrl: '' },
+      summary: '',
+      experiences: [], education: [], researchProjects: [],
+      references: [], certificates: [], languages: [], interests: [], personalProjects: []
+    };
+  }
+  var cv = blankCv();
+
+  function setStatus(t) { document.getElementById('status').textContent = t || ''; }
+
+  // ── Persistance locale (filet hors-ligne) ────────────────────────────────
+  function saveLocal() {
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ serverId: serverId, cv: cv })); } catch (_) {}
+  }
+  function loadLocal() {
+    try {
+      var raw = localStorage.getItem(LS_KEY);
+      if (!raw) return false;
+      var p = JSON.parse(raw);
+      if (p && p.cv) { cv = Object.assign(blankCv(), p.cv); serverId = p.serverId || null; return true; }
+    } catch (_) {}
+    return false;
+  }
+
+  // ── Helpers chemins (pour appliquer les suggestions IA) ───────────────────
+  function getByPath(obj, path) {
+    var parts = path.split('.'); var cur = obj;
+    for (var i = 0; i < parts.length; i++) { if (cur == null) return undefined; cur = cur[parts[i]]; }
+    return cur;
+  }
+  function setByPath(obj, path, val) {
+    var parts = path.split('.'); var cur = obj;
+    for (var i = 0; i < parts.length - 1; i++) { if (cur[parts[i]] == null) return false; cur = cur[parts[i]]; }
+    cur[parts[parts.length - 1]] = val; return true;
+  }
+
+  // ── Marquage modifié + rendu + autosave debounce ──────────────────────────
+  var saveTimer = null;
+  function touch() {
+    dirty = true; render(); saveLocal();
+    setStatus('Modifié…');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () { if (authToken) saveCloud(true); }, 1500);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  //  EDITOR
+  // ════════════════════════════════════════════════════════════════════════
+  function el(tag, attrs, children) {
+    var n = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      if (k === 'class') n.className = attrs[k];
+      else if (k === 'html') n.innerHTML = attrs[k];
+      else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] != null) n.setAttribute(k, attrs[k]);
+    });
+    (children || []).forEach(function (c) { if (c != null) n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+    return n;
+  }
+
+  function input(label, value, oninput, attrs) {
+    attrs = attrs || {};
+    var i = el('input', Object.assign({ type: 'text', value: value || '' }, attrs));
+    i.addEventListener('input', function () { oninput(i.value); });
+    return el('div', { class: 'field' }, [el('label', null, [label]), i]);
+  }
+  function textarea(label, value, oninput) {
+    var t = el('textarea', null, [value || '']);
+    t.value = value || '';
+    t.addEventListener('input', function () { oninput(t.value); });
+    return el('div', { class: 'field' }, [el('label', null, [label]), t]);
+  }
+
+  function bulletsEditor(arr, owner) {
+    owner.bullets = owner.bullets || [];
+    var wrap = el('div', { class: 'bullets' });
+    (owner.bullets || []).forEach(function (b, j) {
+      var i = el('input', { type: 'text', value: b });
+      i.addEventListener('input', function () { owner.bullets[j] = i.value; saveLocal(); renderPreview(); });
+      var del = el('button', { class: 'iconbtn danger', title: 'Supprimer la ligne' }, ['✕']);
+      del.addEventListener('click', function () { owner.bullets.splice(j, 1); touch(); });
+      wrap.appendChild(el('div', { class: 'bl' }, [i, del]));
+    });
+    var add = el('button', { class: 'addrow' }, ['＋ Ajouter une ligne']);
+    add.addEventListener('click', function () { owner.bullets.push(''); touch(); });
+    return el('div', null, [wrap, add]);
+  }
+
+  // Carte générique pour une liste d'items (expériences, formation, etc.)
+  function listCard(title, key, factory, renderItem, openDefault) {
+    var card = el('details', { class: 'card' });
+    if (openDefault) card.setAttribute('open', '');
+    card.appendChild(el('summary', null, [title + ' (' + cv[key].length + ')']));
+    var body = el('div', { class: 'body' });
+    cv[key].forEach(function (it, idx) {
+      var head = el('div', { class: 'item-head' }, [
+        el('span', { class: 'ttl' }, ['#' + (idx + 1)]),
+        mkMove(key, idx, -1), mkMove(key, idx, 1), mkDelete(key, idx)
+      ]);
+      body.appendChild(el('div', { class: 'item' }, [head].concat(renderItem(it, idx))));
+    });
+    var add = el('button', { class: 'addrow' }, ['＋ Ajouter']);
+    add.addEventListener('click', function () { cv[key].push(factory()); touch(); });
+    body.appendChild(add);
+    card.appendChild(body);
+    return card;
+  }
+  function mkMove(key, idx, dir) {
+    var b = el('button', { class: 'iconbtn', title: dir < 0 ? 'Monter' : 'Descendre' }, [dir < 0 ? '↑' : '↓']);
+    b.disabled = (dir < 0 && idx === 0) || (dir > 0 && idx === cv[key].length - 1);
+    b.addEventListener('click', function () {
+      var ni = idx + dir; var a = cv[key];
+      var tmp = a[idx]; a[idx] = a[ni]; a[ni] = tmp; touch();
+    });
+    return b;
+  }
+  function mkDelete(key, idx) {
+    var b = el('button', { class: 'iconbtn danger', title: 'Supprimer' }, ['🗑']);
+    b.addEventListener('click', function () { if (confirm('Supprimer cet élément ?')) { cv[key].splice(idx, 1); touch(); } });
+    return b;
+  }
+
+  function renderEditor() {
+    var root = document.getElementById('editor');
+    root.innerHTML = '';
+    var p = cv.personalInfo;
+
+    // Identité
+    var photoImg = p.photoUrl ? el('img', { class: 'photoPrev', src: p.photoUrl }) : el('div', { class: 'photoPrev', html: '' });
+    var fileIn = el('input', { type: 'file', accept: 'image/png,image/jpeg,image/webp' });
+    fileIn.addEventListener('change', function () {
+      var f = fileIn.files && fileIn.files[0]; if (!f) return;
+      if (f.size > 3 * 1024 * 1024) { alert('Photo trop lourde (max 3 Mo).'); return; }
+      var rd = new FileReader();
+      rd.onload = function () { p.photoUrl = rd.result; touch(); };
+      rd.readAsDataURL(f);
+    });
+    var rmPhoto = el('button', { class: 'btn btn-ghost', style: 'font-size:12px' }, ['Retirer la photo']);
+    rmPhoto.addEventListener('click', function () { p.photoUrl = ''; touch(); });
+
+    var idCard = el('details', { class: 'card', open: '' }, [
+      el('summary', null, ['Identité']),
+      el('div', { class: 'body' }, [
+        el('div', { class: 'row2' }, [
+          input('Prénom', p.firstName, function (v) { p.firstName = v; touch(); }),
+          input('Nom', p.lastName, function (v) { p.lastName = v; touch(); })
+        ]),
+        input('Titre court (ex. Interne en cardiologie)', p.headline, function (v) { p.headline = v; touch(); }),
+        el('div', { class: 'row2' }, [
+          input('Email', p.email, function (v) { p.email = v; touch(); }, { type: 'email' }),
+          input('Téléphone', p.phone, function (v) { p.phone = v; touch(); })
+        ]),
+        el('div', { class: 'row2' }, [
+          input('Ville', p.city, function (v) { p.city = v; touch(); }),
+          input('Pays', p.country, function (v) { p.country = v; touch(); })
+        ]),
+        el('div', { class: 'row2' }, [
+          input('Nationalité', p.nationality, function (v) { p.nationality = v; touch(); }),
+          input('Site / portfolio', p.website, function (v) { p.website = v; touch(); })
+        ]),
+        el('div', { class: 'field' }, [
+          el('label', null, ['Photo']),
+          el('div', { style: 'display:flex;align-items:center;gap:10px' }, [photoImg, el('div', null, [fileIn, rmPhoto])])
+        ])
+      ])
+    ]);
+    root.appendChild(idCard);
+
+    // Résumé
+    root.appendChild(el('details', { class: 'card' }, [
+      el('summary', null, ['Profil / résumé']),
+      el('div', { class: 'body' }, [
+        textarea('Quelques lignes de présentation', cv.summary, function (v) { cv.summary = v; touch(); })
+      ])
+    ]));
+
+    // Expériences
+    root.appendChild(listCard('Expériences', 'experiences',
+      function () { return { id: uid(), title: '', institution: '', location: '', startDate: '', endDate: '', isCurrent: false, description: '', bullets: [] }; },
+      function (it) {
+        var cur = el('input', { type: 'checkbox' }); cur.checked = !!it.isCurrent;
+        cur.addEventListener('change', function () { it.isCurrent = cur.checked; touch(); });
+        return [
+          input('Poste / intitulé', it.title, function (v) { it.title = v; touch(); }),
+          el('div', { class: 'row2' }, [
+            input('Établissement', it.institution, function (v) { it.institution = v; touch(); }),
+            input('Lieu', it.location, function (v) { it.location = v; touch(); })
+          ]),
+          el('div', { class: 'row2' }, [
+            input('Début (ex. 2023)', it.startDate, function (v) { it.startDate = v; touch(); }),
+            input('Fin', it.endDate, function (v) { it.endDate = v; touch(); })
+          ]),
+          el('label', { class: 'checkline' }, [cur, ' Poste actuel']),
+          textarea('Description (optionnel)', it.description, function (v) { it.description = v; touch(); }),
+          el('label', null, ['Points clés']), bulletsEditor(it.bullets, it)
+        ];
+      }, true));
+
+    // Formation
+    root.appendChild(listCard('Formation', 'education',
+      function () { return { id: uid(), degree: '', institution: '', location: '', startDate: '', endDate: '', description: '', bullets: [] }; },
+      function (it) {
+        return [
+          input('Diplôme', it.degree, function (v) { it.degree = v; touch(); }),
+          el('div', { class: 'row2' }, [
+            input('Établissement', it.institution, function (v) { it.institution = v; touch(); }),
+            input('Lieu', it.location, function (v) { it.location = v; touch(); })
+          ]),
+          el('div', { class: 'row2' }, [
+            input('Début', it.startDate, function (v) { it.startDate = v; touch(); }),
+            input('Fin', it.endDate, function (v) { it.endDate = v; touch(); })
+          ]),
+          textarea('Description (optionnel)', it.description, function (v) { it.description = v; touch(); })
+        ];
+      }));
+
+    // Recherche clinique
+    root.appendChild(listCard('Recherche / projets cliniques', 'researchProjects',
+      function () { return { id: uid(), title: '', institution: '', department: '', startDate: '', endDate: '', isCurrent: false, bullets: [] }; },
+      function (it) {
+        var cur = el('input', { type: 'checkbox' }); cur.checked = !!it.isCurrent;
+        cur.addEventListener('change', function () { it.isCurrent = cur.checked; touch(); });
+        return [
+          input('Titre du projet', it.title, function (v) { it.title = v; touch(); }),
+          el('div', { class: 'row2' }, [
+            input('Institution', it.institution, function (v) { it.institution = v; touch(); }),
+            input('Service / département', it.department, function (v) { it.department = v; touch(); })
+          ]),
+          el('div', { class: 'row2' }, [
+            input('Début', it.startDate, function (v) { it.startDate = v; touch(); }),
+            input('Fin', it.endDate, function (v) { it.endDate = v; touch(); })
+          ]),
+          el('label', { class: 'checkline' }, [cur, ' En cours']),
+          el('label', null, ['Points clés']), bulletsEditor(it.bullets, it)
+        ];
+      }));
+
+    // Références
+    root.appendChild(listCard('Références', 'references',
+      function () { return { id: uid(), name: '', title: '', institution: '', location: '', phone: '', email: '' }; },
+      function (it) {
+        return [
+          input('Nom', it.name, function (v) { it.name = v; touch(); }),
+          el('div', { class: 'row2' }, [
+            input('Fonction', it.title, function (v) { it.title = v; touch(); }),
+            input('Institution', it.institution, function (v) { it.institution = v; touch(); })
+          ]),
+          input('Lieu', it.location, function (v) { it.location = v; touch(); }),
+          el('div', { class: 'row2' }, [
+            input('Téléphone', it.phone, function (v) { it.phone = v; touch(); }),
+            input('Email', it.email, function (v) { it.email = v; touch(); }, { type: 'email' })
+          ]),
+          el('div', { class: 'hint' }, ['Les coordonnées des référents ne sont pas envoyées à l’IA par défaut (minimisation RGPD).'])
+        ];
+      }));
+
+    // Certificats
+    root.appendChild(listCard('Certificats', 'certificates',
+      function () { return { id: uid(), title: '', subtitle: '', score: '', date: '' }; },
+      function (it) {
+        return [
+          input('Intitulé', it.title, function (v) { it.title = v; touch(); }),
+          input('Sous-titre (organisme)', it.subtitle, function (v) { it.subtitle = v; touch(); }),
+          el('div', { class: 'row2' }, [
+            input('Score / mention', it.score, function (v) { it.score = v; touch(); }),
+            input('Date', it.date, function (v) { it.date = v; touch(); })
+          ])
+        ];
+      }));
+
+    // Langues
+    root.appendChild(listCard('Langues', 'languages',
+      function () { return { id: uid(), name: '', levelLabel: '', level: 3 }; },
+      function (it) {
+        var sel = el('select', null, ['1', '2', '3', '4', '5'].map(function (n) { return el('option', { value: n }, [n]); }));
+        sel.value = String(it.level || 3);
+        sel.addEventListener('change', function () { it.level = parseInt(sel.value, 10); touch(); });
+        return [
+          el('div', { class: 'row2' }, [
+            input('Langue', it.name, function (v) { it.name = v; touch(); }),
+            input('Niveau (ex. C1)', it.levelLabel, function (v) { it.levelLabel = v; touch(); })
+          ]),
+          el('div', { class: 'field' }, [el('label', null, ['Jauge (1–5)']), sel])
+        ];
+      }));
+
+    // Centres d'intérêt
+    root.appendChild(listCard('Centres d’intérêt', 'interests',
+      function () { return { id: uid(), label: '' }; },
+      function (it) { return [input('Intérêt', it.label, function (v) { it.label = v; touch(); })]; }));
+
+    // Projet perso
+    root.appendChild(listCard('Projets personnels', 'personalProjects',
+      function () { return { id: uid(), title: '', description: '', url: '' }; },
+      function (it) {
+        return [
+          input('Titre', it.title, function (v) { it.title = v; touch(); }),
+          textarea('Description', it.description, function (v) { it.description = v; touch(); }),
+          input('Lien (https)', it.url, function (v) { it.url = v; touch(); })
+        ];
+      }));
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  //  PREVIEW (A4)
+  // ════════════════════════════════════════════════════════════════════════
+  function esc(s) { return (s == null ? '' : String(s)).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
+  function dates(a, b, cur) { var e = cur ? 'présent' : (b || ''); return [a || '', e].filter(Boolean).join(' – '); }
+
+  function renderPreview() {
+    var p = cv.personalInfo;
+    var side = [];
+    if (p.photoUrl) side.push('<img class="cv-photo" src="' + p.photoUrl + '" alt="" />');
+
+    // Coordonnées
+    var contact = [];
+    if (p.email) contact.push('<div class="row"><b>Email</b>' + esc(p.email) + '</div>');
+    if (p.phone) contact.push('<div class="row"><b>Téléphone</b>' + esc(p.phone) + '</div>');
+    var loc = [p.city, p.country].filter(Boolean).join(', ');
+    if (loc) contact.push('<div class="row"><b>Localisation</b>' + esc(loc) + '</div>');
+    if (p.nationality) contact.push('<div class="row"><b>Nationalité</b>' + esc(p.nationality) + '</div>');
+    if (p.website) contact.push('<div class="row"><b>Site</b>' + esc(p.website) + '</div>');
+    if (contact.length) side.push('<div class="blk"><h3>Contact</h3>' + contact.join('') + '</div>');
+
+    if (cv.certificates.length) {
+      side.push('<div class="blk"><h3>Certificats</h3>' + cv.certificates.map(function (c) {
+        return '<div class="row"><b>' + esc(c.title) + '</b>' + [c.subtitle, c.score, c.date].filter(Boolean).map(esc).join(' · ') + '</div>';
+      }).join('') + '</div>');
+    }
+    if (cv.languages.length) {
+      side.push('<div class="blk"><h3>Langues</h3>' + cv.languages.map(function (l) {
+        var pct = Math.max(0, Math.min(5, l.level || 0)) / 5 * 100;
+        return '<div class="cv-lang"><div class="nm"><span>' + esc(l.name) + '</span><span>' + esc(l.levelLabel || '') + '</span></div><div class="cv-bar"><i style="width:' + pct + '%"></i></div></div>';
+      }).join('') + '</div>');
+    }
+    if (cv.interests.length) {
+      side.push('<div class="blk"><h3>Centres d’intérêt</h3>' + cv.interests.filter(function (i) { return i.label; }).map(function (i) {
+        return '<div class="row">' + esc(i.label) + '</div>';
+      }).join('') + '</div>');
+    }
+
+    // Main
+    var main = [];
+    var name = [p.firstName, p.lastName].filter(Boolean).join(' ') || '<span class="empty-ph">Votre nom</span>';
+    main.push('<div class="cv-name">' + (p.firstName || p.lastName ? esc([p.firstName, p.lastName].filter(Boolean).join(' ')) : '<span class="empty-ph">Votre nom</span>') + '</div>');
+    main.push('<div class="cv-headline">' + (p.headline ? esc(p.headline) : '<span class="empty-ph">Titre professionnel</span>') + '</div>');
+
+    if (cv.summary) main.push('<div class="cv-section"><h2>Profil</h2><p class="desc">' + esc(cv.summary) + '</p></div>');
+
+    function entries(title, arr, fmt) {
+      if (!arr.length) return '';
+      return '<div class="cv-section"><h2>' + title + '</h2>' + arr.map(fmt).join('') + '</div>';
+    }
+    main.push(entries('Expérience professionnelle', cv.experiences, function (e) {
+      var b = (e.bullets || []).filter(Boolean);
+      return '<div class="cv-entry"><div class="er"><div><div class="ti">' + esc(e.title) + '</div><div class="inst">' + [e.institution, e.location].filter(Boolean).map(esc).join(' · ') + '</div></div><div class="dt">' + esc(dates(e.startDate, e.endDate, e.isCurrent)) + '</div></div>'
+        + (e.description ? '<p class="desc">' + esc(e.description) + '</p>' : '')
+        + (b.length ? '<ul>' + b.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '') + '</div>';
+    }));
+    main.push(entries('Formation', cv.education, function (e) {
+      return '<div class="cv-entry"><div class="er"><div><div class="ti">' + esc(e.degree) + '</div><div class="inst">' + [e.institution, e.location].filter(Boolean).map(esc).join(' · ') + '</div></div><div class="dt">' + esc(dates(e.startDate, e.endDate, false)) + '</div></div>'
+        + (e.description ? '<p class="desc">' + esc(e.description) + '</p>' : '') + '</div>';
+    }));
+    main.push(entries('Recherche clinique', cv.researchProjects, function (e) {
+      var b = (e.bullets || []).filter(Boolean);
+      return '<div class="cv-entry"><div class="er"><div><div class="ti">' + esc(e.title) + '</div><div class="inst">' + [e.institution, e.department].filter(Boolean).map(esc).join(' · ') + '</div></div><div class="dt">' + esc(dates(e.startDate, e.endDate, e.isCurrent)) + '</div></div>'
+        + (b.length ? '<ul>' + b.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '') + '</div>';
+    }));
+    main.push(entries('Projets personnels', cv.personalProjects, function (e) {
+      return '<div class="cv-entry"><div class="ti">' + esc(e.title) + (e.url ? ' <span class="dt">' + esc(e.url) + '</span>' : '') + '</div>' + (e.description ? '<p class="desc">' + esc(e.description) + '</p>' : '') + '</div>';
+    }));
+    main.push(entries('Références', cv.references, function (r) {
+      return '<div class="cv-entry"><div class="ti">' + esc(r.name) + '</div><div class="inst">' + [r.title, r.institution, r.location].filter(Boolean).map(esc).join(' · ') + '</div>'
+        + ((r.phone || r.email) ? '<div class="dt">' + [r.phone, r.email].filter(Boolean).map(esc).join(' · ') + '</div>' : '') + '</div>';
+    }));
+
+    document.getElementById('sheet').innerHTML =
+      '<div class="cv-side">' + side.join('') + '</div><div class="cv-main">' + main.join('') + '</div>';
+  }
+
+  function render() { renderEditor(); renderPreview(); }
+
+  // ════════════════════════════════════════════════════════════════════════
+  //  CLOUD (own-row RLS via /api/cv-docs)
+  // ════════════════════════════════════════════════════════════════════════
+  function api(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+    if (authToken) opts.headers.Authorization = 'Bearer ' + authToken;
+    return fetch(path, opts);
+  }
+
+  function saveCloud(silent) {
+    if (!authToken) { if (!silent) alert('Connecte-toi pour sauvegarder ton CV dans le cloud (sauvegarde locale active).'); return; }
+    setStatus('Enregistrement…');
+    var body = { document: cv, theme: 'medical' };
+    if (serverId) body.id = serverId;
+    var info = cv.personalInfo;
+    body.title = [info.firstName, info.lastName].filter(Boolean).join(' ');
+    api('/api/cv-docs', { method: 'POST', body: JSON.stringify(body) })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok) { setStatus('Échec de l’enregistrement'); return; }
+        serverId = res.j.id; dirty = false; saveLocal();
+        setStatus('Enregistré ✓');
+      })
+      .catch(function () { setStatus('Hors-ligne — sauvegarde locale'); });
+  }
+
+  function openHistory() {
+    if (!authToken) { alert('Connecte-toi pour retrouver tes CV enregistrés.'); return; }
+    var list = document.getElementById('histList');
+    list.innerHTML = '<div class="histrow">Chargement…</div>';
+    document.getElementById('histModal').classList.add('open');
+    api('/api/cv-docs').then(function (r) { return r.json(); }).then(function (j) {
+      var items = (j && j.items) || [];
+      if (!items.length) { list.innerHTML = '<div class="histrow">Aucun CV enregistré.</div>'; return; }
+      list.innerHTML = '';
+      items.forEach(function (it) {
+        var open = el('div', { class: 'histrow' }, [
+          el('span', { class: 'nm' }, [it.title || 'CV sans titre']),
+          el('span', { class: 'dt' }, [new Date(it.updated_at).toLocaleDateString('fr-FR')]),
+          el('button', { class: 'iconbtn danger', title: 'Supprimer' }, ['🗑'])
+        ]);
+        open.querySelector('.nm').addEventListener('click', function () { loadCloud(it.id); });
+        open.querySelector('.dt').addEventListener('click', function () { loadCloud(it.id); });
+        open.querySelector('.iconbtn').addEventListener('click', function (ev) {
+          ev.stopPropagation();
+          if (!confirm('Supprimer définitivement ce CV ?')) return;
+          api('/api/cv-docs?id=' + it.id, { method: 'DELETE' }).then(function () { openHistory(); });
+        });
+        list.appendChild(open);
+      });
+    }).catch(function () { list.innerHTML = '<div class="histrow">Erreur de chargement.</div>'; });
+  }
+  function loadCloud(id) {
+    api('/api/cv-docs?id=' + id).then(function (r) { return r.json(); }).then(function (j) {
+      if (j && j.cv && j.cv.document) {
+        cv = Object.assign(blankCv(), j.cv.document); serverId = j.cv.id;
+        saveLocal(); render(); setStatus('CV chargé');
+        document.getElementById('histModal').classList.remove('open');
+      }
+    });
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  //  PDF (impression vectorielle)
+  // ════════════════════════════════════════════════════════════════════════
+  function exportPdf() {
+    var info = cv.personalInfo;
+    var prev = document.title;
+    document.title = 'CV-' + ((info.firstName || '') + '-' + (info.lastName || '')).replace(/\s+/g, '') || 'CV';
+    window.print();
+    setTimeout(function () { document.title = prev; }, 500);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  //  RELECTURE IA
+  // ════════════════════════════════════════════════════════════════════════
+  function closeDrawer() { document.getElementById('drawer').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+  function openDrawer() { document.getElementById('drawer').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
+
+  var PRIVACY = 'Pour relire votre CV, seul le contenu textuel nécessaire est envoyé à un service d’IA. La photo et les coordonnées des référents ne sont pas envoyées par défaut.';
+
+  function runReview() {
+    if (!authToken) { alert('La relecture IA est réservée aux comptes vérifiés étudiant ou professionnel.'); return; }
+    openDrawer();
+    var body = document.getElementById('ai-body');
+    body.innerHTML = '<div class="privacy">' + PRIVACY + '</div><div style="display:flex;align-items:center;gap:8px;color:var(--muted)"><span class="spinner"></span> Relecture en cours…</div>';
+    api('/api/cv', { method: 'POST', body: JSON.stringify({ document: cv, includeReferenceContactDetails: false }) })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok) { body.innerHTML = '<div class="issue">' + esc((res.j && res.j.error) || 'Relecture indisponible.') + '</div>'; return; }
+        renderReview(res.j);
+      })
+      .catch(function () { body.innerHTML = '<div class="issue">Erreur réseau pendant la relecture.</div>'; });
+  }
+
+  function renderReview(rep) {
+    var body = document.getElementById('ai-body');
+    body.innerHTML = '';
+    body.appendChild(el('div', { class: 'privacy' }, [PRIVACY]));
+    var score = Math.round(rep.globalScore || 0);
+    body.appendChild(el('div', { class: 'scorebar' }, [el('span', { class: 'scoreval' }, [String(score)]), el('span', { class: 'hint' }, [rep.summary || ''])]));
+
+    (rep.blockingIssues || []).forEach(function (it) {
+      body.appendChild(el('div', { class: 'issue' }, [el('b', null, [(it.section || '') + ' — ']), it.message + (it.suggestedAction ? ' → ' + it.suggestedAction : '')]));
+    });
+
+    var suggs = rep.suggestions || [];
+    if (!suggs.length) { body.appendChild(el('div', { class: 'hint' }, ['Aucune suggestion : le CV semble propre. ✓'])); return; }
+
+    suggs.forEach(function (sg) {
+      var node = el('div', { class: 'sugg' });
+      node.appendChild(el('div', { class: 'tags' }, [
+        el('span', { class: 'tag ' + (sg.severity === 'high' ? 'high' : '') }, [sg.type || 'style']),
+        el('span', { class: 'tag sec' }, [sg.section || sg.fieldPath || ''])
+      ]));
+      if (sg.originalText) node.appendChild(el('div', { class: 'ot' }, [sg.originalText]));
+      node.appendChild(el('div', { class: 'st' }, [sg.suggestedText || '']));
+      if (sg.explanation) node.appendChild(el('div', { class: 'ex' }, [sg.explanation]));
+      var accept = el('button', { class: 'btn btn-accent' }, ['Accepter']);
+      var refuse = el('button', { class: 'btn' }, ['Refuser']);
+      accept.addEventListener('click', function () {
+        var r = applyCvSuggestion(sg);
+        if (r === 'changed') { alert('Le champ a été modifié depuis la relecture : suggestion non appliquée automatiquement.'); }
+        else if (r === 'ok') { node.style.opacity = '.5'; accept.disabled = true; refuse.disabled = true; accept.textContent = 'Appliqué ✓'; render(); }
+        else { alert('Impossible de localiser ce champ.'); }
+      });
+      refuse.addEventListener('click', function () { node.style.opacity = '.4'; accept.disabled = true; refuse.disabled = true; });
+      node.appendChild(el('div', { class: 'acts' }, [accept, refuse]));
+      body.appendChild(node);
+    });
+  }
+
+  // Applique UNE suggestion : vérifie que l'original correspond encore avant d'écrire.
+  function applyCvSuggestion(sg) {
+    if (!sg.fieldPath) return 'missing';
+    var current = getByPath(cv, sg.fieldPath);
+    if (current === undefined) return 'missing';
+    if (sg.originalText && String(current).trim() !== String(sg.originalText).trim()) return 'changed';
+    var ok = setByPath(cv, sg.fieldPath, sg.suggestedText);
+    if (!ok) return 'missing';
+    dirty = true; saveLocal();
+    return 'ok';
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  //  EXEMPLE (données fictives anonymisées)
+  // ════════════════════════════════════════════════════════════════════════
+  function example() {
+    cv = {
+      personalInfo: { firstName: 'Camille', lastName: 'Doré', headline: 'Interne en cardiologie (DES)', email: 'camille.dore@exemple.fr', phone: '+33 6 00 00 00 00', city: 'Lyon', country: 'France', nationality: 'Française', website: '', photoUrl: '' },
+      summary: 'Interne en cardiologie motivée par la recherche clinique et la prise en charge des syndromes coronariens aigus. Expérience hospitalière en CHU et stage international en cardiologie interventionnelle.',
+      experiences: [
+        { id: uid(), title: 'Interne — Cardiologie', institution: 'CHU de Lyon', location: 'Lyon', startDate: '2023', endDate: '', isCurrent: true, description: '', bullets: ['Prise en charge en USIC (soins intensifs cardiologiques).', 'Participation aux staffs de cathétérisme et aux RCP rythmologie.'] },
+        { id: uid(), title: 'Externe — Médecine interne', institution: 'CH de Grenoble', location: 'Grenoble', startDate: '2021', endDate: '2023', isCurrent: false, description: '', bullets: ['Suivi de patients polypathologiques en hospitalisation conventionnelle.'] }
+      ],
+      education: [
+        { id: uid(), degree: 'DES de Cardiologie et maladies vasculaires', institution: 'Université Claude Bernard Lyon 1', location: 'Lyon', startDate: '2023', endDate: 'en cours', description: '', bullets: [] },
+        { id: uid(), degree: 'Diplôme de Formation Approfondie en Sciences Médicales', institution: 'Université Grenoble Alpes', location: 'Grenoble', startDate: '2018', endDate: '2023', description: '', bullets: [] }
+      ],
+      researchProjects: [
+        { id: uid(), title: 'Pronostic des SCA ST+ chez le sujet jeune', institution: 'CHU de Lyon', department: 'Cardiologie interventionnelle', startDate: '2024', endDate: '', isCurrent: true, bullets: ['Étude rétrospective monocentrique (n≈180).', 'Analyse statistique et rédaction de l’abstract.'] }
+      ],
+      references: [
+        { id: uid(), name: 'Pr A. Martin', title: 'PU-PH, chef de service', institution: 'CHU de Lyon', location: 'Lyon', phone: '', email: '' }
+      ],
+      certificates: [
+        { id: uid(), title: 'ACLS', subtitle: 'American Heart Association', score: '', date: '2024' },
+        { id: uid(), title: 'GCP / Bonnes pratiques cliniques', subtitle: 'INSERM', score: '', date: '2023' }
+      ],
+      languages: [
+        { id: uid(), name: 'Français', levelLabel: 'Langue maternelle', level: 5 },
+        { id: uid(), name: 'Anglais', levelLabel: 'C1', level: 4 },
+        { id: uid(), name: 'Espagnol', levelLabel: 'B1', level: 2 }
+      ],
+      interests: [{ id: uid(), label: 'Course à pied' }, { id: uid(), label: 'Photographie' }],
+      personalProjects: [{ id: uid(), title: 'Blog de vulgarisation cardio', description: 'Articles courts pour patients sur la prévention cardiovasculaire.', url: '' }]
+    };
+    serverId = null; touch();
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  //  WIRING
+  // ════════════════════════════════════════════════════════════════════════
+  document.getElementById('btn-new').addEventListener('click', function () { if (confirm('Repartir d’un CV vierge ? (la sauvegarde locale sera remplacée)')) { cv = blankCv(); serverId = null; touch(); } });
+  document.getElementById('btn-example').addEventListener('click', example);
+  document.getElementById('btn-save').addEventListener('click', function () { saveCloud(false); });
+  document.getElementById('btn-history').addEventListener('click', openHistory);
+  document.getElementById('btn-ai').addEventListener('click', runReview);
+  document.getElementById('btn-pdf').addEventListener('click', exportPdf);
+  document.getElementById('ai-close').addEventListener('click', closeDrawer);
+  document.getElementById('overlay').addEventListener('click', closeDrawer);
+  document.getElementById('hist-close').addEventListener('click', function () { document.getElementById('histModal').classList.remove('open'); });
+
+  // Sauvegarde de secours au changement de page (keepalive).
+  window.addEventListener('pagehide', function () { saveLocal(); });
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  if (!loadLocal()) cv = blankCv();
+  render();
+})();
+</script>
+</body>
+</html>

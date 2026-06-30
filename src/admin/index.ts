@@ -154,6 +154,15 @@ export const AI_FEATURES = [
     providers: ['anthropic', 'openai', 'google'],
   },
   {
+    key: 'cv_review',
+    emoji: '📋',
+    label: 'CV — Relecture IA',
+    description: 'Relit un CV médical/pro et renvoie des suggestions (orthographe, style, cohérence) à valider — jamais de réécriture auto',
+    apiRoute: '/api/cv',
+    promptKeys: ['cv_review'],
+    providers: ['anthropic', 'openai', 'google'],
+  },
+  {
     key: 'blog_generate',
     emoji: '📰',
     label: 'Blog — Génération d\'article',

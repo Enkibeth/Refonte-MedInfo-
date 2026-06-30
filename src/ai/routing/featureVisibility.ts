@@ -15,7 +15,7 @@
  */
 import type { Persona } from '@/ai/prompts/_schema';
 
-export type AppFeatureId = 'chat' | 'document' | 'ecos' | 'partiel' | 'revision' | 'audio' | 'presentation';
+export type AppFeatureId = 'chat' | 'document' | 'ecos' | 'partiel' | 'revision' | 'audio' | 'presentation' | 'cv-builder';
 
 /** Nom d'icône (src/ui/icons.tsx) — l'UI n'utilise plus d'emojis (refonte 2026-06). */
 export type AppFeatureIcon =
@@ -25,7 +25,8 @@ export type AppFeatureIcon =
   | 'barChart'
   | 'calendarCheck'
   | 'micVoice'
-  | 'presentation';
+  | 'presentation'
+  | 'idCard';
 
 export interface AppFeatureMeta {
   id: AppFeatureId;
@@ -105,6 +106,15 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     emoji: '🖥️',
     icon: 'presentation',
     description: 'Slides médicales prêtes pour Keynote (manuel ou IA) — export PPTX.',
+    personas: ['student', 'professional'],
+  },
+  {
+    id: 'cv-builder',
+    route: '/(chat)/cv-builder',
+    label: 'CV',
+    emoji: '📋',
+    icon: 'idCard',
+    description: 'Crée et améliore ton CV médical : éditeur, aperçu A4, relecture IA, export PDF.',
     personas: ['student', 'professional'],
   },
 ];
