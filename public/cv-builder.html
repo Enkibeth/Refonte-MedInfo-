@@ -7,6 +7,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet" />
+<!-- Export PDF « distribuable » : on génère le PDF NOUS-MÊMES (pas window.print()) → aucun
+     en-tête/pied de page du navigateur (URL, n° de page), plein cadre A4, jamais de rognage. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root {
     --accent: #0a4d68;        /* petrol700 */
@@ -755,14 +759,58 @@
   }
 
   // ════════════════════════════════════════════════════════════════════════
-  //  PDF (impression vectorielle)
+  //  PDF « distribuable » — généré côté client (jsPDF + html2canvas), SANS
+  //  window.print() : aucun en-tête/pied de page navigateur (URL, n° de page),
+  //  plein cadre A4 (bande latérale jusqu'aux bords), jamais de rognage à droite.
   // ════════════════════════════════════════════════════════════════════════
   function exportPdf() {
+    if (!window.jspdf || !window.html2canvas) { alert('Export PDF indisponible (librairie non chargée). Réessaie dans un instant.'); return; }
     var info = cv.personalInfo;
-    var prev = document.title;
-    document.title = 'CV-' + ((info.firstName || '') + '-' + (info.lastName || '')).replace(/\s+/g, '') || 'CV';
-    window.print();
-    setTimeout(function () { document.title = prev; }, 500);
+    var fname = ('CV-' + (info.firstName || '') + '-' + (info.lastName || '')).replace(/\s+/g, '').replace(/-+$/, '') || 'CV';
+    var btn = document.getElementById('btn-pdf');
+    var prevLabel = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Génération…';
+
+    var sheet = document.getElementById('sheet');
+    var prevMinH = sheet.style.minHeight, prevShadow = sheet.style.boxShadow;
+    sheet.style.boxShadow = 'none';
+
+    // On étend la feuille à un nombre ENTIER de pages A4 pour que la bande latérale
+    // (fond en dégradé de .sheet) remplisse aussi la dernière page jusqu'en bas.
+    var wpx = sheet.offsetWidth;
+    var pageHpx = wpx * 297 / 210;
+    var pages = Math.max(1, Math.ceil((sheet.offsetHeight - 1) / pageHpx));
+    sheet.style.minHeight = (pages * pageHpx) + 'px';
+
+    var SCALE = 3; // ~288 dpi : net à l'impression
+    window.html2canvas(sheet, {
+      scale: SCALE, useCORS: true, backgroundColor: '#ffffff', logging: false,
+      windowWidth: wpx, height: pages * pageHpx, windowHeight: pages * pageHpx,
+    }).then(function (canvas) {
+      sheet.style.minHeight = prevMinH; sheet.style.boxShadow = prevShadow;
+      var jsPDF = window.jspdf.jsPDF;
+      var pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      var imgW = canvas.width;
+      var pxPerPage = Math.round(canvas.width * 297 / 210); // hauteur d'1 page en px canvas
+      var total = Math.max(1, Math.round(canvas.height / pxPerPage));
+      for (var p = 0; p < total; p++) {
+        if (p > 0) pdf.addPage();
+        var srcY = p * pxPerPage, srcH = Math.min(pxPerPage, canvas.height - srcY);
+        var slice = document.createElement('canvas');
+        slice.width = imgW; slice.height = pxPerPage;
+        var ctx = slice.getContext('2d');
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, imgW, pxPerPage);
+        ctx.drawImage(canvas, 0, srcY, imgW, srcH, 0, 0, imgW, srcH);
+        pdf.addImage(slice.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 210, 297); // plein cadre
+      }
+      pdf.save(fname + '.pdf');
+      btn.disabled = false; btn.textContent = prevLabel;
+    }).catch(function (e) {
+      sheet.style.minHeight = prevMinH; sheet.style.boxShadow = prevShadow;
+      console.error('PDF error', e);
+      alert('Échec de la génération du PDF. Réessaie.');
+      btn.disabled = false; btn.textContent = prevLabel;
+    });
   }
 
   // ════════════════════════════════════════════════════════════════════════
