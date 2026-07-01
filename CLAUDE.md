@@ -27,6 +27,12 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 > (qui remplace ADR-0023). La réintroduction de la sécurité est planifiée après validation
 > de l'ébauche par Hugo (voir « Suivi » de l'ADR-0024).
 
+## ⚠️ Frontière grand public 2026-06 (ADR-0029) : encyclopédie conversationnelle
+
+> **Le chatbot public est une encyclopédie qui *peut poser des questions de cadrage* pour mieux répondre — jamais un outil de diagnostic/triage.** Autorisé : questions de clarification + information **générale** (causes fréquentes, red flags, quand consulter en termes généraux). Interdit : diagnostic, décision/triage, **orientation individualisée** (« dans *votre* cas… »), posologie, temporalité personnalisée. Règle-pivot : *les questions cadrent l'information, la sortie reste générale, jamais individualisée* (`docs/01_REGULATION.md` §2/§3, v1.3.0).
+>
+> **Non-conformité connue (suivi séparé, docs d'abord)** : `src/ai/prompts/public.v3.ts` dépasse cette frontière (RECUEIL MINIMUM OBLIGATOIRE + « CE QUE CELA PEUT ÉVOQUER » + « QUE FAIRE MAINTENANT » = anamnèse → orientation individualisée). À réaligner en branche dédiée ; voir `docs/STATUS.md`.
+
 ## Règles de reprise
 
 1. Lire `START.md`, `.ai-governance.md`, `docs/01_REGULATION.md`, puis `docs/README.md` avant tout changement.

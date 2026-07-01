@@ -8,6 +8,26 @@ status: Active
 date: 2026-06-06
 ```
 
+## État courant — 2026-06-30 — Frontière grand public (docs) + suivis prompt/garde-fous
+
+- **Doctrine mise à jour (ADR-0029, `01_REGULATION` 1.2.0 → 1.3.0)** : la frontière grand public est
+  précisée en **encyclopédie conversationnelle** — l'IA peut poser des questions de *cadrage* pour
+  mieux répondre en **information générale**, mais jamais de diagnostic / décision / triage /
+  orientation individualisée. Sections touchées : §2 (règle-pivot « poser des questions ≠
+  diagnostiquer »), §3 (scission de la ligne symptômes + note de frontière), §4 (classifieur recadré
+  sur `individualized_request`/`emergency`), §5 (minimisation Art. 9), §7 (nuance L.4161-1 +
+  référentiels HAS à confirmer), §10 (risque résiduel + benchmark Doctolib = non-safe-harbor).
+  Cohérence : bandeau ajouté en tête de `04_CHATBOT.md`. **Docs uniquement, aucun code touché.**
+- **⚠️ Suivi 1 — réaligner le prompt public** : `src/ai/prompts/public.v3.ts` dépasse la frontière
+  (RECUEIL MINIMUM OBLIGATOIRE + « CE QUE CELA PEUT ÉVOQUER » + « QUE FAIRE MAINTENANT » = anamnèse
+  → orientation individualisée). À réécrire en branche dédiée : questions rendues *optionnelles et de
+  cadrage*, suppression de l'anamnèse imposée et de l'orientation individualisée, sortie maintenue
+  **générale**. (Décision Hugo : docs d'abord.)
+- **⚠️ Suivi 2 — réintroduire les garde-fous techniques (ADR-0024)** : couche 1 (classifieur pré-LLM,
+  recadré sur `individualized_request`/`emergency` au lieu de « tout symptôme personnel ») + couche 3
+  (validation de sortie sur les marqueurs d'individualisation). Sans elles, la frontière ne tient que
+  par le prompt (défense insuffisante, `01_REGULATION` §4).
+
 ## État courant — 2026-06-07
 
 - **Réconciliation `main` ↔ `dev`** : merge de `origin/dev` (refonte design #59 + fix CI #62) dans la

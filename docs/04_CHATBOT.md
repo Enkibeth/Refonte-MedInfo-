@@ -12,6 +12,8 @@ linked_to: [01_REGULATION.md, 02_ARCHITECTURE.md, 03_SECURITY.md, 07_CLASSIFIER.
 
 > **Cœur produit.** Les prompts sont des artefacts versionnés sous contrat, jamais du texte libre éditable en prod. Double test : regression (stabilité du refus) + LLM-as-judge (qualité). **v2 : suppression totale du recueil patient et du triage symptomatique ; pas de synthèse décisionnelle individualisée ; boutons via tool-calling natif (plus de crochets AI Engine).**
 
+> **⚠️ Ce document décrit les prompts v2 — à réaligner (refonte ADR-0024 + frontière ADR-0029).** Depuis la refonte 2026-06, les prompts déployés sont `public.v3` / `student.v3` / `professional.v2` (`src/ai/prompts/`), et la frontière grand public est désormais l'**encyclopédie conversationnelle** (ADR-0029, `01_REGULATION` §2/§3) : l'IA **peut** poser des questions de *cadrage* pour mieux répondre en information générale, mais jamais de diagnostic / triage / orientation individualisée. **Non-conformité connue** : `public.v3` a **ré-introduit** exactement les éléments que le §2 ci-dessous liste comme « SUPPRIMÉ v1→v2 » (RECUEIL MINIMUM OBLIGATOIRE, QUESTIONS_PATIENT, CE QUE CELA PEUT ÉVOQUER, QUE FAIRE MAINTENANT). Réalignement du prompt = suivi séparé (voir `docs/STATUS.md`).
+
 ---
 
 ## 1. Les 3 personas (v2)

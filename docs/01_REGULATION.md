@@ -2,15 +2,17 @@
 
 ```yaml
 title: Regulatory Doctrine
-version: 1.2.0
+version: 1.3.0
 owner: Hugo Bettembourg
 status: Active
-date: 2026-06-03
+date: 2026-06-30
 authority: SOURCE DE VÉRITÉ — tout autre document doit être cohérent avec celui-ci
 linked_to: [00_CHARTER.md, 02_ARCHITECTURE.md, 04_CHATBOT.md, 06_BILLING.md]
 ```
 
 > **Règle d'or.** Ce document prime sur tous les autres. En cas de conflit entre une décision technique, commerciale ou design et ce document, ce document gagne. Toute modification ici incrémente la version et déclenche une revue des documents liés.
+
+> **Révision 1.3.0 (2026-06-30, ADR-0029).** Précision de la **frontière grand public** : le chatbot public est une **encyclopédie conversationnelle** — il peut poser des questions de *cadrage* pour mieux répondre, tant que la sortie reste **générale et jamais individualisée** (ni diagnostic, ni décision/triage, ni orientation personnalisée). Sections touchées : §2, §3, §4, §5, §7, §10. Le bloc verbatim §1 (intended purpose) est **inchangé**. Cette révision déclenche la revue de `04_CHATBOT.md` et `CLAUDE.md`.
 
 ---
 
@@ -38,6 +40,13 @@ La Règle 11 classe alors **a minima Classe IIa** (IIb si erreur → détériora
 
 **Stratégie MedInfo :** rompre le critère 2 (jamais de patient identifiable) ET le critère 1 (jamais de synthèse interprétative individualisée).
 
+**Poser des questions ≠ diagnostiquer.** Le fait de poser des questions n'est pas, en soi, un déclencheur MDSW. Ce qui déclenche la qualification, c'est le **couple** « action interprétative sur des données » (critère 1) **+** « bénéfice d'un patient individuel identifiable » (critère 2). D'où la distinction opératoire :
+
+- ✅ **Cadrage d'information générale** — poser une question pour *désambiguïser le sujet* et *sélectionner l'information pertinente* (ex. « parlez-vous d'une douleur thoracique chez l'adulte ou chez l'enfant ? »), puis livrer une **information générale** (causes fréquentes en population, signes d'alerte, quand consulter en termes généraux). La sortie s'applique à une **catégorie / situation type**, jamais à *ce patient-ci* → critères 1 **et** 2 non réunis → **non-MDSW**.
+- ❌ **Recueil clinique → synthèse individualisée** — collecter un profil clinique (anamnèse) pour produire une **évaluation, une orientation ou un différentiel propres à la personne** (« dans *votre* cas, cela évoque… », « *pour vous*, consultez sous 48 h »). Critères 1 **et** 2 réunis → **MDSW (IIa+)**.
+
+Règle-pivot : **les questions servent au cadrage de l'information, jamais à l'évaluation d'un cas individuel ; la sortie reste générale, jamais individualisée.** (cf. §3, ADR-0029)
+
 > **Un disclaimer ne renverse JAMAIS une qualification MDSW.** Seule la finalité réelle — exprimée par le code, les réponses effectives, le marketing — compte (doctrine Commission/CJUE, jurisprudence ANSM). Marquage CE Classe IIa = **80 000–300 000 € + 12-18 mois** : totalement incompatible avec le budget. La seule voie viable est la safe-box.
 
 ---
@@ -46,8 +55,9 @@ La Règle 11 classe alors **a minima Classe IIa** (IIb si erreur → détériora
 
 | Fonctionnalité | MDSW ? | Décision | Couche d'application |
 |---|---|---|---|
-| Chatbot encyclopédique (sans input patient) | Non | **Autorisé** | — |
-| Utilisateur décrit SES symptômes | Oui (IIa+) | **Refus déterministe** | Classifieur pré-LLM |
+| Chatbot encyclopédique (sans aucune question) | Non | **Autorisé** | — |
+| **Encyclopédie conversationnelle** (questions de *cadrage* → **information générale**) | Non | **Autorisé** | Sortie toujours générale, jamais individualisée ; minimisation des données (§5) |
+| Utilisateur décrit ses symptômes → **orientation / triage / différentiel individualisé** | Oui (IIa+) | **Interdit** | Prompt + (à réintroduire) classifieur + validation |
 | Profile wizard (démo/allergies/traitements) | **Oui — déclencheur** | **SUPPRIMÉ** | Absent du repo |
 | Calculateur clinique interprétatif | Oui | **SUPPRIMÉ (public+pro)** | Absent du repo |
 | Interaction médicamenteuse avec avis | Oui | **Interdit** | Classifieur + validation |
@@ -57,6 +67,10 @@ La Règle 11 classe alors **a minima Classe IIa** (IIb si erreur → détériora
 
 **Invariant :** toute fonctionnalité « Interdit »/« Supprimé » apparaissant dans le code = build CI rouge.
 
+> **Frontière grand public (ADR-0029) — encyclopédie conversationnelle.** La ligne « Utilisateur décrit SES symptômes → refus déterministe » (doctrine antérieure) est **précisée**, pas supprimée : décrire un symptôme n'entraîne plus un refus *par principe*. Le bot public **peut** poser des questions de cadrage et répondre — tant qu'il reste une **encyclopédie** (information générale, causes fréquentes en population, signes d'alerte, quand consulter en termes généraux). Ce qui reste **interdit**, c'est de basculer vers l'**orientation/triage/diagnostic individualisé** (« dans *votre* cas… », « *pour vous*, consultez sous 48 h »). Cf. la règle-pivot §2.
+>
+> **⚠️ Non-conformité connue (à corriger — suivi prompt, hors périmètre de la révision doc).** Le prompt `src/ai/prompts/public.v3.ts` tombe aujourd'hui du **mauvais côté** de cette frontière : il impose un **RECUEIL MINIMUM OBLIGATOIRE** (âge, sexe, tabac, alcool, antécédents personnels + familiaux sur 2 tours forcés) *avant* de répondre, puis produit une section **« CE QUE CELA PEUT ÉVOQUER »** (1 à 3 hypothèses individualisées) et **« QUE FAIRE MAINTENANT »** (orientation personnalisée). C'est un recueil clinique → synthèse individualisée = ligne rouge §2. **À réaligner** sur l'encyclopédie conversationnelle dans une branche dédiée (décision Hugo : docs d'abord).
+
 ---
 
 ## 4. Doctrine du refus — defense-in-depth (3 couches)
@@ -65,11 +79,13 @@ La Règle 11 classe alors **a minima Classe IIa** (IIb si erreur → détériora
 
 Le refus ne repose **jamais** sur le seul prompt. Implémentation dans `04_CHATBOT.md`.
 
-**Couche 1 — Classifieur pré-LLM (déterministe).** Chaque message → catégorie `general_info`/`personal_symptoms`/`emergency`/`out_of_scope`/`ambiguous`. Si `personal_symptoms`/`emergency`/`ambiguous` → refus canonique, **LLM principal jamais appelé**.
+> **Recalage frontière (ADR-0029).** Poser une question de **cadrage** n'est **pas** un déclencheur de refus : l'encyclopédie conversationnelle a le droit de questionner puis de répondre en **information générale** (§2, §3). Ce que les couches doivent bloquer/rediriger de façon déterministe, c'est (a) la **demande d'un acte individualisé** (diagnostic, triage, orientation « pour vous », modification de traitement) et (b) l'**urgence / red flag** (→ message canonique + 15/112). Le simple fait qu'un utilisateur mentionne un symptôme ne suffit plus à déclencher un refus *par principe* — c'est l'**individualisation de la sortie** qui est la ligne rouge.
 
-**Couche 2 — Contrainte prompt.** Réaffirme les interdits (ceinture + bretelles).
+**Couche 1 — Classifieur pré-LLM (déterministe).** Chaque message → catégorie `general_info`/`individualized_request`/`emergency`/`out_of_scope`/`ambiguous`. Si `individualized_request`/`emergency` → message canonique, **LLM principal jamais appelé** ; `ambiguous` → clarification (cadrage) plutôt que refus sec. (La catégorie n'est plus « tout symptôme personnel » mais « demande d'acte individualisé ».)
 
-**Couche 3 — Validation de sortie.** Marqueurs de diagnostic individualisé (« vous avez probablement ») → réponse bloquée + remplacée + incident loggé.
+**Couche 2 — Contrainte prompt.** Réaffirme les interdits (ceinture + bretelles) : sortie générale uniquement, jamais d'orientation/diagnostic individualisés.
+
+**Couche 3 — Validation de sortie.** Marqueurs de diagnostic/orientation individualisés (« vous avez probablement », « dans votre cas, consultez sous… ») → réponse bloquée + remplacée + incident loggé.
 
 **Message de refus standard canonique (verbatim, source unique) :**
 > *MedInfo AI fournit de l'information médicale générale et ne peut pas analyser une situation personnelle ni orienter un diagnostic individuel. Si vous ressentez des symptômes ou une inquiétude qui vous concerne, vous ou un proche, consultez un professionnel de santé. En cas d'urgence, composez le 15 (SAMU) ou le 112. En cas de détresse psychologique ou d'idées suicidaires, composez le 3114. Pour un besoin de soins non programmés, le 116 117 peut orienter selon votre territoire ; pour une pharmacie de garde, le 3237 peut être utile selon disponibilité locale.*
@@ -80,7 +96,15 @@ Le refus ne repose **jamais** sur le seul prompt. Implémentation dans `04_CHATB
 
 ## 5. Données de santé & HDS (art. L.1111-8 CSP)
 
-**Principe CNIL/ANS :** l'autodéclaration de symptômes **crée des données de santé** (RGPD Art. 9). Le framing « éducatif » ne change pas la nature de la donnée.
+**Principe CNIL/ANS :** l'autodéclaration de symptômes **crée des données de santé** (RGPD Art. 9). Le framing « éducatif » ne change pas la nature de la donnée. Ceci reste vrai même lorsque la réponse demeure une information générale : une question de cadrage qui recueille un symptôme, un âge ou un antécédent traite bien une donnée Art. 9.
+
+**Minimisation (conséquence directe de la frontière §2/§3).** Puisque les questions de cadrage touchent à des données Art. 9, elles doivent :
+- collecter le **strict minimum** utile à *sélectionner l'information générale* (ce qui change vraiment la réponse encyclopédique), jamais un profil clinique complet ;
+- **proscrire la moisson systématique** de facteurs sensibles (tabac, alcool, antécédents personnels/familiaux, traitements) en préalable obligatoire — cette anamnèse imposée est à la fois une dérive MDSW (§3) *et* une collecte Art. 9 non minimisée ;
+- rester **stateless / anonyme** côté public (aucune conservation attribuable → HDS non déclenché, ligne « Voie MVP » ci-dessous) ;
+- rester couvertes par l'**AIPD/DPIA** obligatoire (§7).
+
+> Autrement dit : la minimisation des données et le caractère stateless sont les **garde-fous RGPD** qui accompagnent l'assouplissement produit (l'IA peut questionner) — ils empêchent que « poser des questions » ne devienne « constituer un dossier ».
 
 | Scénario | Données santé conservées ? | HDS requis ? | Statut |
 |---|---|---|---|
@@ -116,8 +140,9 @@ GPAI (Art. 51-55) → **le ou les providers GPAI** (OpenAI et/ou Anthropic), pas
 
 - **ANSM GIO** : demander **opinion qualification écrite** (gratuit, 2-6 sem). À envoyer **Mois 0**. Dérisquage le moins cher.
 - **CNIL** : **AIPD obligatoire avant lancement**. Outil gratuit : logiciel PIA CNIL. Risque résiduel élevé → consultation préalable Art. 36.
-- **Art. L.4161-1 CSP** : Hugo non thésé → risque pénal **personnel** (1 an + 30 000 €) si diagnostic individuel, indépendamment du statut.
+- **Art. L.4161-1 CSP** : Hugo non thésé → risque pénal **personnel** (1 an + 30 000 €) si diagnostic individuel, indépendamment du statut. **Nuance frontière (ADR-0029)** : cadrer une information générale (« s'agit-il d'un adulte ou d'un enfant ? ») ≠ « établir un diagnostic » au sens de l'exercice illégal. L'infraction naît de la **conclusion / orientation individualisée** (« vous avez probablement… », « voici quoi faire dans votre cas »), pas du fait de poser une question ou d'exposer des causes générales.
 - **Charte qualité santé** : HONcode supprimé (déc. 2022) → publier sa propre charte (8 principes).
+- **Référentiels HAS à aligner / vérifier (à confirmer côté juridique — ne pas présumer acquis)** : (a) le **référentiel HAS des applications et objets connectés en santé hors dispositif médical** (cadre qualité information/contenu/sécurité/confidentialité pour une app santé non-DM) ; (b) le cadre HAS émergent sur l'**IA générative en santé destinée aux usagers**. À utiliser comme grille d'auto-évaluation de la posture « information santé, pas DM » ; l'intitulé et le périmètre exacts restent à confirmer avant de s'en prévaloir publiquement.
 
 ---
 
@@ -147,3 +172,6 @@ GPAI (Art. 51-55) → **le ou les providers GPAI** (OpenAI et/ou Anthropic), pas
 1. **Avis GIO ANSM** — peut resserrer/desserrer. Bloquant tier Pro.
 2. **Transfert UE-US OpenAI post-Schrems** — peut forcer migration Mistral/Azure EU sous 12-18 mois.
 3. **Digital Omnibus AI Act** — peut repousser échéances haut-risque 2027→2028.
+4. **Frontière « encyclopédie conversationnelle » (ADR-0029)** — la limite entre « cadrage d'information générale » et « orientation individualisée » est **qualitative** ; un LLM peut déraper (d'où couches 2/3 à réintroduire). Risque résiduel à surveiller par revue d'échantillons + tests adverses. Une **qualification formelle** (avis GIO ANSM et/ou avocat e-santé) reste recommandée **avant lancement public**.
+
+> **Benchmark informel — positionnement type « Doctolib ».** Ligne de sûreté visée pour le public : *information médicale + questions de clarification (cadrage) + repérage des red flags + orientation prudente (15/112), sans jamais « vous avez probablement X » ni « prenez Y » ni écarter une urgence.* ⚠️ Ce benchmark est un **repère produit, pas un safe harbor juridique** : le fait qu'un acteur établi (mieux armé — RGPD, HDS, DPO, DPA) procède ainsi **ne qualifie pas** notre propre statut réglementaire. Il ne remplace ni l'AIPD, ni l'avis GIO ANSM, ni une analyse d'un juriste e-santé.
