@@ -11,6 +11,15 @@
      en-tête/pied de page du navigateur (URL, n° de page), plein cadre A4, jamais de rognage. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- Import d'un CV existant : extraction de texte PDF (pdf.js) et Word (mammoth) côté client. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script>
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+</script>
 <style>
   :root {
     --accent: #0a4d68;        /* petrol700 */
@@ -224,6 +233,8 @@
   <div class="cv-band" aria-hidden="true"></div>
   <div class="toolbar">
     <button class="btn" id="btn-new">＋ Nouveau</button>
+    <button class="btn" id="btn-import">⤒ Importer un CV</button>
+    <input type="file" id="import-file" accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" style="display:none" />
     <button class="btn" id="btn-example">Charger un exemple</button>
     <button class="btn" id="btn-history">Mes CV</button>
     <button class="btn" id="btn-save">Sauvegarder</button>
@@ -814,6 +825,61 @@
   }
 
   // ════════════════════════════════════════════════════════════════════════
+  //  IMPORT d'un CV existant (PDF / Word) → pré-remplissage par IA
+  // ════════════════════════════════════════════════════════════════════════
+  async function extractText(file) {
+    var name = (file.name || '').toLowerCase();
+    if (name.endsWith('.pdf') || file.type === 'application/pdf') {
+      if (!window.pdfjsLib) throw new Error('Lecteur PDF non chargé.');
+      var buf = await file.arrayBuffer();
+      var pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
+      var out = [];
+      for (var i = 1; i <= pdf.numPages; i++) {
+        var pg = await pdf.getPage(i);
+        var tc = await pg.getTextContent();
+        out.push(tc.items.map(function (it) { return it.str; }).join(' '));
+      }
+      return out.join('\n');
+    }
+    if (name.endsWith('.docx')) {
+      if (!window.mammoth) throw new Error('Lecteur Word non chargé.');
+      var ab = await file.arrayBuffer();
+      var res = await window.mammoth.extractRawText({ arrayBuffer: ab });
+      return (res && res.value) || '';
+    }
+    // .txt ou autre : lecture brute
+    return await file.text();
+  }
+
+  async function importCv(file) {
+    if (!authToken) { alert('Connecte-toi (compte étudiant ou professionnel) pour importer un CV.'); return; }
+    var btn = document.getElementById('btn-import');
+    var prev = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Lecture…';
+    try {
+      var text = (await extractText(file)).replace(/ /g, ' ').trim();
+      if (text.length < 30) {
+        alert('Impossible de lire le texte de ce fichier (CV scanné en image ?). Essaie un PDF « texte » ou copie-colle le contenu.');
+        return;
+      }
+      btn.textContent = 'Analyse IA…';
+      var res = await api('/api/cv-import', { method: 'POST', body: JSON.stringify({ text: text.slice(0, 24000) }) });
+      var j = await res.json();
+      if (!res.ok) { alert((j && j.error) || 'Échec de l’import.'); return; }
+      if (!j.document) { alert('Import vide.'); return; }
+      if (!confirm('Remplacer le CV actuel par le contenu importé ? (tu pourras tout corriger ensuite)')) return;
+      cv = Object.assign(blankCv(), j.document);
+      serverId = null; touch();
+      setStatus('CV importé — vérifie et corrige les champs');
+    } catch (e) {
+      console.error('import error', e);
+      alert('Échec de la lecture du fichier. Formats acceptés : PDF, Word (.docx), texte.');
+    } finally {
+      btn.disabled = false; btn.textContent = prev;
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
   //  RELECTURE IA
   // ════════════════════════════════════════════════════════════════════════
   function closeDrawer() { document.getElementById('drawer').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
@@ -924,6 +990,12 @@
   //  WIRING
   // ════════════════════════════════════════════════════════════════════════
   document.getElementById('btn-new').addEventListener('click', function () { if (confirm('Repartir d’un CV vierge ? (la sauvegarde locale sera remplacée)')) { cv = blankCv(); serverId = null; touch(); } });
+  document.getElementById('btn-import').addEventListener('click', function () { document.getElementById('import-file').click(); });
+  document.getElementById('import-file').addEventListener('change', function (ev) {
+    var f = ev.target.files && ev.target.files[0];
+    ev.target.value = ''; // permet de ré-importer le même fichier
+    if (f) importCv(f);
+  });
   document.getElementById('btn-example').addEventListener('click', example);
   document.getElementById('btn-save').addEventListener('click', function () { saveCloud(false); });
   document.getElementById('btn-history').addEventListener('click', openHistory);

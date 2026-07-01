@@ -293,3 +293,114 @@ export function sanitizeCvForAi(
     ),
   });
 }
+
+// ── Import d'un CV existant (extraction IA) ─────────────────────────────────
+
+function str(value: unknown, max: number): string {
+  return typeof value === 'string' ? value.trim().slice(0, max) : '';
+}
+function importBullets(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+    .map((x) => x.trim().slice(0, 600))
+    .slice(0, 20);
+}
+function importArr(obj: Record<string, unknown>, key: string): Record<string, unknown>[] {
+  const v = obj[key];
+  return Array.isArray(v) ? (v.filter((x) => x && typeof x === 'object') as Record<string, unknown>[]) : [];
+}
+function newId(): string {
+  const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  return c?.randomUUID ? c.randomUUID() : 'id-' + Math.random().toString(36).slice(2, 12);
+}
+
+/**
+ * Normalise la sortie IA d'un import de CV (PDF/Word extrait en texte, structuré par
+ * `generateObject`) en un `CvDocument` propre : bornes de longueur, ids d'items assignés
+ * côté serveur, photo jamais importée. Module PUR (testé). L'IA n'invente rien : les champs
+ * absents restent vides ; l'utilisateur corrige ensuite dans l'éditeur.
+ */
+export function normalizeImportedCv(raw: unknown): CvDocument {
+  const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const info = (r.personalInfo as Record<string, unknown> | undefined) ?? {};
+
+  return {
+    personalInfo: {
+      firstName: str(info.firstName, 80),
+      lastName: str(info.lastName, 80),
+      headline: str(info.headline, 200),
+      email: str(info.email, 120),
+      phone: str(info.phone, 60),
+      city: str(info.city, 80),
+      country: str(info.country, 80),
+      nationality: str(info.nationality, 80),
+      website: str(info.website, 200),
+      photoUrl: '', // jamais importée
+    },
+    summary: str(r.summary, 2000),
+    experiences: importArr(r, 'experiences').slice(0, 40).map((e) => ({
+      id: newId(),
+      title: str(e.title, 200),
+      institution: str(e.institution, 200),
+      location: str(e.location, 120),
+      startDate: str(e.startDate, 40),
+      endDate: str(e.endDate, 40),
+      isCurrent: e.isCurrent === true,
+      description: str(e.description, 1500),
+      bullets: importBullets(e.bullets),
+    })),
+    education: importArr(r, 'education').slice(0, 30).map((e) => ({
+      id: newId(),
+      degree: str(e.degree, 200),
+      institution: str(e.institution, 200),
+      location: str(e.location, 120),
+      startDate: str(e.startDate, 40),
+      endDate: str(e.endDate, 40),
+      description: str(e.description, 1500),
+      bullets: importBullets(e.bullets),
+    })),
+    researchProjects: importArr(r, 'researchProjects').slice(0, 30).map((e) => ({
+      id: newId(),
+      title: str(e.title, 300),
+      institution: str(e.institution, 200),
+      department: str(e.department, 200),
+      startDate: str(e.startDate, 40),
+      endDate: str(e.endDate, 40),
+      isCurrent: e.isCurrent === true,
+      bullets: importBullets(e.bullets),
+    })),
+    references: importArr(r, 'references').slice(0, 30).map((e) => ({
+      id: newId(),
+      name: str(e.name, 120),
+      title: str(e.title, 300),
+      institution: str(e.institution, 200),
+      location: str(e.location, 120),
+      phone: str(e.phone, 60),
+      email: str(e.email, 120),
+    })),
+    certificates: importArr(r, 'certificates').slice(0, 40).map((e) => ({
+      id: newId(),
+      title: str(e.title, 300),
+      subtitle: str(e.subtitle, 300),
+      score: str(e.score, 60),
+      date: str(e.date, 60),
+    })),
+    languages: importArr(r, 'languages').slice(0, 20).map((e) => ({
+      id: newId(),
+      name: str(e.name, 60),
+      levelLabel: str(e.levelLabel, 60),
+      level: typeof e.level === 'number' ? Math.max(1, Math.min(5, Math.round(e.level))) : undefined,
+    })),
+    interests: (Array.isArray(r.interests) ? r.interests : []).slice(0, 40).map((e) => ({
+      id: newId(),
+      label: typeof e === 'string' ? e.trim().slice(0, 120) : str((e as Record<string, unknown>)?.label, 120),
+    })).filter((i) => i.label),
+    personalProjects: importArr(r, 'personalProjects').slice(0, 20).map((e) => ({
+      id: newId(),
+      title: str(e.title, 200),
+      description: str(e.description, 1500),
+      url: str(e.url, 300),
+    })),
+  };
+}

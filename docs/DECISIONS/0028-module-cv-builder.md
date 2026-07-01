@@ -74,7 +74,22 @@ des données personnelles (identité, parfois celles des référents).
   Storage dédié reste une amélioration future.
 - Aucune donnée de santé : un CV est une donnée personnelle, pas un dossier patient.
 
+## Addendum 2026-07 (retours de test réel)
+
+- **Export PDF « distribuable »** : `window.print()` laissait Safari ajouter ses en-tête/pied de
+  page (URL, n° de page), des marges et un rognage de la colonne de droite → non distribuable.
+  Remplacé par une génération **côté client** (html2canvas + jsPDF, mêmes CDN que `partiel.html`) :
+  aucun chrome navigateur, plein cadre A4 exact, jamais de rognage, bande latérale pleine hauteur
+  sur chaque page (feuille étendue à un nombre entier de pages A4). Rendu ~288 dpi.
+- **Import d'un CV existant** (feature `cv_import`, `/api/cv-import`, migration `0030`) : le client
+  extrait le TEXTE du CV (PDF via pdf.js, Word via mammoth, ou texte collé) et l'IA le structure
+  (`generateObject` + schéma Zod) dans le modèle de CV. Règle stricte : **n'invente rien**, ne
+  reformule pas, laisse vide l'absent ; la photo n'est jamais importée. Normalisation pure et
+  testée (`normalizeImportedCv`), garde persona serveur + rate-limit, comme les autres routes IA.
+- **Prod** : les migrations `0029`/`0030` doivent être appliquées à la base de production Supabase
+  (le pipeline ne les pousse pas automatiquement) — sinon l'enregistrement échoue (table absente).
+
 ## Suivi / améliorations futures
 
-Plusieurs thèmes ; bucket Storage pour la photo ; import depuis PDF/LinkedIn ; quota dédié à la
-relecture ; export Word.
+Plusieurs thèmes ; bucket Storage pour la photo ; import depuis image/scan (OCR vision) et
+LinkedIn ; quota dédié ; export Word.

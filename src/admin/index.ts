@@ -163,6 +163,15 @@ export const AI_FEATURES = [
     providers: ['anthropic', 'openai', 'google'],
   },
   {
+    key: 'cv_import',
+    emoji: '📥',
+    label: 'CV — Import (pré-remplissage)',
+    description: 'Structure le texte d\'un CV existant (PDF/Word) dans les champs de l\'éditeur — n\'invente rien',
+    apiRoute: '/api/cv-import',
+    promptKeys: ['cv_import'],
+    providers: ['anthropic', 'openai', 'google'],
+  },
+  {
     key: 'blog_generate',
     emoji: '📰',
     label: 'Blog — Génération d\'article',

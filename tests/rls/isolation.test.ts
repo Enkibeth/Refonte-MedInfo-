@@ -160,9 +160,9 @@ describe('ai_interactions — service_role only (jamais accessible au client)', 
 
 
 describe('ai_model_config — service_role only (config admin, jamais exposée au client)', () => {
-  it('le seed a bien créé les 13 lignes de fonctionnalités (6 initiales + chat_meta 0021 + blog_generate 0022 + blog_topic/blog_review 0024 + presentation_generate 0025 + revision_plan_assist 0028 + cv_review 0029)', async () => {
+  it('le seed a bien créé les 14 lignes de fonctionnalités (6 initiales + chat_meta 0021 + blog_generate 0022 + blog_topic/blog_review 0024 + presentation_generate 0025 + revision_plan_assist 0028 + cv_review 0029 + cv_import 0030)', async () => {
     const { rows } = await db.asService((q) => q('SELECT key FROM ai_model_config'));
-    expect(rows).toHaveLength(13);
+    expect(rows).toHaveLength(14);
     expect(rows.map((r: { key: string }) => r.key)).toContain('chat_meta');
     expect(rows.map((r: { key: string }) => r.key)).toContain('blog_generate');
     expect(rows.map((r: { key: string }) => r.key)).toContain('blog_topic');
@@ -170,6 +170,7 @@ describe('ai_model_config — service_role only (config admin, jamais exposée a
     expect(rows.map((r: { key: string }) => r.key)).toContain('presentation_generate');
     expect(rows.map((r: { key: string }) => r.key)).toContain('revision_plan_assist');
     expect(rows.map((r: { key: string }) => r.key)).toContain('cv_review');
+    expect(rows.map((r: { key: string }) => r.key)).toContain('cv_import');
   });
 
   it('un client authentifié NE PEUT PAS lire ai_model_config', async () => {
