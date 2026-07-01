@@ -66,10 +66,11 @@ des données personnelles (identité, parfois celles des référents).
 - Création, édition, aperçu, export PDF : **gratuits**, 100 % client. La relecture IA est
   réservée aux comptes vérifiés et passe par le quota technique étudiant (`checkChatRateLimit`).
 - Le CV est stocké dans le cloud (own-row RLS) : il suit l'utilisateur entre appareils.
-- **Limite connue** : la mise en page 2 colonnes à l'impression repose sur `break-inside: avoid`
-  par bloc ; sur un CV qui déborde sur une 2ᵉ page, le fond coloré de la sidebar ne se répète pas
-  automatiquement sur la page suivante. Acceptable en v1 (CV cible 1–2 pages) ; amélioration
-  future possible. La photo est stockée en base64 dans le JSON (borne de taille) ; un bucket
+- **Impression multi-page** : la bande latérale colorée (liseré marine + fond clair) est peinte
+  à l'impression par un élément `position: fixed` que Chrome repeint sur CHAQUE page → elle
+  remplit toute la hauteur de toutes les pages, y compris la dernière (fidèle au gabarit de
+  référence, validé sur un CV réel de 4 pages). Les blocs portent `break-inside: avoid` pour ne
+  pas couper une entrée. La photo est stockée en base64 dans le JSON (borne de taille) ; un bucket
   Storage dédié reste une amélioration future.
 - Aucune donnée de santé : un CV est une donnée personnelle, pas un dossier patient.
 

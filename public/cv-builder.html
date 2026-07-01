@@ -104,35 +104,53 @@
   .hint { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
   .photoPrev { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; border: 1px solid var(--line); }
 
-  /* ── A4 preview ────────────────────────────────────────────── */
+  /* ── A4 preview (gabarit « sidebar claire + liseré marine ») ──────────────
+     Le fond gauche (liseré marine + bande claire) est peint via un dégradé sur
+     .sheet : un fond posé sur un bloc qui déborde sur plusieurs pages CONTINUE à
+     l'impression → la bande latérale se prolonge automatiquement en page 2. */
+  :root { --cv-navy: #16235c; --cv-edge: #101c4b; --cv-side-bg: #eef1f7; --cv-link: #3f6fce; --cv-ink: #232323; --cv-rule: #cfd5e2; }
   .sheet {
-    width: 210mm; min-height: 297mm; background: #fff; color: var(--ink);
-    box-shadow: 0 6px 28px rgba(8,40,60,.18); display: flex; overflow: hidden;
+    width: 210mm; min-height: 297mm; color: var(--cv-ink); flex: 0 0 auto;
+    box-shadow: 0 6px 28px rgba(8,40,60,.18); display: flex;
+    font-family: 'Segoe UI', 'Lato', system-ui, -apple-system, Roboto, Arial, sans-serif;
+    font-size: 10pt; line-height: 1.42;
+    background: linear-gradient(to right, var(--cv-edge) 0, var(--cv-edge) 8mm, var(--cv-side-bg) 8mm, var(--cv-side-bg) 62mm, #fff 62mm);
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
-  .cv-side { width: 64mm; background: var(--accent); color: #eaf2f6; padding: 14mm 9mm; }
-  .cv-main { flex: 1; padding: 14mm 12mm; }
-  .cv-photo { width: 38mm; height: 38mm; border-radius: 50%; object-fit: cover; display: block; margin: 0 auto 8mm; border: 3px solid rgba(255,255,255,.5); }
-  .cv-side h3, .cv-main h2 { font-family: 'Fraunces', Georgia, serif; }
-  .cv-side h3 { font-size: 11pt; letter-spacing: .04em; text-transform: uppercase; color: #fff; margin: 0 0 4mm; padding-bottom: 2mm; border-bottom: 1px solid rgba(255,255,255,.28); }
+  .cv-side { width: 62mm; padding: 13mm 7mm 13mm 15mm; }
+  .cv-main { flex: 1; padding: 13mm 13mm 13mm 10mm; }
+  .cv-photo { width: 38mm; height: 38mm; border-radius: 4px; object-fit: cover; display: block; margin: 0 auto 9mm; }
+  .cv-side h3, .cv-main h2 { color: var(--cv-navy); font-weight: 400; }
+  .cv-side h3 { font-size: 14pt; margin: 0 0 4mm; padding-bottom: 2mm; border-bottom: 1px solid var(--cv-rule); }
   .cv-side .blk { margin-bottom: 9mm; }
-  .cv-side .row { margin-bottom: 3mm; font-size: 8.6pt; line-height: 1.45; }
-  .cv-side .row b { display: block; color: #fff; font-weight: 600; }
-  .cv-lang { margin-bottom: 3mm; }
-  .cv-lang .nm { font-size: 8.6pt; display: flex; justify-content: space-between; }
-  .cv-bar { height: 3px; background: rgba(255,255,255,.25); border-radius: 2px; margin-top: 2px; }
-  .cv-bar > i { display: block; height: 100%; background: #fff; border-radius: 2px; }
-  .cv-name { font-family: 'Fraunces', Georgia, serif; font-size: 22pt; line-height: 1.05; color: var(--accent-deep); }
-  .cv-headline { font-size: 11pt; color: var(--muted); margin-top: 1mm; margin-bottom: 7mm; }
-  .cv-main h2 { font-size: 12pt; color: var(--accent); text-transform: uppercase; letter-spacing: .03em; margin: 0 0 3mm; padding-bottom: 1.5mm; border-bottom: 2px solid var(--accent-tint); }
-  .cv-section { margin-bottom: 7mm; }
-  .cv-entry { margin-bottom: 4.5mm; break-inside: avoid; }
-  .cv-entry .er { display: flex; justify-content: space-between; gap: 6mm; }
-  .cv-entry .ti { font-weight: 700; font-size: 9.6pt; color: var(--ink); }
-  .cv-entry .inst { font-size: 9pt; color: var(--ink2); }
-  .cv-entry .dt { font-size: 8.4pt; color: var(--muted); white-space: nowrap; }
-  .cv-entry ul { margin: 1.5mm 0 0; padding-left: 4mm; }
-  .cv-entry li { font-size: 8.8pt; line-height: 1.4; margin-bottom: .8mm; }
-  .cv-entry p.desc { font-size: 8.8pt; line-height: 1.4; margin: 1mm 0 0; color: var(--ink2); }
+  .cv-crow { display: flex; align-items: flex-start; gap: 3.5mm; margin-bottom: 3.5mm; font-size: 9.5pt; line-height: 1.35; color: var(--cv-ink); }
+  .cv-crow svg { width: 4.6mm; height: 4.6mm; flex: 0 0 auto; margin-top: .4mm; fill: var(--cv-navy); }
+  .cv-cert { margin-bottom: 4mm; }
+  .cv-cert b { display: block; font-weight: 700; font-size: 9.5pt; color: var(--cv-ink); }
+  .cv-cert span { font-size: 9pt; color: #3a3a3a; }
+  .cv-int { display: flex; align-items: flex-start; gap: 3mm; margin-bottom: 2.5mm; font-size: 9.5pt; }
+  .cv-int i { width: 2.6mm; height: 2.6mm; background: var(--cv-navy); flex: 0 0 auto; margin-top: 1.2mm; }
+  .cv-lang { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3mm; font-size: 9.5pt; }
+  .cv-dots { display: flex; gap: 1.4mm; }
+  .cv-dots i { width: 2.6mm; height: 2.6mm; border-radius: 50%; background: var(--cv-navy); display: inline-block; }
+  .cv-dots i.off { background: #c3c9d6; }
+  .cv-name { font-size: 30pt; line-height: 1.02; color: var(--cv-navy); font-weight: 700; }
+  .cv-headline { font-size: 11.5pt; color: #4a4a4a; margin-top: 2mm; margin-bottom: 8mm; }
+  .cv-main h2 { font-size: 16pt; margin: 0 0 4mm; padding-bottom: 2mm; border-bottom: 1px solid var(--cv-rule); }
+  .cv-section { margin-bottom: 8mm; }
+  .cv-entry { margin-bottom: 5mm; break-inside: avoid; }
+  .cv-entry .er { display: flex; justify-content: space-between; align-items: baseline; gap: 8mm; }
+  .cv-entry .ti { font-weight: 700; font-size: 10pt; color: var(--cv-ink); }
+  .cv-entry .inst { font-size: 10pt; color: var(--cv-link); margin-top: .4mm; }
+  .cv-entry .sub { font-size: 10pt; color: var(--cv-ink); margin-top: .4mm; }
+  .cv-entry .dt { font-weight: 700; font-size: 10pt; color: var(--cv-navy); white-space: nowrap; text-align: right; }
+  .cv-entry ul { margin: 2mm 0 0; padding-left: 5mm; list-style: none; }
+  .cv-entry li { font-size: 9.6pt; line-height: 1.4; margin-bottom: 1mm; position: relative; }
+  .cv-entry li::before { content: ''; position: absolute; left: -4mm; top: 1.6mm; width: 1.5mm; height: 1.5mm; border-radius: 50%; background: var(--cv-navy); }
+  .cv-entry p.desc { font-size: 9.6pt; line-height: 1.4; margin: 1.5mm 0 0; color: var(--cv-ink); }
+  .cv-ref { margin-bottom: 4.5mm; break-inside: avoid; }
+  .cv-ref b { display: block; font-weight: 700; font-size: 10pt; color: var(--cv-ink); }
+  .cv-ref span { font-size: 10pt; color: var(--cv-link); }
   .empty-ph { color: #b7c0c6; font-style: italic; }
 
   /* ── AI review panel ───────────────────────────────────────── */
@@ -172,18 +190,34 @@
   .histrow .nm { flex: 1; font-weight: 600; font-size: 13px; }
   .histrow .dt { font-size: 11px; color: var(--muted); }
 
+  /* Bande latérale (liseré marine + fond clair). Masquée à l'écran (le dégradé de
+     .sheet suffit) ; à l'impression elle devient un élément FIXE, que Chrome repeint
+     sur CHAQUE page → la bande remplit toute la hauteur de toutes les pages, y compris
+     la dernière (comme le gabarit de référence). */
+  .cv-band { display: none; }
+
   /* ── Print : seul le CV ──────────────────────────────────── */
   @media print {
     @page { size: A4; margin: 0; }
     .toolbar, .editor, .drawer, .overlay, .modal, .previewWrap > .printNote { display: none !important; }
+    /* Tout transparent → le papier (blanc) apparaît à droite et la bande FIXE apparaît à
+       gauche sur chaque page. Un fond blanc opaque masquerait la bande (z-index négatif). */
+    html, body { background: transparent; }
     .layout { display: block; height: auto; }
-    .previewWrap { padding: 0; background: #fff; display: block; }
-    .sheet { box-shadow: none; width: 210mm; min-height: 297mm; margin: 0; }
+    .previewWrap { padding: 0; background: transparent; display: block; }
+    /* On retire le dégradé de .sheet (il s'arrête avec le contenu) : la bande fixe prend le relais. */
+    .sheet { box-shadow: none; width: 210mm; min-height: 297mm; margin: 0; background: transparent; }
+    .cv-band {
+      display: block; position: fixed; top: 0; bottom: 0; left: 0; width: 62mm; z-index: -1;
+      background: linear-gradient(to right, var(--cv-edge) 0, var(--cv-edge) 8mm, var(--cv-side-bg) 8mm, var(--cv-side-bg) 62mm);
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
   }
   .printNote { font-size: 12px; color: var(--muted); }
 </style>
 </head>
 <body>
+  <div class="cv-band" aria-hidden="true"></div>
   <div class="toolbar">
     <button class="btn" id="btn-new">＋ Nouveau</button>
     <button class="btn" id="btn-example">Charger un exemple</button>
@@ -550,73 +584,105 @@
   //  PREVIEW (A4)
   // ════════════════════════════════════════════════════════════════════════
   function esc(s) { return (s == null ? '' : String(s)).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
-  function dates(a, b, cur) { var e = cur ? 'présent' : (b || ''); return [a || '', e].filter(Boolean).join(' – '); }
+  function ml(s) { return esc(s).replace(/\n/g, '<br>'); } // conserve les retours à la ligne d'une description
+
+  // Format calqué sur le gabarit : « de {début} à {fin} », « de {début} à ce jour »,
+  // ou « {début} » seul quand aucune fin n'est saisie.
+  function dates(a, b, cur) {
+    a = (a || '').trim(); b = (b || '').trim();
+    if (cur && a) return 'de ' + a + ' à ce jour';
+    if (a && b) return 'de ' + a + ' à ' + b;
+    return a || b || '';
+  }
+
+  // Petites icônes de la colonne « Informations personnelles » (SVG inline, teinte marine).
+  var ICO = {
+    user: '<svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5 0-9 2.5-9 6v2h18v-2c0-3.5-4-6-9-6Z"/></svg>',
+    mail: '<svg viewBox="0 0 24 24"><path d="M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm9 7 8-5H4l8 5Zm0 2L4 9v8h16V9l-8 5Z"/></svg>',
+    phone: '<svg viewBox="0 0 24 24"><path d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24 11 11 0 0 0 3.4.55 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11 11 0 0 0 .55 3.4 1 1 0 0 1-.25 1l-2.2 2.4Z"/></svg>',
+    home: '<svg viewBox="0 0 24 24"><path d="M12 3 2 11h3v9h5v-6h4v6h5v-9h3L12 3Z"/></svg>',
+    flag: '<svg viewBox="0 0 24 24"><path d="M5 3v18H3V3h2Zm2 1h13l-3 4 3 4H7V4Z"/></svg>',
+    globe: '<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm6.9 6h-2.5a15 15 0 0 0-1.2-3.3A8 8 0 0 1 18.9 8ZM12 4c.8 1 1.5 2.4 1.9 4h-3.8C10.5 6.4 11.2 5 12 4ZM4.3 14a8 8 0 0 1 0-4h2.9a17 17 0 0 0 0 4H4.3Zm.8 2h2.5a15 15 0 0 0 1.2 3.3A8 8 0 0 1 5.1 16Zm2.5-8H5.1a8 8 0 0 1 3.7-3.3A15 15 0 0 0 7.6 8ZM12 20c-.8-1-1.5-2.4-1.9-4h3.8c-.4 1.6-1.1 3-1.9 4Zm2.3-6H9.7a15 15 0 0 1 0-4h4.6a15 15 0 0 1 0 4Zm.6 5.3a15 15 0 0 0 1.2-3.3h2.5a8 8 0 0 1-3.7 3.3ZM16.8 14a17 17 0 0 0 0-4h2.9a8 8 0 0 1 0 4h-2.9Z"/></svg>'
+  };
 
   function renderPreview() {
     var p = cv.personalInfo;
     var side = [];
     if (p.photoUrl) side.push('<img class="cv-photo" src="' + p.photoUrl + '" alt="" />');
 
-    // Coordonnées
-    var contact = [];
-    if (p.email) contact.push('<div class="row"><b>Email</b>' + esc(p.email) + '</div>');
-    if (p.phone) contact.push('<div class="row"><b>Téléphone</b>' + esc(p.phone) + '</div>');
+    // ── Informations personnelles (nom + coordonnées, avec icônes) ──
+    var name = [p.firstName, p.lastName].filter(Boolean).join(' ');
     var loc = [p.city, p.country].filter(Boolean).join(', ');
-    if (loc) contact.push('<div class="row"><b>Localisation</b>' + esc(loc) + '</div>');
-    if (p.nationality) contact.push('<div class="row"><b>Nationalité</b>' + esc(p.nationality) + '</div>');
-    if (p.website) contact.push('<div class="row"><b>Site</b>' + esc(p.website) + '</div>');
-    if (contact.length) side.push('<div class="blk"><h3>Contact</h3>' + contact.join('') + '</div>');
+    function crow(icon, val) { return val ? '<div class="cv-crow">' + ICO[icon] + '<span>' + esc(val) + '</span></div>' : ''; }
+    var info = crow('user', name) + crow('mail', p.email) + crow('phone', p.phone) + crow('home', loc) + crow('flag', p.nationality) + crow('globe', p.website);
+    if (info) side.push('<div class="blk"><h3>Informations personnelles</h3>' + info + '</div>');
 
+    // ── Certificats ──
     if (cv.certificates.length) {
       side.push('<div class="blk"><h3>Certificats</h3>' + cv.certificates.map(function (c) {
-        return '<div class="row"><b>' + esc(c.title) + '</b>' + [c.subtitle, c.score, c.date].filter(Boolean).map(esc).join(' · ') + '</div>';
+        var sub = [c.subtitle, c.score, c.date].filter(Boolean).map(esc).join(' — ');
+        return '<div class="cv-cert"><b>' + esc(c.title) + '</b>' + (sub ? '<span>' + sub + '</span>' : '') + '</div>';
       }).join('') + '</div>');
     }
+
+    // ── Centres d'intérêt ──
+    var ints = cv.interests.filter(function (i) { return i.label; });
+    if (ints.length) {
+      side.push('<div class="blk"><h3>Centres d’intérêt</h3>' + ints.map(function (i) {
+        return '<div class="cv-int"><i></i><span>' + esc(i.label) + '</span></div>';
+      }).join('') + '</div>');
+    }
+
+    // ── Langues (nom + 5 pastilles) ──
     if (cv.languages.length) {
       side.push('<div class="blk"><h3>Langues</h3>' + cv.languages.map(function (l) {
-        var pct = Math.max(0, Math.min(5, l.level || 0)) / 5 * 100;
-        return '<div class="cv-lang"><div class="nm"><span>' + esc(l.name) + '</span><span>' + esc(l.levelLabel || '') + '</span></div><div class="cv-bar"><i style="width:' + pct + '%"></i></div></div>';
-      }).join('') + '</div>');
-    }
-    if (cv.interests.length) {
-      side.push('<div class="blk"><h3>Centres d’intérêt</h3>' + cv.interests.filter(function (i) { return i.label; }).map(function (i) {
-        return '<div class="row">' + esc(i.label) + '</div>';
+        var n = Math.max(0, Math.min(5, l.level || 0)); var dots = '';
+        for (var k = 1; k <= 5; k++) dots += '<i class="' + (k <= n ? '' : 'off') + '"></i>';
+        return '<div class="cv-lang"><span>' + esc(l.name) + '</span><span class="cv-dots">' + dots + '</span></div>';
       }).join('') + '</div>');
     }
 
-    // Main
+    // ── Colonne principale ──
     var main = [];
-    var name = [p.firstName, p.lastName].filter(Boolean).join(' ') || '<span class="empty-ph">Votre nom</span>';
-    main.push('<div class="cv-name">' + (p.firstName || p.lastName ? esc([p.firstName, p.lastName].filter(Boolean).join(' ')) : '<span class="empty-ph">Votre nom</span>') + '</div>');
-    main.push('<div class="cv-headline">' + (p.headline ? esc(p.headline) : '<span class="empty-ph">Titre professionnel</span>') + '</div>');
+    main.push('<div class="cv-name">' + (name ? esc(name) : '<span class="empty-ph">Votre nom</span>') + '</div>');
+    var head = p.headline || cv.summary;
+    main.push('<div class="cv-headline">' + (head ? esc(head) : '<span class="empty-ph">Titre / sous-titre</span>') + '</div>');
 
-    if (cv.summary) main.push('<div class="cv-section"><h2>Profil</h2><p class="desc">' + esc(cv.summary) + '</p></div>');
-
-    function entries(title, arr, fmt) {
+    function section(title, arr, fmt) {
       if (!arr.length) return '';
       return '<div class="cv-section"><h2>' + title + '</h2>' + arr.map(fmt).join('') + '</div>';
     }
-    main.push(entries('Expérience professionnelle', cv.experiences, function (e) {
-      var b = (e.bullets || []).filter(Boolean);
-      return '<div class="cv-entry"><div class="er"><div><div class="ti">' + esc(e.title) + '</div><div class="inst">' + [e.institution, e.location].filter(Boolean).map(esc).join(' · ') + '</div></div><div class="dt">' + esc(dates(e.startDate, e.endDate, e.isCurrent)) + '</div></div>'
-        + (e.description ? '<p class="desc">' + esc(e.description) + '</p>' : '')
-        + (b.length ? '<ul>' + b.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '') + '</div>';
+    function bullets(list) {
+      var b = (list || []).filter(Boolean);
+      return b.length ? '<ul>' + b.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '';
+    }
+    function head2(title, inst, date, sub) {
+      return '<div class="er"><div><div class="ti">' + esc(title) + '</div>'
+        + (inst ? '<div class="inst">' + esc(inst) + '</div>' : '')
+        + (sub ? '<div class="sub">' + esc(sub) + '</div>' : '')
+        + '</div>' + (date ? '<div class="dt">' + esc(date) + '</div>' : '') + '</div>';
+    }
+
+    main.push(section('Expérience professionnelle', cv.experiences, function (e) {
+      return '<div class="cv-entry">' + head2(e.title, [e.institution, e.location].filter(Boolean).join(', '), dates(e.startDate, e.endDate, e.isCurrent), '')
+        + (e.description ? '<p class="desc">' + ml(e.description) + '</p>' : '') + bullets(e.bullets) + '</div>';
     }));
-    main.push(entries('Formation', cv.education, function (e) {
-      return '<div class="cv-entry"><div class="er"><div><div class="ti">' + esc(e.degree) + '</div><div class="inst">' + [e.institution, e.location].filter(Boolean).map(esc).join(' · ') + '</div></div><div class="dt">' + esc(dates(e.startDate, e.endDate, false)) + '</div></div>'
-        + (e.description ? '<p class="desc">' + esc(e.description) + '</p>' : '') + '</div>';
+    main.push(section('Formation', cv.education, function (e) {
+      return '<div class="cv-entry">' + head2(e.degree, [e.institution, e.location].filter(Boolean).join(', '), dates(e.startDate, e.endDate, false), '')
+        + (e.description ? '<p class="desc">' + ml(e.description) + '</p>' : '') + bullets(e.bullets) + '</div>';
     }));
-    main.push(entries('Recherche clinique', cv.researchProjects, function (e) {
-      var b = (e.bullets || []).filter(Boolean);
-      return '<div class="cv-entry"><div class="er"><div><div class="ti">' + esc(e.title) + '</div><div class="inst">' + [e.institution, e.department].filter(Boolean).map(esc).join(' · ') + '</div></div><div class="dt">' + esc(dates(e.startDate, e.endDate, e.isCurrent)) + '</div></div>'
-        + (b.length ? '<ul>' + b.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '') + '</div>';
+    main.push(section('Références', cv.references, function (r) {
+      var d = [r.title, r.institution, r.location, r.phone, r.email].filter(Boolean).map(esc).join(', ');
+      return '<div class="cv-ref"><b>' + esc(r.name) + '</b>' + (d ? '<span>' + d + '</span>' : '') + '</div>';
     }));
-    main.push(entries('Projets personnels', cv.personalProjects, function (e) {
-      return '<div class="cv-entry"><div class="ti">' + esc(e.title) + (e.url ? ' <span class="dt">' + esc(e.url) + '</span>' : '') + '</div>' + (e.description ? '<p class="desc">' + esc(e.description) + '</p>' : '') + '</div>';
+    main.push(section('Projets de Recherche Clinique', cv.researchProjects, function (e) {
+      return '<div class="cv-entry">' + head2(e.title, e.institution, dates(e.startDate, e.endDate, e.isCurrent), e.department)
+        + bullets(e.bullets) + '</div>';
     }));
-    main.push(entries('Références', cv.references, function (r) {
-      return '<div class="cv-entry"><div class="ti">' + esc(r.name) + '</div><div class="inst">' + [r.title, r.institution, r.location].filter(Boolean).map(esc).join(' · ') + '</div>'
-        + ((r.phone || r.email) ? '<div class="dt">' + [r.phone, r.email].filter(Boolean).map(esc).join(' · ') + '</div>' : '') + '</div>';
+    main.push(section('Projet Personnel', cv.personalProjects, function (e) {
+      return '<div class="cv-entry"><div class="ti">' + esc(e.title) + '</div>'
+        + (e.description ? '<p class="desc">' + ml(e.description) + '</p>' : '')
+        + (e.url ? '<p class="desc">lien : ' + esc(e.url) + '</p>' : '') + '</div>';
     }));
 
     document.getElementById('sheet').innerHTML =
