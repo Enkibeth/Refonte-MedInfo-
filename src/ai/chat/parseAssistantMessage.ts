@@ -412,6 +412,16 @@ function superscriptOf(num: string): string {
   return [...num].map((d) => SUPERSCRIPT_DIGITS[Number(d)] ?? d).join('');
 }
 
+/** Regex d'un exposant complet (un seul SRCn, jamais coupé par un espace). */
+export const SUPERSCRIPT_RUN_RE = /^[⁰¹²³⁴⁵⁶⁷⁸⁹]+$/;
+
+/** Inverse de `superscriptOf` : reconstruit l'identifiant SRCn depuis son exposant affiché. */
+export function sourceIdFromSuperscript(sup: string): string | null {
+  const digits = [...sup].map((c) => SUPERSCRIPT_DIGITS.indexOf(c as (typeof SUPERSCRIPT_DIGITS)[number]));
+  if (digits.some((d) => d < 0)) return null;
+  return `SRC${digits.join('')}`;
+}
+
 /**
  * Remplace les références inline imposées par les prompts — `(SRC1)`, `(SRC1, SRC2)`,
  * `(Classe I · SRC1)`, `SRC3` isolé — par des appels de note en exposant : ¹, ¹ ²,

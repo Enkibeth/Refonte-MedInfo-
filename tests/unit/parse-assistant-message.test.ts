@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import {
   formatInlineCitations,
   parseAssistantMessage,
+  sourceIdFromSuperscript,
   splitBodySections,
   isUppercaseHeading,
 } from '@/ai/chat/parseAssistantMessage';
@@ -302,6 +303,27 @@ describe('formatInlineCitations — (SRCx) → appels de note en exposant', () =
   it('laisse intact un texte sans référence', () => {
     const text = 'Réponse normale (avec parenthèses) et **du gras**.';
     expect(formatInlineCitations(text)).toBe(text);
+  });
+});
+
+describe('sourceIdFromSuperscript — clic sur une référence inline → source', () => {
+  it('retrouve le SRCn depuis un exposant simple', () => {
+    expect(sourceIdFromSuperscript('¹')).toBe('SRC1');
+    expect(sourceIdFromSuperscript('⁵')).toBe('SRC5');
+  });
+
+  it('retrouve un SRCn à plusieurs chiffres', () => {
+    expect(sourceIdFromSuperscript('¹²')).toBe('SRC12');
+  });
+
+  it('reste cohérent avec formatInlineCitations pour un round-trip', () => {
+    const rendered = formatInlineCitations('Point clé. (SRC5)');
+    const superscript = rendered.slice(-1);
+    expect(sourceIdFromSuperscript(superscript)).toBe('SRC5');
+  });
+
+  it("renvoie null si le texte n'est pas un exposant valide", () => {
+    expect(sourceIdFromSuperscript('abc')).toBeNull();
   });
 });
 

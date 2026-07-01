@@ -4,12 +4,17 @@
  * Transforme le texte structuré imposé par les prompts v3 en éléments visuels :
  *   - titres MAJUSCULES → en-têtes de section ;
  *   - SOURCES → cartes cliquables avec badge (OFFICIEL / GUIDELINE / ÉTUDE / RCP) ;
- *   - APPROFONDISSEMENTS → boutons « aller plus loin » ;
+ *   - références inline (¹ ²…) dans le corps → cliquables, ouvrent la même modale de source ;
+ *   - APPROFONDISSEMENTS → propositions à cocher, envoi groupé quand l'utilisateur le décide ;
  *   - QUESTIONS_PATIENT → formulaire 3 questions à choix multiples (1 envoi groupé) ;
- *   - INTERACTION → boutons d'action rapide (format public et pro) ;
+ *   - INTERACTION → propositions à cocher (format public et pro), envoi groupé ;
  *   - AUTO-RÉFLEXION → carte repliable discrète ;
- *   - <!--CALC:…--> → puces de scores cliniques ;
- *   - [1] + [2] + [3] (étudiant) → boutons d'approfondissement numérotés.
+ *   - <!--CALC:…--> → scores cliniques à cocher, envoi groupé ;
+ *   - [1] + [2] + [3] (étudiant) → propositions à cocher, envoi groupé.
+ *
+ * Les blocs de propositions (approfondissements / interaction / calc / relances étudiant)
+ * ne déclenchent jamais d'envoi au premier clic : cocher bascule la sélection, un bouton
+ * « Envoyer (N) » explicite déclenche l'envoi groupé — cohérent avec QUESTIONS_PATIENT.
  */
 import { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -17,6 +22,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import {
   formatInlineCitations,
   parseAssistantMessage,
+  sourceIdFromSuperscript,
   splitBodySections,
   type DeepeningItem,
   type InteractionGroup,
@@ -111,6 +117,45 @@ export function SourcesBlock({
   );
 }
 
+// ── Sélection à cocher + envoi groupé ─────────────────────────────────────────
+// Motif commun à tous les blocs de propositions (approfondissements, interaction,
+// scores, relances étudiant) : on coche une ou plusieurs propositions, puis on
+// choisit soi-même quand les envoyer — plus d'envoi immédiat au premier clic.
+
+function CheckToggle({ checked }: { checked: boolean }) {
+  return (
+    <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
+      {checked ? <Icon name="check" size={12} color={tokens.colors.onAccent} /> : null}
+    </View>
+  );
+}
+
+function SendSelectionButton({
+  count,
+  sent,
+  disabled,
+  onPress,
+}: {
+  count: number;
+  sent: boolean;
+  disabled: boolean;
+  onPress: () => void;
+}) {
+  if (count === 0 && !sent) return null;
+  return (
+    <TouchableOpacity
+      style={[styles.submitButton, (sent || disabled) && styles.submitButtonDisabled]}
+      onPress={onPress}
+      disabled={sent || disabled}
+      accessibilityRole="button"
+    >
+      <Text style={styles.submitButtonText}>
+        {sent ? 'Envoyé' : `Envoyer (${count})`}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
 // ── Approfondissements ────────────────────────────────────────────────────────
 
 function DeepeningBlock({
@@ -122,26 +167,53 @@ function DeepeningBlock({
   onSend: (text: string) => void;
   disabled: boolean;
 }) {
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [sent, setSent] = useState(false);
+
+  const toggle = (i: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  };
+
+  const submit = () => {
+    if (selected.size === 0) return;
+    const text = items
+      .filter((_, i) => selected.has(i))
+      .map((item) => item.question)
+      .join('\n');
+    setSent(true);
+    onSend(text);
+  };
+
   return (
     <View style={styles.deepeningWrapper}>
       <Text style={styles.blockLabel}>Pour aller plus loin</Text>
-      {items.map((item, i) => (
-        <TouchableOpacity
-          key={i}
-          style={styles.deepeningButton}
-          onPress={() => onSend(item.question)}
-          disabled={disabled}
-          accessibilityRole="button"
-        >
-          <View style={styles.deepeningTextBlock}>
-            <Text style={styles.deepeningTitle}>{item.title}</Text>
-            {item.description ? (
-              <Text style={styles.deepeningDescription}>{item.description}</Text>
-            ) : null}
-          </View>
-          <Icon name="arrowRight" size={16} color={tokens.colors.accent} />
-        </TouchableOpacity>
-      ))}
+      {items.map((item, i) => {
+        const checked = selected.has(i);
+        return (
+          <TouchableOpacity
+            key={i}
+            style={[styles.deepeningButton, checked && styles.deepeningButtonSelected]}
+            onPress={() => toggle(i)}
+            disabled={disabled || sent}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked }}
+          >
+            <CheckToggle checked={checked} />
+            <View style={styles.deepeningTextBlock}>
+              <Text style={styles.deepeningTitle}>{item.title}</Text>
+              {item.description ? (
+                <Text style={styles.deepeningDescription}>{item.description}</Text>
+              ) : null}
+            </View>
+          </TouchableOpacity>
+        );
+      })}
+      <SendSelectionButton count={selected.size} sent={sent} disabled={disabled} onPress={submit} />
     </View>
   );
 }
@@ -224,26 +296,60 @@ function InteractionBlock({
   onSend: (text: string) => void;
   disabled: boolean;
 }) {
+  const [selected, setSelected] = useState<Record<number, Set<string>>>({});
+  const [sent, setSent] = useState(false);
+  const count = Object.values(selected).reduce((n, s) => n + s.size, 0);
+
+  const toggle = (gi: number, opt: string) => {
+    setSelected((prev) => {
+      const current = new Set(prev[gi] ?? []);
+      if (current.has(opt)) current.delete(opt);
+      else current.add(opt);
+      return { ...prev, [gi]: current };
+    });
+  };
+
+  const submit = () => {
+    const parts = groups
+      .map((group, gi) => {
+        const opts = [...(selected[gi] ?? [])];
+        if (opts.length === 0) return null;
+        return group.question ? `${group.question} → ${opts.join(', ')}` : opts.join(', ');
+      })
+      .filter((p): p is string => !!p);
+    if (parts.length === 0) return;
+    setSent(true);
+    onSend(parts.join('\n'));
+  };
+
   return (
     <View style={styles.interactionWrapper}>
       {groups.map((group, gi) => (
         <View key={gi} style={styles.interactionGroup}>
           {group.question ? <Text style={styles.interactionQuestion}>{group.question}</Text> : null}
           <View style={styles.optionsRow}>
-            {group.options.map((opt) => (
-              <TouchableOpacity
-                key={opt}
-                style={styles.actionButton}
-                onPress={() => onSend(group.question ? `${group.question} → ${opt}` : opt)}
-                disabled={disabled}
-                accessibilityRole="button"
-              >
-                <Text style={styles.actionButtonText}>{opt}</Text>
-              </TouchableOpacity>
-            ))}
+            {group.options.map((opt) => {
+              const checked = selected[gi]?.has(opt) ?? false;
+              return (
+                <TouchableOpacity
+                  key={opt}
+                  style={[styles.actionButton, checked && styles.actionButtonSelected]}
+                  onPress={() => toggle(gi, opt)}
+                  disabled={disabled || sent}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked }}
+                >
+                  <CheckToggle checked={checked} />
+                  <Text style={[styles.actionButtonText, checked && styles.actionButtonTextSelected]}>
+                    {opt}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
       ))}
+      <SendSelectionButton count={count} sent={sent} disabled={disabled} onPress={submit} />
     </View>
   );
 }
@@ -259,24 +365,48 @@ function FollowupsBlock({
   onSend: (text: string) => void;
   disabled: boolean;
 }) {
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [sent, setSent] = useState(false);
+
+  const toggle = (i: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  };
+
+  const submit = () => {
+    if (selected.size === 0) return;
+    const text = questions.filter((_, i) => selected.has(i)).join('\n');
+    setSent(true);
+    onSend(text);
+  };
+
   return (
     <View style={styles.deepeningWrapper}>
       <Text style={styles.blockLabel}>Approfondir</Text>
-      {questions.map((q, i) => (
-        <TouchableOpacity
-          key={i}
-          style={styles.deepeningButton}
-          onPress={() => onSend(q)}
-          disabled={disabled}
-          accessibilityRole="button"
-        >
-          <View style={styles.followupIndex}>
-            <Text style={styles.followupIndexText}>{i + 1}</Text>
-          </View>
-          <Text style={styles.followupQuestion}>{q}</Text>
-          <Icon name="arrowRight" size={16} color={tokens.colors.accent} />
-        </TouchableOpacity>
-      ))}
+      {questions.map((q, i) => {
+        const checked = selected.has(i);
+        return (
+          <TouchableOpacity
+            key={i}
+            style={[styles.deepeningButton, checked && styles.deepeningButtonSelected]}
+            onPress={() => toggle(i)}
+            disabled={disabled || sent}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked }}
+          >
+            <CheckToggle checked={checked} />
+            <View style={styles.followupIndex}>
+              <Text style={styles.followupIndexText}>{i + 1}</Text>
+            </View>
+            <Text style={styles.followupQuestion}>{q}</Text>
+          </TouchableOpacity>
+        );
+      })}
+      <SendSelectionButton count={selected.size} sent={sent} disabled={disabled} onPress={submit} />
     </View>
   );
 }
@@ -322,34 +452,79 @@ function CalcBlock({
   onSend: (text: string) => void;
   disabled: boolean;
 }) {
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [sent, setSent] = useState(false);
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const submit = () => {
+    const labels = ids.filter((id) => selected.has(id)).map((id) => CALC_LABELS[id] ?? id.toUpperCase());
+    if (labels.length === 0) return;
+    const text =
+      labels.length === 1
+        ? `Calcule avec moi le score ${labels[0]} : pose-moi les questions item par item.`
+        : `Calcule avec moi les scores suivants : ${labels.join(', ')} : pose-moi les questions item par item pour chacun.`;
+    setSent(true);
+    onSend(text);
+  };
+
   return (
     <View style={styles.calcWrapper}>
       <Text style={styles.blockLabel}>Scores cliniques suggérés</Text>
       <View style={styles.optionsRow}>
         {ids.map((id) => {
           const label = CALC_LABELS[id] ?? id.toUpperCase();
+          const checked = selected.has(id);
           return (
             <TouchableOpacity
               key={id}
-              style={styles.calcChip}
-              onPress={() => onSend(`Calcule avec moi le score ${label} : pose-moi les questions item par item.`)}
-              disabled={disabled}
-              accessibilityRole="button"
+              style={[styles.calcChip, checked && styles.calcChipSelected]}
+              onPress={() => toggle(id)}
+              disabled={disabled || sent}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked }}
             >
+              <CheckToggle checked={checked} />
               <Icon name="calculator" size={14} color={tokens.colors.accentDeep} />
               <Text style={styles.calcChipText}>{label}</Text>
             </TouchableOpacity>
           );
         })}
       </View>
+      <SendSelectionButton count={selected.size} sent={sent} disabled={disabled} onPress={submit} />
     </View>
   );
 }
 
 // ── AUTO-RÉFLEXION ────────────────────────────────────────────────────────────
 
-function ReflectionBlock({ markdown }: { markdown: string }) {
+/** Résout l'exposant affiché (ex. "¹") vers la source correspondante, si connue. */
+function useCitationResolver(sources: ParsedSource[], onOpenSource: (s: ParsedSource) => void) {
+  return (superscript: string) => {
+    const id = sourceIdFromSuperscript(superscript);
+    const source = id ? sources.find((s) => s.id === id) : undefined;
+    if (source) onOpenSource(source);
+  };
+}
+
+function ReflectionBlock({
+  markdown,
+  sources,
+  onOpenSource,
+}: {
+  markdown: string;
+  sources: ParsedSource[];
+  onOpenSource: (s: ParsedSource) => void;
+}) {
   const [open, setOpen] = useState(false);
+  const onCitationPress = useCitationResolver(sources, onOpenSource);
   return (
     <View style={styles.reflectionWrapper}>
       <TouchableOpacity
@@ -365,7 +540,7 @@ function ReflectionBlock({ markdown }: { markdown: string }) {
       </TouchableOpacity>
       {open ? (
         <View style={styles.reflectionBody}>
-          <MarkdownRenderer text={formatInlineCitations(markdown)} />
+          <MarkdownRenderer text={formatInlineCitations(markdown)} onCitationPress={onCitationPress} />
         </View>
       ) : null}
     </View>
@@ -374,10 +549,19 @@ function ReflectionBlock({ markdown }: { markdown: string }) {
 
 // ── Corps avec titres MAJUSCULES ──────────────────────────────────────────────
 
-function BodyBlock({ markdown }: { markdown: string }) {
+function BodyBlock({
+  markdown,
+  sources,
+  onOpenSource,
+}: {
+  markdown: string;
+  sources: ParsedSource[];
+  onOpenSource: (s: ParsedSource) => void;
+}) {
   // (SRCx) → appels de note en exposant, APRÈS le découpage en sections : un titre
   // MAJUSCULES contenant une référence resterait sinon non détecté (¹ hors classe).
   const sections = useMemo(() => splitBodySections(markdown), [markdown]);
+  const onCitationPress = useCitationResolver(sources, onOpenSource);
   return (
     <View style={styles.bodyWrapper}>
       {sections.map((section, i) => (
@@ -385,7 +569,9 @@ function BodyBlock({ markdown }: { markdown: string }) {
           {section.heading ? (
             <Text style={styles.sectionHeading}>{formatInlineCitations(section.heading)}</Text>
           ) : null}
-          {section.markdown ? <MarkdownRenderer text={formatInlineCitations(section.markdown)} /> : null}
+          {section.markdown ? (
+            <MarkdownRenderer text={formatInlineCitations(section.markdown)} onCitationPress={onCitationPress} />
+          ) : null}
         </View>
       ))}
     </View>
@@ -412,7 +598,9 @@ export function AssistantBlocks({
       {parsed.blocks.map((block, i) => {
         switch (block.type) {
           case 'body':
-            return <BodyBlock key={i} markdown={block.markdown} />;
+            return (
+              <BodyBlock key={i} markdown={block.markdown} sources={parsed.sources} onOpenSource={onOpenSource} />
+            );
           case 'sources':
             return <SourcesBlock key={i} sources={block.sources} onOpenSource={onOpenSource} />;
           case 'deepening':
@@ -424,7 +612,14 @@ export function AssistantBlocks({
           case 'interaction':
             return <InteractionBlock key={i} groups={block.groups} onSend={onSend} disabled={disabled} />;
           case 'reflection':
-            return <ReflectionBlock key={i} markdown={block.markdown} />;
+            return (
+              <ReflectionBlock
+                key={i}
+                markdown={block.markdown}
+                sources={parsed.sources}
+                onOpenSource={onOpenSource}
+              />
+            );
           case 'calc':
             return <CalcBlock key={i} ids={block.ids} onSend={onSend} disabled={disabled} />;
           case 'followups':
@@ -531,6 +726,22 @@ const styles = StyleSheet.create({
   },
   sourceUrl: { fontFamily: tokens.font.sans, color: tokens.colors.accent, fontSize: tokens.type.micro.fontSize },
 
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: tokens.radius.sm,
+    borderWidth: 1.5,
+    borderColor: tokens.colors.borderStrong,
+    backgroundColor: tokens.colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  checkboxChecked: {
+    borderColor: tokens.colors.accent,
+    backgroundColor: tokens.colors.accent,
+  },
+
   deepeningWrapper: { gap: tokens.space.sm, marginTop: tokens.space.xs },
   deepeningButton: {
     flexDirection: 'row',
@@ -543,6 +754,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.md,
     ...tokens.motion.transitionWeb,
+  },
+  deepeningButtonSelected: {
+    borderColor: tokens.colors.accent,
+    backgroundColor: tokens.colors.accentSurfaceStrong,
   },
   deepeningTextBlock: { flex: 1, gap: 2 },
   deepeningTitle: {
@@ -644,6 +859,9 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
   actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
     borderRadius: tokens.radius.pill,
     borderWidth: 1,
     borderColor: tokens.colors.accent,
@@ -652,11 +870,17 @@ const styles = StyleSheet.create({
     paddingVertical: tokens.space.sm + 1,
     ...tokens.motion.transitionWeb,
   },
+  actionButtonSelected: {
+    backgroundColor: tokens.colors.accentSurfaceStrong,
+  },
   actionButtonText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.accentDeep,
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.medium,
+  },
+  actionButtonTextSelected: {
+    fontWeight: tokens.weight.semibold,
   },
 
   calcWrapper: { gap: tokens.space.sm, marginTop: tokens.space.xs },
@@ -670,6 +894,10 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.accentSurface,
     paddingHorizontal: tokens.space.md,
     paddingVertical: 6,
+  },
+  calcChipSelected: {
+    borderColor: tokens.colors.accent,
+    backgroundColor: tokens.colors.accentSurfaceStrong,
   },
   calcChipText: {
     fontFamily: tokens.font.sans,

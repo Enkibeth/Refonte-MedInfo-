@@ -40,15 +40,18 @@ function footnoteNumber(url: string, reg: FootnoteRegistry): number {
   return idx + 1;
 }
 
-// bold | code | lien markdown (parenthèses englobantes éventuelles absorbées).
-const INLINE_RE = /(\*\*[^*]+\*\*|`[^`]+`|\(?\s*\[[^\]]+\]\(https?:\/\/[^\s)]+\)\s*\)?)/g;
+// bold | code | lien markdown (parenthèses englobantes éventuelles absorbées) | exposant de citation (¹ ²…).
+const INLINE_RE =
+  /(\*\*[^*]+\*\*|`[^`]+`|\(?\s*\[[^\]]+\]\(https?:\/\/[^\s)]+\)\s*\)?|[⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g;
 const LINK_URL_RE = /\[[^\]]+\]\((https?:\/\/[^\s)]+)\)/;
+const SUPERSCRIPT_SEG_RE = /^[⁰¹²³⁴⁵⁶⁷⁸⁹]+$/;
 
 function parseInline(
   text: string,
   base: object,
   reg: FootnoteRegistry,
   key?: string,
+  onCitationPress?: (superscript: string) => void,
 ): React.ReactNode {
   return (
     <Text key={key} style={base}>
@@ -83,6 +86,19 @@ function parseInline(
               accessibilityLabel={`Source ${num}`}
             >
               {num}
+            </Text>
+          );
+        }
+        if (onCitationPress && SUPERSCRIPT_SEG_RE.test(seg)) {
+          return (
+            <Text
+              key={i}
+              style={inlineStyles.footnote}
+              onPress={() => onCitationPress(seg)}
+              accessibilityRole="link"
+              accessibilityLabel={`Voir la source ${seg}`}
+            >
+              {seg}
             </Text>
           );
         }
@@ -255,9 +271,12 @@ function TableBlock({ rows }: { rows: TableRow[] }) {
 export function MarkdownRenderer({
   text,
   onDark = false,
+  onCitationPress,
 }: {
   text: string;
   onDark?: boolean;
+  /** Reçoit l'exposant affiché (ex. "¹") d'une référence inline cliquée — ouvre la source associée. */
+  onCitationPress?: (superscript: string) => void;
 }) {
   const blocks = useMemo(() => parseBlocks(text), [text]);
   const textColor = onDark ? tokens.colors.onAccent : tokens.colors.text;
@@ -272,10 +291,22 @@ export function MarkdownRenderer({
       {blocks.map((block, i) => {
         switch (block.kind) {
           case 'h2':
-            return parseInline(block.text, { ...mdStyles.h2, color: textColor }, footnotes, String(i));
+            return parseInline(
+              block.text,
+              { ...mdStyles.h2, color: textColor },
+              footnotes,
+              String(i),
+              onCitationPress,
+            );
 
           case 'h3':
-            return parseInline(block.text, { ...mdStyles.h3, color: textColor }, footnotes, String(i));
+            return parseInline(
+              block.text,
+              { ...mdStyles.h3, color: textColor },
+              footnotes,
+              String(i),
+              onCitationPress,
+            );
 
           case 'hr':
             return (
@@ -294,7 +325,13 @@ export function MarkdownRenderer({
                 <Text style={[mdStyles.bullet, { color: mutedColor }]}>
                   {block.ordered ? `${block.index}.` : '•'}
                 </Text>
-                {parseInline(block.text, { ...mdStyles.listText, color: textColor }, footnotes)}
+                {parseInline(
+                  block.text,
+                  { ...mdStyles.listText, color: textColor },
+                  footnotes,
+                  undefined,
+                  onCitationPress,
+                )}
               </View>
             );
 
@@ -317,7 +354,13 @@ export function MarkdownRenderer({
             );
 
           case 'paragraph':
-            return parseInline(block.text, { ...mdStyles.paragraph, color: textColor }, footnotes, String(i));
+            return parseInline(
+              block.text,
+              { ...mdStyles.paragraph, color: textColor },
+              footnotes,
+              String(i),
+              onCitationPress,
+            );
 
           case 'spacer':
             return <View key={i} style={mdStyles.spacer} />;
