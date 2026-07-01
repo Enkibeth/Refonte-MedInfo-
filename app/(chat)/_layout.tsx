@@ -124,6 +124,10 @@ export default function ChatLayout() {
         name="presentation"
         options={{ title: 'Présentations', href: hrefFor('presentation'), tabBarIcon: ({ focused }) => <TabIcon icon="presentation" focused={focused} /> }}
       />
+      <Tabs.Screen
+        name="cv-builder"
+        options={{ title: 'CV', href: hrefFor('cv-builder'), tabBarIcon: ({ focused }) => <TabIcon icon="idCard" focused={focused} /> }}
+      />
     </Tabs>
   );
 }

@@ -16,12 +16,12 @@ describe('featureVisibility — matrice stricte par rôle', () => {
     expect(idsFor('public')).toEqual(['chat', 'document']);
   });
 
-  it("l'étudiant voit Chat + ECOS + Partiel + Révisions + Présentations (pas Document ni Audio)", () => {
-    expect(idsFor('student')).toEqual(['chat', 'ecos', 'partiel', 'revision', 'presentation']);
+  it("l'étudiant voit Chat + ECOS + Partiel + Révisions + Présentations + CV (pas Document ni Audio)", () => {
+    expect(idsFor('student')).toEqual(['chat', 'ecos', 'partiel', 'revision', 'presentation', 'cv-builder']);
   });
 
-  it('le professionnel voit Chat + Audio + Présentations (pas ECOS/Partiel/Document)', () => {
-    expect(idsFor('professional')).toEqual(['chat', 'audio', 'presentation']);
+  it('le professionnel voit Chat + Audio + Présentations + CV (pas ECOS/Partiel/Document)', () => {
+    expect(idsFor('professional')).toEqual(['chat', 'audio', 'presentation', 'cv-builder']);
   });
 
   it("l'admin voit toutes les fonctionnalités", () => {
@@ -39,6 +39,13 @@ describe('featureVisibility — cloisonnement inter-rôles', () => {
     expect(isFeatureVisible('partiel', 'public')).toBe(false);
     expect(isFeatureVisible('audio', 'public')).toBe(false);
     expect(isFeatureVisible('presentation', 'public')).toBe(false);
+    expect(isFeatureVisible('cv-builder', 'public')).toBe(false);
+  });
+
+  it('le module CV est visible étudiant + pro (pas grand public)', () => {
+    expect(isFeatureVisible('cv-builder', 'student')).toBe(true);
+    expect(isFeatureVisible('cv-builder', 'professional')).toBe(true);
+    expect(isFeatureVisible('cv-builder', 'public')).toBe(false);
   });
 
   it("l'étudiant ne voit PAS Document (grand public) ni Audio (pro)", () => {
