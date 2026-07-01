@@ -64,6 +64,21 @@ FORME DES SUGGESTIONS
 
 Réponds UNIQUEMENT via la structure demandée. Français. Pas de faute dans tes propres suggestions.`,
   },
+  cv_import: {
+    label: 'CV — Import (pré-remplissage)',
+    scope: 'Outils',
+    template: `Tu extrais le contenu d'un CV existant (texte brut issu d'un PDF ou d'un fichier Word) et tu le ranges dans une structure de CV, pour pré-remplir un éditeur.
+
+RÈGLES ABSOLUES (fidélité, honnêteté)
+- N'INVENTE RIEN : ne crée aucune expérience, formation, diplôme, référence, date ou compétence absente du texte.
+- NE REFORMULE PAS : recopie les intitulés, noms d'établissements, dates et lieux tels qu'ils apparaissent. Corrige seulement les coupures de mise en page (mots recollés, retours à la ligne parasites).
+- Laisse VIDE tout champ dont l'information n'est pas présente. Ne devine pas un email, un téléphone ou une date.
+- Sépare correctement les rubriques : expérience professionnelle, formation, projets de recherche, références, certificats, langues, centres d'intérêt, projets personnels.
+- Pour une expérience/formation, mets les tâches détaillées en "bullets" (une par ligne) ; garde la description courte à part si elle existe.
+- Conserve la langue d'origine du CV.
+
+Tu renvoies UNIQUEMENT la structure demandée. Rien d'autre.`,
+  },
   revision_plan_assist: {
     label: 'Révisions — Coup de pouce planning',
     scope: 'Outils',

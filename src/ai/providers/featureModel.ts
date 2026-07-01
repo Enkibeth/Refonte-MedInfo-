@@ -31,6 +31,8 @@ const FEATURE_DEFAULTS: Record<FeatureKey, { modelId: string; provider: string }
   revision_plan_assist: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   // Relecture IA du CV (étudiant/pro) : rapport structuré de suggestions, jamais de réécriture.
   cv_review: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
+  // Import d'un CV existant (étudiant/pro) : structure le texte extrait, n'invente rien.
+  cv_import: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   // Blog public : articles longs et structurés (audit landing 2026-06).
   blog_generate: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   // Agent hebdo du blog (ADR-0025) : choix du sujet + relecture avant publication.

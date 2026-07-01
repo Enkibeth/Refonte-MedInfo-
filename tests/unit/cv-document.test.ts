@@ -6,6 +6,7 @@ import {
   coerceTheme,
   sanitizeCvPayload,
   sanitizeCvForAi,
+  normalizeImportedCv,
   MAX_CV_JSON_CHARS,
 } from '@/cv/cvDocument';
 
@@ -111,5 +112,38 @@ describe('sanitizeCvForAi — minimisation RGPD', () => {
     const out = sanitizeCvForAi({ personalInfo: {} }) as Record<string, any>;
     expect(out.summary).toBeUndefined();
     expect(out.experiences ?? []).toEqual([]);
+  });
+});
+
+describe('normalizeImportedCv — import d\'un CV existant', () => {
+  it('structure la sortie IA en CvDocument, assigne des ids et borne les champs', () => {
+    const raw = {
+      personalInfo: { firstName: 'Hugo', lastName: 'B', email: 'h@x.fr', photoUrl: 'data:xxx' },
+      experiences: [{ title: 'Interne', institution: 'CHU', isCurrent: true, bullets: ['a', '', 'b'] }],
+      interests: ['Course', { label: 'Photo' }],
+      languages: [{ name: 'Français', level: 9 }],
+    };
+    const out = normalizeImportedCv(raw);
+    expect(out.personalInfo.firstName).toBe('Hugo');
+    expect(out.personalInfo.photoUrl).toBe(''); // photo jamais importée
+    expect(out.experiences).toHaveLength(1);
+    expect(out.experiences[0].id).toBeTruthy();
+    expect(out.experiences[0].isCurrent).toBe(true);
+    expect(out.experiences[0].bullets).toEqual(['a', 'b']);
+    expect(out.interests.map((i) => i.label)).toEqual(['Course', 'Photo']);
+    expect(out.languages[0].level).toBe(5); // borné 1..5
+  });
+
+  it('renvoie un document vide et valide pour une entrée vide (rien inventé)', () => {
+    const out = normalizeImportedCv({});
+    expect(out.personalInfo.firstName).toBe('');
+    expect(out.experiences).toEqual([]);
+    expect(out.references).toEqual([]);
+    expect(Array.isArray(out.certificates)).toBe(true);
+  });
+
+  it('tolère une entrée non-objet', () => {
+    expect(() => normalizeImportedCv(null)).not.toThrow();
+    expect(normalizeImportedCv('nope').summary).toBe('');
   });
 });
