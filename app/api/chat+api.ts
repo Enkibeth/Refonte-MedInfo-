@@ -1,33 +1,24 @@
 /**
  * Route API chat — POST /api/chat (Expo Router API route, web).
  *
- * Refonte 2026-06 (décision Hugo) : un chat DIRECT et fonctionnel d'abord.
+ * ADR-0029 (réintroduction sécurité) : la route reste mince — parse du body,
+ * persona vérifiée côté serveur, verrou essai invité — et délègue au pipeline
+ * (src/ai/chat/pipeline.ts) : garde d'entrée → rate-limit → LLM streamé → archivage.
+ *
  *   - 3 chatbots = 3 prompts produit complets (public.v3 / student.v3 / professional.v2),
  *     éditables depuis le panel admin (table ai_prompts, fallback PROMPT_DEFAULTS).
  *   - Le client choisit son chatbot (`body.chatbot`) ; côté serveur, seuls les comptes
  *     vérifiés étudiant/professionnel (et admins) peuvent utiliser les chats étudiant/pro.
  *   - Contexte utilisateur (prénom/âge/sexe) injecté depuis le profil.
- *   - PAS de classifieur pré-LLM, pas de validation de sortie, pas de RAG, pas de
- *     rate-limit : les couches de sécurité seront réintroduites une fois l'ébauche validée.
  *
- * ⚠️  CONVENTION : le modèle utilisé (feature key: "chat") est configurable depuis le
- * panel admin (app/(admin)/index.tsx). Si tu ajoutes une étape IA ici, déclare-la dans
- * src/admin/index.ts AI_FEATURES.
+ * ⚠️  CONVENTION : les modèles utilisés (feature keys: "chat", "chat_guard") sont
+ * configurables depuis le panel admin (app/(admin)/index.tsx). Si tu ajoutes une
+ * étape IA ici, déclare-la dans src/admin/index.ts AI_FEATURES.
  */
-import { streamText, convertToModelMessages } from 'ai';
-
-import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
-import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { resolveChatPersona } from '@/ai/routing/serverPersona';
-import { logInteraction } from '@/ai/logging/logInteraction';
-import { coerceConversationId, saveAssistantMessageServer } from '@/chat/serverHistory';
-import { createServerSupabaseClient } from '@/db/serverSupabase';
-import {
-  buildUserContextSection,
-  coerceChatbot,
-  coercePersonalInfo,
-  type ChatbotId,
-} from '@/ai/chat/chatContext';
+import { coerceConversationId } from '@/chat/serverHistory';
+import { runChatPipeline } from '@/ai/chat/pipeline';
+import { coerceChatbot, coercePersonalInfo, type ChatbotId } from '@/ai/chat/chatContext';
 import type { Persona } from '@/ai/prompts/_schema';
 
 /**
@@ -92,56 +83,18 @@ export async function POST(request: Request): Promise<Response> {
   const allowed = allowedChatbotsFor(resolution.persona, { guestTrial: !resolution.verified });
   const chatbot: ChatbotId = allowed.includes(requestedChatbot) ? requestedChatbot : 'public';
 
-  const [template, runtime] = await Promise.all([
-    getPromptTemplate(chatbot),
-    // Recherche web ON par défaut pour le chat : les prompts exigent des sources réelles
-    // (URLs vérifiables HAS/ESC/PubMed…) — sans web search le modèle ne peut pas les fournir.
-    getRuntimeForFeature('chat', { webSearch: true }),
-  ]);
+  // Archivage serveur (résilience hors-ligne) : uniquement pour un compte vérifié,
+  // propriété de la conversation vérifiée contre le user du token, jamais le body.
+  const conversationId =
+    resolution.verified && resolution.userId ? coerceConversationId(body.conversationId) : null;
 
-  const system = `${template}${buildUserContextSection(personalInfo)}`;
-  const modelMessages = await convertToModelMessages(uiMessages as any);
-  const { tools: webTools, ...callOptions } = runtime.options;
-
-  // Résilience hors-ligne (2026-06) : la réponse est archivée CÔTÉ SERVEUR en fin de
-  // génération (et non plus par le client) — la propriété de la conversation est
-  // vérifiée contre le user du token, jamais le body (src/chat/serverHistory.ts).
-  const conversationId = resolution.verified && resolution.userId ? coerceConversationId(body.conversationId) : null;
-
-  const result = streamText({
-    model: runtime.model,
-    system,
-    messages: modelMessages,
-    ...(webTools ? { tools: webTools } : {}),
-    ...callOptions,
-    onFinish: async ({ text, usage }) => {
-      if (conversationId && resolution.userId) {
-        const supabase = createServerSupabaseClient();
-        if (supabase) {
-          await saveAssistantMessageServer(supabase, {
-            conversationId,
-            userId: resolution.userId,
-            content: text,
-          });
-        }
-      }
-      await logInteraction({
-        persona: chatbot,
-        model_used: runtime.modelId,
-        tokens_in: usage?.inputTokens,
-        tokens_out: usage?.outputTokens,
-        latency_ms: Date.now() - startMs,
-        refusal_triggered: false,
-        guardrail_layer: 'none',
-        intent_category: 'general_info',
-      });
-    },
+  return runChatPipeline({
+    request,
+    uiMessages,
+    chatbot,
+    resolution,
+    personalInfo,
+    conversationId,
+    startMs,
   });
-
-  // Si le client se déconnecte en plein stream (page suspendue par iOS, réseau coupé),
-  // la génération va quand même au bout : onFinish archive la réponse, que l'utilisateur
-  // retrouvera dans son historique au retour dans l'app.
-  void result.consumeStream();
-
-  return result.toUIMessageStreamResponse();
 }

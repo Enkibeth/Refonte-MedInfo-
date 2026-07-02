@@ -37,6 +37,17 @@ export const PROMPT_DEFAULTS: Record<string, { label: string; scope: string; tem
 - "category" : exactement une catégorie parmi : Symptômes, Médicaments, Examens & analyses, Maladies & pathologies, Prévention & dépistage, Grossesse & enfant, Révisions & concours, Cas clinique, Administratif & rendez-vous, Autre.
 Réponds UNIQUEMENT avec le JSON demandé, rien d'autre.`,
   },
+  chat_guard: {
+    label: 'Chat — Garde d\'entrée (étage 2)',
+    scope: 'Chat personas',
+    template: `Tu es la garde d'entrée de sécurité d'un assistant d'information médicale générale (MedInfo AI). Le message utilisateur fourni a déclenché un marqueur de « situation personnelle » dans un filtre automatique. Ta mission : confirmer ou infirmer, et aider l'utilisateur à reformuler.
+
+Réponds UNIQUEMENT avec le JSON demandé :
+- "personal" : true si le message décrit RÉELLEMENT des symptômes, une situation de santé ou un traitement personnels (ou d'un proche identifiable) et appelle un avis individualisé (diagnostic, conduite à tenir, posologie pour soi). false si c'est en réalité une question d'information générale, pédagogique, encyclopédique ou hypothétique sans patient réel (faux positif du filtre).
+- "reformulations" : UNIQUEMENT si personal=true, propose 2 à 3 reformulations de la question en QUESTIONS D'INFORMATION GÉNÉRALE, courtes (max 120 caractères), à la 3e personne ou impersonnelles, sans « je/mon/ma » ni « vous », sans conseil ni diagnostic. Exemple : « J'ai de la fièvre depuis 3 jours, qu'est-ce que j'ai ? » → ["Quelles sont les causes fréquentes d'une fièvre prolongée chez l'adulte ?", "Quand une fièvre doit-elle amener à consulter ?"].
+
+En cas de doute sur "personal", réponds true (le refus oriente vers un professionnel, c'est le comportement sûr). N'ajoute JAMAIS de texte hors du JSON.`,
+  },
   cv_review: {
     label: 'CV — Relecture IA',
     scope: 'Outils',

@@ -13,7 +13,8 @@ import { resolveEntitlement } from '@/billing/entitlements';
 const DAILY_LIMITS: Record<Persona, number> = {
   public: 10,
   student: 20,
-  // Pro post-MVP : non activé ; conserver une valeur technique non utilisée par la route MVP.
+  // Professionnels vérifiés : illimité (court-circuit dans checkChatRateLimit, ADR-0029).
+  // Valeur technique jamais utilisée pour décompter.
   professional: 0,
 };
 
@@ -133,6 +134,13 @@ function incrementInMemory(params: {
 export async function checkChatRateLimit(request: Request, persona: Persona): Promise<ChatRateLimitResult> {
   const dailyLimit = DAILY_LIMITS[persona];
   const windowDate = todayUtc();
+
+  // Professionnels vérifiés : illimité, AVANT tout accès DB (ADR-0029 — l'ancien 0
+  // aurait bloqué tout message pro au premier envoi si la route chat était rebranchée).
+  if (persona === 'professional') {
+    return unlimitedResult('user', windowDate);
+  }
+
   const supabase = getServiceClient();
   const userId = supabase ? await resolveVerifiedUserId(request, supabase) : null;
   const identityType: 'user' | 'ip' = userId ? 'user' : 'ip';

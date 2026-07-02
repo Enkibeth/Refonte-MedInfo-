@@ -18,6 +18,25 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-07-02] – Claude (Réintroduction sécurité chat PR1 : garde d'entrée + pipeline + rate-limit — ADR-0029)
+### Files modified
+- src/ai/chat/guard/{lexicon,regexClassifier,types,fictive,llmStage2,index,refusalMessage,config}.ts (nouveaux : garde d'entrée 2 étages, lexiques repris d'ea616fc + trous corrigés + normalisation apostrophes ’, politique sans sur-refus, exception ECOS avant verrou urgence, refus canonique + reformulations cliquables)
+- src/ai/chat/pipeline.ts (nouveau : orchestrateur du chat — garde → rate-limit → LLM streamé → archivage/log, deps injectées)
+- app/api/chat+api.ts (route mince : parse/persona/verrou invité → pipeline)
+- src/ai/rateLimit/chatRateLimit.ts (pro illimité — l'ancien 0 aurait bloqué tout message pro ; rebranchement chat via pipeline)
+- src/chat/apiError.ts (nouveau, pur) + app/(chat)/chat.tsx (bannières dédiées 429 quota / 401 invité, sans Réessayer)
+- src/admin/index.ts, src/ai/providers/featureModel.ts, src/ai/prompts/promptStore.ts (feature chat_guard, gemini-2.5-flash-lite)
+- supabase/migrations/0031_chat_guard.sql (seed ai_model_config, convention 0011)
+- tests/unit/{chat-guard,chat-guard-goldenset,chat-refusal-message,chat-api-error,chat-pipeline}.test.ts + tests/unit/golden/golden-set.fr.jsonl (500 cas, attendus révisés)
+- docs/DECISIONS/0029-reintroduction-securite-pipeline-garde.md (nouveau, Proposed)
+### Purpose
+Réintroduire la couche 1 de sécurité (suivi ADR-0024) sous forme de pipeline gardé sans sur-refus : urgences → 15/112 + refus canonique ; symptômes personnels → refus canonique + reformulations en questions générales cliquables (jamais de cul-de-sac) ; tout le reste passe. Un refus ne consomme pas de quota. Mode tri-état MEDINFO_GUARDRAILS (enforce/log/off), logs ai_interactions réels. PR2-4 à venir : validation de sortie streaming, vérificateur de sources, outils par persona (Europe PMC pro, RAG public).
+### Regulatory impact
+Potential (réduction de risque : rétablissement partiel du refus déterministe non-MDSW ; le refus canonique reste verbatim et unique)
+### Rollback plan
+`MEDINFO_GUARDRAILS=off` (kill-switch runtime, comportement ADR-0024) ; ou revert du commit — la migration 0031 est un seed inerte sans la feature.
+
+
 ## [2026-06-29] – Claude (Révisions : améliorations + coup de pouce IA — ADR-0027 phase 2)
 ### Files modified
 - src/revision/engine/{planner,redistribution}.ts, src/revision/types.ts, src/revision/db/plans.ts (mode de répartition lissé/charge-en-avance)
