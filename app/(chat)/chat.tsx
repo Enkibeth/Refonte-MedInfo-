@@ -182,6 +182,7 @@ const TOOL_STATUS_LABELS: Record<string, string> = {
   europe_pmc_search: 'Recherche dans la littérature scientifique…',
   clinical_trials_search: "Recherche d'essais cliniques…",
   verify_source_links: 'Vérification des liens sources…',
+  pubmed_search: 'Recherche PubMed (sous-agent)…',
   web_search: 'Recherche de sources fiables…',
   google_search: 'Recherche de sources fiables…',
 };

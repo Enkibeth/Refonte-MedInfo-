@@ -16,6 +16,7 @@ import {
   MAX_URLS_PER_CALL,
 } from '@/ai/chat/tools';
 import { verifySourceLinksTool } from '@/ai/chat/tools/verifyLinks';
+import { pubmedResearchTool, resolvePubmedMcpUrl } from '@/ai/chat/tools/pubmed';
 
 // ── Garde anti-SSRF ────────────────────────────────────────────────────────────
 
@@ -243,6 +244,48 @@ describe('buildChatTools — disponibilité par chatbot', () => {
     expect(Object.keys(buildChatTools('professional'))).toContain(CHAT_TOOL_NAMES.clinicalTrials);
     expect(Object.keys(buildChatTools('public'))).not.toContain(CHAT_TOOL_NAMES.clinicalTrials);
     expect(Object.keys(buildChatTools('student'))).not.toContain(CHAT_TOOL_NAMES.clinicalTrials);
+  });
+
+  it('le sous-agent PubMed délégué est opt-in et réservé au chatbot professionnel', () => {
+    expect(Object.keys(buildChatTools('professional', { pubmedAgent: true }))).toContain(
+      CHAT_TOOL_NAMES.pubmedAgent,
+    );
+    expect(Object.keys(buildChatTools('professional'))).not.toContain(CHAT_TOOL_NAMES.pubmedAgent);
+    expect(Object.keys(buildChatTools('public', { pubmedAgent: true }))).not.toContain(
+      CHAT_TOOL_NAMES.pubmedAgent,
+    );
+  });
+});
+
+describe('pubmed_search — délégation orchestrateur → sous-agent Claude', () => {
+  const runTool = async (tool: ReturnType<typeof pubmedResearchTool>, query: string) => {
+    const out = await tool.execute!({ query }, { toolCallId: 't', messages: [] } as never);
+    return out as string;
+  };
+
+  it("renvoie la synthèse du sous-agent à l'orchestrateur", async () => {
+    const run = vi.fn(async () => '1. Étude X — PMID : 12345');
+    const out = await runTool(pubmedResearchTool(run), 'anticoagulation FA sujet âgé');
+    expect(run).toHaveBeenCalledWith('anticoagulation FA sujet âgé');
+    expect(out).toContain('PMID : 12345');
+  });
+
+  it('sous-agent en échec → repli textuel actionnable, jamais une exception', async () => {
+    const run = vi.fn(async () => {
+      throw new Error('boom');
+    });
+    const out = await runTool(pubmedResearchTool(run), 'question');
+    expect(out).toContain('Sous-agent PubMed indisponible');
+    expect(out).toContain('europe_pmc_search');
+  });
+});
+
+describe('resolvePubmedMcpUrl', () => {
+  it('défaut = serveur hébergé Anthropic ; env surcharge ou coupe', () => {
+    expect(resolvePubmedMcpUrl({})).toBe(PUBMED_MCP_URL);
+    expect(resolvePubmedMcpUrl({ PUBMED_MCP_URL: 'https://autre/mcp' })).toBe('https://autre/mcp');
+    expect(resolvePubmedMcpUrl({ PUBMED_MCP_URL: 'OFF' })).toBeNull();
+    expect(resolvePubmedMcpUrl({ PUBMED_MCP_URL: ' ' })).toBeNull();
   });
 });
 

@@ -18,6 +18,25 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-07-02] – Claude (Sous-agent PubMed délégué : gpt-5.2 → Claude MCP)
+### Files modified
+- src/ai/chat/tools/pubmed.ts (nouveau : resolvePubmedMcpUrl, pubmedMcpServers, runPubmedAgent, outil pubmed_search), src/ai/chat/tools/index.ts (option pubmedAgent + section système)
+- app/api/chat+api.ts (activation des deux voies), app/(chat)/chat.tsx (statut « Recherche PubMed (sous-agent)… »)
+- src/admin/index.ts, src/ai/providers/featureModel.ts, src/ai/prompts/promptStore.ts (feature pubmed_agent, convention 6 points), supabase/migrations/0031_pubmed_agent.sql (seed)
+- app/(admin)/index.tsx (fix typage providers mono-élément), tests/unit/chat-tools.test.ts, tests/rls/isolation.test.ts (14 → 15)
+### Purpose
+Demande Hugo : quand le modèle du chat n'est pas Claude (gpt-5.2 par défaut), l'orchestrateur
+du chatbot pro DÉLÈGUE la recherche PubMed à un sous-agent Claude (`pubmed_agent`,
+configurable panel admin) qui monte le connecteur MCP PubMed hébergé par Anthropic — le MCP
+devient donc actif même avec gpt-5.2 en modèle principal.
+### Regulatory impact
+None — références bibliographiques uniquement ; le sous-agent n'invente jamais une référence
+(prompt strict), ne parle jamais au patient, et son échec produit un repli textuel.
+### Rollback plan
+`PUBMED_MCP_URL=off` (coupe les deux voies sans déploiement) ou retirer l'option
+`pubmedAgent` dans chat+api.ts ; le seed 0031 est inerte sans le code.
+
+
 ## [2026-07-02] – Claude (Suivi ADR-0030 : PubMed MCP, Citations ancrées, dossier AI for Science)
 ### Files modified
 - src/ai/chat/tools/index.ts (+ pubmedMcpServers, section système conditionnelle), app/api/chat+api.ts (injection providerOptions.anthropic.mcpServers)

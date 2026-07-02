@@ -106,6 +106,14 @@ Principes :
   est Claude ET pour le chatbot professionnel ; beta `mcp-client` ajoutée
   automatiquement par `@ai-sdk/anthropic` ; `PUBMED_MCP_URL=off` pour désactiver.
   Europe PMC reste la voie universelle (gpt-5.2 par défaut).
+- ✅ **Sous-agent PubMed délégué** (2026-07-02, demande Hugo) : quand le modèle principal
+  du chat n'est PAS Claude (gpt-5.2 par défaut), l'orchestrateur du chatbot pro reçoit
+  l'outil `pubmed_search` dont l'exécution lance un **sous-agent Claude** (feature admin
+  `pubmed_agent`, migration `0031`, prompt éditable) qui monte le connecteur MCP PubMed
+  et renvoie une synthèse de références réelles (PMID/DOI/URL). Vraie délégation
+  orchestrateur → sous-agent inter-providers. Conditions d'activation :
+  `ANTHROPIC_API_KEY` présent + connecteur non désactivé ; repli textuel (jamais
+  d'exception) si le sous-agent échoue. `src/ai/chat/tools/pubmed.ts`.
 - ✅ **API Citations d'Anthropic pour `/api/analyze`** (2026-07-02) : quand le modèle de
   la feature `analyze` est Claude, les PDF et le texte collé deviennent des blocs
   `document` avec `citations: {enabled: true}` ; les passages cités (page du PDF ou

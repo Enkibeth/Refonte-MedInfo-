@@ -207,7 +207,7 @@ function ModelsTab({
         if (!current) return null;
 
         const featureModels = config.availableModels.filter((m) =>
-          feature.providers.includes(m.provider as any),
+          (feature.providers as readonly string[]).includes(m.provider),
         );
         const caps = capabilitiesFor(current.model_id);
         const hasParams = caps.temperature || caps.reasoning || caps.verbosity || caps.webSearch;

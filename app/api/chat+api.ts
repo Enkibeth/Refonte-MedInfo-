@@ -34,7 +34,12 @@ import {
   coercePersonalInfo,
   type ChatbotId,
 } from '@/ai/chat/chatContext';
-import { buildChatTools, buildChatToolsSection, pubmedMcpServers } from '@/ai/chat/tools';
+import {
+  buildChatTools,
+  buildChatToolsSection,
+  pubmedMcpServers,
+  resolvePubmedMcpUrl,
+} from '@/ai/chat/tools';
 import type { Persona } from '@/ai/prompts/_schema';
 
 /**
@@ -109,9 +114,11 @@ export async function POST(request: Request): Promise<Response> {
   const modelMessages = await convertToModelMessages(uiMessages as any);
   const { tools: webTools, ...callOptions } = runtime.options;
 
-  // Connecteur PubMed MCP (suivi ADR-0030) : quand le modèle configuré est Claude,
-  // le chatbot professionnel dispose en plus des outils PubMed hébergés par Anthropic
-  // (exécutés côté API Anthropic ; complément de l'outil universel Europe PMC).
+  // PubMed pour le chatbot pro (suivi ADR-0030), deux voies :
+  //  - modèle Claude → connecteur MCP direct sur l'appel principal ;
+  //  - autre modèle (gpt-5.2 par défaut) → délégation : l'orchestrateur reçoit l'outil
+  //    `pubmed_search`, exécuté par un SOUS-AGENT Claude (feature `pubmed_agent`) qui
+  //    monte le connecteur MCP. Requiert ANTHROPIC_API_KEY ; `PUBMED_MCP_URL=off` coupe tout.
   const mcpServers = pubmedMcpServers(runtime.provider, chatbot);
   if (mcpServers) {
     callOptions.providerOptions = {
@@ -119,14 +126,20 @@ export async function POST(request: Request): Promise<Response> {
       anthropic: { ...(callOptions.providerOptions?.anthropic ?? {}), mcpServers },
     };
   }
+  const pubmedAgent =
+    !mcpServers &&
+    chatbot === 'professional' &&
+    runtime.provider !== 'anthropic' &&
+    Boolean(process.env.ANTHROPIC_API_KEY) &&
+    resolvePubmedMcpUrl() !== null;
 
-  const system = `${template}${buildUserContextSection(personalInfo)}${buildChatToolsSection(chatbot, { pubmedMcp: mcpServers !== null })}`;
+  const system = `${template}${buildUserContextSection(personalInfo)}${buildChatToolsSection(chatbot, { pubmedMcp: mcpServers !== null, pubmedAgent })}`;
 
   // Workflow agents (ADR-0030) : le modèle orchestre des outils qualité serveur
   // (Europe PMC, ClinicalTrials.gov pour le pro, vérification des liens sources).
   // Gemini n'accepte pas de mélanger googleSearch et function tools : dans ce cas
   // on garde la recherche web du provider et on renonce aux outils custom.
-  const qualityTools = buildChatTools(chatbot);
+  const qualityTools = buildChatTools(chatbot, { pubmedAgent });
   const tools =
     runtime.provider === 'google' && webTools
       ? webTools

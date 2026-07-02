@@ -14,6 +14,7 @@ import type { ChatbotId } from '@/ai/chat/chatContext';
 import { europePmcSearchTool } from './europePmc';
 import { clinicalTrialsSearchTool } from './clinicalTrials';
 import { verifySourceLinksTool } from './verifyLinks';
+import { pubmedResearchTool } from './pubmed';
 
 export { buildEuropePmcSearchUrl, formatEuropePmcResults } from './europePmc';
 export { buildClinicalTrialsSearchUrl, formatClinicalTrialsResults } from './clinicalTrials';
@@ -25,58 +26,55 @@ export {
   type LinkCheckStatus,
 } from './verifyLinks';
 export { isSafePublicHttpUrl } from './urlSafety';
+export {
+  PUBMED_MCP_URL,
+  resolvePubmedMcpUrl,
+  pubmedMcpServers,
+  pubmedResearchTool,
+  runPubmedAgent,
+  type AnthropicMcpServer,
+} from './pubmed';
 
 /** Noms d'outils exposés — utilisés aussi par le client pour la bulle de statut. */
 export const CHAT_TOOL_NAMES = {
   europePmc: 'europe_pmc_search',
   clinicalTrials: 'clinical_trials_search',
   verifyLinks: 'verify_source_links',
+  pubmedAgent: 'pubmed_search',
 } as const;
+
+export interface BuildChatToolsOptions {
+  fetchImpl?: typeof fetch;
+  /**
+   * Délégation orchestrateur → sous-agent (ADR-0030 suivi) : quand le modèle principal
+   * du chat n'est PAS Claude, le chatbot pro reçoit l'outil `pubmed_search` dont
+   * l'exécution lance un sous-agent Claude porteur du connecteur MCP PubMed.
+   */
+  pubmedAgent?: boolean;
+}
 
 /**
  * Outils disponibles selon le chatbot :
  *  - les 3 chatbots : recherche bibliographique + vérification des liens ;
- *  - professionnel : + essais cliniques (« essais en cours » = demande de cliniciens).
+ *  - professionnel : + essais cliniques (« essais en cours » = demande de cliniciens)
+ *    et, sur option, le sous-agent PubMed délégué (voir BuildChatToolsOptions).
  */
 export function buildChatTools(
   chatbot: ChatbotId,
-  fetchImpl: typeof fetch = fetch,
+  opts: BuildChatToolsOptions = {},
 ): Record<string, unknown> {
+  const fetchImpl = opts.fetchImpl ?? fetch;
   const tools: Record<string, unknown> = {
     [CHAT_TOOL_NAMES.europePmc]: europePmcSearchTool(fetchImpl),
     [CHAT_TOOL_NAMES.verifyLinks]: verifySourceLinksTool(fetchImpl),
   };
   if (chatbot === 'professional') {
     tools[CHAT_TOOL_NAMES.clinicalTrials] = clinicalTrialsSearchTool(fetchImpl);
+    if (opts.pubmedAgent) {
+      tools[CHAT_TOOL_NAMES.pubmedAgent] = pubmedResearchTool();
+    }
   }
   return tools;
-}
-
-/**
- * Connecteur PubMed MCP (Claude for Life Sciences) — serveur hébergé par Anthropic,
- * sans authentification, exécuté côté API Anthropic (beta mcp-client ajoutée
- * automatiquement par @ai-sdk/anthropic quand `mcpServers` est fourni).
- * Complément d'Europe PMC réservé au chatbot professionnel ET aux modèles Claude :
- * les autres providers (gpt-5.2 par défaut) gardent la voie universelle Europe PMC.
- * `PUBMED_MCP_URL=off` (env) désactive le connecteur sans redéploiement.
- */
-export const PUBMED_MCP_URL = 'https://pubmed.mcp.claude.com/mcp';
-
-export interface AnthropicMcpServer {
-  type: 'url';
-  name: string;
-  url: string;
-}
-
-export function pubmedMcpServers(
-  provider: string,
-  chatbot: ChatbotId,
-  env: Record<string, string | undefined> = process.env,
-): AnthropicMcpServer[] | null {
-  if (provider !== 'anthropic' || chatbot !== 'professional') return null;
-  const url = (env.PUBMED_MCP_URL ?? PUBMED_MCP_URL).trim();
-  if (!url || url.toLowerCase() === 'off') return null;
-  return [{ type: 'url', name: 'pubmed', url }];
 }
 
 /**
@@ -86,7 +84,7 @@ export function pubmedMcpServers(
  */
 export function buildChatToolsSection(
   chatbot: ChatbotId,
-  opts: { pubmedMcp?: boolean } = {},
+  opts: { pubmedMcp?: boolean; pubmedAgent?: boolean } = {},
 ): string {
   const lines = [
     `- ${CHAT_TOOL_NAMES.europePmc} : littérature biomédicale réelle (PubMed/Europe PMC : auteurs, journal, année, DOI, citations). À utiliser dès que tu cites une étude — ne cite jamais un article que tu n'as pas retrouvé par cet outil ou la recherche web.`,
@@ -99,6 +97,11 @@ export function buildChatToolsSection(
   if (opts.pubmedMcp) {
     lines.push(
       `- outils PubMed (serveur officiel, via MCP) : recherche PubMed directe (MeSH, PMID, abstracts). À privilégier pour retrouver les références [ÉTUDE] ; croise avec ${CHAT_TOOL_NAMES.europePmc} au besoin.`,
+    );
+  }
+  if (opts.pubmedAgent) {
+    lines.push(
+      `- ${CHAT_TOOL_NAMES.pubmedAgent} : délègue la recherche à un sous-agent spécialisé avec accès direct à PubMed (MeSH, PMID, abstracts) — il renvoie une synthèse de références réelles. À utiliser pour les questions exigeant des références précises ; ne cite jamais une référence qu'il n'a pas renvoyée.`,
     );
   }
   lines.push(
