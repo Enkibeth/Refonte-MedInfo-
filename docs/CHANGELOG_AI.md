@@ -18,6 +18,29 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-07-02] – Claude (Workflow agents qualité du chat — ADR-0030)
+### Files modified
+- src/ai/chat/tools/{index,europePmc,clinicalTrials,verifyLinks,urlSafety}.ts (nouveaux : outils qualité + garde anti-SSRF)
+- app/api/chat+api.ts (boucle agentique stopWhen stepCountIs(8), fusion web_search + outils custom, archivage multi-étapes)
+- app/(chat)/chat.tsx (bulle de statut par outil : littérature / essais cliniques / vérification des liens)
+- tests/unit/chat-tools.test.ts (nouveau : 30 tests, fetch mocké)
+- CLAUDE.md, docs/DECISIONS/0030-agents-outils-qualite-chat.md
+### Purpose
+Le modèle du chat orchestre des outils serveur déterministes (« sous-agents ») orientés
+QUALITÉ de réponse : recherche bibliographique réelle (Europe PMC, tous chatbots),
+essais cliniques (ClinicalTrials.gov, chatbot pro), vérification des liens de la section
+SOURCES avant rédaction (zéro lien mort). Réoriente le chantier « workflow agents » vers
+la qualité/UX (demande Hugo), complémentaire et indépendant de l'ADR-0029 (régulation, PR #103).
+### Regulatory impact
+None — aucun refus/classifieur/quota ajouté ; outils REST déterministes au sein de la
+feature `chat` (aucun appel LLM ajouté) ; anti-SSRF sur les requêtes sortantes ; les
+prompts produit restent la source de vérité du comportement.
+### Rollback plan
+Retirer `buildChatTools`/`buildChatToolsSection` + `stopWhen` de app/api/chat+api.ts
+(revenir à `webTools` seuls) et supprimer src/ai/chat/tools/ ; le chat direct ADR-0024
+refonctionne à l'identique.
+
+
 ## [2026-06-29] – Claude (Révisions : améliorations + coup de pouce IA — ADR-0027 phase 2)
 ### Files modified
 - src/revision/engine/{planner,redistribution}.ts, src/revision/types.ts, src/revision/db/plans.ts (mode de répartition lissé/charge-en-avance)

@@ -10,11 +10,17 @@
  *   - PAS de classifieur pré-LLM, pas de validation de sortie, pas de RAG, pas de
  *     rate-limit : les couches de sécurité seront réintroduites une fois l'ébauche validée.
  *
+ * Workflow agents qualité (2026-07, ADR-0030) : le modèle orchestre une boucle
+ * agentique avec des outils serveur déterministes — recherche bibliographique réelle
+ * (Europe PMC), essais cliniques (ClinicalTrials.gov, chatbot pro) et vérification des
+ * liens sources avant rédaction (src/ai/chat/tools/). Objectif : qualité/vérifiabilité
+ * des réponses — ce n'est PAS une couche de régulation.
+ *
  * ⚠️  CONVENTION : le modèle utilisé (feature key: "chat") est configurable depuis le
  * panel admin (app/(admin)/index.tsx). Si tu ajoutes une étape IA ici, déclare-la dans
  * src/admin/index.ts AI_FEATURES.
  */
-import { streamText, convertToModelMessages } from 'ai';
+import { streamText, convertToModelMessages, stepCountIs } from 'ai';
 
 import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
@@ -28,6 +34,7 @@ import {
   coercePersonalInfo,
   type ChatbotId,
 } from '@/ai/chat/chatContext';
+import { buildChatTools, buildChatToolsSection } from '@/ai/chat/tools';
 import type { Persona } from '@/ai/prompts/_schema';
 
 /**
@@ -99,9 +106,19 @@ export async function POST(request: Request): Promise<Response> {
     getRuntimeForFeature('chat', { webSearch: true }),
   ]);
 
-  const system = `${template}${buildUserContextSection(personalInfo)}`;
+  const system = `${template}${buildUserContextSection(personalInfo)}${buildChatToolsSection(chatbot)}`;
   const modelMessages = await convertToModelMessages(uiMessages as any);
   const { tools: webTools, ...callOptions } = runtime.options;
+
+  // Workflow agents (ADR-0030) : le modèle orchestre des outils qualité serveur
+  // (Europe PMC, ClinicalTrials.gov pour le pro, vérification des liens sources).
+  // Gemini n'accepte pas de mélanger googleSearch et function tools : dans ce cas
+  // on garde la recherche web du provider et on renonce aux outils custom.
+  const qualityTools = buildChatTools(chatbot);
+  const tools =
+    runtime.provider === 'google' && webTools
+      ? webTools
+      : { ...(webTools ?? {}), ...qualityTools };
 
   // Résilience hors-ligne (2026-06) : la réponse est archivée CÔTÉ SERVEUR en fin de
   // génération (et non plus par le client) — la propriété de la conversation est
@@ -112,16 +129,25 @@ export async function POST(request: Request): Promise<Response> {
     model: runtime.model,
     system,
     messages: modelMessages,
-    ...(webTools ? { tools: webTools } : {}),
+    ...(Object.keys(tools).length > 0 ? { tools } : {}),
+    // Boucle agentique : le modèle peut enchaîner recherche → vérification → rédaction.
+    // Borné pour ne jamais boucler indéfiniment (chaque étape = un appel LLM).
+    stopWhen: stepCountIs(8),
     ...callOptions,
-    onFinish: async ({ text, usage }) => {
+    onFinish: async ({ text, steps, usage }) => {
+      // En multi-étapes, `text` ne contient que la DERNIÈRE étape : on archive la
+      // concaténation de toutes les étapes (= ce que le client a affiché).
+      const fullText =
+        Array.isArray(steps) && steps.length > 1
+          ? steps.map((s) => s.text ?? '').join('')
+          : text;
       if (conversationId && resolution.userId) {
         const supabase = createServerSupabaseClient();
         if (supabase) {
           await saveAssistantMessageServer(supabase, {
             conversationId,
             userId: resolution.userId,
-            content: text,
+            content: fullText,
           });
         }
       }
