@@ -18,6 +18,7 @@ import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
 import { resolveVerifiedUserId } from '@/auth/serverIdentity';
 import { createServerSupabaseClient } from '@/db/serverSupabase';
 import { saveAnalysisServer } from '@/document/serverAnalysisHistory';
+import { buildCitationsFooter } from '@/document/citations';
 import type { AnalysisMode } from '@/document/analysisHistory';
 
 const MAX_DOC_LENGTH = 12_000;
@@ -157,29 +158,58 @@ export async function POST(request: Request): Promise<Response> {
         ? `Voici le document médical à traduire. Langue cible : ${input.targetLanguage}.`
         : 'Voici le document médical à analyser :';
 
+    // Citations ancrées (ADR-0030 suivi) : avec un modèle Claude, chaque affirmation
+    // peut pointer le passage exact du document (API Citations d'Anthropic). Actif pour
+    // les PDF et le texte (le document devient un bloc `document` avec citations) ;
+    // les images n'y sont pas éligibles. Autres providers : comportement inchangé.
+    const citationsEnabled =
+      runtime.provider === 'anthropic' &&
+      (input.file ? input.file.mediaType === PDF_TYPE : input.text !== null);
+    const citationOptions = {
+      providerOptions: { anthropic: { citations: { enabled: true } } },
+    } as const;
+
     const userContent: Exclude<(ModelMessage & { role: 'user' })['content'], string> = input.file
       ? [
           { type: 'text', text: instruction },
           input.file.mediaType === PDF_TYPE
-            ? { type: 'file', data: input.file.bytes, mediaType: PDF_TYPE }
+            ? {
+                type: 'file',
+                data: input.file.bytes,
+                mediaType: PDF_TYPE,
+                ...(citationsEnabled ? citationOptions : {}),
+              }
             : { type: 'image', image: input.file.bytes, mediaType: input.file.mediaType },
         ]
-      : [{ type: 'text', text: `${instruction}\n\n${input.text}` }];
+      : citationsEnabled
+        ? [
+            { type: 'text', text: instruction },
+            {
+              type: 'file',
+              // Uint8Array attendu : une string serait interprétée comme du base64.
+              data: new TextEncoder().encode(input.text ?? ''),
+              mediaType: 'text/plain',
+              ...citationOptions,
+            },
+          ]
+        : [{ type: 'text', text: `${instruction}\n\n${input.text}` }];
 
     const result = streamText({
       model: runtime.model,
       system: systemPrompt,
       messages: [{ role: 'user', content: userContent }],
       ...runtime.options,
-      onFinish: async ({ text }) => {
+      onFinish: async ({ text, sources }) => {
         // Archivage du seul RÉSULTAT (jamais du document) pour les comptes connectés.
+        // Le pied CITATIONS est archivé avec le texte : l'historique ré-affiche la
+        // même section « Passages du document cités » que le direct.
         if (userId && supabase) {
           await saveAnalysisServer(supabase, {
             userId,
             mode: input.mode,
             sourceName: input.sourceName ?? 'Texte collé',
             targetLanguage: input.targetLanguage,
-            result: text,
+            result: `${text}${buildCitationsFooter(sources ?? [])}`,
           });
         }
       },
@@ -189,7 +219,26 @@ export async function POST(request: Request): Promise<Response> {
     // reste récupérable depuis l'historique des analyses.
     void result.consumeStream();
 
-    return result.toTextStreamResponse();
+    // Flux texte + pied CITATIONS ajouté en fin (les sources ne voyagent pas dans un
+    // flux texte brut) ; le client le détache avant affichage.
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        try {
+          for await (const chunk of result.textStream) {
+            controller.enqueue(encoder.encode(chunk));
+          }
+          const footer = buildCitationsFooter(await result.sources);
+          if (footer) controller.enqueue(encoder.encode(footer));
+          controller.close();
+        } catch (err) {
+          controller.error(err);
+        }
+      },
+    });
+    return new Response(stream, {
+      headers: { 'content-type': 'text/plain; charset=utf-8' },
+    });
   } catch (e) {
     console.error('Analyze error:', e);
     return Response.json({ error: 'Analyse impossible pour le moment.' }, { status: 502 });

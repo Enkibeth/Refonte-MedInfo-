@@ -91,6 +91,16 @@ export const AI_FEATURES = [
     providers: ['google', 'openai', 'anthropic'],
   },
   {
+    key: 'pubmed_agent',
+    emoji: '🔬',
+    label: 'Chat — Sous-agent PubMed',
+    description:
+      'Recherche PubMed déléguée par le chatbot professionnel à un modèle Claude (connecteur MCP hébergé Anthropic)',
+    apiRoute: '/api/chat',
+    promptKeys: ['pubmed_agent'],
+    providers: ['anthropic'],
+  },
+  {
     key: 'analyze',
     emoji: '📄',
     label: 'Analyse de document',

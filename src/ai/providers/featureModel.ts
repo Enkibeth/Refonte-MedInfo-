@@ -20,6 +20,8 @@ const FEATURE_DEFAULTS: Record<FeatureKey, { modelId: string; provider: string }
   chat:          { modelId: 'gpt-5.2',           provider: 'openai' },
   // Titre + catégorie d'historique : modèle flash économique.
   chat_meta:     { modelId: 'gemini-2.5-flash',  provider: 'google' },
+  // Sous-agent PubMed du chat pro : Claude uniquement (seul provider avec le connecteur MCP).
+  pubmed_agent:  { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   analyze:       { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   ecos_simulate: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   ecos_evaluate: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },

@@ -18,6 +18,69 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-07-02] – Claude (Sous-agent PubMed délégué : gpt-5.2 → Claude MCP)
+### Files modified
+- src/ai/chat/tools/pubmed.ts (nouveau : resolvePubmedMcpUrl, pubmedMcpServers, runPubmedAgent, outil pubmed_search), src/ai/chat/tools/index.ts (option pubmedAgent + section système)
+- app/api/chat+api.ts (activation des deux voies), app/(chat)/chat.tsx (statut « Recherche PubMed (sous-agent)… »)
+- src/admin/index.ts, src/ai/providers/featureModel.ts, src/ai/prompts/promptStore.ts (feature pubmed_agent, convention 6 points), supabase/migrations/0031_pubmed_agent.sql (seed)
+- app/(admin)/index.tsx (fix typage providers mono-élément), tests/unit/chat-tools.test.ts, tests/rls/isolation.test.ts (14 → 15)
+### Purpose
+Demande Hugo : quand le modèle du chat n'est pas Claude (gpt-5.2 par défaut), l'orchestrateur
+du chatbot pro DÉLÈGUE la recherche PubMed à un sous-agent Claude (`pubmed_agent`,
+configurable panel admin) qui monte le connecteur MCP PubMed hébergé par Anthropic — le MCP
+devient donc actif même avec gpt-5.2 en modèle principal.
+### Regulatory impact
+None — références bibliographiques uniquement ; le sous-agent n'invente jamais une référence
+(prompt strict), ne parle jamais au patient, et son échec produit un repli textuel.
+### Rollback plan
+`PUBMED_MCP_URL=off` (coupe les deux voies sans déploiement) ou retirer l'option
+`pubmedAgent` dans chat+api.ts ; le seed 0031 est inerte sans le code.
+
+
+## [2026-07-02] – Claude (Suivi ADR-0030 : PubMed MCP, Citations ancrées, dossier AI for Science)
+### Files modified
+- src/ai/chat/tools/index.ts (+ pubmedMcpServers, section système conditionnelle), app/api/chat+api.ts (injection providerOptions.anthropic.mcpServers)
+- src/document/citations.ts (nouveau : footer CITATIONS pur), app/api/analyze+api.ts (blocs document + citations.enabled, flux + pied, archivage), app/(chat)/document.tsx (section « Passages du document cités »)
+- docs/CANDIDATURE_AI_FOR_SCIENCE.md (nouveau : dossier prêt à soumettre)
+- tests/unit/{chat-tools,document-citations}.test.ts, CLAUDE.md, docs/DECISIONS/0030-agents-outils-qualite-chat.md
+### Purpose
+Les 3 items « Suivi » de l'ADR-0030 : (a) connecteur PubMed MCP hébergé Anthropic pour le
+chatbot pro quand le modèle configuré est Claude ; (b) API Citations d'Anthropic sur
+/api/analyze — chaque affirmation ancrée au passage exact du document (page/extrait),
+rendue au client et archivée ; (c) dossier de candidature AI for Science (≤ 20 k$ de
+crédits) avec évaluation honnête d'éligibilité.
+### Regulatory impact
+None — qualité/vérifiabilité uniquement ; le document analysé n'est toujours jamais
+stocké (seul le résultat + passages cités) ; aucun refus/quota ajouté.
+### Rollback plan
+PubMed MCP : `PUBMED_MCP_URL=off` (sans déploiement) ou retirer l'injection dans
+chat+api.ts. Citations : retirer `citationsEnabled` + le pied dans analyze+api.ts (le
+client tolère l'absence de pied). Dossier : fichier docs sans effet runtime.
+
+
+## [2026-07-02] – Claude (Workflow agents qualité du chat — ADR-0030)
+### Files modified
+- src/ai/chat/tools/{index,europePmc,clinicalTrials,verifyLinks,urlSafety}.ts (nouveaux : outils qualité + garde anti-SSRF)
+- app/api/chat+api.ts (boucle agentique stopWhen stepCountIs(8), fusion web_search + outils custom, archivage multi-étapes)
+- app/(chat)/chat.tsx (bulle de statut par outil : littérature / essais cliniques / vérification des liens)
+- tests/unit/chat-tools.test.ts (nouveau : 30 tests, fetch mocké)
+- CLAUDE.md, docs/DECISIONS/0030-agents-outils-qualite-chat.md
+### Purpose
+Le modèle du chat orchestre des outils serveur déterministes (« sous-agents ») orientés
+QUALITÉ de réponse : recherche bibliographique réelle (Europe PMC, tous chatbots),
+essais cliniques (ClinicalTrials.gov, chatbot pro), vérification des liens de la section
+SOURCES avant rédaction (zéro lien mort). Réoriente le chantier « workflow agents » vers
+la qualité/UX (demande Hugo), complémentaire et indépendant de l'ADR-0029 (régulation, PR #103).
+### Regulatory impact
+None — aucun refus/classifieur/quota ajouté ; outils REST déterministes au sein de la
+feature `chat` (aucun appel LLM ajouté) ; anti-SSRF sur les requêtes sortantes ; les
+prompts produit restent la source de vérité du comportement.
+### Rollback plan
+Retirer `buildChatTools`/`buildChatToolsSection` + `stopWhen` de app/api/chat+api.ts
+(revenir à `webTools` seuls) et supprimer src/ai/chat/tools/ ; le chat direct ADR-0024
+refonctionne à l'identique.
+
+
 ## [2026-06-29] – Claude (Révisions : améliorations + coup de pouce IA — ADR-0027 phase 2)
 ### Files modified
 - src/revision/engine/{planner,redistribution}.ts, src/revision/types.ts, src/revision/db/plans.ts (mode de répartition lissé/charge-en-avance)

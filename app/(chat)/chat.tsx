@@ -110,10 +110,10 @@ type ChatPhase = 'thinking' | 'searching' | 'writing' | 'recovering';
  * Bulle de statut affichée tant que la réponse n'a pas commencé à s'écrire : rassure
  * l'utilisateur que ça charge (réflexion, puis recherche de sources le cas échéant).
  */
-function StatusBubble({ phase }: { phase: ChatPhase }) {
+function StatusBubble({ phase, toolLabel }: { phase: ChatPhase; toolLabel?: string | null }) {
   const label =
     phase === 'searching'
-      ? 'Recherche de sources fiables…'
+      ? (toolLabel ?? 'Recherche de sources fiables…')
       : phase === 'writing'
         ? 'Rédaction de la réponse…'
         : phase === 'recovering'
@@ -174,6 +174,29 @@ function hasToolActivity(message: UIMessage | undefined): boolean {
     const t = (p as { type?: string }).type ?? '';
     return t.startsWith('tool-') || t === 'dynamic-tool';
   });
+}
+
+// Libellés de statut par outil du workflow agents (ADR-0030) : l'utilisateur voit ce que
+// l'assistant est en train de déléguer (littérature, essais cliniques, vérif des liens).
+const TOOL_STATUS_LABELS: Record<string, string> = {
+  europe_pmc_search: 'Recherche dans la littérature scientifique…',
+  clinical_trials_search: "Recherche d'essais cliniques…",
+  verify_source_links: 'Vérification des liens sources…',
+  pubmed_search: 'Recherche PubMed (sous-agent)…',
+  web_search: 'Recherche de sources fiables…',
+  google_search: 'Recherche de sources fiables…',
+};
+
+/** Libellé du DERNIER outil appelé dans le message assistant en cours, sinon null. */
+function activeToolLabel(message: UIMessage | undefined): string | null {
+  const parts = message?.parts ?? [];
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i] as { type?: string; toolName?: string };
+    const t = p.type ?? '';
+    const name = t === 'dynamic-tool' ? p.toolName : t.startsWith('tool-') ? t.slice(5) : null;
+    if (name) return TOOL_STATUS_LABELS[name] ?? 'Recherche de sources fiables…';
+  }
+  return null;
 }
 
 // ── Écran principal ────────────────────────────────────────────────────────────
@@ -655,7 +678,9 @@ export default function ChatScreen() {
             />
           </Reveal>
         ))}
-        {(showStatus || recovering) && <StatusBubble phase={recovering ? 'recovering' : phase} />}
+        {(showStatus || recovering) && (
+          <StatusBubble phase={recovering ? 'recovering' : phase} toolLabel={activeToolLabel(lastAssistant)} />
+        )}
 
         {/* ── Proposition d'inscription / connexion en fin d'essai gratuit ── */}
         {guestLocked && !isLoading ? (
