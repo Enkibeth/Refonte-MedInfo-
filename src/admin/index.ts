@@ -91,6 +91,15 @@ export const AI_FEATURES = [
     providers: ['google', 'openai', 'anthropic'],
   },
   {
+    key: 'chat_guard',
+    emoji: '🛡️',
+    label: 'Chat — Garde d\'entrée',
+    description: 'Relecture LLM des messages signalés par la garde (urgence/symptômes personnels) + reformulations générales proposées avec le refus (ADR-0029)',
+    apiRoute: '/api/chat',
+    promptKeys: ['chat_guard'],
+    providers: ['google', 'anthropic', 'openai'],
+  },
+  {
     key: 'analyze',
     emoji: '📄',
     label: 'Analyse de document',

@@ -40,6 +40,7 @@ import {
   suggestionWindow,
 } from '@/ai/chat/starterSuggestions';
 import { isGuestMessageUsed, markGuestMessageUsed } from '@/chat/guestTrial';
+import { parseChatApiError, formatResetTime } from '@/chat/apiError';
 import {
   createConversation,
   deleteConversation,
@@ -688,22 +689,46 @@ export default function ChatScreen() {
           </Reveal>
         ) : null}
 
-        {error && !recovering && (
-          <View style={styles.errorBanner}>
-            <Text style={styles.errorText}>
-              Une erreur est survenue — la réponse a peut-être été interrompue.
-            </Text>
-            <TouchableOpacity
-              style={styles.retryButton}
-              onPress={() => void handleRetry()}
-              accessibilityRole="button"
-              accessibilityLabel="Réessayer la dernière question"
-            >
-              <Icon name="refresh" size={14} color={tokens.colors.onAccent} />
-              <Text style={styles.retryButtonText}>Réessayer</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        {error && !recovering && (() => {
+          const apiError = parseChatApiError(error.message);
+          if (apiError.kind === 'rate_limited') {
+            const resetTime = formatResetTime(apiError.resetAt);
+            return (
+              <View style={styles.errorBanner}>
+                <Text style={styles.errorText}>
+                  Quota quotidien de messages atteint.
+                  {resetTime ? ` Il se réinitialise à ${resetTime}.` : ' Il se réinitialise chaque jour.'}
+                  {' '}Les abonnés ne sont pas limités (voir Tarifs).
+                </Text>
+              </View>
+            );
+          }
+          if (apiError.kind === 'signup_required') {
+            return (
+              <View style={styles.errorBanner}>
+                <Text style={styles.errorText}>
+                  Créez un compte gratuit ou connectez-vous pour continuer la conversation.
+                </Text>
+              </View>
+            );
+          }
+          return (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorText}>
+                Une erreur est survenue — la réponse a peut-être été interrompue.
+              </Text>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={() => void handleRetry()}
+                accessibilityRole="button"
+                accessibilityLabel="Réessayer la dernière question"
+              >
+                <Icon name="refresh" size={14} color={tokens.colors.onAccent} />
+                <Text style={styles.retryButtonText}>Réessayer</Text>
+              </TouchableOpacity>
+            </View>
+          );
+        })()}
       </ScrollView>
 
       <Text style={styles.disclaimer}>{DISCLAIMER[chatbot]}</Text>

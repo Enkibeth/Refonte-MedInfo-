@@ -20,6 +20,8 @@ const FEATURE_DEFAULTS: Record<FeatureKey, { modelId: string; provider: string }
   chat:          { modelId: 'gpt-5.2',           provider: 'openai' },
   // Titre + catégorie d'historique : modèle flash économique.
   chat_meta:     { modelId: 'gemini-2.5-flash',  provider: 'google' },
+  // Garde d'entrée du chat (étage 2, ADR-0029) : le modèle le moins cher/latent du catalogue.
+  chat_guard:    { modelId: 'gemini-2.5-flash-lite', provider: 'google' },
   analyze:       { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   ecos_simulate: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   ecos_evaluate: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
