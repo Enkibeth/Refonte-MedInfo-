@@ -10,6 +10,8 @@ import {
   formatLinkCheckResults,
   buildChatTools,
   buildChatToolsSection,
+  pubmedMcpServers,
+  PUBMED_MCP_URL,
   CHAT_TOOL_NAMES,
   MAX_URLS_PER_CALL,
 } from '@/ai/chat/tools';
@@ -244,7 +246,31 @@ describe('buildChatTools — disponibilité par chatbot', () => {
   });
 });
 
+describe('pubmedMcpServers — connecteur PubMed MCP (Claude + chatbot pro uniquement)', () => {
+  it('actif seulement pour provider anthropic ET chatbot professionnel', () => {
+    expect(pubmedMcpServers('anthropic', 'professional', {})).toEqual([
+      { type: 'url', name: 'pubmed', url: PUBMED_MCP_URL },
+    ]);
+    expect(pubmedMcpServers('openai', 'professional', {})).toBeNull();
+    expect(pubmedMcpServers('anthropic', 'public', {})).toBeNull();
+    expect(pubmedMcpServers('anthropic', 'student', {})).toBeNull();
+  });
+
+  it("l'env PUBMED_MCP_URL surcharge ou désactive (off / vide)", () => {
+    expect(
+      pubmedMcpServers('anthropic', 'professional', { PUBMED_MCP_URL: 'https://autre.example/mcp' }),
+    ).toEqual([{ type: 'url', name: 'pubmed', url: 'https://autre.example/mcp' }]);
+    expect(pubmedMcpServers('anthropic', 'professional', { PUBMED_MCP_URL: 'off' })).toBeNull();
+    expect(pubmedMcpServers('anthropic', 'professional', { PUBMED_MCP_URL: '  ' })).toBeNull();
+  });
+});
+
 describe('buildChatToolsSection — consigne système', () => {
+  it('mentionne les outils PubMed MCP uniquement quand le connecteur est actif', () => {
+    expect(buildChatToolsSection('professional', { pubmedMcp: true })).toContain('PubMed (serveur officiel');
+    expect(buildChatToolsSection('professional')).not.toContain('serveur officiel');
+  });
+
   it('décrit uniquement les outils réellement disponibles pour le chatbot', () => {
     const pro = buildChatToolsSection('professional');
     expect(pro).toContain(CHAT_TOOL_NAMES.europePmc);

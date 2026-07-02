@@ -33,9 +33,17 @@ import {
   type AnalysisMode,
   type DocumentAnalysis,
 } from '@/document/analysisHistory';
+import {
+  citationPagesLabel,
+  splitAnalysisResult,
+  visibleAnalysisText,
+  type DocumentCitation,
+} from '@/document/citations';
 
 interface Analysis {
   text: string;
+  /** Passages exacts du document cités par le modèle (citations ancrées, modèle Claude). */
+  citations: DocumentCitation[];
 }
 
 interface PickedFile {
@@ -159,12 +167,13 @@ function DocumentScreenInner() {
         const { done, value } = await reader.read();
         if (done) break;
         fullText += decoder.decode(value, { stream: true });
-        // Show progressive result
-        if (fullText.length > 20) setAnalysis({ text: fullText });
+        // Show progressive result (le pied CITATIONS, même partiel, n'est jamais affiché)
+        if (fullText.length > 20) setAnalysis({ text: visibleAnalysisText(fullText), citations: [] });
       }
 
       if (!fullText) throw new Error('Aucune réponse reçue. Réessayez.');
-      setAnalysis({ text: fullText });
+      const { text: finalText, citations } = splitAnalysisResult(fullText);
+      setAnalysis({ text: finalText, citations });
       // L'archivage serveur (onFinish) suit immédiatement la fin du stream.
       setTimeout(() => void refreshHistory(), 1500);
     } catch (e) {
@@ -175,7 +184,8 @@ function DocumentScreenInner() {
   }
 
   function openHistoryItem(item: DocumentAnalysis) {
-    setAnalysis({ text: item.result });
+    const { text, citations } = splitAnalysisResult(item.result);
+    setAnalysis({ text, citations });
     setResultLabel(
       item.mode === 'translation'
         ? `Traduction — ${item.target_language ?? ''} · ${item.source_name ?? 'Document'}`
@@ -376,6 +386,24 @@ function DocumentScreenInner() {
             <View style={styles.resultBody}>
               <MarkdownRenderer text={analysis.text} />
             </View>
+            {analysis.citations.length > 0 ? (
+              <View style={styles.citations}>
+                <Text style={styles.citationsTitle}>Passages du document cités</Text>
+                <Text style={styles.citationsHint}>
+                  Chaque extrait ci-dessous provient mot pour mot de votre document : vous pouvez
+                  vérifier sur quoi s'appuie l'analyse.
+                </Text>
+                {analysis.citations.map((c, i) => {
+                  const pages = citationPagesLabel(c);
+                  return (
+                    <View key={i} style={styles.citationCard}>
+                      <Text style={styles.citationText}>« {c.text} »</Text>
+                      {pages ? <Text style={styles.citationPages}>{pages}</Text> : null}
+                    </View>
+                  );
+                })}
+              </View>
+            ) : null}
             <View style={styles.disclaimer}>
               <Text style={styles.disclaimerText}>
                 Ce résultat est informatif et ne remplace pas une consultation médicale.
@@ -638,6 +666,44 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
   resultBody: { padding: tokens.space.lg },
+  citations: {
+    paddingHorizontal: tokens.space.lg,
+    paddingBottom: tokens.space.lg,
+    gap: tokens.space.sm,
+  },
+  citationsTitle: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  citationsHint: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+    marginBottom: tokens.space.xs,
+  },
+  citationCard: {
+    backgroundColor: tokens.colors.accentSurface,
+    borderLeftWidth: 3,
+    borderLeftColor: tokens.colors.accent,
+    borderRadius: tokens.radius.sm,
+    padding: tokens.space.md,
+    gap: 4,
+  },
+  citationText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.caption.fontSize,
+    fontStyle: 'italic',
+    lineHeight: 20,
+  },
+  citationPages: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
   disclaimer: {
     padding: tokens.space.md,
     borderTopWidth: 1,

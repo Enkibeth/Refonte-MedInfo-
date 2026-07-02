@@ -99,8 +99,24 @@ Principes :
 
 ## Suivi
 
-- Brancher le connecteur PubMed MCP quand le modèle configuré est Claude (complément).
-- API Citations d'Anthropic pour `/api/analyze` (citations ancrées dans le document).
-- Candidature aux crédits « AI for Science » d'Anthropic.
+- ✅ **Connecteur PubMed MCP** (2026-07-02) : `pubmedMcpServers()` dans
+  `src/ai/chat/tools/index.ts` — serveur hébergé Anthropic
+  `https://pubmed.mcp.claude.com/mcp` (sans auth), injecté via
+  `providerOptions.anthropic.mcpServers` UNIQUEMENT quand le modèle configuré du chat
+  est Claude ET pour le chatbot professionnel ; beta `mcp-client` ajoutée
+  automatiquement par `@ai-sdk/anthropic` ; `PUBMED_MCP_URL=off` pour désactiver.
+  Europe PMC reste la voie universelle (gpt-5.2 par défaut).
+- ✅ **API Citations d'Anthropic pour `/api/analyze`** (2026-07-02) : quand le modèle de
+  la feature `analyze` est Claude, les PDF et le texte collé deviennent des blocs
+  `document` avec `citations: {enabled: true}` ; les passages cités (page du PDF ou
+  extrait exact) sont sérialisés en pied de flux `<!--CITATIONS:…-->`
+  (`src/document/citations.ts`, pur, testé), détachés par le client et rendus dans une
+  section « Passages du document cités » ; le pied est archivé avec le résultat →
+  l'historique ré-affiche la même section. Images non éligibles ; autres providers
+  inchangés.
+- ✅ **Candidature « AI for Science »** (2026-07-02) : dossier prêt à soumettre dans
+  `docs/CANDIDATURE_AI_FOR_SCIENCE.md` (programme vérifié : ≤ 20 k$ de crédits / 6 mois,
+  évaluation le 1er lundi du mois ; éligibilité = chercheur rattaché à une institution —
+  angle recherche recommandé, affiliation à compléter par Hugo).
 - Évaluer un vérificateur de sources non-bloquant post-réponse (PR3 de l'ADR-0029) en
   cohérence avec la réintroduction de la sécurité.

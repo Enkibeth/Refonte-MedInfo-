@@ -53,17 +53,52 @@ export function buildChatTools(
 }
 
 /**
+ * Connecteur PubMed MCP (Claude for Life Sciences) — serveur hébergé par Anthropic,
+ * sans authentification, exécuté côté API Anthropic (beta mcp-client ajoutée
+ * automatiquement par @ai-sdk/anthropic quand `mcpServers` est fourni).
+ * Complément d'Europe PMC réservé au chatbot professionnel ET aux modèles Claude :
+ * les autres providers (gpt-5.2 par défaut) gardent la voie universelle Europe PMC.
+ * `PUBMED_MCP_URL=off` (env) désactive le connecteur sans redéploiement.
+ */
+export const PUBMED_MCP_URL = 'https://pubmed.mcp.claude.com/mcp';
+
+export interface AnthropicMcpServer {
+  type: 'url';
+  name: string;
+  url: string;
+}
+
+export function pubmedMcpServers(
+  provider: string,
+  chatbot: ChatbotId,
+  env: Record<string, string | undefined> = process.env,
+): AnthropicMcpServer[] | null {
+  if (provider !== 'anthropic' || chatbot !== 'professional') return null;
+  const url = (env.PUBMED_MCP_URL ?? PUBMED_MCP_URL).trim();
+  if (!url || url.toLowerCase() === 'off') return null;
+  return [{ type: 'url', name: 'pubmed', url }];
+}
+
+/**
  * Section « outils de fiabilisation » concaténée au system prompt (comme le contexte
  * utilisateur) : les prompts produit de Hugo restent la source de vérité du
  * comportement, cette section explique seulement QUAND déléguer aux outils.
  */
-export function buildChatToolsSection(chatbot: ChatbotId): string {
+export function buildChatToolsSection(
+  chatbot: ChatbotId,
+  opts: { pubmedMcp?: boolean } = {},
+): string {
   const lines = [
     `- ${CHAT_TOOL_NAMES.europePmc} : littérature biomédicale réelle (PubMed/Europe PMC : auteurs, journal, année, DOI, citations). À utiliser dès que tu cites une étude — ne cite jamais un article que tu n'as pas retrouvé par cet outil ou la recherche web.`,
   ];
   if (chatbot === 'professional') {
     lines.push(
       `- ${CHAT_TOOL_NAMES.clinicalTrials} : essais cliniques enregistrés (ClinicalTrials.gov : NCT, statut, phase). À utiliser pour toute question sur les essais en cours ou les thérapies émergentes — n'invente jamais un NCT ni un statut de recrutement.`,
+    );
+  }
+  if (opts.pubmedMcp) {
+    lines.push(
+      `- outils PubMed (serveur officiel, via MCP) : recherche PubMed directe (MeSH, PMID, abstracts). À privilégier pour retrouver les références [ÉTUDE] ; croise avec ${CHAT_TOOL_NAMES.europePmc} au besoin.`,
     );
   }
   lines.push(

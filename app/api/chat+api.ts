@@ -34,7 +34,7 @@ import {
   coercePersonalInfo,
   type ChatbotId,
 } from '@/ai/chat/chatContext';
-import { buildChatTools, buildChatToolsSection } from '@/ai/chat/tools';
+import { buildChatTools, buildChatToolsSection, pubmedMcpServers } from '@/ai/chat/tools';
 import type { Persona } from '@/ai/prompts/_schema';
 
 /**
@@ -106,9 +106,21 @@ export async function POST(request: Request): Promise<Response> {
     getRuntimeForFeature('chat', { webSearch: true }),
   ]);
 
-  const system = `${template}${buildUserContextSection(personalInfo)}${buildChatToolsSection(chatbot)}`;
   const modelMessages = await convertToModelMessages(uiMessages as any);
   const { tools: webTools, ...callOptions } = runtime.options;
+
+  // Connecteur PubMed MCP (suivi ADR-0030) : quand le modèle configuré est Claude,
+  // le chatbot professionnel dispose en plus des outils PubMed hébergés par Anthropic
+  // (exécutés côté API Anthropic ; complément de l'outil universel Europe PMC).
+  const mcpServers = pubmedMcpServers(runtime.provider, chatbot);
+  if (mcpServers) {
+    callOptions.providerOptions = {
+      ...(callOptions.providerOptions ?? {}),
+      anthropic: { ...(callOptions.providerOptions?.anthropic ?? {}), mcpServers },
+    };
+  }
+
+  const system = `${template}${buildUserContextSection(personalInfo)}${buildChatToolsSection(chatbot, { pubmedMcp: mcpServers !== null })}`;
 
   // Workflow agents (ADR-0030) : le modèle orchestre des outils qualité serveur
   // (Europe PMC, ClinicalTrials.gov pour le pro, vérification des liens sources).

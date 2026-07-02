@@ -18,6 +18,27 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-07-02] – Claude (Suivi ADR-0030 : PubMed MCP, Citations ancrées, dossier AI for Science)
+### Files modified
+- src/ai/chat/tools/index.ts (+ pubmedMcpServers, section système conditionnelle), app/api/chat+api.ts (injection providerOptions.anthropic.mcpServers)
+- src/document/citations.ts (nouveau : footer CITATIONS pur), app/api/analyze+api.ts (blocs document + citations.enabled, flux + pied, archivage), app/(chat)/document.tsx (section « Passages du document cités »)
+- docs/CANDIDATURE_AI_FOR_SCIENCE.md (nouveau : dossier prêt à soumettre)
+- tests/unit/{chat-tools,document-citations}.test.ts, CLAUDE.md, docs/DECISIONS/0030-agents-outils-qualite-chat.md
+### Purpose
+Les 3 items « Suivi » de l'ADR-0030 : (a) connecteur PubMed MCP hébergé Anthropic pour le
+chatbot pro quand le modèle configuré est Claude ; (b) API Citations d'Anthropic sur
+/api/analyze — chaque affirmation ancrée au passage exact du document (page/extrait),
+rendue au client et archivée ; (c) dossier de candidature AI for Science (≤ 20 k$ de
+crédits) avec évaluation honnête d'éligibilité.
+### Regulatory impact
+None — qualité/vérifiabilité uniquement ; le document analysé n'est toujours jamais
+stocké (seul le résultat + passages cités) ; aucun refus/quota ajouté.
+### Rollback plan
+PubMed MCP : `PUBMED_MCP_URL=off` (sans déploiement) ou retirer l'injection dans
+chat+api.ts. Citations : retirer `citationsEnabled` + le pied dans analyze+api.ts (le
+client tolère l'absence de pied). Dossier : fichier docs sans effet runtime.
+
+
 ## [2026-07-02] – Claude (Workflow agents qualité du chat — ADR-0030)
 ### Files modified
 - src/ai/chat/tools/{index,europePmc,clinicalTrials,verifyLinks,urlSafety}.ts (nouveaux : outils qualité + garde anti-SSRF)
