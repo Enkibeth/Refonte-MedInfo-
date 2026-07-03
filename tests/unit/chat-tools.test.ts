@@ -4,6 +4,8 @@ import {
   isSafePublicHttpUrl,
   buildEuropePmcSearchUrl,
   formatEuropePmcResults,
+  buildEuropePmcArticleUrl,
+  formatEuropePmcArticle,
   buildClinicalTrialsSearchUrl,
   formatClinicalTrialsResults,
   verdictForHttpStatus,
@@ -16,6 +18,7 @@ import {
   MAX_URLS_PER_CALL,
 } from '@/ai/chat/tools';
 import { verifySourceLinksTool } from '@/ai/chat/tools/verifyLinks';
+import { europePmcArticleTool } from '@/ai/chat/tools/europePmc';
 import { pubmedResearchTool, resolvePubmedMcpUrl } from '@/ai/chat/tools/pubmed';
 
 // ── Garde anti-SSRF ────────────────────────────────────────────────────────────
@@ -64,6 +67,122 @@ describe('buildEuropePmcSearchUrl', () => {
     expect(new URL(buildEuropePmcSearchUrl('x', -2)).searchParams.get('pageSize')).toBe('1');
     const longQuery = 'a'.repeat(500);
     expect(new URL(buildEuropePmcSearchUrl(longQuery)).searchParams.get('query')).toHaveLength(300);
+  });
+
+  it('applique le tri recent/cited et omet le tri en pertinence (défaut)', () => {
+    expect(new URL(buildEuropePmcSearchUrl('x', 3, 'recent')).searchParams.get('sort')).toBe(
+      'P_PDATE_D desc',
+    );
+    expect(new URL(buildEuropePmcSearchUrl('x', 3, 'cited')).searchParams.get('sort')).toBe(
+      'CITED desc',
+    );
+    expect(new URL(buildEuropePmcSearchUrl('x', 3, 'relevance')).searchParams.get('sort')).toBeNull();
+    expect(new URL(buildEuropePmcSearchUrl('x', 3)).searchParams.get('sort')).toBeNull();
+  });
+});
+
+// ── Europe PMC — lecture d'article (workflow evidence-first) ────────────────────
+
+describe('buildEuropePmcArticleUrl', () => {
+  it('endpoint article pour un PMID numérique', () => {
+    const url = new URL(buildEuropePmcArticleUrl('38000001')!);
+    expect(url.origin + url.pathname).toBe(
+      'https://www.ebi.ac.uk/europepmc/webservices/rest/article/MED/38000001',
+    );
+    expect(url.searchParams.get('resultType')).toBe('core');
+  });
+
+  it('recherche DOI exacte pour un DOI (nu ou en URL/doi:)', () => {
+    for (const id of [
+      '10.1093/eurheartj/ehae176',
+      'https://doi.org/10.1093/eurheartj/ehae176',
+      'doi:10.1093/eurheartj/ehae176',
+    ]) {
+      const url = new URL(buildEuropePmcArticleUrl(id)!);
+      expect(url.origin + url.pathname).toBe(
+        'https://www.ebi.ac.uk/europepmc/webservices/rest/search',
+      );
+      expect(url.searchParams.get('query')).toBe('DOI:"10.1093/eurheartj/ehae176"');
+      expect(url.searchParams.get('pageSize')).toBe('1');
+    }
+  });
+
+  it('null pour un identifiant qui n’est ni PMID ni DOI', () => {
+    expect(buildEuropePmcArticleUrl('pas un id')).toBeNull();
+    expect(buildEuropePmcArticleUrl('unicorn')).toBeNull();
+  });
+});
+
+describe('formatEuropePmcArticle', () => {
+  it('rend le résumé COMPLET (endpoint article) sans balises HTML', () => {
+    const out = formatEuropePmcArticle({
+      result: {
+        title: 'Anticoagulation in atrial fibrillation.',
+        authorString: 'Dupont A.',
+        journalTitle: 'Eur Heart J',
+        pubYear: '2024',
+        doi: '10.1093/eurheartj/test',
+        pmid: '38000001',
+        abstractText: '<p>Background: a very long abstract about anticoagulation.</p>',
+      },
+    });
+    expect(out).toContain('Anticoagulation in atrial fibrillation — Dupont A. (Eur Heart J, 2024)');
+    expect(out).toContain('Résumé complet :');
+    expect(out).toContain('Background: a very long abstract about anticoagulation.');
+    expect(out).not.toContain('<p>');
+    expect(out).toContain('URL : https://doi.org/10.1093/eurheartj/test');
+  });
+
+  it('accepte aussi la forme recherche {resultList} (DOI)', () => {
+    const out = formatEuropePmcArticle({
+      resultList: { result: [{ title: 'Study', abstractText: 'Some findings.' }] },
+    });
+    expect(out).toContain('Study');
+    expect(out).toContain('Some findings.');
+  });
+
+  it('message actionnable si article introuvable ou résumé absent', () => {
+    expect(formatEuropePmcArticle({ result: {} })).toContain('introuvable');
+    expect(formatEuropePmcArticle(null)).toContain('introuvable');
+    expect(formatEuropePmcArticle({ result: { title: 'No abstract study' } })).toContain(
+      'Résumé indisponible',
+    );
+  });
+});
+
+describe('europe_pmc_article (execute, fetch mocké)', () => {
+  const run = async (tool: ReturnType<typeof europePmcArticleTool>, id: string) =>
+    (await tool.execute!({ id }, { toolCallId: 't', messages: [] } as never)) as string;
+
+  it('lit le résumé complet via l’endpoint article pour un PMID', async () => {
+    let requestedUrl = '';
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      requestedUrl = String(input);
+      return {
+        ok: true,
+        json: async () => ({
+          result: { title: 'Study', abstractText: 'Full abstract text here.', pmid: '38000001' },
+        }),
+      } as unknown as Response;
+    });
+    const out = await run(europePmcArticleTool(fetchMock as unknown as typeof fetch), '38000001');
+    expect(out).toContain('Full abstract text here.');
+    expect(requestedUrl).toContain('/article/MED/38000001');
+  });
+
+  it('identifiant non reconnu → message actionnable sans appel réseau', async () => {
+    const fetchMock = vi.fn();
+    const out = await run(europePmcArticleTool(fetchMock as unknown as typeof fetch), 'pas un id');
+    expect(out).toContain('PMID');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('réseau en échec → repli textuel, jamais une exception', async () => {
+    const fetchMock = vi.fn(async () => {
+      throw new Error('boom');
+    });
+    const out = await run(europePmcArticleTool(fetchMock as unknown as typeof fetch), '38000001');
+    expect(out).toContain('indisponible');
   });
 });
 
@@ -232,10 +351,11 @@ describe('verify_source_links (execute, fetch mocké)', () => {
 // ── Disponibilité par chatbot + section système ───────────────────────────────
 
 describe('buildChatTools — disponibilité par chatbot', () => {
-  it('les 3 chatbots ont littérature + vérification des liens', () => {
+  it('les 3 chatbots ont littérature + lecture d’article + vérification des liens', () => {
     for (const bot of ['public', 'student', 'professional'] as const) {
       const tools = buildChatTools(bot);
       expect(Object.keys(tools)).toContain(CHAT_TOOL_NAMES.europePmc);
+      expect(Object.keys(tools)).toContain(CHAT_TOOL_NAMES.europePmcArticle);
       expect(Object.keys(tools)).toContain(CHAT_TOOL_NAMES.verifyLinks);
     }
   });
@@ -317,6 +437,7 @@ describe('buildChatToolsSection — consigne système', () => {
   it('décrit uniquement les outils réellement disponibles pour le chatbot', () => {
     const pro = buildChatToolsSection('professional');
     expect(pro).toContain(CHAT_TOOL_NAMES.europePmc);
+    expect(pro).toContain(CHAT_TOOL_NAMES.europePmcArticle);
     expect(pro).toContain(CHAT_TOOL_NAMES.clinicalTrials);
     expect(pro).toContain(CHAT_TOOL_NAMES.verifyLinks);
 
@@ -325,5 +446,15 @@ describe('buildChatToolsSection — consigne système', () => {
     expect(pub).toContain('SOURCES');
     // Les prompts produit restent la source de vérité du format.
     expect(pub).toContain('ne changent RIEN au format');
+  });
+
+  it('impose le workflow evidence-first (recherche AVANT de rédiger, lecture des résumés)', () => {
+    const section = buildChatToolsSection('professional');
+    expect(section).toContain('WORKFLOW DE RECHERCHE DOCUMENTAIRE');
+    expect(section).toContain('AVANT de rédiger');
+    // Étape de lecture des résumés (ancrage evidence-first, à la OpenEvidence).
+    expect(section).toContain(CHAT_TOOL_NAMES.europePmcArticle);
+    // Une conversation purement conversationnelle est exemptée du protocole.
+    expect(section).toContain('salutation');
   });
 });

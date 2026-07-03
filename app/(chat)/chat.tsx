@@ -182,6 +182,7 @@ function hasToolActivity(message: UIMessage | undefined): boolean {
 // l'assistant est en train de déléguer (littérature, essais cliniques, vérif des liens).
 const TOOL_STATUS_LABELS: Record<string, string> = {
   europe_pmc_search: 'Recherche dans la littérature scientifique…',
+  europe_pmc_article: 'Lecture des études retenues…',
   clinical_trials_search: "Recherche d'essais cliniques…",
   verify_source_links: 'Vérification des liens sources…',
   pubmed_search: 'Recherche PubMed (sous-agent)…',
