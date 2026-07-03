@@ -80,18 +80,18 @@ export function exportChatToPdf({
 <title>${escapeHtml(title)}</title>
 <style>
   @page { margin: 20mm; }
-  body { font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0F1B22; line-height: 1.5; }
-  header { border-bottom: 2px solid #0A4D68; padding-bottom: 8px; margin-bottom: 16px; }
-  h1 { font-size: 20px; margin: 0 0 2px; color: #083B52; }
-  .meta { color: #697880; font-size: 12px; }
-  .who { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #0A4D68; margin-bottom: 4px; }
-  .q { background: #EFF5F9; border-radius: 8px; padding: 10px 14px; margin: 12px 0 8px; }
-  .a { padding: 4px 2px 12px; border-bottom: 1px solid #ECEFF2; }
-  h3 { font-size: 14px; color: #0A4D68; margin: 12px 0 4px; }
+  body { font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0E1626; line-height: 1.5; }
+  header { border-bottom: 2px solid #2563EB; padding-bottom: 8px; margin-bottom: 16px; }
+  h1 { font-size: 20px; margin: 0 0 2px; color: #1E40AF; }
+  .meta { color: #5D6B80; font-size: 12px; }
+  .who { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #2563EB; margin-bottom: 4px; }
+  .q { background: #EEF4FF; border-radius: 8px; padding: 10px 14px; margin: 12px 0 8px; }
+  .a { padding: 4px 2px 12px; border-bottom: 1px solid #EAEEF5; }
+  h3 { font-size: 14px; color: #2563EB; margin: 12px 0 4px; }
   p { margin: 5px 0; font-size: 13px; }
   ul { margin: 5px 0; padding-left: 20px; }
   li { font-size: 13px; margin: 2px 0; }
-  footer { margin-top: 24px; border-top: 1px solid #DEE3E8; padding-top: 8px; color: #697880; font-size: 11px; }
+  footer { margin-top: 24px; border-top: 1px solid #DDE3ED; padding-top: 8px; color: #5D6B80; font-size: 11px; }
 </style></head>
 <body>
   <header>

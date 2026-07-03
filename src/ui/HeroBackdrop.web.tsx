@@ -2,7 +2,7 @@
  * Fond du hero — implémentation WEB.
  * Trois couches intentionnelles, liées au métier (pas de décor générique) :
  *   1. grille millimétrée très discrète (papier d'observation clinique) ;
- *   2. une seule source de lumière petrol en haut à gauche (éclairage assumé,
+ *   2. une seule source de lumière bleue en haut à gauche (éclairage assumé,
  *      pas d'orbes dégradés multiples) ;
  *   3. tracé ECG qui se dessine une fois au chargement (`.medinfo-ecg-path`,
  *      keyframes dans app/+html.tsx, neutralisé sous prefers-reduced-motion).
@@ -56,7 +56,7 @@ const gridStyle: React.CSSProperties = {
 const lightStyle: React.CSSProperties = {
   position: 'absolute',
   inset: 0,
-  background: 'radial-gradient(640px 360px at 16% -6%, rgba(18,113,147,0.38), transparent 70%)',
+  background: 'radial-gradient(640px 360px at 16% -6%, rgba(59,130,246,0.42), transparent 70%)',
 };
 
 const ecgStyle: React.CSSProperties = {

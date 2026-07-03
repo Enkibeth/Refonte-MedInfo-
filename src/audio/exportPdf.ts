@@ -73,16 +73,16 @@ export function exportDocumentToPdf({ title, createdAt, report, transcription }:
 <title>${escapeHtml(title)}</title>
 <style>
   @page { margin: 20mm; }
-  body { font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0F1B22; line-height: 1.5; }
-  header { border-bottom: 2px solid #0A4D68; padding-bottom: 8px; margin-bottom: 16px; }
-  h1 { font-size: 20px; margin: 0 0 2px; color: #083B52; }
-  .meta { color: #697880; font-size: 12px; }
-  h2 { font-size: 15px; color: #0A4D68; margin: 18px 0 6px; }
+  body { font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0E1626; line-height: 1.5; }
+  header { border-bottom: 2px solid #2563EB; padding-bottom: 8px; margin-bottom: 16px; }
+  h1 { font-size: 20px; margin: 0 0 2px; color: #1E40AF; }
+  .meta { color: #5D6B80; font-size: 12px; }
+  h2 { font-size: 15px; color: #2563EB; margin: 18px 0 6px; }
   p { margin: 6px 0; font-size: 13px; }
   ul { margin: 6px 0; padding-left: 20px; }
   li { font-size: 13px; margin: 2px 0; }
   pre.transcription { white-space: pre-wrap; font-family: inherit; font-size: 13px; }
-  footer { margin-top: 24px; border-top: 1px solid #DEE3E8; padding-top: 8px; color: #697880; font-size: 11px; }
+  footer { margin-top: 24px; border-top: 1px solid #DDE3ED; padding-top: 8px; color: #5D6B80; font-size: 11px; }
 </style></head>
 <body>
   <header>

@@ -25,27 +25,30 @@ linked_to: [02_ARCHITECTURE.md, 04_CHATBOT.md, audits/DESIGN_AUDIT_2026-06.md]
 
 ---
 
-## 2. Palette (validée, étoffée)
+## 2. Palette (refonte 2026-07 : bleu vif)
 
-Identité petrol conservée, déclinée en rampe pour la profondeur et les fonds teintés ;
-neutres cliniques (gris froids désaturés) pour éviter l'aspect « template plat ».
-Source unique : `src/ui/tokens.ts` (clés `tokens.colors.*`).
+**Refonte 2026-07 (demande Hugo)** : le bleu pétrole (jugé fade) est remplacé par une
+identité **bleu vif** — primaire électrique, hero/footer en bleu nuit profond, neutres
+slate froids légèrement teintés bleu. Les clés de tokens sont inchangées (seules les
+valeurs bougent) ; source unique : `src/ui/tokens.ts` (clés `tokens.colors.*`).
 
 | Token (tokens.colors) | Hex | Usage |
 |---|---|---|
-| `accent` | `#0A4D68` | accent principal, header, CTA, bulle user |
-| `accentStrong` | `#0C5C7E` | hover, états actifs |
-| `accentDeep` | `#083B52` | texte accent sur fond clair, profondeur |
-| `accentSurface` | `#EFF5F9` | fond teinté léger (encarts, badges) |
-| `accentSurfaceStrong` | `#DCEAF1` | bordure des fonds teintés |
-| `background` | `#F7FAFB` | fond d'app (off-white teinté petrol, moins plat que blanc pur) |
+| `accent` | `#2563EB` | accent principal, header, bulle user |
+| `accentStrong` | `#3B82F6` | lueurs/décor (hero), états actifs clairs |
+| `accentDeep` | `#1E40AF` | texte accent sur fond clair, profondeur |
+| `accentDarker` | `#141E4E` | bleu nuit — fond hero/footer |
+| `accentVivid` / `accentVividStrong` | `#0067FF` / `#0052D6` | CTA primaires et liens d'action (« bleu pétant ») + hover |
+| `accentSurface` | `#EEF4FF` | fond teinté léger (encarts, badges) |
+| `accentSurfaceStrong` | `#D9E6FF` | bordure des fonds teintés |
+| `background` | `#F7F9FC` | fond d'app (off-white teinté bleu, moins plat que blanc pur) |
 | `surface` | `#FFFFFF` | cartes/panneaux surélevés |
-| `surfaceAlt` | `#F4F6F8` | bulles IA, zones secondaires |
-| `surfaceSunken` | `#ECEFF2` | champs de saisie, fonds enfoncés |
-| `text` | `#0F1B22` | texte principal (ink) |
-| `textSubtle` | `#3A474E` | texte tertiaire renforcé |
-| `textMuted` | `#697880` | texte secondaire (ink-soft) |
-| `border` / `borderStrong` | `#DEE3E8` / `#C4CCD2` | bordures, séparateurs |
+| `surfaceAlt` | `#F3F6FA` | bulles IA, zones secondaires |
+| `surfaceSunken` | `#EAEEF5` | champs de saisie, fonds enfoncés |
+| `text` | `#0E1626` | texte principal (ink) |
+| `textSubtle` | `#36435A` | texte tertiaire renforcé |
+| `textMuted` | `#5D6B80` | texte secondaire (ink-soft) |
+| `border` / `borderStrong` | `#DDE3ED` / `#C3CDDB` | bordures, séparateurs |
 | `success` | `#157F50` | validation QCM correcte |
 | `danger` | `#C42233` | erreur, refus, urgence |
 | `warningText` | `#9A6516` | texte vigilance |
@@ -54,7 +57,10 @@ Sémantiques fournies avec leur fond doux (`successBackground`, `dangerBackgroun
 `warningBackground`). Élévations via `tokens.elevation.{sm,md,lg}` (web) : ombres en
 **deux couches** (contact + diffusion) — jamais un seul grand halo flou « template ».
 
-**Phase 1 : monochrome petrol.** Accents par audience (public/étudiant/pro) **différés en Phase 2** — ne pas fragmenter l'identité au lancement.
+Déclinaisons hors tokens à maintenir alignées : `app/+html.tsx` (theme-color, fond,
+sélection, scrollbar), `app.json` (splash `#141E4E`), exports PDF (`src/chat/exportChatPdf.ts`,
+`src/audio/exportPdf.ts`), pages autonomes `public/partiel.html` / `presentation.html` /
+`cv-builder.html` (variables CSS `--accent*`).
 
 ---
 

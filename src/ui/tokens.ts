@@ -1,9 +1,11 @@
 /**
  * Design system MedInfo AI — source unique (05_DESIGN §2, §3, §4, §9).
  *
- * Identité « bleu pétrole » conservée et étoffée : rampe petrol complète, neutres
- * cliniques (gris froids non boueux), sémantiques sobres, échelle typographique
- * modulaire, espacements 4-pt, rayons mesurés et élévations discrètes.
+ * Refonte 2026-07 (demande Hugo) : exit le « bleu pétrole » jugé fade — identité
+ * BLEU VIF : rampe bleue électrique complète (hero/footer en bleu nuit profond,
+ * CTA saturés), neutres rafraîchis (slate froid légèrement teinté bleu),
+ * sémantiques sobres, échelle typographique modulaire, espacements 4-pt,
+ * rayons mesurés et élévations discrètes.
  *
  * Règle : aucune valeur hex/typo en dur dans les composants — tout passe par ce fichier.
  */
@@ -11,31 +13,31 @@ import { Platform } from 'react-native';
 
 // ── Rampe brute (ne pas consommer directement : passer par `tokens.colors`) ──
 const palette = {
-  // Petrol — identité de marque, déclinée pour la profondeur et les fonds teintés.
-  petrol900: '#062B3D',
-  petrol800: '#083B52', // profondeur, texte accent
-  petrol700: '#0A4D68', // primaire (CTA, header)
-  petrol600: '#0C5C7E', // hover / actif
-  petrol500: '#127193',
-  petrol100: '#DCEAF1', // fond teinté discret
-  petrol50: '#EFF5F9',
+  // Bleu — identité de marque 2026-07 : vif et jeune, décliné pour la profondeur
+  // et les fonds teintés.
+  blue950: '#141E4E', // bleu nuit — hero/footer, profondeur maximale
+  blue800: '#1E40AF', // profondeur, texte accent
+  blue600: '#2563EB', // primaire (CTA, header)
+  blue700: '#1D4ED8', // hover / actif du primaire
+  blue500: '#3B82F6', // lueurs, décor
+  blue100: '#D9E6FF', // fond teinté discret
+  blue50: '#EEF4FF',
 
-  // Bleu vif — essai 2026-06 (audit landing, repris du site actuel medinfo-ai.com).
-  // Réservé aux CTA primaires et accents d'action ; jamais en grandes surfaces
-  // (fonds, hero) où la rampe petrol reste la base.
-  blue600: '#0067FF',
-  blue700: '#0052D6', // hover / actif
+  // Bleu électrique — le « bleu pétant » des CTA primaires et liens d'action
+  // (hérité de l'essai 2026-06, conservé et généralisé par la refonte 2026-07).
+  electric600: '#0067FF',
+  electric700: '#0052D6', // hover / actif
 
-  // Neutres cliniques — gris froids légèrement désaturés, jamais bleu criard.
+  // Neutres — slate froid légèrement teinté bleu (rafraîchi 2026-07), jamais boueux.
   white: '#FFFFFF',
-  neutral25: '#F7FAFB', // fond d'app (off-white teinté petrol, moins « plat » que blanc pur)
-  neutral50: '#F4F6F8', // surfaces alt, cartes
-  neutral100: '#ECEFF2',
-  neutral200: '#DEE3E8', // bordures
-  neutral300: '#C4CCD2',
-  neutral500: '#697880', // texte secondaire
-  neutral700: '#3A474E',
-  neutral900: '#0F1B22', // encre principale
+  neutral25: '#F7F9FC', // fond d'app (off-white teinté bleu, moins « plat » que blanc pur)
+  neutral50: '#F3F6FA', // surfaces alt, cartes
+  neutral100: '#EAEEF5',
+  neutral200: '#DDE3ED', // bordures
+  neutral300: '#C3CDDB',
+  neutral500: '#5D6B80', // texte secondaire
+  neutral700: '#36435A',
+  neutral900: '#0E1626', // encre principale
 
   // Sémantiques — désaturées pour rester sobres en contexte médical.
   green600: '#157F50',
@@ -69,17 +71,17 @@ export const tokens = {
     text: palette.neutral900, // ink
     textMuted: palette.neutral500, // ink-soft
     textSubtle: palette.neutral700,
-    onAccent: palette.white, // texte sur fond petrol
+    onAccent: palette.white, // texte sur fond bleu
 
-    // Accent petrol
-    accent: palette.petrol700, // primaire
-    accentStrong: palette.petrol600, // hover / actif
-    accentDeep: palette.petrol800, // texte accent sur fond clair
-    accentDarker: palette.petrol900, // fond hero, profondeur maximale
-    accentSurface: palette.petrol50, // fond teinté très léger
-    accentSurfaceStrong: palette.petrol100,
-    accentVivid: palette.blue600, // CTA primaires (essai bleu vif 2026-06)
-    accentVividStrong: palette.blue700, // hover des CTA vifs
+    // Accent bleu vif (refonte 2026-07)
+    accent: palette.blue600, // primaire
+    accentStrong: palette.blue500, // lueur / décor (hero) — plus clair que le primaire
+    accentDeep: palette.blue800, // texte accent sur fond clair
+    accentDarker: palette.blue950, // fond hero/footer, profondeur maximale
+    accentSurface: palette.blue50, // fond teinté très léger
+    accentSurfaceStrong: palette.blue100,
+    accentVivid: palette.electric600, // CTA primaires et liens d'action (« bleu pétant »)
+    accentVividStrong: palette.electric700, // hover des CTA vifs
 
     // États
     success: palette.green600,
@@ -91,7 +93,7 @@ export const tokens = {
 
     // États d'interaction (web : hover/focus). Sobres, dérivés de la rampe existante.
     surfaceHover: palette.neutral50, // survol d'une surface blanche (boutons, cartes)
-    accentSurfaceHover: palette.petrol100, // survol d'une pastille teintée petrol
+    accentSurfaceHover: palette.blue100, // survol d'une pastille teintée bleue
 
     // ── Accents par audience (persona) ───────────────────────────────────────
     // Trois publics distincts du design system : pro / étudiant / grand public.
@@ -186,15 +188,15 @@ export const tokens = {
   // « template ». Une seule grande ombre floue est un tell de design générique.
   elevation: {
     sm: Platform.select({
-      web: { boxShadow: '0 1px 2px rgba(15, 27, 34, 0.05), 0 1px 1px rgba(15, 27, 34, 0.04)' },
+      web: { boxShadow: '0 1px 2px rgba(14, 22, 38, 0.05), 0 1px 1px rgba(14, 22, 38, 0.04)' },
       default: {},
     }) as object,
     md: Platform.select({
-      web: { boxShadow: '0 2px 4px rgba(8, 59, 82, 0.05), 0 8px 20px -6px rgba(8, 59, 82, 0.10)' },
+      web: { boxShadow: '0 2px 4px rgba(30, 64, 175, 0.05), 0 8px 20px -6px rgba(30, 64, 175, 0.10)' },
       default: {},
     }) as object,
     lg: Platform.select({
-      web: { boxShadow: '0 4px 8px rgba(8, 59, 82, 0.06), 0 16px 40px -12px rgba(8, 59, 82, 0.18)' },
+      web: { boxShadow: '0 4px 8px rgba(30, 64, 175, 0.06), 0 16px 40px -12px rgba(30, 64, 175, 0.18)' },
       default: {},
     }) as object,
   },
@@ -204,7 +206,7 @@ export const tokens = {
   // le focus clavier ne s'applique pas de la même façon → objet vide ignoré.
   focus: {
     ring: Platform.select({
-      web: { boxShadow: '0 0 0 3px rgba(18, 113, 147, 0.35)' },
+      web: { boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.40)' },
       default: {},
     }) as object,
   },

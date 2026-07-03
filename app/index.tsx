@@ -198,7 +198,7 @@ export default function HomeScreen() {
           hors du ScrollView → reste visible pendant le défilement. */}
       <LandingHeader />
       <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      {/* Hero plein écran, fort contraste (petrol profond / blanc).
+      {/* Hero plein écran, fort contraste (bleu nuit profond / blanc).
           Fond : grille millimétrée + tracé ECG dessiné au chargement (HeroBackdrop). */}
       <View style={styles.hero}>
         <HeroBackdrop />

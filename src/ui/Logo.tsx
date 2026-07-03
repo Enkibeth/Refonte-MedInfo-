@@ -7,7 +7,7 @@ import { tokens } from './tokens';
  * `assets/brand/logo-wordmark.png` (PNG détouré, fond transparent — cf assets/brand/README.md).
  *
  * Tailles : largeur sm 120 / md 170 / lg 220, hauteur = largeur × 0.29 (ratio de l'asset).
- * En `tone="light"` (hero, fond petrol foncé), le logo bleu est posé dans une pastille blanche
+ * En `tone="light"` (hero, fond bleu nuit), le logo bleu est posé dans une pastille blanche
  * arrondie pour le contraste — l'image n'est jamais recolorée.
  *
  * ⚠️ L'alias `@/*` pointe vers `./src/*` ; l'asset est à la racine `./assets`, d'où le chemin
@@ -21,7 +21,7 @@ export function Logo({
   tone = 'dark',
 }: {
   size?: 'sm' | 'md' | 'lg';
-  /** 'dark' : sur fond clair (défaut). 'light' : sur fond petrol/sombre (hero). */
+  /** 'dark' : sur fond clair (défaut). 'light' : sur fond bleu nuit/sombre (hero). */
   tone?: 'dark' | 'light';
 }) {
   const width = WIDTHS[size];

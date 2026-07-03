@@ -184,7 +184,7 @@ export function HistoryPanel({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(6, 43, 61, 0.35)',
+    backgroundColor: 'rgba(20, 30, 78, 0.35)',
     flexDirection: 'row',
   },
   panelSlide: { height: '100%', width: 340, maxWidth: '88%' },

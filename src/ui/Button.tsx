@@ -12,7 +12,7 @@ import { tokens } from './tokens';
 
 /**
  * Bouton MedInfo — primitive unique pour tous les écrans (05_DESIGN §5).
- * Variantes : primary (CTA petrol), secondary (contour), ghost (texte), danger.
+ * Variantes : primary (CTA bleu électrique), secondary (contour), ghost (texte), danger.
  * États gérés : pressed (translation/opacité sobre), disabled, loading.
  */
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'inverse' | 'outlineLight';
@@ -113,8 +113,7 @@ const styles = StyleSheet.create({
 
 const variantStyles: Record<Variant, { container: ViewStyle; hover: ViewStyle; label: { color: string } }> = {
   primary: {
-    // Essai 2026-06 : CTA en bleu vif (tokens.colors.accentVivid) — revenir à
-    // tokens.colors.accent / accentStrong pour retrouver le petrol d'origine.
+    // CTA en bleu électrique (tokens.colors.accentVivid) — identité 2026-07.
     container: { backgroundColor: tokens.colors.accentVivid, ...tokens.elevation.sm },
     // Survol : teinte plus dense + légère élévation/remontée → CTA « vivant » mais sobre.
     hover: { backgroundColor: tokens.colors.accentVividStrong, transform: [{ translateY: -1 }], ...tokens.elevation.md },
@@ -135,7 +134,7 @@ const variantStyles: Record<Variant, { container: ViewStyle; hover: ViewStyle; l
     hover: { transform: [{ translateY: -1 }], ...tokens.elevation.md },
     label: { color: tokens.colors.onAccent },
   },
-  // Pour fonds petrol/sombres (hero) : bouton blanc, texte petrol.
+  // Pour fonds bleus/sombres (hero) : bouton blanc, texte bleu profond.
   inverse: {
     container: { backgroundColor: tokens.colors.onAccent, ...tokens.elevation.md },
     hover: { transform: [{ translateY: -1 }], ...tokens.elevation.lg },

@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(6, 43, 61, 0.4)',
+    backgroundColor: 'rgba(20, 30, 78, 0.4)',
     justifyContent: 'flex-end',
   },
   sheet: {

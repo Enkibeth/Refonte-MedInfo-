@@ -15,7 +15,7 @@ export default function Root({ children }: PropsWithChildren) {
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no" />
-        <meta name="theme-color" content="#0A4D68" />
+        <meta name="theme-color" content="#2563EB" />
 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -33,7 +33,7 @@ export default function Root({ children }: PropsWithChildren) {
 }
 
 const baseStyle = `
-html, body { background-color: #F7FAFB; }
+html, body { background-color: #F7F9FC; }
 /* Hauteur dynamique (dvh) : sur Safari mobile, la barre d'outils du navigateur ne
    recouvre plus le contenu → la barre d'onglets du bas reste entièrement visible.
    overflow-x masqué : un token très long (URL) ne crée plus de défilement horizontal
@@ -46,14 +46,14 @@ body { overflow-x: hidden; }
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
-::selection { background-color: rgba(10, 77, 104, 0.16); }
+::selection { background-color: rgba(37, 99, 235, 0.16); }
 
 /* Barre de défilement fine et neutre : signe d'attention au détail, jamais criarde. */
-* { scrollbar-width: thin; scrollbar-color: #C4CCD2 transparent; }
+* { scrollbar-width: thin; scrollbar-color: #C3CDDB transparent; }
 *::-webkit-scrollbar { width: 8px; height: 8px; }
 *::-webkit-scrollbar-track { background: transparent; }
-*::-webkit-scrollbar-thumb { background-color: #C4CCD2; border-radius: 999px; }
-*::-webkit-scrollbar-thumb:hover { background-color: #697880; }
+*::-webkit-scrollbar-thumb { background-color: #C3CDDB; border-radius: 999px; }
+*::-webkit-scrollbar-thumb:hover { background-color: #5D6B80; }
 
 /* Mouvement (design system §4). Courbes partagées avec tokens.motion.easing.
    L'entrée par défaut : fade + remontée 8 px, easing « standard ». */
