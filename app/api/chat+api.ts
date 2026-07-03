@@ -155,9 +155,11 @@ export async function POST(request: Request): Promise<Response> {
     system,
     messages: modelMessages,
     ...(Object.keys(tools).length > 0 ? { tools } : {}),
-    // Boucle agentique : le modèle peut enchaîner recherche → vérification → rédaction.
-    // Borné pour ne jamais boucler indéfiniment (chaque étape = un appel LLM).
-    stopWhen: stepCountIs(8),
+    // Boucle agentique evidence-first : le modèle enchaîne recherche → lecture des
+    // résumés des articles retenus → vérification des liens → rédaction. Borné pour ne
+    // jamais boucler indéfiniment (chaque étape = un appel LLM) ; 12 laisse la place à
+    // plusieurs recherches + la lecture de 2-3 abstracts avant la rédaction finale.
+    stopWhen: stepCountIs(12),
     ...callOptions,
     onFinish: async ({ text, steps, usage }) => {
       // En multi-étapes, `text` ne contient que la DERNIÈRE étape : on archive la
