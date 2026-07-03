@@ -1151,13 +1151,14 @@ const styles = StyleSheet.create({
     width: tokens.size.controlMd,
     height: tokens.size.controlMd,
     borderRadius: tokens.radius.pill,
-    backgroundColor: tokens.colors.accent,
+    // CTA principal du chat : même bleu électrique que les boutons primaires (2026-07).
+    backgroundColor: tokens.colors.accentVivid,
     justifyContent: 'center',
     alignItems: 'center',
     ...tokens.elevation.sm,
     ...tokens.motion.transitionWeb,
   },
-  sendButtonHover: { backgroundColor: tokens.colors.accentStrong, transform: [{ translateY: -1 }], ...tokens.elevation.md },
+  sendButtonHover: { backgroundColor: tokens.colors.accentVividStrong, transform: [{ translateY: -1 }], ...tokens.elevation.md },
   sendButtonFocus: tokens.focus.ring,
   sendButtonPressed: { transform: [{ scale: 0.94 }], opacity: 0.95 },
   sendButtonDisabled: {
