@@ -21,9 +21,3 @@ export const SEX_OPTIONS: { value: Sex; label: string }[] = [
   { value: 'autre', label: 'Autre' },
   { value: 'non_precise', label: 'Non précisé' },
 ];
-
-/** True si au moins un champ est renseigné. */
-export function hasPersonalInfo(info: PersonalInfo | null | undefined): boolean {
-  if (!info) return false;
-  return Boolean(info.firstName || info.lastName || info.age != null || info.sex);
-}

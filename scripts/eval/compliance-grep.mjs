@@ -9,7 +9,7 @@ const forbidden = [
   /votre diagnostic est/i,
   /nous diagnostiquons/i,
 ];
-const allow = [/PlaceholderScreen\.tsx$/, /disclosures\.ts$/];
+const allow = [/disclosures\.ts$/];
 
 function walk(dir) {
   try {

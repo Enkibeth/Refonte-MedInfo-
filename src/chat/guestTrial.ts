@@ -29,13 +29,3 @@ export function markGuestMessageUsed(): void {
     /* repli mémoire déjà posé */
   }
 }
-
-/** Réinitialisation pour les tests. */
-export function __resetGuestTrialForTests(): void {
-  memoryUsed = false;
-  try {
-    globalThis.localStorage?.removeItem(STORAGE_KEY);
-  } catch {
-    /* no-op */
-  }
-}

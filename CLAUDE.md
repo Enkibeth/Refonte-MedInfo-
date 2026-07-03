@@ -161,15 +161,16 @@ ma_feature: {
 },
 ```
 
-### 5. Utiliser getModelForFeature() et getPromptTemplate() dans l'API
+### 5. Utiliser getRuntimeForFeature() et getPromptTemplate() dans l'API
 ```ts
-import { getModelForFeature } from '@/ai/providers/featureModel';
+import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 
-const [model, systemPrompt] = await Promise.all([
-  getModelForFeature('ma_feature'),
+const [runtime, systemPrompt] = await Promise.all([
+  getRuntimeForFeature('ma_feature'),
   getPromptTemplate('ma_feature'),
 ]);
+// puis : streamText({ model: runtime.model, system: systemPrompt, ...runtime.options, ... })
 ```
 
 ### 6. Ajouter le commentaire de convention dans le fichier API

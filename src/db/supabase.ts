@@ -21,7 +21,7 @@ function assertHeaderSafe(value: string, varName: string): void {
   }
 }
 
-export function createBrowserSupabaseClient(): SupabaseClient {
+function createBrowserSupabaseClient(): SupabaseClient {
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error('Missing EXPO_PUBLIC_SUPABASE_URL or EXPO_PUBLIC_SUPABASE_ANON_KEY.');
   }

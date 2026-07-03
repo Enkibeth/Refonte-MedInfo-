@@ -7,11 +7,7 @@
  * son key ici dans FEATURE_DEFAULTS et dans src/admin/index.ts AI_FEATURES.
  * Voir aussi les migrations SQL ai_model_config (0011) et ai_model_params (0015).
  */
-import { anthropic } from '@ai-sdk/anthropic';
-import { openai } from '@ai-sdk/openai';
-import { google } from '@ai-sdk/google';
 import { createClient } from '@supabase/supabase-js';
-import type { LanguageModel } from 'ai';
 import type { FeatureKey } from '@/admin/index';
 
 /** Modèles par défaut si Supabase est inaccessible. */
@@ -255,24 +251,8 @@ export function invalidateConfigCache() {
   cache = null;
 }
 
-function buildModel(modelId: string, provider: string): LanguageModel {
-  if (provider === 'openai') return openai(modelId);
-  if (provider === 'google') return google(modelId);
-  return anthropic(modelId);
-}
-
 /** Réglages complets d'une fonctionnalité (DB > défaut). */
 export async function getFeatureSettings(feature: FeatureKey): Promise<FeatureSettings> {
   const config = await fetchConfig();
   return config[feature] ?? defaultSettings(feature);
-}
-
-export async function getModelForFeature(feature: FeatureKey): Promise<LanguageModel> {
-  const s = await getFeatureSettings(feature);
-  return buildModel(s.modelId, s.provider);
-}
-
-export async function getModelIdForFeature(feature: FeatureKey): Promise<string> {
-  const s = await getFeatureSettings(feature);
-  return s.modelId;
 }

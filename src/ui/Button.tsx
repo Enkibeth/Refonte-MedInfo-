@@ -147,12 +147,3 @@ const variantStyles: Record<Variant, { container: ViewStyle; hover: ViewStyle; l
     label: { color: tokens.colors.onAccent },
   },
 };
-
-/** Espace réservé exporté pour composer des rangées de boutons cohérentes. */
-export function ButtonRow({ children }: { children: React.ReactNode }) {
-  return <View style={rowStyles.row}>{children}</View>;
-}
-
-const rowStyles = StyleSheet.create({
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.md },
-});
