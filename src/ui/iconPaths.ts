@@ -55,6 +55,8 @@ export const ICON_PATHS = {
   idCard:
     'M19 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Z M9 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z M7 16a2.5 2.5 0 0 1 2.5-2.5h0A2.5 2.5 0 0 1 12 16 M14 9h4 M14 13h4',
   check: 'M20 6 9 17l-5-5',
+  layoutGrid:
+    'M3 4a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z M14 4a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1Z M14 15a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1Z M3 15a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z',
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

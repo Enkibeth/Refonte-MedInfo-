@@ -41,6 +41,11 @@ export interface AppFeatureMeta {
   description: string;
   /** Personas qui voient la feature (hors admin, qui voit tout). */
   personas: Persona[];
+  /**
+   * Candidate aux onglets de la barre du bas quand le rôle a trop d'outils
+   * (au-delà de TAB_BAR_MAX, les non-prioritaires basculent dans le panneau « Outils »).
+   */
+  primary?: boolean;
 }
 
 /** Registre des fonctionnalités exposées dans l'app + leur audience. */
@@ -53,6 +58,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     icon: 'messageCircle',
     description: 'Information santé claire et sourcée (HAS, ANSM…).',
     personas: ['public', 'student', 'professional'],
+    primary: true,
   },
   {
     id: 'document',
@@ -62,6 +68,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     icon: 'fileText',
     description: 'Résumé patient d’un compte rendu ou d’une ordonnance.',
     personas: ['public'],
+    primary: true,
   },
   {
     id: 'ecos',
@@ -71,6 +78,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     icon: 'stethoscope',
     description: 'Simulation patient ECOS + évaluation pédagogique.',
     personas: ['student'],
+    primary: true,
   },
   {
     id: 'partiel',
@@ -89,6 +97,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     icon: 'calendarCheck',
     description: 'Planifie tes révisions : charge quotidienne réaliste, suivi et jauge de risque.',
     personas: ['student'],
+    primary: true,
   },
   {
     id: 'audio',
@@ -98,6 +107,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     icon: 'micVoice',
     description: 'Compte rendu structuré d’une consultation dictée.',
     personas: ['professional'],
+    primary: true,
   },
   {
     id: 'presentation',
@@ -107,6 +117,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     icon: 'presentation',
     description: 'Slides médicales prêtes pour Keynote (manuel ou IA) — export PPTX.',
     personas: ['student', 'professional'],
+    primary: true,
   },
   {
     id: 'cv-builder',
@@ -156,4 +167,41 @@ export function visibleFeatures(
   ctx: VisibilityContext = {},
 ): AppFeatureMeta[] {
   return APP_FEATURES.filter((f) => isFeatureVisible(f.id, persona, ctx));
+}
+
+/**
+ * Nombre maximal d'onglets dans la barre du bas (lisibilité mobile).
+ * Au-delà, la barre affiche les outils prioritaires + un bouton « Outils »
+ * qui ouvre le panneau complet (cf. src/ui/AppTabBar.tsx).
+ */
+export const TAB_BAR_MAX = 4;
+
+export interface TabBarSplit {
+  /** Onglets affichés dans la barre du bas (≤ TAB_BAR_MAX). */
+  bar: AppFeatureMeta[];
+  /** Outils restants, accessibles via le panneau « Outils » (vide → pas de bouton). */
+  overflow: AppFeatureMeta[];
+}
+
+/**
+ * Répartition des outils visibles entre la barre du bas et le panneau « Outils ».
+ * Si tout tient (≤ TAB_BAR_MAX), pas de panneau. Sinon : TAB_BAR_MAX − 1 outils
+ * prioritaires (`primary`, complétés dans l'ordre si besoin) + bouton « Outils ».
+ */
+export function tabBarFeatures(
+  persona: Persona | null | undefined,
+  ctx: VisibilityContext = {},
+): TabBarSplit {
+  const visible = visibleFeatures(persona, ctx);
+  if (visible.length <= TAB_BAR_MAX) return { bar: visible, overflow: [] };
+
+  const slots = TAB_BAR_MAX - 1; // une place réservée au bouton « Outils »
+  const bar = visible.filter((f) => f.primary).slice(0, slots);
+  // Complète avec les premiers outils visibles si trop peu de prioritaires.
+  for (const f of visible) {
+    if (bar.length >= slots) break;
+    if (!bar.includes(f)) bar.push(f);
+  }
+  const overflow = visible.filter((f) => !bar.includes(f));
+  return { bar, overflow };
 }
