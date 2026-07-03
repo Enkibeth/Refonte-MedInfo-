@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 
 import {
   APP_FEATURES,
+  TAB_BAR_MAX,
   isFeatureVisible,
+  tabBarFeatures,
   visibleFeatures,
   type AppFeatureId,
 } from '@/ai/routing/featureVisibility';
@@ -85,5 +87,56 @@ describe('featureVisibility — visiteur non connecté (essai sans inscription)'
 
   it('le chat reste visible pour le visiteur', () => {
     expect(isFeatureVisible('chat', null, { isGuest: true })).toBe(true);
+  });
+});
+
+describe('tabBarFeatures — répartition barre du bas / panneau Outils (lisibilité mobile)', () => {
+  const split = (persona: 'public' | 'student' | 'professional' | null, isAdmin = false, isGuest = false) => {
+    const { bar, overflow } = tabBarFeatures(persona, { isAdmin, isGuest });
+    return { bar: bar.map((f) => f.id), overflow: overflow.map((f) => f.id) };
+  };
+
+  it('la barre ne dépasse jamais TAB_BAR_MAX entrées, quel que soit le rôle', () => {
+    for (const persona of ['public', 'student', 'professional', null] as const) {
+      expect(tabBarFeatures(persona).bar.length).toBeLessThanOrEqual(TAB_BAR_MAX);
+    }
+    expect(tabBarFeatures('public', { isAdmin: true }).bar.length).toBeLessThanOrEqual(TAB_BAR_MAX);
+  });
+
+  it('grand public : tout tient dans la barre, pas de panneau', () => {
+    expect(split('public')).toEqual({ bar: ['chat', 'document'], overflow: [] });
+  });
+
+  it('professionnel : 4 outils = 4 onglets, pas de panneau', () => {
+    expect(split('professional')).toEqual({
+      bar: ['chat', 'audio', 'presentation', 'cv-builder'],
+      overflow: [],
+    });
+  });
+
+  it('étudiant : 3 outils prioritaires + le reste dans le panneau', () => {
+    expect(split('student')).toEqual({
+      bar: ['chat', 'ecos', 'revision'],
+      overflow: ['partiel', 'presentation', 'cv-builder'],
+    });
+  });
+
+  it('admin : 3 prioritaires + le reste dans le panneau (rien de perdu)', () => {
+    const { bar, overflow } = split('public', true);
+    expect(bar).toEqual(['chat', 'document', 'ecos']);
+    expect([...bar, ...overflow].sort()).toEqual(APP_FEATURES.map((f) => f.id).sort());
+  });
+
+  it('barre + panneau = exactement les outils visibles du rôle (aucun doublon, aucun oubli)', () => {
+    for (const persona of ['public', 'student', 'professional'] as const) {
+      const { bar, overflow } = split(persona);
+      const all = [...bar, ...overflow];
+      expect(new Set(all).size).toBe(all.length);
+      expect(all.sort()).toEqual(visibleFeatures(persona).map((f) => f.id).sort());
+    }
+  });
+
+  it('visiteur non connecté : seul le chat, pas de panneau', () => {
+    expect(split(null, false, true)).toEqual({ bar: ['chat'], overflow: [] });
   });
 });
