@@ -4,10 +4,13 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
+import { PAGE_SEO, breadcrumbJsonLd, organizationJsonLd } from '@/seo/meta';
 import { Button } from '@/ui/Button';
 import { LandingHeader } from '@/ui/LandingHeader';
 import { Icon, type IconName } from '@/ui/icons';
 import { Reveal } from '@/ui/Reveal';
+import { SeoHead } from '@/ui/SeoHead';
+import { SiteFooter } from '@/ui/SiteFooter';
 import { tokens } from '@/ui/tokens';
 
 const VALUES: { icon: IconName; title: string; text: string }[] = [
@@ -24,7 +27,7 @@ const VALUES: { icon: IconName; title: string; text: string }[] = [
   {
     icon: 'shield',
     title: 'Fiabilité',
-    text: 'Des réponses appuyées sur les référentiels français et européens : HAS, ANSM, sociétés savantes, littérature scientifique.',
+    text: 'Des réponses appuyées sur les référentiels français et européens : HAS, ANSM, sociétés savantes, littérature scientifique — avec chaque lien cité vérifié avant la rédaction.',
   },
   {
     icon: 'refresh',
@@ -37,6 +40,18 @@ export default function AboutScreen() {
   const router = useRouter();
   return (
     <View style={styles.screen}>
+      <SeoHead
+        title={PAGE_SEO.about.title}
+        description={PAGE_SEO.about.description}
+        path={PAGE_SEO.about.path}
+        jsonLd={[
+          organizationJsonLd(),
+          breadcrumbJsonLd([
+            { name: 'Accueil', path: '/' },
+            { name: 'À propos', path: PAGE_SEO.about.path },
+          ]),
+        ]}
+      />
       <LandingHeader />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.inner}>
@@ -52,11 +67,19 @@ export default function AboutScreen() {
               confiance.
             </Text>
             <Text style={styles.paragraph}>
-              Notre réponse : une intelligence artificielle qui s'appuie exclusivement sur la
-              littérature médicale française et européenne — recommandations HAS, ANSM, sociétés
-              savantes, études publiées — et qui cite ses sources à chaque réponse. Trois
-              assistants spécialisés accompagnent chacun à son niveau : le grand public, les
-              étudiants en santé et les professionnels.
+              Notre réponse : une intelligence artificielle qui ne répond pas « de mémoire ».
+              Pour chaque question, l'assistant recherche en direct dans des sources réelles —
+              recommandations HAS, ANSM et sociétés savantes, littérature scientifique via
+              Europe PMC et PubMed, essais cliniques ClinicalTrials.gov — puis vérifie un à un
+              les liens qu'il va citer avant de rédiger. Chaque réponse affiche ses sources,
+              avec leur niveau de preuve.
+            </Text>
+            <Text style={styles.paragraph}>
+              Trois assistants spécialisés accompagnent chacun à son niveau : le grand public
+              (explications sans jargon, analyse de document médical), les étudiants en santé
+              (référentiels des Collèges EDN/R2C, simulation ECOS, planning de révisions,
+              présentations, CV) et les professionnels (synthèses fondées sur les preuves,
+              recherche PubMed, compte rendu de consultation dicté).
             </Text>
             <Text style={styles.paragraph}>
               MedInfo AI ne remplace ni votre médecin ni votre pharmacien : nous fournissons de
@@ -94,6 +117,8 @@ export default function AboutScreen() {
             />
           </Reveal>
         </View>
+        <View style={styles.footerSpacer} />
+        <SiteFooter />
       </ScrollView>
     </View>
   );
@@ -102,7 +127,8 @@ export default function AboutScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: tokens.colors.background },
   scroll: { flex: 1 },
-  content: { flexGrow: 1, alignItems: 'center', paddingBottom: tokens.space['3xl'] },
+  content: { flexGrow: 1, alignItems: 'center' },
+  footerSpacer: { height: tokens.space['3xl'] },
   inner: {
     width: '100%',
     maxWidth: 720,

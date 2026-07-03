@@ -11,9 +11,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { getPostBySlug, type BlogPost } from '@/blog/posts';
 import { splitArticleSections } from '@/blog/toc';
+import { PAGE_SEO, blogPostingJsonLd, breadcrumbJsonLd } from '@/seo/meta';
 import { LandingHeader } from '@/ui/LandingHeader';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { Icon } from '@/ui/icons';
+import { SeoHead } from '@/ui/SeoHead';
+import { SiteFooter } from '@/ui/SiteFooter';
 import { Skeleton } from '@/ui/Skeleton';
 import { tokens } from '@/ui/tokens';
 
@@ -58,6 +61,30 @@ export default function BlogArticleScreen() {
 
   return (
     <View style={styles.screen}>
+      {post ? (
+        <SeoHead
+          title={post.title}
+          description={post.summary ?? PAGE_SEO.blog.description}
+          path={`/blog/${post.slug}`}
+          image={post.cover_image_url}
+          type="article"
+          jsonLd={[
+            blogPostingJsonLd({
+              slug: post.slug,
+              title: post.title,
+              summary: post.summary,
+              coverImageUrl: post.cover_image_url,
+              publishedAt: post.published_at,
+              category: post.category,
+            }),
+            breadcrumbJsonLd([
+              { name: 'Accueil', path: '/' },
+              { name: 'Blog', path: PAGE_SEO.blog.path },
+              { name: post.title, path: `/blog/${post.slug}` },
+            ]),
+          ]}
+        />
+      ) : null}
       <LandingHeader />
       <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.inner}>
@@ -138,6 +165,8 @@ export default function BlogArticleScreen() {
             </>
           )}
         </View>
+        <View style={styles.footerSpacer} />
+        <SiteFooter />
       </ScrollView>
     </View>
   );
@@ -146,7 +175,8 @@ export default function BlogArticleScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: tokens.colors.background },
   scroll: { flex: 1 },
-  content: { flexGrow: 1, alignItems: 'center', paddingBottom: tokens.space['3xl'] },
+  content: { flexGrow: 1, alignItems: 'center' },
+  footerSpacer: { height: tokens.space['3xl'] },
   inner: {
     width: '100%',
     maxWidth: 720,

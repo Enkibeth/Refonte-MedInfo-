@@ -5,10 +5,12 @@ import { Linking, Platform, StyleSheet, Text, View } from 'react-native';
 import { useSession } from '@/auth/AuthProvider';
 import { plansForPersona, type BillingPlanId } from '@/billing/plans';
 import { shouldShowWebBilling } from '@/billing/surface';
+import { PAGE_SEO, breadcrumbJsonLd } from '@/seo/meta';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
-import { Logo } from '@/ui/Logo';
+import { LandingHeader } from '@/ui/LandingHeader';
 import { Screen } from '@/ui/Screen';
+import { SeoHead } from '@/ui/SeoHead';
 import { tokens } from '@/ui/tokens';
 
 /**
@@ -57,10 +59,22 @@ export default function PricingScreen() {
   }
 
   return (
-    <Screen maxWidth={640}>
-      <View style={styles.brandHeader}>
-        <Logo size="sm" />
-      </View>
+    <View style={styles.screen}>
+      <SeoHead
+        title={PAGE_SEO.pricing.title}
+        description={PAGE_SEO.pricing.description}
+        path={PAGE_SEO.pricing.path}
+        jsonLd={[
+          breadcrumbJsonLd([
+            { name: 'Accueil', path: '/' },
+            { name: 'Tarifs', path: PAGE_SEO.pricing.path },
+          ]),
+        ]}
+      />
+      {/* Header public (refonte SEO 2026-07) : Tarifs est une page marketing,
+          elle partage la navigation des pages publiques. */}
+      <LandingHeader />
+      <Screen maxWidth={640}>
       <Text style={styles.title}>Offres</Text>
 
       <View style={styles.sourcesBox}>
@@ -119,12 +133,13 @@ export default function PricingScreen() {
           Retour au compte
         </Link>
       </View>
-    </Screen>
+      </Screen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  brandHeader: { marginBottom: tokens.space.lg },
+  screen: { flex: 1, backgroundColor: tokens.colors.background },
   title: {
     fontFamily: tokens.font.serif,
     color: tokens.colors.text,

@@ -8,8 +8,11 @@ import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { useRouter } from 'expo-router';
 
 import { listPublishedPosts, type BlogPost } from '@/blog/posts';
+import { PAGE_SEO, breadcrumbJsonLd } from '@/seo/meta';
 import { LandingHeader } from '@/ui/LandingHeader';
 import { Reveal } from '@/ui/Reveal';
+import { SeoHead } from '@/ui/SeoHead';
+import { SiteFooter } from '@/ui/SiteFooter';
 import { Skeleton } from '@/ui/Skeleton';
 import { tokens } from '@/ui/tokens';
 
@@ -36,6 +39,17 @@ export default function BlogScreen() {
 
   return (
     <View style={styles.screen}>
+      <SeoHead
+        title={PAGE_SEO.blog.title}
+        description={PAGE_SEO.blog.description}
+        path={PAGE_SEO.blog.path}
+        jsonLd={[
+          breadcrumbJsonLd([
+            { name: 'Accueil', path: '/' },
+            { name: 'Blog', path: PAGE_SEO.blog.path },
+          ]),
+        ]}
+      />
       <LandingHeader />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.inner}>
@@ -108,6 +122,8 @@ export default function BlogScreen() {
             </View>
           )}
         </View>
+        <View style={styles.footerSpacer} />
+        <SiteFooter />
       </ScrollView>
     </View>
   );
@@ -116,7 +132,8 @@ export default function BlogScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: tokens.colors.background },
   scroll: { flex: 1 },
-  content: { flexGrow: 1, alignItems: 'center', paddingBottom: tokens.space['3xl'] },
+  content: { flexGrow: 1, alignItems: 'center' },
+  footerSpacer: { height: tokens.space['3xl'] },
   inner: {
     width: '100%',
     maxWidth: 960,

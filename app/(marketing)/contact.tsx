@@ -6,9 +6,12 @@
 import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
+import { PAGE_SEO, breadcrumbJsonLd, organizationJsonLd } from '@/seo/meta';
 import { LandingHeader } from '@/ui/LandingHeader';
 import { Icon, type IconName } from '@/ui/icons';
 import { Reveal } from '@/ui/Reveal';
+import { SeoHead } from '@/ui/SeoHead';
+import { SiteFooter } from '@/ui/SiteFooter';
 import { tokens } from '@/ui/tokens';
 
 const CONTACT_EMAIL = 'medaifr1@gmail.com';
@@ -48,6 +51,18 @@ export default function ContactScreen() {
 
   return (
     <View style={styles.screen}>
+      <SeoHead
+        title={PAGE_SEO.contact.title}
+        description={PAGE_SEO.contact.description}
+        path={PAGE_SEO.contact.path}
+        jsonLd={[
+          organizationJsonLd(),
+          breadcrumbJsonLd([
+            { name: 'Accueil', path: '/' },
+            { name: 'Contact', path: PAGE_SEO.contact.path },
+          ]),
+        ]}
+      />
       <LandingHeader />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.inner}>
@@ -84,6 +99,8 @@ export default function ContactScreen() {
             </Reveal>
           ))}
         </View>
+        <View style={styles.footerSpacer} />
+        <SiteFooter />
       </ScrollView>
     </View>
   );
@@ -92,7 +109,8 @@ export default function ContactScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: tokens.colors.background },
   scroll: { flex: 1 },
-  content: { flexGrow: 1, alignItems: 'center', paddingBottom: tokens.space['3xl'] },
+  content: { flexGrow: 1, alignItems: 'center' },
+  footerSpacer: { height: tokens.space['3xl'] },
   inner: {
     width: '100%',
     maxWidth: 720,

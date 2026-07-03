@@ -4,14 +4,17 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
 import type { Persona } from '@/ai/prompts/_schema';
-import { visibleFeatures } from '@/ai/routing/featureVisibility';
+import { APP_FEATURES, visibleFeatures } from '@/ai/routing/featureVisibility';
 import { INTENDED_PURPOSE, getAiDisclosure } from '@/compliance/disclosures';
+import { PAGE_SEO, faqPageJsonLd, organizationJsonLd, webSiteJsonLd, type FaqItem } from '@/seo/meta';
 import { Button } from '@/ui/Button';
 import { HeroBackdrop } from '@/ui/HeroBackdrop';
 import { Icon, type IconName } from '@/ui/icons';
 import { LandingHeader } from '@/ui/LandingHeader';
 import { PersonaCard, type PersonaId } from '@/ui/PersonaCard';
 import { Reveal } from '@/ui/Reveal';
+import { SeoHead } from '@/ui/SeoHead';
+import { SiteFooter } from '@/ui/SiteFooter';
 import { tokens } from '@/ui/tokens';
 
 /** Persona « santé » ciblée par une carte d'accueil (la carte `pro` → 'professional'). */
@@ -25,17 +28,101 @@ const TRUST_POINTS: { icon: IconName; title: string; text: string }[] = [
   {
     icon: 'shield',
     title: 'Sources officielles',
-    text: 'Réponses appuyées sur HAS, ANSM, VIDAL, Thériaque, PubMed.',
+    text: 'Réponses appuyées sur HAS, ANSM, VIDAL, Thériaque, PubMed et les sociétés savantes.',
+  },
+  {
+    icon: 'shieldCheck',
+    title: 'Liens vérifiés un à un',
+    text: 'Chaque lien cité est testé avant la rédaction de la réponse — zéro lien mort dans les sources.',
   },
   {
     icon: 'sparkles',
     title: 'Transparence',
-    text: 'Chaque échange rappelle qu’il s’agit d’une IA et reste vérifiable.',
+    text: 'Chaque échange rappelle qu’il s’agit d’une IA ; les citations sont cliquables, avec le niveau de preuve.',
   },
   {
     icon: 'bookOpen',
     title: 'Références gratuites',
     text: 'Les sources restent accessibles à tous, abonné ou non.',
+  },
+];
+
+/** Workflow agentique du chat (ADR-0030) — raconté côté produit. */
+const WORKFLOW_STEPS: { icon: IconName; title: string; text: string }[] = [
+  {
+    icon: 'messageCircle',
+    title: 'Vous posez votre question',
+    text: 'Dans le chatbot adapté à votre profil — grand public, étudiant ou professionnel — au clavier ou à la voix.',
+  },
+  {
+    icon: 'search',
+    title: 'L’IA recherche de vraies sources',
+    text: 'Recommandations HAS/ANSM/ESC, études via Europe PMC, essais cliniques ClinicalTrials.gov — et PubMed pour le chatbot professionnel.',
+  },
+  {
+    icon: 'shieldCheck',
+    title: 'Chaque lien est vérifié',
+    text: 'Avant de rédiger, l’assistant teste un à un les liens qu’il va citer : les sources affichées existent réellement.',
+  },
+  {
+    icon: 'fileText',
+    title: 'Réponse claire et exploitable',
+    text: 'Citations cliquables avec niveau de preuve, questions de suivi à cocher, historique privé et export PDF.',
+  },
+];
+
+/** Libellé d'audience des outils (section « Une plateforme complète »). */
+const PERSONA_LABEL: Record<Persona, string> = {
+  public: 'Grand public',
+  student: 'Étudiants',
+  professional: 'Professionnels',
+};
+
+/**
+ * FAQ de la landing — texte visible ET données structurées FAQPage (JSON-LD).
+ * Information générale uniquement, jamais un avis médical individuel.
+ */
+const FAQ_ITEMS: FaqItem[] = [
+  {
+    question: 'MedInfo AI est-il gratuit ?',
+    answer:
+      'Oui pour commencer : le premier message est gratuit, sans inscription, sur les trois chatbots. ' +
+      'Un compte gratuit permet de continuer ; les abonnements lèvent seulement les limites de volume ' +
+      'et débloquent des fonctions avancées. Les sources officielles (HAS, ANSM…) restent gratuites pour tous.',
+  },
+  {
+    question: 'MedInfo AI remplace-t-il un médecin ou un pharmacien ?',
+    answer:
+      "Non. MedInfo AI fournit de l'information médicale générale, jamais un diagnostic ni un avis " +
+      "individuel. En cas de symptôme inquiétant, consultez un professionnel de santé ; en cas d'urgence, " +
+      'composez le 15 (SAMU) ou le 112.',
+  },
+  {
+    question: "D'où viennent les réponses ?",
+    answer:
+      "L'assistant recherche en direct dans des sources réelles : recommandations HAS, ANSM et sociétés " +
+      'savantes, littérature scientifique via Europe PMC et PubMed, essais cliniques ClinicalTrials.gov. ' +
+      'Chaque lien cité est vérifié avant la rédaction, et chaque réponse affiche ses sources avec leur niveau de preuve.',
+  },
+  {
+    question: 'Quelle différence entre les trois chatbots ?',
+    answer:
+      'Le chat grand public explique sans jargon ; le chat étudiant s’appuie sur les référentiels des ' +
+      'Collèges (EDN/R2C) ; le chat professionnel cible la synthèse fondée sur les preuves, avec recherche ' +
+      'PubMed et essais cliniques. Les comptes étudiants et professionnels vérifiés accèdent aux trois.',
+  },
+  {
+    question: 'Quels outils au-delà du chat ?',
+    answer:
+      'Analyse de document médical avec citations ancrées (grand public), simulation ECOS, planning de ' +
+      'révisions et analyse des partiels (étudiants), compte rendu de consultation dicté (professionnels), ' +
+      'générateur de présentations et créateur de CV médical (étudiants et professionnels).',
+  },
+  {
+    question: 'Mes conversations sont-elles privées ?',
+    answer:
+      'Oui : votre historique de conversations n’est visible que par vous (isolation stricte par compte) ' +
+      'et vous pouvez l’exporter en PDF ou le supprimer. Les documents analysés ne sont jamais stockés.',
   },
 ];
 
@@ -52,7 +139,7 @@ const PERSONAS: {
     id: 'pro',
     eyebrow: 'Professionnel',
     title: 'Support à la décision clinique',
-    description: 'Calculateurs, recommandations HAS/ESC, interactions, synthèses fondées sur les preuves.',
+    description: 'Recommandations HAS/ESC, recherche PubMed et essais cliniques, interactions, synthèses fondées sur les preuves.',
     cta: 'Lancer une recherche',
     icon: 'stethoscope',
     route: '/(account)/choose-role',
@@ -61,7 +148,7 @@ const PERSONAS: {
     id: 'student',
     eyebrow: 'Étudiant',
     title: 'Apprendre, comprendre, réviser',
-    description: 'Cas cliniques, physiopathologie, questions EDN, raisonnement guidé pas à pas.',
+    description: 'Cours fondés sur les Collèges (EDN/R2C), cas cliniques, ECOS, révisions — raisonnement guidé pas à pas.',
     cta: 'Poser ma question',
     icon: 'brain',
     route: '/(account)/choose-role',
@@ -101,6 +188,12 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.screen}>
+      <SeoHead
+        title={PAGE_SEO.home.title}
+        description={PAGE_SEO.home.description}
+        path={PAGE_SEO.home.path}
+        jsonLd={[organizationJsonLd(), webSiteJsonLd(), faqPageJsonLd(FAQ_ITEMS)]}
+      />
       {/* Header de navigation (audit 2026-06) : logo + Tarifs / connexion / CTA,
           hors du ScrollView → reste visible pendant le défilement. */}
       <LandingHeader />
@@ -120,8 +213,10 @@ export default function HomeScreen() {
           </Reveal>
           <Reveal delay={tokens.motion.revealStagger * 2}>
             <Text style={styles.subhead}>
-              Posez vos questions médicales et pharmacologiques. MedInfo AI répond à partir de la
-              littérature française et européenne — information générale, jamais un avis individuel.
+              Posez vos questions médicales et pharmacologiques. MedInfo AI recherche les
+              recommandations et études en direct (HAS, ANSM, Europe PMC, ClinicalTrials.gov),
+              vérifie chaque lien cité et répond avec ses sources — information générale, jamais
+              un avis individuel.
             </Text>
           </Reveal>
 
@@ -221,6 +316,73 @@ export default function HomeScreen() {
         ) : null}
       </View>
 
+      {/* Comment MedInfo AI répond — workflow agentique du chat (ADR-0030) :
+          recherche de sources réelles + vérification des liens avant rédaction. */}
+      <View style={styles.section}>
+        <Reveal style={styles.sectionHead}>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
+            Comment MedInfo AI répond
+          </Text>
+          <Text style={styles.sectionSubtitle}>
+            Pas de réponse « de mémoire » : l’assistant recherche, vérifie, puis rédige.
+          </Text>
+        </Reveal>
+        <View style={styles.workflowGrid}>
+          {WORKFLOW_STEPS.map((step, i) => (
+            <Reveal key={step.title} delay={tokens.motion.revealStagger * i} style={styles.workflowCell}>
+              <View style={styles.workflowCard}>
+                <View style={styles.workflowTopRow}>
+                  <View style={styles.toolIcon}>
+                    <Icon name={step.icon} size={20} color={tokens.colors.accent} />
+                  </View>
+                  <Text style={styles.workflowIndex}>{String(i + 1).padStart(2, '0')}</Text>
+                </View>
+                <Text style={styles.workflowTitle}>{step.title}</Text>
+                <Text style={styles.workflowText}>{step.text}</Text>
+              </View>
+            </Reveal>
+          ))}
+        </View>
+      </View>
+
+      {/* Une plateforme complète — tous les outils par audience (visiteurs / découverte).
+          Les comptes connectés ont déjà « Mes outils » ci-dessus, filtrés par rôle. */}
+      {!isAuthed ? (
+        <View style={styles.section}>
+          <Reveal style={styles.sectionHead}>
+            <Text style={styles.sectionTitle} accessibilityRole="header">
+              Une plateforme complète, au-delà du chat
+            </Text>
+            <Text style={styles.sectionSubtitle}>
+              Des outils dédiés à chaque profil — inclus avec votre compte, selon votre rôle
+              vérifié.
+            </Text>
+          </Reveal>
+          <View style={styles.toolsGridWide}>
+            {APP_FEATURES.filter((f) => f.id !== 'chat').map((f, i) => (
+              <Reveal key={f.id} delay={tokens.motion.revealStagger * (i % 3)} style={styles.toolCell}>
+                <View style={styles.toolCard}>
+                  <View style={styles.toolIcon}>
+                    <Icon name={f.icon} size={20} color={tokens.colors.accent} />
+                  </View>
+                  <View style={styles.toolTextBlock}>
+                    <View style={styles.toolTitleRow}>
+                      <Text style={styles.toolTitle}>{f.label}</Text>
+                      {f.personas.map((p) => (
+                        <View key={p} style={styles.audiencePill}>
+                          <Text style={styles.audiencePillText}>{PERSONA_LABEL[p]}</Text>
+                        </View>
+                      ))}
+                    </View>
+                    <Text style={styles.toolText}>{f.description}</Text>
+                  </View>
+                </View>
+              </Reveal>
+            ))}
+          </View>
+        </View>
+      ) : null}
+
       {/* Bloc confiance sur fond alterné : un seul panneau, trois rangées
           (icône à côté du titre — pas une grille de cartes identiques). */}
       <View style={styles.sectionAlt}>
@@ -264,6 +426,29 @@ export default function HomeScreen() {
           />
         </View>
       </View>
+
+      {/* FAQ — texte visible, miroir exact du JSON-LD FAQPage injecté dans <SeoHead>. */}
+      <View style={styles.section}>
+        <Reveal style={styles.sectionHead}>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
+            Questions fréquentes
+          </Text>
+        </Reveal>
+        <View style={styles.faqList}>
+          {FAQ_ITEMS.map((item, i) => (
+            <Reveal key={item.question} delay={tokens.motion.revealStagger * (i % 3)}>
+              <View style={[styles.faqRow, i > 0 && styles.faqRowDivided]}>
+                <Text style={styles.faqQuestion} accessibilityRole="header">
+                  {item.question}
+                </Text>
+                <Text style={styles.faqAnswer}>{item.answer}</Text>
+              </View>
+            </Reveal>
+          ))}
+        </View>
+      </View>
+
+      <SiteFooter />
       </ScrollView>
     </View>
   );
@@ -363,9 +548,78 @@ const styles = StyleSheet.create({
   },
   personaCell: { flexGrow: 1, flexBasis: 260, flexDirection: 'row' },
 
+  // ── Workflow du chat ──
+  workflowGrid: {
+    width: '100%',
+    maxWidth: 960,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: tokens.space.md,
+  },
+  workflowCell: { flexGrow: 1, flexBasis: 220, flexDirection: 'row' },
+  workflowCard: {
+    flex: 1,
+    borderRadius: tokens.radius.lg,
+    backgroundColor: tokens.colors.surface,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    padding: tokens.space.lg,
+    gap: tokens.space.sm,
+    ...tokens.elevation.sm,
+  },
+  workflowTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  workflowIndex: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.accentVivid,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.bold,
+  },
+  workflowTitle: {
+    fontFamily: tokens.font.display,
+    color: tokens.colors.text,
+    fontSize: tokens.type.h3.fontSize,
+    letterSpacing: tokens.type.h3.letterSpacing,
+    fontWeight: tokens.weight.bold,
+  },
+  workflowText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.label.fontSize,
+    lineHeight: tokens.type.label.lineHeight,
+  },
+
   // ── Outils du rôle ──
   toolsBlock: { width: '100%', maxWidth: 960, marginTop: tokens.space['2xl'], gap: tokens.space.md },
   toolsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.md },
+  toolsGridWide: {
+    width: '100%',
+    maxWidth: 960,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: tokens.space.md,
+  },
+  toolTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: tokens.space.xs,
+  },
+  audiencePill: {
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accentSurface,
+    paddingHorizontal: tokens.space.sm,
+    paddingVertical: 1,
+  },
+  audiencePillText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.micro.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
   toolCell: { flexGrow: 1, flexBasis: 280, flexDirection: 'row' },
   toolCard: {
     flex: 1,
@@ -511,5 +765,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: tokens.space.sm,
+  },
+
+  // ── FAQ ──
+  faqList: {
+    width: '100%',
+    maxWidth: 720,
+    borderRadius: tokens.radius.lg,
+    backgroundColor: tokens.colors.surface,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    paddingHorizontal: tokens.space.xl,
+    ...tokens.elevation.sm,
+  },
+  faqRow: { paddingVertical: tokens.space.lg, gap: tokens.space.xs },
+  faqRowDivided: { borderTopWidth: 1, borderTopColor: tokens.colors.border },
+  faqQuestion: {
+    fontFamily: tokens.font.display,
+    color: tokens.colors.text,
+    fontSize: tokens.type.h3.fontSize,
+    letterSpacing: tokens.type.h3.letterSpacing,
+    fontWeight: tokens.weight.bold,
+  },
+  faqAnswer: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.label.fontSize,
+    lineHeight: tokens.type.label.lineHeight,
   },
 });

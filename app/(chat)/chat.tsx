@@ -50,6 +50,8 @@ import {
   type ChatConversation,
 } from '@/chat/history';
 import { exportChatToPdf } from '@/chat/exportChatPdf';
+import { PAGE_SEO } from '@/seo/meta';
+import { SeoHead } from '@/ui/SeoHead';
 import { tokens } from '@/ui/tokens';
 import { DictationButton } from '@/ui/DictationButton';
 import { ToolsMenu } from '@/ui/ToolsMenu';
@@ -533,6 +535,11 @@ export default function ChatScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={80}
     >
+      <SeoHead
+        title={PAGE_SEO.chat.title}
+        description={PAGE_SEO.chat.description}
+        path={PAGE_SEO.chat.path}
+      />
       {/* ── En-tête ── */}
       <View style={[styles.chatHeader, { paddingTop: tokens.space.md + insets.top }]}>
         <View style={styles.headerTitleBlock}>

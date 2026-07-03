@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import type { LegalDocument } from '@/compliance/legal';
 import { legalLinks } from '@/compliance/legal';
+import { SeoHead } from '@/ui/SeoHead';
 import { tokens } from '@/ui/tokens';
 
 /**
@@ -13,6 +14,11 @@ import { tokens } from '@/ui/tokens';
 export function LegalScreen({ document }: { document: LegalDocument }) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <SeoHead
+        title={document.title}
+        description={document.intro.length > 160 ? `${document.intro.slice(0, 157)}…` : document.intro}
+        path={`/${document.slug}`}
+      />
       <View style={styles.card}>
         <Text style={styles.eyebrow}>Informations légales</Text>
         <Text style={styles.title}>{document.title}</Text>
