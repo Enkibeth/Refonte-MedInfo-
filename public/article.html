@@ -1,0 +1,1586 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Rédaction d'article — MedInfo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet" />
+<!-- Page 100 % autonome : aucune librairie externe. Rédaction, compteurs, bibliographie
+     (import DOI/PMID via CrossRef / Europe PMC), exports Word/Markdown : tout est client.
+     Seules les aides IA passent par /api/article (compte vérifié étudiant/pro/admin). -->
+<style>
+  :root {
+    --accent: #2563eb;        /* petrol700 */
+    --accent-deep: #1e40af;   /* petrol800 */
+    --accent-soft: #eef4ff;   /* petrol50 */
+    --accent-tint: #d9e6ff;   /* petrol100 */
+    --vivid: #0067ff;         /* blue600 (CTA) */
+    --vivid-deep: #0052d6;
+    --ink: #0e1626;
+    --ink2: #3a474e;
+    --muted: #5d6b80;
+    --surface: #ffffff;
+    --bg: #f7f9fc;
+    --line: #dde3ed;
+    --line-fine: #eaeef5;
+    --danger: #c42233;
+    --danger-soft: #fbeaec;
+    --warn: #9a6a00;
+    --warn-soft: #fdf3d8;
+    --success: #157f50;
+    --success-soft: #e9f6ef;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Public Sans', system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  h1, h2, h3 { margin: 0; }
+  button { font-family: inherit; cursor: pointer; }
+
+  /* ── Top toolbar ───────────────────────────────────────────── */
+  .toolbar {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    padding: 10px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+  .toolbar .grow { flex: 1; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: var(--radius-sm);
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink2);
+    font-size: 13px; font-weight: 600; white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary { background: var(--vivid); border-color: var(--vivid); color: #fff; }
+  .btn-primary:hover { background: var(--vivid-deep); border-color: var(--vivid-deep); color: #fff; }
+  .btn-accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-accent:hover { background: var(--accent-deep); border-color: var(--accent-deep); color: #fff; }
+  .btn-ghost { border-color: transparent; background: transparent; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .status { font-size: 12px; color: var(--muted); margin-left: 4px; }
+
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface); }
+  .seg button { border: none; background: transparent; padding: 7px 14px; font-size: 13px; font-weight: 600; color: var(--ink2); }
+  .seg button.on { background: var(--accent); color: #fff; }
+
+  /* dropdown menus (export / aide IA) */
+  .menuwrap { position: relative; }
+  .menu {
+    position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+    box-shadow: 0 10px 30px rgba(8,40,60,.16); min-width: 240px; padding: 6px; display: none;
+  }
+  .menu.open { display: block; }
+  .menu button { display: block; width: 100%; text-align: left; border: none; background: none; padding: 8px 10px; border-radius: 6px; font-size: 13px; color: var(--ink); }
+  .menu button:hover { background: var(--accent-soft); color: var(--accent-deep); }
+  .menu .sepr { height: 1px; background: var(--line-fine); margin: 5px 4px; }
+  .menu .mhint { font-size: 11px; color: var(--muted); padding: 4px 10px 6px; }
+
+  /* ── Layout ────────────────────────────────────────────────── */
+  .layout { display: grid; grid-template-columns: 340px 1fr; gap: 0; height: calc(100vh - 57px); }
+  .side { overflow-y: auto; padding: 14px; border-right: 1px solid var(--line); background: var(--bg); }
+  .main { overflow-y: auto; padding: 18px 22px; background: var(--surface); }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; height: auto; }
+    .side { border-right: none; border-bottom: 1px solid var(--line); }
+  }
+
+  /* ── Cards / fields ────────────────────────────────────────── */
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; }
+  .card > summary { list-style: none; cursor: pointer; padding: 11px 13px; display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13.5px; color: var(--accent-deep); }
+  .card > summary::-webkit-details-marker { display: none; }
+  .card > summary::after { content: '⌄'; margin-left: auto; color: var(--muted); font-size: 16px; transition: transform .15s; }
+  .card[open] > summary::after { transform: rotate(180deg); }
+  .card .body { padding: 0 13px 13px; }
+  .field { margin-bottom: 10px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--ink2); margin-bottom: 4px; }
+  .field input, .field textarea, .field select {
+    width: 100%; padding: 8px 10px; font-family: inherit; font-size: 13px; color: var(--ink);
+    border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface);
+  }
+  .field input:focus, .field textarea:focus, .field select:focus { outline: none; border-color: var(--vivid); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
+  .iconbtn { border: 1px solid var(--line); background: var(--surface); border-radius: 6px; width: 26px; height: 26px; line-height: 1; color: var(--ink2); font-size: 13px; flex: 0 0 auto; }
+  .iconbtn:hover { border-color: var(--accent); color: var(--accent); }
+  .iconbtn.danger:hover { border-color: var(--danger); color: var(--danger); }
+  .addrow { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--vivid); background: none; border: none; padding: 6px 0 0; }
+  .privacy { font-size: 11px; color: var(--muted); background: var(--accent-soft); border-radius: 8px; padding: 8px 10px; margin-bottom: 12px; line-height: 1.5; }
+
+  /* ── Plan (liste des sections) ─────────────────────────────── */
+  .plan-item { display: flex; align-items: center; gap: 6px; padding: 7px 8px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; }
+  .plan-item:hover { background: var(--accent-soft); }
+  .plan-item.on { background: var(--accent-soft); border-color: var(--accent-tint); }
+  .plan-item .nm { flex: 1; font-weight: 600; font-size: 12.5px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .plan-item .ct { font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+  .plan-item .ct.over { color: var(--danger); font-weight: 700; }
+
+  /* ── Jauges ────────────────────────────────────────────────── */
+  .gauge { height: 6px; border-radius: 999px; background: var(--line-fine); overflow: hidden; margin-top: 6px; }
+  .gauge > i { display: block; height: 100%; border-radius: 999px; background: var(--success); transition: width .2s; }
+  .gauge > i.warn { background: #d99a06; }
+  .gauge > i.over { background: var(--danger); }
+
+  /* ── Éditeur de section ────────────────────────────────────── */
+  .sec-title { font-family: 'Fraunces', Georgia, serif; font-size: 22px; color: var(--accent-deep); border: none; width: 100%; padding: 4px 0 6px; background: transparent; }
+  .sec-title:focus { outline: none; }
+  .guide { font-size: 12px; color: var(--muted); background: var(--bg); border-left: 3px solid var(--accent-tint); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px; line-height: 1.5; }
+  .sec-text {
+    width: 100%; min-height: 320px; resize: vertical;
+    font-family: inherit; font-size: 14.5px; line-height: 1.7; color: var(--ink);
+    border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; background: var(--surface);
+  }
+  .sec-text:focus { outline: none; border-color: var(--vivid); }
+  .counts { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-top: 8px; font-size: 12px; color: var(--muted); }
+  .counts b { color: var(--ink2); font-variant-numeric: tabular-nums; }
+  .counts .over { color: var(--danger); }
+  .limitrow { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--ink2); }
+  .limitrow select, .limitrow input { padding: 5px 7px; font-size: 12px; border: 1px solid var(--line); border-radius: 6px; font-family: inherit; }
+  .limitrow input { width: 84px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+  /* ── Bibliographie ─────────────────────────────────────────── */
+  .refcard { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 10px; background: var(--surface); }
+  .refcard .fmt { font-size: 13px; line-height: 1.55; }
+  .refcard .fmt .num { font-weight: 700; color: var(--accent-deep); }
+  .refcard .metaline { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .refcard .acts { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .refcard .acts .btn { padding: 5px 10px; font-size: 12px; }
+  .badge { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 2px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-deep); }
+  .badge.warn { background: var(--warn-soft); color: var(--warn); }
+  .importbar { display: flex; gap: 8px; margin-bottom: 12px; }
+  .importbar input { flex: 1; padding: 9px 11px; font-size: 13px; border: 1px solid var(--line); border-radius: var(--radius-sm); font-family: inherit; }
+  .importbar input:focus { outline: none; border-color: var(--vivid); }
+  .warnbox { border-left: 3px solid var(--warn); background: var(--warn-soft); color: var(--warn); padding: 8px 10px; border-radius: 6px; margin-bottom: 10px; font-size: 12px; }
+
+  /* ── Aperçu ────────────────────────────────────────────────── */
+  .paper { max-width: 760px; margin: 0 auto; background: var(--surface); }
+  .paper h1 { font-family: 'Fraunces', Georgia, serif; font-size: 26px; color: var(--ink); line-height: 1.25; margin-bottom: 6px; }
+  .paper .byline { font-size: 13px; color: var(--ink2); margin-bottom: 2px; }
+  .paper .kw { font-size: 12px; color: var(--muted); margin-bottom: 18px; }
+  .paper h2 { font-family: 'Fraunces', Georgia, serif; font-size: 18px; color: var(--accent-deep); margin: 22px 0 8px; }
+  .paper p { margin: 0 0 10px; font-size: 14.5px; line-height: 1.75; white-space: pre-wrap; }
+  .paper ol.refs { padding-left: 22px; font-size: 13px; line-height: 1.6; }
+  .paper ol.refs li { margin-bottom: 7px; }
+  .paper .totals { font-size: 12px; color: var(--muted); border: 1px solid var(--line-fine); border-radius: 8px; padding: 8px 12px; margin-bottom: 16px; }
+
+  /* ── Drawer IA ─────────────────────────────────────────────── */
+  .drawer { position: fixed; top: 0; right: 0; height: 100vh; width: 420px; max-width: 94vw; background: var(--surface); border-left: 1px solid var(--line); box-shadow: -8px 0 28px rgba(8,40,60,.14); transform: translateX(100%); transition: transform .22s ease; z-index: 40; display: flex; flex-direction: column; }
+  .drawer.open { transform: translateX(0); }
+  .drawer header { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; }
+  .drawer header h2 { font-family: 'Fraunces', Georgia, serif; font-size: 16px; color: var(--accent-deep); flex: 1; }
+  .drawer .scroll { flex: 1; overflow-y: auto; padding: 14px 16px; }
+  .proposal { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg); padding: 10px 12px; font-size: 13px; line-height: 1.65; white-space: pre-wrap; max-height: 320px; overflow-y: auto; }
+  .chgline { font-size: 12px; color: var(--ink2); padding: 3px 0 3px 14px; position: relative; }
+  .chgline::before { content: ''; position: absolute; left: 2px; top: 9px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  .caution { border-left: 3px solid var(--warn); background: var(--warn-soft); padding: 7px 9px; border-radius: 5px; margin: 6px 0; font-size: 12px; color: var(--warn); }
+  .issue { border-left: 3px solid var(--danger); background: var(--danger-soft); padding: 8px 10px; border-radius: 4px; margin-bottom: 8px; font-size: 12px; }
+  .okline { border-left: 3px solid var(--success); background: var(--success-soft); padding: 8px 10px; border-radius: 4px; margin-bottom: 8px; font-size: 12px; color: var(--success); }
+  .verdict { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; padding: 6px 12px; border-radius: 999px; margin-bottom: 10px; }
+  .verdict.ok { background: var(--success-soft); color: var(--success); }
+  .verdict.attention { background: var(--warn-soft); color: var(--warn); }
+  .verdict.risque { background: var(--danger-soft); color: var(--danger); }
+  .finding { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px; margin-bottom: 10px; }
+  .finding .psg { font-size: 12.5px; font-style: italic; color: var(--ink2); background: var(--bg); border-radius: 5px; padding: 6px 8px; margin-bottom: 6px; }
+  .finding .cnc { font-size: 12px; color: var(--ink); margin-bottom: 4px; }
+  .finding .src a { font-size: 12px; color: var(--vivid); word-break: break-all; }
+  .finding .sug { font-size: 12.5px; color: var(--ink); background: var(--success-soft); border-left: 2px solid var(--success); padding: 5px 8px; border-radius: 4px; margin-top: 5px; }
+  .drawer .acts { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .spinner { width: 16px; height: 16px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .overlay { position: fixed; inset: 0; background: rgba(15,27,34,.35); z-index: 35; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .overlay.open { opacity: 1; pointer-events: auto; }
+
+  /* ── Modals (historique / citer) ───────────────────────────── */
+  .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 50; background: rgba(15,27,34,.35); }
+  .modal.open { display: flex; }
+  .modal .sheet2 { background: #fff; border-radius: var(--radius); width: 500px; max-width: 94vw; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 18px 50px rgba(8,40,60,.3); }
+  .modal header { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; }
+  .modal header h2 { font-family: 'Fraunces', serif; font-size: 16px; color: var(--accent-deep); flex: 1; }
+  .modal .list { overflow-y: auto; padding: 8px; }
+  .histrow { display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: 8px; cursor: pointer; }
+  .histrow:hover { background: var(--accent-soft); }
+  .histrow .nm { flex: 1; font-weight: 600; font-size: 13px; }
+  .histrow .tp { font-size: 10.5px; color: var(--accent-deep); background: var(--accent-soft); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+  .histrow .dt { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+  .checkline { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; color: var(--ink2); padding: 4px 0; cursor: pointer; }
+  .checkline input { margin-top: 2px; }
+  .checkline.done { color: var(--muted); text-decoration: line-through; }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <button class="btn" id="btn-new">＋ Nouveau</button>
+    <button class="btn" id="btn-example">Charger un exemple</button>
+    <button class="btn" id="btn-history">Mes articles</button>
+    <button class="btn" id="btn-save">Sauvegarder</button>
+    <span class="status" id="status"></span>
+    <span class="grow"></span>
+    <span class="seg" id="viewseg">
+      <button data-view="write" class="on">Rédaction</button>
+      <button data-view="biblio">Bibliographie</button>
+      <button data-view="preview">Aperçu</button>
+    </span>
+    <span class="menuwrap">
+      <button class="btn btn-primary" id="btn-export">⤓ Exporter ▾</button>
+      <div class="menu" id="export-menu">
+        <button id="exp-word">Document Word (.doc)</button>
+        <button id="exp-md">Markdown (.md)</button>
+        <button id="exp-copy">Copier le texte complet</button>
+        <div class="sepr"></div>
+        <div class="mhint">Citations [@…] rendues en appels numérotés, bibliographie incluse.</div>
+      </div>
+    </span>
+  </div>
+
+  <div class="layout">
+    <aside class="side" id="side"></aside>
+    <main class="main" id="main"></main>
+  </div>
+
+  <!-- Drawer IA -->
+  <div class="overlay" id="overlay"></div>
+  <aside class="drawer" id="drawer">
+    <header>
+      <h2 id="drawer-title">Aide IA</h2>
+      <button class="iconbtn" id="drawer-close">✕</button>
+    </header>
+    <div class="scroll" id="drawer-body"></div>
+  </aside>
+
+  <!-- Historique -->
+  <div class="modal" id="histModal">
+    <div class="sheet2">
+      <header><h2>Mes articles enregistrés</h2><button class="iconbtn" id="hist-close">✕</button></header>
+      <div class="list" id="histList"></div>
+    </div>
+  </div>
+
+  <!-- Citer une référence -->
+  <div class="modal" id="citeModal">
+    <div class="sheet2">
+      <header><h2>Insérer un appel de citation</h2><button class="iconbtn" id="cite-close">✕</button></header>
+      <div class="list" id="citeList"></div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── Session token (postMessage depuis le wrapper natif) ──────────────────
+  var authToken = null;
+  window.addEventListener('message', function (e) {
+    if (e.origin !== window.location.origin) return;
+    var d = e.data || {};
+    if (d.type === 'medinfo:auth') authToken = d.token || null;
+  });
+  try { window.parent.postMessage({ type: 'medinfo:auth-request' }, window.location.origin); } catch (_) {}
+
+  // ── Constantes produit ────────────────────────────────────────────────────
+  var LS_KEY = 'medinfo:article:draft';
+  var TOKEN_RE = /\[@([A-Za-z0-9_-]{1,40})\]/g;
+
+  var DOC_TYPES = {
+    original:    'Article original (IMRaD)',
+    abstract:    'Abstract / résumé de congrès',
+    case_report: 'Cas clinique',
+    review:      'Revue de littérature',
+    thesis:      'Thèse / mémoire'
+  };
+
+  // Gabarits de sections par type de document (titre, conseil, limite par défaut).
+  var TEMPLATES = {
+    original: [
+      { t: 'Résumé', g: 'Structure : contexte, objectif, méthodes, résultats principaux (chiffrés), conclusion. Souvent limité à 250 mots par les revues.', lk: 'words', lm: 250 },
+      { t: 'Introduction', g: 'Du général au spécifique : contexte, ce qui est connu, la lacune, puis l’objectif précis en dernière phrase.' },
+      { t: 'Matériels et méthodes', g: 'Au passé : schéma d’étude, population, critères d’inclusion/exclusion, critère de jugement principal, analyse statistique, éthique.' },
+      { t: 'Résultats', g: 'Au passé, sans interprétation : effectifs (diagramme de flux), caractéristiques, critère principal puis secondaires, avec IC 95 %.' },
+      { t: 'Discussion', g: 'Résultat principal → comparaison à la littérature → forces et limites → implications. Ne conclus jamais au-delà des données.' },
+      { t: 'Conclusion', g: 'Deux à quatre phrases : réponse à l’objectif, portée pratique, perspective.' },
+      { t: 'Remerciements', g: 'Contributeurs non auteurs, financements, soutien technique.' },
+      { t: 'Conflits d’intérêts', g: 'Déclare les liens d’intérêts de chaque auteur (ou leur absence).' }
+    ],
+    abstract: [
+      { t: 'Contexte et objectif', g: 'Deux ou trois phrases de contexte, puis l’objectif précis de l’étude.' },
+      { t: 'Méthodes', g: 'Schéma d’étude, population, critère de jugement principal.' },
+      { t: 'Résultats', g: 'Les chiffres clés : effectifs, résultat principal avec IC 95 %.' },
+      { t: 'Conclusion', g: 'Une ou deux phrases, sans dépasser les données.' }
+    ],
+    case_report: [
+      { t: 'Introduction', g: 'Pourquoi ce cas mérite d’être rapporté (rareté, piège diagnostique, enseignement).' },
+      { t: 'Observation', g: 'Chronologie ANONYMISÉE : présentation, examens, prise en charge, évolution. Jamais de donnée identifiante.' },
+      { t: 'Discussion', g: 'Ce que ce cas apporte au regard de la littérature ; diagnostics différentiels.' },
+      { t: 'Conclusion', g: 'Le message à retenir pour la pratique.' },
+      { t: 'Consentement', g: 'Mentionne le consentement éclairé du patient pour la publication (exigé par les revues, grille CARE).' }
+    ],
+    review: [
+      { t: 'Introduction', g: 'La question posée et pourquoi elle se pose maintenant.' },
+      { t: 'Méthodes', g: 'Stratégie de recherche reproductible : bases interrogées, équations, période, critères de sélection (grille PRISMA).' },
+      { t: 'Résultats', g: 'Flux de sélection des études, puis synthèse structurée des études retenues.' },
+      { t: 'Discussion', g: 'Synthèse critique, niveaux de preuve, zones d’ombre et besoins de recherche.' },
+      { t: 'Conclusion', g: 'Réponse à la question posée et perspectives.' }
+    ],
+    thesis: [
+      { t: 'Introduction', g: 'Contexte, justification du travail et objectif(s), annoncés clairement.' },
+      { t: 'Généralités', g: 'Revue du sujet : définitions, épidémiologie, état des connaissances.' },
+      { t: 'Matériels et méthodes', g: 'Schéma, population, recueil, critère de jugement principal, statistiques, éthique.' },
+      { t: 'Résultats', g: 'Sans interprétation : effectifs, tableaux et figures appelés dans le texte.' },
+      { t: 'Discussion', g: 'Principaux résultats, comparaison à la littérature, forces/limites, implications.' },
+      { t: 'Conclusion', g: 'Réponse à l’objectif et perspectives (souvent signée dans les thèses).' },
+      { t: 'Annexes', g: 'Questionnaires, grilles, tableaux complémentaires.' }
+    ]
+  };
+
+  // Limite globale par défaut (les congrès imposent souvent ~2 500 caractères).
+  var DEFAULT_GLOBAL_LIMIT = { abstract: { kind: 'chars', max: 2500 } };
+
+  var CHECK_COMMON = [
+    { k: 'objectif', l: 'L’objectif est énoncé clairement (fin d’introduction).' },
+    { k: 'methode', l: 'La méthode est décrite assez précisément pour être reproduite.' },
+    { k: 'chiffres', l: 'Chaque chiffre du résumé figure aussi (identique) dans le corps du texte.' },
+    { k: 'limites', l: 'Les limites du travail sont discutées.' },
+    { k: 'conclusion', l: 'La conclusion ne dépasse pas ce que montrent les données.' },
+    { k: 'refs', l: 'Chaque affirmation importante renvoie à une référence citée.' },
+    { k: 'anonymat', l: 'Aucune donnée identifiante de patient (nom, initiales, dates précises).' }
+  ];
+  var CHECK_EXTRA = {
+    original: [
+      { k: 'ic95', l: 'Les résultats principaux sont donnés avec IC 95 % (pas seulement un p).' },
+      { k: 'coi', l: 'Conflits d’intérêts et financements déclarés.' }
+    ],
+    abstract: [{ k: 'limite', l: 'La limite de caractères/mots du congrès est respectée (jauge verte).' }],
+    case_report: [{ k: 'care', l: 'Le consentement du patient est mentionné (grille CARE).' }],
+    review: [{ k: 'prisma', l: 'La stratégie de recherche est reproductible (bases, équations, période — PRISMA).' }],
+    thesis: [{ k: 'faculte', l: 'La mise en forme suit les consignes de la faculté (page de garde, sommaire).' }]
+  };
+
+  var PRIVACY = 'Les aides IA n’envoient que la section travaillée et le plan (jamais les auteurs). L’IA n’invente ni fait, ni chiffre, ni référence. N’inclus jamais de données identifiantes de patients.';
+
+  // ── État ──────────────────────────────────────────────────────────────────
+  function uid() { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var r = Math.random() * 16 | 0; var v = c === 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }); }
+  function shortId() { return Math.random().toString(36).slice(2, 8); }
+
+  function sectionsFromTemplate(type) {
+    return (TEMPLATES[type] || TEMPLATES.original).map(function (s) {
+      var sec = { id: shortId(), title: s.t, content: '', guidance: s.g || '' };
+      if (s.lk) sec.limit = { kind: s.lk, max: s.lm };
+      return sec;
+    });
+  }
+
+  function blankArticle(type) {
+    type = DOC_TYPES[type] ? type : 'original';
+    return {
+      meta: {
+        title: '', docType: type, authors: '', keywords: '', targetJournal: '', language: 'fr',
+        globalLimit: DEFAULT_GLOBAL_LIMIT[type] ? Object.assign({}, DEFAULT_GLOBAL_LIMIT[type]) : null,
+        refStyle: 'vancouver'
+      },
+      sections: sectionsFromTemplate(type),
+      references: [],
+      checklist: {}
+    };
+  }
+
+  var art = blankArticle('original');
+  var serverId = null;
+  var dirty = false;
+  var ui = { view: 'write', activeSectionId: null, cursor: null /* {sectionId, pos} */ };
+
+  function setStatus(t) { document.getElementById('status').textContent = t || ''; }
+
+  // ── Persistance locale + cloud (autosave) ─────────────────────────────────
+  function saveLocal() {
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ serverId: serverId, art: art })); } catch (_) {}
+  }
+  function loadLocal() {
+    try {
+      var raw = localStorage.getItem(LS_KEY);
+      if (!raw) return false;
+      var p = JSON.parse(raw);
+      if (p && p.art && p.art.meta && Array.isArray(p.art.sections)) {
+        art = p.art; serverId = p.serverId || null;
+        if (!art.references) art.references = [];
+        if (!art.checklist) art.checklist = {};
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  var saveTimer = null;
+  // Modification LÉGÈRE (frappe au clavier) : état + compteurs, pas de re-rendu de l'éditeur.
+  function touchLight() {
+    dirty = true; saveLocal(); setStatus('Modifié…');
+    updateCounts();
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () { if (authToken) saveCloud(true); }, 1600);
+  }
+  // Modification STRUCTURELLE (sections, références, type…) : re-rendu complet.
+  function touch() { touchLight(); renderAll(); }
+
+  // ── Helpers DOM ───────────────────────────────────────────────────────────
+  function esc(sv) {
+    return String(sv == null ? '' : sv)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function el(tag, attrs, children) {
+    var n = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      if (k === 'class') n.className = attrs[k];
+      else if (k === 'html') n.innerHTML = attrs[k];
+      else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] != null) n.setAttribute(k, attrs[k]);
+    });
+    (children || []).forEach(function (c) { if (c != null) n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+    return n;
+  }
+
+  // ── Comptage (miroir de src/article/articleDocument.ts countText) ─────────
+  function countText(text) {
+    if (!text) return { ws: 0, ns: 0, w: 0 };
+    var t = String(text).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    var tr = t.trim();
+    return { ws: t.length, ns: t.replace(/\s/g, '').length, w: tr ? tr.split(/\s+/).length : 0 };
+  }
+  function fmtN(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+  function countLabel(c) { return fmtN(c.ws) + ' car. · ' + fmtN(c.ns) + ' hors esp. · ' + fmtN(c.w) + ' mots'; }
+  function pickCount(c, kind) { return kind === 'chars' ? c.ws : kind === 'chars_no_spaces' ? c.ns : c.w; }
+  var KIND_SHORT = { chars: 'car.', chars_no_spaces: 'car. hors esp.', words: 'mots' };
+
+  // ── Citations (miroir de citationOrder / renderCitations) ─────────────────
+  function citationOrder() {
+    var known = {}; art.references.forEach(function (r) { known[r.id] = true; });
+    var ordered = [], unknown = [];
+    art.sections.forEach(function (sec) {
+      var c = sec.content || ''; var m; TOKEN_RE.lastIndex = 0;
+      while ((m = TOKEN_RE.exec(c))) {
+        if (known[m[1]]) { if (ordered.indexOf(m[1]) < 0) ordered.push(m[1]); }
+        else if (unknown.indexOf(m[1]) < 0) unknown.push(m[1]);
+      }
+    });
+    var uncited = art.references.map(function (r) { return r.id; }).filter(function (id) { return ordered.indexOf(id) < 0; });
+    return { ordered: ordered, unknown: unknown, uncited: uncited };
+  }
+
+  function refById(id) { for (var i = 0; i < art.references.length; i++) if (art.references[i].id === id) return art.references[i]; return null; }
+  function firstAuthorLast(ref) {
+    var a = (ref.authors && ref.authors[0]) || '';
+    return a ? a.split(/\s+/)[0] : (ref.title ? ref.title.split(/\s+/).slice(0, 2).join(' ') : ref.id);
+  }
+  function apaLabel(ref) {
+    var n = (ref.authors || []).length;
+    var who = firstAuthorLast(ref);
+    if (n > 2) who += ' et al.';
+    else if (n === 2) who = firstAuthorLast(ref) + ' & ' + (ref.authors[1] || '').split(/\s+/)[0];
+    return '(' + who + (ref.year ? ', ' + ref.year : '') + ')';
+  }
+
+  /** Remplace les tokens [@id] par l'appel rendu ([n] Vancouver, (Auteur, année) APA). */
+  function renderTokens(text, order) {
+    var style = art.meta.refStyle || 'vancouver';
+    return String(text || '').replace(TOKEN_RE, function (_m, id) {
+      if (style === 'apa') { var r = refById(id); return r ? apaLabel(r) : '[?]'; }
+      var idx = order.ordered.indexOf(id);
+      return idx >= 0 ? '[' + (idx + 1) + ']' : '[?]';
+    });
+  }
+  /** Retour inverse : ré-ancre les appels [n] d'un texte IA sur les tokens [@id]. */
+  function detokenize(text, orderedSnapshot) {
+    return String(text || '').replace(/\[(\d{1,3})\]/g, function (m, n) {
+      var id = orderedSnapshot[parseInt(n, 10) - 1];
+      return id ? '[@' + id + ']' : m;
+    });
+  }
+
+  // ── Formatage des références (miroir Vancouver / APA) ─────────────────────
+  function s(v) { return (typeof v === 'string' ? v.trim() : ''); }
+  function vAuthors(ref) {
+    var a = (ref.authors || []).map(s).filter(Boolean);
+    if (!a.length) return '';
+    return a.length > 6 ? a.slice(0, 6).join(', ') + ', et al.' : a.join(', ');
+  }
+  function apaAuthors(ref) {
+    var a = (ref.authors || []).map(s).filter(Boolean);
+    if (!a.length) return '';
+    if (a.length === 1) return a[0];
+    return a.slice(0, -1).join(', ') + ' & ' + a[a.length - 1];
+  }
+  function formatVancouver(ref) {
+    var parts = [];
+    var au = vAuthors(ref); if (au) parts.push(au + '.');
+    if (s(ref.title)) parts.push(s(ref.title).replace(/\.$/, '') + '.');
+    if (s(ref.journal)) {
+      var cite = s(ref.journal).replace(/\.$/, '');
+      if (s(ref.year)) {
+        cite += '. ' + s(ref.year);
+        if (s(ref.volume)) {
+          cite += ';' + s(ref.volume);
+          if (s(ref.issue)) cite += '(' + s(ref.issue) + ')';
+          if (s(ref.pages)) cite += ':' + s(ref.pages);
+        } else if (s(ref.pages)) cite += ':' + s(ref.pages);
+      }
+      parts.push(cite + '.');
+    } else if (s(ref.year)) parts.push(s(ref.year) + '.');
+    if (s(ref.doi)) parts.push('doi:' + s(ref.doi).replace(/^doi:\s*/i, ''));
+    else if (s(ref.url)) parts.push(s(ref.url));
+    return parts.join(' ');
+  }
+  function formatApa(ref) {
+    var parts = [];
+    var au = apaAuthors(ref); if (au) parts.push(au);
+    if (s(ref.year)) parts.push('(' + s(ref.year) + ').');
+    if (s(ref.title)) parts.push(s(ref.title).replace(/\.$/, '') + '.');
+    if (s(ref.journal)) {
+      var cite = s(ref.journal).replace(/\.$/, '');
+      if (s(ref.volume)) { cite += ', ' + s(ref.volume); if (s(ref.issue)) cite += '(' + s(ref.issue) + ')'; }
+      if (s(ref.pages)) cite += ', ' + s(ref.pages);
+      parts.push(cite + '.');
+    }
+    if (s(ref.doi)) parts.push('https://doi.org/' + s(ref.doi).replace(/^doi:\s*/i, ''));
+    else if (s(ref.url)) parts.push(s(ref.url));
+    return parts.join(' ');
+  }
+  function formatRef(ref) { return (art.meta.refStyle === 'apa' ? formatApa(ref) : formatVancouver(ref)); }
+
+  /** Liste ordonnée pour la bibliographie : Vancouver = ordre d'appel ; APA = alphabétique. */
+  function bibliography(order) {
+    if (art.meta.refStyle === 'apa') {
+      return art.references.slice().sort(function (a, b) {
+        return firstAuthorLast(a).localeCompare(firstAuthorLast(b), 'fr');
+      });
+    }
+    var cited = order.ordered.map(refById).filter(Boolean);
+    var rest = art.references.filter(function (r) { return order.ordered.indexOf(r.id) < 0; });
+    return cited.concat(rest);
+  }
+
+  // ── Sections : rendu global / compteurs ───────────────────────────────────
+  function activeSection() {
+    var sec = null;
+    art.sections.forEach(function (x) { if (x.id === ui.activeSectionId) sec = x; });
+    if (!sec) { sec = art.sections[0] || null; ui.activeSectionId = sec ? sec.id : null; }
+    return sec;
+  }
+
+  function globalRendered() {
+    var order = citationOrder();
+    return art.sections.map(function (sec) { return renderTokens(sec.content || '', order); }).join('\n');
+  }
+
+  function gaugeClass(v, max) { return v > max ? 'over' : (v > max * 0.85 ? 'warn' : ''); }
+
+  function updateCounts() {
+    var order = citationOrder();
+    // Sidebar : compteur par section + jauge globale.
+    art.sections.forEach(function (sec) {
+      var node = document.getElementById('cnt-' + sec.id);
+      if (!node) return;
+      var c = countText(renderTokens(sec.content || '', order));
+      if (sec.limit && sec.limit.max) {
+        var v = pickCount(c, sec.limit.kind);
+        node.textContent = fmtN(v) + '/' + fmtN(sec.limit.max) + ' ' + KIND_SHORT[sec.limit.kind];
+        node.className = 'ct' + (v > sec.limit.max ? ' over' : '');
+      } else {
+        node.textContent = fmtN(c.ws) + ' car.';
+        node.className = 'ct';
+      }
+    });
+    var g = countText(globalRendered());
+    var gNode = document.getElementById('cnt-global');
+    if (gNode) gNode.innerHTML = '<b>' + countLabel(g).replace(/·/g, '·') + '</b>';
+    var gl = art.meta.globalLimit;
+    var gBar = document.getElementById('gauge-global');
+    var gTxt = document.getElementById('gauge-global-txt');
+    if (gBar && gTxt) {
+      if (gl && gl.max) {
+        var gv = pickCount(g, gl.kind);
+        gBar.parentElement.style.display = '';
+        gTxt.style.display = '';
+        gBar.style.width = Math.min(100, (gv / gl.max) * 100) + '%';
+        gBar.className = gaugeClass(gv, gl.max);
+        gTxt.textContent = fmtN(gv) + ' / ' + fmtN(gl.max) + ' ' + KIND_SHORT[gl.kind] + (gv > gl.max ? ' — limite dépassée' : '');
+        gTxt.style.color = gv > gl.max ? 'var(--danger)' : 'var(--muted)';
+      } else {
+        gBar.parentElement.style.display = 'none';
+        gTxt.style.display = 'none';
+      }
+    }
+    // Éditeur : compteur de la section active.
+    var sec = activeSection();
+    if (sec) {
+      var cNode = document.getElementById('cnt-active');
+      if (cNode) {
+        var c2 = countText(renderTokens(sec.content || '', order));
+        var html = '<b>' + fmtN(c2.ws) + '</b> caractères · <b>' + fmtN(c2.ns) + '</b> hors espaces · <b>' + fmtN(c2.w) + '</b> mots';
+        if (sec.limit && sec.limit.max) {
+          var v2 = pickCount(c2, sec.limit.kind);
+          html += ' · limite <b class="' + (v2 > sec.limit.max ? 'over' : '') + '">' + fmtN(v2) + '/' + fmtN(sec.limit.max) + '</b> ' + KIND_SHORT[sec.limit.kind];
+        }
+        cNode.innerHTML = html;
+      }
+      var bar = document.getElementById('gauge-active');
+      if (bar) {
+        if (sec.limit && sec.limit.max) {
+          var c3 = countText(renderTokens(sec.content || '', order));
+          var v3 = pickCount(c3, sec.limit.kind);
+          bar.parentElement.style.display = '';
+          bar.style.width = Math.min(100, (v3 / sec.limit.max) * 100) + '%';
+          bar.className = gaugeClass(v3, sec.limit.max);
+        } else bar.parentElement.style.display = 'none';
+      }
+    }
+  }
+
+  // ── Sidebar ───────────────────────────────────────────────────────────────
+  function renderSidebar() {
+    var root = document.getElementById('side');
+    root.innerHTML = '';
+    var m = art.meta;
+
+    // Document (métadonnées)
+    var typeSel = el('select', null, Object.keys(DOC_TYPES).map(function (k) {
+      var o = el('option', { value: k }, [DOC_TYPES[k]]); if (k === m.docType) o.selected = true; return o;
+    }));
+    typeSel.addEventListener('change', function () {
+      var nt = typeSel.value;
+      var hasText = art.sections.some(function (x) { return (x.content || '').trim(); });
+      // Sans texte saisi : on adopte le gabarit du nouveau type sans question.
+      // Avec du texte : OK = remplacer le plan (texte perdu), Annuler = garder les sections.
+      var replace = !hasText || confirm(
+        'Adapter le plan au type « ' + DOC_TYPES[nt] + ' » ?\n\n' +
+        'OK = remplacer les sections par le gabarit du nouveau type (le texte saisi sera perdu).\n' +
+        'Annuler = garder tes sections et changer seulement le type.'
+      );
+      art.meta.docType = nt;
+      if (replace) {
+        art.sections = sectionsFromTemplate(nt);
+        art.meta.globalLimit = DEFAULT_GLOBAL_LIMIT[nt] ? Object.assign({}, DEFAULT_GLOBAL_LIMIT[nt]) : null;
+        ui.activeSectionId = null;
+      }
+      touch();
+    });
+
+    var docCard = el('details', { class: 'card', open: '' }, [
+      el('summary', null, ['Document']),
+      el('div', { class: 'body' }, [
+        fieldWrap('Type de document', typeSel),
+        inputField('Titre du manuscrit', m.title, function (v) { m.title = v; touchLight(); }),
+        inputField('Auteurs (ex. Doré C, Martin A)', m.authors, function (v) { m.authors = v; touchLight(); }),
+        inputField('Mots-clés (séparés par des virgules)', m.keywords, function (v) { m.keywords = v; touchLight(); }),
+        inputField('Revue / congrès cible (optionnel)', m.targetJournal, function (v) { m.targetJournal = v; touchLight(); }),
+        globalLimitEditor(),
+        el('div', { class: 'hint' }, ['La limite globale s’applique au texte assemblé (appels de citation rendus « [1] »).'])
+      ])
+    ]);
+    root.appendChild(docCard);
+
+    // Plan
+    var planBody = el('div', { class: 'body' });
+    art.sections.forEach(function (sec, idx) {
+      var row = el('div', { class: 'plan-item' + (sec.id === ui.activeSectionId ? ' on' : '') }, [
+        el('span', { class: 'nm' }, [sec.title || 'Section']),
+        el('span', { class: 'ct', id: 'cnt-' + sec.id }, ['']),
+        mkMove(idx, -1), mkMove(idx, 1), mkDelSection(idx)
+      ]);
+      row.addEventListener('click', function (ev) {
+        if (ev.target.closest('.iconbtn')) return;
+        ui.activeSectionId = sec.id; ui.view = 'write';
+        renderAll();
+      });
+      planBody.appendChild(row);
+    });
+    var add = el('button', { class: 'addrow' }, ['＋ Ajouter une section']);
+    add.addEventListener('click', function () {
+      var sec = { id: shortId(), title: 'Nouvelle section', content: '', guidance: '' };
+      art.sections.push(sec); ui.activeSectionId = sec.id; touch();
+    });
+    planBody.appendChild(add);
+    var totals = el('div', { style: 'margin-top:10px' }, [
+      el('div', { id: 'cnt-global', style: 'font-size:12px;color:var(--muted)' }, ['']),
+      el('div', { class: 'gauge' }, [el('i', { id: 'gauge-global' })]),
+      el('div', { id: 'gauge-global-txt', style: 'font-size:11px;color:var(--muted);margin-top:4px' }, [''])
+    ]);
+    planBody.appendChild(totals);
+    root.appendChild(el('details', { class: 'card', open: '' }, [el('summary', null, ['Plan (' + art.sections.length + ' sections)']), planBody]));
+
+    // Check-list qualité
+    var items = CHECK_COMMON.concat(CHECK_EXTRA[m.docType] || []);
+    var done = items.filter(function (it) { return art.checklist[it.k]; }).length;
+    var clBody = el('div', { class: 'body' });
+    items.forEach(function (it) {
+      var cb = el('input', { type: 'checkbox' });
+      cb.checked = !!art.checklist[it.k];
+      var line = el('label', { class: 'checkline' + (cb.checked ? ' done' : '') }, [cb, el('span', null, [it.l])]);
+      cb.addEventListener('change', function () {
+        art.checklist[it.k] = cb.checked;
+        line.className = 'checkline' + (cb.checked ? ' done' : '');
+        touchLight(); renderSidebarSummaryOnly();
+      });
+      clBody.appendChild(line);
+    });
+    root.appendChild(el('details', { class: 'card' }, [
+      el('summary', { id: 'checklist-summary' }, ['Check-list qualité (' + done + '/' + items.length + ')']),
+      clBody
+    ]));
+
+    root.appendChild(el('div', { class: 'privacy' }, [PRIVACY]));
+    updateCounts();
+  }
+
+  function renderSidebarSummaryOnly() {
+    var m = art.meta;
+    var items = CHECK_COMMON.concat(CHECK_EXTRA[m.docType] || []);
+    var done = items.filter(function (it) { return art.checklist[it.k]; }).length;
+    var sum = document.getElementById('checklist-summary');
+    if (sum) sum.textContent = 'Check-list qualité (' + done + '/' + items.length + ')';
+  }
+
+  function fieldWrap(label, node) { return el('div', { class: 'field' }, [el('label', null, [label]), node]); }
+  function inputField(label, value, oninput, attrs) {
+    var i = el('input', Object.assign({ type: 'text', value: value || '' }, attrs || {}));
+    i.addEventListener('input', function () { oninput(i.value); });
+    return fieldWrap(label, i);
+  }
+
+  function limitKindSelect(current) {
+    var kinds = [['', 'Aucune limite'], ['chars', 'Caractères (esp. comprises)'], ['chars_no_spaces', 'Caractères hors espaces'], ['words', 'Mots']];
+    return el('select', null, kinds.map(function (kv) {
+      var o = el('option', { value: kv[0] }, [kv[1]]); if ((current || '') === kv[0]) o.selected = true; return o;
+    }));
+  }
+  function globalLimitEditor() {
+    var gl = art.meta.globalLimit;
+    var kindSel = limitKindSelect(gl ? gl.kind : '');
+    var maxIn = el('input', { type: 'number', min: '1', value: gl && gl.max ? gl.max : '', placeholder: 'max' });
+    function apply() {
+      var k = kindSel.value;
+      var mx = parseInt(maxIn.value, 10);
+      art.meta.globalLimit = (k && mx > 0) ? { kind: k, max: mx } : null;
+      touchLight();
+    }
+    kindSel.addEventListener('change', apply);
+    maxIn.addEventListener('input', apply);
+    return fieldWrap('Limite globale (abstract, congrès…)', el('div', { class: 'row2' }, [kindSel, maxIn]));
+  }
+
+  function mkMove(idx, dir) {
+    var b = el('button', { class: 'iconbtn', title: dir < 0 ? 'Monter' : 'Descendre' }, [dir < 0 ? '↑' : '↓']);
+    b.disabled = (dir < 0 && idx === 0) || (dir > 0 && idx === art.sections.length - 1);
+    b.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      var ni = idx + dir; var a = art.sections;
+      var tmp = a[idx]; a[idx] = a[ni]; a[ni] = tmp; touch();
+    });
+    return b;
+  }
+  function mkDelSection(idx) {
+    var b = el('button', { class: 'iconbtn danger', title: 'Supprimer la section' }, ['🗑']);
+    b.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      var sec = art.sections[idx];
+      if (!confirm('Supprimer la section « ' + (sec.title || 'Section') + ' »' + ((sec.content || '').trim() ? ' et son texte' : '') + ' ?')) return;
+      art.sections.splice(idx, 1);
+      if (ui.activeSectionId === sec.id) ui.activeSectionId = null;
+      touch();
+    });
+    return b;
+  }
+
+  // ── Vue Rédaction ─────────────────────────────────────────────────────────
+  function renderWrite() {
+    var root = document.getElementById('main');
+    root.innerHTML = '';
+    var sec = activeSection();
+    if (!sec) {
+      root.appendChild(el('div', { class: 'hint' }, ['Ajoute une section pour commencer (bouton « ＋ Ajouter une section » à gauche).']));
+      return;
+    }
+
+    var titleIn = el('input', { class: 'sec-title', value: sec.title || '', placeholder: 'Titre de la section' });
+    titleIn.addEventListener('input', function () {
+      sec.title = titleIn.value; touchLight();
+      // Reflète le nom dans le plan sans re-rendu complet.
+      var row = document.getElementById('cnt-' + sec.id);
+      if (row && row.previousSibling) row.previousSibling.textContent = sec.title || 'Section';
+    });
+    root.appendChild(titleIn);
+
+    if (sec.guidance) root.appendChild(el('div', { class: 'guide' }, [sec.guidance]));
+
+    var ta = el('textarea', { class: 'sec-text', id: 'sec-text', placeholder: 'Rédige ici. Les appels de citation s’insèrent via « Citer une référence » et deviennent [1], [2]… dans l’aperçu et les exports.' });
+    ta.value = sec.content || '';
+    ta.addEventListener('input', function () { sec.content = ta.value; touchLight(); });
+    function saveCursor() { ui.cursor = { sectionId: sec.id, pos: ta.selectionStart, end: ta.selectionEnd }; }
+    ['keyup', 'click', 'blur'].forEach(function (evn) { ta.addEventListener(evn, saveCursor); });
+    root.appendChild(ta);
+
+    var counts = el('div', { class: 'counts' }, [
+      el('span', { id: 'cnt-active' }, ['']),
+      el('span', { class: 'grow', style: 'flex:1' }),
+      sectionLimitEditor(sec)
+    ]);
+    root.appendChild(counts);
+    root.appendChild(el('div', { class: 'gauge', style: 'max-width:420px' }, [el('i', { id: 'gauge-active' })]));
+
+    // Actions IA + citation
+    var aiMenuBtn = el('button', { class: 'btn btn-accent' }, ['✦ Aide IA ▾']);
+    var aiMenu = el('div', { class: 'menu' });
+    [
+      ['improve', 'Améliorer le style scientifique'],
+      ['correct', 'Corriger orthographe et grammaire'],
+      ['clarify', 'Clarifier les phrases ambiguës'],
+      ['transition', 'Travailler les transitions'],
+      ['translate_en', 'Traduire en anglais scientifique'],
+      ['titles', 'Suggérer des titres de manuscrit'],
+      ['structure', 'Avis sur la structure de la section']
+    ].forEach(function (kv) {
+      var b = el('button', null, [kv[1]]);
+      b.addEventListener('click', function () { closeMenus(); runAssist(kv[0], ''); });
+      aiMenu.appendChild(b);
+    });
+    aiMenu.appendChild(el('div', { class: 'sepr' }));
+    var customBtn = el('button', null, ['Consigne libre…']);
+    customBtn.addEventListener('click', function () {
+      closeMenus();
+      var c = prompt('Consigne pour l’IA (elle n’inventera ni fait, ni chiffre, ni référence) :');
+      if (c && c.trim()) runAssist('custom', c.trim());
+    });
+    aiMenu.appendChild(customBtn);
+    aiMenu.appendChild(el('div', { class: 'mhint' }, ['La proposition s’affiche à droite : tu l’appliques ou tu la refuses.']));
+    var aiWrap = el('span', { class: 'menuwrap' }, [aiMenuBtn, aiMenu]);
+    aiMenuBtn.addEventListener('click', function (ev) { ev.stopPropagation(); toggleMenu(aiMenu); });
+
+    var reduceBtn = el('button', { class: 'btn' }, ['✂ Réduire à une limite…']);
+    reduceBtn.addEventListener('click', runReduce);
+    var origBtn = el('button', { class: 'btn' }, ['🔎 Contrôle d’originalité']);
+    origBtn.addEventListener('click', runOriginality);
+    var citeBtn = el('button', { class: 'btn' }, ['❞ Citer une référence']);
+    citeBtn.addEventListener('click', openCiteModal);
+
+    root.appendChild(el('div', { class: 'actions' }, [aiWrap, reduceBtn, origBtn, citeBtn]));
+    updateCounts();
+  }
+
+  function sectionLimitEditor(sec) {
+    var kindSel = limitKindSelect(sec.limit ? sec.limit.kind : '');
+    var maxIn = el('input', { type: 'number', min: '1', value: sec.limit && sec.limit.max ? sec.limit.max : '', placeholder: 'max' });
+    function apply() {
+      var k = kindSel.value; var mx = parseInt(maxIn.value, 10);
+      sec.limit = (k && mx > 0) ? { kind: k, max: mx } : undefined;
+      touchLight();
+    }
+    kindSel.addEventListener('change', apply);
+    maxIn.addEventListener('input', apply);
+    return el('span', { class: 'limitrow' }, ['Limite de section :', kindSel, maxIn]);
+  }
+
+  // ── Vue Bibliographie ─────────────────────────────────────────────────────
+  function renderBiblio() {
+    var root = document.getElementById('main');
+    root.innerHTML = '';
+    var order = citationOrder();
+
+    root.appendChild(el('h2', { style: "font-family:'Fraunces',Georgia,serif;font-size:20px;color:var(--accent-deep);margin-bottom:10px" }, ['Bibliographie (' + art.references.length + ')']));
+
+    // Style
+    var segV = el('button', { class: art.meta.refStyle !== 'apa' ? 'on' : '' }, ['Vancouver [1]']);
+    var segA = el('button', { class: art.meta.refStyle === 'apa' ? 'on' : '' }, ['APA (Auteur, année)']);
+    segV.addEventListener('click', function () { art.meta.refStyle = 'vancouver'; touch(); });
+    segA.addEventListener('click', function () { art.meta.refStyle = 'apa'; touch(); });
+    root.appendChild(el('div', { style: 'margin-bottom:12px' }, [el('span', { class: 'seg' }, [segV, segA])]));
+
+    // Import DOI / PMID
+    var impIn = el('input', { placeholder: 'DOI (10.xxxx/…) ou PMID (ex. 34320281) — métadonnées réelles via CrossRef / Europe PMC', id: 'imp-in' });
+    var impBtn = el('button', { class: 'btn btn-accent' }, ['Ajouter']);
+    impBtn.addEventListener('click', function () { importRef(impIn.value, impBtn); });
+    impIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') importRef(impIn.value, impBtn); });
+    root.appendChild(el('div', { class: 'importbar' }, [impIn, impBtn]));
+
+    // Alertes cohérence
+    if (order.unknown.length) {
+      root.appendChild(el('div', { class: 'warnbox' }, ['Appels sans référence : ' + order.unknown.map(function (u) { return '[@' + u + ']'; }).join(', ') + ' — corrige le texte ou ajoute la référence.']));
+    }
+    if (order.uncited.length) {
+      root.appendChild(el('div', { class: 'warnbox' }, [String(order.uncited.length) + ' référence(s) jamais citée(s) dans le texte (marquées ci-dessous). Elles restent en fin de bibliographie.']));
+    }
+
+    // Liste
+    var list = bibliography(order);
+    if (!list.length) {
+      root.appendChild(el('div', { class: 'hint' }, ['Aucune référence. Colle un DOI ou un PMID ci-dessus (données réelles, jamais inventées), ou saisis une référence à la main.']));
+    }
+    list.forEach(function (ref) {
+      var num = order.ordered.indexOf(ref.id);
+      var fmt = el('div', { class: 'fmt', html: (art.meta.refStyle !== 'apa' && num >= 0 ? '<span class="num">' + (num + 1) + '.</span> ' : '') + esc(formatRef(ref)) });
+      var metaBits = [];
+      if (ref.pmid) metaBits.push('PMID ' + ref.pmid);
+      if (ref.doi) metaBits.push('DOI ' + ref.doi);
+      metaBits.push('appel : [@' + ref.id + ']');
+      var card = el('div', { class: 'refcard' }, [
+        num < 0 ? el('span', { class: 'badge warn', style: 'margin-bottom:6px' }, ['Jamais citée']) : null,
+        fmt,
+        el('div', { class: 'metaline' }, [metaBits.join(' · ')])
+      ]);
+      var cite = el('button', { class: 'btn btn-accent' }, ['❞ Citer']);
+      cite.addEventListener('click', function () { insertToken(ref.id); });
+      var edit = el('button', { class: 'btn' }, ['Modifier']);
+      edit.addEventListener('click', function () { card.replaceWith(refEditor(ref)); });
+      var del = el('button', { class: 'btn' }, ['Supprimer']);
+      del.addEventListener('click', function () {
+        var cited = num >= 0;
+        if (!confirm(cited ? 'Cette référence est CITÉE dans le texte : ses appels [@' + ref.id + '] deviendront invalides. Supprimer quand même ?' : 'Supprimer cette référence ?')) return;
+        art.references = art.references.filter(function (r) { return r.id !== ref.id; });
+        touch();
+      });
+      card.appendChild(el('div', { class: 'acts' }, [cite, edit, del]));
+      root.appendChild(card);
+    });
+
+    var manual = el('button', { class: 'addrow' }, ['＋ Saisir une référence à la main']);
+    var manualWrap = el('div', null, [manual]);
+    manual.addEventListener('click', function () {
+      // Brouillon : la référence n'entre en bibliographie qu'au clic « Enregistrer ».
+      var draft = { id: '', authors: [], title: '', journal: '', year: '', volume: '', issue: '', pages: '', doi: '', pmid: '', url: '' };
+      manualWrap.replaceWith(refEditor(draft, true));
+    });
+    root.appendChild(manualWrap);
+    root.appendChild(el('div', { class: 'hint', style: 'margin-top:10px' }, [
+      'Vancouver : appels [1], [2]… numérotés dans l’ordre d’apparition ; la bibliographie suit cet ordre. APA : appels (Auteur, année), bibliographie alphabétique.'
+    ]));
+  }
+
+  function refEditor(ref, isNew) {
+    var box = el('div', { class: 'refcard' });
+    var authorsIn = el('input', { type: 'text', value: (ref.authors || []).join(', '), placeholder: 'Doré C, Martin A' });
+    var fields = [
+      ['Titre', 'title'], ['Revue (abréviation)', 'journal'], ['Année', 'year'],
+      ['Volume', 'volume'], ['Numéro', 'issue'], ['Pages', 'pages'],
+      ['DOI', 'doi'], ['PMID', 'pmid'], ['URL', 'url']
+    ];
+    box.appendChild(fieldWrap('Auteurs (format « Nom Initiales », séparés par des virgules)', authorsIn));
+    var inputs = {};
+    var grid = el('div', { class: 'row2' });
+    fields.forEach(function (f) {
+      var i = el('input', { type: 'text', value: ref[f[1]] || '' });
+      inputs[f[1]] = i;
+      grid.appendChild(fieldWrap(f[0], i));
+    });
+    box.appendChild(grid);
+    var ok = el('button', { class: 'btn btn-accent' }, ['Enregistrer']);
+    ok.addEventListener('click', function () {
+      ref.authors = authorsIn.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+      fields.forEach(function (f) { ref[f[1]] = inputs[f[1]].value.trim(); });
+      if (!ref.title && !ref.doi && !ref.pmid) { alert('Renseigne au moins un titre (ou un DOI/PMID).'); return; }
+      if (isNew) { ref.id = makeRefId(ref); art.references.push(ref); }
+      touch();
+    });
+    var cancel = el('button', { class: 'btn' }, ['Fermer']);
+    cancel.addEventListener('click', function () { renderAll(); });
+    box.appendChild(el('div', { class: 'acts' }, [ok, cancel]));
+    return box;
+  }
+
+  function makeRefId(base) {
+    var last = (base.authors && base.authors[0] ? base.authors[0].split(/\s+/)[0] : 'ref')
+      .normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '') || 'ref';
+    var id = last + (base.year || '');
+    if (!refById(id)) return id;
+    var n = 2;
+    while (refById(id + '-' + n)) n++;
+    return id + '-' + n;
+  }
+
+  // Import par DOI (CrossRef) ou PMID (Europe PMC) — APIs publiques, données réelles.
+  function importRef(raw, btn) {
+    var q = (raw || '').trim().replace(/^https?:\/\/(dx\.)?doi\.org\//i, '');
+    if (!q) return;
+    var prev = btn.textContent; btn.disabled = true; btn.textContent = 'Recherche…';
+    var done = function () { btn.disabled = false; btn.textContent = prev; };
+
+    function finish(ref) {
+      var dup = art.references.some(function (r) {
+        return (ref.doi && r.doi && r.doi.toLowerCase() === ref.doi.toLowerCase()) || (ref.pmid && r.pmid && r.pmid === ref.pmid);
+      });
+      if (dup) { alert('Cette référence est déjà dans la bibliographie.'); done(); return; }
+      ref.id = makeRefId(ref);
+      art.references.push(ref);
+      done(); touch();
+      setStatus('Référence ajoutée ✓');
+    }
+    function fail(msg) { done(); alert(msg || 'Référence introuvable. Vérifie le DOI/PMID ou saisis-la à la main.'); }
+
+    if (/^10\./.test(q)) {
+      fetch('https://api.crossref.org/works/' + encodeURIComponent(q))
+        .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+        .then(function (j) {
+          var w = j && j.message; if (!w) throw 0;
+          finish({
+            authors: (w.author || []).slice(0, 30).map(function (a) {
+              var ini = (a.given || '').split(/[\s-]+/).map(function (g) { return g.charAt(0); }).join('');
+              return ((a.family || '') + (ini ? ' ' + ini : '')).trim();
+            }).filter(Boolean),
+            title: (w.title && w.title[0]) || '',
+            journal: (w['short-container-title'] && w['short-container-title'][0]) || (w['container-title'] && w['container-title'][0]) || '',
+            year: String((w.issued && w.issued['date-parts'] && w.issued['date-parts'][0] && w.issued['date-parts'][0][0]) || ''),
+            volume: w.volume || '', issue: w.issue || '', pages: w.page || '',
+            doi: w.DOI || q, pmid: '', url: ''
+          });
+        })
+        .catch(function () { fail('DOI introuvable sur CrossRef. Vérifie-le ou saisis la référence à la main.'); });
+      return;
+    }
+    if (/^\d{4,9}$/.test(q)) {
+      fetch('https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:' + q + '%20AND%20SRC:MED&format=json&resultType=core&pageSize=1')
+        .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+        .then(function (j) {
+          var it = j && j.resultList && j.resultList.result && j.resultList.result[0];
+          if (!it) throw 0;
+          var ji = it.journalInfo || {};
+          finish({
+            authors: (it.authorString || '').replace(/\.$/, '').split(',').map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 30),
+            title: (it.title || '').replace(/\.$/, ''),
+            journal: (ji.journal && (ji.journal.medlineAbbreviation || ji.journal.title)) || '',
+            year: String(it.pubYear || ''),
+            volume: ji.volume || '', issue: ji.issue || '', pages: it.pageInfo || '',
+            doi: it.doi || '', pmid: String(it.pmid || q), url: ''
+          });
+        })
+        .catch(function () { fail('PMID introuvable sur Europe PMC. Vérifie-le ou saisis la référence à la main.'); });
+      return;
+    }
+    fail('Format non reconnu : colle un DOI (commence par « 10. ») ou un PMID (nombre).');
+  }
+
+  // Insertion d'un appel [@id] à la position du curseur de la section active.
+  function insertToken(refId) {
+    var sec = activeSection();
+    if (!sec) { alert('Ajoute d’abord une section.'); return; }
+    var token = '[@' + refId + ']';
+    var content = sec.content || '';
+    var pos = (ui.cursor && ui.cursor.sectionId === sec.id) ? ui.cursor.pos : content.length;
+    // Espace insécable typographique : espace avant l'appel si le caractère précédent est un mot.
+    var before = content.slice(0, pos);
+    var glue = /[\s(\[]$|^$/.test(before) ? '' : ' ';
+    sec.content = before + glue + token + content.slice(pos);
+    if (ui.cursor && ui.cursor.sectionId === sec.id) ui.cursor.pos += glue.length + token.length;
+    document.getElementById('citeModal').classList.remove('open');
+    ui.view = 'write';
+    touch();
+    setStatus('Appel ' + token + ' inséré dans « ' + (sec.title || 'Section') + ' »');
+  }
+
+  function openCiteModal() {
+    if (!art.references.length) {
+      alert('Aucune référence en bibliographie. Ouvre l’onglet « Bibliographie » pour en ajouter (DOI, PMID ou saisie manuelle).');
+      return;
+    }
+    var list = document.getElementById('citeList');
+    list.innerHTML = '';
+    var order = citationOrder();
+    art.references.forEach(function (ref) {
+      var num = order.ordered.indexOf(ref.id);
+      var row = el('div', { class: 'histrow' }, [
+        el('span', { class: 'nm' }, [(num >= 0 ? '[' + (num + 1) + '] ' : '') + (formatVancouver(ref).slice(0, 90) || ref.id)]),
+        el('span', { class: 'tp' }, ['[@' + ref.id + ']'])
+      ]);
+      row.addEventListener('click', function () { insertToken(ref.id); });
+      list.appendChild(row);
+    });
+    document.getElementById('citeModal').classList.add('open');
+  }
+
+  // ── Vue Aperçu ────────────────────────────────────────────────────────────
+  function renderPreviewView() {
+    var root = document.getElementById('main');
+    root.innerHTML = '';
+    var order = citationOrder();
+    var paper = el('div', { class: 'paper' });
+
+    var g = countText(globalRendered());
+    var gl = art.meta.globalLimit;
+    var totals = 'Texte assemblé : ' + countLabel(g);
+    if (gl && gl.max) {
+      var gv = pickCount(g, gl.kind);
+      totals += ' — limite globale ' + fmtN(gv) + '/' + fmtN(gl.max) + ' ' + KIND_SHORT[gl.kind] + (gv > gl.max ? ' ⚠ DÉPASSÉE' : ' ✓');
+    }
+    paper.appendChild(el('div', { class: 'totals' }, [totals]));
+
+    paper.appendChild(el('h1', null, [art.meta.title || 'Titre du manuscrit']));
+    if (art.meta.authors) paper.appendChild(el('div', { class: 'byline' }, [art.meta.authors]));
+    if (art.meta.keywords) paper.appendChild(el('div', { class: 'kw' }, ['Mots-clés : ' + art.meta.keywords]));
+
+    if (order.unknown.length) {
+      paper.appendChild(el('div', { class: 'warnbox' }, ['Appels sans référence (rendus « [?] ») : ' + order.unknown.map(function (u) { return '[@' + u + ']'; }).join(', ')]));
+    }
+
+    art.sections.forEach(function (sec) {
+      var txt = (sec.content || '').trim();
+      if (!txt && !sec.title) return;
+      paper.appendChild(el('h2', null, [sec.title || 'Section']));
+      paper.appendChild(el('p', null, [txt ? renderTokens(txt, order) : '—']));
+    });
+
+    var bib = bibliography(order);
+    if (bib.length) {
+      paper.appendChild(el('h2', null, ['Références']));
+      if (art.meta.refStyle === 'apa') {
+        bib.forEach(function (ref) { paper.appendChild(el('p', { style: 'font-size:13px' }, [formatApa(ref)])); });
+      } else {
+        var ol = el('ol', { class: 'refs' });
+        bib.forEach(function (ref) {
+          var cited = order.ordered.indexOf(ref.id) >= 0;
+          ol.appendChild(el('li', null, [formatVancouver(ref) + (cited ? '' : '  (non citée)')]));
+        });
+        paper.appendChild(ol);
+      }
+    }
+    root.appendChild(paper);
+  }
+
+  // ── Vues : switch ─────────────────────────────────────────────────────────
+  function renderAll() {
+    // Segmented control
+    document.querySelectorAll('#viewseg button').forEach(function (b) {
+      b.className = b.getAttribute('data-view') === ui.view ? 'on' : '';
+    });
+    renderSidebar();
+    if (ui.view === 'biblio') renderBiblio();
+    else if (ui.view === 'preview') renderPreviewView();
+    else renderWrite();
+  }
+
+  // ── Exports ───────────────────────────────────────────────────────────────
+  function assembled() {
+    var order = citationOrder();
+    var lines = [];
+    lines.push(art.meta.title || 'Titre du manuscrit');
+    if (art.meta.authors) lines.push(art.meta.authors);
+    if (art.meta.keywords) lines.push('Mots-clés : ' + art.meta.keywords);
+    lines.push('');
+    art.sections.forEach(function (sec) {
+      var txt = (sec.content || '').trim();
+      if (!txt && !sec.title) return;
+      lines.push((sec.title || 'Section').toUpperCase());
+      lines.push(txt ? renderTokens(txt, order) : '');
+      lines.push('');
+    });
+    var bib = bibliography(order);
+    if (bib.length) {
+      lines.push('RÉFÉRENCES');
+      bib.forEach(function (ref, i) {
+        lines.push(art.meta.refStyle === 'apa' ? formatApa(ref) : (i + 1) + '. ' + formatVancouver(ref));
+      });
+    }
+    return lines.join('\n');
+  }
+
+  function fileName(ext) {
+    var base = (art.meta.title || 'article').normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'article';
+    return base + '.' + ext;
+  }
+  function download(name, mime, content) {
+    var blob = new Blob([content], { type: mime });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 300);
+  }
+
+  // Word : HTML compatible (.doc) — Times 12, interligne double, comme attendu par les revues.
+  function exportWord() {
+    var order = citationOrder();
+    var html = ['<html xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8">',
+      '<style>body{font-family:"Times New Roman",serif;font-size:12pt;line-height:2}h1{font-size:16pt}h2{font-size:13pt;margin:18pt 0 6pt}p{margin:0 0 10pt;white-space:pre-wrap}ol{font-size:11pt}</style>',
+      '</head><body>'];
+    html.push('<h1>' + esc(art.meta.title || 'Titre du manuscrit') + '</h1>');
+    if (art.meta.authors) html.push('<p><b>' + esc(art.meta.authors) + '</b></p>');
+    if (art.meta.keywords) html.push('<p><i>Mots-clés : ' + esc(art.meta.keywords) + '</i></p>');
+    art.sections.forEach(function (sec) {
+      var txt = (sec.content || '').trim();
+      if (!txt && !sec.title) return;
+      html.push('<h2>' + esc(sec.title || 'Section') + '</h2>');
+      html.push('<p>' + esc(renderTokens(txt, order)).replace(/\n/g, '<br>') + '</p>');
+    });
+    var bib = bibliography(order);
+    if (bib.length) {
+      html.push('<h2>Références</h2>');
+      if (art.meta.refStyle === 'apa') {
+        bib.forEach(function (ref) { html.push('<p>' + esc(formatApa(ref)) + '</p>'); });
+      } else {
+        html.push('<ol>' + bib.map(function (ref) { return '<li>' + esc(formatVancouver(ref)) + '</li>'; }).join('') + '</ol>');
+      }
+    }
+    html.push('</body></html>');
+    download(fileName('doc'), 'application/msword', '﻿' + html.join(''));
+  }
+
+  function exportMarkdown() {
+    var order = citationOrder();
+    var out = ['# ' + (art.meta.title || 'Titre du manuscrit'), ''];
+    if (art.meta.authors) out.push('_' + art.meta.authors + '_', '');
+    if (art.meta.keywords) out.push('**Mots-clés :** ' + art.meta.keywords, '');
+    art.sections.forEach(function (sec) {
+      var txt = (sec.content || '').trim();
+      if (!txt && !sec.title) return;
+      out.push('## ' + (sec.title || 'Section'), '', txt ? renderTokens(txt, order) : '', '');
+    });
+    var bib = bibliography(order);
+    if (bib.length) {
+      out.push('## Références', '');
+      bib.forEach(function (ref, i) {
+        out.push(art.meta.refStyle === 'apa' ? '- ' + formatApa(ref) : (i + 1) + '. ' + formatVancouver(ref));
+      });
+    }
+    download(fileName('md'), 'text/markdown', out.join('\n'));
+  }
+
+  function copyAll() {
+    var text = assembled();
+    (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject())
+      .then(function () { setStatus('Texte copié ✓'); })
+      .catch(function () {
+        var ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); setStatus('Texte copié ✓'); } catch (_) { alert('Copie impossible : utilise l’export Markdown.'); }
+        ta.remove();
+      });
+  }
+
+  // ── Cloud (own-row RLS via /api/article-docs) ─────────────────────────────
+  function api(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+    if (authToken) opts.headers.Authorization = 'Bearer ' + authToken;
+    return fetch(path, opts);
+  }
+
+  function saveCloud(silent) {
+    if (!authToken) { if (!silent) alert('Connecte-toi (compte étudiant ou professionnel) pour sauvegarder dans le cloud — la sauvegarde locale reste active.'); return; }
+    setStatus('Enregistrement…');
+    var body = { document: art, docType: art.meta.docType, title: art.meta.title };
+    if (serverId) body.id = serverId;
+    api('/api/article-docs', { method: 'POST', body: JSON.stringify(body) })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok) { setStatus('Échec de l’enregistrement'); return; }
+        serverId = res.j.id; dirty = false; saveLocal();
+        setStatus('Enregistré ✓');
+      })
+      .catch(function () { setStatus('Hors-ligne — sauvegarde locale'); });
+  }
+
+  function openHistory() {
+    if (!authToken) { alert('Connecte-toi pour retrouver tes articles enregistrés.'); return; }
+    var list = document.getElementById('histList');
+    list.innerHTML = '<div class="histrow">Chargement…</div>';
+    document.getElementById('histModal').classList.add('open');
+    api('/api/article-docs').then(function (r) { return r.json(); }).then(function (j) {
+      var items = (j && j.items) || [];
+      if (!items.length) { list.innerHTML = '<div class="histrow">Aucun article enregistré.</div>'; return; }
+      list.innerHTML = '';
+      items.forEach(function (it) {
+        var row = el('div', { class: 'histrow' }, [
+          el('span', { class: 'nm' }, [it.title || 'Article sans titre']),
+          el('span', { class: 'tp' }, [DOC_TYPES[it.doc_type] || it.doc_type || '']),
+          el('span', { class: 'dt' }, [new Date(it.updated_at).toLocaleDateString('fr-FR')]),
+          el('button', { class: 'iconbtn danger', title: 'Supprimer' }, ['🗑'])
+        ]);
+        row.addEventListener('click', function (ev) {
+          if (ev.target.closest('.iconbtn')) return;
+          loadCloud(it.id);
+        });
+        row.querySelector('.iconbtn').addEventListener('click', function (ev) {
+          ev.stopPropagation();
+          if (!confirm('Supprimer définitivement cet article ?')) return;
+          api('/api/article-docs?id=' + it.id, { method: 'DELETE' }).then(function () { openHistory(); });
+        });
+        list.appendChild(row);
+      });
+    }).catch(function () { list.innerHTML = '<div class="histrow">Erreur de chargement.</div>'; });
+  }
+  function loadCloud(id) {
+    api('/api/article-docs?id=' + id).then(function (r) { return r.json(); }).then(function (j) {
+      if (j && j.article && j.article.document && j.article.document.meta) {
+        art = j.article.document; serverId = j.article.id;
+        if (!art.references) art.references = [];
+        if (!art.checklist) art.checklist = {};
+        ui.activeSectionId = null;
+        saveLocal(); renderAll(); setStatus('Article chargé');
+        document.getElementById('histModal').classList.remove('open');
+      } else alert('Chargement impossible.');
+    });
+  }
+
+  // ── Aides IA (drawer) ─────────────────────────────────────────────────────
+  function openDrawer(title) {
+    document.getElementById('drawer-title').textContent = title;
+    document.getElementById('drawer').classList.add('open');
+    document.getElementById('overlay').classList.add('open');
+  }
+  function closeDrawer() {
+    document.getElementById('drawer').classList.remove('open');
+    document.getElementById('overlay').classList.remove('open');
+  }
+  function drawerLoading(msg) {
+    document.getElementById('drawer-body').innerHTML =
+      '<div class="privacy">' + esc(PRIVACY) + '</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;color:var(--muted)"><span class="spinner"></span> ' + esc(msg) + '</div>';
+  }
+  function drawerError(msg) {
+    document.getElementById('drawer-body').innerHTML = '<div class="issue">' + esc(msg) + '</div>';
+  }
+  function requireAuth() {
+    if (!authToken) { alert('Les aides IA sont réservées aux comptes vérifiés étudiant ou professionnel.'); return false; }
+    return true;
+  }
+
+  function aiCall(body) {
+    return api('/api/article', { method: 'POST', body: JSON.stringify(body) })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); });
+  }
+
+  function runAssist(instruction, customInstruction) {
+    if (!requireAuth()) return;
+    var sec = activeSection(); if (!sec) return;
+    var snapshotContent = sec.content || '';
+    var orderSnapshot = citationOrder().ordered.slice();
+    openDrawer('Aide à la rédaction');
+    drawerLoading('L’IA travaille sur « ' + (sec.title || 'Section') + ' »…');
+    aiCall({ mode: 'assist', document: art, sectionId: sec.id, instruction: instruction, customInstruction: customInstruction })
+      .then(function (res) {
+        if (!res.ok) { drawerError((res.j && res.j.error) || 'Aide indisponible.'); return; }
+        renderAssistResult(res.j, sec, snapshotContent, orderSnapshot, instruction);
+      })
+      .catch(function () { drawerError('Erreur réseau pendant l’aide IA.'); });
+  }
+
+  function renderAssistResult(rep, sec, snapshotContent, orderSnapshot, instruction) {
+    var body = document.getElementById('drawer-body');
+    body.innerHTML = '';
+    body.appendChild(el('div', { class: 'privacy' }, [PRIVACY]));
+
+    (rep.cautions || []).forEach(function (c) { body.appendChild(el('div', { class: 'caution' }, [c])); });
+
+    if (rep.advice && rep.advice.trim()) {
+      body.appendChild(el('h3', { style: 'font-size:13px;margin:8px 0 6px' }, ['Avis de structure']));
+      body.appendChild(el('div', { class: 'proposal' }, [rep.advice]));
+    }
+
+    if (rep.titleIdeas && rep.titleIdeas.length) {
+      body.appendChild(el('h3', { style: 'font-size:13px;margin:12px 0 6px' }, ['Titres proposés']));
+      rep.titleIdeas.forEach(function (t) {
+        var use = el('button', { class: 'btn', style: 'padding:4px 9px;font-size:12px' }, ['Utiliser']);
+        use.addEventListener('click', function () { art.meta.title = t; touch(); setStatus('Titre mis à jour ✓'); });
+        body.appendChild(el('div', { class: 'finding' }, [el('div', { class: 'cnc' }, [t]), el('div', { class: 'acts', style: 'margin-top:6px' }, [use])]));
+      });
+    }
+
+    if (rep.revisedText && rep.revisedText.trim()) {
+      var before = countText(renderTokens(snapshotContent, { ordered: orderSnapshot }));
+      var after = rep.counts ? { ws: rep.counts.withSpaces, ns: rep.counts.withoutSpaces, w: rep.counts.words } : countText(rep.revisedText);
+      body.appendChild(el('h3', { style: 'font-size:13px;margin:12px 0 6px' }, ['Texte proposé']));
+      body.appendChild(el('div', { class: 'hint', style: 'margin:0 0 6px' }, ['Avant : ' + countLabel(before) + ' → après : ' + countLabel(after)]));
+      body.appendChild(el('div', { class: 'proposal' }, [rep.revisedText]));
+      if (rep.changes && rep.changes.length) {
+        body.appendChild(el('h3', { style: 'font-size:13px;margin:12px 0 4px' }, ['Modifications effectuées']));
+        rep.changes.forEach(function (c) { body.appendChild(el('div', { class: 'chgline' }, [(c.kind ? c.kind + ' — ' : '') + (c.description || '')])); });
+      }
+      var apply = el('button', { class: 'btn btn-accent' }, ['Appliquer à la section']);
+      var refuse = el('button', { class: 'btn' }, ['Refuser']);
+      apply.addEventListener('click', function () {
+        if ((sec.content || '') !== snapshotContent &&
+            !confirm('La section a été modifiée depuis la demande. Remplacer quand même par la proposition ?')) return;
+        sec.content = detokenize(rep.revisedText, orderSnapshot);
+        touch(); closeDrawer(); setStatus('Proposition appliquée ✓');
+      });
+      refuse.addEventListener('click', closeDrawer);
+      body.appendChild(el('div', { class: 'acts' }, [apply, refuse]));
+    } else if (!(rep.advice && rep.advice.trim()) && !(rep.titleIdeas && rep.titleIdeas.length)) {
+      body.appendChild(el('div', { class: 'okline' }, ['Aucune proposition : la section semble déjà propre pour cette instruction.']));
+    }
+  }
+
+  function runReduce() {
+    if (!requireAuth()) return;
+    var sec = activeSection(); if (!sec) return;
+    if (!(sec.content || '').trim()) { alert('Écris d’abord du texte dans cette section.'); return; }
+    var def = sec.limit && sec.limit.max ? sec.limit : (art.meta.globalLimit || { kind: 'chars', max: 2500 });
+    var raw = prompt(
+      'Réduire « ' + (sec.title || 'Section') + ' » à combien ?\n' +
+      'Format : nombre + unité — « 2500 c » (caractères esp. comprises), « 1800 h » (hors espaces), « 250 m » (mots).',
+      def.max + ' ' + (def.kind === 'words' ? 'm' : def.kind === 'chars_no_spaces' ? 'h' : 'c')
+    );
+    if (!raw) return;
+    var m = raw.trim().match(/^(\d{2,6})\s*([chm]?)/i);
+    if (!m) { alert('Format non reconnu.'); return; }
+    var kind = m[2].toLowerCase() === 'm' ? 'words' : m[2].toLowerCase() === 'h' ? 'chars_no_spaces' : 'chars';
+    var max = parseInt(m[1], 10);
+
+    var snapshotContent = sec.content || '';
+    var orderSnapshot = citationOrder().ordered.slice();
+    openDrawer('Réduction à la limite');
+    drawerLoading('Réduction en cours (objectif : ' + fmtN(max) + ' ' + KIND_SHORT[kind] + ')…');
+    aiCall({ mode: 'reduce', document: art, sectionId: sec.id, target: { kind: kind, max: max } })
+      .then(function (res) {
+        if (!res.ok) { drawerError((res.j && res.j.error) || 'Réduction indisponible.'); return; }
+        var rep = res.j;
+        var body = document.getElementById('drawer-body');
+        body.innerHTML = '';
+        body.appendChild(el('div', { class: 'privacy' }, [PRIVACY]));
+        var achieved = rep.counts ? pickCount({ ws: rep.counts.withSpaces, ns: rep.counts.withoutSpaces, w: rep.counts.words }, kind) : null;
+        body.appendChild(el('div', { class: rep.withinLimit ? 'okline' : 'caution' }, [
+          rep.withinLimit
+            ? 'Objectif atteint : ' + fmtN(achieved) + ' / ' + fmtN(max) + ' ' + KIND_SHORT[kind] + ' ✓ (vérifié par comptage, pas sur parole de l’IA)'
+            : 'Objectif non atteint : ' + fmtN(achieved) + ' / ' + fmtN(max) + ' ' + KIND_SHORT[kind] + ' — vois les compromis listés, ou relance.'
+        ]));
+        (rep.cautions || []).forEach(function (c) { body.appendChild(el('div', { class: 'caution' }, [c])); });
+        body.appendChild(el('h3', { style: 'font-size:13px;margin:10px 0 6px' }, ['Texte réduit proposé']));
+        body.appendChild(el('div', { class: 'proposal' }, [rep.revisedText || '']));
+        if (rep.removed && rep.removed.length) {
+          body.appendChild(el('h3', { style: 'font-size:13px;margin:12px 0 4px' }, ['Coupes effectuées']));
+          rep.removed.forEach(function (c) { body.appendChild(el('div', { class: 'chgline' }, [c])); });
+        }
+        var apply = el('button', { class: 'btn btn-accent' }, ['Appliquer à la section']);
+        var refuse = el('button', { class: 'btn' }, ['Refuser']);
+        apply.addEventListener('click', function () {
+          if ((sec.content || '') !== snapshotContent &&
+              !confirm('La section a été modifiée depuis la demande. Remplacer quand même ?')) return;
+          sec.content = detokenize(rep.revisedText || '', orderSnapshot);
+          touch(); closeDrawer(); setStatus('Réduction appliquée ✓');
+        });
+        refuse.addEventListener('click', closeDrawer);
+        body.appendChild(el('div', { class: 'acts' }, [apply, refuse]));
+      })
+      .catch(function () { drawerError('Erreur réseau pendant la réduction.'); });
+  }
+
+  var ORIG_DISCLAIMER = 'Contrôle INDICATIF assisté par IA (recherche web) : il aide à repérer des formulations trop proches de sources publiées, mais ne remplace pas le logiciel anti-plagiat de ton institution (Compilatio, iThenticate…).';
+
+  function runOriginality() {
+    if (!requireAuth()) return;
+    var sec = activeSection(); if (!sec) return;
+    var order = citationOrder();
+    var text = renderTokens((sec.content || '').trim(), order);
+    if (text.length < 200) { alert('Écris au moins quelques paragraphes (200 caractères) pour un contrôle utile.'); return; }
+    openDrawer('Contrôle d’originalité');
+    drawerLoading('Recherche de formulations proches dans les sources publiées…');
+    aiCall({ mode: 'originality', text: text })
+      .then(function (res) {
+        if (!res.ok) { drawerError((res.j && res.j.error) || 'Contrôle indisponible.'); return; }
+        var rep = res.j;
+        var body = document.getElementById('drawer-body');
+        body.innerHTML = '';
+        body.appendChild(el('div', { class: 'privacy' }, [ORIG_DISCLAIMER]));
+        var VLBL = { ok: 'Aucun signal sérieux', attention: 'À retravailler par endroits', risque: 'Passages trop proches d’une source' };
+        body.appendChild(el('div', { class: 'verdict ' + rep.verdict }, [VLBL[rep.verdict] || rep.verdict, ' · risque ' + rep.riskScore + '/100']));
+        if (rep.summary) body.appendChild(el('div', { class: 'hint', style: 'margin-bottom:10px' }, [rep.summary]));
+        if (!rep.findings || !rep.findings.length) {
+          body.appendChild(el('div', { class: 'okline' }, ['Aucune formulation problématique repérée sur cette section.']));
+          return;
+        }
+        rep.findings.forEach(function (f) {
+          var node = el('div', { class: 'finding' });
+          if (f.passage) node.appendChild(el('div', { class: 'psg' }, ['« ' + f.passage + ' »']));
+          if (f.concern) node.appendChild(el('div', { class: 'cnc' }, [f.concern]));
+          if (f.sourceUrl || f.sourceTitle) {
+            var link = f.sourceUrl
+              ? el('a', { href: f.sourceUrl, target: '_blank', rel: 'noopener noreferrer' }, [f.sourceTitle || f.sourceUrl])
+              : el('span', null, [f.sourceTitle || '']);
+            node.appendChild(el('div', { class: 'src' }, ['Source proche : ', link]));
+          }
+          if (f.suggestion) node.appendChild(el('div', { class: 'sug' }, ['Piste : ' + f.suggestion]));
+          body.appendChild(node);
+        });
+      })
+      .catch(function () { drawerError('Erreur réseau pendant le contrôle.'); });
+  }
+
+  // ── Menus déroulants ──────────────────────────────────────────────────────
+  function toggleMenu(menu) {
+    var was = menu.classList.contains('open');
+    closeMenus();
+    if (!was) menu.classList.add('open');
+  }
+  function closeMenus() { document.querySelectorAll('.menu.open').forEach(function (mn) { mn.classList.remove('open'); }); }
+  document.addEventListener('click', function (e) { if (!e.target.closest('.menuwrap')) closeMenus(); });
+
+  // ── Exemple (données fictives, références explicitement fictives) ─────────
+  function example() {
+    art = blankArticle('abstract');
+    art.meta.title = 'Pronostic à un an des SCA ST+ du sujet de moins de 45 ans : cohorte rétrospective (exemple fictif)';
+    art.meta.authors = 'Doré C, Martin A';
+    art.meta.keywords = 'syndrome coronarien aigu, sujet jeune, pronostic';
+    art.meta.targetJournal = 'Congrès (exemple)';
+    art.references = [
+      { id: 'exemple2022', authors: ['Exemple A', 'Fictif B'], title: 'Exemple : registre illustratif des SCA du sujet jeune (données fictives)', journal: 'Rev Exemple Cardiol', year: '2022', volume: '12', issue: '3', pages: '145-152', doi: '', pmid: '', url: '' },
+      { id: 'demo2023', authors: ['Démo C', 'Exemple D', 'Fictif E'], title: 'Exemple : suivi à un an après angioplastie primaire (données fictives)', journal: 'J Demo Med', year: '2023', volume: '8', issue: '', pages: 'e210', doi: '', pmid: '', url: '' }
+    ];
+    var secs = art.sections;
+    secs[0].content = 'Les syndromes coronariens aigus avec sus-décalage du segment ST (SCA ST+) du sujet jeune restent peu décrits en population française [@exemple2022]. L’objectif était de décrire le pronostic à un an des patients de moins de 45 ans pris en charge par angioplastie primaire.';
+    secs[1].content = 'Cohorte rétrospective monocentrique (2019-2024). Critère de jugement principal : événements cardiovasculaires majeurs (MACE) à un an [@demo2023].';
+    secs[2].content = 'Au total, 184 patients ont été inclus (âge médian 41 ans, 82 % d’hommes, 64 % de fumeurs actifs). À un an, le taux de MACE était de 7,6 % (IC 95 % : 4,3-12,1).';
+    secs[3].content = 'Dans cette cohorte illustrative, le pronostic à un an était favorable. Ces données d’exemple montrent surtout comment structurer un abstract : contexte, objectif, méthodes, résultats chiffrés, conclusion prudente.';
+    serverId = null;
+    ui.activeSectionId = null;
+    ui.view = 'write';
+    touch();
+    setStatus('Exemple chargé (données et références FICTIVES, pour illustrer l’outil)');
+  }
+
+  // ── Wiring ────────────────────────────────────────────────────────────────
+  document.getElementById('btn-new').addEventListener('click', function () {
+    if (!confirm('Repartir d’un article vierge ? (la sauvegarde locale sera remplacée ; les articles cloud restent dans « Mes articles »)')) return;
+    art = blankArticle(art.meta.docType); serverId = null; ui.activeSectionId = null; touch();
+  });
+  document.getElementById('btn-example').addEventListener('click', example);
+  document.getElementById('btn-save').addEventListener('click', function () { saveCloud(false); });
+  document.getElementById('btn-history').addEventListener('click', openHistory);
+  document.getElementById('hist-close').addEventListener('click', function () { document.getElementById('histModal').classList.remove('open'); });
+  document.getElementById('cite-close').addEventListener('click', function () { document.getElementById('citeModal').classList.remove('open'); });
+  document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+  document.getElementById('overlay').addEventListener('click', closeDrawer);
+
+  document.querySelectorAll('#viewseg button').forEach(function (b) {
+    b.addEventListener('click', function () { ui.view = b.getAttribute('data-view'); renderAll(); });
+  });
+
+  var exportBtn = document.getElementById('btn-export');
+  var exportMenu = document.getElementById('export-menu');
+  exportBtn.addEventListener('click', function (ev) { ev.stopPropagation(); toggleMenu(exportMenu); });
+  document.getElementById('exp-word').addEventListener('click', function () { closeMenus(); exportWord(); });
+  document.getElementById('exp-md').addEventListener('click', function () { closeMenus(); exportMarkdown(); });
+  document.getElementById('exp-copy').addEventListener('click', function () { closeMenus(); copyAll(); });
+
+  // Sauvegarde de secours au changement de page.
+  window.addEventListener('pagehide', function () { saveLocal(); });
+
+  // Fermeture des modales au clic sur le fond.
+  ['histModal', 'citeModal'].forEach(function (id) {
+    var mnode = document.getElementById(id);
+    mnode.addEventListener('click', function (e) { if (e.target === mnode) mnode.classList.remove('open'); });
+  });
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  if (!loadLocal()) art = blankArticle('original');
+  renderAll();
+})();
+</script>
+</body>
+</html>
