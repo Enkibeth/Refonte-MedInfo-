@@ -15,7 +15,7 @@
  */
 import type { Persona } from '@/ai/prompts/_schema';
 
-export type AppFeatureId = 'chat' | 'document' | 'ecos' | 'partiel' | 'revision' | 'audio' | 'presentation' | 'cv-builder';
+export type AppFeatureId = 'chat' | 'document' | 'ecos' | 'partiel' | 'revision' | 'audio' | 'presentation' | 'cv-builder' | 'article';
 
 /** Nom d'icône (src/ui/icons.tsx) — l'UI n'utilise plus d'emojis (refonte 2026-06). */
 export type AppFeatureIcon =
@@ -26,7 +26,8 @@ export type AppFeatureIcon =
   | 'calendarCheck'
   | 'micVoice'
   | 'presentation'
-  | 'idCard';
+  | 'idCard'
+  | 'penLine';
 
 export interface AppFeatureMeta {
   id: AppFeatureId;
@@ -126,6 +127,16 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     emoji: '📋',
     icon: 'idCard',
     description: 'Crée et améliore ton CV médical : éditeur, aperçu A4, relecture IA, export PDF.',
+    personas: ['student', 'professional'],
+  },
+  {
+    id: 'article',
+    route: '/(chat)/article',
+    label: 'Article',
+    emoji: '✒️',
+    icon: 'penLine',
+    description:
+      'Rédige ton article ou ta thèse : plan IMRaD, compteurs de caractères, bibliographie Vancouver, aides IA et contrôle d’originalité.',
     personas: ['student', 'professional'],
   },
 ];

@@ -182,6 +182,36 @@ export const AI_FEATURES = [
     providers: ['anthropic', 'openai', 'google'],
   },
   {
+    key: 'article_assist',
+    emoji: '✒️',
+    label: 'Article — Aide à la rédaction',
+    description:
+      'Améliore une section de manuscrit médical (style scientifique, clarté, traduction, titres) — n\'invente jamais un fait ni une référence',
+    apiRoute: '/api/article',
+    promptKeys: ['article_assist'],
+    providers: ['anthropic', 'openai', 'google'],
+  },
+  {
+    key: 'article_reduce',
+    emoji: '✂️',
+    label: 'Article — Réduction de caractères',
+    description:
+      'Réduit une section à la limite imposée (caractères/mots) en préservant faits, chiffres et appels de citation',
+    apiRoute: '/api/article',
+    promptKeys: ['article_reduce'],
+    providers: ['anthropic', 'openai', 'google'],
+  },
+  {
+    key: 'article_originality',
+    emoji: '🔍',
+    label: 'Article — Contrôle d\'originalité',
+    description:
+      'Repère les formulations trop proches de sources publiées (recherche web) et propose des reformulations — indicatif, ne remplace pas un logiciel anti-plagiat',
+    apiRoute: '/api/article',
+    promptKeys: ['article_originality'],
+    providers: ['anthropic', 'openai', 'google'],
+  },
+  {
     key: 'blog_generate',
     emoji: '📰',
     label: 'Blog — Génération d\'article',

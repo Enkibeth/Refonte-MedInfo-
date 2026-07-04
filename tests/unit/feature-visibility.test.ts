@@ -18,12 +18,12 @@ describe('featureVisibility — matrice stricte par rôle', () => {
     expect(idsFor('public')).toEqual(['chat', 'document']);
   });
 
-  it("l'étudiant voit Chat + ECOS + Partiel + Révisions + Présentations + CV (pas Document ni Audio)", () => {
-    expect(idsFor('student')).toEqual(['chat', 'ecos', 'partiel', 'revision', 'presentation', 'cv-builder']);
+  it("l'étudiant voit Chat + ECOS + Partiel + Révisions + Présentations + CV + Article (pas Document ni Audio)", () => {
+    expect(idsFor('student')).toEqual(['chat', 'ecos', 'partiel', 'revision', 'presentation', 'cv-builder', 'article']);
   });
 
-  it('le professionnel voit Chat + Audio + Présentations + CV (pas ECOS/Partiel/Document)', () => {
-    expect(idsFor('professional')).toEqual(['chat', 'audio', 'presentation', 'cv-builder']);
+  it('le professionnel voit Chat + Audio + Présentations + CV + Article (pas ECOS/Partiel/Document)', () => {
+    expect(idsFor('professional')).toEqual(['chat', 'audio', 'presentation', 'cv-builder', 'article']);
   });
 
   it("l'admin voit toutes les fonctionnalités", () => {
@@ -42,6 +42,13 @@ describe('featureVisibility — cloisonnement inter-rôles', () => {
     expect(isFeatureVisible('audio', 'public')).toBe(false);
     expect(isFeatureVisible('presentation', 'public')).toBe(false);
     expect(isFeatureVisible('cv-builder', 'public')).toBe(false);
+    expect(isFeatureVisible('article', 'public')).toBe(false);
+  });
+
+  it("le module Rédaction d'article est visible étudiant + pro (pas grand public)", () => {
+    expect(isFeatureVisible('article', 'student')).toBe(true);
+    expect(isFeatureVisible('article', 'professional')).toBe(true);
+    expect(isFeatureVisible('article', 'public')).toBe(false);
   });
 
   it('le module CV est visible étudiant + pro (pas grand public)', () => {
@@ -107,17 +114,17 @@ describe('tabBarFeatures — répartition barre du bas / panneau Outils (lisibil
     expect(split('public')).toEqual({ bar: ['chat', 'document'], overflow: [] });
   });
 
-  it('professionnel : 4 outils = 4 onglets, pas de panneau', () => {
+  it('professionnel : 3 outils prioritaires + le reste dans le panneau', () => {
     expect(split('professional')).toEqual({
-      bar: ['chat', 'audio', 'presentation', 'cv-builder'],
-      overflow: [],
+      bar: ['chat', 'audio', 'presentation'],
+      overflow: ['cv-builder', 'article'],
     });
   });
 
   it('étudiant : 3 outils prioritaires + le reste dans le panneau', () => {
     expect(split('student')).toEqual({
       bar: ['chat', 'ecos', 'revision'],
-      overflow: ['partiel', 'presentation', 'cv-builder'],
+      overflow: ['partiel', 'presentation', 'cv-builder', 'article'],
     });
   });
 

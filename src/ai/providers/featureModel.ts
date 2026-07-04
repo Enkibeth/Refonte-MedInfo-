@@ -35,6 +35,11 @@ const FEATURE_DEFAULTS: Record<FeatureKey, { modelId: string; provider: string }
   cv_review: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   // Import d'un CV existant (étudiant/pro) : structure le texte extrait, n'invente rien.
   cv_import: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
+  // Rédaction d'article médical (étudiant/pro) : révision de section, réduction à la
+  // limite, contrôle d'originalité (web_search activé via la migration 0033).
+  article_assist:      { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
+  article_reduce:      { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
+  article_originality: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   // Blog public : articles longs et structurés (audit landing 2026-06).
   blog_generate: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   // Agent hebdo du blog (ADR-0025) : choix du sujet + relecture avant publication.
