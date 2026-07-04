@@ -31,6 +31,9 @@ export async function writeArticle(topic: string): Promise<GeneratedArticle | nu
   const { tools: webTools, ...callOptions } = runtime.options;
 
   const { text } = await generateText({
+    // La rédaction est l'étape la plus longue ; borne large mais dure pour ne
+    // jamais consommer à elle seule le maxDuration de la fonction Vercel.
+    abortSignal: AbortSignal.timeout(150_000),
     model: runtime.model,
     system: template,
     prompt: topic
@@ -56,6 +59,7 @@ export async function generateArticleImage(
   try {
     const res = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
+      signal: AbortSignal.timeout(90_000),
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
         model: 'gpt-image-1',

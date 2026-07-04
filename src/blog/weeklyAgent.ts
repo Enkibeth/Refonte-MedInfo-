@@ -5,7 +5,11 @@
  *   1. Choix du sujet  (feature "blog_topic")   — évite les doublons avec les
  *      articles existants, privilégie l'actualité santé.
  *   2. Rédaction       (feature "blog_generate") — writeArticle() partagé avec
- *      la génération manuelle admin.
+ *      la génération manuelle admin. L'article est inséré en BROUILLON dès
+ *      cette étape : si le pipeline échoue ou est tué ensuite (maxDuration
+ *      Vercel), l'article existe déjà dans le panel admin au lieu de
+ *      disparaître sans trace. Chaque appel LLM porte son propre timeout
+ *      (STEP_TIMEOUT_MS) et chaque étape est tracée dans les logs Vercel.
  *   3. En PARALLÈLE (sous-agents fail-open : un échec n'empêche jamais la
  *      relecture finale, qui reste la barrière fail-closed) :
  *      - Vérification des faits/sources (feature "blog_fact_check", web_search)
@@ -45,6 +49,17 @@ import { blogServiceClient, generateArticleImage, writeArticle } from '@/blog/se
 
 const GUARD_WINDOW_DAYS = 6;
 
+// Budgets par étape : la fonction Vercel est tuée à maxDuration (300 s) ; un
+// seul appel LLM qui traîne ne doit jamais consommer tout le budget du pipeline.
+// Les étapes fail-open (sujet, fact-check, copyedit) avortent silencieusement ;
+// la relecture finale avortée laisse l'article en brouillon (fail-closed).
+export const STEP_TIMEOUT_MS = {
+  topic: 60_000,
+  factCheck: 90_000,
+  copyedit: 90_000,
+  review: 90_000,
+} as const;
+
 export interface WeeklyAgentResult {
   ok: boolean;
   skipped?: string;
@@ -77,6 +92,7 @@ async function pickTopic(
       : '(aucun article pour le moment)';
 
   const { text } = await generateText({
+    abortSignal: AbortSignal.timeout(STEP_TIMEOUT_MS.topic),
     model: runtime.model,
     system: template,
     prompt: `Articles déjà présents sur le blog (à ne PAS dupliquer) :\n${existing}\n\nNous sommes le ${new Date().toISOString().slice(0, 10)}. Propose le sujet de l'article de cette semaine.`,
@@ -104,6 +120,7 @@ async function factCheckArticle(article: GeneratedArticle): Promise<FactCheckRep
     const { tools: webTools, ...callOptions } = runtime.options;
 
     const { text } = await generateText({
+      abortSignal: AbortSignal.timeout(STEP_TIMEOUT_MS.factCheck),
       model: runtime.model,
       system: template,
       prompt: [
@@ -136,6 +153,7 @@ async function copyeditArticle(article: GeneratedArticle): Promise<GeneratedArti
     const { tools: webTools, ...callOptions } = runtime.options;
 
     const { text } = await generateText({
+      abortSignal: AbortSignal.timeout(STEP_TIMEOUT_MS.copyedit),
       model: runtime.model,
       system: template,
       prompt: [
@@ -175,6 +193,7 @@ async function reviewArticle(
     : 'Vérification indisponible (sous-agent en échec) : redouble de vigilance sur les faits et chiffres.';
 
   const { text } = await generateText({
+    abortSignal: AbortSignal.timeout(STEP_TIMEOUT_MS.review),
     model: runtime.model,
     system: template,
     prompt: [
@@ -219,6 +238,11 @@ async function reviewArticle(
 
 /** Exécute le pipeline complet. `force` saute la garde anti-doublon (tests admin). */
 export async function runWeeklyBlogAgent(force = false): Promise<WeeklyAgentResult> {
+  const t0 = Date.now();
+  // Trace chaque étape dans les logs Vercel : le pipeline dure plusieurs minutes
+  // et peut être tué par maxDuration — sans ces logs, un échec est indiagnosticable.
+  const step = (msg: string) =>
+    console.log(`[weekly-blog] ${msg} (+${Math.round((Date.now() - t0) / 1000)}s)`);
   const db = blogServiceClient();
 
   // Garde anti-doublon : un seul article de l'agent par fenêtre de 6 jours.
@@ -251,45 +275,81 @@ export async function runWeeklyBlogAgent(force = false): Promise<WeeklyAgentResu
   } catch {
     topic = '';
   }
+  step(`sujet : ${topic ? topic.slice(0, 80) : '(libre)'}`);
 
   // 2. Rédaction.
   const article = await writeArticle(topic.slice(0, 300));
   if (!article) {
+    console.error('[weekly-blog] échec : le rédacteur n\'a pas renvoyé un article exploitable');
     return { ok: false, topic, error: "Le rédacteur n'a pas renvoyé un article exploitable." };
   }
+  step(`article rédigé : ${article.title.slice(0, 80)}`);
 
-  // 3. Sous-agents en parallèle : vérification des faits/sources, relecture
-  //    rédactionnelle, illustrations (couverture + corps, best-effort). Les
-  //    chemins d'images utilisent un slug provisoire (le titre peut encore être
-  //    corrigé par la relecture finale ; seul le slug DB doit refléter le titre
-  //    final).
-  const imageSlug = `${slugify(article.title)}-${Math.random().toString(36).slice(2, 6)}`;
+  // 3. Brouillon inséré IMMÉDIATEMENT : si une étape suivante échoue ou si la
+  //    fonction est tuée (maxDuration Vercel), l'article existe déjà dans le
+  //    panel admin au lieu de disparaître sans trace — et la garde anti-doublon
+  //    voit le run. Le slug est donc figé sur le titre du rédacteur.
+  const slug = `${slugify(article.title)}-${Math.random().toString(36).slice(2, 6)}`;
+  const { data: draftRow, error: draftError } = await db
+    .from('blog_posts')
+    .insert({
+      slug,
+      title: article.title,
+      summary: article.summary,
+      category: article.category,
+      content_md: article.content_md,
+      status: 'draft',
+      source: 'weekly_agent',
+    })
+    .select('id')
+    .single();
+  if (draftError) {
+    console.error('[weekly-blog] échec insertion brouillon :', draftError.message);
+    return { ok: false, topic, error: draftError.message };
+  }
+  const postId = draftRow.id as string;
+  step(`brouillon inséré (${slug})`);
+
+  // 4. Sous-agents en parallèle : vérification des faits/sources, relecture
+  //    rédactionnelle, illustrations (couverture + corps, best-effort).
   const [factCheck, copyedited, coverUrl, bodyImageUrl] = await Promise.all([
     factCheckArticle(article),
     copyeditArticle(article),
-    generateArticleImage(`${imageSlug}.png`, article.image_prompt),
+    generateArticleImage(`${slug}.png`, article.image_prompt),
     article.body_image_prompt
-      ? generateArticleImage(`${imageSlug}-corps.png`, article.body_image_prompt)
+      ? generateArticleImage(`${slug}-corps.png`, article.body_image_prompt)
       : Promise.resolve(null),
   ]);
   const drafted = copyedited
     ? { ...copyedited, image_prompt: article.image_prompt }
     : article;
+  step(
+    `sous-agents : fact-check ${factCheck ? factCheck.status : 'indisponible'}, copyedit ${copyedited ? 'ok' : 'indisponible'}, couverture ${coverUrl ? 'ok' : 'non'}, image corps ${bodyImageUrl ? 'ok' : 'non'}`,
+  );
 
-  // 4. Relecture finale (barrière fail-closed), informée du rapport de vérification.
-  const { verdict, notes, final } = await reviewArticle(drafted, factCheck);
+  // 5. Relecture finale (barrière fail-closed), informée du rapport de
+  //    vérification. En cas d'échec technique de la relecture, l'article RESTE
+  //    en brouillon (jamais de publication sans relecture).
+  let verdict: 'publish' | 'revise' | 'reject' = 'reject';
+  let notes = 'Relecture finale en échec technique : article conservé en brouillon.';
+  let final = drafted;
+  try {
+    ({ verdict, notes, final } = await reviewArticle(drafted, factCheck));
+  } catch (e) {
+    console.error('[weekly-blog] relecture finale en échec :', e instanceof Error ? e.message : e);
+  }
   const publish = verdict === 'publish' || verdict === 'revise';
+  step(`relecture finale : ${verdict}`);
 
-  // 5. Insertion (illustration du corps intégrée au markdown) puis publication si approuvé.
+  // 6. Mise à jour du brouillon (illustration du corps intégrée au markdown)
+  //    puis publication si approuvé.
   const contentWithImage = bodyImageUrl
     ? insertBodyImage(final.content_md, bodyImageUrl, `Illustration — ${final.title}`)
     : final.content_md;
-  const slug = `${slugify(final.title)}-${Math.random().toString(36).slice(2, 6)}`;
   const now = new Date().toISOString();
-  const { data, error } = await db
+  const { error } = await db
     .from('blog_posts')
-    .insert({
-      slug,
+    .update({
       title: final.title,
       summary: final.summary,
       category: final.category,
@@ -297,19 +357,21 @@ export async function runWeeklyBlogAgent(force = false): Promise<WeeklyAgentResu
       cover_image_url: coverUrl,
       status: publish ? 'published' : 'draft',
       published_at: publish ? now : null,
-      source: 'weekly_agent',
     })
-    .select('id, slug')
-    .single();
-  if (error) return { ok: false, topic, reviewVerdict: verdict, error: error.message };
+    .eq('id', postId);
+  if (error) {
+    console.error('[weekly-blog] échec mise à jour finale :', error.message);
+    return { ok: false, topic, reviewVerdict: verdict, postId, slug, error: error.message };
+  }
+  step(publish ? 'article publié' : 'article laissé en brouillon');
 
   return {
     ok: true,
     topic,
     reviewVerdict: verdict,
     reviewNotes: notes,
-    postId: data.id,
-    slug: data.slug,
+    postId,
+    slug,
     published: publish,
     coverGenerated: Boolean(coverUrl),
     bodyImageGenerated: Boolean(bodyImageUrl),
