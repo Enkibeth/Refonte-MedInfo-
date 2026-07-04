@@ -36,9 +36,11 @@ export async function GET(request: Request): Promise<Response> {
 
   try {
     const result = await runWeeklyBlogAgent(force);
+    console.log('[weekly-blog] résultat :', JSON.stringify(result));
     return Response.json(result, { status: result.ok ? 200 : 502 });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Erreur inattendue du pipeline.';
+    console.error('[weekly-blog] erreur inattendue du pipeline :', e);
     return Response.json({ ok: false, error: message }, { status: 500 });
   }
 }

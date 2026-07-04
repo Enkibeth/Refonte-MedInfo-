@@ -18,6 +18,23 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-07-04] – Claude (Blog hebdo : résilience du pipeline + politique de cache du site)
+### Files modified
+- src/blog/weeklyAgent.ts (brouillon inséré dès la rédaction puis mis à jour ; STEP_TIMEOUT_MS par appel LLM ; relecture finale en échec → brouillon ; logs [weekly-blog] par étape)
+- src/blog/serverGeneration.ts (timeout rédaction 150 s + images 90 s), app/api/cron/weekly-blog+api.ts (log résultat/erreur)
+- vercel.json (headers : /_expo/static immutable 1 an, /assets 1 j + SWR, HTML no-store)
+- docs/DECISIONS/0025 (section résilience)
+### Purpose
+Premier run manuel du cron resté muet : la fonction peut être tuée à maxDuration avant
+l'insertion (fin de pipeline) et la route n'émettait aucun log — échec indiagnosticable.
+Désormais un run laisse toujours au minimum un brouillon + des logs. Cache : les bundles
+hashés n'étaient pas mis en cache et le HTML pouvait rester servi périmé (chargements
+infinis après déploiement, symptôme « ça marche seulement en navigation privée »).
+### Regulatory impact
+None (aucun changement de contenu ni d'accès ; headers HTTP et robustesse d'exécution)
+### Rollback plan
+Revert du commit (les brouillons créés par des runs interrompus se suppriment dans l'admin).
+
 ## [2026-07-04] – Claude (Blog hebdo : sous-agents fact-check + relecture rédactionnelle + illustration du corps)
 ### Files modified
 - src/blog/weeklyAgent.ts (sous-agents parallèles factCheckArticle/copyeditArticle, relecture finale informée du rapport, illustrations en parallèle), src/blog/serverGeneration.ts (generateArticleImage généralisée)

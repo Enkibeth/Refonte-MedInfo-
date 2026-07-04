@@ -97,3 +97,21 @@ La relecture finale `blog_review` reçoit l'article relu ET le rapport du
 vérificateur ; elle reste l'unique barrière **fail-closed** (reject → brouillon).
 Convention admin respectée pour les 2 nouvelles features (AI_FEATURES,
 FEATURE_DEFAULTS, PROMPT_DEFAULTS, seed migration `0032_blog_agent_subagents.sql`).
+
+### Résilience d'exécution (2026-07-04, suite au premier run muet)
+
+Le pipeline complet peut approcher `maxDuration` (300 s) : quand la fonction est
+tuée, l'insertion en toute fin de pipeline n'a jamais lieu et le run ne laisse
+AUCUNE trace (ni article, ni log — la route avalait aussi les erreurs). Trois
+correctifs :
+
+1. **Brouillon inséré dès la rédaction** (statut `draft`, `source =
+   'weekly_agent'`), puis mis à jour/publié en fin de pipeline. Un échec ou un
+   timeout tardif laisse toujours un brouillon visible dans le panel admin, et
+   la garde anti-doublon voit le run. Le slug est figé sur le titre du rédacteur.
+2. **Timeout par étape** (`STEP_TIMEOUT_MS` : sujet 60 s, fact-check/copyedit/
+   relecture 90 s ; rédaction 150 s ; images 90 s) : un appel LLM qui traîne
+   n'épuise plus le budget total. Étapes fail-open avortées silencieusement ;
+   relecture finale avortée → brouillon (fail-closed).
+3. **Logs** : chaque étape (`[weekly-blog] … (+Ns)`) et le résultat/erreur de la
+   route sont tracés dans les logs runtime Vercel.
