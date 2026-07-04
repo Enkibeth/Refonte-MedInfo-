@@ -73,3 +73,27 @@ l'article est publié sur le blog.
   brouillon + notification admin (changer une ligne dans `weeklyAgent.ts`).
 - Optionnel plus tard : stocker les notes du relecteur (colonne dédiée) et les
   afficher dans l'éditeur admin.
+
+## Addendum 2026-07-04 — Sous-agents qualité (fact-check, relecture rédactionnelle, illustration du corps)
+
+Le pipeline passe de 3 étapes séquentielles à un pipeline multi-agents : après la
+rédaction, trois travaux s'exécutent EN PARALLÈLE (pas d'allongement notable de la
+chaîne, `maxDuration: 300` inchangé) :
+
+1. **`blog_fact_check`** (web_search ON, migration `0032`) : vérifie les
+   affirmations chiffrées, les attributions (HAS/ANSM/OMS/études) et les URLs de
+   l'article contre les sources réelles ; produit un rapport `ok`/`issues`
+   (parseur pur `parseFactCheckJson`). **Fail-open** : en échec, le rapport est
+   « indisponible » et le relecteur final est invité à redoubler de vigilance.
+2. **`blog_copyedit`** : relecture rédactionnelle (orthographe, style, structure
+   markdown, disclaimer) qui renvoie l'article entier corrigé — interdiction de
+   toucher au fond. **Fail-open** : en échec, la version du rédacteur continue.
+3. **Illustrations** (best-effort, comme la couverture) : le rédacteur propose un
+   `body_image_prompt` optionnel ; l'image du corps est insérée avant la deuxième
+   section « ## » (`insertBodyImage`, pur). Chemins d'images sur slug provisoire
+   (le titre peut encore changer en relecture finale).
+
+La relecture finale `blog_review` reçoit l'article relu ET le rapport du
+vérificateur ; elle reste l'unique barrière **fail-closed** (reject → brouillon).
+Convention admin respectée pour les 2 nouvelles features (AI_FEATURES,
+FEATURE_DEFAULTS, PROMPT_DEFAULTS, seed migration `0032_blog_agent_subagents.sql`).

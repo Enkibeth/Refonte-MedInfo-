@@ -18,6 +18,23 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-07-04] – Claude (Blog hebdo : sous-agents fact-check + relecture rédactionnelle + illustration du corps)
+### Files modified
+- src/blog/weeklyAgent.ts (sous-agents parallèles factCheckArticle/copyeditArticle, relecture finale informée du rapport, illustrations en parallèle), src/blog/serverGeneration.ts (generateArticleImage généralisée)
+- src/blog/articleJson.ts (parseFactCheckJson, insertBodyImage, body_image_prompt), tests/unit/blog-agent.test.ts (+8 tests)
+- src/admin/index.ts, src/ai/providers/featureModel.ts, src/ai/prompts/promptStore.ts (features blog_fact_check + blog_copyedit, convention 6 points ; body_image_prompt dans blog_generate)
+- supabase/migrations/0032_blog_agent_subagents.sql (seed ai_model_config), app/api/cron/weekly-blog+api.ts (commentaire convention)
+- docs : ADR-0025 addendum, CLAUDE.md, .env.example (CRON_SECRET)
+### Purpose
+Demande Hugo : ajouter au pipeline hebdo du blog des sous-agents qui vérifient la rédaction,
+les sources/faits (web_search) et la qualité, plus une illustration dans le corps d'article.
+Sous-agents fail-open exécutés en parallèle après la rédaction ; `blog_review` reste la
+barrière fail-closed avant publication.
+### Regulatory impact
+None (articles = information générale, disclaimer inchangé ; aucune donnée utilisateur ; RLS blog inchangée)
+### Rollback plan
+Revert du commit ; les lignes `blog_fact_check`/`blog_copyedit` de `ai_model_config` peuvent rester (ignorées par l'ancien pipeline).
+
 ## [2026-07-02] – Claude (Sous-agent PubMed délégué : gpt-5.2 → Claude MCP)
 ### Files modified
 - src/ai/chat/tools/pubmed.ts (nouveau : resolvePubmedMcpUrl, pubmedMcpServers, runPubmedAgent, outil pubmed_search), src/ai/chat/tools/index.ts (option pubmedAgent + section système)
