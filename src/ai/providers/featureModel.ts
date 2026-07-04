@@ -40,6 +40,10 @@ const FEATURE_DEFAULTS: Record<FeatureKey, { modelId: string; provider: string }
   // Agent hebdo du blog (ADR-0025) : choix du sujet + relecture avant publication.
   blog_topic:    { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   blog_review:   { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
+  // Sous-agents qualité du pipeline hebdo (2026-07) : vérification des faits/sources
+  // (web_search activé via la migration 0032) + relecture rédactionnelle.
+  blog_fact_check: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
+  blog_copyedit:   { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
 };
 
 /**

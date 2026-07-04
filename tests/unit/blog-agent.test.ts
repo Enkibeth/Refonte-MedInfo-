@@ -1,11 +1,14 @@
 /**
  * Tests des parseurs de l'agent éditorial hebdomadaire du blog
  * (src/blog/articleJson.ts) : article du rédacteur, sujet de la semaine,
- * verdict du relecteur.
+ * verdict du relecteur, rapport du vérificateur de faits, insertion
+ * d'illustration dans le corps.
  */
 import { describe, expect, it } from 'vitest';
 import {
+  insertBodyImage,
   parseArticleJson,
+  parseFactCheckJson,
   parseReviewJson,
   parseTopicJson,
   slugify,
@@ -36,6 +39,56 @@ describe('parseArticleJson', () => {
   it('retourne null sans title ou content_md', () => {
     expect(parseArticleJson('{"summary":"x"}')).toBeNull();
     expect(parseArticleJson('pas du JSON')).toBeNull();
+  });
+
+  it('extrait body_image_prompt quand il est fourni, sinon undefined', () => {
+    const withPrompt = parseArticleJson(
+      '{"title":"T","content_md":"## S","body_image_prompt":" flat body illustration "}',
+    );
+    expect(withPrompt?.body_image_prompt).toBe('flat body illustration');
+    const without = parseArticleJson('{"title":"T","content_md":"## S","body_image_prompt":"  "}');
+    expect(without?.body_image_prompt).toBeUndefined();
+  });
+});
+
+describe('parseFactCheckJson', () => {
+  it('extrait un rapport ok', () => {
+    expect(parseFactCheckJson('{"status":"ok","issues":[],"notes":"Vérifié via HAS"}')).toEqual({
+      status: 'ok',
+      issues: [],
+      notes: 'Vérifié via HAS',
+    });
+  });
+
+  it('extrait les anomalies en filtrant les entrées invalides', () => {
+    const report = parseFactCheckJson(
+      '```json\n{"status":"issues","issues":[" Chiffre faux ", 42, ""],"notes":"n"}\n```',
+    );
+    expect(report).toEqual({ status: 'issues', issues: ['Chiffre faux'], notes: 'n' });
+  });
+
+  it('retourne null si le status est invalide ou absent', () => {
+    expect(parseFactCheckJson('{"status":"maybe"}')).toBeNull();
+    expect(parseFactCheckJson('{"issues":[]}')).toBeNull();
+    expect(parseFactCheckJson('pas du JSON')).toBeNull();
+  });
+});
+
+describe('insertBodyImage', () => {
+  const article = '## Intro\ntexte\n\n## Deuxième\nsuite\n\n## Ce qu\'il faut retenir\n- a';
+
+  it("insère l'image avant le deuxième titre « ## »", () => {
+    const out = insertBodyImage(article, 'https://x.test/i.png', 'Illustration');
+    expect(out).toBe(
+      '## Intro\ntexte\n\n![Illustration](https://x.test/i.png)\n\n## Deuxième\nsuite\n\n## Ce qu\'il faut retenir\n- a',
+    );
+  });
+
+  it("laisse l'article inchangé sans deuxième section ou sans URL", () => {
+    expect(insertBodyImage('## Seule section\ntexte', 'https://x.test/i.png', 'A')).toBe(
+      '## Seule section\ntexte',
+    );
+    expect(insertBodyImage(article, '', 'A')).toBe(article);
   });
 });
 

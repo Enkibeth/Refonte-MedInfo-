@@ -43,9 +43,12 @@ export async function writeArticle(topic: string): Promise<GeneratedArticle | nu
   return parseArticleJson(text);
 }
 
-/** Génère la couverture (best-effort) et retourne son URL publique, sinon null. */
-export async function generateCoverImage(
-  slug: string,
+/**
+ * Génère une illustration (best-effort), l'upload dans le bucket public
+ * `blog-covers` sous `path` et retourne son URL publique, sinon null.
+ */
+export async function generateArticleImage(
+  path: string,
   imagePrompt: string,
 ): Promise<string | null> {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -68,7 +71,6 @@ export async function generateCoverImage(
 
     const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
     const db = blogServiceClient();
-    const path = `${slug}.png`;
     const { error } = await db.storage
       .from('blog-covers')
       .upload(path, bytes, { contentType: 'image/png', upsert: true });
@@ -77,4 +79,12 @@ export async function generateCoverImage(
   } catch {
     return null;
   }
+}
+
+/** Génère la couverture (best-effort) et retourne son URL publique, sinon null. */
+export async function generateCoverImage(
+  slug: string,
+  imagePrompt: string,
+): Promise<string | null> {
+  return generateArticleImage(`${slug}.png`, imagePrompt);
 }

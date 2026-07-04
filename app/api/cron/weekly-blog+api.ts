@@ -11,9 +11,9 @@
  *     la garde anti-doublon pour tester le pipeline.
  *
  * ⚠️  CONVENTION : les modèles utilisés (feature keys: "blog_topic",
- * "blog_generate", "blog_review") sont configurables depuis le panel admin
- * (app/(admin)/index.tsx). Si tu ajoutes une étape IA ici, déclare-la dans
- * src/admin/index.ts AI_FEATURES.
+ * "blog_generate", "blog_fact_check", "blog_copyedit", "blog_review") sont
+ * configurables depuis le panel admin (app/(admin)/index.tsx). Si tu ajoutes
+ * une étape IA ici, déclare-la dans src/admin/index.ts AI_FEATURES.
  */
 import { requireAdmin } from '@/admin/index';
 import { runWeeklyBlogAgent } from '@/blog/weeklyAgent';
