@@ -25,50 +25,47 @@ import { normalizeImportedCv } from '@/cv/cvDocument';
 
 const MAX_TEXT = 24_000;
 
-const entry = z
-  .object({
-    title: z.string(),
-    degree: z.string(),
-    institution: z.string(),
-    department: z.string(),
-    location: z.string(),
-    startDate: z.string(),
-    endDate: z.string(),
-    isCurrent: z.boolean(),
-    description: z.string(),
-    bullets: z.array(z.string()),
-  })
-  .partial();
+// ⚠️ AUCUN champ optionnel dans ce schéma : l'API Anthropic refuse les schémas
+// d'outil comptant plus de 24 paramètres optionnels (« Schemas contains too many
+// optional parameters », vu en prod avec l'ancien `.partial()` → 64 optionnels).
+// Tout est requis ; l'absence se dit par chaîne vide / tableau vide / false / 0,
+// ce que `normalizeImportedCv` (défensif, `raw: unknown`) nettoie de toute façon.
+const entry = z.object({
+  title: z.string(),
+  degree: z.string(),
+  institution: z.string(),
+  department: z.string(),
+  location: z.string(),
+  startDate: z.string(),
+  endDate: z.string(),
+  isCurrent: z.boolean(),
+  description: z.string(),
+  bullets: z.array(z.string()),
+});
 
 const importSchema = z.object({
-  personalInfo: z
-    .object({
-      firstName: z.string(),
-      lastName: z.string(),
-      headline: z.string(),
-      email: z.string(),
-      phone: z.string(),
-      city: z.string(),
-      country: z.string(),
-      nationality: z.string(),
-      website: z.string(),
-    })
-    .partial(),
-  summary: z.string().optional(),
-  experiences: z.array(entry).optional(),
-  education: z.array(entry).optional(),
-  researchProjects: z.array(entry).optional(),
-  references: z
-    .array(
-      z.object({ name: z.string(), title: z.string(), institution: z.string(), location: z.string(), phone: z.string(), email: z.string() }).partial(),
-    )
-    .optional(),
-  certificates: z
-    .array(z.object({ title: z.string(), subtitle: z.string(), score: z.string(), date: z.string() }).partial())
-    .optional(),
-  languages: z.array(z.object({ name: z.string(), levelLabel: z.string(), level: z.number() }).partial()).optional(),
-  interests: z.array(z.string()).optional(),
-  personalProjects: z.array(z.object({ title: z.string(), description: z.string(), url: z.string() }).partial()).optional(),
+  personalInfo: z.object({
+    firstName: z.string(),
+    lastName: z.string(),
+    headline: z.string(),
+    email: z.string(),
+    phone: z.string(),
+    city: z.string(),
+    country: z.string(),
+    nationality: z.string(),
+    website: z.string(),
+  }),
+  summary: z.string(),
+  experiences: z.array(entry),
+  education: z.array(entry),
+  researchProjects: z.array(entry),
+  references: z.array(
+    z.object({ name: z.string(), title: z.string(), institution: z.string(), location: z.string(), phone: z.string(), email: z.string() }),
+  ),
+  certificates: z.array(z.object({ title: z.string(), subtitle: z.string(), score: z.string(), date: z.string() })),
+  languages: z.array(z.object({ name: z.string(), levelLabel: z.string(), level: z.number() })),
+  interests: z.array(z.string()),
+  personalProjects: z.array(z.object({ title: z.string(), description: z.string(), url: z.string() })),
 });
 
 export async function POST(request: Request): Promise<Response> {
@@ -112,7 +109,8 @@ export async function POST(request: Request): Promise<Response> {
       prompt:
         'Voici le texte brut d\'un CV existant. Structure-le fidèlement dans le format demandé, ' +
         'sans rien inventer ni reformuler (recopie les intitulés, dates et lieux tels quels). ' +
-        'Laisse vide tout champ absent.\n\n"""' + text + '"""',
+        'Tous les champs sont requis : mets une chaîne vide (ou un tableau vide, false, 0) ' +
+        'pour toute information absente du CV.\n\n"""' + text + '"""',
       ...callOptions,
     });
     return Response.json({ document: normalizeImportedCv(object) });
