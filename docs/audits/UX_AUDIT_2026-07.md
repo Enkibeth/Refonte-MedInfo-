@@ -18,7 +18,7 @@ regle_tokens: ce fichier est la SOURCE DE VÉRITÉ durable. Une fois une feature
 - [x] **F1 · ECOS** — Corriger le chrono qui se réinitialise à chaque frappe (`Timer` : `onExpire` dans les deps `useEffect`). `app/(chat)/ecos.tsx`. **P1**
 - [x] **F2 · Analyse de document** — Retirer le faux paywall « Premium » (`isPaid = Boolean(session)` stub + `PremiumGate`), s'appuyer sur `RoleGate` + serveur. `app/(chat)/document.tsx`. **P1**
 - [x] **F3 · Audio** — Retirer le même faux paywall « Premium » + afficher un message quand le compte rendu échoue partiellement (`report:null` silencieux). `app/(chat)/audio.tsx`. **P1/P2**
-- [ ] **F4 · Présentations** — Confirmation avant suppression d'un deck dans « Mes présentations ». `public/presentation.html`. **P2**
+- [x] **F4 · Présentations** — Confirmation avant suppression d'un deck dans « Mes présentations ». `public/presentation.html`. **P2**
 - [ ] **F5 · Partiels** — Vrai glisser-déposer (la zone dit « Déposer le fichier » mais n'a pas de handler `drop`). `public/partiel.html`. **P2**
 - [ ] **F6 · CV** — Échapper `photoUrl` dans `src=""` + remplacer l'octet NUL littéral de la regex par `\x00`. `public/cv-builder.html`. **P3**
 
@@ -41,3 +41,4 @@ regle_tokens: ce fichier est la SOURCE DE VÉRITÉ durable. Une fois une feature
 - [x] F1 · ECOS — chrono stabilisé (intervalle créé une fois, callback via ref) ; plus de gel pendant la saisie.
 - [x] F2 · Document — faux paywall « Premium » supprimé (outil gratuit grand public) ; RoleGate gère invité (créer un compte) et rôle.
 - [x] F3 · Audio — même faux paywall supprimé (outil role-gated pro) ; message clair quand le compte rendu échoue mais que la transcription a réussi.
+- [x] F4 · Présentations — confirmation avant suppression d'un deck (« Supprimer définitivement … ? »), aligné sur le CV Builder.
