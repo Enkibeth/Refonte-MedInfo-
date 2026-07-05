@@ -30,7 +30,7 @@ regle_tokens: ce fichier est la SOURCE DE VÉRITÉ durable. Une fois une feature
 
 ### Lot 3 — Robustesse (fond)
 - [ ] **F11 · CDN** — Auto-héberger les libs (pptxgenjs, html2canvas, jsPDF, pdf.js, xlsx, mammoth) **et les polices Google Fonts** des 3 outils autonomes dans `/public`. **P2**
-- [ ] **F12 · Partiels** — Fidélité PDF : couleurs résolues en dur (html2canvas 1.4.1 ne rasterise pas `color-mix()`/variables CSS dans le radar & la courbe de Gauss). **P2/P3**
+- [x] **F12 · Partiels** — Fidélité PDF : couleurs résolues en dur (html2canvas 1.4.1 ne rasterise pas `color-mix()`/variables CSS dans le radar & la courbe de Gauss). **P2/P3**
 - [ ] **F13 · Blog / navigation** — Passe dédiée (rendu markdown des articles, états vides, navigation rôle-aware). **P3**
 
 ### Hors périmètre UX — nécessite arbitrage Hugo (NE PAS toucher sans go)
@@ -48,3 +48,4 @@ regle_tokens: ce fichier est la SOURCE DE VÉRITÉ durable. Une fois une feature
 - [x] F8 · Audio — Copier sur la transcription et le compte rendu ; garde-fou de taille (25 Mo) avant l'upload avec message clair au lieu d'un 413 générique.
 - [x] F9 · ECOS — réponses patient affichées au fil du flux ; « Terminer et évaluer » demande confirmation (l'expiration du chrono reste automatique) ; Copier + Export PDF de l'évaluation.
 - [x] F10 · Dictée — message d'erreur transitoire (bulle) si micro refusé / transcription échouée / aucune parole ; repli clavier inchangé. **Lot 2 terminé.**
+- [x] F12 · Partiels — radar & courbe de Gauss (SVG) : couleurs `color-mix()`/`var(--)` remplacées par hex/rgba résolus (palette `SVGC`) pour que l'export PDF (html2canvas) les rende ; rendu écran identique. Syntaxe vérifiée (node --check).
