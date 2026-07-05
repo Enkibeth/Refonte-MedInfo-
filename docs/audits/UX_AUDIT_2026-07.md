@@ -23,7 +23,7 @@ regle_tokens: ce fichier est la SOURCE DE VÉRITÉ durable. Une fois une feature
 - [x] **F6 · CV** — Échapper `photoUrl` dans `src=""` + remplacer l'octet NUL littéral de la regex par `\x00`. `public/cv-builder.html`. **P3**
 
 ### Lot 2 — UX (cohérence entre outils)
-- [ ] **F7 · Document** — Ajouter Copier + Export PDF du résultat + fiabiliser le refresh de l'historique (re-poll court). **P2**
+- [x] **F7 · Document** — Ajouter Copier + Export PDF du résultat + fiabiliser le refresh de l'historique (re-poll court). **P2**
 - [ ] **F8 · Audio** — Copier inline (transcription + compte rendu) + alerte de durée avant la limite 25 Mo. **P2**
 - [ ] **F9 · ECOS** — Réponses patient en streaming + confirmation avant « Terminer et évaluer » + export de l'évaluation. **P2**
 - [ ] **F10 · Dictée vocale** — Retour visible en cas d'échec (micro refusé / transcription échouée). `src/ui/DictationButton.tsx`. **P2**
@@ -44,3 +44,4 @@ regle_tokens: ce fichier est la SOURCE DE VÉRITÉ durable. Une fois une feature
 - [x] F4 · Présentations — confirmation avant suppression d'un deck (« Supprimer définitivement … ? »), aligné sur le CV Builder.
 - [x] F5 · Partiels — vrai glisser-déposer (dragenter/over/leave/drop + surbrillance) + garde-fou fenêtre anti-navigation ; syntaxe du script vérifiée (node --check).
 - [x] F6 · CV — photoUrl échappé dans src="" (plus de rupture d'attribut) ; octet NUL littéral de la regex remplacé par \x00 (fichier plus « binaire »). **Lot 1 terminé.**
+- [x] F7 · Document — Copier + Export PDF du résultat (mini-markdown partagé `src/ui/miniMarkdown.ts`, exporteur `src/document/exportAnalysisPdf.ts`) ; historique ré-interrogé jusqu'à apparition (poll 1,2/2,5/4 s) au lieu d'un unique setTimeout.

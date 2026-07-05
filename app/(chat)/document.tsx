@@ -31,6 +31,7 @@ import {
   type AnalysisMode,
   type DocumentAnalysis,
 } from '@/document/analysisHistory';
+import { exportAnalysisToPdf } from '@/document/exportAnalysisPdf';
 import {
   citationPagesLabel,
   splitAnalysisResult,
@@ -87,6 +88,7 @@ function DocumentScreenInner() {
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<DocumentAnalysis[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const userId = session?.user?.id ?? null;
 
@@ -94,6 +96,40 @@ function DocumentScreenInner() {
     if (!userId) return;
     setHistory(await listAnalyses(userId));
   }, [userId]);
+
+  // L'archivage serveur (onFinish) suit la fin du stream mais peut prendre plus d'une
+  // seconde : on ré-interroge l'historique quelques fois jusqu'à voir apparaître la
+  // nouvelle analyse, au lieu d'un unique setTimeout qui la manquait souvent.
+  const pollHistoryUntilNew = useCallback(
+    async (beforeCount: number) => {
+      for (const delay of [1200, 2500, 4000]) {
+        await new Promise((r) => setTimeout(r, delay));
+        if (!userId) return;
+        const list = await listAnalyses(userId);
+        setHistory(list);
+        if (list.length > beforeCount) return;
+      }
+    },
+    [userId],
+  );
+
+  const handleCopy = useCallback(async () => {
+    if (!analysis?.text) return;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(analysis.text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1800);
+      }
+    } catch {
+      /* presse-papiers indisponible — l'utilisateur peut sélectionner le texte */
+    }
+  }, [analysis]);
+
+  const handleExportPdf = useCallback(() => {
+    if (!analysis?.text) return;
+    exportAnalysisToPdf({ title: resultLabel, markdown: analysis.text, citations: analysis.citations });
+  }, [analysis, resultLabel]);
 
   useEffect(() => {
     void refreshHistory();
@@ -171,8 +207,8 @@ function DocumentScreenInner() {
       if (!fullText) throw new Error('Aucune réponse reçue. Réessayez.');
       const { text: finalText, citations } = splitAnalysisResult(fullText);
       setAnalysis({ text: finalText, citations });
-      // L'archivage serveur (onFinish) suit immédiatement la fin du stream.
-      setTimeout(() => void refreshHistory(), 1500);
+      // Rafraîchit l'historique jusqu'à voir apparaître la nouvelle analyse archivée.
+      void pollHistoryUntilNew(history.length);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Une erreur est survenue.');
     } finally {
@@ -375,6 +411,28 @@ function DocumentScreenInner() {
           <View style={styles.result}>
             <View style={styles.resultHeader}>
               <Text style={styles.resultTitle}>{resultLabel}</Text>
+              {!loading && analysis.text ? (
+                <View style={styles.resultActions}>
+                  <TouchableOpacity
+                    onPress={handleCopy}
+                    accessibilityRole="button"
+                    accessibilityLabel="Copier le résultat"
+                    style={styles.resultAction}
+                  >
+                    <Text style={styles.resultActionText}>{copied ? 'Copié ✓' : 'Copier'}</Text>
+                  </TouchableOpacity>
+                  {Platform.OS === 'web' ? (
+                    <TouchableOpacity
+                      onPress={handleExportPdf}
+                      accessibilityRole="button"
+                      accessibilityLabel="Exporter le résultat en PDF"
+                      style={styles.resultAction}
+                    >
+                      <Text style={styles.resultActionText}>Export PDF</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              ) : null}
             </View>
             <View style={styles.resultBody}>
               <MarkdownRenderer text={analysis.text} />
@@ -625,6 +683,10 @@ const styles = StyleSheet.create({
     ...tokens.elevation.sm,
   },
   resultHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: tokens.space.sm,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.md,
     backgroundColor: tokens.colors.accentSurface,
@@ -632,9 +694,25 @@ const styles = StyleSheet.create({
     borderBottomColor: tokens.colors.accentSurfaceStrong,
   },
   resultTitle: {
+    flex: 1,
     fontFamily: tokens.font.sans,
     color: tokens.colors.accentDeep,
     fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  resultActions: { flexDirection: 'row', gap: tokens.space.xs },
+  resultAction: {
+    paddingHorizontal: tokens.space.sm,
+    paddingVertical: 6,
+    borderRadius: tokens.radius.sm,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    backgroundColor: tokens.colors.surface,
+  },
+  resultActionText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
   },
   resultBody: { padding: tokens.space.lg },
