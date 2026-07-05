@@ -29,7 +29,7 @@ regle_tokens: ce fichier est la SOURCE DE VÉRITÉ durable. Une fois une feature
 - [x] **F10 · Dictée vocale** — Retour visible en cas d'échec (micro refusé / transcription échouée). `src/ui/DictationButton.tsx`. **P2**
 
 ### Lot 3 — Robustesse (fond)
-- [ ] **F11 · CDN** — Auto-héberger les libs (pptxgenjs, html2canvas, jsPDF, pdf.js, xlsx, mammoth) **et les polices Google Fonts** des 3 outils autonomes dans `/public`. **P2**
+- [x] **F11 · CDN** — Auto-héberger les libs (pptxgenjs, html2canvas, jsPDF, pdf.js, xlsx, mammoth) **et les polices Google Fonts** des outils autonomes dans `/public/vendor`. **P2**
 - [x] **F12 · Partiels** — Fidélité PDF : couleurs résolues en dur (html2canvas 1.4.1 ne rasterise pas `color-mix()`/variables CSS dans le radar & la courbe de Gauss). **P2/P3**
 - [x] **F13 · Blog / navigation** — Passe dédiée (rendu markdown des articles, états vides, navigation rôle-aware). **P3**
 - [ ] **F14 · Outil « Rédaction d'article » (nouveau, #109)** — Audit dédié de `public/article.html` (1586 lignes) + `app/(chat)/article.tsx` : n'existait pas au moment de l'audit initial. **À planifier**
@@ -50,4 +50,5 @@ regle_tokens: ce fichier est la SOURCE DE VÉRITÉ durable. Une fois une feature
 - [x] F9 · ECOS — réponses patient affichées au fil du flux ; « Terminer et évaluer » demande confirmation (l'expiration du chrono reste automatique) ; Copier + Export PDF de l'évaluation.
 - [x] F10 · Dictée — message d'erreur transitoire (bulle) si micro refusé / transcription échouée / aucune parole ; repli clavier inchangé. **Lot 2 terminé.**
 - [x] F12 · Partiels — radar & courbe de Gauss (SVG) : couleurs `color-mix()`/`var(--)` remplacées par hex/rgba résolus (palette `SVGC`) pour que l'export PDF (html2canvas) les rende ; rendu écran identique. Syntaxe vérifiée (node --check).
+- [x] F11 · CDN — 7 libs JS (3,9 Mo) + polices latin (5 woff2, 236 Ko) vendorisées dans `public/vendor/` ; les 4 outils autonomes (partiel/présentation/cv/article) ne référencent plus AUCUN CDN (sweep vérifié) ; worker pdf.js local ; README de provenance. Syntaxe des 4 outils vérifiée.
 - [x] F13 · Blog/nav — pages blog solides (skeleton, états vide/introuvable, SEO, MarkdownRenderer) ; filet `.catch/.finally` ajouté sur les 2 chargements (plus de skeleton infini si la promesse rejette) ; navigation rôle-aware OK (outil `article` bien câblé dans featureVisibility, tests verts). Outil Article (nouveau, #109) = audit dédié à part → F14.

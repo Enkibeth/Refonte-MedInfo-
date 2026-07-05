@@ -4,20 +4,18 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 <title>Créateur de CV — MedInfo</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/vendor/fonts/fonts.css" />
 <!-- Export PDF « distribuable » : on génère le PDF NOUS-MÊMES (pas window.print()) → aucun
      en-tête/pied de page du navigateur (URL, n° de page), plein cadre A4, jamais de rognage. -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="/vendor/js/jspdf.umd.min.js"></script>
+<script src="/vendor/js/html2canvas.min.js"></script>
 <!-- Import d'un CV existant : extraction de texte PDF (pdf.js) et Word (mammoth) côté client. -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="/vendor/js/pdf.min.js"></script>
+<script src="/vendor/js/mammoth.browser.min.js"></script>
 <script>
   if (window.pdfjsLib) {
     pdfjsLib.GlobalWorkerOptions.workerSrc =
-      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      '/vendor/js/pdf.worker.min.js';
   }
 </script>
 <style>
