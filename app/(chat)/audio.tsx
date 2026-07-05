@@ -16,8 +16,6 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
-import { Link } from 'expo-router';
-
 import { useSession } from '@/auth/AuthProvider';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
@@ -38,18 +36,9 @@ Adapte les sections au contenu réel de la transcription. Le compte rendu doit �
 export default function AudioScreen() {
   return (
     <RoleGate feature="audio">
-      <AudioScreenInner />
+      <AudioFeature />
     </RoleGate>
   );
-}
-
-function AudioScreenInner() {
-  const { session } = useSession();
-  const isPaid = Boolean(session); // simplified
-
-  if (!isPaid) return <PremiumGate />;
-
-  return <AudioFeature />;
 }
 
 function AudioFeature() {
@@ -159,7 +148,15 @@ function AudioFeature() {
 
       const data = await res.json() as { transcription: string; report?: string };
       setTranscription(data.transcription);
-      if (mode === 'report' && data.report) setReport(data.report);
+      if (mode === 'report') {
+        if (data.report) setReport(data.report);
+        // Le serveur renvoie report:null si l'étape de rédaction échoue (la transcription,
+        // elle, a réussi) : on le dit clairement au lieu d'afficher un résultat vide.
+        else
+          setError(
+            "Le compte rendu n'a pas pu être généré cette fois — la transcription ci-dessous reste disponible. Relance un enregistrement pour réessayer.",
+          );
+      }
       setRecordState('done');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Une erreur est survenue.');
@@ -370,26 +367,6 @@ function AudioFeature() {
         </Text>
       </ScrollView>
       )}
-    </View>
-  );
-}
-
-function PremiumGate() {
-  return (
-    <View style={styles.gateContainer}>
-      <View style={styles.gateCard}>
-        <View style={styles.iconBadge}>
-          <Icon name="micVoice" size={26} color={tokens.colors.accentDeep} />
-        </View>
-        <Text style={styles.gateTitle}>Fonctions audio</Text>
-        <Text style={styles.gateText}>
-          Transcription d'enregistrements et rédaction de comptes rendus médicaux automatisée.
-          Réservé aux abonnés MedInfo Premium.
-        </Text>
-        <Link href="/(billing)/pricing" style={styles.gateLink}>
-          Voir les offres Premium
-        </Link>
-      </View>
     </View>
   );
 }
@@ -649,18 +626,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     lineHeight: 18,
   },
-  // Gate styles
-  gateContainer: { flex: 1, justifyContent: 'center', padding: tokens.space.xl, backgroundColor: tokens.colors.background },
-  gateCard: {
-    borderRadius: tokens.radius.lg,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
-    padding: tokens.space.xl,
-    alignItems: 'center',
-    gap: tokens.space.md,
-    ...tokens.elevation.md,
-  },
   iconBadge: {
     width: 56,
     height: 56,
@@ -668,34 +633,6 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.accentSurface,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  gateTitle: {
-    fontFamily: tokens.font.display,
-    color: tokens.colors.text,
-    fontSize: tokens.type.h3.fontSize,
-    fontWeight: tokens.weight.semibold,
-    letterSpacing: tokens.type.h3.letterSpacing,
-    textAlign: 'center',
-  },
-  gateText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
-    fontSize: tokens.type.body.fontSize,
-    lineHeight: tokens.type.body.lineHeight,
-    textAlign: 'center',
-    maxWidth: 340,
-  },
-  gateLink: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.semibold,
-    fontSize: tokens.type.label.fontSize,
-    backgroundColor: tokens.colors.accent,
-    paddingHorizontal: tokens.space.xl,
-    paddingVertical: tokens.space.md,
-    borderRadius: tokens.radius.lg,
-    overflow: 'hidden',
-    marginTop: tokens.space.sm,
   },
   centeredBox: { alignItems: 'center', gap: tokens.space.lg, padding: tokens.space.xl },
   infoTitle: {
