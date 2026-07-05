@@ -113,6 +113,14 @@ function Timer({ totalSeconds, onExpire }: { totalSeconds: number; onExpire: () 
   const [remaining, setRemaining] = useState(totalSeconds);
   const expired = useRef(false);
 
+  // Le callback est gardé dans une ref : l'intervalle ci-dessous ne dépend donc
+  // PAS de `onExpire`. Sans ça, `onExpire` (recréé à chaque rendu du parent) relançait
+  // l'intervalle à chaque frappe dans la zone de saisie → le compte à rebours se figeait.
+  const onExpireRef = useRef(onExpire);
+  useEffect(() => {
+    onExpireRef.current = onExpire;
+  }, [onExpire]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setRemaining((r) => {
@@ -120,7 +128,7 @@ function Timer({ totalSeconds, onExpire }: { totalSeconds: number; onExpire: () 
           clearInterval(interval);
           if (!expired.current) {
             expired.current = true;
-            onExpire();
+            onExpireRef.current();
           }
           return 0;
         }
@@ -128,7 +136,7 @@ function Timer({ totalSeconds, onExpire }: { totalSeconds: number; onExpire: () 
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [onExpire]);
+  }, []);
 
   const mins = Math.floor(remaining / 60);
   const secs = remaining % 60;
