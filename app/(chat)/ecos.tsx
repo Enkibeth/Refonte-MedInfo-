@@ -24,6 +24,7 @@ import { tokens } from '@/ui/tokens';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
 import { DictationButton } from '@/ui/DictationButton';
+import { exportAnalysisToPdf } from '@/document/exportAnalysisPdf';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -113,6 +114,14 @@ function Timer({ totalSeconds, onExpire }: { totalSeconds: number; onExpire: () 
   const [remaining, setRemaining] = useState(totalSeconds);
   const expired = useRef(false);
 
+  // Le callback est gardé dans une ref : l'intervalle ci-dessous ne dépend donc
+  // PAS de `onExpire`. Sans ça, `onExpire` (recréé à chaque rendu du parent) relançait
+  // l'intervalle à chaque frappe dans la zone de saisie → le compte à rebours se figeait.
+  const onExpireRef = useRef(onExpire);
+  useEffect(() => {
+    onExpireRef.current = onExpire;
+  }, [onExpire]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setRemaining((r) => {
@@ -120,7 +129,7 @@ function Timer({ totalSeconds, onExpire }: { totalSeconds: number; onExpire: () 
           clearInterval(interval);
           if (!expired.current) {
             expired.current = true;
-            onExpire();
+            onExpireRef.current();
           }
           return 0;
         }
@@ -128,7 +137,7 @@ function Timer({ totalSeconds, onExpire }: { totalSeconds: number; onExpire: () 
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [onExpire]);
+  }, []);
 
   const mins = Math.floor(remaining / 60);
   const secs = remaining % 60;
@@ -167,7 +176,28 @@ function EcosScreenInner() {
   const [aiLoading, setAiLoading] = useState(false);
   const [evaluation, setEvaluation] = useState('');
   const [evalLoading, setEvalLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+
+  const evalTitle = () => `Évaluation ECOS — ${selectedCase?.titre ?? ''}`.trim();
+
+  async function copyEvaluation() {
+    if (!evaluation) return;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(evaluation);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1800);
+      }
+    } catch {
+      /* presse-papiers indisponible */
+    }
+  }
+
+  function handleExportEval() {
+    if (!evaluation) return;
+    exportAnalysisToPdf({ title: evalTitle(), markdown: evaluation });
+  }
 
   const loadCases = useCallback(async () => {
     setCasesLoading(true);
@@ -253,15 +283,35 @@ RÈGLES :
 
       const decoder = new TextDecoder();
       let reply = '';
+      let started = false;
 
+      // Affichage au fil du flux : la bulle du patient se remplit en direct
+      // (au lieu d'apparaître d'un bloc à la fin).
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         reply += decoder.decode(value, { stream: true });
+        if (!reply) continue;
+        if (!started) {
+          started = true;
+          setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
+        } else {
+          setMessages((prev) => {
+            const copy = prev.slice();
+            copy[copy.length - 1] = { role: 'assistant', content: reply };
+            return copy;
+          });
+        }
+        scrollRef.current?.scrollToEnd({ animated: false });
       }
 
-      if (reply.trim()) {
-        setMessages((prev) => [...prev, { role: 'assistant', content: reply.trim() }]);
+      // Normalise la version finale (trim) une fois le flux terminé.
+      if (started) {
+        setMessages((prev) => {
+          const copy = prev.slice();
+          copy[copy.length - 1] = { role: 'assistant', content: reply.trim() };
+          return copy;
+        });
       }
     } catch {
       setMessages((prev) => [
@@ -272,6 +322,24 @@ RÈGLES :
       setAiLoading(false);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
     }
+  }
+
+  // Demande de fin par l'étudiant (bouton) : garde-fous + confirmation, car ça clôt
+  // la station. L'expiration du chrono, elle, appelle finishEcos() directement.
+  function requestFinish() {
+    if (!selectedCase) return;
+    const userTurns = messages.filter((m) => m.role === 'user').length;
+    if (userTurns === 0) {
+      setInput('');
+      return;
+    }
+    const ok =
+      typeof window !== 'undefined' && typeof window.confirm === 'function'
+        ? window.confirm(
+            "Terminer la simulation et lancer l'évaluation ? Tu ne pourras plus échanger avec le patient.",
+          )
+        : true;
+    if (ok) void finishEcos();
   }
 
   async function finishEcos() {
@@ -447,7 +515,7 @@ Sois précis, bienveillant et pédagogique.`;
               </Text>
             </View>
           ))}
-          {aiLoading && (
+          {aiLoading && messages[messages.length - 1]?.role === 'user' && (
             <View style={styles.simTyping}>
               <ActivityIndicator color={tokens.colors.accent} size="small" />
               <Text style={styles.simTypingText}>Le patient répond…</Text>
@@ -480,7 +548,7 @@ Sois précis, bienveillant et pédagogique.`;
               <Text style={styles.simSendText}>→</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.finishButton} onPress={finishEcos}>
+          <TouchableOpacity style={styles.finishButton} onPress={requestFinish}>
             <Text style={styles.finishText}>Terminer et évaluer</Text>
           </TouchableOpacity>
         </View>
@@ -504,6 +572,26 @@ Sois précis, bienveillant et pédagogique.`;
           </View>
         ) : (
           <View style={styles.evalResult}>
+            <View style={styles.evalActions}>
+              <TouchableOpacity
+                onPress={() => void copyEvaluation()}
+                accessibilityRole="button"
+                accessibilityLabel="Copier l'évaluation"
+                style={styles.evalAction}
+              >
+                <Text style={styles.evalActionText}>{copied ? 'Copié ✓' : 'Copier'}</Text>
+              </TouchableOpacity>
+              {Platform.OS === 'web' ? (
+                <TouchableOpacity
+                  onPress={handleExportEval}
+                  accessibilityRole="button"
+                  accessibilityLabel="Exporter l'évaluation en PDF"
+                  style={styles.evalAction}
+                >
+                  <Text style={styles.evalActionText}>Export PDF</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
             <MarkdownRenderer text={evaluation} />
           </View>
         )}
@@ -805,6 +893,26 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.surface,
     padding: tokens.space.lg,
     ...tokens.elevation.sm,
+  },
+  evalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: tokens.space.xs,
+    marginBottom: tokens.space.sm,
+  },
+  evalAction: {
+    paddingHorizontal: tokens.space.sm,
+    paddingVertical: 6,
+    borderRadius: tokens.radius.sm,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surfaceAlt,
+  },
+  evalActionText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
   },
   retryEcos: {
     height: 48,

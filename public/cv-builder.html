@@ -623,7 +623,7 @@
   function renderPreview() {
     var p = cv.personalInfo;
     var side = [];
-    if (p.photoUrl) side.push('<img class="cv-photo" src="' + p.photoUrl + '" alt="" />');
+    if (p.photoUrl) side.push('<img class="cv-photo" src="' + esc(p.photoUrl) + '" alt="" />');
 
     // ── Informations personnelles (nom + coordonnées, avec icônes) ──
     var name = [p.firstName, p.lastName].filter(Boolean).join(' ');
@@ -857,7 +857,7 @@
     var prev = btn.textContent;
     btn.disabled = true; btn.textContent = 'Lecture…';
     try {
-      var text = (await extractText(file)).replace(/ /g, ' ').trim();
+      var text = (await extractText(file)).replace(/\x00/g, ' ').trim();
       if (text.length < 30) {
         alert('Impossible de lire le texte de ce fichier (CV scanné en image ?). Essaie un PDF « texte » ou copie-colle le contenu.');
         return;

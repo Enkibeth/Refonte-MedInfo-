@@ -3,50 +3,7 @@
  * (même approche sans dépendance que src/audio/exportPdf.ts).
  */
 import { formatInlineCitations } from '@/ai/chat/parseAssistantMessage';
-
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-/** Mini markdown → HTML (titres, gras, listes) — suffisant pour une réponse de chat. */
-function markdownToHtml(md: string): string {
-  const lines = md.split('\n');
-  const out: string[] = [];
-  let inList = false;
-  const closeList = () => {
-    if (inList) {
-      out.push('</ul>');
-      inList = false;
-    }
-  };
-
-  for (const raw of lines) {
-    const line = raw.trimEnd();
-    if (/^#{1,3}\s+/.test(line)) {
-      closeList();
-      out.push(`<h3>${inline(line.replace(/^#{1,3}\s+/, ''))}</h3>`);
-    } else if (/^\s*[-•]\s+/.test(line)) {
-      if (!inList) {
-        out.push('<ul>');
-        inList = true;
-      }
-      out.push(`<li>${inline(line.replace(/^\s*[-•]\s+/, ''))}</li>`);
-    } else if (line.trim() === '') {
-      closeList();
-    } else {
-      closeList();
-      out.push(`<p>${inline(line)}</p>`);
-    }
-  }
-  closeList();
-  return out.join('\n');
-
-  function inline(s: string): string {
-    return escapeHtml(s)
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.+?)\*/g, '<em>$1</em>');
-  }
-}
+import { escapeHtml, markdownToHtml } from '@/ui/miniMarkdown';
 
 export interface ChatPdfMessage {
   role: 'user' | 'assistant';

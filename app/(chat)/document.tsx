@@ -19,8 +19,6 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Link } from 'expo-router';
-
 import { useSession } from '@/auth/AuthProvider';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
@@ -33,6 +31,7 @@ import {
   type AnalysisMode,
   type DocumentAnalysis,
 } from '@/document/analysisHistory';
+import { exportAnalysisToPdf } from '@/document/exportAnalysisPdf';
 import {
   citationPagesLabel,
   splitAnalysisResult,
@@ -89,14 +88,48 @@ function DocumentScreenInner() {
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<DocumentAnalysis[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const userId = session?.user?.id ?? null;
-  const isPaid = Boolean(session); // simplified — replace with actual entitlement check
 
   const refreshHistory = useCallback(async () => {
     if (!userId) return;
     setHistory(await listAnalyses(userId));
   }, [userId]);
+
+  // L'archivage serveur (onFinish) suit la fin du stream mais peut prendre plus d'une
+  // seconde : on ré-interroge l'historique quelques fois jusqu'à voir apparaître la
+  // nouvelle analyse, au lieu d'un unique setTimeout qui la manquait souvent.
+  const pollHistoryUntilNew = useCallback(
+    async (beforeCount: number) => {
+      for (const delay of [1200, 2500, 4000]) {
+        await new Promise((r) => setTimeout(r, delay));
+        if (!userId) return;
+        const list = await listAnalyses(userId);
+        setHistory(list);
+        if (list.length > beforeCount) return;
+      }
+    },
+    [userId],
+  );
+
+  const handleCopy = useCallback(async () => {
+    if (!analysis?.text) return;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(analysis.text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1800);
+      }
+    } catch {
+      /* presse-papiers indisponible — l'utilisateur peut sélectionner le texte */
+    }
+  }, [analysis]);
+
+  const handleExportPdf = useCallback(() => {
+    if (!analysis?.text) return;
+    exportAnalysisToPdf({ title: resultLabel, markdown: analysis.text, citations: analysis.citations });
+  }, [analysis, resultLabel]);
 
   useEffect(() => {
     void refreshHistory();
@@ -174,8 +207,8 @@ function DocumentScreenInner() {
       if (!fullText) throw new Error('Aucune réponse reçue. Réessayez.');
       const { text: finalText, citations } = splitAnalysisResult(fullText);
       setAnalysis({ text: finalText, citations });
-      // L'archivage serveur (onFinish) suit immédiatement la fin du stream.
-      setTimeout(() => void refreshHistory(), 1500);
+      // Rafraîchit l'historique jusqu'à voir apparaître la nouvelle analyse archivée.
+      void pollHistoryUntilNew(history.length);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Une erreur est survenue.');
     } finally {
@@ -198,10 +231,6 @@ function DocumentScreenInner() {
   async function handleDeleteHistory(id: string) {
     await deleteAnalysis(id);
     setHistory((prev) => prev.filter((h) => h.id !== id));
-  }
-
-  if (!isPaid) {
-    return <PremiumGate feature="Analyse de document" />;
   }
 
   return (
@@ -382,6 +411,28 @@ function DocumentScreenInner() {
           <View style={styles.result}>
             <View style={styles.resultHeader}>
               <Text style={styles.resultTitle}>{resultLabel}</Text>
+              {!loading && analysis.text ? (
+                <View style={styles.resultActions}>
+                  <TouchableOpacity
+                    onPress={handleCopy}
+                    accessibilityRole="button"
+                    accessibilityLabel="Copier le résultat"
+                    style={styles.resultAction}
+                  >
+                    <Text style={styles.resultActionText}>{copied ? 'Copié ✓' : 'Copier'}</Text>
+                  </TouchableOpacity>
+                  {Platform.OS === 'web' ? (
+                    <TouchableOpacity
+                      onPress={handleExportPdf}
+                      accessibilityRole="button"
+                      accessibilityLabel="Exporter le résultat en PDF"
+                      style={styles.resultAction}
+                    >
+                      <Text style={styles.resultActionText}>Export PDF</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              ) : null}
             </View>
             <View style={styles.resultBody}>
               <MarkdownRenderer text={analysis.text} />
@@ -413,27 +464,6 @@ function DocumentScreenInner() {
         ) : null}
       </ScrollView>
     </KeyboardAvoidingView>
-  );
-}
-
-function PremiumGate({ feature }: { feature: string }) {
-  return (
-    <View style={styles.gateContainer}>
-      <View style={styles.gateCard}>
-        <View style={styles.iconBadge}>
-          <Icon name="lock" size={26} color={tokens.colors.accentDeep} />
-        </View>
-        <Text style={styles.gateTitle}>{feature}</Text>
-        <Text style={styles.gateText}>
-          Cette fonctionnalité est réservée aux abonnés MedInfo Premium. Elle vous permet
-          d'obtenir un résumé patient clair ou une traduction de vos documents médicaux (PDF,
-          photo ou texte) avec les termes expliqués et des questions à poser à votre médecin.
-        </Text>
-        <Link href="/(billing)/pricing" style={styles.gateLink}>
-          Voir les offres Premium
-        </Link>
-      </View>
-    </View>
   );
 }
 
@@ -653,6 +683,10 @@ const styles = StyleSheet.create({
     ...tokens.elevation.sm,
   },
   resultHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: tokens.space.sm,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.md,
     backgroundColor: tokens.colors.accentSurface,
@@ -660,9 +694,25 @@ const styles = StyleSheet.create({
     borderBottomColor: tokens.colors.accentSurfaceStrong,
   },
   resultTitle: {
+    flex: 1,
     fontFamily: tokens.font.sans,
     color: tokens.colors.accentDeep,
     fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  resultActions: { flexDirection: 'row', gap: tokens.space.xs },
+  resultAction: {
+    paddingHorizontal: tokens.space.sm,
+    paddingVertical: 6,
+    borderRadius: tokens.radius.sm,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    backgroundColor: tokens.colors.surface,
+  },
+  resultActionText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
   },
   resultBody: { padding: tokens.space.lg },
@@ -715,52 +765,5 @@ const styles = StyleSheet.create({
     color: tokens.colors.warningText,
     fontSize: tokens.type.caption.fontSize,
     lineHeight: 18,
-  },
-  gateContainer: { flex: 1, justifyContent: 'center', padding: tokens.space.xl, backgroundColor: tokens.colors.background },
-  gateCard: {
-    borderRadius: tokens.radius.lg,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
-    padding: tokens.space.xl,
-    alignItems: 'center',
-    gap: tokens.space.md,
-    ...tokens.elevation.md,
-  },
-  iconBadge: {
-    width: 56,
-    height: 56,
-    borderRadius: tokens.radius.pill,
-    backgroundColor: tokens.colors.accentSurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gateTitle: {
-    fontFamily: tokens.font.display,
-    color: tokens.colors.text,
-    fontSize: tokens.type.h3.fontSize,
-    fontWeight: tokens.weight.semibold,
-    letterSpacing: tokens.type.h3.letterSpacing,
-    textAlign: 'center',
-  },
-  gateText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
-    fontSize: tokens.type.body.fontSize,
-    lineHeight: tokens.type.body.lineHeight,
-    textAlign: 'center',
-    maxWidth: 340,
-  },
-  gateLink: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.semibold,
-    fontSize: tokens.type.label.fontSize,
-    backgroundColor: tokens.colors.accent,
-    paddingHorizontal: tokens.space.xl,
-    paddingVertical: tokens.space.md,
-    borderRadius: tokens.radius.lg,
-    overflow: 'hidden',
-    marginTop: tokens.space.sm,
   },
 });

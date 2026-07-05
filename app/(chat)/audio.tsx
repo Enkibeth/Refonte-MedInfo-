@@ -16,8 +16,6 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
-import { Link } from 'expo-router';
-
 import { useSession } from '@/auth/AuthProvider';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
@@ -31,6 +29,9 @@ type Mode = 'transcription' | 'report';
 type Tab = 'transcription' | 'report' | 'library';
 type RecordState = 'idle' | 'recording' | 'have-audio' | 'processing' | 'done';
 
+/** Limite serveur de /api/transcribe (Whisper) — garde-fou client pour un message clair. */
+const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
+
 const REPORT_PROMPT = `Tu es un assistant médical expert en rédaction. À partir de la transcription audio ci-dessous (dictée médicale ou consultation), génère un compte rendu médical structuré en français en markdown, avec les sections adaptées au contexte (ex. Motif de consultation, Anamnèse, Examen clinique, Conclusion, Conduite à tenir, Prescription le cas échéant).
 
 Adapte les sections au contenu réel de la transcription. Le compte rendu doit être professionnel, factuel et complet.`;
@@ -38,18 +39,9 @@ Adapte les sections au contenu réel de la transcription. Le compte rendu doit �
 export default function AudioScreen() {
   return (
     <RoleGate feature="audio">
-      <AudioScreenInner />
+      <AudioFeature />
     </RoleGate>
   );
-}
-
-function AudioScreenInner() {
-  const { session } = useSession();
-  const isPaid = Boolean(session); // simplified
-
-  if (!isPaid) return <PremiumGate />;
-
-  return <AudioFeature />;
 }
 
 function AudioFeature() {
@@ -64,6 +56,19 @@ function AudioFeature() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [libraryRefresh, setLibraryRefresh] = useState(0);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  async function copyText(text: string, key: string) {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(text);
+        setCopiedKey(key);
+        setTimeout(() => setCopiedKey(null), 1800);
+      }
+    } catch {
+      /* presse-papiers indisponible — le texte reste sélectionnable */
+    }
+  }
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -137,6 +142,14 @@ function AudioFeature() {
   async function processAudio() {
     const blob = audioBlobRef.current;
     if (!blob) return;
+    // Le serveur refuse au-delà de 25 Mo : on l'annonce ici plutôt que d'envoyer
+    // un fichier trop lourd pour recevoir une erreur 413 générique après l'upload.
+    if (blob.size > MAX_AUDIO_BYTES) {
+      setError(
+        `Enregistrement trop volumineux (${(blob.size / 1024 / 1024).toFixed(0)} Mo, maximum 25 Mo). Enregistrez des segments plus courts.`,
+      );
+      return;
+    }
     setError(null);
     setRecordState('processing');
 
@@ -159,7 +172,15 @@ function AudioFeature() {
 
       const data = await res.json() as { transcription: string; report?: string };
       setTranscription(data.transcription);
-      if (mode === 'report' && data.report) setReport(data.report);
+      if (mode === 'report') {
+        if (data.report) setReport(data.report);
+        // Le serveur renvoie report:null si l'étape de rédaction échoue (la transcription,
+        // elle, a réussi) : on le dit clairement au lieu d'afficher un résultat vide.
+        else
+          setError(
+            "Le compte rendu n'a pas pu être généré cette fois — la transcription ci-dessous reste disponible. Relance un enregistrement pour réessayer.",
+          );
+      }
       setRecordState('done');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Une erreur est survenue.');
@@ -325,15 +346,37 @@ function AudioFeature() {
 
         {transcription && recordState === 'done' ? (
           <View style={styles.resultCard}>
-            <Text style={styles.resultCardTitle}>Transcription</Text>
+            <View style={styles.resultCardHeader}>
+              <Text style={styles.resultCardTitle}>Transcription</Text>
+              <TouchableOpacity
+                onPress={() => void copyText(transcription, 'tr')}
+                accessibilityRole="button"
+                accessibilityLabel="Copier la transcription"
+                style={styles.copyBtn}
+              >
+                <Text style={styles.copyBtnText}>{copiedKey === 'tr' ? 'Copié ✓' : 'Copier'}</Text>
+              </TouchableOpacity>
+            </View>
             <Text style={styles.transcriptionText}>{transcription}</Text>
           </View>
         ) : null}
 
         {report && mode === 'report' && recordState === 'done' ? (
           <View style={styles.resultCard}>
-            <Text style={styles.resultCardTitle}>Compte rendu généré</Text>
-            <MarkdownRenderer text={report} />
+            <View style={styles.resultCardHeader}>
+              <Text style={styles.resultCardTitle}>Compte rendu généré</Text>
+              <TouchableOpacity
+                onPress={() => void copyText(report, 'rp')}
+                accessibilityRole="button"
+                accessibilityLabel="Copier le compte rendu"
+                style={styles.copyBtn}
+              >
+                <Text style={styles.copyBtnText}>{copiedKey === 'rp' ? 'Copié ✓' : 'Copier'}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.reportBody}>
+              <MarkdownRenderer text={report} />
+            </View>
             <View style={styles.disclaimer}>
               <Text style={styles.disclaimerText}>
                 À vérifier et valider par le professionnel de santé avant tout usage clinique.
@@ -370,26 +413,6 @@ function AudioFeature() {
         </Text>
       </ScrollView>
       )}
-    </View>
-  );
-}
-
-function PremiumGate() {
-  return (
-    <View style={styles.gateContainer}>
-      <View style={styles.gateCard}>
-        <View style={styles.iconBadge}>
-          <Icon name="micVoice" size={26} color={tokens.colors.accentDeep} />
-        </View>
-        <Text style={styles.gateTitle}>Fonctions audio</Text>
-        <Text style={styles.gateText}>
-          Transcription d'enregistrements et rédaction de comptes rendus médicaux automatisée.
-          Réservé aux abonnés MedInfo Premium.
-        </Text>
-        <Link href="/(billing)/pricing" style={styles.gateLink}>
-          Voir les offres Premium
-        </Link>
-      </View>
     </View>
   );
 }
@@ -576,17 +599,39 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...tokens.elevation.sm,
   },
-  resultCardTitle: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
-    fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.semibold,
+  resultCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: tokens.space.sm,
     padding: tokens.space.md,
     paddingHorizontal: tokens.space.lg,
     backgroundColor: tokens.colors.accentSurface,
     borderBottomWidth: 1,
     borderBottomColor: tokens.colors.accentSurfaceStrong,
   },
+  resultCardTitle: {
+    flex: 1,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  copyBtn: {
+    paddingHorizontal: tokens.space.sm,
+    paddingVertical: 6,
+    borderRadius: tokens.radius.sm,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    backgroundColor: tokens.colors.surface,
+  },
+  copyBtnText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  reportBody: { padding: tokens.space.lg },
   transcriptionText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,
@@ -649,18 +694,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     lineHeight: 18,
   },
-  // Gate styles
-  gateContainer: { flex: 1, justifyContent: 'center', padding: tokens.space.xl, backgroundColor: tokens.colors.background },
-  gateCard: {
-    borderRadius: tokens.radius.lg,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
-    padding: tokens.space.xl,
-    alignItems: 'center',
-    gap: tokens.space.md,
-    ...tokens.elevation.md,
-  },
   iconBadge: {
     width: 56,
     height: 56,
@@ -668,34 +701,6 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.accentSurface,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  gateTitle: {
-    fontFamily: tokens.font.display,
-    color: tokens.colors.text,
-    fontSize: tokens.type.h3.fontSize,
-    fontWeight: tokens.weight.semibold,
-    letterSpacing: tokens.type.h3.letterSpacing,
-    textAlign: 'center',
-  },
-  gateText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
-    fontSize: tokens.type.body.fontSize,
-    lineHeight: tokens.type.body.lineHeight,
-    textAlign: 'center',
-    maxWidth: 340,
-  },
-  gateLink: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.semibold,
-    fontSize: tokens.type.label.fontSize,
-    backgroundColor: tokens.colors.accent,
-    paddingHorizontal: tokens.space.xl,
-    paddingVertical: tokens.space.md,
-    borderRadius: tokens.radius.lg,
-    overflow: 'hidden',
-    marginTop: tokens.space.sm,
   },
   centeredBox: { alignItems: 'center', gap: tokens.space.lg, padding: tokens.space.xl },
   infoTitle: {

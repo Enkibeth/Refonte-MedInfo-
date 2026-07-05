@@ -886,6 +886,9 @@ async function loadDeck(id) {
 }
 async function deleteDeck(id) {
   if (!authToken) return;
+  const item = (state.library || []).find((d) => d.id === id);
+  const label = item && item.title ? "« " + item.title + " »" : "cette présentation";
+  if (!confirm("Supprimer définitivement " + label + " ? Cette action est irréversible.")) return;
   try {
     const res = await apiFetch("/api/presentations?id=" + encodeURIComponent(id), { method: "DELETE" });
     if (!res.ok) return;
