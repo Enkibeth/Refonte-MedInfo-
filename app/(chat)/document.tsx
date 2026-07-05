@@ -19,8 +19,6 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Link } from 'expo-router';
-
 import { useSession } from '@/auth/AuthProvider';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
@@ -91,7 +89,6 @@ function DocumentScreenInner() {
   const [historyOpen, setHistoryOpen] = useState(false);
 
   const userId = session?.user?.id ?? null;
-  const isPaid = Boolean(session); // simplified — replace with actual entitlement check
 
   const refreshHistory = useCallback(async () => {
     if (!userId) return;
@@ -198,10 +195,6 @@ function DocumentScreenInner() {
   async function handleDeleteHistory(id: string) {
     await deleteAnalysis(id);
     setHistory((prev) => prev.filter((h) => h.id !== id));
-  }
-
-  if (!isPaid) {
-    return <PremiumGate feature="Analyse de document" />;
   }
 
   return (
@@ -413,27 +406,6 @@ function DocumentScreenInner() {
         ) : null}
       </ScrollView>
     </KeyboardAvoidingView>
-  );
-}
-
-function PremiumGate({ feature }: { feature: string }) {
-  return (
-    <View style={styles.gateContainer}>
-      <View style={styles.gateCard}>
-        <View style={styles.iconBadge}>
-          <Icon name="lock" size={26} color={tokens.colors.accentDeep} />
-        </View>
-        <Text style={styles.gateTitle}>{feature}</Text>
-        <Text style={styles.gateText}>
-          Cette fonctionnalité est réservée aux abonnés MedInfo Premium. Elle vous permet
-          d'obtenir un résumé patient clair ou une traduction de vos documents médicaux (PDF,
-          photo ou texte) avec les termes expliqués et des questions à poser à votre médecin.
-        </Text>
-        <Link href="/(billing)/pricing" style={styles.gateLink}>
-          Voir les offres Premium
-        </Link>
-      </View>
-    </View>
   );
 }
 
@@ -715,52 +687,5 @@ const styles = StyleSheet.create({
     color: tokens.colors.warningText,
     fontSize: tokens.type.caption.fontSize,
     lineHeight: 18,
-  },
-  gateContainer: { flex: 1, justifyContent: 'center', padding: tokens.space.xl, backgroundColor: tokens.colors.background },
-  gateCard: {
-    borderRadius: tokens.radius.lg,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
-    padding: tokens.space.xl,
-    alignItems: 'center',
-    gap: tokens.space.md,
-    ...tokens.elevation.md,
-  },
-  iconBadge: {
-    width: 56,
-    height: 56,
-    borderRadius: tokens.radius.pill,
-    backgroundColor: tokens.colors.accentSurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gateTitle: {
-    fontFamily: tokens.font.display,
-    color: tokens.colors.text,
-    fontSize: tokens.type.h3.fontSize,
-    fontWeight: tokens.weight.semibold,
-    letterSpacing: tokens.type.h3.letterSpacing,
-    textAlign: 'center',
-  },
-  gateText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
-    fontSize: tokens.type.body.fontSize,
-    lineHeight: tokens.type.body.lineHeight,
-    textAlign: 'center',
-    maxWidth: 340,
-  },
-  gateLink: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.semibold,
-    fontSize: tokens.type.label.fontSize,
-    backgroundColor: tokens.colors.accent,
-    paddingHorizontal: tokens.space.xl,
-    paddingVertical: tokens.space.md,
-    borderRadius: tokens.radius.lg,
-    overflow: 'hidden',
-    marginTop: tokens.space.sm,
   },
 });
