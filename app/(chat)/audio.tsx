@@ -29,6 +29,9 @@ type Mode = 'transcription' | 'report';
 type Tab = 'transcription' | 'report' | 'library';
 type RecordState = 'idle' | 'recording' | 'have-audio' | 'processing' | 'done';
 
+/** Limite serveur de /api/transcribe (Whisper) — garde-fou client pour un message clair. */
+const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
+
 const REPORT_PROMPT = `Tu es un assistant médical expert en rédaction. À partir de la transcription audio ci-dessous (dictée médicale ou consultation), génère un compte rendu médical structuré en français en markdown, avec les sections adaptées au contexte (ex. Motif de consultation, Anamnèse, Examen clinique, Conclusion, Conduite à tenir, Prescription le cas échéant).
 
 Adapte les sections au contenu réel de la transcription. Le compte rendu doit être professionnel, factuel et complet.`;
@@ -53,6 +56,19 @@ function AudioFeature() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [libraryRefresh, setLibraryRefresh] = useState(0);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  async function copyText(text: string, key: string) {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(text);
+        setCopiedKey(key);
+        setTimeout(() => setCopiedKey(null), 1800);
+      }
+    } catch {
+      /* presse-papiers indisponible — le texte reste sélectionnable */
+    }
+  }
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -126,6 +142,14 @@ function AudioFeature() {
   async function processAudio() {
     const blob = audioBlobRef.current;
     if (!blob) return;
+    // Le serveur refuse au-delà de 25 Mo : on l'annonce ici plutôt que d'envoyer
+    // un fichier trop lourd pour recevoir une erreur 413 générique après l'upload.
+    if (blob.size > MAX_AUDIO_BYTES) {
+      setError(
+        `Enregistrement trop volumineux (${(blob.size / 1024 / 1024).toFixed(0)} Mo, maximum 25 Mo). Enregistrez des segments plus courts.`,
+      );
+      return;
+    }
     setError(null);
     setRecordState('processing');
 
@@ -322,15 +346,37 @@ function AudioFeature() {
 
         {transcription && recordState === 'done' ? (
           <View style={styles.resultCard}>
-            <Text style={styles.resultCardTitle}>Transcription</Text>
+            <View style={styles.resultCardHeader}>
+              <Text style={styles.resultCardTitle}>Transcription</Text>
+              <TouchableOpacity
+                onPress={() => void copyText(transcription, 'tr')}
+                accessibilityRole="button"
+                accessibilityLabel="Copier la transcription"
+                style={styles.copyBtn}
+              >
+                <Text style={styles.copyBtnText}>{copiedKey === 'tr' ? 'Copié ✓' : 'Copier'}</Text>
+              </TouchableOpacity>
+            </View>
             <Text style={styles.transcriptionText}>{transcription}</Text>
           </View>
         ) : null}
 
         {report && mode === 'report' && recordState === 'done' ? (
           <View style={styles.resultCard}>
-            <Text style={styles.resultCardTitle}>Compte rendu généré</Text>
-            <MarkdownRenderer text={report} />
+            <View style={styles.resultCardHeader}>
+              <Text style={styles.resultCardTitle}>Compte rendu généré</Text>
+              <TouchableOpacity
+                onPress={() => void copyText(report, 'rp')}
+                accessibilityRole="button"
+                accessibilityLabel="Copier le compte rendu"
+                style={styles.copyBtn}
+              >
+                <Text style={styles.copyBtnText}>{copiedKey === 'rp' ? 'Copié ✓' : 'Copier'}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.reportBody}>
+              <MarkdownRenderer text={report} />
+            </View>
             <View style={styles.disclaimer}>
               <Text style={styles.disclaimerText}>
                 À vérifier et valider par le professionnel de santé avant tout usage clinique.
@@ -553,17 +599,39 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...tokens.elevation.sm,
   },
-  resultCardTitle: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
-    fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.semibold,
+  resultCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: tokens.space.sm,
     padding: tokens.space.md,
     paddingHorizontal: tokens.space.lg,
     backgroundColor: tokens.colors.accentSurface,
     borderBottomWidth: 1,
     borderBottomColor: tokens.colors.accentSurfaceStrong,
   },
+  resultCardTitle: {
+    flex: 1,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  copyBtn: {
+    paddingHorizontal: tokens.space.sm,
+    paddingVertical: 6,
+    borderRadius: tokens.radius.sm,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    backgroundColor: tokens.colors.surface,
+  },
+  copyBtnText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  reportBody: { padding: tokens.space.lg },
   transcriptionText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,
