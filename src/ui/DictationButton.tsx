@@ -9,7 +9,7 @@
  * Le texte dicté est ensuite traité par la safe-box normale de la route cible.
  */
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
 import { Icon } from '@/ui/icons';
@@ -32,10 +32,19 @@ export function DictationButton({
 }) {
   const { session } = useSession();
   const [state, setState] = useState<State>('idle');
+  const [error, setError] = useState<string | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   if (!SUPPORTED) return null;
+
+  // Message transitoire au-dessus du bouton (le repli reste la saisie clavier).
+  function flashError(msg: string) {
+    setError(msg);
+    if (errorTimer.current) clearTimeout(errorTimer.current);
+    errorTimer.current = setTimeout(() => setError(null), 3500);
+  }
 
   async function start() {
     try {
@@ -58,8 +67,10 @@ export function DictationButton({
       };
       mr.start(250);
       setState('recording');
+      setError(null);
     } catch {
       setState('idle');
+      flashError('Micro indisponible — vérifie les autorisations du navigateur.');
     }
   }
 
@@ -83,9 +94,13 @@ export function DictationButton({
         const data = (await res.json()) as { transcription?: string };
         const text = data.transcription?.trim();
         if (text) onTranscript(text);
+        else flashError('Aucune parole détectée.');
+      } else {
+        flashError('Dictée indisponible — réessaie.');
       }
     } catch {
-      /* dictée indisponible → l'utilisateur peut taper au clavier */
+      // dictée indisponible → l'utilisateur peut taper au clavier
+      flashError('Dictée indisponible — réessaie.');
     } finally {
       setState('idle');
     }
@@ -101,27 +116,53 @@ export function DictationButton({
   const busy = state === 'transcribing';
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      disabled={disabled || busy}
-      accessibilityRole="button"
-      accessibilityLabel={recording ? 'Arrêter la dictée' : 'Dicter au micro'}
-      style={[styles.button, recording && styles.buttonRecording, (disabled || busy) && styles.buttonDisabled]}
-    >
-      {busy ? (
-        <ActivityIndicator size="small" color={tokens.colors.accent} />
-      ) : (
-        <Icon
-          name={recording ? 'stop' : 'micVoice'}
-          size={19}
-          color={recording ? tokens.colors.danger : tokens.colors.accentDeep}
-        />
-      )}
-    </TouchableOpacity>
+    <View style={styles.wrap}>
+      {error ? (
+        <View style={styles.errorBubble} pointerEvents="none" accessibilityRole="alert">
+          <Text style={styles.errorBubbleText}>{error}</Text>
+        </View>
+      ) : null}
+      <TouchableOpacity
+        onPress={onPress}
+        disabled={disabled || busy}
+        accessibilityRole="button"
+        accessibilityLabel={recording ? 'Arrêter la dictée' : 'Dicter au micro'}
+        style={[styles.button, recording && styles.buttonRecording, (disabled || busy) && styles.buttonDisabled]}
+      >
+        {busy ? (
+          <ActivityIndicator size="small" color={tokens.colors.accent} />
+        ) : (
+          <Icon
+            name={recording ? 'stop' : 'micVoice'}
+            size={19}
+            color={recording ? tokens.colors.danger : tokens.colors.accentDeep}
+          />
+        )}
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrap: { position: 'relative' },
+  errorBubble: {
+    position: 'absolute',
+    bottom: 52,
+    right: 0,
+    maxWidth: 220,
+    backgroundColor: tokens.colors.danger,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: tokens.radius.sm,
+    zIndex: 10,
+    ...tokens.elevation.sm,
+  },
+  errorBubbleText: {
+    color: tokens.colors.onAccent,
+    fontFamily: tokens.font.sans,
+    fontSize: tokens.type.caption.fontSize,
+    lineHeight: 16,
+  },
   button: {
     width: 44,
     height: 44,

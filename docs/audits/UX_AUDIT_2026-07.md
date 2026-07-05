@@ -26,7 +26,7 @@ regle_tokens: ce fichier est la SOURCE DE VÉRITÉ durable. Une fois une feature
 - [x] **F7 · Document** — Ajouter Copier + Export PDF du résultat + fiabiliser le refresh de l'historique (re-poll court). **P2**
 - [x] **F8 · Audio** — Copier inline (transcription + compte rendu) + alerte de durée avant la limite 25 Mo. **P2**
 - [x] **F9 · ECOS** — Réponses patient en streaming + confirmation avant « Terminer et évaluer » + export de l'évaluation. **P2**
-- [ ] **F10 · Dictée vocale** — Retour visible en cas d'échec (micro refusé / transcription échouée). `src/ui/DictationButton.tsx`. **P2**
+- [x] **F10 · Dictée vocale** — Retour visible en cas d'échec (micro refusé / transcription échouée). `src/ui/DictationButton.tsx`. **P2**
 
 ### Lot 3 — Robustesse (fond)
 - [ ] **F11 · CDN** — Auto-héberger les libs (pptxgenjs, html2canvas, jsPDF, pdf.js, xlsx, mammoth) **et les polices Google Fonts** des 3 outils autonomes dans `/public`. **P2**
@@ -47,3 +47,4 @@ regle_tokens: ce fichier est la SOURCE DE VÉRITÉ durable. Une fois une feature
 - [x] F7 · Document — Copier + Export PDF du résultat (mini-markdown partagé `src/ui/miniMarkdown.ts`, exporteur `src/document/exportAnalysisPdf.ts`) ; historique ré-interrogé jusqu'à apparition (poll 1,2/2,5/4 s) au lieu d'un unique setTimeout.
 - [x] F8 · Audio — Copier sur la transcription et le compte rendu ; garde-fou de taille (25 Mo) avant l'upload avec message clair au lieu d'un 413 générique.
 - [x] F9 · ECOS — réponses patient affichées au fil du flux ; « Terminer et évaluer » demande confirmation (l'expiration du chrono reste automatique) ; Copier + Export PDF de l'évaluation.
+- [x] F10 · Dictée — message d'erreur transitoire (bulle) si micro refusé / transcription échouée / aucune parole ; repli clavier inchangé. **Lot 2 terminé.**
