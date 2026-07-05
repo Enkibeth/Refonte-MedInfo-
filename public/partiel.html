@@ -4,17 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Analyse des partiels</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&family=Public+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link rel="stylesheet" href="/vendor/fonts/fonts.css">
+<script src="/vendor/js/xlsx.full.min.js"></script>
+<script src="/vendor/js/jspdf.umd.min.js"></script>
+<script src="/vendor/js/html2canvas.min.js"></script>
+<script src="/vendor/js/pdf.min.js"></script>
 <script>
   if (window.pdfjsLib) {
     pdfjsLib.GlobalWorkerOptions.workerSrc =
-      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      '/vendor/js/pdf.worker.min.js';
   }
 </script>
 <style>
@@ -728,6 +726,11 @@ function buildHeroRow(stu){
   return{moy,n:gs.length,rank:moy!=null?RK(moy,os):null,pct:moy!=null?PC(moy,os):null};
 }
 
+// Couleurs résolues en dur pour les SVG radar/Gauss : html2canvas (export PDF) ne
+// sait pas rasteriser color-mix() ni les variables CSS. Valeurs = celles de :root.
+const SVGC={a1:'#2563eb',a2:'#1e8e3e',ink:'#202124',muted:'#80868b',line:'#dadce0',linef:'#e8eaed'};
+const svgRgba=(hex,a)=>{const n=parseInt(hex.slice(1),16);return`rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;};
+
 function buildRadar(stu,colorVar){
   const inc=S.overall.inc.slice(0,Math.min(S.overall.inc.length,12));
   const N=inc.length;if(N<3)return null;
@@ -736,18 +739,18 @@ function buildRadar(stu,colorVar){
   const svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox',`0 0 ${size} ${size}`);svg.setAttribute('role','img');svg.setAttribute('aria-label','Radar de performance');
   for(let ring=1;ring<=4;ring++){
     const pts=[];for(let i=0;i<N;i++){const a=2*Math.PI*i/N-Math.PI/2;const r=R*ring/4;pts.push(`${cx+r*Math.cos(a)},${cy+r*Math.sin(a)}`);}
-    const poly=document.createElementNS(ns,'polygon');poly.setAttribute('points',pts.join(' '));poly.setAttribute('fill','none');poly.setAttribute('stroke',ring===4?'var(--line)':'var(--linef)');poly.setAttribute('stroke-width','1');svg.appendChild(poly);
+    const poly=document.createElementNS(ns,'polygon');poly.setAttribute('points',pts.join(' '));poly.setAttribute('fill','none');poly.setAttribute('stroke',ring===4?SVGC.line:SVGC.linef);poly.setAttribute('stroke-width','1');svg.appendChild(poly);
   }
-  for(let i=0;i<N;i++){const a=2*Math.PI*i/N-Math.PI/2;const line=document.createElementNS(ns,'line');line.setAttribute('x1',cx);line.setAttribute('y1',cy);line.setAttribute('x2',cx+R*Math.cos(a));line.setAttribute('y2',cy+R*Math.sin(a));line.setAttribute('stroke','var(--linef)');line.setAttribute('stroke-width','1');svg.appendChild(line);}
+  for(let i=0;i<N;i++){const a=2*Math.PI*i/N-Math.PI/2;const line=document.createElementNS(ns,'line');line.setAttribute('x1',cx);line.setAttribute('y1',cy);line.setAttribute('x2',cx+R*Math.cos(a));line.setAttribute('y2',cy+R*Math.sin(a));line.setAttribute('stroke',SVGC.linef);line.setAttribute('stroke-width','1');svg.appendChild(line);}
   const medPts=[];for(let i=0;i<N;i++){const s=inc[i];const st=S.subStats[s];if(!st)continue;const med=st.median/S.scaleMax;const a=2*Math.PI*i/N-Math.PI/2;const r=R*Math.min(1,Math.max(0,med));medPts.push(`${cx+r*Math.cos(a)},${cy+r*Math.sin(a)}`);}
-  if(medPts.length>=3){const mpoly=document.createElementNS(ns,'polygon');mpoly.setAttribute('points',medPts.join(' '));mpoly.setAttribute('fill','rgba(122,112,96,.12)');mpoly.setAttribute('stroke','var(--muted)');mpoly.setAttribute('stroke-width','1');mpoly.setAttribute('stroke-dasharray','3 2');svg.appendChild(mpoly);}
+  if(medPts.length>=3){const mpoly=document.createElementNS(ns,'polygon');mpoly.setAttribute('points',medPts.join(' '));mpoly.setAttribute('fill','rgba(122,112,96,.12)');mpoly.setAttribute('stroke',SVGC.muted);mpoly.setAttribute('stroke-width','1');mpoly.setAttribute('stroke-dasharray','3 2');svg.appendChild(mpoly);}
   const stuPts=[];for(let i=0;i<N;i++){const s=inc[i];const g=stu.grades[s];if(g==null)continue;const norm=g/S.scaleMax;const a=2*Math.PI*i/N-Math.PI/2;const r=R*Math.min(1,Math.max(0,norm));stuPts.push({x:cx+r*Math.cos(a),y:cy+r*Math.sin(a)});}
   if(stuPts.length>=3){
     const pts=stuPts.map(p=>`${p.x},${p.y}`).join(' ');
-    const fill=document.createElementNS(ns,'polygon');fill.setAttribute('points',pts);fill.setAttribute('fill',`color-mix(in srgb,${colorVar} 18%,transparent)`);fill.setAttribute('stroke',colorVar);fill.setAttribute('stroke-width','1.5');svg.appendChild(fill);
+    const fill=document.createElementNS(ns,'polygon');fill.setAttribute('points',pts);fill.setAttribute('fill',svgRgba(colorVar,0.18));fill.setAttribute('stroke',colorVar);fill.setAttribute('stroke-width','1.5');svg.appendChild(fill);
     stuPts.forEach(p=>{const c=document.createElementNS(ns,'circle');c.setAttribute('cx',p.x);c.setAttribute('cy',p.y);c.setAttribute('r','2.5');c.setAttribute('fill',colorVar);svg.appendChild(c);});
   }
-  for(let i=0;i<N;i++){const a=2*Math.PI*i/N-Math.PI/2;const lr=R+14;const tx=cx+lr*Math.cos(a);const ty=cy+lr*Math.sin(a);const label=inc[i].length>8?inc[i].slice(0,7)+'…':inc[i];const t=document.createElementNS(ns,'text');t.setAttribute('x',tx);t.setAttribute('y',ty);t.setAttribute('text-anchor','middle');t.setAttribute('dominant-baseline','middle');t.setAttribute('font-size','8');t.setAttribute('font-family','JetBrains Mono, monospace');t.setAttribute('fill','var(--muted)');t.textContent=label;svg.appendChild(t);}
+  for(let i=0;i<N;i++){const a=2*Math.PI*i/N-Math.PI/2;const lr=R+14;const tx=cx+lr*Math.cos(a);const ty=cy+lr*Math.sin(a);const label=inc[i].length>8?inc[i].slice(0,7)+'…':inc[i];const t=document.createElementNS(ns,'text');t.setAttribute('x',tx);t.setAttribute('y',ty);t.setAttribute('text-anchor','middle');t.setAttribute('dominant-baseline','middle');t.setAttribute('font-size','8');t.setAttribute('font-family','JetBrains Mono, monospace');t.setAttribute('fill',SVGC.muted);t.textContent=label;svg.appendChild(t);}
   return svg;
 }
 
@@ -765,8 +768,8 @@ function rResults(){
   eb.innerHTML=errs;
   const hero=document.getElementById('block-hero');hero.innerHTML='';
   hero.className='herogrid'+((S.stu1&&S.stu2)?' two':'');
-  if(S.stu1)hero.appendChild(buildHeroCard('A','a','var(--a1)',S.stu1));
-  if(S.stu2)hero.appendChild(buildHeroCard('B','b','var(--a2)',S.stu2));
+  if(S.stu1)hero.appendChild(buildHeroCard('A','a',SVGC.a1,S.stu1));
+  if(S.stu2)hero.appendChild(buildHeroCard('B','b',SVGC.a2,S.stu2));
   document.getElementById('block-profile').hidden=!S.stu1&&!S.stu2;
   if(S.stu1||S.stu2)rProfile();
   rSubStats();rDist();
@@ -899,18 +902,18 @@ function buildGauss(wrap,stats,g1,g2,sm){
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
   svg.setAttribute('preserveAspectRatio','none');
   svg.style.width='100%';svg.style.height='100%';svg.style.display='block';svg.style.touchAction='none';
-  for(let i=1;i<=3;i++){const y=PADT+i*(H-PADT-PADB)/4;const ln=document.createElementNS(ns,'line');ln.setAttribute('x1',PADL);ln.setAttribute('x2',W-PADR);ln.setAttribute('y1',y);ln.setAttribute('y2',y);ln.setAttribute('stroke','var(--linef)');ln.setAttribute('stroke-dasharray','2 3');svg.appendChild(ln);}
-  const ar=document.createElementNS(ns,'path');ar.setAttribute('d',area);ar.setAttribute('fill','color-mix(in srgb,var(--muted) 14%,transparent)');svg.appendChild(ar);
-  const ln=document.createElementNS(ns,'path');ln.setAttribute('d',path);ln.setAttribute('fill','none');ln.setAttribute('stroke','var(--ink)');ln.setAttribute('stroke-width','1.6');ln.setAttribute('vector-effect','non-scaling-stroke');svg.appendChild(ln);
+  for(let i=1;i<=3;i++){const y=PADT+i*(H-PADT-PADB)/4;const ln=document.createElementNS(ns,'line');ln.setAttribute('x1',PADL);ln.setAttribute('x2',W-PADR);ln.setAttribute('y1',y);ln.setAttribute('y2',y);ln.setAttribute('stroke',SVGC.linef);ln.setAttribute('stroke-dasharray','2 3');svg.appendChild(ln);}
+  const ar=document.createElementNS(ns,'path');ar.setAttribute('d',area);ar.setAttribute('fill',svgRgba(SVGC.muted,0.14));svg.appendChild(ar);
+  const ln=document.createElementNS(ns,'path');ln.setAttribute('d',path);ln.setAttribute('fill','none');ln.setAttribute('stroke',SVGC.ink);ln.setAttribute('stroke-width','1.6');ln.setAttribute('vector-effect','non-scaling-stroke');svg.appendChild(ln);
   const addV=(v,col,dash,w)=>{if(v==null||isNaN(v))return;const x=xToPx(v);const l=document.createElementNS(ns,'line');l.setAttribute('x1',x);l.setAttribute('x2',x);l.setAttribute('y1',yToPx(0));l.setAttribute('y2',yToPx(pdf(v)));l.setAttribute('stroke',col);l.setAttribute('stroke-width',w);if(dash)l.setAttribute('stroke-dasharray',dash);l.setAttribute('vector-effect','non-scaling-stroke');svg.appendChild(l);};
-  addV(stats.q1,'var(--muted)','3 3',1);
-  addV(stats.q3,'var(--muted)','3 3',1);
-  addV(stats.median,'var(--ink)','4 3',1.5);
-  addV(g1,'var(--a1)',null,2.2);
-  addV(g2,'var(--a2)',null,2.2);
+  addV(stats.q1,SVGC.muted,'3 3',1);
+  addV(stats.q3,SVGC.muted,'3 3',1);
+  addV(stats.median,SVGC.ink,'4 3',1.5);
+  addV(g1,SVGC.a1,null,2.2);
+  addV(g2,SVGC.a2,null,2.2);
   const cursor=document.createElementNS(ns,'g');cursor.style.display='none';
-  const cl=document.createElementNS(ns,'line');cl.setAttribute('y1',PADT);cl.setAttribute('y2',H-PADB);cl.setAttribute('stroke','var(--ink)');cl.setAttribute('stroke-width','1');cl.setAttribute('vector-effect','non-scaling-stroke');cursor.appendChild(cl);
-  const cd=document.createElementNS(ns,'circle');cd.setAttribute('r','4');cd.setAttribute('fill','var(--ink)');cursor.appendChild(cd);
+  const cl=document.createElementNS(ns,'line');cl.setAttribute('y1',PADT);cl.setAttribute('y2',H-PADB);cl.setAttribute('stroke',SVGC.ink);cl.setAttribute('stroke-width','1');cl.setAttribute('vector-effect','non-scaling-stroke');cursor.appendChild(cl);
+  const cd=document.createElementNS(ns,'circle');cd.setAttribute('r','4');cd.setAttribute('fill',SVGC.ink);cursor.appendChild(cd);
   svg.appendChild(cursor);
   wrap.appendChild(svg);
   const tip=document.createElement('div');tip.className='gtip';wrap.appendChild(tip);

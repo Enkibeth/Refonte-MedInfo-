@@ -40,10 +40,10 @@ export default function BlogArticleScreen() {
 
   useEffect(() => {
     if (!slug) return;
-    void getPostBySlug(String(slug)).then((p) => {
-      setPost(p);
-      setLoading(false);
-    });
+    void getPostBySlug(String(slug))
+      .then((p) => setPost(p))
+      .catch(() => setPost(null))
+      .finally(() => setLoading(false));
   }, [slug]);
 
   const sections = useMemo(
