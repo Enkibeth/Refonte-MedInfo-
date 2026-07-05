@@ -31,10 +31,10 @@ export default function BlogScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    void listPublishedPosts().then((p) => {
-      setPosts(p);
-      setLoading(false);
-    });
+    void listPublishedPosts()
+      .then((p) => setPosts(p))
+      .catch(() => setPosts([]))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
