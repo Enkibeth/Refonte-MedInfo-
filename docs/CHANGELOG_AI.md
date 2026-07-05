@@ -18,6 +18,20 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-07-04] – Claude (Fix import CV : schéma refusé par l'API Anthropic)
+### Files modified
+- app/api/cv-import+api.ts (schéma Zod tout-requis : plus aucun `.partial()`/`.optional()` ; prompt précisé « champ absent = chaîne vide »)
+### Purpose
+L'import de CV échouait en prod : l'API Anthropic refuse les schémas d'outil comptant
+plus de 24 paramètres optionnels (l'ancien schéma en avait 64 via `.partial()`).
+Tous les champs sont désormais requis, l'absence s'exprime par valeur vide, et
+`normalizeImportedCv` (défensif) nettoie comme avant. Aucun changement de comportement
+produit : l'IA n'invente toujours rien.
+### Regulatory impact
+None (même minimisation, la photo reste jamais importée)
+### Rollback plan
+Revert du commit (l'import redevient cassé avec les modèles Anthropic).
+
 ## [2026-07-04] – Claude (Blog hebdo : résilience du pipeline + politique de cache du site)
 ### Files modified
 - src/blog/weeklyAgent.ts (brouillon inséré dès la rédaction puis mis à jour ; STEP_TIMEOUT_MS par appel LLM ; relecture finale en échec → brouillon ; logs [weekly-blog] par étape)
