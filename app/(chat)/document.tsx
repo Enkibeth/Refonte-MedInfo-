@@ -256,10 +256,13 @@ function DocumentScreenInner() {
             style={styles.historyToggle}
             onPress={() => setHistoryOpen((v) => !v)}
             accessibilityRole="button"
+            accessibilityLabel={`Mes analyses (${history.length})`}
           >
-            <Text style={styles.historyToggleText}>
-              {historyOpen ? '▾' : '▸'} Mes analyses ({history.length})
-            </Text>
+            <Icon name="clock" size={15} color={tokens.colors.accentDeep} />
+            <Text style={styles.historyToggleText}>Mes analyses ({history.length})</Text>
+            <View style={{ transform: [{ rotate: historyOpen ? '180deg' : '0deg' }] }}>
+              <Icon name="chevronDown" size={14} color={tokens.colors.accentDeep} />
+            </View>
           </TouchableOpacity>
         ) : null}
 
@@ -360,6 +363,9 @@ function DocumentScreenInner() {
             </View>
           ) : (
             <TouchableOpacity style={styles.uploadButton} onPress={pickFile} accessibilityRole="button">
+              <View style={styles.uploadIconWrap}>
+                <Icon name="fileText" size={22} color={tokens.colors.accentDeep} />
+              </View>
               <Text style={styles.uploadButtonText}>
                 Importer un fichier (PDF, photo JPEG/PNG, texte)
               </Text>
@@ -493,8 +499,27 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   scroll: { flex: 1 },
-  scrollContent: { padding: tokens.space.lg, gap: tokens.space.md },
-  historyToggle: { alignSelf: 'flex-start' },
+  // Colonne de lecture centrée (~800 px) : cohérente avec le fil du chat sur desktop.
+  scrollContent: {
+    padding: tokens.space.lg,
+    gap: tokens.space.md,
+    width: '100%',
+    maxWidth: 800,
+    alignSelf: 'center',
+  },
+  historyToggle: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.sm,
+    borderRadius: tokens.radius.pill,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    backgroundColor: tokens.colors.accentSurface,
+    ...tokens.motion.transitionWeb,
+  },
   historyToggleText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.accentDeep,
@@ -542,28 +567,30 @@ const styles = StyleSheet.create({
     padding: tokens.space.sm,
     fontStyle: 'italic',
   },
-  modeRow: { flexDirection: 'row', gap: tokens.space.sm },
+  // Sélecteur de mode : segmented control pill, même motif que le switch de chatbot.
+  modeRow: {
+    flexDirection: 'row',
+    gap: tokens.space.xs,
+    backgroundColor: tokens.colors.surfaceSunken,
+    borderRadius: tokens.radius.pill,
+    padding: 3,
+  },
   modeButton: {
     flex: 1,
-    height: 40,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
+    height: 38,
+    borderRadius: tokens.radius.pill,
     justifyContent: 'center',
     alignItems: 'center',
+    ...tokens.motion.transitionWeb,
   },
-  modeButtonActive: {
-    borderColor: tokens.colors.accent,
-    backgroundColor: tokens.colors.accentSurface,
-  },
+  modeButtonActive: { backgroundColor: tokens.colors.accent },
   modeButtonText: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
+    color: tokens.colors.textSubtle,
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.semibold,
   },
-  modeButtonTextActive: { color: tokens.colors.accentDeep },
+  modeButtonTextActive: { color: tokens.colors.onAccent },
   languageRow: { gap: 6 },
   languageLabel: {
     fontFamily: tokens.font.sans,
@@ -583,14 +610,26 @@ const styles = StyleSheet.create({
     color: tokens.colors.text,
   },
   uploadButton: {
-    borderRadius: tokens.radius.md,
+    borderRadius: tokens.radius.lg,
     borderWidth: 1,
     borderStyle: 'dashed',
     borderColor: tokens.colors.accent,
     backgroundColor: tokens.colors.accentSurface,
-    padding: tokens.space.lg,
+    paddingVertical: tokens.space.xl,
+    paddingHorizontal: tokens.space.lg,
     alignItems: 'center',
     gap: 4,
+    ...tokens.motion.transitionWeb,
+  },
+  uploadIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: tokens.radius.lg,
+    backgroundColor: tokens.colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: tokens.space.xs,
+    ...tokens.elevation.sm,
   },
   uploadButtonText: {
     fontFamily: tokens.font.sans,
@@ -640,19 +679,21 @@ const styles = StyleSheet.create({
     lineHeight: tokens.type.body.lineHeight,
   },
   button: {
-    height: 48,
-    borderRadius: tokens.radius.lg,
-    backgroundColor: tokens.colors.accent,
+    height: tokens.size.controlLg,
+    borderRadius: tokens.radius.pill,
+    // CTA principal : bleu électrique des actions primaires (convention 2026-07).
+    backgroundColor: tokens.colors.accentVivid,
     justifyContent: 'center',
     alignItems: 'center',
     ...tokens.elevation.sm,
+    ...tokens.motion.transitionWeb,
   },
   buttonDisabled: { opacity: 0.45 },
   buttonText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.onAccent,
     fontWeight: tokens.weight.semibold,
-    fontSize: tokens.type.label.fontSize,
+    fontSize: tokens.type.body.fontSize,
   },
   privacyNote: {
     fontFamily: tokens.font.sans,

@@ -457,7 +457,14 @@ const styles = StyleSheet.create({
   },
   modeLabelActive: { color: tokens.colors.accent, fontWeight: tokens.weight.semibold },
   scroll: { flex: 1 },
-  scrollContent: { padding: tokens.space.lg, gap: tokens.space.md },
+  // Colonne de lecture centrée : cohérente avec le chat et les autres outils.
+  scrollContent: {
+    padding: tokens.space.lg,
+    gap: tokens.space.md,
+    width: '100%',
+    maxWidth: 800,
+    alignSelf: 'center',
+  },
   infoBox: {
     borderRadius: tokens.radius.md,
     backgroundColor: tokens.colors.accentSurface,

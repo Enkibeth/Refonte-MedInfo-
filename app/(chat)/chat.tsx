@@ -23,6 +23,9 @@ import {
   Easing,
   KeyboardAvoidingView,
   Platform,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  type TextInputKeyPressEventData,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -71,6 +74,19 @@ const DISCLAIMER: Record<ChatbotId, string> = {
   student: 'Support de révision — ne remplace pas les référentiels ni la pratique encadrée.',
   professional: "Outil d'aide à la décision — la décision finale appartient au clinicien.",
 };
+
+// Sur desktop (pointeur précis), Entrée envoie le message et Maj+Entrée insère un
+// retour à la ligne — le standard des chats (ChatGPT, Claude). Sur mobile/tactile,
+// Entrée garde son rôle de retour à la ligne (l'envoi passe par le bouton).
+const ENTER_SENDS =
+  Platform.OS === 'web' &&
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(pointer: fine)').matches;
+
+// Copie d'une réponse : presse-papiers web uniquement (l'app est web-first).
+const CAN_COPY =
+  Platform.OS === 'web' && typeof navigator !== 'undefined' && !!navigator.clipboard;
 
 // ── Indicateur de statut (réflexion / recherche de sources / rédaction) ──────────
 
@@ -124,7 +140,7 @@ function StatusBubble({ phase, toolLabel }: { phase: ChatPhase; toolLabel?: stri
   const icon =
     phase === 'searching' ? 'search' : phase === 'writing' ? 'sparkles' : phase === 'recovering' ? 'clock' : 'brain';
   return (
-    <View style={[styles.bubble, styles.bubbleAssistant, styles.statusBubble]} accessibilityLabel={label}>
+    <View style={styles.statusPill} accessibilityLabel={label}>
       <View style={styles.statusIconWrap}>
         <Icon name={icon} size={16} color={tokens.colors.accent} />
       </View>
@@ -140,16 +156,86 @@ function messageText(message: UIMessage): string {
   return (message.parts ?? []).filter(isTextUIPart).map((p) => p.text).join('');
 }
 
-function MessageBubble({
+/**
+ * Actions discrètes sous une réponse terminée (copie, régénération de la dernière) —
+ * le motif des chats de référence (ChatGPT, Claude) : accessibles sans encombrer le fil.
+ */
+function MessageActions({
+  text,
+  showRegenerate,
+  onRegenerate,
+}: {
+  text: string;
+  showRegenerate: boolean;
+  onRegenerate?: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  if (!CAN_COPY && !showRegenerate) return null;
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // presse-papiers indisponible : rien à faire, la sélection manuelle reste possible
+    }
+  };
+
+  return (
+    <View style={styles.messageActions}>
+      {CAN_COPY ? (
+        <TouchableOpacity
+          style={styles.messageActionButton}
+          onPress={() => void copy()}
+          accessibilityRole="button"
+          accessibilityLabel="Copier la réponse"
+        >
+          <Icon
+            name={copied ? 'check' : 'copy'}
+            size={14}
+            color={copied ? tokens.colors.success : tokens.colors.textMuted}
+          />
+          <Text style={[styles.messageActionText, copied && styles.messageActionTextDone]}>
+            {copied ? 'Copié' : 'Copier'}
+          </Text>
+        </TouchableOpacity>
+      ) : null}
+      {showRegenerate && onRegenerate ? (
+        <TouchableOpacity
+          style={styles.messageActionButton}
+          onPress={onRegenerate}
+          accessibilityRole="button"
+          accessibilityLabel="Régénérer la réponse"
+        >
+          <Icon name="refresh" size={14} color={tokens.colors.textMuted} />
+          <Text style={styles.messageActionText}>Régénérer</Text>
+        </TouchableOpacity>
+      ) : null}
+    </View>
+  );
+}
+
+/**
+ * Un tour de conversation : question de l'utilisateur en bulle accent à droite,
+ * réponse de l'assistant posée pleine largeur sur le fond (contenu d'abord, comme
+ * ChatGPT / OpenEvidence) — les blocs internes (sources, propositions) gardent
+ * leurs propres cartes.
+ */
+function MessageRow({
   message,
   onSend,
   disabled,
   onOpenSource,
+  isLastAssistant,
+  onRegenerate,
 }: {
   message: UIMessage;
   onSend: (text: string) => void;
   disabled: boolean;
   onOpenSource: (s: ParsedSource) => void;
+  isLastAssistant: boolean;
+  onRegenerate: () => void;
 }) {
   const isUser = message.role === 'user';
   const text = messageText(message);
@@ -157,14 +243,24 @@ function MessageBubble({
 
   if (isUser) {
     return (
-      <View style={[styles.bubble, styles.bubbleUser]}>
-        <Text style={styles.textUser}>{text}</Text>
+      <View style={styles.userRow}>
+        <View style={styles.bubbleUser}>
+          <Text style={styles.textUser}>{text}</Text>
+        </View>
       </View>
     );
   }
+  const streamingThisMessage = disabled && isLastAssistant;
   return (
-    <View style={[styles.bubble, styles.bubbleAssistant]}>
+    <View style={styles.assistantRow}>
       <AssistantBlocks text={text} onSend={onSend} disabled={disabled} onOpenSource={onOpenSource} />
+      {!streamingThisMessage ? (
+        <MessageActions
+          text={text}
+          showRegenerate={isLastAssistant && !disabled}
+          onRegenerate={onRegenerate}
+        />
+      ) : null}
     </View>
   );
 }
@@ -297,7 +393,7 @@ export default function ChatScreen() {
   // Sert à la reprise après suspension de la page (iOS coupe le flux quand on quitte Safari).
   const awaitingRef = useRef(false);
 
-  const { messages, sendMessage, status, error, setMessages, regenerate, clearError } = useChat({
+  const { messages, sendMessage, status, error, setMessages, regenerate, clearError, stop } = useChat({
     transport,
     onFinish: async ({ message }) => {
       awaitingRef.current = false;
@@ -319,6 +415,32 @@ export default function ChatScreen() {
 
   const isLoading = status === 'streaming' || status === 'submitted';
   const canSend = !isLoading && input.trim().length > 0 && !guestLocked;
+
+  // ── Auto-scroll du fil (fluidité type ChatGPT) ─────────────────────────────────
+  // Le fil suit la réponse pendant le streaming tant que l'utilisateur est en bas ;
+  // s'il remonte pour relire, on arrête de suivre et un bouton « revenir en bas »
+  // apparaît au-dessus du composer.
+  const scrollRef = useRef<ScrollView>(null);
+  const followRef = useRef(true);
+  const [atBottom, setAtBottom] = useState(true);
+
+  const handleThreadScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+    const distance = contentSize.height - layoutMeasurement.height - contentOffset.y;
+    const near = distance < 120;
+    followRef.current = near;
+    setAtBottom(near);
+  }, []);
+
+  const scrollToBottom = useCallback((animated = true) => {
+    followRef.current = true;
+    setAtBottom(true);
+    scrollRef.current?.scrollToEnd({ animated });
+  }, []);
+
+  const handleThreadGrow = useCallback(() => {
+    if (followRef.current) scrollRef.current?.scrollToEnd({ animated: false });
+  }, []);
 
   // ── Reprise après coupure (page suspendue / réseau) ────────────────────────────
   // La génération continue côté serveur et la réponse est archivée dans l'historique :
@@ -457,8 +579,10 @@ export default function ChatScreen() {
       }
       awaitingRef.current = true;
       sendMessage({ text: trimmed });
+      // Envoyer ramène toujours le fil en bas, même si on relisait plus haut.
+      scrollToBottom();
     },
-    [sendMessage, user, isGuest, guestUsed],
+    [sendMessage, user, isGuest, guestUsed, scrollToBottom],
   );
 
   const handleSend = () => {
@@ -467,6 +591,29 @@ export default function ChatScreen() {
     setInput('');
     void sendText(text);
   };
+
+  // Entrée = envoyer sur desktop (Maj+Entrée = nouvelle ligne) ; sans effet sur tactile.
+  const handleInputKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
+    if (!ENTER_SENDS) return;
+    const native = e.nativeEvent as TextInputKeyPressEventData & { shiftKey?: boolean };
+    const shift = native.shiftKey ?? (e as unknown as { shiftKey?: boolean }).shiftKey ?? false;
+    if (native.key === 'Enter' && !shift) {
+      (e as unknown as { preventDefault?: () => void }).preventDefault?.();
+      handleSend();
+    }
+  };
+
+  // Arrêt volontaire de la génération : on n'attend plus la réponse (pas de reprise
+  // depuis l'historique) — le texte déjà écrit reste affiché.
+  const handleStop = () => {
+    awaitingRef.current = false;
+    void stop();
+  };
+
+  const handleRegenerate = useCallback(() => {
+    awaitingRef.current = true;
+    void regenerate();
+  }, [regenerate]);
 
   const startNewConversation = useCallback(
     (nextChatbot?: ChatbotId) => {
@@ -647,7 +794,16 @@ export default function ChatScreen() {
       />
 
       {/* ── Fil de messages ── */}
-      <ScrollView style={styles.messages} contentContainerStyle={styles.messagesContent}>
+      <View style={styles.threadWrap}>
+      <ScrollView
+        ref={scrollRef}
+        style={styles.messages}
+        contentContainerStyle={[styles.messagesContent, showEmptyState && styles.messagesContentEmpty]}
+        onScroll={handleThreadScroll}
+        scrollEventThrottle={80}
+        onContentSizeChange={handleThreadGrow}
+        keyboardShouldPersistTaps="handled"
+      >
         {messages.length === 0 && !isLoading ? (
           <Reveal style={styles.emptyState}>
             <View style={styles.emptyIconWrap}>
@@ -678,11 +834,13 @@ export default function ChatScreen() {
 
         {messages.map((m) => (
           <Reveal key={m.id}>
-            <MessageBubble
+            <MessageRow
               message={m}
               onSend={(t) => void sendText(t)}
               disabled={isLoading}
               onOpenSource={setDetailSource}
+              isLastAssistant={m.role === 'assistant' && m.id === lastAssistant?.id}
+              onRegenerate={handleRegenerate}
             />
           </Reveal>
         ))}
@@ -739,52 +897,85 @@ export default function ChatScreen() {
         )}
       </ScrollView>
 
-      <Text style={styles.disclaimer}>{DISCLAIMER[chatbot]}</Text>
-
-      {/* ── Saisie ── */}
-      <View style={styles.inputRow}>
-        {!isGuest ? (
-          <DictationButton
-            onTranscript={(text) => setInput((prev) => (prev.trim() ? `${prev.trim()} ${text}` : text))}
-            disabled={isLoading}
-          />
-        ) : null}
-        <TextInput
-          style={[styles.input, inputFocused && styles.inputFocused]}
-          value={input}
-          onChangeText={setInput}
-          onFocus={() => setInputFocused(true)}
-          onBlur={() => setInputFocused(false)}
-          placeholder={
-            guestLocked
-              ? 'Créez un compte gratuit pour continuer…'
-              : chatbot === 'student'
-                ? 'Une notion, un item EDN, un mécanisme…'
-                : chatbot === 'professional'
-                  ? 'Votre question clinique…'
-                  : 'Posez une question sur la santé…'
-          }
-          placeholderTextColor={tokens.colors.textMuted}
-          multiline
-          editable={!isLoading && !guestLocked}
-          returnKeyType="send"
-          onSubmitEditing={handleSend}
-        />
-        <Pressable
-          onPress={handleSend}
-          disabled={!canSend}
+      {/* ── Bouton « revenir en bas » (fil remonté pendant/après une réponse) ── */}
+      {!atBottom && !showEmptyState ? (
+        <TouchableOpacity
+          style={styles.scrollDownButton}
+          onPress={() => scrollToBottom()}
           accessibilityRole="button"
-          accessibilityLabel="Envoyer le message"
-          style={({ pressed, hovered, focused }: { pressed: boolean; hovered?: boolean; focused?: boolean }) => [
-            styles.sendButton,
-            !canSend && styles.sendButtonDisabled,
-            canSend && hovered && styles.sendButtonHover,
-            canSend && focused && styles.sendButtonFocus,
-            canSend && pressed && styles.sendButtonPressed,
-          ]}
+          accessibilityLabel="Revenir en bas de la conversation"
         >
-          <Icon name="arrowUp" size={20} color={canSend ? tokens.colors.onAccent : tokens.colors.textMuted} />
-        </Pressable>
+          <Icon name="chevronDown" size={18} color={tokens.colors.accentDeep} />
+        </TouchableOpacity>
+      ) : null}
+      </View>
+
+      {/* ── Composer (zone de saisie unifiée : texte + dictée + envoi/stop) ── */}
+      <View style={[styles.composerZone, isGuest && { paddingBottom: tokens.space.sm + insets.bottom }]}>
+        <View style={[styles.composer, inputFocused && styles.composerFocused]}>
+          <TextInput
+            style={styles.input}
+            value={input}
+            onChangeText={setInput}
+            onFocus={() => setInputFocused(true)}
+            onBlur={() => setInputFocused(false)}
+            placeholder={
+              guestLocked
+                ? 'Créez un compte gratuit pour continuer…'
+                : chatbot === 'student'
+                  ? 'Une notion, un item EDN, un mécanisme…'
+                  : chatbot === 'professional'
+                    ? 'Votre question clinique…'
+                    : 'Posez une question sur la santé…'
+            }
+            placeholderTextColor={tokens.colors.textMuted}
+            multiline
+            editable={!guestLocked}
+            returnKeyType="send"
+            onSubmitEditing={handleSend}
+            onKeyPress={handleInputKeyPress}
+          />
+          <View style={styles.composerActions}>
+            {!isGuest ? (
+              <DictationButton
+                onTranscript={(text) => setInput((prev) => (prev.trim() ? `${prev.trim()} ${text}` : text))}
+                disabled={isLoading}
+              />
+            ) : null}
+            <View style={styles.composerSpacer} />
+            {isLoading ? (
+              <Pressable
+                onPress={handleStop}
+                accessibilityRole="button"
+                accessibilityLabel="Arrêter la génération"
+                style={({ pressed }: { pressed: boolean }) => [
+                  styles.sendButton,
+                  styles.stopButton,
+                  pressed && styles.sendButtonPressed,
+                ]}
+              >
+                <Icon name="stop" size={17} color={tokens.colors.onAccent} />
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={handleSend}
+                disabled={!canSend}
+                accessibilityRole="button"
+                accessibilityLabel="Envoyer le message"
+                style={({ pressed, hovered, focused }: { pressed: boolean; hovered?: boolean; focused?: boolean }) => [
+                  styles.sendButton,
+                  !canSend && styles.sendButtonDisabled,
+                  canSend && hovered && styles.sendButtonHover,
+                  canSend && focused && styles.sendButtonFocus,
+                  canSend && pressed && styles.sendButtonPressed,
+                ]}
+              >
+                <Icon name="arrowUp" size={20} color={canSend ? tokens.colors.onAccent : tokens.colors.textMuted} />
+              </Pressable>
+            )}
+          </View>
+        </View>
+        <Text style={styles.disclaimer}>{DISCLAIMER[chatbot]}</Text>
       </View>
 
       <SourceDetailModal source={detailSource} onClose={() => setDetailSource(null)} />
@@ -964,16 +1155,44 @@ const styles = StyleSheet.create({
     borderColor: tokens.colors.border,
   },
   sourcesPaneContent: { paddingHorizontal: tokens.space.lg, paddingVertical: tokens.space.sm },
+  threadWrap: { flex: 1 },
   messages: { flex: 1 },
-  messagesContent: { padding: tokens.space.lg, gap: tokens.space.md },
+  // Colonne de lecture centrée (~800 px) : le fil reste lisible sur desktop au lieu
+  // de s'étirer sur toute la largeur ; sans effet sur mobile.
+  messagesContent: {
+    padding: tokens.space.lg,
+    gap: tokens.space.lg,
+    width: '100%',
+    maxWidth: 800,
+    alignSelf: 'center',
+  },
+  // État vide : accroche + suggestions centrées verticalement (comme les chats de référence).
+  messagesContentEmpty: { flexGrow: 1, justifyContent: 'center' },
+
+  scrollDownButton: {
+    position: 'absolute',
+    bottom: tokens.space.md,
+    alignSelf: 'center',
+    width: 38,
+    height: 38,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.surface,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...tokens.elevation.md,
+    ...tokens.motion.transitionWeb,
+  },
 
   emptyState: {
-    marginTop: tokens.space['2xl'],
     paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.xl,
     gap: tokens.space.sm,
     maxWidth: 560,
     alignSelf: 'center',
     width: '100%',
+    alignItems: 'center',
   },
   emptyIconWrap: {
     width: 56,
@@ -991,14 +1210,16 @@ const styles = StyleSheet.create({
     lineHeight: tokens.type.h2.lineHeight,
     letterSpacing: tokens.type.h2.letterSpacing,
     fontWeight: tokens.weight.bold,
+    textAlign: 'center',
   },
   emptyText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
     fontSize: tokens.type.body.fontSize,
     lineHeight: tokens.type.body.lineHeight,
+    textAlign: 'center',
   },
-  starterColumn: { gap: tokens.space.sm, marginTop: tokens.space.md },
+  starterColumn: { gap: tokens.space.sm, marginTop: tokens.space.md, alignSelf: 'stretch' },
   starterChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1020,25 +1241,15 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
 
-  bubble: {
-    maxWidth: '92%',
-    borderRadius: tokens.radius.lg,
-    padding: tokens.space.md,
-    gap: tokens.space.sm,
-    overflow: 'hidden',
-  },
+  // Question de l'utilisateur : bulle accent compacte à droite (repère visuel du tour).
+  userRow: { alignItems: 'flex-end' },
   bubbleUser: {
-    alignSelf: 'flex-end',
-    backgroundColor: tokens.colors.accent,
+    maxWidth: '85%',
+    borderRadius: tokens.radius.xl,
     borderBottomRightRadius: tokens.radius.xs,
-    ...tokens.elevation.sm,
-  },
-  bubbleAssistant: {
-    alignSelf: 'flex-start',
-    backgroundColor: tokens.colors.surface,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    borderBottomLeftRadius: tokens.radius.xs,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.md,
+    backgroundColor: tokens.colors.accent,
     ...tokens.elevation.sm,
   },
   textUser: {
@@ -1048,12 +1259,38 @@ const styles = StyleSheet.create({
     lineHeight: tokens.type.body.lineHeight,
   },
 
-  statusBubble: {
+  // Réponse assistant : posée pleine largeur sur le fond, sans bulle bordée —
+  // le contenu (texte, sources, propositions) occupe l'espace de lecture.
+  assistantRow: { alignSelf: 'stretch', gap: tokens.space.sm },
+  messageActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.lg,
+  },
+  messageActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.xs + 2,
+    paddingVertical: tokens.space.xs,
+    ...tokens.motion.transitionWeb,
+  },
+  messageActionText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.medium,
+  },
+  messageActionTextDone: { color: tokens.colors.success },
+
+  statusPill: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.sm,
-    paddingVertical: tokens.space.md,
-    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm,
+    paddingHorizontal: tokens.space.md,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.surfaceAlt,
   },
   statusIconWrap: {
     width: 28,
@@ -1108,45 +1345,57 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
 
+  // ── Composer unifié (motif ChatGPT/Claude : une carte, texte + actions) ──
+  composerZone: {
+    width: '100%',
+    maxWidth: 800,
+    alignSelf: 'center',
+    paddingHorizontal: tokens.space.lg,
+    paddingTop: tokens.space.xs,
+    paddingBottom: tokens.space.sm,
+    gap: tokens.space.xs + 2,
+  },
+  composer: {
+    borderRadius: tokens.radius.xl,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surface,
+    paddingHorizontal: tokens.space.sm,
+    paddingTop: tokens.space.xs,
+    paddingBottom: tokens.space.sm,
+    gap: tokens.space.xs,
+    ...tokens.elevation.md,
+    ...tokens.motion.transitionWeb,
+  },
+  composerFocused: {
+    borderColor: tokens.colors.accent,
+    ...tokens.focus.ring,
+  },
+  composerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    paddingHorizontal: tokens.space.xs,
+  },
+  composerSpacer: { flex: 1 },
+  input: {
+    minHeight: 40,
+    maxHeight: 140,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.sm + 2,
+    color: tokens.colors.text,
+    fontFamily: tokens.font.sans,
+    fontSize: tokens.type.body.fontSize,
+    lineHeight: tokens.type.body.lineHeight,
+    // Le focus est porté par la carte du composer, pas par le champ lui-même.
+    ...(Platform.select({ web: { outlineStyle: 'none' } as object, default: {} }) as object),
+  },
   disclaimer: {
     fontFamily: tokens.font.sans,
     textAlign: 'center',
     fontSize: tokens.type.caption.fontSize,
     color: tokens.colors.textMuted,
     paddingHorizontal: tokens.space.lg,
-    paddingVertical: tokens.space.sm,
-    backgroundColor: tokens.colors.surfaceAlt,
-    borderTopWidth: 1,
-    borderColor: tokens.colors.border,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    padding: tokens.space.md,
-    gap: tokens.space.sm,
-    backgroundColor: tokens.colors.surface,
-    borderTopWidth: 1,
-    borderColor: tokens.colors.border,
-    alignItems: 'flex-end',
-  },
-  input: {
-    flex: 1,
-    minHeight: tokens.size.controlMd,
-    maxHeight: 120,
-    borderRadius: tokens.radius.lg,
-    paddingHorizontal: tokens.space.lg,
-    paddingVertical: tokens.space.md,
-    backgroundColor: tokens.colors.surfaceSunken,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    color: tokens.colors.text,
-    fontFamily: tokens.font.sans,
-    fontSize: tokens.type.body.fontSize,
-    ...tokens.motion.transitionWeb,
-  },
-  inputFocused: {
-    borderColor: tokens.colors.accent,
-    backgroundColor: tokens.colors.surface,
-    ...tokens.focus.ring,
   },
   sendButton: {
     width: tokens.size.controlMd,
@@ -1166,4 +1415,6 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.borderStrong,
     ...Platform.select({ web: { boxShadow: 'none' } as object, default: {} }),
   },
+  // Pendant la génération, le bouton d'envoi devient un bouton d'arrêt (encre sombre).
+  stopButton: { backgroundColor: tokens.colors.text },
 });
