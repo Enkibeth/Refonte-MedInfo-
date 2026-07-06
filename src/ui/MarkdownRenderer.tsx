@@ -218,15 +218,47 @@ function parseBlocks(text: string): Block[] {
 }
 
 // ── Table component ──────────────────────────────────────────────────────────
+// Chaque ligne est une flex-row indépendante : sans largeur de colonne partagée,
+// les cellules se dimensionnent selon leur propre contenu et les colonnes se
+// décalent d'une ligne à l'autre. On calcule donc une largeur par colonne
+// (estimée sur le contenu, bornée pour forcer le retour à la ligne des cellules
+// longues) appliquée en flexBasis identique sur toutes les lignes ; flexGrow
+// proportionnel pour qu'un petit tableau occupe toute la largeur de la bulle.
 
-function TableBlock({ rows }: { rows: TableRow[] }) {
+const CELL_FONT_CHAR_W = 7.4; // largeur moyenne d'un caractère (label 14px)
+const CELL_MIN_W = 84;
+const CELL_MAX_W = 220; // au-delà, le texte wrappe dans la cellule
+
+function columnWidths(rows: TableRow[], colCount: number): number[] {
+  const pad = tokens.space.md * 2;
+  return Array.from({ length: colCount }, (_, ci) => {
+    let longest = 0;
+    for (const row of rows) {
+      const raw = (row.cells[ci] ?? '').replace(/\*\*|`/g, '').trim();
+      longest = Math.max(longest, raw.length);
+    }
+    const ideal = Math.ceil(longest * CELL_FONT_CHAR_W) + pad;
+    return Math.min(CELL_MAX_W, Math.max(CELL_MIN_W, ideal));
+  });
+}
+
+function TableBlock({
+  rows,
+  footnotes,
+  onCitationPress,
+}: {
+  rows: TableRow[];
+  footnotes: FootnoteRegistry;
+  onCitationPress?: (superscript: string) => void;
+}) {
   if (rows.length === 0) return null;
   const colCount = Math.max(...rows.map((r) => r.cells.length));
+  const widths = columnWidths(rows, colCount);
 
   return (
     <ScrollView
       horizontal
-      showsHorizontalScrollIndicator={false}
+      showsHorizontalScrollIndicator={Platform.OS === 'web'}
       style={tableStyles.scroll}
       contentContainerStyle={tableStyles.scrollContent}
     >
@@ -241,24 +273,24 @@ function TableBlock({ rows }: { rows: TableRow[] }) {
               ri < rows.length - 1 && tableStyles.rowBorder,
             ]}
           >
-            {Array.from({ length: colCount }).map((_, ci) => {
-              const cell = row.cells[ci] ?? '';
-              return (
-                <View
-                  key={ci}
-                  style={[
-                    tableStyles.cell,
-                    ci < colCount - 1 && tableStyles.cellBorder,
-                  ]}
-                >
-                  <Text
-                    style={row.isHeader ? tableStyles.headerText : tableStyles.cellText}
-                  >
-                    {cell}
-                  </Text>
-                </View>
-              );
-            })}
+            {Array.from({ length: colCount }).map((_, ci) => (
+              <View
+                key={ci}
+                style={[
+                  tableStyles.cell,
+                  { flexBasis: widths[ci], flexGrow: widths[ci] },
+                  ci < colCount - 1 && tableStyles.cellBorder,
+                ]}
+              >
+                {parseInline(
+                  row.cells[ci] ?? '',
+                  row.isHeader ? tableStyles.headerText : tableStyles.cellText,
+                  footnotes,
+                  undefined,
+                  onCitationPress,
+                )}
+              </View>
+            ))}
           </View>
         ))}
       </View>
@@ -336,7 +368,14 @@ export function MarkdownRenderer({
             );
 
           case 'table':
-            return <TableBlock key={i} rows={block.rows} />;
+            return (
+              <TableBlock
+                key={i}
+                rows={block.rows}
+                footnotes={footnotes}
+                onCitationPress={onCitationPress}
+              />
+            );
 
           case 'image':
             return (
@@ -446,8 +485,11 @@ const inlineStyles = StyleSheet.create({
 
 const tableStyles = StyleSheet.create({
   scroll: { marginVertical: tokens.space.sm },
-  scrollContent: {},
+  // flexGrow : un tableau plus étroit que la bulle s'étire sur toute sa largeur
+  // (les flexGrow des cellules répartissent l'espace en respectant l'alignement).
+  scrollContent: { flexGrow: 1 },
   table: {
+    flexGrow: 1,
     borderRadius: tokens.radius.sm,
     borderWidth: 1,
     borderColor: tokens.colors.border,
@@ -469,7 +511,7 @@ const tableStyles = StyleSheet.create({
     borderBottomColor: tokens.colors.border,
   },
   cell: {
-    minWidth: 90,
+    flexShrink: 0,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.sm + 2,
     justifyContent: 'center',
