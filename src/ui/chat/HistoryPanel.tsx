@@ -1,19 +1,22 @@
 /**
- * Panneau d'historique des conversations (refonte 2026-06).
+ * Panneau d'historique des conversations (refonte 2026-06, passe UX 2026-07).
  * Liste les conversations classées par CATÉGORIE (générée par IA — feature chat_meta),
- * avec titre IA, date et chatbot d'origine. Sélection, suppression, nouvelle conversation.
+ * avec titre IA, date et chatbot d'origine. Sélection, suppression (avec confirmation),
+ * recherche par titre/catégorie, nouvelle conversation.
  * Ouverture : glissement latéral sobre (translateX + fade, design system §4) ;
  * chargement : squelettes pulsés. Reduced-motion respecté.
  */
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -55,6 +58,21 @@ export function HistoryPanel({
   const reduced = useReducedMotion();
   const slide = useRef(new Animated.Value(0)).current;
 
+  // Recherche + confirmation de suppression : état local, remis à zéro par les
+  // interactions (fermeture, sélection) — jamais par un effet.
+  const [query, setQuery] = useState('');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const resetTransientState = () => {
+    setQuery('');
+    setConfirmDeleteId(null);
+  };
+
+  const handleClose = () => {
+    resetTransientState();
+    onClose();
+  };
+
   useEffect(() => {
     if (!visible) return;
     if (reduced) {
@@ -72,20 +90,30 @@ export function HistoryPanel({
     return () => anim.stop();
   }, [visible, reduced, slide]);
 
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return conversations;
+    return conversations.filter(
+      (c) =>
+        (c.title ?? 'Conversation').toLowerCase().includes(q) ||
+        (c.category ?? '').toLowerCase().includes(q),
+    );
+  }, [conversations, query]);
+
   const grouped = useMemo(() => {
     const map = new Map<string, ChatConversation[]>();
-    for (const c of conversations) {
+    for (const c of filtered) {
       const key = c.category ?? 'Autre';
       const list = map.get(key) ?? [];
       list.push(c);
       map.set(key, list);
     }
     return [...map.entries()];
-  }, [conversations]);
+  }, [filtered]);
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
+      <Pressable style={styles.backdrop} onPress={handleClose}>
         <Animated.View
           style={[
             styles.panelSlide,
@@ -102,7 +130,7 @@ export function HistoryPanel({
             <Icon name="clock" size={18} color={tokens.colors.accentDeep} />
             <Text style={styles.headerTitle}>Historique</Text>
             <TouchableOpacity
-              onPress={onClose}
+              onPress={handleClose}
               accessibilityRole="button"
               accessibilityLabel="Fermer l'historique"
               style={styles.closeButton}
@@ -111,10 +139,44 @@ export function HistoryPanel({
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.newButton} onPress={onNew} accessibilityRole="button">
+          <TouchableOpacity
+            style={styles.newButton}
+            onPress={() => {
+              resetTransientState();
+              onNew();
+            }}
+            accessibilityRole="button"
+          >
             <Icon name="plus" size={16} color={tokens.colors.onAccent} />
             <Text style={styles.newButtonText}>Nouvelle conversation</Text>
           </TouchableOpacity>
+
+          {conversations.length > 0 ? (
+            <View style={styles.searchBox}>
+              <Icon name="search" size={15} color={tokens.colors.textMuted} />
+              <TextInput
+                style={styles.searchInput}
+                value={query}
+                onChangeText={(t) => {
+                  setQuery(t);
+                  setConfirmDeleteId(null);
+                }}
+                placeholder="Rechercher une conversation…"
+                placeholderTextColor={tokens.colors.textMuted}
+                accessibilityLabel="Rechercher une conversation"
+              />
+              {query ? (
+                <TouchableOpacity
+                  onPress={() => setQuery('')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Effacer la recherche"
+                  style={styles.searchClear}
+                >
+                  <Icon name="x" size={13} color={tokens.colors.textMuted} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          ) : null}
 
           <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
             {loading && conversations.length === 0 ? (
@@ -138,6 +200,10 @@ export function HistoryPanel({
                 Aucune conversation enregistrée pour l'instant. Vos échanges apparaîtront ici,
                 classés automatiquement par thème.
               </Text>
+            ) : filtered.length === 0 ? (
+              <Text style={styles.empty}>
+                Aucune conversation ne correspond à « {query.trim()} ».
+              </Text>
             ) : (
               grouped.map(([category, items]) => (
                 <View key={category} style={styles.group}>
@@ -148,7 +214,10 @@ export function HistoryPanel({
                       <TouchableOpacity
                         key={c.id}
                         style={[styles.item, active && styles.itemActive]}
-                        onPress={() => onSelect(c)}
+                        onPress={() => {
+                          resetTransientState();
+                          onSelect(c);
+                        }}
                         accessibilityRole="button"
                       >
                         <View style={styles.itemBody}>
@@ -159,14 +228,40 @@ export function HistoryPanel({
                             {CHATBOT_META[c.chatbot]?.shortLabel ?? c.chatbot} · {formatDate(c.updated_at)}
                           </Text>
                         </View>
-                        <TouchableOpacity
-                          onPress={() => onDelete(c.id)}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Supprimer « ${c.title ?? 'Conversation'} »`}
-                          style={styles.deleteButton}
-                        >
-                          <Icon name="trash" size={15} color={tokens.colors.textMuted} />
-                        </TouchableOpacity>
+                        {confirmDeleteId === c.id ? (
+                          // Suppression en deux temps : le premier appui demande
+                          // confirmation au lieu de supprimer immédiatement.
+                          <View style={styles.confirmRow}>
+                            <TouchableOpacity
+                              onPress={() => {
+                                setConfirmDeleteId(null);
+                                onDelete(c.id);
+                              }}
+                              accessibilityRole="button"
+                              accessibilityLabel={`Confirmer la suppression de « ${c.title ?? 'Conversation'} »`}
+                              style={styles.confirmDelete}
+                            >
+                              <Text style={styles.confirmDeleteText}>Supprimer</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              onPress={() => setConfirmDeleteId(null)}
+                              accessibilityRole="button"
+                              accessibilityLabel="Annuler la suppression"
+                              style={styles.confirmCancel}
+                            >
+                              <Icon name="x" size={14} color={tokens.colors.textMuted} />
+                            </TouchableOpacity>
+                          </View>
+                        ) : (
+                          <TouchableOpacity
+                            onPress={() => setConfirmDeleteId(c.id)}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Supprimer « ${c.title ?? 'Conversation'} »`}
+                            style={styles.deleteButton}
+                          >
+                            <Icon name="trash" size={15} color={tokens.colors.textMuted} />
+                          </TouchableOpacity>
+                        )}
                       </TouchableOpacity>
                     );
                   })}
@@ -285,5 +380,50 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    height: 38,
+    paddingHorizontal: tokens.space.md,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.surfaceSunken,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: tokens.font.sans,
+    fontSize: tokens.type.label.fontSize,
+    color: tokens.colors.text,
+    ...(Platform.select({ web: { outlineStyle: 'none' } as object, default: {} }) as object),
+  },
+  searchClear: {
+    width: 24,
+    height: 24,
+    borderRadius: tokens.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.xs },
+  confirmDelete: {
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.danger,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.xs + 1,
+    ...tokens.motion.transitionWeb,
+  },
+  confirmDeleteText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.onAccent,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  confirmCancel: {
+    width: 28,
+    height: 28,
+    borderRadius: tokens.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: tokens.colors.surfaceSunken,
   },
 });

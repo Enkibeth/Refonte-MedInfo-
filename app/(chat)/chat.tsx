@@ -1379,10 +1379,10 @@ const styles = StyleSheet.create({
   },
   composerSpacer: { flex: 1 },
   input: {
-    minHeight: 40,
+    minHeight: 36,
     maxHeight: 140,
     paddingHorizontal: tokens.space.md,
-    paddingVertical: tokens.space.sm + 2,
+    paddingVertical: tokens.space.sm,
     color: tokens.colors.text,
     fontFamily: tokens.font.sans,
     fontSize: tokens.type.body.fontSize,

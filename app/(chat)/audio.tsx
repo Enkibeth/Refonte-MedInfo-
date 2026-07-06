@@ -247,6 +247,8 @@ function AudioFeature() {
           <TouchableOpacity
             style={[styles.modeTab, tab === 'transcription' && styles.modeTabActive]}
             onPress={() => switchTab('transcription')}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: tab === 'transcription' }}
           >
             <Text style={[styles.modeLabel, tab === 'transcription' && styles.modeLabelActive]}>
               Transcription
@@ -255,6 +257,8 @@ function AudioFeature() {
           <TouchableOpacity
             style={[styles.modeTab, tab === 'report' && styles.modeTabActive]}
             onPress={() => switchTab('report')}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: tab === 'report' }}
           >
             <Text style={[styles.modeLabel, tab === 'report' && styles.modeLabelActive]}>
               Compte rendu
@@ -263,6 +267,8 @@ function AudioFeature() {
           <TouchableOpacity
             style={[styles.modeTab, tab === 'library' && styles.modeTabActive]}
             onPress={() => switchTab('library')}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: tab === 'library' }}
           >
             <Text style={[styles.modeLabel, tab === 'library' && styles.modeLabelActive]}>
               Mes documents
@@ -287,18 +293,35 @@ function AudioFeature() {
         {/* Recorder */}
         <View style={styles.recorder}>
           {recordState === 'idle' && (
-            <TouchableOpacity style={styles.recordButton} onPress={startRecording}>
-              <Icon name="micVoice" size={44} color={tokens.colors.accent} />
+            <TouchableOpacity
+              style={styles.recordButton}
+              onPress={startRecording}
+              accessibilityRole="button"
+              accessibilityLabel="Démarrer l'enregistrement"
+            >
+              <View style={styles.recordCircle}>
+                <Icon name="micVoice" size={36} color={tokens.colors.onAccent} />
+              </View>
               <Text style={styles.recordLabel}>Démarrer l'enregistrement</Text>
             </TouchableOpacity>
           )}
 
           {recordState === 'recording' && (
             <View style={styles.recordingActive}>
-              <View style={styles.recordingIndicator} />
+              <View style={styles.recordingBadge}>
+                <View style={styles.recordingIndicator} />
+                <Text style={styles.recordingBadgeText}>Enregistrement en cours</Text>
+              </View>
               <Text style={styles.recordingTime}>{formatTime(duration)}</Text>
-              <TouchableOpacity style={styles.stopButton} onPress={stopRecording}>
-                <Icon name="stop" size={22} color={tokens.colors.danger} />
+              <TouchableOpacity
+                style={styles.stopButton}
+                onPress={stopRecording}
+                accessibilityRole="button"
+                accessibilityLabel="Arrêter l'enregistrement"
+              >
+                <View style={styles.stopCircle}>
+                  <Icon name="stop" size={28} color={tokens.colors.onAccent} />
+                </View>
                 <Text style={styles.stopLabel}>Arrêter</Text>
               </TouchableOpacity>
             </View>
@@ -388,8 +411,11 @@ function AudioFeature() {
         {transcription && recordState === 'done' ? (
           saved ? (
             <View style={styles.savedBox}>
-              <Text style={styles.savedText}>✓ Enregistré dans « Mes documents ».</Text>
-              <TouchableOpacity onPress={() => switchTab('library')}>
+              <View style={styles.savedRow}>
+                <Icon name="check" size={15} color={tokens.colors.success} />
+                <Text style={styles.savedText}>Enregistré dans « Mes documents ».</Text>
+              </View>
+              <TouchableOpacity onPress={() => switchTab('library')} accessibilityRole="button">
                 <Text style={styles.savedLink}>Voir ma bibliothèque</Text>
               </TouchableOpacity>
             </View>
@@ -400,8 +426,9 @@ function AudioFeature() {
               disabled={saving}
               accessibilityRole="button"
             >
+              <Icon name="download" size={17} color={tokens.colors.onAccent} />
               <Text style={styles.saveButtonText}>
-                {saving ? 'Enregistrement…' : '💾 Enregistrer dans ma bibliothèque'}
+                {saving ? 'Enregistrement…' : 'Enregistrer dans ma bibliothèque'}
               </Text>
             </TouchableOpacity>
           )
@@ -488,22 +515,49 @@ const styles = StyleSheet.create({
     gap: tokens.space.md,
     ...tokens.elevation.sm,
   },
+  // Bouton d'enregistrement rond (motif dictaphone) : l'action principale est
+  // immédiatement identifiable, cible tactile généreuse.
   recordButton: {
     alignItems: 'center',
-    gap: tokens.space.sm,
+    gap: tokens.space.md,
     padding: tokens.space.lg,
+  },
+  recordCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accentVivid,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...tokens.elevation.md,
+    ...tokens.motion.transitionWeb,
   },
   recordLabel: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.accent,
+    color: tokens.colors.accentDeep,
     fontWeight: tokens.weight.semibold,
     fontSize: tokens.type.label.fontSize,
   },
   recordingActive: { alignItems: 'center', gap: tokens.space.md },
+  recordingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.xs,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.dangerBackground,
+  },
+  recordingBadgeText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.danger,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
   recordingIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 10,
+    height: 10,
+    borderRadius: tokens.radius.pill,
     backgroundColor: tokens.colors.danger,
   },
   recordingTime: {
@@ -514,12 +568,18 @@ const styles = StyleSheet.create({
   },
   stopButton: {
     alignItems: 'center',
-    gap: 4,
-    padding: tokens.space.md,
-    borderRadius: tokens.radius.md,
-    backgroundColor: tokens.colors.dangerBackground,
-    borderWidth: 1,
-    borderColor: tokens.colors.danger,
+    gap: tokens.space.sm,
+    padding: tokens.space.sm,
+  },
+  stopCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...tokens.elevation.md,
+    ...tokens.motion.transitionWeb,
   },
   stopLabel: {
     fontFamily: tokens.font.sans,
@@ -552,11 +612,13 @@ const styles = StyleSheet.create({
   processButton: {
     flex: 2,
     height: 44,
-    borderRadius: tokens.radius.md,
-    backgroundColor: tokens.colors.accent,
+    borderRadius: tokens.radius.pill,
+    // CTA principal : bleu électrique des actions primaires (convention 2026-07).
+    backgroundColor: tokens.colors.accentVivid,
     justifyContent: 'center',
     alignItems: 'center',
     ...tokens.elevation.sm,
+    ...tokens.motion.transitionWeb,
   },
   processText: {
     fontFamily: tokens.font.sans,
@@ -647,12 +709,15 @@ const styles = StyleSheet.create({
     padding: tokens.space.lg,
   },
   saveButton: {
-    height: 48,
-    borderRadius: tokens.radius.md,
-    backgroundColor: tokens.colors.accent,
+    height: tokens.size.controlLg,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accentVivid,
+    flexDirection: 'row',
+    gap: tokens.space.sm,
     justifyContent: 'center',
     alignItems: 'center',
     ...tokens.elevation.sm,
+    ...tokens.motion.transitionWeb,
   },
   saveButtonText: {
     fontFamily: tokens.font.sans,
@@ -669,6 +734,7 @@ const styles = StyleSheet.create({
     gap: tokens.space.xs,
     alignItems: 'center',
   },
+  savedRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
   savedText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.success,
