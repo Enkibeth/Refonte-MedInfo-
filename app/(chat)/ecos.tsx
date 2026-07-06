@@ -620,7 +620,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: tokens.colors.background },
 
   // Selection
-  selectionContent: { padding: tokens.space.lg, gap: tokens.space.md },
+  // Colonnes de lecture centrées (~800 px) : cohérentes avec le chat sur desktop.
+  selectionContent: { padding: tokens.space.lg, gap: tokens.space.md, width: '100%', maxWidth: 800, alignSelf: 'center' },
   selectionHeader: { marginBottom: tokens.space.sm },
   selectionTitle: {
     fontFamily: tokens.font.serif,
@@ -662,7 +663,7 @@ const styles = StyleSheet.create({
   },
 
   // Preparation
-  prepContent: { padding: tokens.space.lg, gap: tokens.space.md },
+  prepContent: { padding: tokens.space.lg, gap: tokens.space.md, width: '100%', maxWidth: 800, alignSelf: 'center' },
   prepHeader: { gap: tokens.space.xs },
   backButton: { marginBottom: tokens.space.xs },
   backText: {
@@ -771,7 +772,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   simMessages: { flex: 1 },
-  simMessagesContent: { padding: tokens.space.lg, gap: tokens.space.md },
+  simMessagesContent: { padding: tokens.space.lg, gap: tokens.space.md, width: '100%', maxWidth: 800, alignSelf: 'center' },
   simBubble: { maxWidth: '88%', borderRadius: tokens.radius.lg, padding: tokens.space.md, gap: 4 },
   simBubbleUser: {
     alignSelf: 'flex-end',
@@ -866,7 +867,7 @@ const styles = StyleSheet.create({
   },
 
   // Evaluation
-  evalContent: { padding: tokens.space.lg, gap: tokens.space.md },
+  evalContent: { padding: tokens.space.lg, gap: tokens.space.md, width: '100%', maxWidth: 800, alignSelf: 'center' },
   evalHeader: { gap: 4 },
   evalTitle: {
     fontFamily: tokens.font.serif,

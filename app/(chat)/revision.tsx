@@ -335,9 +335,11 @@ function RevisionScreenInner() {
             onPress={() => setPlansOpen((v) => !v)}
             accessibilityRole="button"
           >
-            <Text style={styles.plansToggleText}>
-              {plansOpen ? '▾' : '▸'} Mes plans ({plans.length})
-            </Text>
+            <Icon name="clock" size={15} color={tokens.colors.accentDeep} />
+            <Text style={styles.plansToggleText}>Mes plans ({plans.length})</Text>
+            <View style={{ transform: [{ rotate: plansOpen ? '180deg' : '0deg' }] }}>
+              <Icon name="chevronDown" size={14} color={tokens.colors.accentDeep} />
+            </View>
           </TouchableOpacity>
         ) : null}
 
@@ -713,9 +715,28 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   scroll: { flex: 1 },
-  scrollContent: { padding: tokens.space.lg, gap: tokens.space.md },
+  // Colonne de lecture centrée : cohérente avec le chat et l'analyse de document.
+  scrollContent: {
+    padding: tokens.space.lg,
+    gap: tokens.space.md,
+    width: '100%',
+    maxWidth: 800,
+    alignSelf: 'center',
+  },
 
-  plansToggle: { alignSelf: 'flex-start' },
+  plansToggle: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.sm,
+    borderRadius: tokens.radius.pill,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    backgroundColor: tokens.colors.accentSurface,
+    ...tokens.motion.transitionWeb,
+  },
   plansToggleText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.accentDeep,

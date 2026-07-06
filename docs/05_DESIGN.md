@@ -2,10 +2,10 @@
 
 ```yaml
 title: Design System
-version: 1.2.0
+version: 1.3.0
 owner: Hugo Bettembourg
 status: Active
-date: 2026-06-13
+date: 2026-07-06
 linked_to: [02_ARCHITECTURE.md, 04_CHATBOT.md, audits/DESIGN_AUDIT_2026-06.md]
 ```
 
@@ -130,13 +130,17 @@ décor. Tokens : `tokens.motion.*` ; CSS global (keyframes, scrollbar) : `app/+h
 
 | Composant | Spécif |
 |---|---|
-| Bulle IA | fond `--surface-alt`, radius 12px, padding 12-16px, rendu Markdown |
-| Bulle user | fond `--petrol`, texte blanc, aligné droite, radius 12px |
-| Input chat | bordure `--border`, focus `--petrol`, placeholder engageant, bouton envoi icône |
+| Réponse assistant | **pleine largeur sans bulle bordée** (refonte fluidité 2026-07, motif ChatGPT/OpenEvidence) : le contenu est posé sur le fond d'app ; les blocs internes (sources, propositions) gardent leurs cartes. Actions discrètes Copier / Régénérer sous chaque réponse terminée |
+| Bulle user | fond `accent`, texte blanc, alignée droite, radius `xl` + coin pincé `xs`, maxWidth 85 % |
+| Composer chat | **carte unifiée** (refonte 2026-07) : zone de texte sans bordure + rangée d'actions (dictée à gauche, envoi/stop à droite) dans une carte radius `xl` focusable ; Entrée envoie sur desktop (Maj+Entrée = retour ligne) ; pendant la génération le bouton d'envoi devient un bouton **stop** (encre sombre) et la saisie reste possible |
+| Fil de messages | colonne de lecture centrée max 800 px (comme les écrans outils) ; **auto-scroll** pendant le streaming tant que l'utilisateur est en bas, bouton flottant « revenir en bas » sinon |
 | Bouton Sources | header chat, icône + badge compteur, toggle vue (cf 04_CHATBOT §9) |
 | QCM interactif | propositions cliquables, feedback `--success`/`--danger`, justification sourcée |
-| Disclaimer permanent | bandeau discret mais visible, `--ink-soft`, présent sur toute vue chat |
-| Typing indicator | animation sobre 3 points |
+| Disclaimer permanent | légende discrète sous le composer (`textMuted`, caption) — plus de bandeau bordé qui mange l'écran mobile |
+| Typing indicator | pastille de statut (icône + libellé de phase + 3 points animés) |
+| Toggle d'historique (outils) | pill `accentSurface` avec icône horloge + chevron pivotant — jamais de glyphe texte « ▸/▾ » |
+| Segmented control | rangée pill sur `surfaceSunken`, segment actif `accent` texte blanc (switch de chatbot, modes Analyse/Traduction) |
+| Enregistreur audio | bouton rond 88 px `accentVivid` (micro blanc), état enregistrement : badge rouge + minuteur mono + bouton stop rond `danger` |
 
 ---
 
