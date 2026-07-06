@@ -1498,9 +1498,12 @@
           if (f.passage) node.appendChild(el('div', { class: 'psg' }, ['« ' + f.passage + ' »']));
           if (f.concern) node.appendChild(el('div', { class: 'cnc' }, [f.concern]));
           if (f.sourceUrl || f.sourceTitle) {
-            var link = f.sourceUrl
-              ? el('a', { href: f.sourceUrl, target: '_blank', rel: 'noopener noreferrer' }, [f.sourceTitle || f.sourceUrl])
-              : el('span', null, [f.sourceTitle || '']);
+            // La source vient d'une recherche web côté IA : on ne rend cliquable
+            // qu'une URL http(s) (jamais un javascript:/data: qui s'exécuterait au clic).
+            var safeUrl = /^https?:\/\//i.test(f.sourceUrl || '') ? f.sourceUrl : '';
+            var link = safeUrl
+              ? el('a', { href: safeUrl, target: '_blank', rel: 'noopener noreferrer' }, [f.sourceTitle || safeUrl])
+              : el('span', null, [f.sourceTitle || f.sourceUrl || '']);
             node.appendChild(el('div', { class: 'src' }, ['Source proche : ', link]));
           }
           if (f.suggestion) node.appendChild(el('div', { class: 'sug' }, ['Piste : ' + f.suggestion]));
