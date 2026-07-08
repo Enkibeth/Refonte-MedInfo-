@@ -67,7 +67,10 @@ export async function runPubmedAgent(
   if (!url) throw new Error('Connecteur PubMed MCP désactivé');
 
   const [runtime, system] = await Promise.all([
-    getRuntimeForFeature('pubmed_agent'),
+    // Plafond de sortie : le sous-agent renvoie une synthèse compacte de références —
+    // borner la génération borne la latence de l'outil vue par l'orchestrateur.
+    // (Si le thinking Anthropic est actif, featureRuntime garde son plancher plus haut.)
+    getRuntimeForFeature('pubmed_agent', { maxOutputTokens: 2048 }),
     getPromptTemplate('pubmed_agent'),
   ]);
   // Les tools du runtime (web_search éventuel) sont ignorés : le sous-agent n'a que PubMed.
@@ -104,7 +107,8 @@ export function pubmedResearchTool(run: (query: string) => Promise<string> = run
     description:
       'Délègue une recherche bibliographique à un sous-agent spécialisé disposant d’un accès direct à PubMed (MeSH, abstracts, PMID). ' +
       'Renvoie une synthèse de références réelles : titre, auteurs, journal, année, PMID/DOI, URL PubMed, résultat principal. ' +
-      "À utiliser pour toute question nécessitant des références précises de la littérature — n'invente jamais une référence que le sous-agent n'a pas renvoyée.",
+      'EN SECONDE INTENTION SEULEMENT (appel lent) : réserve cet outil aux questions exigeant des références précises que europe_pmc_search et la recherche web n’ont pas déjà retrouvées, 1 appel maximum par réponse. ' +
+      "N'invente jamais une référence que le sous-agent n'a pas renvoyée.",
     inputSchema: z.object({
       query: z
         .string()

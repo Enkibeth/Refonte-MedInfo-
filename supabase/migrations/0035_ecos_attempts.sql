@@ -1,4 +1,4 @@
--- Migration 0034 — Historique des passages ECOS (dashboard ECOS, ADR-0032).
+-- Migration 0035 — Historique des passages ECOS (dashboard ECOS, ADR-0032).
 --
 -- Table own-row STRICTE : une ligne par passage (simulation + évaluation) d'un cas
 -- ECOS par un étudiant. On conserve la note extraite du markdown (« x/20 », nullable

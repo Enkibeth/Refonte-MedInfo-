@@ -1,5 +1,5 @@
 /**
- * Gate `rls-isolation` — ecos_attempts (migration 0034, ADR-0032).
+ * Gate `rls-isolation` — ecos_attempts (migration 0035, ADR-0032).
  *
  * Historique des passages ECOS : isolation own-row STRICTE + immuabilité.
  *   - un user lit/crée/supprime SES passages ;

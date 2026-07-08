@@ -286,14 +286,48 @@ const TOOL_STATUS_LABELS: Record<string, string> = {
   google_search: 'Recherche de sources fiables…',
 };
 
+/** Compacte un texte d'appel d'outil pour la bulle de statut (une ligne courte). */
+function truncateStatusDetail(text: string, max = 64): string {
+  const clean = text.replace(/\s+/g, ' ').trim();
+  return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean;
+}
+
+/**
+ * Libellé dynamique depuis les arguments de l'appel d'outil (latence perçue, 2026-07) :
+ * montrer le travail documentaire réel — titre de l'article lu, requête cherchée, nombre
+ * de liens vérifiés — rend l'attente légitime. Arguments potentiellement partiels pendant
+ * le streaming → repli systématique sur le libellé générique de l'outil.
+ */
+function toolLabelWithDetail(name: string, input: unknown): string {
+  const args = (input ?? null) as
+    | { query?: unknown; title?: unknown; urls?: unknown }
+    | null;
+  if (name === 'europe_pmc_article' && typeof args?.title === 'string' && args.title.trim()) {
+    return `Lecture : « ${truncateStatusDetail(args.title)} »`;
+  }
+  if (
+    (name === 'europe_pmc_search' || name === 'clinical_trials_search') &&
+    typeof args?.query === 'string' &&
+    args.query.trim()
+  ) {
+    const prefix = name === 'clinical_trials_search' ? 'Essais cliniques' : 'Littérature';
+    return `${prefix} : « ${truncateStatusDetail(args.query)} »`;
+  }
+  if (name === 'verify_source_links' && Array.isArray(args?.urls) && args.urls.length > 0) {
+    const n = args.urls.length;
+    return `Vérification de ${n} lien${n > 1 ? 's' : ''} sources…`;
+  }
+  return TOOL_STATUS_LABELS[name] ?? 'Recherche de sources fiables…';
+}
+
 /** Libellé du DERNIER outil appelé dans le message assistant en cours, sinon null. */
 function activeToolLabel(message: UIMessage | undefined): string | null {
   const parts = message?.parts ?? [];
   for (let i = parts.length - 1; i >= 0; i--) {
-    const p = parts[i] as { type?: string; toolName?: string };
+    const p = parts[i] as { type?: string; toolName?: string; input?: unknown };
     const t = p.type ?? '';
     const name = t === 'dynamic-tool' ? p.toolName : t.startsWith('tool-') ? t.slice(5) : null;
-    if (name) return TOOL_STATUS_LABELS[name] ?? 'Recherche de sources fiables…';
+    if (name) return toolLabelWithDetail(name, p.input);
   }
   return null;
 }

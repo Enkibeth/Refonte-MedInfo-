@@ -1,5 +1,5 @@
 /**
- * CRUD client des passages ECOS (table `ecos_attempts`, migration 0034, ADR-0032).
+ * CRUD client des passages ECOS (table `ecos_attempts`, migration 0035, ADR-0032).
  *
  * Écran natif (pas d'iframe) → client Supabase navigateur (clé anon) : la RLS
  * own-row est la barrière réelle — l'utilisateur ne lit/écrit QUE ses passages.

@@ -18,7 +18,7 @@ et la note globale.
 
 ## Décision
 
-1. **Table `ecos_attempts` (migration `0034`)** — une ligne par passage : `case_slug`,
+1. **Table `ecos_attempts` (migration `0035`)** — une ligne par passage : `case_slug`,
    `case_title`, `specialty`, `score numeric(4,1)` (nullable, CHECK 0–20), `evaluation`
    (markdown complet du feedback), `created_at`. RLS **own-row stricte** et passage
    **immuable** : policies select/insert/delete propriétaire, **aucun UPDATE** (ni policy ni
