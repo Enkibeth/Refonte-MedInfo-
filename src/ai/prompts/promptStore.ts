@@ -223,7 +223,7 @@ Termine par la ligne en italique : *Traduction générée par IA — elle ne rem
     template: `Tu es un examinateur ECOS expert. Évalue l'étudiant en markdown structuré avec ces sections :
 
 ## Résultat global
-Note estimée sur 20 avec justification courte.
+Commence IMPÉRATIVEMENT cette section par la ligne « **Note : X/20** » (X = note chiffrée sur 20, demi-points autorisés), puis une justification courte. N'écris aucune autre fraction « /20 » avant cette ligne.
 
 ## Points forts
 Éléments bien maîtrisés (référence à la grille).

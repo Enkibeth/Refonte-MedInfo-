@@ -1,6 +1,8 @@
 /**
  * ECOS — Examen Clinique Objectif Structuré.
- * Simulation patient–étudiant avec évaluation IA sur grille de correction.
+ * Dashboard d'entraînement (stats globales, filtres, cas classés par thème,
+ * historique des passages avec notes) + simulation patient–étudiant et
+ * évaluation IA sur grille de correction.
  * Accès réservé aux étudiants en santé (persona student).
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -25,6 +27,23 @@ import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
 import { DictationButton } from '@/ui/DictationButton';
 import { exportAnalysisToPdf } from '@/document/exportAnalysisPdf';
+import { parseScoreFromEvaluation, scoreTone, formatScore, type ScoreTone } from '@/ecos/score';
+import {
+  computeEcosStats,
+  summarizeAttemptsByCase,
+  filterCases,
+  groupCasesByTheme,
+  listThemes,
+  type AttemptLite,
+  type StatusFilter,
+  type CaseAttemptSummary,
+} from '@/ecos/dashboard';
+import {
+  listAttempts,
+  saveAttempt,
+  deleteAttempt,
+  type EcosAttemptRow,
+} from '@/ecos/attemptsDb';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -91,9 +110,93 @@ async function fetchPublishedCases(): Promise<EcosCase[]> {
   return (data ?? []).map((row) => mapRow(row as EcosCaseRow));
 }
 
+// ── Aides d'affichage note ───────────────────────────────────────────────────
+
+function toneColors(tone: ScoreTone): { fg: string; bg: string } {
+  switch (tone) {
+    case 'success':
+      return { fg: tokens.colors.success, bg: tokens.colors.successBackground };
+    case 'warning':
+      return { fg: tokens.colors.warningText, bg: tokens.colors.warningBackground };
+    case 'danger':
+      return { fg: tokens.colors.danger, bg: tokens.colors.dangerBackground };
+  }
+}
+
+const TONE_LABELS: Record<ScoreTone, string> = {
+  success: 'Bien maîtrisé',
+  warning: 'Acquis, à consolider',
+  danger: 'À retravailler',
+};
+
+function formatDay(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+
 // ── Composants ─────────────────────────────────────────────────────────────
 
-function CaseCard({ cas, onSelect }: { cas: EcosCase; onSelect: () => void }) {
+function ScorePill({ score, prefix }: { score: number | null; prefix?: string }) {
+  if (score === null) {
+    return (
+      <View style={[dashStyles.scorePill, dashStyles.scorePillEmpty]}>
+        <Text style={dashStyles.scorePillEmptyText}>{prefix ?? ''}—/20</Text>
+      </View>
+    );
+  }
+  const { fg, bg } = toneColors(scoreTone(score));
+  return (
+    <View style={[dashStyles.scorePill, { backgroundColor: bg }]}>
+      <Text style={[dashStyles.scorePillText, { color: fg }]}>
+        {prefix ?? ''}
+        {formatScore(score)}/20
+      </Text>
+    </View>
+  );
+}
+
+function StatTile({
+  label,
+  value,
+  suffix,
+  hint,
+  valueColor,
+}: {
+  label: string;
+  value: string;
+  suffix?: string;
+  hint?: string;
+  valueColor?: string;
+}) {
+  return (
+    <View style={dashStyles.statTile}>
+      <Text style={dashStyles.statLabel}>{label}</Text>
+      <Text style={[dashStyles.statValue, valueColor ? { color: valueColor } : null]}>
+        {value}
+        {suffix ? <Text style={dashStyles.statSuffix}>{suffix}</Text> : null}
+      </Text>
+      {hint ? <Text style={dashStyles.statHint}>{hint}</Text> : null}
+    </View>
+  );
+}
+
+function CaseCard({
+  cas,
+  summary,
+  onSelect,
+}: {
+  cas: EcosCase;
+  summary: CaseAttemptSummary | undefined;
+  onSelect: () => void;
+}) {
+  const done = (summary?.attempts ?? 0) > 0;
   return (
     <TouchableOpacity style={caseStyles.card} onPress={onSelect} accessibilityRole="button">
       <View style={caseStyles.cardHeader}>
@@ -102,10 +205,24 @@ function CaseCard({ cas, onSelect }: { cas: EcosCase; onSelect: () => void }) {
           <Text style={caseStyles.badgeText}>{cas.duree} min</Text>
         </View>
       </View>
-      <Text style={caseStyles.cardSpecialite}>{cas.specialite}</Text>
       <Text style={caseStyles.cardConsigne} numberOfLines={2}>
         {cas.consigneCandidat}
       </Text>
+      <View style={caseStyles.cardFooter}>
+        {done && summary ? (
+          <>
+            <ScorePill score={summary.best} prefix="Meilleure : " />
+            <Text style={caseStyles.cardMeta}>
+              {summary.attempts} {summary.attempts > 1 ? 'passages' : 'passage'}
+              {summary.last !== null ? ` · dernière ${formatScore(summary.last)}/20` : ''}
+            </Text>
+          </>
+        ) : (
+          <View style={caseStyles.todoPill}>
+            <Text style={caseStyles.todoPillText}>À faire</Text>
+          </View>
+        )}
+      </View>
     </TouchableOpacity>
   );
 }
@@ -165,27 +282,39 @@ export default function EcosScreen() {
 }
 
 function EcosScreenInner() {
-  const { persona } = useSession();
+  const { persona, user } = useSession();
   const [phase, setPhase] = useState<Phase>('selection');
   const [selectedCase, setSelectedCase] = useState<EcosCase | null>(null);
   const [cases, setCases] = useState<EcosCase[]>([]);
   const [casesLoading, setCasesLoading] = useState(true);
   const [casesError, setCasesError] = useState<string | null>(null);
+  const [attempts, setAttempts] = useState<EcosAttemptRow[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [evaluation, setEvaluation] = useState('');
   const [evalLoading, setEvalLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  const [viewedAttempt, setViewedAttempt] = useState<EcosAttemptRow | null>(null);
+  // Filtres du dashboard
+  const [query, setQuery] = useState('');
+  const [themeFilter, setThemeFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const scrollRef = useRef<ScrollView>(null);
 
-  const evalTitle = () => `Évaluation ECOS — ${selectedCase?.titre ?? ''}`.trim();
+  // Évaluation affichée : passage historique consulté OU évaluation fraîche.
+  const evalMarkdown = viewedAttempt ? viewedAttempt.evaluation : evaluation;
+  const evalScore = viewedAttempt ? viewedAttempt.score : parseScoreFromEvaluation(evaluation);
+  const evalCaseTitle = viewedAttempt ? viewedAttempt.case_title : selectedCase?.titre ?? '';
+
+  const evalTitle = () => `Évaluation ECOS — ${evalCaseTitle}`.trim();
 
   async function copyEvaluation() {
-    if (!evaluation) return;
+    if (!evalMarkdown) return;
     try {
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
-        await navigator.clipboard.writeText(evaluation);
+        await navigator.clipboard.writeText(evalMarkdown);
         setCopied(true);
         setTimeout(() => setCopied(false), 1800);
       }
@@ -195,25 +324,31 @@ function EcosScreenInner() {
   }
 
   function handleExportEval() {
-    if (!evaluation) return;
-    exportAnalysisToPdf({ title: evalTitle(), markdown: evaluation });
+    if (!evalMarkdown) return;
+    exportAnalysisToPdf({ title: evalTitle(), markdown: evalMarkdown });
   }
 
-  const loadCases = useCallback(async () => {
+  const loadDashboard = useCallback(async () => {
     setCasesLoading(true);
     setCasesError(null);
     try {
-      setCases(await fetchPublishedCases());
+      // L'historique est best-effort : son échec ne bloque pas l'entraînement.
+      const [loadedCases, loadedAttempts] = await Promise.all([
+        fetchPublishedCases(),
+        listAttempts().catch(() => [] as EcosAttemptRow[]),
+      ]);
+      setCases(loadedCases);
+      setAttempts(loadedAttempts);
     } catch {
-      setCasesError('Impossible de charger les cas ECOS. Réessayez.');
+      setCasesError('Impossible de charger le dashboard ECOS. Réessayez.');
     } finally {
       setCasesLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (persona === 'student') loadCases();
-  }, [persona, loadCases]);
+    if (persona === 'student') loadDashboard();
+  }, [persona, loadDashboard]);
 
   if (persona !== 'student') {
     return (
@@ -239,7 +374,41 @@ function EcosScreenInner() {
     setSelectedCase(cas);
     setMessages([]);
     setEvaluation('');
+    setViewedAttempt(null);
     setPhase('preparation');
+  }
+
+  function backToDashboard() {
+    setPhase('selection');
+    setSelectedCase(null);
+    setMessages([]);
+    setEvaluation('');
+    setViewedAttempt(null);
+    setSaveError(false);
+  }
+
+  function openAttempt(attempt: EcosAttemptRow) {
+    setViewedAttempt(attempt);
+    setSelectedCase(null);
+    setEvaluation('');
+    setSaveError(false);
+    setPhase('evaluation');
+  }
+
+  async function removeViewedAttempt() {
+    if (!viewedAttempt) return;
+    const ok =
+      typeof window !== 'undefined' && typeof window.confirm === 'function'
+        ? window.confirm('Supprimer ce passage de ton historique ? La note et l’évaluation seront perdues.')
+        : true;
+    if (!ok) return;
+    try {
+      await deleteAttempt(viewedAttempt.id);
+      setAttempts((prev) => prev.filter((a) => a.id !== viewedAttempt.id));
+      backToDashboard();
+    } catch {
+      /* suppression impossible (hors-ligne ?) — l'historique restera inchangé */
+    }
   }
 
   function startSimulation() {
@@ -346,26 +515,17 @@ RÈGLES :
     if (!selectedCase || messages.length < 2) return;
     setPhase('evaluation');
     setEvalLoading(true);
+    setViewedAttempt(null);
+    setSaveError(false);
 
     const transcript = messages
       .map((m) => `${m.role === 'user' ? 'ÉTUDIANT' : 'PATIENT'}: ${m.content}`)
       .join('\n\n');
 
-    const evalSystemPrompt = `Tu es un examinateur ECOS expert. Évalue l'étudiant en markdown structuré avec ces sections :
-
-## Résultat global
-Note estimée sur 20 avec justification courte.
-
-## Points forts
-Éléments bien maîtrisés (référence à la grille).
-
-## Axes d'amélioration
-Points manquants ou insuffisants (référence à la grille).
-
-## Feedback pédagogique
-2-3 conseils pratiques pour progresser.
-
-Sois précis, bienveillant et pédagogique.`;
+    // Le cadre d'évaluation complet (sections + format de note « **Note : X/20** »)
+    // vient du prompt serveur `ecos_evaluate` (promptStore, éditable panel admin) ;
+    // on n'envoie ici que le contexte de la station.
+    const evalSystemPrompt = `Contexte : station ECOS « ${selectedCase.titre} » (${selectedCase.specialite}). L'étudiant vient de terminer la simulation ; évalue sa performance à partir de la grille de correction fournie.`;
 
     try {
       const res = await fetch('/api/ecos', {
@@ -385,7 +545,26 @@ Sois précis, bienveillant et pédagogique.`;
 
       if (!res.ok) throw new Error('Erreur d\'évaluation.');
       const data = await res.json() as { evaluation?: string };
-      setEvaluation(data.evaluation ?? 'Évaluation non disponible.');
+      const text = data.evaluation ?? 'Évaluation non disponible.';
+      setEvaluation(text);
+
+      // Archivage du passage (note extraite déterministe, jamais inventée) —
+      // best-effort : l'évaluation reste affichée même si l'insert échoue.
+      if (user && data.evaluation) {
+        try {
+          const saved = await saveAttempt({
+            userId: user.id,
+            caseSlug: selectedCase.id,
+            caseTitle: selectedCase.titre,
+            specialty: selectedCase.specialite,
+            score: parseScoreFromEvaluation(text),
+            evaluation: text,
+          });
+          setAttempts((prev) => [saved, ...prev]);
+        } catch {
+          setSaveError(true);
+        }
+      }
     } catch {
       setEvaluation('Une erreur est survenue lors de l\'évaluation.');
     } finally {
@@ -393,40 +572,237 @@ Sois précis, bienveillant et pédagogique.`;
     }
   }
 
-  // ── Phase : sélection ──────────────────────────────────────────────────
+  // ── Phase : sélection (dashboard) ──────────────────────────────────────
   if (phase === 'selection') {
+    const attemptLites: AttemptLite[] = attempts.map((a) => ({
+      caseSlug: a.case_slug,
+      score: a.score,
+      createdAt: a.created_at,
+    }));
+    const stats = computeEcosStats(cases.map((c) => c.id), attemptLites);
+    const summaries = summarizeAttemptsByCase(attemptLites);
+    const themes = listThemes(cases);
+    const filtered = filterCases(cases, { query, theme: themeFilter, status: statusFilter }, summaries);
+    const groups = groupCasesByTheme(filtered);
+    const hasFilters = query.trim() !== '' || themeFilter !== null || statusFilter !== 'all';
+    const recentAttempts = attempts.slice(0, 8);
+
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.selectionContent}>
         <View style={styles.selectionHeader}>
-          <Text style={styles.selectionTitle}>Simulation ECOS</Text>
+          <Text style={styles.selectionTitle}>Dashboard ECOS</Text>
           <Text style={styles.selectionSubtitle}>
-            Choisissez un cas clinique pour simuler une consultation avec un patient IA et obtenir
-            une évaluation sur grille.
+            Entraîne-toi sur des stations fictives avec un patient joué par l'IA, suis tes notes
+            et repère les thèmes à retravailler.
           </Text>
         </View>
 
         {casesLoading ? (
           <View style={styles.casesState}>
             <ActivityIndicator color={tokens.colors.accent} size="large" />
-            <Text style={styles.casesStateText}>Chargement des cas…</Text>
+            <Text style={styles.casesStateText}>Chargement du dashboard…</Text>
           </View>
         ) : casesError ? (
           <View style={styles.casesState}>
             <Text style={styles.casesStateText}>{casesError}</Text>
-            <TouchableOpacity style={styles.casesRetry} onPress={loadCases}>
+            <TouchableOpacity style={styles.casesRetry} onPress={loadDashboard}>
               <Text style={styles.casesRetryText}>Réessayer</Text>
             </TouchableOpacity>
           </View>
-        ) : cases.length === 0 ? (
-          <View style={styles.casesState}>
-            <Text style={styles.casesStateText}>
-              Aucun cas ECOS disponible pour le moment.
-            </Text>
-          </View>
         ) : (
-          cases.map((cas) => (
-            <CaseCard key={cas.id} cas={cas} onSelect={() => selectCase(cas)} />
-          ))
+          <>
+            {/* Stats globales */}
+            <View style={dashStyles.statsRow}>
+              <StatTile label="Cas disponibles" value={String(stats.casesAvailable)} />
+              <StatTile
+                label="Passages"
+                value={String(stats.attemptsCount)}
+                hint={
+                  stats.attemptsCount > 0
+                    ? `${stats.casesAttempted}/${stats.casesAvailable} cas couverts`
+                    : 'Lance ta première station'
+                }
+              />
+              <StatTile
+                label="Note globale"
+                value={stats.averageScore !== null ? formatScore(stats.averageScore) : '—'}
+                suffix="/20"
+                valueColor={
+                  stats.averageScore !== null
+                    ? toneColors(scoreTone(stats.averageScore)).fg
+                    : undefined
+                }
+                hint="moyenne de tous tes passages"
+              />
+              <StatTile
+                label="Meilleure note"
+                value={stats.bestScore !== null ? formatScore(stats.bestScore) : '—'}
+                suffix="/20"
+                valueColor={
+                  stats.bestScore !== null ? toneColors(scoreTone(stats.bestScore)).fg : undefined
+                }
+              />
+            </View>
+
+            {/* Filtres */}
+            <View style={dashStyles.filters}>
+              <View style={dashStyles.searchRow}>
+                <Icon name="search" size={16} color={tokens.colors.textMuted} />
+                <TextInput
+                  style={dashStyles.searchInput}
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder="Rechercher un cas, un thème…"
+                  placeholderTextColor={tokens.colors.textMuted}
+                />
+                {query !== '' && (
+                  <TouchableOpacity onPress={() => setQuery('')} accessibilityLabel="Effacer la recherche">
+                    <Icon name="x" size={16} color={tokens.colors.textMuted} />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <View style={dashStyles.segmentRow}>
+                {([
+                  ['all', 'Tous'],
+                  ['todo', 'À faire'],
+                  ['done', 'Déjà passés'],
+                ] as [StatusFilter, string][]).map(([value, label]) => (
+                  <TouchableOpacity
+                    key={value}
+                    style={[dashStyles.segment, statusFilter === value && dashStyles.segmentActive]}
+                    onPress={() => setStatusFilter(value)}
+                    accessibilityRole="button"
+                  >
+                    <Text
+                      style={[
+                        dashStyles.segmentText,
+                        statusFilter === value && dashStyles.segmentTextActive,
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {themes.length > 1 && (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={dashStyles.themeRow}
+                >
+                  <TouchableOpacity
+                    style={[dashStyles.themeChip, themeFilter === null && dashStyles.themeChipActive]}
+                    onPress={() => setThemeFilter(null)}
+                  >
+                    <Text
+                      style={[
+                        dashStyles.themeChipText,
+                        themeFilter === null && dashStyles.themeChipTextActive,
+                      ]}
+                    >
+                      Tous les thèmes
+                    </Text>
+                  </TouchableOpacity>
+                  {themes.map((theme) => (
+                    <TouchableOpacity
+                      key={theme}
+                      style={[dashStyles.themeChip, themeFilter === theme && dashStyles.themeChipActive]}
+                      onPress={() => setThemeFilter(themeFilter === theme ? null : theme)}
+                    >
+                      <Text
+                        style={[
+                          dashStyles.themeChipText,
+                          themeFilter === theme && dashStyles.themeChipTextActive,
+                        ]}
+                      >
+                        {theme}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+            </View>
+
+            {/* Cas classés par thème */}
+            {cases.length === 0 ? (
+              <View style={styles.casesState}>
+                <Text style={styles.casesStateText}>Aucun cas ECOS disponible pour le moment.</Text>
+              </View>
+            ) : filtered.length === 0 ? (
+              <View style={styles.casesState}>
+                <Text style={styles.casesStateText}>Aucun cas ne correspond à ces filtres.</Text>
+                <TouchableOpacity
+                  style={styles.casesRetry}
+                  onPress={() => {
+                    setQuery('');
+                    setThemeFilter(null);
+                    setStatusFilter('all');
+                  }}
+                >
+                  <Text style={styles.casesRetryText}>Réinitialiser les filtres</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <>
+                {hasFilters && (
+                  <Text style={dashStyles.resultCount}>
+                    {filtered.length} {filtered.length > 1 ? 'cas affichés' : 'cas affiché'}
+                  </Text>
+                )}
+                {groups.map((group) => (
+                  <View key={group.theme} style={dashStyles.themeSection}>
+                    <View style={dashStyles.themeHeader}>
+                      <Text style={dashStyles.themeTitle}>{group.theme}</Text>
+                      <Text style={dashStyles.themeCount}>{group.cases.length}</Text>
+                    </View>
+                    {group.cases.map((cas) => (
+                      <CaseCard
+                        key={cas.id}
+                        cas={cas}
+                        summary={summaries.get(cas.id)}
+                        onSelect={() => selectCase(cas)}
+                      />
+                    ))}
+                  </View>
+                ))}
+              </>
+            )}
+
+            {/* Historique des passages */}
+            {recentAttempts.length > 0 && (
+              <View style={dashStyles.historySection}>
+                <View style={dashStyles.themeHeader}>
+                  <Text style={dashStyles.themeTitle}>Derniers passages</Text>
+                  <Text style={dashStyles.themeCount}>{attempts.length}</Text>
+                </View>
+                <View style={dashStyles.historyCard}>
+                  {recentAttempts.map((attempt, index) => (
+                    <TouchableOpacity
+                      key={attempt.id}
+                      style={[dashStyles.historyRow, index > 0 && dashStyles.historyRowBorder]}
+                      onPress={() => openAttempt(attempt)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Voir l'évaluation de ${attempt.case_title}`}
+                    >
+                      <ScorePill score={attempt.score} />
+                      <View style={dashStyles.historyInfo}>
+                        <Text style={dashStyles.historyTitle} numberOfLines={1}>
+                          {attempt.case_title}
+                        </Text>
+                        <Text style={dashStyles.historyMeta}>
+                          {attempt.specialty ? `${attempt.specialty} · ` : ''}
+                          {formatDay(attempt.created_at)}
+                        </Text>
+                      </View>
+                      <Icon name="arrowRight" size={16} color={tokens.colors.textMuted} />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
     );
@@ -437,8 +813,8 @@ Sois précis, bienveillant et pédagogique.`;
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.prepContent}>
         <View style={styles.prepHeader}>
-          <TouchableOpacity onPress={() => setPhase('selection')} style={styles.backButton}>
-            <Text style={styles.backText}>← Retour</Text>
+          <TouchableOpacity onPress={backToDashboard} style={styles.backButton}>
+            <Text style={styles.backText}>← Retour au dashboard</Text>
           </TouchableOpacity>
           <Text style={styles.prepTitle}>{selectedCase.titre}</Text>
           <View style={styles.prepBadge}>
@@ -556,13 +932,22 @@ Sois précis, bienveillant et pédagogique.`;
     );
   }
 
-  // ── Phase : évaluation ─────────────────────────────────────────────────
+  // ── Phase : évaluation (fraîche ou passage historique) ─────────────────
   if (phase === 'evaluation') {
+    const heroTone = evalScore !== null ? scoreTone(evalScore) : null;
+    const heroColors = heroTone ? toneColors(heroTone) : null;
+    const replayCase = viewedAttempt
+      ? cases.find((c) => c.id === viewedAttempt.case_slug) ?? null
+      : null;
+
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.evalContent}>
         <View style={styles.evalHeader}>
           <Text style={styles.evalTitle}>Évaluation</Text>
-          <Text style={styles.evalSubtitle}>{selectedCase?.titre}</Text>
+          <Text style={styles.evalSubtitle}>
+            {evalCaseTitle}
+            {viewedAttempt ? ` — ${formatDay(viewedAttempt.created_at)}` : ''}
+          </Text>
         </View>
 
         {evalLoading ? (
@@ -571,41 +956,78 @@ Sois précis, bienveillant et pédagogique.`;
             <Text style={styles.evalLoadingText}>Évaluation en cours…</Text>
           </View>
         ) : (
-          <View style={styles.evalResult}>
-            <View style={styles.evalActions}>
-              <TouchableOpacity
-                onPress={() => void copyEvaluation()}
-                accessibilityRole="button"
-                accessibilityLabel="Copier l'évaluation"
-                style={styles.evalAction}
-              >
-                <Text style={styles.evalActionText}>{copied ? 'Copié ✓' : 'Copier'}</Text>
-              </TouchableOpacity>
-              {Platform.OS === 'web' ? (
+          <>
+            {evalScore !== null && heroColors && heroTone && (
+              <View style={[dashStyles.scoreHero, { backgroundColor: heroColors.bg }]}>
+                <Text style={[dashStyles.scoreHeroValue, { color: heroColors.fg }]}>
+                  {formatScore(evalScore)}
+                  <Text style={dashStyles.scoreHeroMax}>/20</Text>
+                </Text>
+                <Text style={[dashStyles.scoreHeroLabel, { color: heroColors.fg }]}>
+                  {TONE_LABELS[heroTone]}
+                </Text>
+              </View>
+            )}
+
+            {saveError && (
+              <Text style={dashStyles.saveErrorText}>
+                Ce passage n'a pas pu être enregistré dans ton historique (connexion ?). La note
+                reste affichée ci-dessous.
+              </Text>
+            )}
+
+            <View style={styles.evalResult}>
+              <View style={styles.evalActions}>
                 <TouchableOpacity
-                  onPress={handleExportEval}
+                  onPress={() => void copyEvaluation()}
                   accessibilityRole="button"
-                  accessibilityLabel="Exporter l'évaluation en PDF"
+                  accessibilityLabel="Copier l'évaluation"
                   style={styles.evalAction}
                 >
-                  <Text style={styles.evalActionText}>Export PDF</Text>
+                  <Text style={styles.evalActionText}>{copied ? 'Copié ✓' : 'Copier'}</Text>
                 </TouchableOpacity>
-              ) : null}
+                {Platform.OS === 'web' ? (
+                  <TouchableOpacity
+                    onPress={handleExportEval}
+                    accessibilityRole="button"
+                    accessibilityLabel="Exporter l'évaluation en PDF"
+                    style={styles.evalAction}
+                  >
+                    <Text style={styles.evalActionText}>Export PDF</Text>
+                  </TouchableOpacity>
+                ) : null}
+                {viewedAttempt ? (
+                  <TouchableOpacity
+                    onPress={() => void removeViewedAttempt()}
+                    accessibilityRole="button"
+                    accessibilityLabel="Supprimer ce passage de l'historique"
+                    style={styles.evalAction}
+                  >
+                    <Text style={[styles.evalActionText, { color: tokens.colors.danger }]}>
+                      Supprimer
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+              <MarkdownRenderer text={evalMarkdown} />
             </View>
-            <MarkdownRenderer text={evaluation} />
-          </View>
+          </>
         )}
 
+        {replayCase && (
+          <TouchableOpacity style={styles.retryEcos} onPress={() => selectCase(replayCase)}>
+            <Text style={styles.retryEcosText}>Repasser ce cas</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
-          style={styles.retryEcos}
-          onPress={() => {
-            setPhase('selection');
-            setSelectedCase(null);
-            setMessages([]);
-            setEvaluation('');
-          }}
+          style={viewedAttempt ? dashStyles.backToDashSecondary : styles.retryEcos}
+          onPress={backToDashboard}
         >
-          <Text style={styles.retryEcosText}>Nouvelle simulation</Text>
+          <Text
+            style={viewedAttempt ? dashStyles.backToDashSecondaryText : styles.retryEcosText}
+          >
+            Retour au dashboard
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     );
@@ -981,6 +1403,266 @@ const styles = StyleSheet.create({
   },
 });
 
+// Dashboard (stats, filtres, thèmes, historique) + hero de note.
+const dashStyles = StyleSheet.create({
+  statsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: tokens.space.md,
+  },
+  statTile: {
+    flexGrow: 1,
+    flexBasis: 150,
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surface,
+    padding: tokens.space.lg,
+    gap: 4,
+    ...tokens.elevation.sm,
+  },
+  statLabel: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.micro.fontSize,
+    fontWeight: tokens.weight.medium,
+    textTransform: 'uppercase',
+    letterSpacing: tokens.tracking.caps,
+  },
+  statValue: {
+    fontFamily: tokens.font.display,
+    color: tokens.colors.text,
+    fontSize: tokens.type.h1.fontSize,
+    lineHeight: tokens.type.h1.lineHeight,
+    letterSpacing: tokens.type.h1.letterSpacing,
+    fontWeight: tokens.weight.bold,
+  },
+  statSuffix: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.body.fontSize,
+    fontWeight: tokens.weight.medium,
+    letterSpacing: 0,
+  },
+  statHint: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+    lineHeight: tokens.type.caption.lineHeight,
+  },
+
+  // Filtres
+  filters: { gap: tokens.space.sm, marginTop: tokens.space.xs },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surface,
+    paddingHorizontal: tokens.space.md,
+    height: 44,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: tokens.font.sans,
+    fontSize: tokens.type.body.fontSize,
+    color: tokens.colors.text,
+    paddingVertical: 0,
+    height: '100%',
+  },
+  segmentRow: {
+    flexDirection: 'row',
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surfaceSunken,
+    padding: 3,
+    gap: 3,
+  },
+  segment: {
+    flex: 1,
+    borderRadius: tokens.radius.sm,
+    paddingVertical: tokens.space.sm,
+    alignItems: 'center',
+  },
+  segmentActive: {
+    backgroundColor: tokens.colors.surface,
+    ...tokens.elevation.sm,
+  },
+  segmentText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.medium,
+  },
+  segmentTextActive: {
+    color: tokens.colors.text,
+    fontWeight: tokens.weight.semibold,
+  },
+  themeRow: { gap: tokens.space.sm, paddingVertical: 2 },
+  themeChip: {
+    borderRadius: tokens.radius.pill,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surface,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.xs + 2,
+  },
+  themeChipActive: {
+    backgroundColor: tokens.colors.accent,
+    borderColor: tokens.colors.accent,
+  },
+  themeChipText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textSubtle,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.medium,
+  },
+  themeChipTextActive: {
+    color: tokens.colors.onAccent,
+    fontWeight: tokens.weight.semibold,
+  },
+  resultCount: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+  },
+
+  // Sections par thème
+  themeSection: { gap: tokens.space.sm, marginTop: tokens.space.sm },
+  themeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+  },
+  themeTitle: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.textSubtle,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+    textTransform: 'uppercase',
+    letterSpacing: tokens.tracking.caps,
+  },
+  themeCount: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.micro.fontSize,
+    fontWeight: tokens.weight.medium,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.surfaceSunken,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    paddingHorizontal: tokens.space.sm,
+    paddingVertical: 1,
+    overflow: 'hidden',
+  },
+
+  // Pastille de note
+  scorePill: {
+    borderRadius: tokens.radius.pill,
+    paddingHorizontal: tokens.space.sm + 2,
+    paddingVertical: 3,
+  },
+  scorePillText: {
+    fontFamily: tokens.font.mono,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.bold,
+  },
+  scorePillEmpty: {
+    backgroundColor: tokens.colors.surfaceSunken,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+  },
+  scorePillEmptyText: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.medium,
+  },
+
+  // Historique
+  historySection: { gap: tokens.space.sm, marginTop: tokens.space.md },
+  historyCard: {
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surface,
+    ...tokens.elevation.sm,
+  },
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.md,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.md,
+  },
+  historyRowBorder: {
+    borderTopWidth: 1,
+    borderColor: tokens.colors.border,
+  },
+  historyInfo: { flex: 1, gap: 1 },
+  historyTitle: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  historyMeta: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+  },
+
+  // Hero de note (phase évaluation)
+  scoreHero: {
+    borderRadius: tokens.radius.lg,
+    alignItems: 'center',
+    paddingVertical: tokens.space.xl,
+    gap: 2,
+  },
+  scoreHeroValue: {
+    fontFamily: tokens.font.serif,
+    fontSize: tokens.type.display.fontSize,
+    lineHeight: tokens.type.display.lineHeight,
+    letterSpacing: tokens.type.display.letterSpacing,
+    fontWeight: tokens.weight.bold,
+  },
+  scoreHeroMax: {
+    fontFamily: tokens.font.sans,
+    fontSize: tokens.type.h3.fontSize,
+    fontWeight: tokens.weight.medium,
+    letterSpacing: 0,
+  },
+  scoreHeroLabel: {
+    fontFamily: tokens.font.sans,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  saveErrorText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.warningText,
+    fontSize: tokens.type.caption.fontSize,
+    lineHeight: tokens.type.caption.lineHeight,
+  },
+  backToDashSecondary: {
+    height: 48,
+    borderRadius: tokens.radius.lg,
+    borderWidth: 1,
+    borderColor: tokens.colors.borderStrong,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  backToDashSecondaryText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textSubtle,
+    fontWeight: tokens.weight.semibold,
+    fontSize: tokens.type.label.fontSize,
+  },
+});
+
 const caseStyles = StyleSheet.create({
   card: {
     borderRadius: tokens.radius.lg,
@@ -1015,18 +1697,38 @@ const caseStyles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
   },
-  cardSpecialite: {
-    fontFamily: tokens.font.mono,
-    color: tokens.colors.textMuted,
-    fontSize: tokens.type.micro.fontSize,
-    fontWeight: tokens.weight.medium,
-  },
   cardConsigne: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textSubtle,
     fontSize: tokens.type.label.fontSize,
     lineHeight: 20,
     marginTop: 2,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    marginTop: tokens.space.sm,
+    flexWrap: 'wrap',
+  },
+  cardMeta: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+  },
+  todoPill: {
+    borderRadius: tokens.radius.pill,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    backgroundColor: tokens.colors.accentSurface,
+    paddingHorizontal: tokens.space.sm + 2,
+    paddingVertical: 3,
+  },
+  todoPillText: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
   },
 });
 
