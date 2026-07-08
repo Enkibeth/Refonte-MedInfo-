@@ -26,6 +26,7 @@ import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { resolveChatPersona } from '@/ai/routing/serverPersona';
 import { logInteraction } from '@/ai/logging/logInteraction';
+import { summarizeSteps } from '@/ai/logging/stepMetrics';
 import { coerceConversationId, saveAssistantMessageServer } from '@/chat/serverHistory';
 import { createServerSupabaseClient } from '@/db/serverSupabase';
 import {
@@ -108,7 +109,14 @@ export async function POST(request: Request): Promise<Response> {
     getPromptTemplate(chatbot),
     // Recherche web ON par défaut pour le chat : les prompts exigent des sources réelles
     // (URLs vérifiables HAS/ESC/PubMed…) — sans web search le modèle ne peut pas les fournir.
-    getRuntimeForFeature('chat', { webSearch: true }),
+    // Balance rapidité/qualité par chatbot (2026-07) : le chat public plafonne l'effort de
+    // raisonnement à `minimal` — l'ancrage factuel vient du workflow d'outils (recherche,
+    // lecture des résumés, vérification des liens), pas du thinking, et l'effort se paie à
+    // CHAQUE étape de la boucle agentique. Étudiant/pro gardent la config admin (profondeur).
+    getRuntimeForFeature('chat', {
+      webSearch: true,
+      ...(chatbot === 'public' ? { capReasoningEffort: 'minimal' as const } : {}),
+    }),
   ]);
 
   const modelMessages = await convertToModelMessages(uiMessages as any);
@@ -178,12 +186,18 @@ export async function POST(request: Request): Promise<Response> {
           });
         }
       }
+      // Instrumentation latence (2026-07) : nombre d'étapes LLM + décompte d'appels par
+      // outil (noms seulement, jamais les arguments) — pour savoir OÙ part le temps
+      // (sous-agent PubMed ? lectures séquentielles ? rédaction ?). Migration 0034.
+      const metrics = summarizeSteps(steps);
       await logInteraction({
         persona: chatbot,
         model_used: runtime.modelId,
         tokens_in: usage?.inputTokens,
         tokens_out: usage?.outputTokens,
         latency_ms: Date.now() - startMs,
+        steps: metrics?.steps,
+        tool_calls: metrics?.toolCalls,
         refusal_triggered: false,
         guardrail_layer: 'none',
         intent_category: 'general_info',

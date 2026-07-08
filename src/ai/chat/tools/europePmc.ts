@@ -200,11 +200,18 @@ export function europePmcArticleTool(fetchImpl: typeof fetch = fetch) {
     description:
       "Lit le résumé COMPLET d'un article scientifique identifié par son PMID ou son DOI (Europe PMC). " +
       'À utiliser après europe_pmc_search sur les 2-3 articles qui fonderont ta réponse : ' +
-      "chaque affirmation appuyée sur une étude doit venir de son résumé réel, jamais de son seul titre.",
+      "chaque affirmation appuyée sur une étude doit venir de son résumé réel, jamais de son seul titre. " +
+      'Appelle-le pour CHAQUE article retenu EN PARALLÈLE (tous les appels dans le même tour) et passe le paramètre title.',
     inputSchema: z.object({
       id: z.string().min(2).describe("PMID (ex : 38000001) ou DOI (ex : 10.1093/eurheartj/ehae176) de l'article"),
+      // Latence perçue : le titre est affiché dans la bulle de statut du client pendant
+      // la lecture (« Lecture : “…” ») — il ne change rien à la requête Europe PMC.
+      title: z
+        .string()
+        .optional()
+        .describe("Titre de l'article, repris du résultat de recherche (affiché à l'utilisateur pendant la lecture)"),
     }),
-    execute: async ({ id }: { id: string }) => {
+    execute: async ({ id }: { id: string; title?: string }) => {
       const url = buildEuropePmcArticleUrl(id);
       if (!url) {
         return 'Identifiant non reconnu : fournis un PMID numérique ou un DOI (10.xxxx/…).';

@@ -24,6 +24,10 @@ export interface InteractionLog {
   tokens_in?: number;
   tokens_out?: number;
   latency_ms?: number;
+  /** Nombre d'étapes LLM de la boucle agentique (diagnostic latence, migration 0034). */
+  steps?: number;
+  /** Décompte d'appels par nom d'outil — jamais leurs arguments (migration 0034). */
+  tool_calls?: Record<string, number>;
   refusal_triggered: boolean;
   guardrail_layer: GuardrailLayer;
   intent_category: IntentCategory;

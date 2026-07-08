@@ -6,13 +6,40 @@
  * candidates ; toute URL cassée doit être remplacée (URL DOI, page officielle de niveau
  * supérieur) ou retirée. Requêtes sortantes bornées : URLs publiques nommées uniquement
  * (anti-SSRF, cf urlSafety.ts), HEAD puis repli GET, timeout court, 8 URLs max.
+ *
+ * Latence (2026-07) : les verdicts ok/cassé sont mis en cache en mémoire (les URLs
+ * HAS/ESC/DOI reviennent d'une réponse à l'autre sur une instance chaude) ; les échecs
+ * réseau (INJOIGNABLE) ne sont jamais mis en cache — transitoires par nature.
  */
 import { tool } from 'ai';
 import { z } from 'zod';
 import { isSafePublicHttpUrl } from './urlSafety';
 
-const FETCH_TIMEOUT_MS = 6_000;
+const FETCH_TIMEOUT_MS = 4_000;
 export const MAX_URLS_PER_CALL = 8;
+
+// ── Cache mémoire des verdicts ─────────────────────────────────────────────────
+// Clé externe = fetchImpl (WeakMap) : en production tous les appels partagent le fetch
+// global → cache commun à l'instance ; en test chaque mock a son cache isolé.
+const CACHE_TTL_OK_MS = 10 * 60_000;
+const CACHE_TTL_BROKEN_MS = 5 * 60_000;
+const CACHE_MAX_ENTRIES = 500;
+
+interface CachedVerdict {
+  result: LinkCheckResult;
+  expiresAt: number;
+}
+
+const cacheByFetch = new WeakMap<typeof fetch, Map<string, CachedVerdict>>();
+
+function cacheFor(fetchImpl: typeof fetch): Map<string, CachedVerdict> {
+  let cache = cacheByFetch.get(fetchImpl);
+  if (!cache) {
+    cache = new Map();
+    cacheByFetch.set(fetchImpl, cache);
+  }
+  return cache;
+}
 
 export type LinkCheckStatus = 'ok' | 'broken' | 'unreachable' | 'unsafe';
 
@@ -67,6 +94,30 @@ async function checkOne(url: string, fetchImpl: typeof fetch): Promise<LinkCheck
   }
 }
 
+/** checkOne avec cache mémoire : seuls les verdicts stables (ok/cassé) sont conservés. */
+async function checkOneCached(url: string, fetchImpl: typeof fetch): Promise<LinkCheckResult> {
+  const cache = cacheFor(fetchImpl);
+  const hit = cache.get(url);
+  if (hit) {
+    if (hit.expiresAt > Date.now()) return hit.result;
+    cache.delete(url);
+  }
+  const result = await checkOne(url, fetchImpl);
+  if (result.status === 'ok' || result.status === 'broken') {
+    cache.set(url, {
+      result,
+      expiresAt: Date.now() + (result.status === 'ok' ? CACHE_TTL_OK_MS : CACHE_TTL_BROKEN_MS),
+    });
+    // Éviction FIFO simple (ordre d'insertion des Map) — borne la mémoire de l'instance.
+    while (cache.size > CACHE_MAX_ENTRIES) {
+      const oldest = cache.keys().next().value;
+      if (oldest == null) break;
+      cache.delete(oldest);
+    }
+  }
+  return result;
+}
+
 /** Formate les verdicts en liste actionnable par le modèle (pur, testé). */
 export function formatLinkCheckResults(results: LinkCheckResult[]): string {
   const lines = results.map((r) => {
@@ -104,7 +155,7 @@ export function verifySourceLinksTool(fetchImpl: typeof fetch = fetch) {
     }),
     execute: async ({ urls }: { urls: string[] }) => {
       const unique = [...new Set(urls)].slice(0, MAX_URLS_PER_CALL);
-      const results = await Promise.all(unique.map((u) => checkOne(u, fetchImpl)));
+      const results = await Promise.all(unique.map((u) => checkOneCached(u, fetchImpl)));
       return formatLinkCheckResults(results);
     },
   });
