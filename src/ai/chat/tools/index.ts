@@ -101,12 +101,14 @@ export function buildChatToolsSection(
     searchTools.push(`${CHAT_TOOL_NAMES.clinicalTrials} (essais en cours)`);
   }
   if (opts.pubmedMcp) searchTools.push('les outils PubMed MCP');
-  if (opts.pubmedAgent) searchTools.push(CHAT_TOOL_NAMES.pubmedAgent);
+  // NB : pubmed_search (sous-agent délégué) n'est volontairement PAS dans la liste des
+  // recherches de première intention — c'est un appel LLM imbriqué coûteux en latence,
+  // réservé en seconde intention (voir sa ligne « Outils disponibles » ci-dessous).
 
   const steps = [
     `1. DÉCOMPOSE la question en 1 à 3 requêtes de recherche ciblées (anglais pour la littérature, syntaxe PubMed acceptée).`,
     `2. RECHERCHE AVANT DE RÉDIGER : lance en parallèle la recherche web (recommandations en vigueur : HAS, ESC, sociétés savantes…) et ${searchTools.join(' + ')}. Aucune affirmation actionnable ne doit précéder cette étape. Privilégie le récent et le fortement cité (paramètre sort : recent / cited).`,
-    `3. LIS LES RÉSUMÉS : pour les 2-3 articles qui fonderont ta réponse, appelle ${CHAT_TOOL_NAMES.europePmcArticle} (PMID ou DOI) et appuie chaque affirmation sur le contenu réel du résumé — jamais sur le seul titre d'un résultat de recherche.`,
+    `3. LIS LES RÉSUMÉS : pour les 2-3 articles qui fonderont ta réponse, appelle ${CHAT_TOOL_NAMES.europePmcArticle} (PMID ou DOI, + le paramètre title repris du résultat de recherche) pour CHAQUE article EN PARALLÈLE — tous les appels dans le MÊME tour, jamais un article par tour — et appuie chaque affirmation sur le contenu réel du résumé, jamais sur le seul titre d'un résultat de recherche.`,
     `4. VÉRIFIE LES LIENS : appelle ${CHAT_TOOL_NAMES.verifyLinks} UNE SEULE fois, juste avant de rédiger la section SOURCES, avec toutes les URLs que tu prévois de citer ; remplace toute URL cassée (DOI, page officielle de niveau supérieur) ou retire la source.`,
     `5. RÉDIGE selon le format exigé par tes consignes : chaque affirmation actionnable est ancrée à une source réellement retrouvée aux étapes 2-3. Si la recherche ne retrouve rien de probant, dis-le — ne comble jamais avec une référence non retrouvée.`,
   ];
@@ -127,7 +129,7 @@ export function buildChatToolsSection(
   }
   if (opts.pubmedAgent) {
     lines.push(
-      `- ${CHAT_TOOL_NAMES.pubmedAgent} : délègue la recherche à un sous-agent spécialisé avec accès direct à PubMed (MeSH, PMID, abstracts) — il renvoie une synthèse de références réelles. À utiliser pour les questions exigeant des références précises ; ne cite jamais une référence qu'il n'a pas renvoyée.`,
+      `- ${CHAT_TOOL_NAMES.pubmedAgent} : délègue la recherche à un sous-agent spécialisé avec accès direct à PubMed (MeSH, PMID, abstracts) — il renvoie une synthèse de références réelles. EN SECONDE INTENTION SEULEMENT (appel lent) : réserve-le aux questions exigeant des références précises que ${CHAT_TOOL_NAMES.europePmc} et la recherche web n'ont PAS déjà retrouvées, 1 appel maximum par réponse, jamais en première intention ; ne cite jamais une référence qu'il n'a pas renvoyée.`,
     );
   }
   lines.push(

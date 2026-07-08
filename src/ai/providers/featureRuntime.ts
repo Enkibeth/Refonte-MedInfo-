@@ -40,9 +40,31 @@ export interface FeatureCallOptions {
  */
 export interface FeatureRuntimeOverrides {
   reasoningEffort?: ReasoningEffort | null;
+  /**
+   * PLAFOND d'effort de raisonnement (balance rapidité/qualité par chatbot) : abaisse
+   * l'effort effectif au niveau donné s'il le dépasse, mais ne RELÈVE jamais (un effort
+   * absent/null reste null — on n'active pas de thinking là où l'admin n'en a pas mis).
+   */
+  capReasoningEffort?: ReasoningEffort;
   verbosity?: Verbosity | null;
   webSearch?: boolean;
   maxOutputTokens?: number;
+}
+
+const REASONING_EFFORT_ORDER: Record<ReasoningEffort, number> = {
+  minimal: 0,
+  low: 1,
+  medium: 2,
+  high: 3,
+};
+
+/** Applique le plafond d'effort : abaisse si au-dessus, ne relève jamais (pur, testé). */
+export function capReasoningEffort(
+  effort: ReasoningEffort | null,
+  cap: ReasoningEffort,
+): ReasoningEffort | null {
+  if (effort == null) return null;
+  return REASONING_EFFORT_ORDER[effort] > REASONING_EFFORT_ORDER[cap] ? cap : effort;
 }
 
 export interface FeatureRuntime {
@@ -74,9 +96,13 @@ export async function getRuntimeForFeature(
 ): Promise<FeatureRuntime> {
   const base = await getFeatureSettings(feature);
   // Les surcharges par requête (réglages utilisateur) priment sur la config admin.
+  const effort = overrides.reasoningEffort ?? base.reasoningEffort;
   const settings: FeatureSettings = {
     ...base,
-    reasoningEffort: overrides.reasoningEffort ?? base.reasoningEffort,
+    reasoningEffort:
+      overrides.capReasoningEffort != null
+        ? capReasoningEffort(effort, overrides.capReasoningEffort)
+        : effort,
     verbosity: overrides.verbosity ?? base.verbosity,
     webSearch: overrides.webSearch ?? base.webSearch,
   };

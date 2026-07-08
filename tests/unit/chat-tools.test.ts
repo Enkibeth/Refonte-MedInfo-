@@ -184,6 +184,25 @@ describe('europe_pmc_article (execute, fetch mocké)', () => {
     const out = await run(europePmcArticleTool(fetchMock as unknown as typeof fetch), '38000001');
     expect(out).toContain('indisponible');
   });
+
+  it('accepte un titre optionnel (bulle de statut) sans changer la requête Europe PMC', async () => {
+    let requestedUrl = '';
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      requestedUrl = String(input);
+      return {
+        ok: true,
+        json: async () => ({ result: { title: 'Study', abstractText: 'Full abstract text here.' } }),
+      } as unknown as Response;
+    });
+    const tool = europePmcArticleTool(fetchMock as unknown as typeof fetch);
+    const out = (await tool.execute!(
+      { id: '38000001', title: 'Anticoagulation in atrial fibrillation' },
+      { toolCallId: 't', messages: [] } as never,
+    )) as string;
+    expect(out).toContain('Full abstract text here.');
+    expect(requestedUrl).toContain('/article/MED/38000001');
+    expect(requestedUrl).not.toContain('Anticoagulation');
+  });
 });
 
 describe('formatEuropePmcResults', () => {
@@ -346,6 +365,33 @@ describe('verify_source_links (execute, fetch mocké)', () => {
     const out = await runVerify(tool, ['https://down.fr/x']);
     expect(out).toContain('INJOIGNABLE');
   });
+
+  it('met en cache les verdicts ok/cassé (URLs récurrentes), jamais les échecs réseau', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.startsWith('https://down.fr')) throw new Error('boom');
+      if (url.startsWith('https://casse.fr')) return makeResponse(404, url);
+      return makeResponse(200, url);
+    });
+    const tool = verifySourceLinksTool(fetchMock as unknown as typeof fetch);
+
+    const first = await runVerify(tool, ['https://ok.fr/a', 'https://casse.fr/b']);
+    expect(first).toContain('OK (200)');
+    expect(first).toContain('CASSÉ (HTTP 404)');
+    const callsAfterFirst = fetchMock.mock.calls.length;
+
+    // Deuxième vérification des mêmes URLs : verdicts servis depuis le cache, zéro fetch.
+    const second = await runVerify(tool, ['https://ok.fr/a', 'https://casse.fr/b']);
+    expect(second).toContain('OK (200)');
+    expect(second).toContain('CASSÉ (HTTP 404)');
+    expect(fetchMock.mock.calls.length).toBe(callsAfterFirst);
+
+    // INJOIGNABLE (transitoire) : jamais mis en cache, re-vérifié à chaque appel.
+    await runVerify(tool, ['https://down.fr/x']);
+    const afterDown = fetchMock.mock.calls.length;
+    await runVerify(tool, ['https://down.fr/x']);
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(afterDown);
+  });
 });
 
 // ── Disponibilité par chatbot + section système ───────────────────────────────
@@ -456,5 +502,22 @@ describe('buildChatToolsSection — consigne système', () => {
     expect(section).toContain(CHAT_TOOL_NAMES.europePmcArticle);
     // Une conversation purement conversationnelle est exemptée du protocole.
     expect(section).toContain('salutation');
+  });
+
+  it('impose la lecture des résumés EN PARALLÈLE en un seul tour (latence, 2026-07)', () => {
+    const section = buildChatToolsSection('public');
+    expect(section).toContain('EN PARALLÈLE');
+    expect(section).toContain('MÊME tour');
+  });
+
+  it('sous-agent PubMed en seconde intention, hors recherches de première intention', () => {
+    const section = buildChatToolsSection('professional', { pubmedAgent: true });
+    // L'étape 2 (recherches à lancer en parallèle) ne mentionne plus pubmed_search…
+    const step2 = section.split('\n').find((l) => l.startsWith('2.'));
+    expect(step2).toBeDefined();
+    expect(step2).not.toContain(CHAT_TOOL_NAMES.pubmedAgent);
+    // …qui reste décrit dans les outils disponibles, en seconde intention explicite.
+    expect(section).toContain(CHAT_TOOL_NAMES.pubmedAgent);
+    expect(section).toContain('SECONDE INTENTION');
   });
 });
