@@ -170,13 +170,22 @@ function MessageActions({
   onRegenerate?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Nettoie le minuteur « Copié » si le message est démonté avant la fin du délai.
+  useEffect(
+    () => () => {
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+    },
+    [],
+  );
   if (!CAN_COPY && !showRegenerate) return null;
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+      copiedTimerRef.current = setTimeout(() => setCopied(false), 1800);
     } catch {
       // presse-papiers indisponible : rien à faire, la sélection manuelle reste possible
     }
@@ -370,9 +379,13 @@ export default function ChatScreen() {
   // Un paramètre ?bot=… (cartes de l'accueil) prime s'il est autorisé pour ce compte.
   const { bot } = useLocalSearchParams<{ bot?: string }>();
   const personaInitialized = useRef(false);
+  // Dernière valeur de ?bot= déjà appliquée : chaque valeur du paramètre ne bascule
+  // le chatbot qu'une fois (un switch manuel ultérieur ne doit pas être écrasé).
+  const appliedBotParamRef = useRef<string | undefined>(undefined);
   useEffect(() => {
     if ((persona || isGuest) && !personaInitialized.current) {
       personaInitialized.current = true;
+      appliedBotParamRef.current = bot;
       const requested = bot as ChatbotId | undefined;
       const allowed = isGuest || isAdmin || persona === 'student' || persona === 'professional'
         ? (['public', 'student', 'professional'] as ChatbotId[])
@@ -651,6 +664,10 @@ export default function ChatScreen() {
 
   const startNewConversation = useCallback(
     (nextChatbot?: ChatbotId) => {
+      // Une génération encore en cours ne doit pas continuer d'écrire dans le
+      // nouveau fil, ni laisser la reprise hors-ligne armée sur l'ancien.
+      if (statusRef.current === 'streaming' || statusRef.current === 'submitted') void stop();
+      awaitingRef.current = false;
       setMessages([]);
       conversationIdRef.current = null;
       setConversationId(null);
@@ -660,7 +677,7 @@ export default function ChatScreen() {
       setHistoryOpen(false);
       if (nextChatbot) setChatbot(nextChatbot);
     },
-    [setMessages],
+    [setMessages, stop],
   );
 
   const handleSwitchChatbot = (next: ChatbotId) => {
@@ -669,8 +686,25 @@ export default function ChatScreen() {
     startNewConversation(next);
   };
 
+  // Lien profond ?bot=… reçu alors que l'écran est déjà monté (menu Chatbots du header,
+  // footer) : sans cet effet, le paramètre n'était lu qu'au premier rendu et le clic
+  // ne faisait rien. Chaque nouvelle valeur est appliquée une seule fois.
+  useEffect(() => {
+    if (!personaInitialized.current || bot === appliedBotParamRef.current) return;
+    appliedBotParamRef.current = bot;
+    const requested = bot as ChatbotId | undefined;
+    if (!requested || requested === chatbotRef.current) return;
+    if (!availableChatbots.includes(requested)) return;
+    startNewConversation(requested);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bot]);
+
   const openConversation = useCallback(
     async (c: ChatConversation) => {
+      // Même garde que startNewConversation : le flux en cours ne doit pas venir
+      // s'écrire dans la conversation qu'on ouvre.
+      if (statusRef.current === 'streaming' || statusRef.current === 'submitted') void stop();
+      awaitingRef.current = false;
       const stored = await loadMessages(c.id);
       setMessages(
         stored.map((m) => ({
@@ -686,7 +720,7 @@ export default function ChatScreen() {
       if (availableChatbots.includes(c.chatbot)) setChatbot(c.chatbot);
       setHistoryOpen(false);
     },
-    [availableChatbots, setMessages],
+    [availableChatbots, setMessages, stop],
   );
 
   const handleDeleteConversation = useCallback(

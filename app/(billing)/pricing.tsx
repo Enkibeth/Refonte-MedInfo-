@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Linking, Platform, StyleSheet, Text, View } from 'react-native';
 
@@ -21,9 +21,13 @@ import { tokens } from '@/ui/tokens';
  * Aucune donnée de santé.
  */
 export default function PricingScreen() {
+  const router = useRouter();
   const { session, persona } = useSession();
   const [loadingPlan, setLoadingPlan] = useState<BillingPlanId | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Visiteur non connecté : « S'abonner » doit mener à la création de compte,
+  // pas à un message d'erreur sans issue.
+  const [needsSignIn, setNeedsSignIn] = useState(false);
 
   const webBilling = shouldShowWebBilling(Platform.OS);
   const plans = plansForPersona(persona ?? 'public');
@@ -31,10 +35,12 @@ export default function PricingScreen() {
   async function handleSubscribe(plan: BillingPlanId) {
     if (loadingPlan) return;
     setErrorMessage(null);
+    setNeedsSignIn(false);
 
     const token = session?.access_token;
     if (!token) {
-      setErrorMessage('Connecte-toi pour gérer ton abonnement.');
+      setErrorMessage('Connecte-toi (ou crée un compte gratuit) pour gérer ton abonnement.');
+      setNeedsSignIn(true);
       return;
     }
 
@@ -125,6 +131,14 @@ export default function PricingScreen() {
       {errorMessage ? (
         <View style={styles.errorBox} accessibilityLiveRegion="polite">
           <Text style={styles.errorText}>{errorMessage}</Text>
+          {needsSignIn ? (
+            <Button
+              label="Se connecter / Créer un compte"
+              fullWidth={false}
+              onPress={() => router.push('/(auth)/sign-in')}
+              style={styles.errorAction}
+            />
+          ) : null}
         </View>
       ) : null}
 
@@ -227,6 +241,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.label.fontSize,
     lineHeight: 21,
   },
+  errorAction: { marginTop: tokens.space.md, alignSelf: 'flex-start' },
   footer: { marginTop: tokens.space.xl },
   inlineLink: {
     fontFamily: tokens.font.sans,
