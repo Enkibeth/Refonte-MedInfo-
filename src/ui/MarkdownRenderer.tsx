@@ -124,7 +124,6 @@ function parseBlocks(text: string): Block[] {
   const lines = text.split('\n');
   const blocks: Block[] = [];
   let i = 0;
-  let orderedCounter = 0;
 
   while (i < lines.length) {
     const line = lines[i];
@@ -133,14 +132,12 @@ function parseBlocks(text: string): Block[] {
     // H3 before H2 (### has 3 chars, ## has 2)
     if (trimmed.startsWith('### ')) {
       blocks.push({ kind: 'h3', text: trimmed.slice(4) });
-      orderedCounter = 0;
       i++;
       continue;
     }
 
     if (trimmed.startsWith('## ')) {
       blocks.push({ kind: 'h2', text: trimmed.slice(3) });
-      orderedCounter = 0;
       i++;
       continue;
     }
@@ -149,7 +146,6 @@ function parseBlocks(text: string): Block[] {
     const imageMatch = trimmed.match(/^!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)$/);
     if (imageMatch) {
       blocks.push({ kind: 'image', url: imageMatch[2], caption: imageMatch[1] });
-      orderedCounter = 0;
       i++;
       continue;
     }
@@ -164,16 +160,21 @@ function parseBlocks(text: string): Block[] {
     // Unordered list
     if (/^[-*]\s/.test(line)) {
       blocks.push({ kind: 'listItem', text: line.slice(2).trim(), ordered: false, index: 0 });
-      orderedCounter = 0;
       i++;
       continue;
     }
 
-    // Ordered list
+    // Ordered list — le numéro AFFICHÉ est celui écrit dans le texte : les lignes
+    // vides entre items (fréquentes dans les réponses LLM) ne remettent plus la
+    // numérotation à « 1. » à chaque item.
     const orderedMatch = line.match(/^(\d+)\.\s(.+)/);
     if (orderedMatch) {
-      orderedCounter++;
-      blocks.push({ kind: 'listItem', text: orderedMatch[2].trim(), ordered: true, index: orderedCounter });
+      blocks.push({
+        kind: 'listItem',
+        text: orderedMatch[2].trim(),
+        ordered: true,
+        index: Number(orderedMatch[1]),
+      });
       i++;
       continue;
     }
@@ -182,19 +183,20 @@ function parseBlocks(text: string): Block[] {
     if (TABLE_ROW_RE.test(trimmed)) {
       const tableLines: string[] = [];
       while (i < lines.length && TABLE_ROW_RE.test(lines[i].trim())) {
-        tableLines.push(lines[i]);
+        // Trim : une ligne de tableau indentée créerait une cellule parasite vide
+        // (slice(1, -1) sur la ligne brute) et décalerait toutes les colonnes.
+        tableLines.push(lines[i].trim());
         i++;
       }
       // Find separator index to identify header
-      const sepIdx = tableLines.findIndex((l) => TABLE_SEP_RE.test(l.trim()));
+      const sepIdx = tableLines.findIndex((l) => TABLE_SEP_RE.test(l));
       const rows: TableRow[] = tableLines
-        .filter((l) => !TABLE_SEP_RE.test(l.trim()))
+        .filter((l) => !TABLE_SEP_RE.test(l))
         .map((l, idx) => ({
           cells: parseTableRow(l),
           isHeader: sepIdx > 0 && idx === 0,
         }));
       if (rows.length > 0) blocks.push({ kind: 'table', rows });
-      orderedCounter = 0;
       continue;
     }
 
@@ -204,7 +206,6 @@ function parseBlocks(text: string): Block[] {
       if (blocks.length > 0 && blocks[blocks.length - 1].kind !== 'spacer') {
         blocks.push({ kind: 'spacer' });
       }
-      orderedCounter = 0;
       i++;
       continue;
     }

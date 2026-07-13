@@ -39,7 +39,14 @@ export default function BlogArticleScreen() {
   const sectionYRef = useRef<Record<number, number>>({});
 
   useEffect(() => {
-    if (!slug) return;
+    if (!slug) {
+      // Sans slug, pas de requête : sortir de l'état de chargement au lieu de
+      // laisser les squelettes indéfiniment.
+      setPost(null);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     void getPostBySlug(String(slug))
       .then((p) => setPost(p))
       .catch(() => setPost(null))
@@ -84,6 +91,10 @@ export default function BlogArticleScreen() {
             ]),
           ]}
         />
+      ) : !loading ? (
+        // Article absent (slug inconnu ou dépublié) : métadonnées noindex pour que
+        // les moteurs n'indexent pas une page d'erreur sans contenu.
+        <SeoHead title="Article introuvable" path={PAGE_SEO.blog.path} noindex />
       ) : null}
       <LandingHeader />
       <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.content}>

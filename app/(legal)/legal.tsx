@@ -6,9 +6,11 @@ import {
   INTENDED_PURPOSE,
   getAiDisclosure,
 } from '@/compliance/disclosures';
+import { PAGE_SEO, breadcrumbJsonLd } from '@/seo/meta';
 import { Card } from '@/ui/Card';
 import { Logo } from '@/ui/Logo';
 import { Screen } from '@/ui/Screen';
+import { SeoHead } from '@/ui/SeoHead';
 import { tokens } from '@/ui/tokens';
 
 /**
@@ -24,6 +26,17 @@ const PENDING = '[À compléter avant lancement]';
 export default function LegalScreen() {
   return (
     <Screen maxWidth={760}>
+      <SeoHead
+        title={PAGE_SEO.legal.title}
+        description={PAGE_SEO.legal.description}
+        path={PAGE_SEO.legal.path}
+        jsonLd={[
+          breadcrumbJsonLd([
+            { name: 'Accueil', path: '/' },
+            { name: 'Informations légales', path: PAGE_SEO.legal.path },
+          ]),
+        ]}
+      />
       <View style={styles.brandHeader}>
         <Logo size="sm" />
       </View>

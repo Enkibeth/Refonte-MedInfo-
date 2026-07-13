@@ -7,10 +7,12 @@ import {
   blogPostingJsonLd,
   breadcrumbJsonLd,
   canonicalUrl,
+  defaultOgImageUrl,
   faqPageJsonLd,
   organizationJsonLd,
   pageTitle,
   siteUrl,
+  webApplicationJsonLd,
   webSiteJsonLd,
 } from '@/seo/meta';
 import { STATIC_SITEMAP_ENTRIES, buildSitemapXml } from '@/seo/sitemap';
@@ -71,6 +73,31 @@ describe('PAGE_SEO (budgets SEO)', () => {
       expect(page.description.length).toBeLessThanOrEqual(175);
     }
   });
+
+  it('couvre chaque outil du site (refonte SEO par feature 2026-07)', () => {
+    const paths = Object.values(PAGE_SEO).map((p) => p.path);
+    for (const expected of [
+      '/document',
+      '/ecos',
+      '/revision',
+      '/partiel',
+      '/audio',
+      '/presentation',
+      '/cv-builder',
+      '/article',
+      '/mentions-legales',
+      '/cgu',
+      '/confidentialite',
+      '/legal',
+    ]) {
+      expect(paths).toContain(expected);
+    }
+  });
+
+  it('les chemins sont uniques (pas de canonicals en conflit)', () => {
+    const paths = Object.values(PAGE_SEO).map((p) => p.path);
+    expect(new Set(paths).size).toBe(paths.length);
+  });
 });
 
 describe('JSON-LD', () => {
@@ -107,6 +134,24 @@ describe('JSON-LD', () => {
     expect('image' in jsonLd).toBe(false);
   });
 
+  it('WebApplication décrit un outil gratuit en français avec URL canonique', () => {
+    const jsonLd = webApplicationJsonLd({
+      name: 'Simulation ECOS — MedInfo AI',
+      description: 'Entraînement aux ECOS.',
+      path: '/ecos',
+    });
+    expect(jsonLd['@type']).toBe('WebApplication');
+    expect(jsonLd.url).toBe(`${DEFAULT_SITE_URL}/ecos`);
+    expect(jsonLd.applicationCategory).toBe('HealthApplication');
+    expect(jsonLd.inLanguage).toBe('fr-FR');
+    expect((jsonLd.offers as { price: string }).price).toBe('0');
+  });
+
+  it('l’image de partage par défaut et le logo Organization pointent vers /og-image.png', () => {
+    expect(defaultOgImageUrl()).toBe(`${DEFAULT_SITE_URL}/og-image.png`);
+    expect(organizationJsonLd().logo).toBe(`${DEFAULT_SITE_URL}/og-image.png`);
+  });
+
   it('BreadcrumbList numérote les positions à partir de 1', () => {
     const jsonLd = breadcrumbJsonLd([
       { name: 'Accueil', path: '/' },
@@ -119,11 +164,29 @@ describe('JSON-LD', () => {
 });
 
 describe('sitemap', () => {
-  it('les entrées statiques couvrent les pages marketing et légales', () => {
+  it('les entrées statiques couvrent les pages marketing, outils et légales', () => {
     const paths = STATIC_SITEMAP_ENTRIES.map((e) => e.path);
-    for (const expected of ['/', '/chat', '/blog', '/a-propos', '/pricing', '/contact', '/cgu']) {
+    for (const expected of [
+      '/',
+      '/chat',
+      '/blog',
+      '/a-propos',
+      '/pricing',
+      '/contact',
+      '/cgu',
+      '/document',
+      '/ecos',
+      '/revision',
+      '/partiel',
+      '/audio',
+      '/presentation',
+      '/cv-builder',
+      '/article',
+      '/legal',
+    ]) {
       expect(paths).toContain(expected);
     }
+    expect(new Set(paths).size).toBe(paths.length);
   });
 
   it('produit un XML valide avec loc absolus et lastmod tronqué au jour', () => {

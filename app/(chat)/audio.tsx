@@ -6,7 +6,7 @@
  * Utilise l'API MediaRecorder (web) pour l'enregistrement côté client.
  * Transcription via /api/transcribe (Whisper).
  */
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,8 @@ import {
 import { useSession } from '@/auth/AuthProvider';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
+import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
+import { SeoHead } from '@/ui/SeoHead';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
 import { ToolsMenu } from '@/ui/ToolsMenu';
@@ -38,9 +40,29 @@ Adapte les sections au contenu réel de la transcription. Le compte rendu doit �
 
 export default function AudioScreen() {
   return (
-    <RoleGate feature="audio">
-      <AudioFeature />
-    </RoleGate>
+    <>
+      {/* SEO par feature (2026-07) : titre/description/canonical + fiche WebApplication,
+          rendus pour tous (y compris visiteurs) — RoleGate ne gate que le contenu. */}
+      <SeoHead
+        title={PAGE_SEO.audio.title}
+        description={PAGE_SEO.audio.description}
+        path={PAGE_SEO.audio.path}
+        jsonLd={[
+          breadcrumbJsonLd([
+            { name: 'Accueil', path: '/' },
+            { name: 'Compte rendu de consultation', path: PAGE_SEO.audio.path },
+          ]),
+          webApplicationJsonLd({
+            name: 'Compte rendu de consultation — MedInfo AI',
+            description: PAGE_SEO.audio.description,
+            path: PAGE_SEO.audio.path,
+          }),
+        ]}
+      />
+      <RoleGate feature="audio">
+        <AudioFeature />
+      </RoleGate>
+    </>
   );
 }
 
@@ -71,10 +93,38 @@ function AudioFeature() {
   }
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const audioBlobRef = useRef<Blob | null>(null);
   const mimeTypeRef = useRef<string>('audio/webm');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Coupe TOUT le matériel d'enregistrement (voyant micro compris) sans passer par
+  // les callbacks : utilisé quand on abandonne (changement d'onglet, unmount) —
+  // sinon le micro restait ouvert et l'interval tournait en fond.
+  const releaseRecordingHardware = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    const mr = mediaRecorderRef.current;
+    if (mr) {
+      mr.ondataavailable = null;
+      mr.onstop = null;
+      if (mr.state !== 'inactive') {
+        try {
+          mr.stop();
+        } catch {
+          /* déjà arrêté */
+        }
+      }
+      mediaRecorderRef.current = null;
+    }
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+  }, []);
+
+  useEffect(() => releaseRecordingHardware, [releaseRecordingHardware]);
 
   if (Platform.OS !== 'web') {
     return (
@@ -102,6 +152,7 @@ function AudioFeature() {
 
     try {
       const stream = await (navigator as any).mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const mimeType =
         MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
           ? 'audio/webm;codecs=opus'
@@ -189,6 +240,8 @@ function AudioFeature() {
   }
 
   function reset() {
+    // Un enregistrement encore en cours est abandonné : micro et timer libérés.
+    releaseRecordingHardware();
     audioBlobRef.current = null;
     setRecordState('idle');
     setTranscription('');

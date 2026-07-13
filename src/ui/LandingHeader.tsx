@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
@@ -65,6 +65,15 @@ export function LandingHeader() {
 
   return (
     <View style={styles.bar}>
+      {/* Fermeture au clic à l'extérieur : calque plein écran (web : position fixed)
+          rendu SOUS la barre — les liens du header et le menu restent cliquables. */}
+      {openMenu ? (
+        <Pressable
+          style={styles.clickAway}
+          onPress={() => setOpenMenu(null)}
+          accessibilityLabel="Fermer le menu"
+        />
+      ) : null}
       <View style={styles.inner}>
         <Pressable
           style={styles.brandRow}
@@ -190,6 +199,16 @@ function DropdownCard({ entries, onSelect }: { entries: MenuEntry[]; onSelect: (
 }
 
 const styles = StyleSheet.create({
+  clickAway: {
+    // RN web transmet 'fixed' au CSS ; sur natif, repli absolu (les dropdowns du
+    // header sont une surface web-first).
+    position: Platform.OS === 'web' ? ('fixed' as 'absolute') : 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    ...(Platform.OS === 'web' ? ({ cursor: 'auto' } as object) : null),
+  },
   bar: {
     backgroundColor: tokens.colors.surface,
     borderBottomWidth: 1,

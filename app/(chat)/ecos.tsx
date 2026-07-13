@@ -20,9 +20,12 @@ import {
 import { Link } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
+import { isAdminUserId } from '@/admin/index';
 import { getSupabaseClient } from '@/db/supabase';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
+import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
+import { SeoHead } from '@/ui/SeoHead';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
 import { DictationButton } from '@/ui/DictationButton';
@@ -60,6 +63,8 @@ interface EcosCase {
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  /** Bulle d'erreur UI : jamais envoyée à l'IA ni comptée dans la transcription. */
+  error?: boolean;
 }
 
 // ── Chargement des cas depuis Supabase ──────────────────────────────────────
@@ -275,9 +280,29 @@ type Phase = 'selection' | 'preparation' | 'simulation' | 'evaluation';
 
 export default function EcosScreen() {
   return (
-    <RoleGate feature="ecos">
-      <EcosScreenInner />
-    </RoleGate>
+    <>
+      {/* SEO par feature (2026-07) : titre/description/canonical + fiche WebApplication,
+          rendus pour tous (y compris visiteurs) — RoleGate ne gate que le contenu. */}
+      <SeoHead
+        title={PAGE_SEO.ecos.title}
+        description={PAGE_SEO.ecos.description}
+        path={PAGE_SEO.ecos.path}
+        jsonLd={[
+          breadcrumbJsonLd([
+            { name: 'Accueil', path: '/' },
+            { name: 'Simulation ECOS', path: PAGE_SEO.ecos.path },
+          ]),
+          webApplicationJsonLd({
+            name: 'Simulation ECOS — MedInfo AI',
+            description: PAGE_SEO.ecos.description,
+            path: PAGE_SEO.ecos.path,
+          }),
+        ]}
+      />
+      <RoleGate feature="ecos">
+        <EcosScreenInner />
+      </RoleGate>
+    </>
   );
 }
 
@@ -346,11 +371,15 @@ function EcosScreenInner() {
     }
   }, []);
 
-  useEffect(() => {
-    if (persona === 'student') loadDashboard();
-  }, [persona, loadDashboard]);
+  // Même règle que RoleGate/CLAUDE.md : étudiants ET admins (quelle que soit leur
+  // persona active) accèdent au module — le garde interne enfermait les admins.
+  const canUseEcos = persona === 'student' || (user ? isAdminUserId(user.id) : false);
 
-  if (persona !== 'student') {
+  useEffect(() => {
+    if (canUseEcos) loadDashboard();
+  }, [canUseEcos, loadDashboard]);
+
+  if (!canUseEcos) {
     return (
       <View style={styles.gateContainer}>
         <View style={styles.gateCard}>
@@ -423,7 +452,12 @@ function EcosScreenInner() {
     const text = input.trim();
     if (!text || aiLoading || !selectedCase) return;
     setInput('');
-    const newMessages: Message[] = [...messages, { role: 'user', content: text }];
+    // Les bulles d'erreur UI sont retirées de l'historique envoyé au « patient »
+    // (et de l'affichage : le nouvel essai les remplace).
+    const newMessages: Message[] = [
+      ...messages.filter((m) => !m.error),
+      { role: 'user', content: text },
+    ];
     setMessages(newMessages);
     setAiLoading(true);
 
@@ -474,18 +508,20 @@ RÈGLES :
         scrollRef.current?.scrollToEnd({ animated: false });
       }
 
+      // Flux terminé sans un seul octet : traite comme une erreur au lieu de
+      // laisser la question de l'étudiant sans réponse ni explication.
+      if (!started) throw new Error('Réponse vide.');
+
       // Normalise la version finale (trim) une fois le flux terminé.
-      if (started) {
-        setMessages((prev) => {
-          const copy = prev.slice();
-          copy[copy.length - 1] = { role: 'assistant', content: reply.trim() };
-          return copy;
-        });
-      }
+      setMessages((prev) => {
+        const copy = prev.slice();
+        copy[copy.length - 1] = { role: 'assistant', content: reply.trim() };
+        return copy;
+      });
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: '[Erreur de communication. Réessayez.]' },
+        { role: 'assistant', content: '[Erreur de communication. Réessayez.]', error: true },
       ]);
     } finally {
       setAiLoading(false);
@@ -511,6 +547,20 @@ RÈGLES :
     if (ok) void finishEcos();
   }
 
+  // Expiration du chrono : s'il n'y a rien à évaluer (aucun tour étudiant), on
+  // revient au dashboard — sinon l'écran restait figé sans aucune sortie.
+  function handleTimerExpire() {
+    const userTurns = messages.filter((m) => m.role === 'user').length;
+    if (userTurns === 0) {
+      setSelectedCase(null);
+      setMessages([]);
+      setInput('');
+      setPhase('selection');
+      return;
+    }
+    void finishEcos();
+  }
+
   async function finishEcos() {
     if (!selectedCase || messages.length < 2) return;
     setPhase('evaluation');
@@ -518,7 +568,9 @@ RÈGLES :
     setViewedAttempt(null);
     setSaveError(false);
 
+    // Les bulles d'erreur UI ne font pas partie de la prestation évaluée.
     const transcript = messages
+      .filter((m) => !m.error)
       .map((m) => `${m.role === 'user' ? 'ÉTUDIANT' : 'PATIENT'}: ${m.content}`)
       .join('\n\n');
 
@@ -864,7 +916,7 @@ RÈGLES :
           </View>
           <Timer
             totalSeconds={selectedCase.duree * 60}
-            onExpire={finishEcos}
+            onExpire={handleTimerExpire}
           />
         </View>
 

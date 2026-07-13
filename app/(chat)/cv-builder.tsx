@@ -17,6 +17,8 @@ import { View, Text, StyleSheet, Platform } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
 import { tokens } from '@/ui/tokens';
+import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
+import { SeoHead } from '@/ui/SeoHead';
 import { RoleGate } from '@/ui/RoleGate';
 import { ToolsMenu } from '@/ui/ToolsMenu';
 
@@ -78,9 +80,29 @@ function CvBuilderInner() {
 
 export default function CvBuilderScreen() {
   return (
-    <RoleGate feature="cv-builder">
-      <CvBuilderInner />
-    </RoleGate>
+    <>
+      {/* SEO par feature (2026-07) : titre/description/canonical + fiche WebApplication,
+          rendus pour tous (y compris visiteurs) — RoleGate ne gate que le contenu. */}
+      <SeoHead
+        title={PAGE_SEO.cvBuilder.title}
+        description={PAGE_SEO.cvBuilder.description}
+        path={PAGE_SEO.cvBuilder.path}
+        jsonLd={[
+          breadcrumbJsonLd([
+            { name: 'Accueil', path: '/' },
+            { name: 'Créateur de CV médical', path: PAGE_SEO.cvBuilder.path },
+          ]),
+          webApplicationJsonLd({
+            name: 'Créateur de CV médical — MedInfo AI',
+            description: PAGE_SEO.cvBuilder.description,
+            path: PAGE_SEO.cvBuilder.path,
+          }),
+        ]}
+      />
+      <RoleGate feature="cv-builder">
+        <CvBuilderInner />
+      </RoleGate>
+    </>
   );
 }
 

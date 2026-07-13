@@ -396,6 +396,10 @@
   var art = blankArticle('original');
   var serverId = null;
   var dirty = false;
+  var docGen = 0;            // change quand on charge/crée un autre article : une réponse
+                             // d'autosave tardive ne doit pas rattacher serverId au mauvais document
+  var editSeq = 0;           // incrémenté à chaque édition : ne remet dirty=false que si rien n'a bougé
+  var saveInFlight = false;
   var ui = { view: 'write', activeSectionId: null, cursor: null /* {sectionId, pos} */ };
 
   function setStatus(t) { document.getElementById('status').textContent = t || ''; }
@@ -422,7 +426,7 @@
   var saveTimer = null;
   // Modification LÉGÈRE (frappe au clavier) : état + compteurs, pas de re-rendu de l'éditeur.
   function touchLight() {
-    dirty = true; saveLocal(); setStatus('Modifié…');
+    dirty = true; editSeq++; saveLocal(); setStatus('Modifié…');
     updateCounts();
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function () { if (authToken) saveCloud(true); }, 1600);
@@ -524,14 +528,12 @@
     if (s(ref.title)) parts.push(s(ref.title).replace(/\.$/, '') + '.');
     if (s(ref.journal)) {
       var cite = s(ref.journal).replace(/\.$/, '');
-      if (s(ref.year)) {
-        cite += '. ' + s(ref.year);
-        if (s(ref.volume)) {
-          cite += ';' + s(ref.volume);
-          if (s(ref.issue)) cite += '(' + s(ref.issue) + ')';
-          if (s(ref.pages)) cite += ':' + s(ref.pages);
-        } else if (s(ref.pages)) cite += ':' + s(ref.pages);
-      }
+      // Année, volume(numéro):pages — chaque champ est émis dès qu'il est présent
+      // (une référence sans volume ou sans année ne perd plus son numéro/ses pages).
+      if (s(ref.year)) cite += '. ' + s(ref.year);
+      if (s(ref.volume)) cite += ';' + s(ref.volume);
+      if (s(ref.issue)) cite += '(' + s(ref.issue) + ')';
+      if (s(ref.pages)) cite += ':' + s(ref.pages);
       parts.push(cite + '.');
     } else if (s(ref.year)) parts.push(s(ref.year) + '.');
     if (s(ref.doi)) parts.push('doi:' + s(ref.doi).replace(/^doi:\s*/i, ''));
@@ -981,9 +983,14 @@
     box.appendChild(grid);
     var ok = el('button', { class: 'btn btn-accent' }, ['Enregistrer']);
     ok.addEventListener('click', function () {
-      ref.authors = authorsIn.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean);
-      fields.forEach(function (f) { ref[f[1]] = inputs[f[1]].value.trim(); });
-      if (!ref.title && !ref.doi && !ref.pmid) { alert('Renseigne au moins un titre (ou un DOI/PMID).'); return; }
+      // Lecture dans un brouillon : la référence existante n'est écrasée qu'une fois
+      // la validation passée (sinon « Enregistrer » avec champs vides la mutilait).
+      var draftAuthors = authorsIn.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+      var draftFields = {};
+      fields.forEach(function (f) { draftFields[f[1]] = inputs[f[1]].value.trim(); });
+      if (!draftFields.title && !draftFields.doi && !draftFields.pmid) { alert('Renseigne au moins un titre (ou un DOI/PMID).'); return; }
+      ref.authors = draftAuthors;
+      fields.forEach(function (f) { ref[f[1]] = draftFields[f[1]]; });
       if (isNew) { ref.id = makeRefId(ref); art.references.push(ref); }
       touch();
     });
@@ -1271,17 +1278,32 @@
 
   function saveCloud(silent) {
     if (!authToken) { if (!silent) alert('Connecte-toi (compte étudiant ou professionnel) pour sauvegarder dans le cloud — la sauvegarde locale reste active.'); return; }
+    // Une requête déjà en vol : re-tenter après, sinon un POST sans id partirait en
+    // parallèle et créerait une ligne en double.
+    if (saveInFlight) {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(function () { saveCloud(silent); }, 800);
+      return;
+    }
+    saveInFlight = true;
+    var genAtSave = docGen, editAtSave = editSeq;
     setStatus('Enregistrement…');
     var body = { document: art, docType: art.meta.docType, title: art.meta.title };
     if (serverId) body.id = serverId;
     api('/api/article-docs', { method: 'POST', body: JSON.stringify(body) })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
       .then(function (res) {
+        saveInFlight = false;
+        // Le document affiché a changé pendant la requête : ne surtout pas lui
+        // rattacher l'id du document précédent (écrasement croisé silencieux).
+        if (genAtSave !== docGen) return;
         if (!res.ok) { setStatus('Échec de l’enregistrement'); return; }
-        serverId = res.j.id; dirty = false; saveLocal();
-        setStatus('Enregistré ✓');
+        serverId = res.j.id;
+        if (editAtSave === editSeq) dirty = false;
+        saveLocal();
+        setStatus(editAtSave === editSeq ? 'Enregistré ✓' : 'Modifié…');
       })
-      .catch(function () { setStatus('Hors-ligne — sauvegarde locale'); });
+      .catch(function () { saveInFlight = false; if (genAtSave === docGen) setStatus('Hors-ligne — sauvegarde locale'); });
   }
 
   function openHistory() {
@@ -1316,14 +1338,15 @@
   function loadCloud(id) {
     api('/api/article-docs?id=' + id).then(function (r) { return r.json(); }).then(function (j) {
       if (j && j.article && j.article.document && j.article.document.meta) {
-        art = j.article.document; serverId = j.article.id;
+        docGen++; editSeq++;
+        art = j.article.document; serverId = j.article.id; dirty = false;
         if (!art.references) art.references = [];
         if (!art.checklist) art.checklist = {};
         ui.activeSectionId = null;
         saveLocal(); renderAll(); setStatus('Article chargé');
         document.getElementById('histModal').classList.remove('open');
       } else alert('Chargement impossible.');
-    });
+    }).catch(function () { alert('Chargement impossible (réseau). Réessaie.'); });
   }
 
   // ── Aides IA (drawer) ─────────────────────────────────────────────────────
@@ -1538,7 +1561,7 @@
     secs[1].content = 'Cohorte rétrospective monocentrique (2019-2024). Critère de jugement principal : événements cardiovasculaires majeurs (MACE) à un an [@demo2023].';
     secs[2].content = 'Au total, 184 patients ont été inclus (âge médian 41 ans, 82 % d’hommes, 64 % de fumeurs actifs). À un an, le taux de MACE était de 7,6 % (IC 95 % : 4,3-12,1).';
     secs[3].content = 'Dans cette cohorte illustrative, le pronostic à un an était favorable. Ces données d’exemple montrent surtout comment structurer un abstract : contexte, objectif, méthodes, résultats chiffrés, conclusion prudente.';
-    serverId = null;
+    docGen++; serverId = null;
     ui.activeSectionId = null;
     ui.view = 'write';
     touch();
@@ -1548,7 +1571,7 @@
   // ── Wiring ────────────────────────────────────────────────────────────────
   document.getElementById('btn-new').addEventListener('click', function () {
     if (!confirm('Repartir d’un article vierge ? (la sauvegarde locale sera remplacée ; les articles cloud restent dans « Mes articles »)')) return;
-    art = blankArticle(art.meta.docType); serverId = null; ui.activeSectionId = null; touch();
+    docGen++; art = blankArticle(art.meta.docType); serverId = null; ui.activeSectionId = null; touch();
   });
   document.getElementById('btn-example').addEventListener('click', example);
   document.getElementById('btn-save').addEventListener('click', function () { saveCloud(false); });

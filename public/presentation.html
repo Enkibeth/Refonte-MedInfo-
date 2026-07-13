@@ -340,7 +340,20 @@ function normalizeDeck(input) {
   const options = { ...DEFAULT_OPTIONS, ...(deck.options || {}) };
   const theme = ["v1", "v2", "v3"].includes(deck.theme) ? deck.theme : "v2";
   let slides = Array.isArray(deck.slides) ? deck.slides : [];
-  slides = slides.filter((s) => s && SLIDE_TYPES[s.type]).map((s) => ({ ...SLIDE_TYPES[s.type].blank(), ...s, type: s.type }));
+  slides = slides.filter((s) => s && SLIDE_TYPES[s.type]).map((s) => {
+    const blank = SLIDE_TYPES[s.type].blank();
+    const merged = { ...blank, ...s, type: s.type };
+    // Coercition par kind de champ : l'IA renvoie parfois une chaîne là où l'éditeur
+    // attend un tableau (items, stats…) → aperçu vide et export PPTX en TypeError.
+    (SLIDE_TYPES[s.type].fields || []).forEach((f) => {
+      const v = merged[f.key];
+      if (f.kind === "list") merged[f.key] = Array.isArray(v) ? v.map(String) : typeof v === "string" && v.trim() ? v.split("\n").map((l) => l.trim()).filter(Boolean) : blank[f.key] || [];
+      else if (f.kind === "stats" || f.kind === "matrix") merged[f.key] = Array.isArray(v) ? v : blank[f.key] || [];
+      else if (f.kind === "column") merged[f.key] = v && typeof v === "object" && !Array.isArray(v) ? { label: String(v.label || ""), items: Array.isArray(v.items) ? v.items.map(String) : typeof v.items === "string" ? v.items.split("\n").map((l) => l.trim()).filter(Boolean) : [] } : blank[f.key] || { label: "", items: [] };
+      else if (f.kind === "table") merged[f.key] = v && typeof v === "object" && !Array.isArray(v) ? { header: Array.isArray(v.header) ? v.header : [], rows: Array.isArray(v.rows) ? v.rows.map((r) => (Array.isArray(r) ? r : String(r).split("|").map((c) => c.trim()))) : [] } : blank[f.key] || { header: [], rows: [] };
+    });
+    return merged;
+  });
   if (slides.length === 0) slides = [createSlide("cover")];
   return { meta, theme, options, slides };
 }
@@ -568,49 +581,56 @@ const listToLines = (a) => (Array.isArray(a) ? a.join("\n") : "");
 const rowText = (c) => (Array.isArray(c) ? c.join(" | ") : "");
 const textRow = (s) => s.split("|").map((c) => c.trim());
 const hx = (v) => "#" + v;
-function setSlide(i, next) { state.deck.slides[i] = next; render(); }
+function setSlide(i, next, light) { state.deck.slides[i] = next; if (light) renderPreviewLight(); else render(); }
+// Frappe au clavier : re-rendre tout le DOM détruisait le champ en cours de saisie
+// (focus perdu à chaque caractère). On ne met alors à jour que le volet d'aperçu.
+function renderPreviewLight() {
+  const right = document.querySelector(".mip-right");
+  if (right) { right.innerHTML = ""; right.append(previewEl()); scheduleAutosave(); }
+  else render();
+}
 
 function fieldEl(field, slide, onChange) {
   const v = slide[field.key];
   const lab = (txt) => h("label", {}, txt);
   const wrap = (...kids) => h("div", { class: "mip-field" }, lab(field.label), ...kids);
-  if (field.kind === "text" || field.kind === "number") return wrap(h("input", { class: "mip-input", type: field.kind === "number" ? "number" : "text", value: v ?? "", placeholder: field.placeholder || "", oninput: (e) => onChange(e.target.value) }));
-  if (field.kind === "textarea") { const ta = h("textarea", { class: "mip-textarea", placeholder: field.placeholder || "" }); ta.value = v || ""; ta.addEventListener("input", (e) => onChange(e.target.value)); return wrap(ta); }
-  if (field.kind === "list") { const ta = h("textarea", { class: "mip-textarea", placeholder: "Un élément par ligne" }); ta.value = listToLines(v); ta.addEventListener("input", (e) => onChange(linesToList(e.target.value))); return wrap(ta, h("span", { class: "mip-hint" }, "Un élément par ligne.")); }
+  if (field.kind === "text" || field.kind === "number") return wrap(h("input", { class: "mip-input", type: field.kind === "number" ? "number" : "text", value: v ?? "", placeholder: field.placeholder || "", oninput: (e) => onChange(e.target.value, true) }));
+  if (field.kind === "textarea") { const ta = h("textarea", { class: "mip-textarea", placeholder: field.placeholder || "" }); ta.value = v || ""; ta.addEventListener("input", (e) => onChange(e.target.value, true)); return wrap(ta); }
+  if (field.kind === "list") { const ta = h("textarea", { class: "mip-textarea", placeholder: "Un élément par ligne" }); ta.value = listToLines(v); ta.addEventListener("input", (e) => onChange(linesToList(e.target.value), true)); return wrap(ta, h("span", { class: "mip-hint" }, "Un élément par ligne.")); }
   if (field.kind === "column") {
     const col = v && typeof v === "object" ? v : { label: "", items: [] };
-    const inp = h("input", { class: "mip-input", value: col.label || "", placeholder: "Intitulé de la colonne", oninput: (e) => onChange({ ...col, label: e.target.value }) });
-    const ta = h("textarea", { class: "mip-textarea", style: "margin-top:6px", placeholder: "Un point par ligne" }); ta.value = listToLines(col.items); ta.addEventListener("input", (e) => onChange({ ...col, items: linesToList(e.target.value) }));
+    const inp = h("input", { class: "mip-input", value: col.label || "", placeholder: "Intitulé de la colonne", oninput: (e) => onChange({ ...col, label: e.target.value }, true) });
+    const ta = h("textarea", { class: "mip-textarea", style: "margin-top:6px", placeholder: "Un point par ligne" }); ta.value = listToLines(col.items); ta.addEventListener("input", (e) => onChange({ ...col, items: linesToList(e.target.value) }, true));
     return wrap(inp, ta);
   }
   if (field.kind === "stats") {
     const stats = Array.isArray(v) ? v : [];
     const rows = stats.map((s, i) => h("div", { class: "mip-stat-item" },
-      h("input", { class: "mip-input", style: "flex:0 0 38%", value: s.value || "", placeholder: "Valeur", oninput: (e) => { stats[i] = { ...s, value: e.target.value }; onChange([...stats]); } }),
-      h("input", { class: "mip-input", value: s.label || "", placeholder: "Libellé", oninput: (e) => { stats[i] = { ...s, label: e.target.value }; onChange([...stats]); } }),
+      h("input", { class: "mip-input", style: "flex:0 0 38%", value: s.value || "", placeholder: "Valeur", oninput: (e) => { stats[i] = { ...s, value: e.target.value }; onChange([...stats], true); } }),
+      h("input", { class: "mip-input", value: s.label || "", placeholder: "Libellé", oninput: (e) => { stats[i] = { ...s, label: e.target.value }; onChange([...stats], true); } }),
       h("button", { class: "mip-iconbtn", onclick: () => onChange(stats.filter((_, j) => j !== i)) }, "✕")));
     return wrap(...rows, h("div", { class: "mip-addrow" }, h("button", { class: "mip-btn mip-btn-sm", onclick: () => onChange([...stats, { value: "", label: "" }]) }, "+ Ajouter un chiffre")));
   }
   if (field.kind === "matrix") {
     const base = [0, 1, 2, 3].map((i) => (Array.isArray(v) && v[i]) || { label: "", text: "" });
-    const cells = base.map((c, i) => { const ta = h("textarea", { class: "mip-textarea", style: "margin-top:6px;min-height:48px", placeholder: "Description" }); ta.value = c.text || ""; ta.addEventListener("input", (e) => { base[i] = { ...base[i], text: e.target.value }; onChange([...base]); }); return h("div", { style: "border:1px solid var(--rule-2);border-radius:6px;padding:8px" }, h("input", { class: "mip-input", value: c.label || "", placeholder: "Titre quadrant " + (i + 1), oninput: (e) => { base[i] = { ...base[i], label: e.target.value }; onChange([...base]); } }), ta); });
+    const cells = base.map((c, i) => { const ta = h("textarea", { class: "mip-textarea", style: "margin-top:6px;min-height:48px", placeholder: "Description" }); ta.value = c.text || ""; ta.addEventListener("input", (e) => { base[i] = { ...base[i], text: e.target.value }; onChange([...base], true); }); return h("div", { style: "border:1px solid var(--rule-2);border-radius:6px;padding:8px" }, h("input", { class: "mip-input", value: c.label || "", placeholder: "Titre quadrant " + (i + 1), oninput: (e) => { base[i] = { ...base[i], label: e.target.value }; onChange([...base], true); } }), ta); });
     return wrap(h("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:8px" }, ...cells));
   }
   if (field.kind === "table") {
     const tbl = v && typeof v === "object" ? v : { header: [], rows: [] };
     const header = Array.isArray(tbl.header) ? tbl.header : [], rows = Array.isArray(tbl.rows) ? tbl.rows : [];
-    const headerInput = h("input", { class: "mip-input", style: "margin-top:6px;font-weight:700", value: rowText(header), placeholder: "Critère | Option A | Option B", oninput: (e) => onChange({ ...tbl, header: textRow(e.target.value) }) });
-    const rowEls = rows.map((r, i) => h("div", { class: "mip-list-item", style: "margin-top:6px" }, h("input", { class: "mip-input", value: rowText(r), placeholder: "Cellule | Cellule | Cellule", oninput: (e) => { const rr = [...rows]; rr[i] = textRow(e.target.value); onChange({ ...tbl, rows: rr }); } }), h("button", { class: "mip-iconbtn", onclick: () => onChange({ ...tbl, rows: rows.filter((_, j) => j !== i) }) }, "✕")));
+    const headerInput = h("input", { class: "mip-input", style: "margin-top:6px;font-weight:700", value: rowText(header), placeholder: "Critère | Option A | Option B", oninput: (e) => onChange({ ...tbl, header: textRow(e.target.value) }, true) });
+    const rowEls = rows.map((r, i) => h("div", { class: "mip-list-item", style: "margin-top:6px" }, h("input", { class: "mip-input", value: rowText(r), placeholder: "Cellule | Cellule | Cellule", oninput: (e) => { const rr = [...rows]; rr[i] = textRow(e.target.value); onChange({ ...tbl, rows: rr }, true); } }), h("button", { class: "mip-iconbtn", onclick: () => onChange({ ...tbl, rows: rows.filter((_, j) => j !== i) }) }, "✕")));
     const addBtn = h("div", { class: "mip-addrow" }, h("button", { class: "mip-btn mip-btn-sm", onclick: () => onChange({ ...tbl, rows: [...rows, header.map(() => "…")] }) }, "+ Ajouter une ligne"));
     return wrap(h("span", { class: "mip-hint" }, "Cellules séparées par « | ». 1re ligne = en-tête."), headerInput, ...rowEls, addBtn);
   }
-  return wrap(h("input", { class: "mip-input", value: typeof v === "string" ? v : "", oninput: (e) => onChange(e.target.value) }));
+  return wrap(h("input", { class: "mip-input", value: typeof v === "string" ? v : "", oninput: (e) => onChange(e.target.value, true) }));
 }
 function editorEl() {
   const slide = state.deck.slides[state.sel];
   if (!slide) return h("div", { class: "mip-editor" }, h("p", { class: "mip-hint" }, "Aucune slide."));
   const def = SLIDE_TYPES[slide.type], words = slideTextLength(slide);
-  const onField = (key) => (val) => { slide[key] = val; setSlide(state.sel, { ...slide }); };
+  const onField = (key) => (val, light) => { slide[key] = val; setSlide(state.sel, { ...slide }, light); };
   return h("div", { class: "mip-editor" },
     h("div", { class: "mip-editor-head" }, h("h3", {}, "Slide " + (state.sel + 1) + " · " + def.label), h("span", { class: "mip-editor-hint" }, def.hint)),
     words > 90 ? h("div", { class: "mip-banner mip-banner-warn" }, "Slide dense (~" + words + " mots).") : null,
@@ -787,7 +807,7 @@ async function exportPptx(btn) {
 /* ----- Config ----- */
 function configEl() {
   const meta = state.deck.meta, opt = state.deck.options;
-  const setMeta = (k) => (e) => { meta[k] = e.target.value; if (k !== "title") render(); else scheduleAutosave(); };
+  const setMeta = (k) => (e) => { meta[k] = e.target.value; renderPreviewLight(); };
   const field = (label, key, ph) => h("div", { class: "mip-field" }, h("label", {}, label), h("input", { class: "mip-input", value: meta[key] || "", placeholder: ph || "", oninput: setMeta(key) }));
   const themeChips = THEME_LIST.map((t) => {
     const a = THEMES[t.id].c;
@@ -841,7 +861,9 @@ async function saveDeck(opts) {
   if (!authToken) { setSaveStatus("offline"); return; }
   if (saving) return;
   const content = currentContent();
-  if (state.deckId && content === lastSavedContent) { setSaveStatus("saved"); return; }
+  // Contenu inchangé : rien à envoyer — deckId présent ou non. (Sans ce garde, chaque
+  // visite créait un deck vierge fantôme, et un deck supprimé ressuscitait.)
+  if (content === lastSavedContent) { setSaveStatus(state.deckId ? "saved" : "idle"); return; }
   saving = true; setSaveStatus("saving");
   try {
     const payload = { id: state.deckId, title: state.deck.meta.title, theme: state.deck.theme, deck: state.deck, aiHistory: state.aiHistory };
@@ -890,7 +912,13 @@ async function deleteDeck(id) {
   try {
     const res = await apiFetch("/api/presentations?id=" + encodeURIComponent(id), { method: "DELETE" });
     if (!res.ok) return;
-    if (state.deckId === id) { state.deckId = null; }
+    if (state.deckId === id) {
+      // Le deck affiché vient d'être supprimé : repartir d'un deck vierge, sinon le
+      // prochain autosave re-créait le deck « supprimé définitivement » sous un autre id.
+      const keepOpen = state.libraryOpen;
+      newDeck();
+      state.libraryOpen = keepOpen;
+    }
     await refreshLibrary(); render();
   } catch (e) {}
 }
@@ -941,6 +969,8 @@ function render() {
   const main = h("div", { class: "mip-main" }, left, h("div", { class: "mip-right" }, previewEl()));
   app.append(header, configEl(), main);
   if (state.libraryOpen) app.append(libraryModal());
+  const chatLog = app.querySelector(".mip-chat-log");
+  if (chatLog) chatLog.scrollTop = chatLog.scrollHeight;
   scheduleAutosave();
 }
 render();

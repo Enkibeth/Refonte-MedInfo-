@@ -21,6 +21,24 @@ const ROUTES = [
   { from: '(auth)/sign-in.html', to: 'sign-in/index.html' },
   { from: '(account)/account.html', to: 'account/index.html' },
   { from: '+not-found.html', to: '404.html' },
+  // Refonte SEO 2026-07 : toutes les pages publiques indexables ont leur coquille
+  // statique (marketing, tarifs, outils, légal) — les crawlers reçoivent le HTML
+  // pré-rendu avec <SeoHead> même si la fonction serveur est contournée.
+  { from: '(marketing)/a-propos.html', to: 'a-propos/index.html' },
+  { from: '(marketing)/contact.html', to: 'contact/index.html' },
+  { from: '(billing)/pricing.html', to: 'pricing/index.html' },
+  { from: '(chat)/document.html', to: 'document/index.html' },
+  { from: '(chat)/ecos.html', to: 'ecos/index.html' },
+  { from: '(chat)/revision.html', to: 'revision/index.html' },
+  { from: '(chat)/partiel.html', to: 'partiel/index.html' },
+  { from: '(chat)/audio.html', to: 'audio/index.html' },
+  { from: '(chat)/presentation.html', to: 'presentation/index.html' },
+  { from: '(chat)/cv-builder.html', to: 'cv-builder/index.html' },
+  { from: '(chat)/article.html', to: 'article/index.html' },
+  { from: '(legal)/mentions-legales.html', to: 'mentions-legales/index.html' },
+  { from: '(legal)/cgu.html', to: 'cgu/index.html' },
+  { from: '(legal)/confidentialite.html', to: 'confidentialite/index.html' },
+  { from: '(legal)/legal.html', to: 'legal/index.html' },
 ];
 
 const serverDir = path.join(process.cwd(), 'dist/server');
