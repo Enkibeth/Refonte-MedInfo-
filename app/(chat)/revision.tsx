@@ -6,7 +6,7 @@
  * le moteur DÉTERMINISTE (`@/revision/engine`) — aucune IA, aucun chiffre inventé. Données
  * pédagogiques uniquement (jamais de symptôme/patient/santé). Persistance own-row (RLS).
  */
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,8 @@ import {
 import { useSession } from '@/auth/AuthProvider';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
+import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
+import { SeoHead } from '@/ui/SeoHead';
 import { RoleGate } from '@/ui/RoleGate';
 import { ToolsMenu } from '@/ui/ToolsMenu';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
@@ -98,9 +100,29 @@ type BoostIntent = (typeof BOOST_INTENTS)[number]['key'];
 
 export default function RevisionScreen() {
   return (
-    <RoleGate feature="revision">
-      <RevisionScreenInner />
-    </RoleGate>
+    <>
+      {/* SEO par feature (2026-07) : titre/description/canonical + fiche WebApplication,
+          rendus pour tous (y compris visiteurs) — RoleGate ne gate que le contenu. */}
+      <SeoHead
+        title={PAGE_SEO.revision.title}
+        description={PAGE_SEO.revision.description}
+        path={PAGE_SEO.revision.path}
+        jsonLd={[
+          breadcrumbJsonLd([
+            { name: 'Accueil', path: '/' },
+            { name: 'Planning de révisions', path: PAGE_SEO.revision.path },
+          ]),
+          webApplicationJsonLd({
+            name: 'Planning de révisions — MedInfo AI',
+            description: PAGE_SEO.revision.description,
+            path: PAGE_SEO.revision.path,
+          }),
+        ]}
+      />
+      <RoleGate feature="revision">
+        <RevisionScreenInner />
+      </RoleGate>
+    </>
   );
 }
 
@@ -120,6 +142,15 @@ function RevisionScreenInner() {
   const [plansOpen, setPlansOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  // Compteurs de révision : éditions (editRev) et changements de document (docRev),
+  // comparés en fin de sauvegarde pour ne pas écraser un état plus récent.
+  const editRevRef = useRef(0);
+  const docRevRef = useRef(0);
+
+  function markDirty() {
+    editRevRef.current += 1;
+    setDirty(true);
+  }
   const [error, setError] = useState<string | null>(null);
   const [boostLoading, setBoostLoading] = useState(false);
   const [boostText, setBoostText] = useState<string | null>(null);
@@ -151,7 +182,7 @@ function RevisionScreenInner() {
 
   function patchStored(patch: Partial<StoredPlan>) {
     setStored((prev) => ({ ...prev, ...patch }));
-    setDirty(true);
+    markDirty();
   }
 
   function patchResource(id: string, patch: Partial<StoredResource>) {
@@ -159,7 +190,7 @@ function RevisionScreenInner() {
       ...prev,
       resources: prev.resources.map((r) => (r.id === id ? { ...r, ...patch } : r)),
     }));
-    setDirty(true);
+    markDirty();
   }
 
   function addResource() {
@@ -179,12 +210,12 @@ function RevisionScreenInner() {
         },
       ],
     }));
-    setDirty(true);
+    markDirty();
   }
 
   function removeResource(id: string) {
     setStored((prev) => ({ ...prev, resources: prev.resources.filter((r) => r.id !== id) }));
-    setDirty(true);
+    markDirty();
   }
 
   const persist = useCallback(
@@ -193,6 +224,11 @@ function RevisionScreenInner() {
         setError('Connecte-toi pour enregistrer ton plan.');
         return;
       }
+      // Jetons capturés au départ : une édition pendant la requête ne doit pas être
+      // « oubliée » (dirty écrasé), et un changement de plan pendant la requête ne
+      // doit pas récupérer l'id du plan précédent.
+      const editRevAtSave = editRevRef.current;
+      const docRevAtSave = docRevRef.current;
       setSaving(true);
       setError(null);
       try {
@@ -203,8 +239,10 @@ function RevisionScreenInner() {
           examType: nextExamType,
           plan: nextStored,
         });
-        setPlanId(id);
-        setDirty(false);
+        if (docRevRef.current === docRevAtSave) {
+          setPlanId(id);
+          if (editRevRef.current === editRevAtSave) setDirty(false);
+        }
         await refreshPlans();
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Enregistrement impossible.');
@@ -260,6 +298,7 @@ function RevisionScreenInner() {
         setError('Plan introuvable.');
         return;
       }
+      docRevRef.current += 1;
       setPlanId(record.id);
       setTitle(record.title);
       setExamType(record.exam_type);
@@ -274,6 +313,7 @@ function RevisionScreenInner() {
 
   function startNewPlan() {
     const d = newDraft();
+    docRevRef.current += 1;
     setPlanId(null);
     setTitle(d.title);
     setExamType(d.examType);
@@ -389,7 +429,7 @@ function RevisionScreenInner() {
               defaultValue={title}
               onChangeText={(t) => {
                 setTitle(t);
-                setDirty(true);
+                markDirty();
               }}
               placeholder="Mon plan de révision"
               placeholderTextColor={tokens.colors.textMuted}
@@ -404,7 +444,7 @@ function RevisionScreenInner() {
                 style={[styles.examChip, examType === t && styles.examChipActive]}
                 onPress={() => {
                   setExamType(t);
-                  setDirty(true);
+                  markDirty();
                 }}
                 accessibilityRole="button"
               >

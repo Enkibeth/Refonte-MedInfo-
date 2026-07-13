@@ -231,7 +231,9 @@ function PatientQuestionsBlock({
 }) {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [sent, setSent] = useState(false);
-  const answeredCount = Object.keys(answers).length;
+  // Une désélection laisse une chaîne vide : seules les réponses non vides comptent
+  // (sinon le bouton affichait « (1/3) » actif mais inopérant).
+  const answeredCount = Object.values(answers).filter(Boolean).length;
 
   const submit = () => {
     const parts = questions

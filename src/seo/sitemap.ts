@@ -13,17 +13,27 @@ export interface SitemapEntry {
   priority?: number;
 }
 
-/** Pages statiques indexables (marketing + légal + chat public). */
+/** Pages statiques indexables (marketing + outils + légal + chat public). */
 export const STATIC_SITEMAP_ENTRIES: SitemapEntry[] = [
   { path: PAGE_SEO.home.path, changefreq: 'weekly', priority: 1 },
   { path: PAGE_SEO.chat.path, changefreq: 'weekly', priority: 0.9 },
   { path: PAGE_SEO.blog.path, changefreq: 'weekly', priority: 0.8 },
   { path: PAGE_SEO.about.path, changefreq: 'monthly', priority: 0.7 },
   { path: PAGE_SEO.pricing.path, changefreq: 'monthly', priority: 0.7 },
+  // Pages outils (refonte SEO 2026-07) : une URL indexable par feature.
+  { path: PAGE_SEO.document.path, changefreq: 'monthly', priority: 0.7 },
+  { path: PAGE_SEO.ecos.path, changefreq: 'monthly', priority: 0.7 },
+  { path: PAGE_SEO.revision.path, changefreq: 'monthly', priority: 0.6 },
+  { path: PAGE_SEO.partiel.path, changefreq: 'monthly', priority: 0.6 },
+  { path: PAGE_SEO.audio.path, changefreq: 'monthly', priority: 0.6 },
+  { path: PAGE_SEO.presentation.path, changefreq: 'monthly', priority: 0.6 },
+  { path: PAGE_SEO.cvBuilder.path, changefreq: 'monthly', priority: 0.6 },
+  { path: PAGE_SEO.article.path, changefreq: 'monthly', priority: 0.6 },
   { path: PAGE_SEO.contact.path, changefreq: 'monthly', priority: 0.5 },
-  { path: '/mentions-legales', changefreq: 'yearly', priority: 0.3 },
-  { path: '/cgu', changefreq: 'yearly', priority: 0.3 },
-  { path: '/confidentialite', changefreq: 'yearly', priority: 0.3 },
+  { path: PAGE_SEO.mentionsLegales.path, changefreq: 'yearly', priority: 0.3 },
+  { path: PAGE_SEO.cgu.path, changefreq: 'yearly', priority: 0.3 },
+  { path: PAGE_SEO.confidentialite.path, changefreq: 'yearly', priority: 0.3 },
+  { path: PAGE_SEO.legal.path, changefreq: 'yearly', priority: 0.3 },
 ];
 
 function escapeXml(value: string): string {

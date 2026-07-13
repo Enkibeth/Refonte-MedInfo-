@@ -380,7 +380,7 @@ function coerceCell(v){
 
 // Détecte la colonne identifiant : en-tête explicite d'abord, sinon la colonne
 // la plus « identifiante » (valeurs uniques, entiers longs, pas une plage de notes).
-const ID_HEADER_RE=/num|étud|etud|matricule|\bine\b|^id$|\bid\b|inscription|anonym|candidat/i;
+const ID_HEADER_RE=/^num|n°|identifiant|étud|etud|matricule|\bine\b|\bid\b|inscription|anonym|candidat/i;
 function detectIdCol(body,hdrs){
   const byHeader=hdrs.findIndex(h=>ID_HEADER_RE.test(h));
   if(byHeader>=0)return byHeader;
@@ -410,11 +410,14 @@ function rawScale(body,hdrs,idCol){
   let votes100=0,cols=0;
   for(let c=0;c<hdrs.length;c++){
     if(c===idCol)continue;
-    let mx=-Infinity,n=0;
-    for(const r of body){const v=r?.[c];if(typeof v==='number'){if(v>mx)mx=v;n++;}}
-    if(!n)continue;
+    const nums=[];
+    for(const r of body){const v=r?.[c];if(typeof v==='number')nums.push(v);}
+    if(!nums.length)continue;
+    // Une colonne séquentielle (rang, place, n° d'ordre) n'est pas une note :
+    // elle ne vote pas l'échelle (sinon un fichier /20 basculait en /100).
+    if(isLikelySequence(nums))continue;
     cols++;
-    if(mx>25)votes100++;
+    if(Math.max(...nums)>25)votes100++;
   }
   return cols&&votes100>cols/2?100:20;
 }
@@ -653,7 +656,14 @@ function recomp(){
   S.overall={stats:CS(vals),byStu,inc};
 }
 
-const findStu=id=>{if(!S.rows)return null;const q=(id||'').trim();if(!q)return null;const n=x=>String(x).replace(/\s/g,'');return S.rows.find(r=>r.id===q)||S.rows.find(r=>n(r.id)===n(q));};
+const findStu=id=>{
+  if(!S.rows)return null;const q=(id||'').trim();if(!q)return null;
+  const n=x=>String(x).replace(/\s/g,'');
+  // La coercition numérique mange les zéros de tête (Number("0123")=123) : on
+  // compare aussi sans zéros de tête (et sans casse) pour retrouver l'étudiant.
+  const z=x=>{const t=n(x);return /^\d+$/.test(t)?t.replace(/^0+(?=\d)/,''):t.toLowerCase();};
+  return S.rows.find(r=>r.id===q)||S.rows.find(r=>n(r.id)===n(q))||S.rows.find(r=>z(r.id)===z(q))||null;
+};
 function toggleSub(s){S.excluded.has(s)?S.excluded.delete(s):S.excluded.add(s);S.generated=false;recomp();renderAll();}
 function setAll(on){S.excluded=on?new Set():new Set(S.subjects);S.generated=false;recomp();renderAll();}
 function chgIdCol(i){S.idColIdx=i;if(!S.rawBody)return;S.scaleMax=rawScale(S.rawBody,S.headers,i);const{subjects:subs,students}=parseBody(S.rawBody,S.headers,i);S.subjects=subs;S.rows=students;const grades=gradeColumnsOf(subs,students,S.scaleMax);S.excluded=new Set(subs.filter(s=>!grades.includes(s)));S.selSub=grades[0]||subs[0]||null;S.generated=false;recomp();renderAll();}

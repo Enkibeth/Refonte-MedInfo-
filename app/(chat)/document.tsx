@@ -7,7 +7,7 @@
  * Le document n'est jamais conservé : seul le résultat IA est archivé dans
  * l'historique (`document_analyses`, archivage serveur via /api/analyze onFinish).
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,8 @@ import {
 import { useSession } from '@/auth/AuthProvider';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
+import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
+import { SeoHead } from '@/ui/SeoHead';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
 import { ToolsMenu } from '@/ui/ToolsMenu';
@@ -56,9 +58,29 @@ const ACCEPTED_FILES = '.pdf,.jpg,.jpeg,.png,.webp,.txt,application/pdf,image/jp
 
 export default function DocumentScreen() {
   return (
-    <RoleGate feature="document">
-      <DocumentScreenInner />
-    </RoleGate>
+    <>
+      {/* SEO par feature (2026-07) : titre/description/canonical + fiche WebApplication,
+          rendus pour tous (y compris visiteurs) — RoleGate ne gate que le contenu. */}
+      <SeoHead
+        title={PAGE_SEO.document.title}
+        description={PAGE_SEO.document.description}
+        path={PAGE_SEO.document.path}
+        jsonLd={[
+          breadcrumbJsonLd([
+            { name: 'Accueil', path: '/' },
+            { name: 'Analyse de document', path: PAGE_SEO.document.path },
+          ]),
+          webApplicationJsonLd({
+            name: 'Analyse de document médical — MedInfo AI',
+            description: PAGE_SEO.document.description,
+            path: PAGE_SEO.document.path,
+          }),
+        ]}
+      />
+      <RoleGate feature="document">
+        <DocumentScreenInner />
+      </RoleGate>
+    </>
   );
 }
 
@@ -92,9 +114,20 @@ function DocumentScreenInner() {
 
   const userId = session?.user?.id ?? null;
 
+  // L'analyse streamée et le polling d'historique (~8 s) survivent à la navigation :
+  // ce drapeau évite les setState fantômes après avoir quitté l'écran.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   const refreshHistory = useCallback(async () => {
     if (!userId) return;
-    setHistory(await listAnalyses(userId));
+    const list = await listAnalyses(userId);
+    if (mountedRef.current) setHistory(list);
   }, [userId]);
 
   // L'archivage serveur (onFinish) suit la fin du stream mais peut prendre plus d'une
@@ -104,8 +137,9 @@ function DocumentScreenInner() {
     async (beforeCount: number) => {
       for (const delay of [1200, 2500, 4000]) {
         await new Promise((r) => setTimeout(r, delay));
-        if (!userId) return;
+        if (!userId || !mountedRef.current) return;
         const list = await listAnalyses(userId);
+        if (!mountedRef.current) return;
         setHistory(list);
         if (list.length > beforeCount) return;
       }
@@ -197,6 +231,11 @@ function DocumentScreenInner() {
       let fullText = '';
 
       while (true) {
+        if (!mountedRef.current) {
+          // Écran quitté : on arrête de consommer le flux (l'archivage serveur, lui, continue).
+          void reader.cancel().catch(() => undefined);
+          return;
+        }
         const { done, value } = await reader.read();
         if (done) break;
         fullText += decoder.decode(value, { stream: true });
@@ -210,9 +249,9 @@ function DocumentScreenInner() {
       // Rafraîchit l'historique jusqu'à voir apparaître la nouvelle analyse archivée.
       void pollHistoryUntilNew(history.length);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Une erreur est survenue.');
+      if (mountedRef.current) setError(e instanceof Error ? e.message : 'Une erreur est survenue.');
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }
 

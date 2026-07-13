@@ -4,7 +4,7 @@
  * renommer, classer (dossier), supprimer, exporter en PDF, et réécouter l'audio
  * tant qu'il n'est pas purgé (≤ 24h).
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -98,11 +98,31 @@ export function AudioLibrary({ refreshToken }: { refreshToken: number }) {
     }
   }
 
+  // Une seule lecture à la fois : l'instance courante est arrêtée avant d'en
+  // lancer une autre (et à l'unmount) — sinon les clics superposaient les audios.
+  const playerRef = useRef<HTMLAudioElement | null>(null);
+  useEffect(
+    () => () => {
+      playerRef.current?.pause();
+      playerRef.current = null;
+    },
+    [],
+  );
+
   async function play(doc: AudioDocument) {
     if (!doc.audio_path) return;
-    const url = await getAudioSignedUrl(doc.audio_path);
-    if (url && typeof window !== 'undefined' && 'Audio' in window) {
-      new window.Audio(url).play().catch(() => undefined);
+    try {
+      const url = await getAudioSignedUrl(doc.audio_path);
+      if (!url) throw new Error('URL indisponible');
+      if (typeof window !== 'undefined' && 'Audio' in window) {
+        playerRef.current?.pause();
+        const audio = new window.Audio(url);
+        playerRef.current = audio;
+        await audio.play();
+      }
+    } catch {
+      // L'audio est purgé au bout de 24 h : on l'explique au lieu d'échouer en silence.
+      setError("Lecture impossible — l'audio a peut-être expiré (conservation 24 h).");
     }
   }
 
@@ -211,7 +231,7 @@ export function AudioLibrary({ refreshToken }: { refreshToken: number }) {
                         <Text style={styles.actionText}>PDF</Text>
                       </TouchableOpacity>
                       {audioOk ? (
-                        <TouchableOpacity style={styles.actionBtn} onPress={() => play(doc)}>
+                        <TouchableOpacity style={styles.actionBtn} onPress={() => void play(doc)}>
                           <Text style={styles.actionText}>▶ Écouter</Text>
                         </TouchableOpacity>
                       ) : null}

@@ -50,12 +50,18 @@ export interface FaqItem {
   answer: string;
 }
 
+/** Image de partage social par défaut (public/og-image.png, copiée du logo). */
+export function defaultOgImageUrl(): string {
+  return canonicalUrl('/og-image.png');
+}
+
 export function organizationJsonLd(): Record<string, unknown> {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: SITE_NAME,
     url: `${siteUrl()}/`,
+    logo: defaultOgImageUrl(),
     description: DEFAULT_DESCRIPTION,
     contactPoint: {
       '@type': 'ContactPoint',
@@ -63,6 +69,30 @@ export function organizationJsonLd(): Record<string, unknown> {
       url: canonicalUrl('/contact'),
       availableLanguage: 'French',
     },
+  };
+}
+
+/**
+ * Fiche schema.org WebApplication d'un outil du site (SEO par feature, 2026-07).
+ * Décrit chaque outil (analyse de document, ECOS, CV…) comme une application web
+ * gratuite de la catégorie santé — sans jamais aucune donnée d'utilisateur.
+ */
+export function webApplicationJsonLd(app: {
+  name: string;
+  description: string;
+  path: string;
+}): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: app.name,
+    description: app.description,
+    url: canonicalUrl(app.path),
+    applicationCategory: 'HealthApplication',
+    operatingSystem: 'Web',
+    inLanguage: 'fr-FR',
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+    publisher: { '@type': 'Organization', name: SITE_NAME, url: `${siteUrl()}/` },
   };
 }
 
@@ -178,6 +208,96 @@ export const PAGE_SEO = {
     description:
       'Chat IA médical en français : réponses claires appuyées sur des sources réelles et ' +
       'vérifiées (HAS, ANSM, PubMed). Premier message gratuit, sans inscription.',
+  },
+
+  // ── Outils par feature (refonte SEO 2026-07) : chaque outil a son titre et sa
+  //    description orientés intention de recherche, son canonical et sa fiche
+  //    WebApplication — les écrans restent protégés par RoleGate côté produit. ──
+  document: {
+    path: '/document',
+    title: 'Analyse de document médical par IA — explication claire',
+    description:
+      "Déposez un compte rendu, une ordonnance ou un résultat d'analyse : l'IA l'explique " +
+      'en langage clair, avec des citations tirées mot pour mot du document.',
+  },
+  ecos: {
+    path: '/ecos',
+    title: 'Simulation ECOS en ligne — patient virtuel et note sur 20',
+    description:
+      'Entraînez-vous aux ECOS avec un patient simulé par IA : cas fictifs par spécialité, ' +
+      'évaluation sur grille, note sur 20 et historique de vos passages.',
+  },
+  revision: {
+    path: '/revision',
+    title: 'Planning de révisions médecine — planificateur intelligent',
+    description:
+      "Construisez un planning de révisions réaliste pour vos partiels ou l'EDN : charge " +
+      'quotidienne calculée, redistribution automatique, jauge de risque.',
+  },
+  partiel: {
+    path: '/partiel',
+    title: 'Analyse des partiels — classement de promo et statistiques',
+    description:
+      'Importez les notes de votre promo (Excel, CSV, PDF) : rang, quantiles, distributions ' +
+      "et comparaison d'épreuves. Calcul 100 % local, aucune note envoyée.",
+  },
+  audio: {
+    path: '/audio',
+    title: 'Compte rendu de consultation par dictée vocale — IA',
+    description:
+      'Dictez votre consultation : transcription puis compte rendu structuré par IA. Audio ' +
+      'purgé sous 24 h, bibliothèque privée sécurisée, export PDF.',
+  },
+  presentation: {
+    path: '/presentation',
+    title: 'Générateur de présentations médicales — export PowerPoint',
+    description:
+      "Créez des présentations médicales soignées, à la main ou avec l'IA, et exportez-les " +
+      'en PPTX compatible PowerPoint et Keynote. Historique cloud inclus.',
+  },
+  cvBuilder: {
+    path: '/cv-builder',
+    title: 'Créateur de CV médical en ligne — modèle pro, export PDF',
+    description:
+      'Rédigez un CV médical convaincant : gabarit deux colonnes, aperçu A4 en direct, ' +
+      'import de votre CV existant, relecture IA et export PDF net.',
+  },
+  article: {
+    path: '/article',
+    title: "Rédaction d'article médical — IMRaD, citations Vancouver",
+    description:
+      'Structurez votre manuscrit scientifique : gabarits IMRaD, compteurs par section, ' +
+      'bibliographie DOI/PMID, citations Vancouver ou APA, export Word.',
+  },
+
+  // ── Pages légales : indexables, description honnête (confiance E-E-A-T). ──
+  mentionsLegales: {
+    path: '/mentions-legales',
+    title: 'Mentions légales',
+    description:
+      'Éditeur, hébergement et contacts du site MedInfo AI — les informations prévues par ' +
+      "la loi pour la confiance dans l'économie numérique (LCEN).",
+  },
+  cgu: {
+    path: '/cgu',
+    title: "Conditions générales d'utilisation (CGU)",
+    description:
+      "Les règles d'utilisation de MedInfo AI : information médicale générale, comptes et " +
+      'rôles vérifiés, abonnements, responsabilités et bon usage du service.',
+  },
+  confidentialite: {
+    path: '/confidentialite',
+    title: 'Politique de confidentialité et données personnelles (RGPD)',
+    description:
+      'Quelles données MedInfo AI traite, pourquoi et combien de temps : historique de chat ' +
+      'privé, documents jamais stockés, droits RGPD et contact.',
+  },
+  legal: {
+    path: '/legal',
+    title: 'Informations légales et conformité',
+    description:
+      'Toutes les informations légales de MedInfo AI : mentions légales, CGU, politique de ' +
+      "confidentialité et engagement de transparence sur l'IA (AI Act).",
   },
 } as const satisfies Record<string, PageSeo>;
 

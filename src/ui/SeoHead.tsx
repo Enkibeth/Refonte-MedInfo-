@@ -10,7 +10,7 @@
 import Head from 'expo-router/head';
 import { Platform } from 'react-native';
 
-import { DEFAULT_DESCRIPTION, canonicalUrl, pageTitle, SITE_NAME } from '@/seo/meta';
+import { DEFAULT_DESCRIPTION, canonicalUrl, defaultOgImageUrl, pageTitle, SITE_NAME } from '@/seo/meta';
 
 export function SeoHead({
   title,
@@ -38,6 +38,9 @@ export function SeoHead({
 
   const fullTitle = pageTitle(title);
   const url = canonicalUrl(path);
+  // Image de partage : celle de la page (article de blog…) sinon le logo du site —
+  // un lien partagé sans aucune image fait perdre le clic sur les réseaux.
+  const ogImage = image ?? defaultOgImageUrl();
 
   return (
     <Head>
@@ -55,12 +58,14 @@ export function SeoHead({
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:url" content={url} />
-      {image ? <meta property="og:image" content={image} /> : null}
+      <meta property="og:image" content={ogImage} />
 
+      {/* summary_large_image seulement pour une vraie image de page (16:9) ;
+          le logo carré de repli passe en carte « summary ». */}
       <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
-      {image ? <meta name="twitter:image" content={image} /> : null}
+      <meta name="twitter:image" content={ogImage} />
 
       {/* JSON-LD : react-helmet (sous-jacent d'expo-router/head) n'émet le contenu
           d'un <script> que passé en enfant — dangerouslySetInnerHTML est ignoré. */}

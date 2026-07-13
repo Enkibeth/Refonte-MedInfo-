@@ -19,6 +19,8 @@ import { View, Text, StyleSheet, Platform } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
 import { tokens } from '@/ui/tokens';
+import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
+import { SeoHead } from '@/ui/SeoHead';
 import { RoleGate } from '@/ui/RoleGate';
 import { ToolsMenu } from '@/ui/ToolsMenu';
 
@@ -81,9 +83,29 @@ function ArticleWriterInner() {
 
 export default function ArticleWriterScreen() {
   return (
-    <RoleGate feature="article">
-      <ArticleWriterInner />
-    </RoleGate>
+    <>
+      {/* SEO par feature (2026-07) : titre/description/canonical + fiche WebApplication,
+          rendus pour tous (y compris visiteurs) — RoleGate ne gate que le contenu. */}
+      <SeoHead
+        title={PAGE_SEO.article.title}
+        description={PAGE_SEO.article.description}
+        path={PAGE_SEO.article.path}
+        jsonLd={[
+          breadcrumbJsonLd([
+            { name: 'Accueil', path: '/' },
+            { name: "Rédaction d'article médical", path: PAGE_SEO.article.path },
+          ]),
+          webApplicationJsonLd({
+            name: "Rédaction d'article médical — MedInfo AI",
+            description: PAGE_SEO.article.description,
+            path: PAGE_SEO.article.path,
+          }),
+        ]}
+      />
+      <RoleGate feature="article">
+        <ArticleWriterInner />
+      </RoleGate>
+    </>
   );
 }
 

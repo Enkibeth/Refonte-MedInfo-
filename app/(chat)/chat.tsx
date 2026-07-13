@@ -53,7 +53,7 @@ import {
   type ChatConversation,
 } from '@/chat/history';
 import { exportChatToPdf } from '@/chat/exportChatPdf';
-import { PAGE_SEO } from '@/seo/meta';
+import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
 import { tokens } from '@/ui/tokens';
 import { DictationButton } from '@/ui/DictationButton';
@@ -755,6 +755,17 @@ export default function ChatScreen() {
         title={PAGE_SEO.chat.title}
         description={PAGE_SEO.chat.description}
         path={PAGE_SEO.chat.path}
+        jsonLd={[
+          breadcrumbJsonLd([
+            { name: 'Accueil', path: '/' },
+            { name: 'Chat santé IA', path: PAGE_SEO.chat.path },
+          ]),
+          webApplicationJsonLd({
+            name: 'Chat santé IA — MedInfo AI',
+            description: PAGE_SEO.chat.description,
+            path: PAGE_SEO.chat.path,
+          }),
+        ]}
       />
       {/* ── En-tête ── */}
       <View style={[styles.chatHeader, { paddingTop: tokens.space.md + insets.top }]}>

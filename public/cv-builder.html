@@ -163,6 +163,7 @@
   .cv-ref b { display: block; font-weight: 700; font-size: 10pt; color: var(--cv-ink); }
   .cv-ref span { font-size: 10pt; color: var(--cv-link); }
   .empty-ph { color: #b7c0c6; font-style: italic; }
+  .exporting .empty-ph { visibility: hidden; } /* jamais dans le PDF exporté */
 
   /* ── AI review panel ───────────────────────────────────────── */
   .drawer { position: fixed; top: 0; right: 0; height: 100vh; width: 380px; max-width: 92vw; background: var(--surface); border-left: 1px solid var(--line); box-shadow: -8px 0 28px rgba(8,40,60,.14); transform: translateX(100%); transition: transform .22s ease; z-index: 40; display: flex; flex-direction: column; }
@@ -190,7 +191,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 
   /* history modal */
-  .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 50; }
+  .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 50; background: rgba(8, 40, 60, .45); }
   .modal.open { display: flex; }
   .modal .sheet2 { background: #fff; border-radius: var(--radius); width: 460px; max-width: 92vw; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 18px 50px rgba(8,40,60,.3); }
   .modal header { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; }
@@ -245,7 +246,7 @@
   <div class="layout">
     <aside class="editor" id="editor"></aside>
     <main class="previewWrap">
-      <div class="printNote">Aperçu A4 — le PDF reprend exactement cette feuille (texte sélectionnable).</div>
+      <div class="printNote">Aperçu A4 — le PDF reprend exactement cette feuille (rendu image haute définition).</div>
       <div class="sheet" id="sheet"></div>
     </main>
   </div>
@@ -287,6 +288,10 @@
   var uid = function () { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var r = Math.random() * 16 | 0; var v = c === 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }); };
   var serverId = null;       // id Supabase du CV courant (cloud)
   var dirty = false;
+  var docGen = 0;            // change quand on charge/crée un autre CV : une réponse
+                             // d'autosave tardive ne doit pas rattacher serverId au mauvais document
+  var editSeq = 0;           // incrémenté à chaque édition : ne remet dirty=false que si rien n'a bougé
+  var saveInFlight = false;
 
   function blankCv() {
     return {
@@ -329,7 +334,15 @@
   // ── Marquage modifié + rendu + autosave debounce ──────────────────────────
   var saveTimer = null;
   function touch() {
-    dirty = true; render(); saveLocal();
+    dirty = true; editSeq++; saveLocal();
+    // Frappe dans un champ texte : re-rendre tout l'éditeur détruirait le champ actif
+    // (perte de focus à chaque caractère) et replierait les cartes ouvertes — on ne met
+    // alors à jour que l'aperçu. Les actions structurelles re-rendent tout.
+    var ae = document.activeElement;
+    var editorEl = document.getElementById('editor');
+    var typing = !!(ae && editorEl && editorEl.contains(ae) &&
+      (ae.tagName === 'TEXTAREA' || (ae.tagName === 'INPUT' && /^(text|email|tel|url|search)$/.test(ae.type))));
+    if (typing) renderPreview(); else render();
     setStatus('Modifié…');
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function () { if (authToken) saveCloud(true); }, 1500);
@@ -368,7 +381,7 @@
     var wrap = el('div', { class: 'bullets' });
     (owner.bullets || []).forEach(function (b, j) {
       var i = el('input', { type: 'text', value: b });
-      i.addEventListener('input', function () { owner.bullets[j] = i.value; saveLocal(); renderPreview(); });
+      i.addEventListener('input', function () { owner.bullets[j] = i.value; touch(); });
       var del = el('button', { class: 'iconbtn danger', title: 'Supprimer la ligne' }, ['✕']);
       del.addEventListener('click', function () { owner.bullets.splice(j, 1); touch(); });
       wrap.appendChild(el('div', { class: 'bl' }, [i, del]));
@@ -418,7 +431,8 @@
     var p = cv.personalInfo;
 
     // Identité
-    var photoImg = p.photoUrl ? el('img', { class: 'photoPrev', src: p.photoUrl }) : el('div', { class: 'photoPrev', html: '' });
+    var photoSrcEd = safePhotoUrl(p.photoUrl);
+    var photoImg = photoSrcEd ? el('img', { class: 'photoPrev', src: photoSrcEd }) : el('div', { class: 'photoPrev', html: '' });
     var fileIn = el('input', { type: 'file', accept: 'image/png,image/jpeg,image/webp' });
     fileIn.addEventListener('change', function () {
       var f = fileIn.files && fileIn.files[0]; if (!f) return;
@@ -596,7 +610,12 @@
   // ════════════════════════════════════════════════════════════════════════
   //  PREVIEW (A4)
   // ════════════════════════════════════════════════════════════════════════
-  function esc(s) { return (s == null ? '' : String(s)).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
+  function esc(s) { return (s == null ? '' : String(s)).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  // La photo n'est légitime qu'en data-URI image (FileReader) : tout autre schéma est ignoré.
+  function safePhotoUrl(u) {
+    u = String(u || '').trim();
+    return /^data:image\/(png|jpe?g|webp);base64,/i.test(u) ? u : '';
+  }
   function ml(s) { return esc(s).replace(/\n/g, '<br>'); } // conserve les retours à la ligne d'une description
 
   // Format calqué sur le gabarit : « de {début} à {fin} », « de {début} à ce jour »,
@@ -621,7 +640,8 @@
   function renderPreview() {
     var p = cv.personalInfo;
     var side = [];
-    if (p.photoUrl) side.push('<img class="cv-photo" src="' + esc(p.photoUrl) + '" alt="" />');
+    var photoSrc = safePhotoUrl(p.photoUrl);
+    if (photoSrc) side.push('<img class="cv-photo" src="' + esc(photoSrc) + '" alt="" />');
 
     // ── Informations personnelles (nom + coordonnées, avec icônes) ──
     var name = [p.firstName, p.lastName].filter(Boolean).join(' ');
@@ -716,6 +736,15 @@
 
   function saveCloud(silent) {
     if (!authToken) { if (!silent) alert('Connecte-toi pour sauvegarder ton CV dans le cloud (sauvegarde locale active).'); return; }
+    // Une requête déjà en vol : re-tenter après, sinon un POST sans id partirait en
+    // parallèle et créerait une ligne en double.
+    if (saveInFlight) {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(function () { saveCloud(silent); }, 800);
+      return;
+    }
+    saveInFlight = true;
+    var genAtSave = docGen, editAtSave = editSeq;
     setStatus('Enregistrement…');
     var body = { document: cv, theme: 'medical' };
     if (serverId) body.id = serverId;
@@ -724,11 +753,17 @@
     api('/api/cv-docs', { method: 'POST', body: JSON.stringify(body) })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
       .then(function (res) {
+        saveInFlight = false;
+        // Le document affiché a changé pendant la requête : ne surtout pas lui
+        // rattacher l'id du document précédent (écrasement croisé silencieux).
+        if (genAtSave !== docGen) return;
         if (!res.ok) { setStatus('Échec de l’enregistrement'); return; }
-        serverId = res.j.id; dirty = false; saveLocal();
-        setStatus('Enregistré ✓');
+        serverId = res.j.id;
+        if (editAtSave === editSeq) dirty = false;
+        saveLocal();
+        setStatus(editAtSave === editSeq ? 'Enregistré ✓' : 'Modifié…');
       })
-      .catch(function () { setStatus('Hors-ligne — sauvegarde locale'); });
+      .catch(function () { saveInFlight = false; if (genAtSave === docGen) setStatus('Hors-ligne — sauvegarde locale'); });
   }
 
   function openHistory() {
@@ -760,11 +795,14 @@
   function loadCloud(id) {
     api('/api/cv-docs?id=' + id).then(function (r) { return r.json(); }).then(function (j) {
       if (j && j.cv && j.cv.document) {
-        cv = Object.assign(blankCv(), j.cv.document); serverId = j.cv.id;
+        docGen++; editSeq++;
+        cv = Object.assign(blankCv(), j.cv.document); serverId = j.cv.id; dirty = false;
         saveLocal(); render(); setStatus('CV chargé');
         document.getElementById('histModal').classList.remove('open');
+      } else {
+        alert('Impossible de charger ce CV. Réessaie.');
       }
-    });
+    }).catch(function () { alert('Impossible de charger ce CV (réseau). Réessaie.'); });
   }
 
   // ════════════════════════════════════════════════════════════════════════
@@ -783,6 +821,7 @@
     var sheet = document.getElementById('sheet');
     var prevMinH = sheet.style.minHeight, prevShadow = sheet.style.boxShadow;
     sheet.style.boxShadow = 'none';
+    sheet.classList.add('exporting'); // masque les placeholders « Votre nom » etc.
 
     // On étend la feuille à un nombre ENTIER de pages A4 pour que la bande latérale
     // (fond en dégradé de .sheet) remplisse aussi la dernière page jusqu'en bas.
@@ -797,6 +836,7 @@
       windowWidth: wpx, height: pages * pageHpx, windowHeight: pages * pageHpx,
     }).then(function (canvas) {
       sheet.style.minHeight = prevMinH; sheet.style.boxShadow = prevShadow;
+      sheet.classList.remove('exporting');
       var jsPDF = window.jspdf.jsPDF;
       var pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       var imgW = canvas.width;
@@ -816,6 +856,7 @@
       btn.disabled = false; btn.textContent = prevLabel;
     }).catch(function (e) {
       sheet.style.minHeight = prevMinH; sheet.style.boxShadow = prevShadow;
+      sheet.classList.remove('exporting');
       console.error('PDF error', e);
       alert('Échec de la génération du PDF. Réessaie.');
       btn.disabled = false; btn.textContent = prevLabel;
@@ -939,6 +980,8 @@
   // Applique UNE suggestion : vérifie que l'original correspond encore avant d'écrire.
   function applyCvSuggestion(sg) {
     if (!sg.fieldPath) return 'missing';
+    // La photo (data-URI) n'est jamais un champ de texte à réécrire.
+    if (/photoUrl/.test(sg.fieldPath)) return 'missing';
     var current = getByPath(cv, sg.fieldPath);
     if (current === undefined) return 'missing';
     if (sg.originalText && String(current).trim() !== String(sg.originalText).trim()) return 'changed';
@@ -981,13 +1024,13 @@
       interests: [{ id: uid(), label: 'Course à pied' }, { id: uid(), label: 'Photographie' }],
       personalProjects: [{ id: uid(), title: 'Blog de vulgarisation cardio', description: 'Articles courts pour patients sur la prévention cardiovasculaire.', url: '' }]
     };
-    serverId = null; touch();
+    docGen++; serverId = null; touch();
   }
 
   // ════════════════════════════════════════════════════════════════════════
   //  WIRING
   // ════════════════════════════════════════════════════════════════════════
-  document.getElementById('btn-new').addEventListener('click', function () { if (confirm('Repartir d’un CV vierge ? (la sauvegarde locale sera remplacée)')) { cv = blankCv(); serverId = null; touch(); } });
+  document.getElementById('btn-new').addEventListener('click', function () { if (confirm('Repartir d’un CV vierge ? (la sauvegarde locale sera remplacée)')) { docGen++; cv = blankCv(); serverId = null; touch(); } });
   document.getElementById('btn-import').addEventListener('click', function () { document.getElementById('import-file').click(); });
   document.getElementById('import-file').addEventListener('change', function (ev) {
     var f = ev.target.files && ev.target.files[0];
@@ -1002,6 +1045,10 @@
   document.getElementById('ai-close').addEventListener('click', closeDrawer);
   document.getElementById('overlay').addEventListener('click', closeDrawer);
   document.getElementById('hist-close').addEventListener('click', function () { document.getElementById('histModal').classList.remove('open'); });
+  // Fermeture de la modale au clic sur le fond (hors de la feuille).
+  document.getElementById('histModal').addEventListener('click', function (ev) {
+    if (ev.target === ev.currentTarget) ev.currentTarget.classList.remove('open');
+  });
 
   // Sauvegarde de secours au changement de page (keepalive).
   window.addEventListener('pagehide', function () { saveLocal(); });

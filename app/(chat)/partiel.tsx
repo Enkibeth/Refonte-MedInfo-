@@ -9,6 +9,8 @@
 import { View, Text, StyleSheet, Platform } from 'react-native';
 
 import { tokens } from '@/ui/tokens';
+import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
+import { SeoHead } from '@/ui/SeoHead';
 import { RoleGate } from '@/ui/RoleGate';
 import { ToolsMenu } from '@/ui/ToolsMenu';
 
@@ -46,9 +48,29 @@ function PartielInner() {
 
 export default function PartielScreen() {
   return (
-    <RoleGate feature="partiel">
-      <PartielInner />
-    </RoleGate>
+    <>
+      {/* SEO par feature (2026-07) : titre/description/canonical + fiche WebApplication,
+          rendus pour tous (y compris visiteurs) — RoleGate ne gate que le contenu. */}
+      <SeoHead
+        title={PAGE_SEO.partiel.title}
+        description={PAGE_SEO.partiel.description}
+        path={PAGE_SEO.partiel.path}
+        jsonLd={[
+          breadcrumbJsonLd([
+            { name: 'Accueil', path: '/' },
+            { name: 'Analyse des partiels', path: PAGE_SEO.partiel.path },
+          ]),
+          webApplicationJsonLd({
+            name: 'Analyse des partiels — MedInfo AI',
+            description: PAGE_SEO.partiel.description,
+            path: PAGE_SEO.partiel.path,
+          }),
+        ]}
+      />
+      <RoleGate feature="partiel">
+        <PartielInner />
+      </RoleGate>
+    </>
   );
 }
 

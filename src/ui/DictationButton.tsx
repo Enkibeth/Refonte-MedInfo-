@@ -8,7 +8,7 @@
  *
  * Le texte dicté est ensuite traité par la safe-box normale de la route cible.
  */
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
@@ -34,21 +34,52 @@ export function DictationButton({
   const [state, setState] = useState<State>('idle');
   const [error, setError] = useState<string | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
+
+  // Démontage pendant une dictée (ex. : chrono ECOS qui expire) : libérer le micro
+  // et le timer d'erreur, et empêcher les setState après unmount.
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (errorTimer.current) clearTimeout(errorTimer.current);
+      const mr = recorderRef.current;
+      if (mr) {
+        mr.ondataavailable = null;
+        mr.onstop = null;
+        if (mr.state !== 'inactive') {
+          try {
+            mr.stop();
+          } catch {
+            /* déjà arrêté */
+          }
+        }
+        recorderRef.current = null;
+      }
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    };
+  }, []);
 
   if (!SUPPORTED) return null;
 
   // Message transitoire au-dessus du bouton (le repli reste la saisie clavier).
   function flashError(msg: string) {
+    if (!mountedRef.current) return;
     setError(msg);
     if (errorTimer.current) clearTimeout(errorTimer.current);
-    errorTimer.current = setTimeout(() => setError(null), 3500);
+    errorTimer.current = setTimeout(() => {
+      if (mountedRef.current) setError(null);
+    }, 3500);
   }
 
   async function start() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
         ? 'audio/webm;codecs=opus'
         : MediaRecorder.isTypeSupported('audio/webm')
@@ -63,6 +94,7 @@ export function DictationButton({
       };
       mr.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
         await transcribe(new Blob(chunksRef.current, { type: mimeType }));
       };
       mr.start(250);
@@ -93,8 +125,9 @@ export function DictationButton({
       if (res.ok) {
         const data = (await res.json()) as { transcription?: string };
         const text = data.transcription?.trim();
-        if (text) onTranscript(text);
-        else flashError('Aucune parole détectée.');
+        if (text) {
+          if (mountedRef.current) onTranscript(text);
+        } else flashError('Aucune parole détectée.');
       } else {
         flashError('Dictée indisponible — réessaie.');
       }
@@ -102,7 +135,7 @@ export function DictationButton({
       // dictée indisponible → l'utilisateur peut taper au clavier
       flashError('Dictée indisponible — réessaie.');
     } finally {
-      setState('idle');
+      if (mountedRef.current) setState('idle');
     }
   }
 

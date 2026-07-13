@@ -15,6 +15,8 @@ import { View, Text, StyleSheet, Platform } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
 import { tokens } from '@/ui/tokens';
+import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
+import { SeoHead } from '@/ui/SeoHead';
 import { RoleGate } from '@/ui/RoleGate';
 import { ToolsMenu } from '@/ui/ToolsMenu';
 
@@ -79,9 +81,29 @@ function PresentationInner() {
 
 export default function PresentationScreen() {
   return (
-    <RoleGate feature="presentation">
-      <PresentationInner />
-    </RoleGate>
+    <>
+      {/* SEO par feature (2026-07) : titre/description/canonical + fiche WebApplication,
+          rendus pour tous (y compris visiteurs) — RoleGate ne gate que le contenu. */}
+      <SeoHead
+        title={PAGE_SEO.presentation.title}
+        description={PAGE_SEO.presentation.description}
+        path={PAGE_SEO.presentation.path}
+        jsonLd={[
+          breadcrumbJsonLd([
+            { name: 'Accueil', path: '/' },
+            { name: 'Générateur de présentations', path: PAGE_SEO.presentation.path },
+          ]),
+          webApplicationJsonLd({
+            name: 'Générateur de présentations médicales — MedInfo AI',
+            description: PAGE_SEO.presentation.description,
+            path: PAGE_SEO.presentation.path,
+          }),
+        ]}
+      />
+      <RoleGate feature="presentation">
+        <PresentationInner />
+      </RoleGate>
+    </>
   );
 }
 
