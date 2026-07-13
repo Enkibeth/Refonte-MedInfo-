@@ -146,4 +146,25 @@ describe('tabBarFeatures — répartition barre du bas / panneau Outils (lisibil
   it('visiteur non connecté : seul le chat, pas de panneau', () => {
     expect(split(null, false, true)).toEqual({ bar: ['chat'], overflow: [] });
   });
+
+  it("slot réservé (onglet Accueil) : la capacité se réduit d'autant", () => {
+    // Étudiant avec 1 slot réservé : 4 − 1 (Accueil) − 1 (Outils) = 2 outils en barre.
+    const { bar, overflow } = tabBarFeatures('student', {}, { reservedSlots: 1 });
+    expect(bar.map((f) => f.id)).toEqual(['chat', 'ecos']);
+    expect(bar.length + 1 + 1).toBeLessThanOrEqual(TAB_BAR_MAX + 1); // Accueil + Outils inclus
+    expect([...bar, ...overflow].map((f) => f.id).sort()).toEqual(
+      visibleFeatures('student').map((f) => f.id).sort(),
+    );
+  });
+
+  it('slot réservé mais tout tient : pas de panneau (public : Accueil + 2 outils)', () => {
+    const { bar, overflow } = tabBarFeatures('public', {}, { reservedSlots: 1 });
+    expect(bar.map((f) => f.id)).toEqual(['chat', 'document']);
+    expect(overflow).toEqual([]);
+  });
+
+  it('slots réservés extrêmes : la barre garde au moins un outil', () => {
+    const { bar } = tabBarFeatures('student', {}, { reservedSlots: 10 });
+    expect(bar.length).toBeGreaterThanOrEqual(1);
+  });
 });

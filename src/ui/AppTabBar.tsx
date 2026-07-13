@@ -11,7 +11,16 @@
  * visibilité par rôle reste inchangée et le serveur reste la vraie barrière.
  */
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -22,7 +31,9 @@ import {
   visibleFeatures,
   type AppFeatureMeta,
 } from '@/ai/routing/featureVisibility';
+import { featureTint } from '@/ui/featureChips';
 import { Icon, type IconName } from '@/ui/icons';
+import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 import { tokens } from '@/ui/tokens';
 import { useReducedMotion } from '@/ui/useReducedMotion';
 
@@ -56,6 +67,7 @@ export function AppTabBar({ state, navigation }: AppTabBarProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
+  const { width } = useWindowDimensions();
   const { persona, user, session } = useSession();
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -63,24 +75,28 @@ export function AppTabBar({ state, navigation }: AppTabBarProps) {
   const isGuest = !session;
   const ctx = { isAdmin, isGuest };
 
-  const { bar, overflow } = tabBarFeatures(persona, ctx);
+  // L’onglet « Accueil » (Vue d’ensemble) occupe un slot pour les comptes connectés.
+  const showHome = !isGuest;
+  const { bar, overflow } = tabBarFeatures(persona, ctx, { reservedSlots: showHome ? 1 : 0 });
   const allTools = visibleFeatures(persona, ctx);
   const activeName = state.routes[state.index]?.name;
 
+  // Desktop web : la sidebar du shell (src/ui/shell/AppShell.tsx) porte la navigation.
+  if (Platform.OS === 'web' && width >= SHELL_BREAKPOINT) return null;
+
   // Un seul outil visible (visiteur non connecté) : une barre à onglet unique
   // n'apporte rien — on rend l'espace à l'écran de chat.
-  if (bar.length <= 1) return null;
+  if (!showHome && bar.length <= 1) return null;
 
-  const routeFor = (feature: AppFeatureMeta): TabRoute | undefined =>
-    state.routes.find((r) => r.name === feature.id);
-
-  const goToFeature = (feature: AppFeatureMeta) => {
+  const goToRoute = (name: string) => {
     setSheetOpen(false);
-    const route = routeFor(feature);
+    const route = state.routes.find((r) => r.name === name);
     if (!route) return;
     const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
     if (activeName !== route.name && !event.defaultPrevented) navigation.navigate(route.name);
   };
+
+  const goToFeature = (feature: AppFeatureMeta) => goToRoute(feature.id);
 
   const extras: ExtraLink[] = isGuest
     ? [
@@ -89,7 +105,7 @@ export function AppTabBar({ state, navigation }: AppTabBarProps) {
       ]
     : [
         { key: 'account', label: 'Mon compte', icon: 'userRound', route: '/(account)/account' },
-        { key: 'home', label: 'Accueil', icon: 'home', route: '/' },
+        { key: 'home', label: 'Accueil du site', icon: 'globe', route: '/' },
       ];
   if (isAdmin) extras.push({ key: 'admin', label: 'Panel admin', icon: 'settings', route: '/(admin)' });
 
@@ -100,8 +116,30 @@ export function AppTabBar({ state, navigation }: AppTabBarProps) {
 
   const bottomInset = Math.max(insets.bottom, tokens.space.sm);
 
+  const homeActive = activeName === 'dashboard';
+
   return (
     <View style={[styles.bar, { paddingBottom: bottomInset }]}>
+      {showHome ? (
+        <Pressable
+          onPress={() => goToRoute('dashboard')}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: homeActive }}
+          accessibilityLabel="Vue d’ensemble"
+          style={styles.tab}
+        >
+          <View style={[styles.tabPill, homeActive && styles.tabPillActive]}>
+            <Icon
+              name="home"
+              size={22}
+              color={homeActive ? tokens.colors.onAccent : tokens.colors.textMuted}
+            />
+          </View>
+          <Text style={[styles.tabLabel, homeActive && styles.tabLabelActive]} numberOfLines={1}>
+            Accueil
+          </Text>
+        </Pressable>
+      ) : null}
       {bar.map((feature) => {
         const focused = activeName === feature.id;
         return (
@@ -168,6 +206,7 @@ export function AppTabBar({ state, navigation }: AppTabBarProps) {
               <View style={styles.grid}>
                 {allTools.map((feature) => {
                   const active = activeName === feature.id;
+                  const tint = featureTint(feature.id);
                   return (
                     <Pressable
                       key={feature.id}
@@ -176,11 +215,17 @@ export function AppTabBar({ state, navigation }: AppTabBarProps) {
                       accessibilityLabel={feature.label}
                       style={[styles.card, active && styles.cardActive]}
                     >
-                      <View style={[styles.cardIcon, active && styles.cardIconActive]}>
+                      <View
+                        style={[
+                          styles.cardIcon,
+                          { backgroundColor: tint.bg },
+                          active && styles.cardIconActive,
+                        ]}
+                      >
                         <Icon
                           name={feature.icon}
                           size={20}
-                          color={active ? tokens.colors.onAccent : tokens.colors.accentDeep}
+                          color={active ? tokens.colors.onAccent : tint.fg}
                         />
                       </View>
                       <Text style={[styles.cardLabel, active && styles.cardLabelActive]} numberOfLines={1}>

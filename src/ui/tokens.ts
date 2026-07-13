@@ -102,6 +102,20 @@ export const tokens = {
       student: { accent: palette.studentAccent, soft: palette.studentSoft },
       public: { accent: palette.publicAccent, soft: palette.publicSoft },
     },
+
+    // ── Teintes de pastilles par outil (shell 2026-07) ───────────────────────
+    // Chips colorées des cartes/listes d'outils (dashboard, panneau Outils,
+    // activité récente) : fond doux + encre foncée AA. Usage strict : pastille
+    // d'icône et monogramme — jamais des aplats de section entiers.
+    tints: {
+      blue: { fg: palette.blue700, bg: '#E4EDFF' },
+      green: { fg: '#0E6B4A', bg: '#DFF3E9' },
+      amber: { fg: '#8A5410', bg: '#FBEEDA' },
+      rose: { fg: '#B01E45', bg: '#FCE5EC' },
+      violet: { fg: '#5B34C7', bg: '#ECE6FC' },
+      teal: { fg: '#0C6E67', bg: '#DCF2F0' },
+      slate: { fg: palette.neutral700, bg: palette.neutral100 },
+    },
   },
 
   // ── Typographie ────────────────────────────────────────────────────────────

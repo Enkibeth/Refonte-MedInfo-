@@ -188,25 +188,37 @@ export function visibleFeatures(
 export const TAB_BAR_MAX = 4;
 
 export interface TabBarSplit {
-  /** Onglets affichés dans la barre du bas (≤ TAB_BAR_MAX). */
+  /** Onglets affichés dans la barre du bas (≤ TAB_BAR_MAX, slots réservés déduits). */
   bar: AppFeatureMeta[];
   /** Outils restants, accessibles via le panneau « Outils » (vide → pas de bouton). */
   overflow: AppFeatureMeta[];
 }
 
+export interface TabBarOptions {
+  /**
+   * Emplacements pris par des entrées hors registre d'outils (ex. l'onglet
+   * « Accueil » vers la Vue d'ensemble, refonte shell 2026-07) — déduits de la
+   * capacité de la barre AVANT répartition.
+   */
+  reservedSlots?: number;
+}
+
 /**
  * Répartition des outils visibles entre la barre du bas et le panneau « Outils ».
- * Si tout tient (≤ TAB_BAR_MAX), pas de panneau. Sinon : TAB_BAR_MAX − 1 outils
+ * Si tout tient (≤ TAB_BAR_MAX − réservés), pas de panneau. Sinon : outils
  * prioritaires (`primary`, complétés dans l'ordre si besoin) + bouton « Outils ».
  */
 export function tabBarFeatures(
   persona: Persona | null | undefined,
   ctx: VisibilityContext = {},
+  options: TabBarOptions = {},
 ): TabBarSplit {
+  const reserved = Math.max(0, options.reservedSlots ?? 0);
+  const capacity = Math.max(1, TAB_BAR_MAX - reserved);
   const visible = visibleFeatures(persona, ctx);
-  if (visible.length <= TAB_BAR_MAX) return { bar: visible, overflow: [] };
+  if (visible.length <= capacity) return { bar: visible, overflow: [] };
 
-  const slots = TAB_BAR_MAX - 1; // une place réservée au bouton « Outils »
+  const slots = Math.max(1, capacity - 1); // une place réservée au bouton « Outils »
   const bar = visible.filter((f) => f.primary).slice(0, slots);
   // Complète avec les premiers outils visibles si trop peu de prioritaires.
   for (const f of visible) {
