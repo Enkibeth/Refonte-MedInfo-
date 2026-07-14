@@ -18,6 +18,7 @@ export const ICON_PATHS = {
   bookOpen:
     'M12 7v14 M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z',
   arrowRight: 'M5 12h14 M13 6l6 6-6 6',
+  arrowLeft: 'M19 12H5 M11 6l-6 6 6 6',
   arrowUp: 'M12 19V5 M5 12l7-7 7 7',
   refresh: 'M21 12a9 9 0 1 1-2.64-6.36 M21 3v6h-6',
   clock: 'M12 6v6l4 2 M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z',

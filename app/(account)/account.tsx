@@ -1,6 +1,14 @@
 import { Link, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 
 import type { Persona } from '@/ai/prompts/_schema';
 import { useSession } from '@/auth/AuthProvider';
@@ -10,10 +18,12 @@ import { isAdminUserId } from '@/admin/index';
 import { visibleFeatures } from '@/ai/routing/featureVisibility';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
+import { featureTint } from '@/ui/featureChips';
 import { Icon } from '@/ui/icons';
 import { PersonalInfoForm } from '@/ui/PersonalInfoForm';
 import { Logo } from '@/ui/Logo';
 import { Screen } from '@/ui/Screen';
+import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 import { tokens } from '@/ui/tokens';
 
 /**
@@ -32,6 +42,10 @@ const VERIFIABLE_PERSONAS: Persona[] = ['public', 'student', 'professional'];
 export default function AccountScreen() {
   const { loading, persona, status, verifiedPersonas, requestRole, signOut, user } = useSession();
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  // Sous le shell desktop (sidebar avec logo + fil d'Ariane), l'en-tête de marque
+  // local ferait doublon.
+  const inShell = Platform.OS === 'web' && width >= SHELL_BREAKPOINT && !!user;
   const [signingOut, setSigningOut] = useState(false);
   const [switching, setSwitching] = useState<Persona | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -97,9 +111,11 @@ export default function AccountScreen() {
 
   return (
     <Screen maxWidth={640}>
-      <View style={styles.brandHeader}>
-        <Logo size="sm" />
-      </View>
+      {!inShell ? (
+        <View style={styles.brandHeader}>
+          <Logo size="sm" />
+        </View>
+      ) : null}
       <Text style={styles.title}>Mon compte</Text>
       <Text style={styles.body}>
         Informations de connexion et préférences associées à ta session MedInfo AI.
@@ -155,21 +171,24 @@ export default function AccountScreen() {
             Les fonctionnalités disponibles dépendent de ton rôle.
           </Text>
           <View style={styles.toolList}>
-            {visibleFeatures(persona, { isAdmin }).map((f) => (
-              <TouchableOpacity
-                key={f.id}
-                style={styles.toolItem}
-                onPress={() => router.push(f.route as never)}
-                accessibilityRole="link"
-                accessibilityLabel={f.label}
-              >
-                <View style={styles.toolItemIcon}>
-                  <Icon name={f.icon} size={16} color={tokens.colors.accent} />
-                </View>
-                <Text style={styles.toolItemLabel}>{f.label}</Text>
-                <Icon name="arrowRight" size={14} color={tokens.colors.accent} />
-              </TouchableOpacity>
-            ))}
+            {visibleFeatures(persona, { isAdmin }).map((f) => {
+              const tint = featureTint(f.id);
+              return (
+                <TouchableOpacity
+                  key={f.id}
+                  style={styles.toolItem}
+                  onPress={() => router.push(f.route as never)}
+                  accessibilityRole="link"
+                  accessibilityLabel={f.label}
+                >
+                  <View style={[styles.toolItemIcon, { backgroundColor: tint.bg }]}>
+                    <Icon name={f.icon} size={16} color={tint.fg} />
+                  </View>
+                  <Text style={styles.toolItemLabel}>{f.label}</Text>
+                  <Icon name="arrowRight" size={14} color={tokens.colors.textMuted} />
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </Card>
       ) : null}
@@ -192,7 +211,7 @@ export default function AccountScreen() {
                   {validated ? (
                     <View style={[styles.statusBadge, active && styles.statusBadgeActive]}>
                       <Text style={[styles.statusBadgeText, active && styles.statusBadgeTextActive]}>
-                        {active ? '● Actif' : '✓ Validé'}
+                        {active ? 'Actif' : 'Validé'}
                       </Text>
                     </View>
                   ) : pending ? (
@@ -268,7 +287,12 @@ export default function AccountScreen() {
 
       {isAdmin ? (
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>⚙️ Administration</Text>
+          <View style={styles.sectionTitleRow}>
+            <View style={styles.sectionTitleIcon}>
+              <Icon name="settings" size={15} color={tokens.colors.accentDeep} />
+            </View>
+            <Text style={styles.sectionTitle}>Administration</Text>
+          </View>
           <Text style={styles.sectionText}>
             Configurer les modèles IA et éditer les prompts système.
           </Text>
@@ -351,6 +375,20 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
     marginBottom: tokens.space.xs,
   },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    marginBottom: tokens.space.xs,
+  },
+  sectionTitleIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: tokens.radius.sm,
+    backgroundColor: tokens.colors.accentSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   roleStatusList: { gap: tokens.space.sm, marginBottom: tokens.space.md },
   roleStatusRow: {
     flexDirection: 'row',
@@ -418,25 +456,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.md,
-    backgroundColor: tokens.colors.accentSurface,
+    backgroundColor: tokens.colors.surface,
     borderWidth: 1,
-    borderColor: tokens.colors.accentSurfaceStrong,
+    borderColor: tokens.colors.border,
     borderRadius: tokens.radius.md,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.sm + 2,
+    ...tokens.motion.transitionWeb,
   },
   toolItemIcon: {
     width: 28,
     height: 28,
     borderRadius: tokens.radius.sm,
-    backgroundColor: tokens.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   toolItemLabel: {
     flex: 1,
     fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
+    color: tokens.colors.text,
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.semibold,
   },

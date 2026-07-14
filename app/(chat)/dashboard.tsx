@@ -52,6 +52,7 @@ import {
 } from '@/dashboard/overview';
 import { Button } from '@/ui/Button';
 import { featureTint } from '@/ui/featureChips';
+import { HeroBackdrop } from '@/ui/HeroBackdrop';
 import { Icon } from '@/ui/icons';
 import { SeoHead } from '@/ui/SeoHead';
 import { Skeleton } from '@/ui/Skeleton';
@@ -227,8 +228,9 @@ export default function DashboardScreen() {
           <View style={styles.mainColumn}>
             {/* Hero « Qu’est-ce qui compte aujourd’hui ? » */}
             <View style={styles.hero}>
-              <View style={styles.heroGlow} />
-              <View style={styles.heroGlowSmall} />
+              {/* Grille millimétrée + tracé ECG animé (motif métier du design system,
+                  coupé sous prefers-reduced-motion) — cf. src/ui/HeroBackdrop. */}
+              <HeroBackdrop />
               <View style={styles.greetingPill}>
                 <Text style={styles.greetingText}>{greeting}</Text>
               </View>
@@ -458,24 +460,6 @@ const styles = StyleSheet.create({
     gap: tokens.space.md,
     overflow: 'hidden',
     ...tokens.elevation.lg,
-  },
-  heroGlow: {
-    position: 'absolute',
-    top: -110,
-    right: -70,
-    width: 280,
-    height: 280,
-    borderRadius: tokens.radius.pill,
-    backgroundColor: 'rgba(59, 130, 246, 0.22)',
-  },
-  heroGlowSmall: {
-    position: 'absolute',
-    top: 40,
-    right: 90,
-    width: 120,
-    height: 120,
-    borderRadius: tokens.radius.pill,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   greetingPill: {
     alignSelf: 'flex-start',

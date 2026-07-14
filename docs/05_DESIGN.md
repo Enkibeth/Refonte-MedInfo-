@@ -163,9 +163,15 @@ décor. Tokens : `tokens.motion.*` ; CSS global (keyframes, scrollbar) : `app/+h
   barre supérieure avec fil d'Ariane, pastille de disclosure IA et bouton Aide.
   Source : `src/ui/shell/AppShell.tsx` (transparent sur mobile/natif/visiteur/pages
   publiques — la tab bar mobile reste la navigation). Couche d'ergonomie uniquement :
-  RoleGate + autorisation serveur inchangés.
+  RoleGate + autorisation serveur inchangés. Uniformisation 2026-07 : sous le shell,
+  les groupes Compte/Tarifs masquent leur en-tête natif de Stack (doublon du fil
+  d'Ariane, conservé sur mobile pour le retour) et le panel admin passe en en-tête
+  clair (titre serif, badge ADMIN teinté, onglets à icônes ligne — plus d'emojis) ;
+  les pages autonomes `public/partiel.html` / `presentation.html` / `cv-builder.html`
+  / `article.html` ont leurs variables CSS alignées sur ces tokens (§2).
 - **Vue d'ensemble** (`app/(chat)/dashboard.tsx`) : accueil de l'espace connecté — hero
-  bleu nuit (« Qu'est-ce qui compte aujourd'hui ? », salutation + semaine ISO, stat tiles),
+  bleu nuit (« Qu'est-ce qui compte aujourd'hui ? », salutation + semaine ISO, stat tiles,
+  fond `HeroBackdrop` : grille millimétrée + tracé ECG animé, coupé sous reduced-motion),
   grille des outils du rôle à pastilles teintées, rail droit (Prochain objectif dérivé du
   plan de révision réel + Activité récente chat/ECOS/révisions). Chiffres exclusivement
   issus des données utilisateur et du moteur déterministe (`src/dashboard/overview.ts`,

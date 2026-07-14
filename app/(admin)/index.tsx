@@ -20,12 +20,15 @@ import {
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId, AI_FEATURES } from '@/admin/index';
 import { BlogEditorModal } from '@/ui/admin/BlogEditorModal';
+import { Icon, type IconName } from '@/ui/icons';
+import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 import { tokens } from '@/ui/tokens';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -1145,9 +1148,18 @@ const blogStyles = StyleSheet.create({
 
 // ── Écran principal ───────────────────────────────────────────────────────────
 
+/** Onglets du panel — icônes ligne du design system (plus d'emojis dans l'UI, 05_DESIGN §7). */
+const ADMIN_TABS: Array<{ key: Tab; label: string; icon: IconName }> = [
+  { key: 'models', label: 'Modèles IA', icon: 'sparkles' },
+  { key: 'prompts', label: 'Prompts', icon: 'penLine' },
+  { key: 'ecos', label: 'Cas ECOS', icon: 'stethoscope' },
+  { key: 'blog', label: 'Blog', icon: 'bookOpen' },
+];
+
 export default function AdminScreen() {
   const { user, session } = useSession();
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const [tab, setTab] = useState<Tab>('models');
   const [config, setConfig] = useState<Config | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1155,6 +1167,8 @@ export default function AdminScreen() {
 
   // Vérification admin côté client (le serveur revérifie dans chaque API call)
   const isAdmin = user ? isAdminUserId(user.id) : false;
+  // Sous le shell desktop, l'en-tête bleu nuit ferait doublon avec la sidebar.
+  const inShell = Platform.OS === 'web' && width >= SHELL_BREAKPOINT;
 
   const loadConfig = useCallback(async () => {
     if (!session?.access_token) return;
@@ -1193,54 +1207,57 @@ export default function AdminScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>←</Text>
-        </TouchableOpacity>
+      {/* Header : bandeau bleu nuit sur mobile ; version claire sous le shell desktop
+          (la sidebar + le fil d'Ariane portent déjà la marque et le retour). */}
+      <View style={[styles.header, inShell && styles.headerInShell]}>
+        {!inShell ? (
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Retour"
+          >
+            <Icon name="arrowLeft" size={22} color={tokens.colors.onAccent} />
+          </TouchableOpacity>
+        ) : null}
         <View>
-          <Text style={styles.headerTitle}>Panel Admin IA</Text>
-          <Text style={styles.headerSub}>Configuration des modèles et prompts</Text>
+          <Text style={[styles.headerTitle, inShell && styles.headerTitleInShell]}>
+            Panel Admin IA
+          </Text>
+          <Text style={[styles.headerSub, inShell && styles.headerSubInShell]}>
+            Configuration des modèles et prompts
+          </Text>
         </View>
-        <View style={styles.adminBadge}>
-          <Text style={styles.adminBadgeText}>ADMIN</Text>
+        <View style={[styles.adminBadge, inShell && styles.adminBadgeInShell]}>
+          <Text style={[styles.adminBadgeText, inShell && styles.adminBadgeTextInShell]}>
+            ADMIN
+          </Text>
         </View>
       </View>
 
       {/* Tabs */}
       <View style={styles.tabs}>
-        <TouchableOpacity
-          style={[styles.tabBtn, tab === 'models' && styles.tabBtnActive]}
-          onPress={() => setTab('models')}
-        >
-          <Text style={[styles.tabLabel, tab === 'models' && styles.tabLabelActive]}>
-            🤖 Modèles IA
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabBtn, tab === 'prompts' && styles.tabBtnActive]}
-          onPress={() => setTab('prompts')}
-        >
-          <Text style={[styles.tabLabel, tab === 'prompts' && styles.tabLabelActive]}>
-            📝 Prompts
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabBtn, tab === 'ecos' && styles.tabBtnActive]}
-          onPress={() => setTab('ecos')}
-        >
-          <Text style={[styles.tabLabel, tab === 'ecos' && styles.tabLabelActive]}>
-            🩺 Cas ECOS
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabBtn, tab === 'blog' && styles.tabBtnActive]}
-          onPress={() => setTab('blog')}
-        >
-          <Text style={[styles.tabLabel, tab === 'blog' && styles.tabLabelActive]}>
-            📰 Blog
-          </Text>
-        </TouchableOpacity>
+        {ADMIN_TABS.map((t) => {
+          const active = tab === t.key;
+          return (
+            <TouchableOpacity
+              key={t.key}
+              style={[styles.tabBtn, active && styles.tabBtnActive]}
+              onPress={() => setTab(t.key)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+            >
+              <View style={styles.tabInner}>
+                <Icon
+                  name={t.icon}
+                  size={15}
+                  color={active ? tokens.colors.accent : tokens.colors.textMuted}
+                />
+                <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{t.label}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {tab === 'ecos' ? (
@@ -1283,8 +1300,12 @@ const styles = StyleSheet.create({
     paddingBottom: tokens.space.md,
     backgroundColor: tokens.colors.accentDarker,
   },
+  headerInShell: {
+    backgroundColor: 'transparent',
+    paddingTop: tokens.space.xl,
+    paddingHorizontal: tokens.space.xl,
+  },
   backBtn: { padding: tokens.space.xs },
-  backBtnText: { color: tokens.colors.onAccent, fontSize: tokens.type.h2.fontSize },
   headerTitle: {
     fontFamily: tokens.font.display,
     color: tokens.colors.onAccent,
@@ -1292,12 +1313,21 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
     letterSpacing: tokens.type.h3.letterSpacing,
   },
+  // Sous le shell : titre de page du design system (serif, encre sombre).
+  headerTitleInShell: {
+    fontFamily: tokens.font.serif,
+    color: tokens.colors.text,
+    fontSize: tokens.type.h2.fontSize,
+    lineHeight: tokens.type.h2.lineHeight,
+    letterSpacing: tokens.type.h2.letterSpacing,
+  },
   headerSub: {
     fontFamily: tokens.font.sans,
     color: 'rgba(255,255,255,0.6)',
     fontSize: tokens.type.caption.fontSize,
     marginTop: 2,
   },
+  headerSubInShell: { color: tokens.colors.textMuted },
   adminBadge: {
     marginLeft: 'auto',
     borderRadius: tokens.radius.pill,
@@ -1307,6 +1337,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.xs,
   },
+  adminBadgeInShell: {
+    backgroundColor: tokens.colors.accentSurface,
+    borderColor: tokens.colors.accentSurfaceStrong,
+  },
   adminBadgeText: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.onAccent,
@@ -1314,6 +1348,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.bold,
     letterSpacing: tokens.tracking.caps,
   },
+  adminBadgeTextInShell: { color: tokens.colors.accentDeep },
   tabs: {
     flexDirection: 'row',
     backgroundColor: tokens.colors.surface,
@@ -1328,6 +1363,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   tabBtnActive: { borderBottomColor: tokens.colors.accent },
+  tabInner: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.xs + 2 },
   tabLabel: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
