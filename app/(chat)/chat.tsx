@@ -36,7 +36,11 @@ import type { UIMessage } from 'ai';
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
 import type { ChatbotId } from '@/ai/chat/chatContext';
-import { parseAssistantMessage, type ParsedSource } from '@/ai/chat/parseAssistantMessage';
+import {
+  assistantTextForExport,
+  parseAssistantMessage,
+  type ParsedSource,
+} from '@/ai/chat/parseAssistantMessage';
 import {
   STARTER_SUGGESTIONS,
   SUGGESTIONS_ROTATION_MS,
@@ -265,7 +269,9 @@ function MessageRow({
       <AssistantBlocks text={text} onSend={onSend} disabled={disabled} onOpenSource={onOpenSource} />
       {!streamingThisMessage ? (
         <MessageActions
-          text={text}
+          // Copier colle la version « texte propre » (références en exposant, légende
+          // des sources) — jamais les marqueurs techniques SRCn:: / INTERACTION / CALC.
+          text={assistantTextForExport(text)}
           showRegenerate={isLastAssistant && !disabled}
           onRegenerate={onRegenerate}
         />
@@ -408,6 +414,9 @@ export default function ChatScreen() {
   const conversationIdRef = useRef<string | null>(null);
   const titleGeneratedRef = useRef(false);
   const firstUserTextRef = useRef('');
+  // Régénération en cours : le serveur REMPLACE alors la dernière réponse archivée
+  // au lieu d'en ajouter une seconde (sinon la conversation rouverte montre les deux).
+  const regenerateRef = useRef(false);
 
   const transport = useMemo(
     () =>
@@ -421,6 +430,7 @@ export default function ChatScreen() {
           // Résilience hors-ligne : le serveur archive la réponse dans cette conversation
           // même si la page est suspendue pendant le streaming (voir /api/chat).
           conversationId: conversationIdRef.current ?? undefined,
+          regenerate: regenerateRef.current || undefined,
         }),
       }),
     [],
@@ -447,6 +457,7 @@ export default function ChatScreen() {
     transport,
     onFinish: async ({ message }) => {
       awaitingRef.current = false;
+      regenerateRef.current = false;
       const text = messageText(message);
       const convId = conversationIdRef.current;
       if (!convId || !user?.id || !text.trim()) return;
@@ -496,6 +507,9 @@ export default function ChatScreen() {
   // La génération continue côté serveur et la réponse est archivée dans l'historique :
   // on la récupère depuis Supabase au lieu de la perdre.
   const [recovering, setRecovering] = useState(false);
+  // Arrêt volontaire pendant le streaming : note honnête « la réponse complète est
+  // dans l'historique » (le serveur va au bout et archive — résilience hors-ligne).
+  const [stoppedNotice, setStoppedNotice] = useState(false);
 
   const recoverFromHistory = useCallback(async (): Promise<boolean> => {
     const convId = conversationIdRef.current;
@@ -562,6 +576,9 @@ export default function ChatScreen() {
     if (recovered) return;
     clearError();
     awaitingRef.current = true;
+    // Réessayer relance la même question : la réponse partielle éventuellement déjà
+    // archivée doit être remplacée, pas doublée.
+    regenerateRef.current = true;
     void regenerate();
   }, [recoverFromHistory, clearError, regenerate]);
 
@@ -583,6 +600,26 @@ export default function ChatScreen() {
     () => [...messages].reverse().find((m) => m.role === 'assistant'),
     [messages],
   );
+
+  // ── Classification des erreurs serveur (au lieu d'une bannière générique) ──────
+  // 401 `signup_required` : essai invité épuisé côté serveur (localStorage purgé…)
+  // ou session expirée pour un compte connecté — deux parcours différents.
+  const errorKind: 'guest' | 'session' | 'generic' | null = useMemo(() => {
+    if (!error) return null;
+    if (String(error.message ?? '').includes('signup_required')) {
+      return isGuest ? 'guest' : 'session';
+    }
+    return 'generic';
+  }, [error, isGuest]);
+
+  // Refus serveur de l'essai invité → aligner l'indicateur client (0/1) : la carte
+  // CTA inscription/connexion prend le relais de la bannière d'erreur.
+  useEffect(() => {
+    if (errorKind !== 'guest') return;
+    markGuestMessageUsed();
+    setGuestUsed(true);
+    clearError();
+  }, [errorKind, clearError]);
 
   // Sources de la dernière réponse (onglet global dans l'en-tête).
   const latestSources = useMemo(
@@ -628,6 +665,8 @@ export default function ChatScreen() {
         void saveMessage(conversationIdRef.current, user.id, 'user', trimmed);
       }
       awaitingRef.current = true;
+      regenerateRef.current = false;
+      setStoppedNotice(false);
       sendMessage({ text: trimmed });
       // Envoyer ramène toujours le fil en bas, même si on relisait plus haut.
       scrollToBottom();
@@ -654,14 +693,18 @@ export default function ChatScreen() {
   };
 
   // Arrêt volontaire de la génération : on n'attend plus la réponse (pas de reprise
-  // depuis l'historique) — le texte déjà écrit reste affiché.
+  // depuis l'historique) — le texte déjà écrit reste affiché. Le serveur, lui, mène
+  // la génération au bout et l'archive : on le dit honnêtement (note sous le fil).
   const handleStop = () => {
     awaitingRef.current = false;
+    if (user && conversationIdRef.current) setStoppedNotice(true);
     void stop();
   };
 
   const handleRegenerate = useCallback(() => {
     awaitingRef.current = true;
+    regenerateRef.current = true;
+    setStoppedNotice(false);
     void regenerate();
   }, [regenerate]);
 
@@ -671,6 +714,8 @@ export default function ChatScreen() {
       // nouveau fil, ni laisser la reprise hors-ligne armée sur l'ancien.
       if (statusRef.current === 'streaming' || statusRef.current === 'submitted') void stop();
       awaitingRef.current = false;
+      regenerateRef.current = false;
+      setStoppedNotice(false);
       setMessages([]);
       conversationIdRef.current = null;
       setConversationId(null);
@@ -708,6 +753,8 @@ export default function ChatScreen() {
       // s'écrire dans la conversation qu'on ouvre.
       if (statusRef.current === 'streaming' || statusRef.current === 'submitted') void stop();
       awaitingRef.current = false;
+      regenerateRef.current = false;
+      setStoppedNotice(false);
       const stored = await loadMessages(c.id);
       setMessages(
         stored.map((m) => ({
@@ -950,7 +997,8 @@ export default function ChatScreen() {
               <Text style={styles.guestCtaTitle}>Continuez la conversation</Text>
               <Text style={styles.guestCtaText}>
                 Votre message d’essai gratuit a été utilisé (0/1). Créez un compte gratuit ou
-                connectez-vous pour poser toutes vos questions et retrouver votre historique.
+                connectez-vous pour poser toutes vos questions, conserver cette réponse et
+                retrouver tout votre historique.
               </Text>
               <View style={styles.guestCtaActions}>
                 <TouchableOpacity
@@ -974,8 +1022,35 @@ export default function ChatScreen() {
           </Reveal>
         ) : null}
 
-        {error && !recovering && (
-          <View style={styles.errorBanner}>
+        {/* ── Note honnête après un arrêt volontaire (le serveur archive la réponse
+            complète — résilience hors-ligne) ── */}
+        {stoppedNotice && !isLoading && !error ? (
+          <View style={styles.stoppedNotice} accessibilityLiveRegion="polite">
+            <Icon name="clock" size={14} color={tokens.colors.textMuted} />
+            <Text style={styles.stoppedNoticeText}>
+              Génération arrêtée — la réponse complète restera disponible dans l’historique.
+            </Text>
+          </View>
+        ) : null}
+
+        {error && !recovering && errorKind === 'session' && (
+          <View style={styles.errorBanner} accessibilityLiveRegion="polite">
+            <Text style={styles.errorText}>
+              Votre session a expiré — reconnectez-vous pour continuer la conversation.
+            </Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={() => router.push('/(auth)/sign-in' as never)}
+              accessibilityRole="button"
+              accessibilityLabel="Se reconnecter"
+            >
+              <Icon name="userRound" size={14} color={tokens.colors.onAccent} />
+              <Text style={styles.retryButtonText}>Se reconnecter</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        {error && !recovering && errorKind === 'generic' && (
+          <View style={styles.errorBanner} accessibilityLiveRegion="polite">
             <Text style={styles.errorText}>
               Une erreur est survenue — la réponse a peut-être été interrompue.
             </Text>
@@ -1407,6 +1482,22 @@ const styles = StyleSheet.create({
     height: 7,
     borderRadius: tokens.radius.pill,
     backgroundColor: tokens.colors.textMuted,
+  },
+
+  stoppedNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    alignSelf: 'flex-start',
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.surfaceAlt,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.sm,
+  },
+  stoppedNoticeText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
   },
 
   errorBanner: {

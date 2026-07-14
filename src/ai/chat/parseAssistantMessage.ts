@@ -453,6 +453,49 @@ export function formatInlineCitations(markdown: string): string {
     .join('\n');
 }
 
+// ── Texte propre pour Copier / export PDF ─────────────────────────────────────
+
+/** Numéro d'une source `SRCn` en exposant (¹ ²…) pour la légende exportée. */
+function superscriptOfSourceId(id: string): string {
+  const digits = id.replace(/^SRC/, '');
+  return superscriptOf(digits);
+}
+
+/**
+ * Version « texte propre » d'une réponse assistant, partagée par le bouton Copier
+ * et l'export PDF : le corps avec les références inline en exposant, la section
+ * SOURCES en légende numérotée lisible (badge, libellé, année, URL), l'auto-réflexion
+ * conservée sous son titre. Les blocs purement interactifs (propositions à cocher,
+ * formulaire QUESTIONS_PATIENT, marqueurs CALC, relances étudiant) sont omis :
+ * ce sont des affordances d'interface, pas du contenu.
+ */
+export function assistantTextForExport(text: string): string {
+  const { blocks } = parseAssistantMessage(text);
+  const parts: string[] = [];
+
+  for (const block of blocks) {
+    if (block.type === 'body') {
+      parts.push(formatInlineCitations(block.markdown));
+    } else if (block.type === 'sources') {
+      const lines = block.sources.map((s) => {
+        const label = [s.shortLabel, s.org && s.org !== s.shortLabel ? s.org : null, s.title]
+          .filter(Boolean)
+          .join(' — ');
+        const meta = [s.badge ? `[${s.badge}]` : null, label || s.id, s.year]
+          .filter(Boolean)
+          .join(' ');
+        return `${superscriptOfSourceId(s.id)} ${meta}${s.url ? `\n   ${s.url}` : ''}`;
+      });
+      parts.push(`Sources\n${lines.join('\n')}`);
+    } else if (block.type === 'reflection') {
+      parts.push(`Auto-réflexion\n${formatInlineCitations(block.markdown)}`);
+    }
+    // deepening / questionsPatient / interaction / calc / followups : omis (interactifs).
+  }
+
+  return parts.join('\n\n').trim();
+}
+
 // ── Découpage du corps en sections MAJUSCULES (rendu) ─────────────────────────
 
 export interface BodySection {

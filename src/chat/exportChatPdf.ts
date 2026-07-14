@@ -2,7 +2,7 @@
  * Export PDF d'une conversation de chat via la fenêtre d'impression du navigateur
  * (même approche sans dépendance que src/audio/exportPdf.ts).
  */
-import { formatInlineCitations } from '@/ai/chat/parseAssistantMessage';
+import { assistantTextForExport } from '@/ai/chat/parseAssistantMessage';
 import { escapeHtml, markdownToHtml } from '@/ui/miniMarkdown';
 
 export interface ChatPdfMessage {
@@ -28,7 +28,7 @@ export function exportChatToPdf({
     .map((m) =>
       m.role === 'user'
         ? `<div class="q"><div class="who">Question</div>${markdownToHtml(m.content)}</div>`
-        : `<div class="a"><div class="who">Réponse — ${escapeHtml(chatbotLabel)}</div>${markdownToHtml(formatInlineCitations(m.content))}</div>`,
+        : `<div class="a"><div class="who">Réponse — ${escapeHtml(chatbotLabel)}</div>${markdownToHtml(assistantTextForExport(m.content))}</div>`,
     )
     .join('\n');
 
