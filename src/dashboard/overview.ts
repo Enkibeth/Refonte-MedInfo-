@@ -194,7 +194,8 @@ export function buildRecentActivity(input: RecentActivityInput, limit = 6): Acti
       title: truncateLabel(c.title || 'Conversation'),
       detail: c.category,
       timestamp: c.updated_at,
-      route: '/(chat)/chat',
+      // Deep-link : rouvre CETTE conversation (paramètre lu par app/(chat)/chat.tsx).
+      route: `/(chat)/chat?conversation=${encodeURIComponent(c.id)}`,
     });
   }
   for (const a of input.ecosAttempts ?? []) {

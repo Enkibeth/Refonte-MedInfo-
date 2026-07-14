@@ -11,7 +11,7 @@
  * role-aware existante) et n'est jamais une barrière — l'autorisation réelle reste
  * côté serveur (serverPersona.ts) et <RoleGate> en défense en profondeur.
  */
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Image,
   Platform,
@@ -60,6 +60,24 @@ function storeCollapsedPref(collapsed: boolean) {
   }
 }
 
+/**
+ * Indice « une session existait ici » : pendant l'hydratation de la session au
+ * rechargement, on réserve la place de la sidebar (squelette) au lieu de rendre
+ * le contenu pleine largeur puis de le décaler d'un coup. Auto-réparé : posé
+ * quand une session est confirmée, retiré dès qu'une absence de session est
+ * confirmée (déconnexion, autre navigateur…).
+ */
+const SHELL_SEEN_KEY = 'medinfo.shell.hadSession';
+
+function readHadSession(): boolean {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return false;
+  try {
+    return window.localStorage.getItem(SHELL_SEEN_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 /** Groupes de routes qui vivent DANS le shell (espace connecté). */
 const SHELL_GROUPS = new Set(['(chat)', '(account)', '(billing)', '(admin)']);
 
@@ -104,18 +122,87 @@ interface NavEntry {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { width } = useWindowDimensions();
-  const { session, user, persona, personalInfo } = useSession();
+  const { session, user, persona, personalInfo, loading } = useSession();
   const segments = useSegments() as string[];
   const pathname = usePathname();
   const router = useRouter();
   // Sidebar repliable (demande Hugo) : le chat et les outils récupèrent la largeur.
   const [collapsed, setCollapsed] = useState(readCollapsedPref);
+  // Tooltip du rail replié : libellé + position verticale (mesurée en fenêtre).
+  const [railTip, setRailTip] = useState<{ label: string; y: number } | null>(null);
+  const entryRefs = useRef(new Map<string, View | null>());
 
   const isAdmin = user ? isAdminUserId(user.id) : false;
   const inShellGroup = SHELL_GROUPS.has(segments[0] ?? '');
   const desktop = Platform.OS === 'web' && width >= SHELL_BREAKPOINT;
+  const shellReady = desktop && !!session && inShellGroup;
+  // Hydratation au rechargement : session pas encore connue mais probable → on
+  // réserve la place de la sidebar pour éviter le saut de layout à son arrivée.
+  const shellPending = desktop && inShellGroup && !session && loading && readHadSession();
 
-  if (!desktop || !session || !inShellGroup) return <>{children}</>;
+  const toggleCollapsed = useCallback(() => {
+    setRailTip(null);
+    setCollapsed((prev) => {
+      storeCollapsedPref(!prev);
+      return !prev;
+    });
+  }, []);
+
+  // Mémorise si une session a été confirmée sur ce navigateur (cf. SHELL_SEEN_KEY).
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || loading) return;
+    try {
+      if (session) window.localStorage.setItem(SHELL_SEEN_KEY, '1');
+      else window.localStorage.removeItem(SHELL_SEEN_KEY);
+    } catch {
+      // Stockage indisponible : l'indice n'est simplement pas mémorisé.
+    }
+  }, [session, loading]);
+
+  // Raccourci clavier Ctrl/Cmd + B : replier/déplier la sidebar (hors saisie).
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !shellReady) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.shiftKey || event.altKey) return;
+      if (event.key.toLowerCase() !== 'b') return;
+      const el = document.activeElement as HTMLElement | null;
+      const tag = el?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || el?.isContentEditable) return;
+      event.preventDefault();
+      toggleCollapsed();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [shellReady, toggleCollapsed]);
+
+  if (shellPending) {
+    // Squelette du shell : mêmes dimensions que la vraie sidebar/top bar, aucun
+    // contenu dépendant du compte (persona inconnue tant que la session charge).
+    return (
+      <View style={styles.frame}>
+        <View style={[styles.sidebar, collapsed && styles.sidebarCollapsed]}>
+          <View style={[styles.skeletonBadge, collapsed && styles.logoRowCollapsed]} />
+          {!collapsed ? <View style={styles.skeletonCard} /> : null}
+          <View style={styles.skeletonRows}>
+            <View style={styles.skeletonRow} />
+            <View style={styles.skeletonRow} />
+            <View style={styles.skeletonRow} />
+            <View style={styles.skeletonRow} />
+          </View>
+        </View>
+        <View style={styles.main}>
+          <View style={styles.topBar}>
+            <View style={styles.breadcrumb}>
+              <Text style={styles.breadcrumbRoot}>MedInfo AI</Text>
+            </View>
+          </View>
+          <View style={styles.content}>{children}</View>
+        </View>
+      </View>
+    );
+  }
+
+  if (!shellReady) return <>{children}</>;
 
   const tools = visibleFeatures(persona, { isAdmin });
   const spaceEntries: NavEntry[] = [
@@ -163,19 +250,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     user?.email ||
     'Mon compte';
 
-  const toggleCollapsed = () => {
-    setCollapsed((prev) => {
-      storeCollapsedPref(!prev);
-      return !prev;
-    });
-  };
-
   const renderEntry = (entry: NavEntry) => {
     const active = isActive(entry);
     return (
       <Pressable
         key={entry.key}
+        ref={(node) => {
+          entryRefs.current.set(entry.key, node as unknown as View | null);
+        }}
         onPress={() => router.push(entry.route as never)}
+        onHoverIn={() => {
+          if (!collapsed) return;
+          // Tooltip rendu HORS du ScrollView (qui rognerait tout débordement) :
+          // position mesurée en fenêtre — le frame couvre tout le viewport.
+          const node = entryRefs.current.get(entry.key) as unknown as {
+            measureInWindow?: (cb: (x: number, y: number, w: number, h: number) => void) => void;
+          } | null;
+          node?.measureInWindow?.((_x, y, _w, h) => {
+            setRailTip({ label: entry.label, y: y + h / 2 });
+          });
+        }}
+        onHoverOut={() => setRailTip(null)}
         accessibilityRole="link"
         accessibilityLabel={entry.label}
         accessibilityState={{ selected: active }}
@@ -207,6 +302,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       onPress={toggleCollapsed}
       accessibilityRole="button"
       accessibilityLabel={collapsed ? 'Déplier le menu latéral' : 'Replier le menu latéral'}
+      accessibilityHint="Raccourci : Ctrl ou Cmd + B"
       style={({ hovered }: { hovered?: boolean }) => [
         styles.collapseButton,
         hovered && styles.collapseButtonHovered,
@@ -295,7 +391,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <View style={styles.main}>
         <View style={styles.topBar}>
           <View style={styles.breadcrumb}>
-            <Text style={styles.breadcrumbRoot}>MedInfo AI</Text>
+            {/* Racine cliquable : retour à la Vue d'ensemble. */}
+            <Pressable
+              onPress={() => router.push('/(chat)/dashboard' as never)}
+              accessibilityRole="link"
+              accessibilityLabel="Vue d’ensemble"
+            >
+              {({ hovered }: { hovered?: boolean }) => (
+                <Text style={[styles.breadcrumbRoot, hovered && styles.breadcrumbRootHovered]}>
+                  MedInfo AI
+                </Text>
+              )}
+            </Pressable>
             {pageLabel ? (
               <>
                 <Text style={styles.breadcrumbSeparator}>/</Text>
@@ -322,6 +429,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </View>
         <View style={styles.content}>{children}</View>
       </View>
+
+      {/* Tooltip du rail replié (au niveau du frame : le ScrollView de la nav
+          rognerait tout débordement horizontal). */}
+      {collapsed && railTip ? (
+        <View pointerEvents="none" style={[styles.railTooltip, { top: railTip.y - 14 }]}>
+          <Text style={styles.railTooltipText} numberOfLines={1}>
+            {railTip.label}
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -524,6 +641,10 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
   },
+  breadcrumbRootHovered: {
+    color: tokens.colors.accentDeep,
+    textDecorationLine: 'underline',
+  },
   breadcrumbSeparator: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.borderStrong,
@@ -567,4 +688,44 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
   content: { flex: 1, minHeight: 0 },
+
+  // ── Tooltip du rail replié ──
+  railTooltip: {
+    position: 'absolute',
+    left: SIDEBAR_WIDTH_COLLAPSED + 6,
+    height: 28,
+    justifyContent: 'center',
+    backgroundColor: tokens.colors.accentDarker,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    borderRadius: tokens.radius.sm,
+    paddingHorizontal: tokens.space.md,
+    zIndex: 100,
+    ...tokens.elevation.md,
+  },
+  railTooltipText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.onAccent,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+
+  // ── Squelette du shell (hydratation de session) ──
+  skeletonBadge: {
+    width: 46,
+    height: 46,
+    borderRadius: tokens.radius.md,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+  },
+  skeletonCard: {
+    height: 64,
+    borderRadius: tokens.radius.lg,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  skeletonRows: { gap: tokens.space.sm },
+  skeletonRow: {
+    height: 38,
+    borderRadius: tokens.radius.md,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
 });

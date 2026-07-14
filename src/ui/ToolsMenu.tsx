@@ -4,7 +4,16 @@
  * (cf featureVisibility.ts) + Mon compte / Accueil (+ Admin si admin).
  */
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
@@ -12,6 +21,7 @@ import { isAdminUserId } from '@/admin/index';
 import { visibleFeatures, type AppFeatureId } from '@/ai/routing/featureVisibility';
 import { featureTint } from '@/ui/featureChips';
 import { Icon, type IconName } from '@/ui/icons';
+import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 import { tokens } from '@/ui/tokens';
 
 interface MenuItem {
@@ -26,6 +36,7 @@ interface MenuItem {
 export function ToolsMenu() {
   const router = useRouter();
   const segments = useSegments();
+  const { width } = useWindowDimensions();
   const { persona, user, session } = useSession();
   const [open, setOpen] = useState(false);
 
@@ -33,6 +44,10 @@ export function ToolsMenu() {
   // Visiteur non connecté (essai sans inscription) : seul le chat apparaît dans le menu.
   const isGuest = !session;
   const current = (segments as string[])[segments.length - 1];
+
+  // Sous le shell desktop (sidebar, src/ui/shell/AppShell.tsx), ce menu ferait
+  // doublon avec la navigation latérale — il reste pour les invités, sans shell.
+  if (Platform.OS === 'web' && width >= SHELL_BREAKPOINT && session) return null;
 
   const tools: MenuItem[] = visibleFeatures(persona, { isAdmin, isGuest }).map((f) => ({
     key: f.id,

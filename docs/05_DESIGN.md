@@ -170,6 +170,13 @@ décor. Tokens : `tokens.motion.*` ; CSS global (keyframes, scrollbar) : `app/+h
   clair (titre serif, badge ADMIN teinté, onglets à icônes ligne — plus d'emojis) ;
   les pages autonomes `public/partiel.html` / `presentation.html` / `cv-builder.html`
   / `article.html` ont leurs variables CSS alignées sur ces tokens (§2).
+  **Sidebar repliable** (2026-07, demande Hugo) : bouton panneau en tête de sidebar
+  (+ raccourci Ctrl/Cmd + B hors saisie) → rail d'icônes 72 px avec tooltip au survol,
+  préférence persistée (`localStorage`) ; pendant l'hydratation de session au
+  rechargement, un squelette réserve la place de la sidebar (indice `hadSession`
+  auto-réparé) pour éviter le saut de layout ; fil d'Ariane : racine « MedInfo AI »
+  cliquable → Vue d'ensemble ; sous le shell actif, le menu « Outils » des headers
+  d'écran est masqué (doublon de la sidebar — conservé pour les invités, sans shell).
 - **Vue d'ensemble** (`app/(chat)/dashboard.tsx`) : accueil de l'espace connecté — hero
   bleu nuit (« Qu'est-ce qui compte aujourd'hui ? », salutation + semaine ISO, stat tiles,
   fond `HeroBackdrop` : grille millimétrée + tracé ECG animé, coupé sous reduced-motion),
@@ -178,6 +185,10 @@ décor. Tokens : `tokens.motion.*` ; CSS global (keyframes, scrollbar) : `app/+h
   issus des données utilisateur et du moteur déterministe (`src/dashboard/overview.ts`,
   module pur testé) ; chaque source est fail-soft. Post-login → Vue d'ensemble ; sur
   mobile, onglet « Accueil » en tête de tab bar (slot réservé via `tabBarFeatures`).
+  Confort 2026-07 : horloge vivante (salutation/horodatages rafraîchis chaque minute
+  + au focus), cache mémoire 5 min par compte (stale-while-revalidate : retour
+  instantané sans skeletons, rafraîchi en arrière-plan), l'activité récente rouvre
+  LA conversation cliquée (`/chat?conversation=…`, paramètre appliqué une fois).
 - **Post-login** : routing audience (sélection au 1ᵉʳ login, modifiable en réglages) → Vue d'ensemble, chat plein écran épuré à un clic.
 - **Chat** : header (nom bot + statut + bouton Sources) / fil scrollable / input bas / disclaimer permanent.
 - **Réglages** : gestion compte, switch student→pro (si RPPS vérifié), suppression historique totale, dossiers, export PDF.

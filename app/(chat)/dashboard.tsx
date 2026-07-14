@@ -81,6 +81,42 @@ interface NextExam {
   dateIso: string;
 }
 
+/**
+ * Cache mémoire léger du dashboard (stale-while-revalidate) : en navigation
+ * aller-retour, les dernières données du MÊME utilisateur s'affichent
+ * instantanément (plus de skeletons) pendant que le rafraîchissement réel se
+ * fait en arrière-plan. Jamais persisté, jamais partagé entre comptes.
+ */
+const DASHBOARD_CACHE_TTL_MS = 5 * 60_000;
+
+interface DashboardCache {
+  userId: string;
+  ts: number;
+  convs: ChatConversation[] | null;
+  attempts: EcosAttemptRow[] | null;
+  plans: RevisionPlanListItem[] | null;
+  snapshot: PlanSnapshot | null;
+  nextExam: NextExam | null;
+}
+
+let dashboardCache: DashboardCache | null = null;
+
+function updateDashboardCache(
+  userId: string,
+  patch: Partial<Omit<DashboardCache, 'userId' | 'ts'>>,
+) {
+  const base: DashboardCache =
+    dashboardCache?.userId === userId
+      ? dashboardCache
+      : { userId, ts: 0, convs: null, attempts: null, plans: null, snapshot: null, nextExam: null };
+  dashboardCache = { ...base, ...patch, userId, ts: Date.now() };
+}
+
+function freshDashboardCache(userId: string): DashboardCache | null {
+  if (!dashboardCache || dashboardCache.userId !== userId) return null;
+  return Date.now() - dashboardCache.ts < DASHBOARD_CACHE_TTL_MS ? dashboardCache : null;
+}
+
 export default function DashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -104,14 +140,33 @@ export default function DashboardScreen() {
     if (!userId) return;
     let alive = true;
 
+    // Retour instantané : dernières données connues du même compte, puis
+    // rafraîchissement réel en arrière-plan (les setters ci-dessous écrasent).
+    const cached = freshDashboardCache(userId);
+    if (cached) {
+      if (cached.convs) setConvs(cached.convs);
+      if (cached.attempts) setAttempts(cached.attempts);
+      if (cached.plans) setPlans(cached.plans);
+      setSnapshot(cached.snapshot);
+      setNextExam(cached.nextExam);
+    }
+
     listConversations(userId)
-      .then((rows) => alive && setConvs(rows))
-      .catch(() => alive && setConvs([]));
+      .then((rows) => {
+        if (!alive) return;
+        setConvs(rows);
+        updateDashboardCache(userId, { convs: rows });
+      })
+      .catch(() => alive && setConvs((prev) => prev ?? []));
 
     if (canEcos) {
       listAttempts()
-        .then((rows) => alive && setAttempts(rows))
-        .catch(() => alive && setAttempts([]));
+        .then((rows) => {
+          if (!alive) return;
+          setAttempts(rows);
+          updateDashboardCache(userId, { attempts: rows });
+        })
+        .catch(() => alive && setAttempts((prev) => prev ?? []));
     } else {
       setAttempts([]);
     }
@@ -127,19 +182,28 @@ export default function DashboardScreen() {
           const upcoming = rows
             .filter((p) => p.exam_date >= today)
             .sort((a, b) => a.exam_date.localeCompare(b.exam_date))[0];
-          if (!upcoming) return;
-          setNextExam({
+          if (!upcoming) {
+            // Plus d'examen à venir : purger aussi un éventuel état issu du cache.
+            setNextExam(null);
+            setSnapshot(null);
+            updateDashboardCache(userId, { plans: rows, snapshot: null, nextExam: null });
+            return;
+          }
+          const exam: NextExam = {
             label:
               upcoming.exam_type !== 'custom'
                 ? EXAM_LABELS[upcoming.exam_type]
                 : `« ${truncateLabel(upcoming.title, 32)} »`,
             dateIso: upcoming.exam_date,
-          });
+          };
+          setNextExam(exam);
           const full = await getPlan(upcoming.id);
-          if (!alive || !full) return;
-          setSnapshot(planSnapshot(full.plan, today));
+          if (!alive) return;
+          const snap = full ? planSnapshot(full.plan, today) : null;
+          setSnapshot(snap);
+          updateDashboardCache(userId, { plans: rows, snapshot: snap, nextExam: exam });
         } catch {
-          if (alive) setPlans([]);
+          if (alive) setPlans((prev) => prev ?? []);
         }
       })();
     } else {
@@ -151,7 +215,21 @@ export default function DashboardScreen() {
     };
   }, [userId, canEcos, canRevision]);
 
-  const now = useMemo(() => new Date(), []);
+  // Horloge vivante : salutation et horodatages relatifs (« Hier », « 18:20 »)
+  // restent justes si l'onglet reste ouvert — tick chaque minute + retour de focus.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const tick = () => setNow(new Date());
+    const id = setInterval(tick, 60_000);
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.addEventListener('focus', tick);
+      return () => {
+        clearInterval(id);
+        window.removeEventListener('focus', tick);
+      };
+    }
+    return () => clearInterval(id);
+  }, []);
   const activity = useMemo(
     () =>
       buildRecentActivity(
