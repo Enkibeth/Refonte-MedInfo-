@@ -4,13 +4,24 @@
  * (cf featureVisibility.ts) + Mon compte / Accueil (+ Admin si admin).
  */
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
-import { visibleFeatures } from '@/ai/routing/featureVisibility';
+import { visibleFeatures, type AppFeatureId } from '@/ai/routing/featureVisibility';
+import { featureTint } from '@/ui/featureChips';
 import { Icon, type IconName } from '@/ui/icons';
+import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 import { tokens } from '@/ui/tokens';
 
 interface MenuItem {
@@ -18,11 +29,14 @@ interface MenuItem {
   label: string;
   icon: IconName;
   route: string;
+  /** Outil du registre → pastille teintée (refonte shell 2026-07). */
+  featureId?: AppFeatureId;
 }
 
 export function ToolsMenu() {
   const router = useRouter();
   const segments = useSegments();
+  const { width } = useWindowDimensions();
   const { persona, user, session } = useSession();
   const [open, setOpen] = useState(false);
 
@@ -31,11 +45,16 @@ export function ToolsMenu() {
   const isGuest = !session;
   const current = (segments as string[])[segments.length - 1];
 
+  // Sous le shell desktop (sidebar, src/ui/shell/AppShell.tsx), ce menu ferait
+  // doublon avec la navigation latérale — il reste pour les invités, sans shell.
+  if (Platform.OS === 'web' && width >= SHELL_BREAKPOINT && session) return null;
+
   const tools: MenuItem[] = visibleFeatures(persona, { isAdmin, isGuest }).map((f) => ({
     key: f.id,
     label: f.label,
     icon: f.icon,
     route: f.route,
+    featureId: f.id,
   }));
 
   const extras: MenuItem[] = isGuest
@@ -44,8 +63,8 @@ export function ToolsMenu() {
         { key: 'signin', label: 'Se connecter / Créer un compte', icon: 'userRound', route: '/(auth)/sign-in' },
       ]
     : [
+        { key: 'dashboard', label: "Vue d’ensemble", icon: 'home', route: '/(chat)/dashboard' },
         { key: 'account', label: 'Mon compte', icon: 'userRound', route: '/(account)/account' },
-        { key: 'home', label: 'Accueil', icon: 'home', route: '/' },
       ];
   if (isAdmin) extras.push({ key: 'admin', label: 'Panel admin', icon: 'settings', route: '/(admin)' });
 
@@ -62,7 +81,7 @@ export function ToolsMenu() {
         accessibilityLabel="Ouvrir le menu des outils"
         style={styles.trigger}
       >
-        <Text style={styles.triggerIcon}>⋯</Text>
+        <Icon name="layoutGrid" size={14} color={tokens.colors.accentDeep} />
         <Text style={styles.triggerLabel}>Outils</Text>
       </Pressable>
 
@@ -73,6 +92,7 @@ export function ToolsMenu() {
             <ScrollView style={styles.list}>
               {tools.map((item) => {
                 const active = item.key === current;
+                const tint = item.featureId ? featureTint(item.featureId) : null;
                 return (
                   <Pressable
                     key={item.key}
@@ -80,8 +100,12 @@ export function ToolsMenu() {
                     accessibilityRole="button"
                     style={[styles.item, active && styles.itemActive]}
                   >
-                    <View style={styles.itemIcon}>
-                      <Icon name={item.icon} size={17} color={active ? tokens.colors.accentDeep : tokens.colors.textSubtle} />
+                    <View style={[styles.itemIcon, tint && { backgroundColor: tint.bg }]}>
+                      <Icon
+                        name={item.icon}
+                        size={15}
+                        color={active ? tokens.colors.accentDeep : (tint?.fg ?? tokens.colors.textSubtle)}
+                      />
                     </View>
                     <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>{item.label}</Text>
                     {active ? <Text style={styles.itemDot}>•</Text> : null}
@@ -122,7 +146,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: tokens.colors.accentSurfaceStrong,
   },
-  triggerIcon: { fontSize: tokens.type.h3.fontSize, lineHeight: tokens.type.h3.fontSize, color: tokens.colors.accentDeep, fontWeight: tokens.weight.bold },
   triggerLabel: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.accentDeep,
@@ -166,7 +189,13 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radius.md,
   },
   itemActive: { backgroundColor: tokens.colors.accentSurface },
-  itemIcon: { width: 22, alignItems: 'center' },
+  itemIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: tokens.radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   itemLabel: {
     flex: 1,
     fontFamily: tokens.font.sans,

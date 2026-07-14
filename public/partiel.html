@@ -17,21 +17,21 @@
 </script>
 <style>
 :root{
-  --bg:#ffffff;--ink:#202124;--ink2:#3c4043;
-  --muted:#80868b;--muted2:#5f6368;
-  --line:#dadce0;--linef:#e8eaed;
+  --bg:#f7f9fc;--ink:#0e1626;--ink2:#36435a;
+  --muted:#5d6b80;--muted2:#36435a;
+  --line:#dde3ed;--linef:#eaeef5;
   --card:#f8f9fa;--cardalt:#f1f3f4;
-  --a1:#2563eb;--a1s:rgba(26,111,212,.10);--a1m:rgba(26,111,212,.22);
+  --a1:#2563eb;--a1s:rgba(37,99,235,.10);--a1m:rgba(37,99,235,.22);
   /* Accent clinique (info / second profil) — medinfo-ai */
-  --a2:#1e8e3e;--a2s:rgba(30,142,62,.10);--a2m:rgba(30,142,62,.22);
+  --a2:#157f50;--a2s:rgba(21,127,80,.10);--a2m:rgba(21,127,80,.22);
   --c-clinical-blue:#2563eb;--c-clinical-blue-soft:#eef4ff;
-  --c-clinical-green:#1e8e3e;--c-clinical-green-soft:#e6f4ea;
-  --ok:#1e8e3e;--oks:rgba(30,142,62,.14);
-  --bar:#dadce0;--errbg:#fce8e6;
-  --r-xs:3px;--r-sm:6px;--r-md:8px;
-  --shadow-rest:0 1px 0 rgba(26,26,26,.03),0 1px 2px rgba(26,26,26,.04);
-  --shadow-card:0 1px 0 rgba(26,26,26,.03),0 6px 18px -10px rgba(26,26,26,.10);
-  --shadow-lift:0 1px 0 rgba(26,26,26,.04),0 14px 36px -16px rgba(26,26,26,.18);
+  --c-clinical-green:#157f50;--c-clinical-green-soft:#e6f4ec;
+  --ok:#157f50;--oks:rgba(21,127,80,.14);
+  --bar:#dde3ed;--errbg:#fbeaec;
+  --r-xs:6px;--r-sm:8px;--r-md:12px;
+  --shadow-rest:0 1px 2px rgba(14,22,38,.05),0 1px 1px rgba(14,22,38,.04);
+  --shadow-card:0 2px 4px rgba(30,64,175,.05),0 8px 20px -6px rgba(30,64,175,.10);
+  --shadow-lift:0 4px 8px rgba(30,64,175,.06),0 16px 40px -12px rgba(30,64,175,.18);
   --ease:cubic-bezier(.25,1,.5,1);
 }
 *,*::before,*::after{box-sizing:border-box;-webkit-font-smoothing:antialiased;}
@@ -68,7 +68,7 @@ main{padding:40px 0 100px;display:flex;flex-direction:column;gap:44px;}
 
 .dropzone{display:block;border:1.5px dashed var(--line);background:rgba(255,255,255,.55);padding:44px 24px;text-align:center;cursor:pointer;transition:all .22s var(--ease);border-radius:var(--r-md);box-shadow:var(--shadow-rest);}
 @media(min-width:768px){.dropzone{padding:60px 24px;}}
-.dropzone:hover{border-color:#8a8273;background:rgba(255,255,255,.72);box-shadow:var(--shadow-card);transform:translateY(-1px);}
+.dropzone:hover{border-color:#c3cddb;background:rgba(255,255,255,.72);box-shadow:var(--shadow-card);transform:translateY(-1px);}
 .dropzone.dragover{border-color:var(--a1);background:var(--a1s);box-shadow:var(--shadow-card);transform:translateY(-1px);}
 .dropzone .big{font-family:'Fraunces',Georgia,serif;font-size:28px;font-style:italic;font-weight:400;display:block;letter-spacing:-.02em;}
 @media(min-width:768px){.dropzone .big{font-size:38px;}}
@@ -87,7 +87,7 @@ main{padding:40px 0 100px;display:flex;flex-direction:column;gap:44px;}
 .crow{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;margin-top:20px;}
 .clabel{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:500;}
 select.f{font-family:'JetBrains Mono',monospace;font-size:12px;border:1px solid var(--line);padding:9px 14px;background:white;color:var(--ink);min-width:220px;cursor:pointer;border-radius:var(--r-sm);}
-select.f:focus{outline:none;border-color:var(--a1);box-shadow:0 0 0 3px rgba(26,111,212,.14);}
+select.f:focus{outline:none;border-color:var(--a1);box-shadow:0 0 0 3px rgba(37,99,235,.14);}
 .seg{display:flex;border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;background:var(--card);}
 .seg button{font-family:'JetBrains Mono',monospace;font-size:11px;padding:9px 16px;border:none;border-right:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;letter-spacing:.02em;transition:all .15s var(--ease);}
 .seg button:last-child{border-right:none;}
@@ -131,11 +131,11 @@ tr.excl td{opacity:.35;text-decoration:line-through;text-decoration-color:var(--
 .idcard.a{border-left-color:var(--a1);}
 .idcard.b{border-left-color:var(--a2);}
 input.f{width:100%;font-family:'JetBrains Mono',monospace;font-size:17px;padding:12px 14px;border:1px solid var(--line);background:white;outline:none;transition:border-color .15s var(--ease),box-shadow .15s var(--ease);border-radius:var(--r-sm);}
-input.f:focus{border-color:var(--a1);box-shadow:0 0 0 3px rgba(26,111,212,.14);}
+input.f:focus{border-color:var(--a1);box-shadow:0 0 0 3px rgba(37,99,235,.14);}
 
 .genbtn{width:100%;padding:26px 24px;font-family:'Fraunces',Georgia,serif;font-optical-sizing:auto;font-style:italic;font-weight:600;font-size:26px;letter-spacing:-.02em;background:var(--ink);color:var(--bg);border:none;cursor:pointer;transition:all .2s var(--ease);border-radius:var(--r-md);box-shadow:var(--shadow-card);}
 @media(min-width:768px){.genbtn{font-size:34px;padding:32px 24px;}}
-.genbtn:hover:not(:disabled){background:var(--a1);transform:translateY(-1px);box-shadow:0 14px 36px -16px rgba(26,111,212,.34);}
+.genbtn:hover:not(:disabled){background:var(--a1);transform:translateY(-1px);box-shadow:0 14px 36px -16px rgba(37,99,235,.34);}
 .genbtn:disabled{background:var(--linef);color:var(--muted);cursor:not-allowed;}
 .errbox{font-family:'JetBrains Mono',monospace;font-size:12px;padding:14px 16px;border:1px solid var(--a1);border-left-width:4px;background:var(--errbg);color:var(--a1);letter-spacing:.02em;border-radius:var(--r-md);}
 
@@ -151,7 +151,7 @@ input.f:focus{border-color:var(--a1);box-shadow:0 0 0 3px rgba(26,111,212,.14);}
 .rdate{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}
 
 .pdfbtn{font-family:'JetBrains Mono',monospace;font-size:11px;padding:9px 18px;background:var(--a1);color:white;border:none;cursor:pointer;letter-spacing:.04em;display:inline-flex;align-items:center;gap:8px;transition:all .15s var(--ease);flex-shrink:0;border-radius:var(--r-sm);}
-.pdfbtn:hover{opacity:.95;transform:translateY(-1px);box-shadow:0 6px 16px -4px rgba(26,111,212,.32);}
+.pdfbtn:hover{opacity:.95;transform:translateY(-1px);box-shadow:0 6px 16px -4px rgba(37,99,235,.32);}
 .pdfbtn:disabled{opacity:.5;cursor:not-allowed;}
 .pdfbtn svg{width:14px;height:14px;fill:currentColor;flex-shrink:0;}
 .pdfbtn .spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
@@ -738,7 +738,7 @@ function buildHeroRow(stu){
 
 // Couleurs résolues en dur pour les SVG radar/Gauss : html2canvas (export PDF) ne
 // sait pas rasteriser color-mix() ni les variables CSS. Valeurs = celles de :root.
-const SVGC={a1:'#2563eb',a2:'#1e8e3e',ink:'#202124',muted:'#80868b',line:'#dadce0',linef:'#e8eaed'};
+const SVGC={a1:'#2563eb',a2:'#157f50',ink:'#0e1626',muted:'#5d6b80',line:'#dde3ed',linef:'#eaeef5'};
 const svgRgba=(hex,a)=>{const n=parseInt(hex.slice(1),16);return`rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;};
 
 function buildRadar(stu,colorVar){

@@ -9,6 +9,7 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { MedInfoThemeProvider } from '@/ui/MedInfoThemeProvider';
 import { AuthProvider, useSession } from '@/auth/AuthProvider';
 import { resolvePersonaRoute } from '@/ai/routing/persona';
+import { AppShell } from '@/ui/shell/AppShell';
 
 /**
  * Garde de navigation par persona (02_ARCHITECTURE §4).
@@ -51,7 +52,8 @@ function useProtectedRoute() {
 
     const resolution = persona ? resolvePersonaRoute(persona) : null;
     if (inAuthGroup) {
-      router.replace(resolution?.allowed ? '/(chat)/chat' : '/(account)/account');
+      // Post-connexion : atterrissage sur la Vue d'ensemble (refonte shell 2026-07).
+      router.replace(resolution?.allowed ? '/(chat)/dashboard' : '/(account)/account');
     } else if (resolution && !resolution.allowed && segments[0] === '(chat)') {
       // Persona reportée (professional) : pas d'accès au chat MVP.
       router.replace('/(account)/account');
@@ -62,16 +64,20 @@ function useProtectedRoute() {
 function RootNavigator() {
   useProtectedRoute();
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="(auth)" />
-      <Stack.Screen name="(chat)" />
-      <Stack.Screen name="(account)" />
-      <Stack.Screen name="(billing)" />
-      <Stack.Screen name="(legal)" />
-      <Stack.Screen name="(marketing)" />
-      <Stack.Screen name="(admin)" />
-    </Stack>
+    // Shell applicatif (sidebar + top bar) : actif seulement sur desktop web,
+    // session ouverte et groupes applicatifs — transparent partout ailleurs.
+    <AppShell>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(chat)" />
+        <Stack.Screen name="(account)" />
+        <Stack.Screen name="(billing)" />
+        <Stack.Screen name="(legal)" />
+        <Stack.Screen name="(marketing)" />
+        <Stack.Screen name="(admin)" />
+      </Stack>
+    </AppShell>
   );
 }
 

@@ -377,7 +377,10 @@ export default function ChatScreen() {
 
   // Le profil charge après le premier rendu : aligne le chatbot par défaut une fois connu.
   // Un paramètre ?bot=… (cartes de l'accueil) prime s'il est autorisé pour ce compte.
-  const { bot } = useLocalSearchParams<{ bot?: string }>();
+  const { bot, conversation: conversationParam } = useLocalSearchParams<{
+    bot?: string;
+    conversation?: string;
+  }>();
   const personaInitialized = useRef(false);
   // Dernière valeur de ?bot= déjà appliquée : chaque valeur du paramètre ne bascule
   // le chatbot qu'une fois (un switch manuel ultérieur ne doit pas être écrasé).
@@ -722,6 +725,19 @@ export default function ChatScreen() {
     },
     [availableChatbots, setMessages, stop],
   );
+
+  // Deep-link ?conversation=… (activité récente du dashboard) : rouvre la
+  // conversation visée dès que la liste est chargée. Même patron que ?bot= :
+  // chaque valeur n'est appliquée qu'une fois (une navigation manuelle ultérieure
+  // dans l'historique ne doit pas être écrasée).
+  const appliedConversationParamRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!conversationParam || conversationParam === appliedConversationParamRef.current) return;
+    if (conversationsLoading) return;
+    appliedConversationParamRef.current = conversationParam;
+    const target = conversations.find((c) => c.id === conversationParam);
+    if (target && target.id !== conversationIdRef.current) void openConversation(target);
+  }, [conversationParam, conversationsLoading, conversations, openConversation]);
 
   const handleDeleteConversation = useCallback(
     async (id: string) => {

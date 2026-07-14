@@ -14,21 +14,21 @@
    Aperçu de slide (.pv-*) en Georgia : fidèle au rendu PPTX (Keynote).
    ============================================================ */
 :root {
-  --bg: #f6f7f9;
+  --bg: #f7f9fc;
   --surface: #ffffff;
-  --ink: #202124;
-  --ink-2: #3c4043;
-  --ink-3: #80868b;
-  --rule: #e8eaed;
-  --rule-2: #dadce0;
+  --ink: #0e1626;
+  --ink-2: #36435a;
+  --ink-3: #5d6b80;
+  --rule: #eaeef5;
+  --rule-2: #dde3ed;
   --accent: #2563eb;
   --accent-deep: #1e40af;
   --accent-soft: #eef4ff;
-  --danger: #c5221f;
-  --warn-bg: #fff7ed;
-  --warn-line: #fed7aa;
-  --warn-ink: #9a3412;
-  --radius: 10px;
+  --danger: #c42233;
+  --warn-bg: #fbf1dd;
+  --warn-line: rgba(154, 101, 22, .3);
+  --warn-ink: #9a6516;
+  --radius: 12px;
   --serif: Georgia, "Times New Roman", serif;      /* aperçu = rendu PPTX */
   --brand-serif: "Fraunces", Georgia, serif;        /* titres chrome MedInfo */
   --sans: "Public Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
@@ -67,7 +67,7 @@ button { font-family: inherit; }
 /* ---------- Cloud (autosave + bibliothèque) ---------- */
 .mip-cloud { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .mip-save { font-size: 12px; color: var(--ink-3); min-width: 96px; text-align: right; }
-.mip-save[data-st="saved"] { color: #1e8e3e; }
+.mip-save[data-st="saved"] { color: #157f50; }
 .mip-save[data-st="saving"] { color: var(--accent); }
 .mip-save[data-st="error"] { color: var(--danger); }
 .mip-save[data-st="offline"] { color: var(--ink-3); }

@@ -57,6 +57,14 @@ Sémantiques fournies avec leur fond doux (`successBackground`, `dangerBackgroun
 `warningBackground`). Élévations via `tokens.elevation.{sm,md,lg}` (web) : ombres en
 **deux couches** (contact + diffusion) — jamais un seul grand halo flou « template ».
 
+**Teintes de pastilles par outil** (refonte shell 2026-07) : `tokens.colors.tints.{blue,
+green, amber, rose, violet, teal, slate}` — paires fond doux + encre foncée. Chaque outil
+porte une teinte stable dans toute l'app (mapping : `src/ui/featureChips.ts`), pensée pour
+que les outils visibles ensemble pour un même rôle restent distincts. Usage strict :
+pastille d'icône / monogramme (cartes d'outils, panneau Outils, activité récente) — jamais
+des aplats de section, et jamais l'unique porteur d'information (icône + libellé toujours
+présents).
+
 Déclinaisons hors tokens à maintenir alignées : `app/+html.tsx` (theme-color, fond,
 sélection, scrollbar), `app.json` (splash `#141E4E`), exports PDF (`src/chat/exportChatPdf.ts`,
 `src/audio/exportPdf.ts`), pages autonomes `public/partiel.html` / `presentation.html` /
@@ -147,7 +155,41 @@ décor. Tokens : `tokens.motion.*` ; CSS global (keyframes, scrollbar) : `app/+h
 ## 6. Layout
 
 - **Page d'entrée unique** : logo, value prop courte, CTA login/signup. Rien d'autre.
-- **Post-login** : routing audience (sélection au 1ᵉʳ login, modifiable en réglages) → chat plein écran épuré.
+- **Shell applicatif** (refonte 2026-07, principe « dashboard » validé par Hugo) :
+  sur **desktop web (≥ 1024 px, connecté)**, les écrans applicatifs (groupes chat/compte/
+  billing/admin) vivent dans un shell persistant — sidebar bleu nuit (`accentDarker`) avec
+  pastille de l'illustration d'équipe + logo (mêmes assets que le header public),
+  carte utilisateur (initiales + rôle), sections « Mon espace » (Vue d'ensemble +
+  outils du rôle via `visibleFeatures`) et « Compte », carte « Données protégées » en pied ;
+  barre supérieure avec fil d'Ariane, pastille de disclosure IA et bouton Aide.
+  Source : `src/ui/shell/AppShell.tsx` (transparent sur mobile/natif/visiteur/pages
+  publiques — la tab bar mobile reste la navigation). Couche d'ergonomie uniquement :
+  RoleGate + autorisation serveur inchangés. Uniformisation 2026-07 : sous le shell,
+  les groupes Compte/Tarifs masquent leur en-tête natif de Stack (doublon du fil
+  d'Ariane, conservé sur mobile pour le retour) et le panel admin passe en en-tête
+  clair (titre serif, badge ADMIN teinté, onglets à icônes ligne — plus d'emojis) ;
+  les pages autonomes `public/partiel.html` / `presentation.html` / `cv-builder.html`
+  / `article.html` ont leurs variables CSS alignées sur ces tokens (§2).
+  **Sidebar repliable** (2026-07, demande Hugo) : bouton panneau en tête de sidebar
+  (+ raccourci Ctrl/Cmd + B hors saisie) → rail d'icônes 72 px avec tooltip au survol,
+  préférence persistée (`localStorage`) ; pendant l'hydratation de session au
+  rechargement, un squelette réserve la place de la sidebar (indice `hadSession`
+  auto-réparé) pour éviter le saut de layout ; fil d'Ariane : racine « MedInfo AI »
+  cliquable → Vue d'ensemble ; sous le shell actif, le menu « Outils » des headers
+  d'écran est masqué (doublon de la sidebar — conservé pour les invités, sans shell).
+- **Vue d'ensemble** (`app/(chat)/dashboard.tsx`) : accueil de l'espace connecté — hero
+  bleu nuit (« Qu'est-ce qui compte aujourd'hui ? », salutation + semaine ISO, stat tiles,
+  fond `HeroBackdrop` : grille millimétrée + tracé ECG animé, coupé sous reduced-motion),
+  grille des outils du rôle à pastilles teintées, rail droit (Prochain objectif dérivé du
+  plan de révision réel + Activité récente chat/ECOS/révisions). Chiffres exclusivement
+  issus des données utilisateur et du moteur déterministe (`src/dashboard/overview.ts`,
+  module pur testé) ; chaque source est fail-soft. Post-login → Vue d'ensemble ; sur
+  mobile, onglet « Accueil » en tête de tab bar (slot réservé via `tabBarFeatures`).
+  Confort 2026-07 : horloge vivante (salutation/horodatages rafraîchis chaque minute
+  + au focus), cache mémoire 5 min par compte (stale-while-revalidate : retour
+  instantané sans skeletons, rafraîchi en arrière-plan), l'activité récente rouvre
+  LA conversation cliquée (`/chat?conversation=…`, paramètre appliqué une fois).
+- **Post-login** : routing audience (sélection au 1ᵉʳ login, modifiable en réglages) → Vue d'ensemble, chat plein écran épuré à un clic.
 - **Chat** : header (nom bot + statut + bouton Sources) / fil scrollable / input bas / disclaimer permanent.
 - **Réglages** : gestion compte, switch student→pro (si RPPS vérifié), suppression historique totale, dossiers, export PDF.
 - Responsive parfait mobile/tablette/desktop (Expo = natif).
