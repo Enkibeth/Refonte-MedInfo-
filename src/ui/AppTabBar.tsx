@@ -68,11 +68,13 @@ export function AppTabBar({ state, navigation }: AppTabBarProps) {
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
   const { width } = useWindowDimensions();
-  const { persona, user, session } = useSession();
+  const { persona, user, session, loading } = useSession();
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const isAdmin = user ? isAdminUserId(user.id) : false;
-  const isGuest = !session;
+  // Même garde que app/(chat)/_layout.tsx : pendant l'hydratation de session,
+  // ne pas conclure « invité » (sinon flash de la barre invité au rechargement).
+  const isGuest = !session && !loading;
   const ctx = { isAdmin, isGuest };
 
   // L’onglet « Accueil » (Vue d’ensemble) occupe un slot pour les comptes connectés.

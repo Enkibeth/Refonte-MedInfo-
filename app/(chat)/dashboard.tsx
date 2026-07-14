@@ -55,6 +55,7 @@ import { featureTint } from '@/ui/featureChips';
 import { HeroBackdrop } from '@/ui/HeroBackdrop';
 import { Icon } from '@/ui/icons';
 import { SeoHead } from '@/ui/SeoHead';
+import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 import { Skeleton } from '@/ui/Skeleton';
 import { tokens } from '@/ui/tokens';
 
@@ -210,7 +211,7 @@ export default function DashboardScreen() {
       ? { label: TOOL_CTA_LABEL[secondTool.id] ?? secondTool.label, route: secondTool.route }
       : { label: 'Mon compte', route: '/(account)/account' };
 
-  const desktopShell = Platform.OS === 'web' && width >= 1024;
+  const desktopShell = Platform.OS === 'web' && width >= SHELL_BREAKPOINT;
   const wide = Platform.OS === 'web' && width >= 1180;
 
   return (
