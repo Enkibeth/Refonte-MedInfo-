@@ -2,7 +2,7 @@
  * Route API chat — POST /api/chat (Expo Router API route, web).
  *
  * Refonte 2026-06 (décision Hugo) : un chat DIRECT et fonctionnel d'abord.
- *   - 3 chatbots = 3 prompts produit complets (public.v3 / student.v3 / professional.v2),
+ *   - 3 chatbots = 3 prompts produit complets (public.v3 / student.v4 / professional.v2),
  *     éditables depuis le panel admin (table ai_prompts, fallback PROMPT_DEFAULTS).
  *   - Le client choisit son chatbot (`body.chatbot`) ; côté serveur, seuls les comptes
  *     vérifiés étudiant/professionnel (et admins) peuvent utiliser les chats étudiant/pro.

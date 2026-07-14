@@ -35,6 +35,7 @@ import type { UIMessage } from 'ai';
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
+import { isFeatureVisible } from '@/ai/routing/featureVisibility';
 import type { ChatbotId } from '@/ai/chat/chatContext';
 import {
   assistantTextForExport,
@@ -990,6 +991,35 @@ export default function ChatScreen() {
           <StatusBubble phase={recovering ? 'recovering' : phase} toolLabel={activeToolLabel(lastAssistant)} />
         )}
 
+        {/* ── Passerelles étudiant : prolonger la révision avec les outils du rôle ── */}
+        {chatbot === 'student' && !isLoading && lastAssistant && user ? (
+          <View style={styles.bridgeRow}>
+            <Text style={styles.bridgeLabel}>Continuer avec</Text>
+            {isFeatureVisible('ecos', persona, { isAdmin }) ? (
+              <TouchableOpacity
+                style={styles.bridgeChip}
+                onPress={() => router.push('/(chat)/ecos' as never)}
+                accessibilityRole="link"
+                accessibilityLabel="S'entraîner sur un cas ECOS"
+              >
+                <Icon name="stethoscope" size={14} color={tokens.colors.accentDeep} />
+                <Text style={styles.bridgeChipText}>S’entraîner (ECOS)</Text>
+              </TouchableOpacity>
+            ) : null}
+            {isFeatureVisible('revision', persona, { isAdmin }) ? (
+              <TouchableOpacity
+                style={styles.bridgeChip}
+                onPress={() => router.push('/(chat)/revision' as never)}
+                accessibilityRole="link"
+                accessibilityLabel="Planifier mes révisions"
+              >
+                <Icon name="calendarCheck" size={14} color={tokens.colors.accentDeep} />
+                <Text style={styles.bridgeChipText}>Planifier (Révisions)</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        ) : null}
+
         {/* ── Proposition d'inscription / connexion en fin d'essai gratuit ── */}
         {guestLocked && !isLoading ? (
           <Reveal>
@@ -1482,6 +1512,38 @@ const styles = StyleSheet.create({
     height: 7,
     borderRadius: tokens.radius.pill,
     backgroundColor: tokens.colors.textMuted,
+  },
+
+  // Passerelles étudiant (chat → ECOS / Révisions) : rangée discrète après la réponse.
+  bridgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: tokens.space.sm,
+  },
+  bridgeLabel: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.medium,
+  },
+  bridgeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.xs + 2,
+    borderRadius: tokens.radius.pill,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    backgroundColor: tokens.colors.accentSurface,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.xs + 2,
+    ...tokens.motion.transitionWeb,
+  },
+  bridgeChipText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
   },
 
   stoppedNotice: {

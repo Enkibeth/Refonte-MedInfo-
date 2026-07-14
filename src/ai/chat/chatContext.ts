@@ -1,7 +1,7 @@
 /**
  * Contexte utilisateur injecté dans le system prompt des 3 chatbots (refonte 2026-06).
  *
- * Les prompts produit (public.v3 / student.v3 / professional.v2) sont la source de vérité
+ * Les prompts produit (public.v3 / student.v4 / professional.v2) sont la source de vérité
  * du comportement : ce module n'ajoute QUE le minimum de contexte (prénom, âge, sexe)
  * pour que l'IA personnalise ses réponses sans redemander ces informations.
  *

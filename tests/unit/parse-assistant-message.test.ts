@@ -377,3 +377,27 @@ describe('assistantTextForExport — texte propre (Copier / export PDF)', () => 
     expect(out).not.toContain('[1] + [2] + [3]');
   });
 });
+
+describe('section SOURCES — robustesse (format étudiant historique)', () => {
+  it("reconnaît l'en-tête « SOURCES UTILISÉES » (prompt étudiant v3 archivé)", () => {
+    const text =
+      'Réponse.\n\nSOURCES UTILISÉES\n\nSRC1 :: [OFFICIEL] HAS :: HAS :: Titre :: 2024\nhttps://exemple.fr/reco';
+    const parsed = parseAssistantMessage(text);
+    expect(parsed.sources).toHaveLength(1);
+    expect(parsed.sources[0].id).toBe('SRC1');
+  });
+
+  it('ne perd JAMAIS une bibliographie libre sans lignes SRCn (repart dans le corps)', () => {
+    const text =
+      'Réponse.\n\nSOURCES UTILISÉES\n• CMIT — Item EDN 161 : Infections urinaires — p.186 — Rang A\n• CNEC — Item EDN 230 : Fibrillation atriale — p.45 — Rang A';
+    const parsed = parseAssistantMessage(text);
+    expect(parsed.sources).toHaveLength(0);
+    const bodyText = parsed.blocks
+      .filter((b): b is { type: 'body'; markdown: string } => b.type === 'body')
+      .map((b) => b.markdown)
+      .join('\n');
+    expect(bodyText).toContain('SOURCES UTILISÉES');
+    expect(bodyText).toContain('CMIT — Item EDN 161');
+    expect(bodyText).toContain('CNEC — Item EDN 230');
+  });
+});
