@@ -11,7 +11,16 @@
  * role-aware existante) et n'est jamais une barrière — l'autorisation réelle reste
  * côté serveur (serverPersona.ts) et <RoleGate> en défense en profondeur.
  */
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, Platform } from 'react-native';
+import {
+  Image,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { useRouter, usePathname, useSegments } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
@@ -166,6 +175,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           accessibilityLabel="MedInfo AI — accueil"
           style={styles.logoRow}
         >
+          {/* Illustration de l'équipe (demande Hugo) — même pastille que le header
+              public (src/ui/LandingHeader.tsx). Asset relatif (piège alias @/). */}
+          <Image
+            source={require('../../../assets/brand/team-illustration.png')}
+            style={styles.teamBadge}
+            resizeMode="cover"
+            accessibilityRole="image"
+            accessibilityLabel="L'équipe MedInfo AI"
+          />
           <Logo size="sm" tone="light" />
         </Pressable>
 
@@ -256,7 +274,20 @@ const styles = StyleSheet.create({
     paddingBottom: tokens.space.lg,
     gap: tokens.space.lg,
   },
-  logoRow: { alignSelf: 'flex-start' },
+  logoRow: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.md,
+  },
+  teamBadge: {
+    width: 46,
+    height: 46,
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
   userCard: {
     flexDirection: 'row',
     alignItems: 'center',

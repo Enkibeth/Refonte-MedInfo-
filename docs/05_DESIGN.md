@@ -158,7 +158,8 @@ décor. Tokens : `tokens.motion.*` ; CSS global (keyframes, scrollbar) : `app/+h
 - **Shell applicatif** (refonte 2026-07, principe « dashboard » validé par Hugo) :
   sur **desktop web (≥ 1024 px, connecté)**, les écrans applicatifs (groupes chat/compte/
   billing/admin) vivent dans un shell persistant — sidebar bleu nuit (`accentDarker`) avec
-  logo, carte utilisateur (initiales + rôle), sections « Mon espace » (Vue d'ensemble +
+  pastille de l'illustration d'équipe + logo (mêmes assets que le header public),
+  carte utilisateur (initiales + rôle), sections « Mon espace » (Vue d'ensemble +
   outils du rôle via `visibleFeatures`) et « Compte », carte « Données protégées » en pied ;
   barre supérieure avec fil d'Ariane, pastille de disclosure IA et bouton Aide.
   Source : `src/ui/shell/AppShell.tsx` (transparent sur mobile/natif/visiteur/pages
