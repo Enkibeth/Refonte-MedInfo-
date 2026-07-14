@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 import {
   buildRecentActivity,
+  conversationsThisWeek,
   formatMinutes,
   greetingWord,
   heroSummary,
@@ -197,5 +198,74 @@ describe('buildRecentActivity — fusion multi-outils triée', () => {
       conversations: [{ id: 'c1', title: 'x', category: null, updated_at: 'invalid' }],
     });
     expect(entries).toHaveLength(0);
+  });
+});
+
+describe('buildRecentActivity — activité de tous les outils du rôle (D1)', () => {
+  it('fusionne document / audio / présentations / CV / articles avec le bon deep-link', () => {
+    const entries = buildRecentActivity({
+      documentAnalyses: [
+        { id: 'd1', mode: 'translation', source_name: 'compte-rendu.pdf', created_at: '2026-07-13T10:00:00Z' },
+        { id: 'd2', mode: 'analysis', source_name: null, created_at: '2026-07-12T10:00:00Z' },
+      ],
+      audioDocuments: [{ id: 'a1', title: 'Consultation Mme B.', created_at: '2026-07-11T10:00:00Z' }],
+      presentationDecks: [{ id: 'p1', title: 'Insuffisance cardiaque', updated_at: '2026-07-10T10:00:00Z' }],
+      cvDocuments: [{ id: 'v1', title: null, updated_at: '2026-07-09T10:00:00Z' }],
+      articleDocuments: [
+        { id: 'r1', title: 'Étude pilote', doc_type: 'case_report', updated_at: '2026-07-08T10:00:00Z' },
+      ],
+    });
+    expect(entries.map((e) => e.feature)).toEqual([
+      'document',
+      'document',
+      'audio',
+      'presentation',
+      'cv-builder',
+      'article',
+    ]);
+    expect(entries[0].title).toBe('Traduction — compte-rendu.pdf');
+    expect(entries[1].title).toBe('Analyse — Texte collé');
+    expect(entries[2].title).toBe('Audio — Consultation Mme B.');
+    expect(entries[4].title).toBe('CV — Mon CV');
+    expect(entries[5].detail).toBe('Cas clinique');
+    expect(entries[0].route).toBe('/(chat)/document');
+    expect(entries[5].route).toBe('/(chat)/article');
+  });
+
+  it('affiche le chatbot d’origine de la conversation quand il est fourni (D4)', () => {
+    const entries = buildRecentActivity({
+      conversations: [
+        {
+          id: 'c1',
+          chatbot: 'student',
+          title: 'Item 230',
+          category: 'Révisions & concours',
+          updated_at: '2026-07-12T09:00:00Z',
+        },
+      ],
+    });
+    expect(entries[0].detail).toBe('Chat étudiant · Révisions & concours');
+  });
+});
+
+describe('conversationsThisWeek — tuile « Cette semaine » (D2)', () => {
+  const now = new Date('2026-07-14T12:00:00Z');
+
+  it('compte les conversations actives dans les 7 derniers jours', () => {
+    expect(
+      conversationsThisWeek(
+        [
+          { updated_at: '2026-07-14T09:00:00Z' },
+          { updated_at: '2026-07-08T09:00:00Z' },
+          { updated_at: '2026-07-01T09:00:00Z' },
+          { updated_at: 'invalid' },
+        ],
+        now,
+      ),
+    ).toBe(2);
+  });
+
+  it('liste vide → 0', () => {
+    expect(conversationsThisWeek([], now)).toBe(0);
   });
 });
