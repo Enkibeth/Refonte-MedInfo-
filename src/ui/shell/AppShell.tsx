@@ -11,6 +11,7 @@
  * role-aware existante) et n'est jamais une barrière — l'autorisation réelle reste
  * côté serveur (serverPersona.ts) et <RoleGate> en défense en profondeur.
  */
+import { useState } from 'react';
 import {
   Image,
   Platform,
@@ -35,6 +36,29 @@ import { tokens } from '@/ui/tokens';
 export const SHELL_BREAKPOINT = 1024;
 
 const SIDEBAR_WIDTH = 264;
+/** Largeur du rail replié : icônes seules, l'écran (chat, outils) récupère la place. */
+const SIDEBAR_WIDTH_COLLAPSED = 72;
+
+/** Préférence de repli persistée (web only — le shell n'existe que sur desktop web). */
+const SIDEBAR_COLLAPSED_KEY = 'medinfo.shell.sidebarCollapsed';
+
+function readCollapsedPref(): boolean {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return false;
+  try {
+    return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function storeCollapsedPref(collapsed: boolean) {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0');
+  } catch {
+    // Stockage indisponible (navigation privée…) : préférence non persistée, sans gravité.
+  }
+}
 
 /** Groupes de routes qui vivent DANS le shell (espace connecté). */
 const SHELL_GROUPS = new Set(['(chat)', '(account)', '(billing)', '(admin)']);
@@ -84,6 +108,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const segments = useSegments() as string[];
   const pathname = usePathname();
   const router = useRouter();
+  // Sidebar repliable (demande Hugo) : le chat et les outils récupèrent la largeur.
+  const [collapsed, setCollapsed] = useState(readCollapsedPref);
 
   const isAdmin = user ? isAdminUserId(user.id) : false;
   const inShellGroup = SHELL_GROUPS.has(segments[0] ?? '');
@@ -137,6 +163,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     user?.email ||
     'Mon compte';
 
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      storeCollapsedPref(!prev);
+      return !prev;
+    });
+  };
+
   const renderEntry = (entry: NavEntry) => {
     const active = isActive(entry);
     return (
@@ -144,9 +177,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         key={entry.key}
         onPress={() => router.push(entry.route as never)}
         accessibilityRole="link"
+        accessibilityLabel={entry.label}
         accessibilityState={{ selected: active }}
         style={({ hovered }: { hovered?: boolean }) => [
           styles.navItem,
+          collapsed && styles.navItemCollapsed,
           hovered && !active && styles.navItemHovered,
           active && styles.navItemActive,
         ]}
@@ -158,69 +193,102 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             color={active ? tokens.colors.accentDeep : 'rgba(255,255,255,0.75)'}
           />
         </View>
-        <Text style={[styles.navLabel, active && styles.navLabelActive]} numberOfLines={1}>
-          {entry.label}
-        </Text>
+        {collapsed ? null : (
+          <Text style={[styles.navLabel, active && styles.navLabelActive]} numberOfLines={1}>
+            {entry.label}
+          </Text>
+        )}
       </Pressable>
     );
   };
 
+  const collapseToggle = (
+    <Pressable
+      onPress={toggleCollapsed}
+      accessibilityRole="button"
+      accessibilityLabel={collapsed ? 'Déplier le menu latéral' : 'Replier le menu latéral'}
+      style={({ hovered }: { hovered?: boolean }) => [
+        styles.collapseButton,
+        hovered && styles.collapseButtonHovered,
+      ]}
+    >
+      <Icon name="panelLeft" size={16} color="rgba(255,255,255,0.75)" />
+    </Pressable>
+  );
+
   return (
     <View style={styles.frame}>
-      {/* ── Sidebar bleu nuit ── */}
-      <View style={styles.sidebar}>
-        <Pressable
-          onPress={() => router.push('/')}
-          accessibilityRole="link"
-          accessibilityLabel="MedInfo AI — accueil"
-          style={styles.logoRow}
-        >
-          {/* Illustration de l'équipe (demande Hugo) — même pastille que le header
-              public (src/ui/LandingHeader.tsx). Asset relatif (piège alias @/). */}
-          <Image
-            source={require('../../../assets/brand/team-illustration.png')}
-            style={styles.teamBadge}
-            resizeMode="cover"
-            accessibilityRole="image"
-            accessibilityLabel="L'équipe MedInfo AI"
-          />
-          <Logo size="sm" tone="light" />
-        </Pressable>
+      {/* ── Sidebar bleu nuit (repliable en rail d'icônes) ── */}
+      <View style={[styles.sidebar, collapsed && styles.sidebarCollapsed]}>
+        <View style={[styles.sidebarHeader, collapsed && styles.sidebarHeaderCollapsed]}>
+          <Pressable
+            onPress={() => router.push('/')}
+            accessibilityRole="link"
+            accessibilityLabel="MedInfo AI — accueil"
+            style={[styles.logoRow, collapsed && styles.logoRowCollapsed]}
+          >
+            {/* Illustration de l'équipe (demande Hugo) — même pastille que le header
+                public (src/ui/LandingHeader.tsx). Asset relatif (piège alias @/). */}
+            <Image
+              source={require('../../../assets/brand/team-illustration.png')}
+              style={styles.teamBadge}
+              resizeMode="cover"
+              accessibilityRole="image"
+              accessibilityLabel="L'équipe MedInfo AI"
+            />
+            {collapsed ? null : <Logo size="sm" tone="light" />}
+          </Pressable>
+          {collapseToggle}
+        </View>
 
-        <View style={styles.userCard}>
-          <View style={styles.avatar}>
+        {collapsed ? (
+          <View style={[styles.avatar, styles.avatarCollapsed]}>
             <Text style={styles.avatarText}>
               {initialsOf(personalInfo?.firstName ?? null, personalInfo?.lastName ?? null, user?.email ?? null)}
             </Text>
           </View>
-          <View style={styles.userText}>
-            <Text style={styles.userName} numberOfLines={1}>
-              {displayName}
-            </Text>
-            <Text style={styles.userRole} numberOfLines={1}>
-              {isAdmin ? 'Administrateur' : PERSONA_LABEL[persona ?? 'public']}
-            </Text>
+        ) : (
+          <View style={styles.userCard}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {initialsOf(personalInfo?.firstName ?? null, personalInfo?.lastName ?? null, user?.email ?? null)}
+              </Text>
+            </View>
+            <View style={styles.userText}>
+              <Text style={styles.userName} numberOfLines={1}>
+                {displayName}
+              </Text>
+              <Text style={styles.userRole} numberOfLines={1}>
+                {isAdmin ? 'Administrateur' : PERSONA_LABEL[persona ?? 'public']}
+              </Text>
+            </View>
           </View>
-        </View>
+        )}
 
         <ScrollView style={styles.navScroll} contentContainerStyle={styles.navContent}>
-          <Text style={styles.sectionLabel}>Mon espace</Text>
+          {collapsed ? null : <Text style={styles.sectionLabel}>Mon espace</Text>}
           {spaceEntries.map(renderEntry)}
-          <Text style={[styles.sectionLabel, styles.sectionLabelSpaced]}>Compte</Text>
+          {collapsed ? (
+            <View style={styles.navDivider} />
+          ) : (
+            <Text style={[styles.sectionLabel, styles.sectionLabelSpaced]}>Compte</Text>
+          )}
           {accountEntries.map(renderEntry)}
         </ScrollView>
 
         {/* Rappel confidentialité (véridique : RLS own-row + sources gratuites). */}
-        <View style={styles.privacyCard}>
-          <View style={styles.privacyTitleRow}>
-            <Icon name="shieldCheck" size={14} color="rgba(255,255,255,0.85)" />
-            <Text style={styles.privacyTitle}>Données protégées</Text>
+        {collapsed ? null : (
+          <View style={styles.privacyCard}>
+            <View style={styles.privacyTitleRow}>
+              <Icon name="shieldCheck" size={14} color="rgba(255,255,255,0.85)" />
+              <Text style={styles.privacyTitle}>Données protégées</Text>
+            </View>
+            <Text style={styles.privacyText}>
+              Tes contenus sont privés et isolés par compte. Les sources médicales restent
+              accessibles à tous.
+            </Text>
           </View>
-          <Text style={styles.privacyText}>
-            Tes contenus sont privés et isolés par compte. Les sources médicales restent
-            accessibles à tous.
-          </Text>
-        </View>
+        )}
       </View>
 
       {/* ── Colonne principale : top bar + écran ── */}
@@ -273,13 +341,49 @@ const styles = StyleSheet.create({
     paddingTop: tokens.space.xl,
     paddingBottom: tokens.space.lg,
     gap: tokens.space.lg,
+    // Repli/dépli fluide (web only — le shell n'existe que là).
+    ...(Platform.OS === 'web'
+      ? {
+          transitionProperty: 'width, padding',
+          transitionDuration: '200ms',
+          transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+        }
+      : null),
   },
+  sidebarCollapsed: {
+    width: SIDEBAR_WIDTH_COLLAPSED,
+    paddingHorizontal: tokens.space.sm,
+    alignItems: 'stretch',
+  },
+  sidebarHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: tokens.space.sm,
+  },
+  sidebarHeaderCollapsed: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: tokens.space.md,
+  },
+  collapseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: tokens.radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    ...tokens.motion.transitionWeb,
+  },
+  collapseButtonHovered: { backgroundColor: 'rgba(255,255,255,0.16)' },
   logoRow: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.md,
   },
+  logoRowCollapsed: { alignSelf: 'center' },
   teamBadge: {
     width: 46,
     height: 46,
@@ -306,6 +410,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  avatarCollapsed: { alignSelf: 'center' },
   avatarText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.onAccent,
@@ -345,6 +450,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.space.sm,
     borderRadius: tokens.radius.md,
     ...tokens.motion.transitionWeb,
+  },
+  navItemCollapsed: {
+    justifyContent: 'center',
+    paddingHorizontal: 0,
+  },
+  navDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    marginVertical: tokens.space.md,
+    marginHorizontal: tokens.space.sm,
   },
   navItemHovered: { backgroundColor: 'rgba(255,255,255,0.08)' },
   navItemActive: { backgroundColor: tokens.colors.surface, ...tokens.elevation.sm },
