@@ -1,7 +1,7 @@
 # Audit UX du chatbot — expérience par rôle + intégration Vue d'ensemble
 
 ```yaml
-status: Proposé (audit — aucun correctif appliqué dans cette passe)
+status: Livré (correctifs appliqués les 2026-07-14/15 — voir Journal ; go Hugo en session)
 date: 2026-07-14
 scope: Chat (3 chatbots), parcours par rôle (invité / public / étudiant / pro / admin),
   intégration avec la Vue d'ensemble (dashboard, refonte shell 2026-07)
@@ -224,36 +224,48 @@ chat desktop serait le prochain gros gain de confort ; la modale reste pour mobi
 ## Plan d'action proposé (par lots)
 
 ### Lot 0 — Arbitrage Hugo (bloquant pour le lot 2)
-- [ ] **A1** — Décision sur le prompt étudiant : réécriture pour l'architecture réelle /
-  RAG Collèges (ADR dédié) / retrait minimal du SCORE DE FIABILITÉ chiffré. **P1 · ARBITRAGE**
+- [x] **A1** — Décision sur le prompt étudiant : réécriture pour l'architecture réelle
+  (option 1, go Hugo en session le 2026-07-14). **P1 · ARBITRAGE**
 
 ### Lot 1 — Fiabilité du fil (rapide, fort impact, sans arbitrage)
-- [ ] **B1** — Formateur « texte propre » partagé pour Copier + export PDF. **P2**
-- [ ] **B2** — Régénérer : remplacer (pas ajouter) la dernière réponse archivée ; Arrêter :
-  ne pas archiver la version complète non vue (ou signaler la reprise). **P2**
-- [ ] **B3** — Mapper le 401 `signup_required` sur la carte CTA (invité) / reconnexion (session
+- [x] **B1** — Formateur « texte propre » partagé pour Copier + export PDF. **P2**
+- [x] **B2** — Régénérer : remplacer (pas ajouter) la dernière réponse archivée ; Arrêter :
+  note honnête « réponse complète dans l'historique ». **P2**
+- [x] **B3** — Mapper le 401 `signup_required` sur la carte CTA (invité) / reconnexion (session
   expirée) au lieu de la bannière générique. **P2**
-- [ ] **C1** — Carte CTA invité : mention « conservez cette réponse en créant un compte ». **P2**
+- [x] **C1** — Carte CTA invité : mention « conservez cette réponse en créant un compte ». **P2**
 
 ### Lot 2 — Adaptation étudiant (après lot 0)
-- [ ] **A2** — UI de sources pour le chatbot étudiant (format `SRCn ::` dans le nouveau prompt,
-  ou alias « SOURCES UTILISÉES » + carte biblio sans URL). **P2**
-- [ ] **A3** — Rendu compact des citations inline étudiantes. **P3**
-- [ ] **C6** — Passerelles chat étudiant → ECOS / Révisions. **P3**
+- [x] **A2** — UI de sources pour le chatbot étudiant (format `SRCn ::` dans le prompt v4 +
+  alias « SOURCES UTILISÉES » et fallback anti-perte pour les conversations v3). **P2**
+- [x] **A3** — Rendu compact des citations inline étudiantes (via `(SRCn)` → exposants). **P3**
+- [x] **C6** — Passerelles chat étudiant → ECOS / Révisions. **P3**
 
 ### Lot 3 — Dashboard vraiment role-aware
-- [ ] **D1** — Étendre `buildRecentActivity` + fetchs dashboard à document/audio/présentations/
+- [x] **D1** — Étendre `buildRecentActivity` + fetchs dashboard à document/audio/présentations/
   CV/article (fail-soft, `isFeatureVisible`). **P2**
-- [ ] **D2** — Remplacer la tuile « Chatbots » par une métrique réelle. **P3**
-- [ ] **D3** — Accès direct aux 3 chatbots depuis le dashboard (`?bot=`). **P3**
-- [ ] **D4** — Afficher le chatbot d'origine (activité récente, fil d'Ariane). **P3**
+- [x] **D2** — Tuile « Chatbots » remplacée par « Cette semaine » (conversations 7 j). **P3**
+- [x] **D3** — Accès direct aux 3 chatbots depuis le dashboard (`?bot=`). **P3**
+- [x] **D4** — Chatbot d'origine affiché dans l'activité récente (fil d'Ariane : non retenu,
+  couplage shell↔écran disproportionné pour un gain faible — la colonne d'historique desktop
+  et le switcher rendent déjà le contexte visible). **P3**
 
 ### Lot 4 — Confort & accessibilité
-- [ ] **D5** — Panneau d'historique persistant sur desktop shell. **P3**
-- [ ] **B4/B5** — Signaler la bascule de chatbot (toast/confirmation) + le cas non autorisé. **P3**
-- [ ] **C2/C3/C5** — Finitions invité + état vide par chatbot. **P3**
-- [ ] **E1/E2/E3** — Live region streaming, rotation suspendue au survol, renommage de
-  conversation. **P3**
+- [x] **D5** — Panneau d'historique persistant sur desktop shell (`ConversationList`). **P3**
+- [x] **B4/B5** — Notice de bascule de chatbot + cas du chatbot devenu non autorisé. **P3**
+- [x] **C2/C3/C4/C5** — Finitions invité (chips grisées, pastille d'essai dans l'état vide),
+  passerelle Document sur long texte collé, état vide par chatbot. **P3**
+- [x] **E1/E2/E3** — Live regions (statut/erreurs), rotation suspendue au survol +
+  reduced-motion, renommage de conversation. **P3**
 
 ## Journal (à remplir au fil des correctifs)
 <!-- format : - [x] Xn · <finding> — <commit sha> — <une ligne> -->
+- [x] B1/B2/B3/C1 — afaf637 — copie/PDF propres (`assistantTextForExport` testé), régénération
+  `replaceLast` côté serveur, note d'arrêt honnête, 401 `signup_required` différencié, CTA invité.
+- [x] A1/A2/A3/C6 — 26c9415 — prompt `student.v4` (architecture réelle, SOURCES `SRCn ::`,
+  bloc FIABILITÉ qualitatif, plus de métrique inventée), parseur tolérant au format v3 archivé,
+  passerelles ECOS/Révisions.
+- [x] D1/D2/D3/D4 — 71eded8 — activité récente multi-outils (5 nouvelles sources fail-soft),
+  tuile « Cette semaine » réelle, rangée des 3 chatbots, chatbot d'origine dans l'activité.
+- [x] D5/B4/B5/C2/C3/C4/C5/E1/E2/E3 — 1a27cf1 — colonne d'historique desktop + renommage,
+  notices de bascule, finitions invité/public, live regions, rotation au survol.
