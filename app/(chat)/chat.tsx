@@ -21,6 +21,7 @@ import {
   StyleSheet,
   Animated,
   Easing,
+  Image,
   KeyboardAvoidingView,
   Platform,
   useWindowDimensions,
@@ -31,8 +32,8 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChat } from '@ai-sdk/react';
-import { DefaultChatTransport, isTextUIPart } from 'ai';
-import type { UIMessage } from 'ai';
+import { DefaultChatTransport, isTextUIPart, isFileUIPart } from 'ai';
+import type { UIMessage, FileUIPart } from 'ai';
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
@@ -49,6 +50,12 @@ import {
   suggestionWindow,
 } from '@/ai/chat/starterSuggestions';
 import { isGuestMessageUsed, markGuestMessageUsed } from '@/chat/guestTrial';
+import { formatFileSize, totalAttachmentChars, CHAT_ATTACHMENT_LIMITS } from '@/chat/attachments';
+import {
+  pickChatAttachments,
+  CHAT_ATTACHMENTS_SUPPORTED,
+  type PickedAttachment,
+} from '@/chat/pickAttachments';
 import {
   createConversation,
   deleteConversation,
@@ -271,14 +278,40 @@ function MessageRow({
 }) {
   const isUser = message.role === 'user';
   const text = messageText(message);
-  if (!text.trim()) return null;
+  // Pièces jointes du message (photos/PDF envoyés avec la question).
+  const fileParts = isUser ? (message.parts ?? []).filter(isFileUIPart) : [];
+  if (!text.trim() && fileParts.length === 0) return null;
 
   if (isUser) {
     return (
       <View style={styles.userRow}>
-        <View style={styles.bubbleUser}>
-          <Text style={styles.textUser}>{text}</Text>
-        </View>
+        {fileParts.length > 0 ? (
+          <View style={styles.userAttachments}>
+            {fileParts.map((part, i) =>
+              part.mediaType?.startsWith('image/') ? (
+                <Image
+                  key={i}
+                  source={{ uri: part.url }}
+                  style={styles.userAttachmentImage}
+                  resizeMode="cover"
+                  accessibilityLabel={part.filename ? `Photo jointe : ${part.filename}` : 'Photo jointe'}
+                />
+              ) : (
+                <View key={i} style={styles.userAttachmentChip}>
+                  <Icon name="fileText" size={14} color={tokens.colors.accentDeep} />
+                  <Text style={styles.userAttachmentChipText} numberOfLines={1}>
+                    {part.filename ?? 'Document PDF'}
+                  </Text>
+                </View>
+              ),
+            )}
+          </View>
+        ) : null}
+        {text.trim() ? (
+          <View style={styles.bubbleUser}>
+            <Text style={styles.textUser}>{text}</Text>
+          </View>
+        ) : null}
       </View>
     );
   }
@@ -400,6 +433,29 @@ export default function ChatScreen() {
   const [input, setInput] = useState('');
   const [inputFocused, setInputFocused] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  // Colonne d'historique du desktop shell : affichable/masquable, préférence conservée.
+  const [historyRailVisible, setHistoryRailVisible] = useState(() => {
+    if (Platform.OS !== 'web' || typeof localStorage === 'undefined') return true;
+    try {
+      return localStorage.getItem('medinfo.chat.historyRail') !== '0';
+    } catch {
+      return true;
+    }
+  });
+  const toggleHistoryRail = useCallback(() => {
+    setHistoryRailVisible((visible) => {
+      const next = !visible;
+      try {
+        localStorage.setItem('medinfo.chat.historyRail', next ? '1' : '0');
+      } catch {
+        /* stockage indisponible (navigation privée) : préférence non persistée */
+      }
+      return next;
+    });
+  }, []);
+  // Pièces jointes en attente d'envoi (photos/PDF) + dernière erreur de sélection.
+  const [attachments, setAttachments] = useState<PickedAttachment[]>([]);
+  const [attachNotice, setAttachNotice] = useState<string | null>(null);
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [conversationsLoading, setConversationsLoading] = useState(true);
@@ -518,9 +574,15 @@ export default function ChatScreen() {
 
   const statusRef = useRef(status);
   statusRef.current = status;
+  // Miroirs pour les callbacks stables : pièces jointes en attente + fil courant.
+  const attachmentsRef = useRef(attachments);
+  attachmentsRef.current = attachments;
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
 
   const isLoading = status === 'streaming' || status === 'submitted';
-  const canSend = !isLoading && input.trim().length > 0 && !guestLocked;
+  const canSend =
+    !isLoading && (input.trim().length > 0 || attachments.length > 0) && !guestLocked;
 
   // C4 : un long texte collé dans le chat public ressemble à un document (compte
   // rendu, ordonnance…) — l'outil Analyse de document est fait pour ça.
@@ -699,7 +761,10 @@ export default function ChatScreen() {
   const sendText = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed) return;
+      // Pièces jointes en attente : envoyées avec CE message puis vidées (un message
+      // peut être fichiers seuls, texte seul, ou les deux).
+      const files = attachmentsRef.current;
+      if (!trimmed && files.length === 0) return;
 
       // Essai sans inscription : un seul message gratuit, l'indicateur passe à 0/1.
       if (isGuest) {
@@ -719,12 +784,30 @@ export default function ChatScreen() {
         }
       }
       if (user && conversationIdRef.current) {
-        void saveMessage(conversationIdRef.current, user.id, 'user', trimmed);
+        // Les fichiers eux-mêmes ne sont JAMAIS archivés (même doctrine que l'outil
+        // Analyse de document) : l'historique ne garde qu'une mention textuelle.
+        const archived =
+          files.length > 0
+            ? [trimmed, ...files.map((f) => `(Pièce jointe : ${f.filename})`)].filter(Boolean).join('\n')
+            : trimmed;
+        void saveMessage(conversationIdRef.current, user.id, 'user', archived);
       }
       awaitingRef.current = true;
       regenerateRef.current = false;
       setStoppedNotice(false);
-      sendMessage({ text: trimmed });
+      if (files.length > 0) {
+        setAttachments([]);
+        setAttachNotice(null);
+        const fileParts: FileUIPart[] = files.map((f) => ({
+          type: 'file',
+          mediaType: f.mediaType,
+          filename: f.filename,
+          url: f.dataUrl,
+        }));
+        sendMessage({ text: trimmed, files: fileParts });
+      } else {
+        sendMessage({ text: trimmed });
+      }
       // Envoyer ramène toujours le fil en bas, même si on relisait plus haut.
       scrollToBottom();
     },
@@ -737,6 +820,44 @@ export default function ChatScreen() {
     setInput('');
     void sendText(text);
   };
+
+  // ── Pièces jointes (photos/PDF) — sélection + garde-fous côté client ────────
+  const handlePickAttachments = useCallback(async () => {
+    const { files, errors } = await pickChatAttachments();
+    const notices = [...errors];
+    if (files.length > 0) {
+      setAttachments((prev) => {
+        const next = [...prev];
+        // Budget de la conversation : l'historique renvoie aussi les pièces des tours
+        // précédents — même plafond que le serveur, vérifié AVANT l'envoi.
+        let budget =
+          CHAT_ATTACHMENT_LIMITS.maxTotalDataUrlChars -
+          totalAttachmentChars(messagesRef.current) -
+          prev.reduce((sum, f) => sum + f.dataUrl.length, 0);
+        for (const file of files) {
+          if (next.length >= CHAT_ATTACHMENT_LIMITS.maxFilesPerMessage) {
+            notices.push(`Au plus ${CHAT_ATTACHMENT_LIMITS.maxFilesPerMessage} pièces jointes par message.`);
+            break;
+          }
+          if (file.dataUrl.length > budget) {
+            notices.push(
+              `« ${file.filename} » dépasse la place restante de cette conversation — démarrez une nouvelle conversation.`,
+            );
+            continue;
+          }
+          budget -= file.dataUrl.length;
+          next.push(file);
+        }
+        return next;
+      });
+    }
+    setAttachNotice(notices.length > 0 ? notices.join(' ') : null);
+  }, []);
+
+  const removeAttachment = useCallback((index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+    setAttachNotice(null);
+  }, []);
 
   // Entrée = envoyer sur desktop (Maj+Entrée = nouvelle ligne) ; sans effet sur tactile.
   const handleInputKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
@@ -780,6 +901,8 @@ export default function ChatScreen() {
       firstUserTextRef.current = '';
       setSourcesOpen(false);
       setHistoryOpen(false);
+      setAttachments([]);
+      setAttachNotice(null);
       if (nextChatbot) setChatbot(nextChatbot);
     },
     [setMessages, stop],
@@ -915,12 +1038,21 @@ export default function ChatScreen() {
         ]}
       />
       <View style={styles.screenRow}>
-      {/* ── Colonne d'historique persistante (desktop shell, D5) ── */}
-      {desktopShell && user ? (
+      {/* ── Colonne d'historique persistante (desktop shell, D5) — repliable ── */}
+      {desktopShell && user && historyRailVisible ? (
         <View style={styles.historyRail}>
           <View style={styles.historyRailHeader}>
             <Icon name="clock" size={16} color={tokens.colors.accentDeep} />
             <Text style={styles.historyRailTitle}>Historique</Text>
+            <View style={styles.composerSpacer} />
+            <TouchableOpacity
+              onPress={toggleHistoryRail}
+              accessibilityRole="button"
+              accessibilityLabel="Masquer l'historique des conversations"
+              style={styles.historyRailToggle}
+            >
+              <Icon name="panelLeft" size={16} color={tokens.colors.textMuted} />
+            </TouchableOpacity>
           </View>
           <ConversationList
             conversations={conversations}
@@ -977,6 +1109,22 @@ export default function ChatScreen() {
               accessibilityLabel="Historique des conversations"
             >
               <Icon name="clock" size={17} color={tokens.colors.accentDeep} />
+            </TouchableOpacity>
+          ) : null}
+          {/* Desktop shell : affiche/masque la colonne d'historique (préférence mémorisée) */}
+          {user && desktopShell ? (
+            <TouchableOpacity
+              style={[styles.headerIconButton, historyRailVisible && styles.headerIconButtonActive]}
+              onPress={toggleHistoryRail}
+              accessibilityRole="button"
+              accessibilityLabel={historyRailVisible ? "Masquer l'historique" : "Afficher l'historique"}
+              accessibilityState={{ expanded: historyRailVisible }}
+            >
+              <Icon
+                name="panelLeft"
+                size={17}
+                color={historyRailVisible ? tokens.colors.onAccent : tokens.colors.accentDeep}
+              />
             </TouchableOpacity>
           ) : null}
           {messages.length > 0 ? (
@@ -1289,6 +1437,41 @@ export default function ChatScreen() {
             </TouchableOpacity>
           </View>
         ) : null}
+        {/* Pièces jointes en attente d'envoi (photos / PDF) + erreurs de sélection */}
+        {attachments.length > 0 ? (
+          <View style={styles.attachmentRow}>
+            {attachments.map((att, i) => (
+              <View key={i} style={styles.attachmentChip}>
+                {att.mediaType.startsWith('image/') ? (
+                  <Image source={{ uri: att.dataUrl }} style={styles.attachmentThumb} resizeMode="cover" />
+                ) : (
+                  <View style={styles.attachmentThumbDoc}>
+                    <Icon name="fileText" size={16} color={tokens.colors.accentDeep} />
+                  </View>
+                )}
+                <View style={styles.attachmentMeta}>
+                  <Text style={styles.attachmentName} numberOfLines={1}>
+                    {att.filename}
+                  </Text>
+                  <Text style={styles.attachmentSize}>{formatFileSize(att.bytes)}</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => removeAttachment(i)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Retirer ${att.filename}`}
+                  style={styles.attachmentRemove}
+                >
+                  <Icon name="x" size={13} color={tokens.colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        ) : null}
+        {attachNotice ? (
+          <View style={styles.attachNotice} accessibilityLiveRegion="polite">
+            <Text style={styles.attachNoticeText}>{attachNotice}</Text>
+          </View>
+        ) : null}
         <View style={[styles.composer, inputFocused && styles.composerFocused]}>
           <TextInput
             style={styles.input}
@@ -1313,6 +1496,22 @@ export default function ChatScreen() {
             onKeyPress={handleInputKeyPress}
           />
           <View style={styles.composerActions}>
+            {/* Pièce jointe (photos/PDF) — comptes connectés, web uniquement (input fichier) */}
+            {!isGuest && CHAT_ATTACHMENTS_SUPPORTED ? (
+              <TouchableOpacity
+                onPress={() => void handlePickAttachments()}
+                disabled={isLoading || attachments.length >= CHAT_ATTACHMENT_LIMITS.maxFilesPerMessage}
+                accessibilityRole="button"
+                accessibilityLabel="Joindre un document ou une photo"
+                style={[
+                  styles.attachButton,
+                  (isLoading || attachments.length >= CHAT_ATTACHMENT_LIMITS.maxFilesPerMessage) &&
+                    styles.attachButtonDisabled,
+                ]}
+              >
+                <Icon name="paperclip" size={18} color={tokens.colors.accentDeep} />
+              </TouchableOpacity>
+            ) : null}
             {!isGuest ? (
               <DictationButton
                 onTranscript={(text) => setInput((prev) => (prev.trim() ? `${prev.trim()} ${text}` : text))}
@@ -1725,7 +1924,7 @@ const styles = StyleSheet.create({
   },
 
   // Question de l'utilisateur : bulle accent compacte à droite (repère visuel du tour).
-  userRow: { alignItems: 'flex-end' },
+  userRow: { alignItems: 'flex-end', gap: tokens.space.xs },
   bubbleUser: {
     maxWidth: '85%',
     borderRadius: tokens.radius.xl,
@@ -1740,6 +1939,40 @@ const styles = StyleSheet.create({
     color: tokens.colors.onAccent,
     fontSize: tokens.type.body.fontSize,
     lineHeight: tokens.type.body.lineHeight,
+  },
+  // Pièces jointes affichées dans le fil (côté question de l'utilisateur).
+  userAttachments: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    gap: tokens.space.xs,
+    maxWidth: '85%',
+  },
+  userAttachmentImage: {
+    width: 128,
+    height: 128,
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surfaceAlt,
+  },
+  userAttachmentChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    maxWidth: 220,
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surface,
+    paddingHorizontal: tokens.space.sm,
+    paddingVertical: tokens.space.xs,
+  },
+  userAttachmentChipText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.caption.fontSize,
+    flexShrink: 1,
   },
 
   // Réponse assistant : posée pleine largeur sur le fond, sans bulle bordée —
@@ -1909,6 +2142,87 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.space.xs,
   },
   composerSpacer: { flex: 1 },
+  attachButton: {
+    width: tokens.size.iconButton,
+    height: tokens.size.iconButton,
+    borderRadius: tokens.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: tokens.colors.accentSurface,
+  },
+  attachButtonDisabled: { opacity: 0.4 },
+  // Puces de prévisualisation des pièces jointes en attente d'envoi.
+  attachmentRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: tokens.space.sm,
+    paddingHorizontal: tokens.space.xs,
+    paddingBottom: tokens.space.xs,
+  },
+  attachmentChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    maxWidth: 240,
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surface,
+    paddingVertical: 6,
+    paddingLeft: 6,
+    paddingRight: tokens.space.sm,
+    ...tokens.elevation.sm,
+  },
+  attachmentThumb: {
+    width: 36,
+    height: 36,
+    borderRadius: tokens.radius.sm,
+    backgroundColor: tokens.colors.surfaceAlt,
+  },
+  attachmentThumbDoc: {
+    width: 36,
+    height: 36,
+    borderRadius: tokens.radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: tokens.colors.accentSurface,
+  },
+  attachmentMeta: { flexShrink: 1, minWidth: 0 },
+  attachmentName: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.medium,
+  },
+  attachmentSize: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.micro.fontSize,
+  },
+  attachmentRemove: {
+    width: 22,
+    height: 22,
+    borderRadius: tokens.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: tokens.colors.surfaceAlt,
+  },
+  attachNotice: {
+    paddingHorizontal: tokens.space.sm,
+    paddingBottom: tokens.space.xs,
+  },
+  attachNoticeText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.danger,
+    fontSize: tokens.type.caption.fontSize,
+  },
+  historyRailToggle: {
+    width: 28,
+    height: 28,
+    borderRadius: tokens.radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   input: {
     minHeight: 36,
     maxHeight: 140,

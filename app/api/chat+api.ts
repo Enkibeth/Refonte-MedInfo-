@@ -28,6 +28,7 @@ import { resolveChatPersona } from '@/ai/routing/serverPersona';
 import { logInteraction } from '@/ai/logging/logInteraction';
 import { summarizeSteps } from '@/ai/logging/stepMetrics';
 import { coerceConversationId, saveAssistantMessageServer } from '@/chat/serverHistory';
+import { scanChatAttachments } from '@/chat/attachments';
 import { createServerSupabaseClient } from '@/db/serverSupabase';
 import {
   buildUserContextSection,
@@ -100,6 +101,18 @@ export async function POST(request: Request): Promise<Response> {
         { status: 401, headers: { 'content-type': 'application/json' } },
       );
     }
+  }
+
+  // Pièces jointes (documents/photos, 2026-07) : validation fail-closed AVANT toute
+  // conversion — types whitelistés, data URL exigée (anti-SSRF), plafonds de taille et
+  // de nombre, refus des pièces jointes anonymes (l'essai invité reste texte seul).
+  // Les fichiers ne sont JAMAIS stockés : ils ne font que transiter vers le modèle.
+  const attachmentScan = scanChatAttachments(uiMessages, { allowFiles: resolution.verified });
+  if (!attachmentScan.ok) {
+    return new Response(JSON.stringify({ error: attachmentScan.error }), {
+      status: attachmentScan.status,
+      headers: { 'content-type': 'application/json' },
+    });
   }
 
   const requestedChatbot = coerceChatbot(body.chatbot);
