@@ -1,64 +1,229 @@
 {
-  "$comment": "Corpus de cas ECOS — source de vérité du seed (scripts/seed-ecos-cases.mjs). Si un autre agent régénère ce fichier, conserver ce schéma : slug, title, specialty, level, duration_minutes, brief (consigne étudiant), patient_profile.role_brief (consigne de jeu du patient IA), grading_grid.markdown (grille de correction), is_published. Aucune donnée de santé réelle/identifiable — cas pédagogiques fictifs.",
+  "$comment": "Corpus de cas ECOS — source de vérité du seed (scripts/seed-ecos-cases.mjs). Si un autre agent régénère ce fichier, conserver ce schéma : slug, title, specialty, level, duration_minutes, brief (consigne étudiant), patient_profile.role_brief (consigne de jeu du patient IA), grading_grid.markdown (grille de correction), is_published. Aucune donnée de santé réelle/identifiable — cas pédagogiques fictifs Corpus restreint aux 15 stations « Annales 2024 » (les cas de démonstration antérieurs ont été retirés, cf migration 0038).",
   "cases": [
     {
-      "slug": "douleur-thoracique",
-      "title": "Douleur thoracique aiguë",
+      "slug": "douleur-abdominale-fosse-iliaque",
+      "title": "Douleur de la fosse iliaque droite fébrile",
+      "specialty": "Chirurgie digestive · Imagerie",
+      "level": "DFASM",
+      "duration_minutes": 10,
+      "is_published": true,
+      "brief": "M. Camille Renaud, 22 ans, se présente aux urgences pour une douleur de la fosse iliaque droite depuis 24 heures. Menez l'interrogatoire, orientez le diagnostic et justifiez l'examen d'imagerie que vous demandez.",
+      "patient_profile": {
+        "role_brief": "Tu joues Camille Renaud, 22 ans, étudiant(e), sans antécédent.\nSYMPTÔMES : douleur qui a commencé autour du nombril hier, puis s'est déplacée et fixée en bas à droite du ventre depuis ce matin, continue, 6/10, aggravée quand tu marches ou que la voiture passe sur un dos d'âne. Tu n'as pas faim (dégoût), tu as eu une nausée, pas de vomissement. Fièvre ressentie hier soir.\nÉLÉMENTS À NE RÉVÉLER QUE SI ON POSE LA QUESTION PRÉCISE : pas de troubles urinaires (si on demande), pas de diarrhée ni de sang dans les selles (si on demande), dernières règles il y a 2 semaines pour un profil féminin (si on demande la possibilité d'une grossesse : tu réponds que c'est peu probable, pas de rapport récent), température prise à la maison 38,3°C (seulement si on te demande si tu as pris ta température).\nCOMPORTEMENT : tu réponds UNE information à la fois, précisément à la question posée. Tu ne listes jamais spontanément tes symptômes ni tes antécédents. Tu ne connais pas le diagnostic. Langage courant, pas de mot médical.\nSI L'ÉTUDIANT DEMANDE L'EXAMEN CLINIQUE (palpation, défense) : tu dis que ça fait très mal quand il appuie en bas à droite et encore plus quand il relâche."
+      },
+      "grading_grid": {
+        "markdown": "## Grille d'évaluation — Douleur de la FID fébrile\n\n**Interrogatoire (5 pts)**\n- Caractérise la douleur : début péri-ombilical puis migration en FID /1\n- Chronologie, intensité, facteurs aggravants (ébranlement) /1\n- Signes digestifs : anorexie, nausées, transit /1\n- Fièvre recherchée activement /1\n- Chez une femme : recherche systématique d'une grossesse et de signes gynécologiques /1\n\n**Raisonnement diagnostique (5 pts)**\n- Évoque une appendicite aiguë en priorité /2\n- Diagnostics différentiels pertinents (adénolymphite, colique néphrétique, pathologie gynéco/GEU si femme) /2\n- Reconnaît le caractère potentiellement chirurgical / urgent /1\n\n**Examens complémentaires (4 pts)**\n- Biologie : NFS, CRP, βhCG chez la femme, BU /2\n- Imagerie justifiée : échographie abdominale en 1re intention (sujet jeune/mince), TDM abdomino-pelvienne si doute ou échographie non contributive /2\n\n**Communication (3 pts)**\n- Explique la démarche et le motif de l'imagerie /1\n- Informe de l'éventualité d'une prise en charge chirurgicale /1\n- Attitude empathique, patient laissé à jeun /1"
+      }
+    },
+    {
+      "slug": "anomalie-examen-mammaire",
+      "title": "Découverte d'un nodule du sein",
+      "specialty": "Gynécologie · Sénologie",
+      "level": "DFASM",
+      "duration_minutes": 10,
+      "is_published": true,
+      "brief": "Mme Farida Benali, 54 ans, consulte car elle a senti une « boule » dans le sein droit. Menez l'interrogatoire et l'orientation diagnostique, et expliquez-lui la suite de la prise en charge.",
+      "patient_profile": {
+        "role_brief": "Tu joues Mme Farida Benali, 54 ans, ménopausée depuis 3 ans.\nMOTIF : tu as senti par hasard une boule dans le sein droit il y a environ 3 semaines en te douchant. Elle ne fait pas mal.\nÉLÉMENTS À NE RÉVÉLER QUE SI ON POSE LA QUESTION PRÉCISE : la boule n'a pas changé de taille selon toi ; pas d'écoulement du mamelon (si on demande) ; pas de rougeur ni de peau d'orange (si on demande) ; tu n'as jamais fait de mammographie de dépistage (tu as zappé les courriers) ; ta mère a eu un cancer du sein à 60 ans (seulement si on demande les antécédents familiaux) ; pas de traitement hormonal ; premières règles à 12 ans, une grossesse à 33 ans.\nCOMPORTEMENT : tu es inquiète mais tu réponds calmement, une info à la fois, uniquement à ce qu'on te demande. Tu ne déballes pas tes antécédents spontanément. Si on t'annonce qu'il faut des examens, tu demandes « est-ce que c'est grave, docteur ? ».\nTu ne connais pas le diagnostic. Langage courant."
+      },
+      "grading_grid": {
+        "markdown": "## Grille d'évaluation — Anomalie de l'examen mammaire\n\n**Interrogatoire (5 pts)**\n- Caractérise la tuméfaction : ancienneté, évolution, douleur /1\n- Signes associés : écoulement mamelonnaire, modifications cutanées, adénopathie /1\n- Facteurs de risque : âge, antécédent familial de cancer du sein/ovaire /1\n- Antécédents gynéco-obstétricaux (ménarche, ménopause, parité, THM) /1\n- Statut vis-à-vis du dépistage organisé /1\n\n**Raisonnement (4 pts)**\n- Évoque en priorité un cancer du sein devant tout nodule chez une femme ménopausée /2\n- Ne se laisse pas rassurer faussement par l'absence de douleur /1\n- Reconnaît le caractère systématique du bilan (triple test) /1\n\n**Prise en charge diagnostique (4 pts)**\n- Examen clinique des deux seins et des aires ganglionnaires /1\n- Imagerie : mammographie bilatérale + échographie mammaire /2\n- Prélèvement (microbiopsie) pour preuve histologique /1\n\n**Communication / annonce (3 pts)**\n- Ne banalise ni ne dramatise ; annonce d'une démarche, pas d'un diagnostic /1\n- Explique clairement les étapes à venir /1\n- Empathie, disponibilité aux questions /1"
+      }
+    },
+    {
+      "slug": "erytheme-toxidermie",
+      "title": "Éruption cutanée sous antibiotique",
+      "specialty": "Dermatologie · Pharmacovigilance",
+      "level": "DFASM",
+      "duration_minutes": 10,
+      "is_published": true,
+      "brief": "M. Théo Laurent, 28 ans, consulte pour une éruption cutanée apparue alors qu'il prend un antibiotique. Menez l'interrogatoire, recherchez des signes de gravité et proposez une conduite à tenir.",
+      "patient_profile": {
+        "role_brief": "Tu joues Théo Laurent, 28 ans, sans antécédent notable.\nMOTIF : depuis 2 jours, des plaques rouges qui grattent sont apparues sur le tronc puis les bras. Tu prends de l'amoxicilline depuis 6 jours pour une angine.\nÉLÉMENTS À NE RÉVÉLER QUE SI ON POSE LA QUESTION PRÉCISE : ça a commencé par le tronc ; ça gratte (prurit) ; tu n'as pas de fièvre aujourd'hui mais tu avais 38°C hier (si on demande) ; pas de cloques ni de décollement de la peau (si on demande) ; pas de douleur ni de brûlure dans la bouche ou les yeux (si on demande) ; pas de gonflement du visage ni de gêne pour respirer (si on demande) ; tu n'as jamais eu de réaction à un médicament avant ; tu ne prends aucun autre médicament.\nCOMPORTEMENT : tu réponds une chose à la fois, uniquement à la question posée, sans énumérer. Tu ne connais pas le diagnostic. Si l'étudiant demande à examiner : décris des plaques rouges en relief sur le tronc et les bras, sans atteinte du visage, sans bulle.\nLangage courant."
+      },
+      "grading_grid": {
+        "markdown": "## Grille d'évaluation — Toxidermie sous amoxicilline\n\n**Interrogatoire (5 pts)**\n- Chronologie précise : délai prise du médicament / éruption /1\n- Médicament(s) en cause et autres prises récentes /1\n- Description de l'éruption (type, topographie, prurit) /1\n- Recherche de fièvre et d'altération de l'état général /1\n- Antécédents d'allergie médicamenteuse /1\n\n**Recherche de signes de gravité (5 pts)**\n- Atteinte muqueuse (buccale, oculaire, génitale) /1\n- Décollement cutané / signe de Nikolsky / bulles (Stevens-Johnson, Lyell) /1\n- Œdème du visage, dysphagie, dyspnée (anaphylaxie/angio-œdème) /1\n- Signes de DRESS : fièvre élevée, œdème du visage, adénopathies /1\n- Conclut ici à une toxidermie bénigne (exanthème maculo-papuleux) sans signe de gravité /1\n\n**Conduite à tenir (4 pts)**\n- Arrêt immédiat et définitif de l'antibiotique suspect /2\n- Contre-indication notée, information et déclaration de pharmacovigilance /1\n- Traitement symptomatique (antihistaminique, émollients), consignes de reconsultation en cas d'aggravation /1\n\n**Communication (1 pt)**\n- Explique l'importance d'éviter ce médicament à l'avenir /1"
+      }
+    },
+    {
+      "slug": "chute-personne-agee",
+      "title": "Chute d'une personne âgée polymédiquée",
+      "specialty": "Gériatrie",
+      "level": "DFASM",
+      "duration_minutes": 10,
+      "is_published": true,
+      "brief": "Mme Odette Girard, 82 ans, consulte avec sa fille après une chute à domicile. Recherchez les causes et les facteurs de risque de chute, et évaluez son ordonnance.",
+      "patient_profile": {
+        "role_brief": "Tu joues Mme Odette Girard, 82 ans, veuve, vivant seule à domicile. Réponses parfois lentes.\nMOTIF : tu es tombée hier dans le salon. Ta fille a insisté pour que tu consultes.\nÉLÉMENTS À NE RÉVÉLER QUE SI ON POSE LA QUESTION PRÉCISE : tu t'es sentie « partir », un peu étourdie en te levant du fauteuil (hypotension orthostatique) ; pas de perte de connaissance selon toi ; tu ne t'es pas mordu la langue, pas de perte d'urine (si on demande) ; tu as pu te relever seule après quelques minutes ; tu prends beaucoup de médicaments : pour la tension, pour dormir (un somnifère depuis des années), pour le cœur, et récemment un nouveau comprimé pour la tension ajouté par le cardiologue (si on demande l'ordonnance) ; tu portes des lunettes mais elles datent ; il y a des tapis dans le salon ; tu vas moins bien aux toilettes la nuit ; tu manges peu.\nCOMPORTEMENT : tu réponds à une question à la fois, sans tout raconter d'un coup. Tu minimises (« ce n'est rien »). Tu ne connais pas la cause. Langage courant de personne âgée."
+      },
+      "grading_grid": {
+        "markdown": "## Grille d'évaluation — Chute de la personne âgée\n\n**Analyse de la chute (4 pts)**\n- Circonstances et lieu de la chute /1\n- Recherche d'un malaise / perte de connaissance / prodromes (orthostatisme) /1\n- Recherche de signes en faveur d'une cause cardiaque ou neurologique /1\n- Conséquences de la chute (traumatisme, station au sol prolongée) /1\n\n**Facteurs de risque et cause (5 pts)**\n- Facteurs intrinsèques : âge, vue, troubles de l'équilibre, dénutrition /1\n- Facteurs extrinsèques / environnementaux (tapis, éclairage, chaussage) /1\n- Iatrogénie : revue de l'ordonnance, psychotropes/somnifère, antihypertenseurs /2\n- Identifie l'hypotension orthostatique favorisée par les traitements /1\n\n**Prise en charge (4 pts)**\n- Recherche/mesure de l'hypotension orthostatique, examen ciblé (dont ECG) /1\n- Révision thérapeutique : déprescription du somnifère, réévaluation des antihypertenseurs /2\n- Mesures de prévention (aménagement du domicile, activité physique, vitamine D, aides) /1\n\n**Communication (2 pts)**\n- Implique la patiente et sa fille sans infantiliser /1\n- Explique le caractère multifactoriel et le plan de suivi /1"
+      }
+    },
+    {
+      "slug": "prescription-transfusion",
+      "title": "Prescription et sécurité transfusionnelle",
+      "specialty": "Hématologie · Transfusion",
+      "level": "DFASM",
+      "duration_minutes": 8,
+      "is_published": true,
+      "brief": "Vous devez transfuser un concentré de globules rouges à Mme Suzanne Morel, 68 ans, hospitalisée pour une anémie mal tolérée. Expliquez-lui la procédure, recueillez son consentement et énoncez les vérifications de sécurité avant et pendant la transfusion.",
+      "patient_profile": {
+        "role_brief": "Tu joues Mme Suzanne Morel, 68 ans, hospitalisée, fatiguée et essoufflée à cause d'une anémie.\nMOTIF : le médecin vient t'expliquer qu'il faut te donner du sang.\nÉLÉMENTS À NE RÉVÉLER QUE SI ON POSE LA QUESTION PRÉCISE : tu n'as jamais été transfusée avant ; tu es un peu inquiète des « maladies du sang » (tu poseras la question si l'étudiant t'explique les risques) ; tu n'as pas d'objection de principe à la transfusion ; tu n'as pas d'allergie connue.\nCOMPORTEMENT : tu poses des questions simples de patiente (« Est-ce que c'est dangereux ? », « Combien de temps ça prend ? »). Tu réponds seulement à ce qu'on te demande. Tu ne connais rien à la médecine transfusionnelle : tu attends des explications claires.\nLangage courant."
+      },
+      "grading_grid": {
+        "markdown": "## Grille d'évaluation — Sécurité transfusionnelle\n\n**Information et consentement (4 pts)**\n- Explique l'indication (anémie mal tolérée) en langage clair /1\n- Informe des bénéfices attendus et des risques principaux /1\n- Recueille le consentement éclairé /1\n- Répond aux inquiétudes (sécurité du don, traçabilité) /1\n\n**Examens et prescription (4 pts)**\n- Vérifie/prescrit les examens immuno-hématologiques : 2 déterminations de groupe ABO-RH + RAI valide /2\n- Prescription conforme du CGR (nombre, caractéristiques : phénotypé/irradié si indiqué) /1\n- Information/consignes de surveillance prévues /1\n\n**Sécurité au lit du patient (5 pts)**\n- Contrôle ultime pré-transfusionnel au lit du patient, par la personne qui transfuse /2\n- Concordance identité patient / documents / poche + contrôle ultime ABO (Beth-Vincent) /2\n- Surveillance : constantes avant, pendant (première 15 min) et après /1\n\n**Gestion d'un incident (2 pts)**\n- Sait arrêter immédiatement la transfusion en cas de signe d'alerte /1\n- Conserve la poche, alerte, déclare (hémovigilance) /1"
+      }
+    },
+    {
+      "slug": "douleur-abdominale-hypotension",
+      "title": "Douleur abdominale avec hypotension",
+      "specialty": "Urgences · Réanimation",
+      "level": "DFASM",
+      "duration_minutes": 10,
+      "is_published": true,
+      "brief": "M. Alain Fontaine, 61 ans, est amené aux urgences pour une douleur abdominale intense. L'infirmière vous signale une tension basse. Évaluez la gravité, orientez le diagnostic et débutez la prise en charge.",
+      "patient_profile": {
+        "role_brief": "Tu joues M. Alain Fontaine, 61 ans, gros consommateur d'alcool.\nSYMPTÔMES : douleur violente en barre au niveau de l'estomac depuis ce matin, irradiant dans le dos, 9/10, tu es plié en deux, tu as vomi plusieurs fois.\nÉLÉMENTS À NE RÉVÉLER QUE SI ON POSE LA QUESTION PRÉCISE : tu bois beaucoup d'alcool depuis des années (seulement si on demande précisément la consommation d'alcool) ; tu as fait un gros repas très arrosé hier soir ; tu te sens faible, la tête qui tourne quand on te redresse ; tu as soif ; pas de sang dans les vomissements (si on demande) ; pas d'antécédent chirurgical.\nCONSTANTES (à donner SEULEMENT si l'étudiant les demande, sans les interpréter) : « l'infirmière vous dit : tension 88/54, pouls 118, saturation 96%, température 37,8°C ».\nCOMPORTEMENT : tu es en souffrance, réponses courtes, une info à la fois. Tu ne minimises pas la douleur mais tu ne listes pas tes antécédents spontanément. Tu ne connais pas le diagnostic. Langage courant."
+      },
+      "grading_grid": {
+        "markdown": "## Grille d'évaluation — Douleur abdominale + hypotension\n\n**Reconnaissance de la gravité (5 pts)**\n- Prend/demande les constantes et identifie l'hypotension + tachycardie /2\n- Reconnaît un état de choc / une détresse hémodynamique /2\n- Reconnaît le caractère d'urgence vitale, alerte /1\n\n**Interrogatoire orienté (3 pts)**\n- Caractérise la douleur (barre épigastrique, irradiation dorsale) /1\n- Recherche l'intoxication alcoolique et le facteur déclenchant /1\n- Recherche des signes de gravité digestifs (hématémèse, arrêt du transit) /1\n\n**Raisonnement diagnostique (3 pts)**\n- Évoque une pancréatite aiguë (contexte alcoolique) /1\n- Diagnostics différentiels graves (ulcère perforé, ischémie mésentérique, anévrisme) /1\n- Comprend que l'hypotension impose d'éliminer une cause hémorragique/septique /1\n\n**Prise en charge initiale (4 pts)**\n- Mise en condition : 2 voies veineuses, remplissage, O2, scope, à jeun, antalgie /2\n- Bilan : NFS, ionogramme, lipasémie, bilan hépatique, gaz du sang/lactate, groupe-RAI /1\n- Imagerie adaptée (TDM abdominale) une fois stabilisé, avis réanimation/chirurgie /1"
+      }
+    },
+    {
+      "slug": "consultation-grossesse-normale",
+      "title": "Consultation de grossesse normale (1er trimestre)",
+      "specialty": "Gynécologie-obstétrique",
+      "level": "DFASM",
+      "duration_minutes": 10,
+      "is_published": true,
+      "brief": "Mme Julie Moreau, 29 ans, vient pour sa première consultation de grossesse. Elle a fait un test urinaire positif. Menez la consultation de déclaration et donnez les informations et prescriptions utiles.",
+      "patient_profile": {
+        "role_brief": "Tu joues Mme Julie Moreau, 29 ans, enceinte pour la première fois, en bonne santé.\nMOTIF : ton test de grossesse est positif, tu viens voir le médecin.\nÉLÉMENTS À NE RÉVÉLER QUE SI ON POSE LA QUESTION PRÉCISE : dernières règles il y a environ 8 semaines ; cycles réguliers ; tu ne prends pas d'acide folique (tu ne savais pas) ; tu fumes 5 cigarettes par jour (seulement si on demande le tabac) ; tu bois un verre de vin de temps en temps (si on demande l'alcool) ; pas de maladie chronique, pas de traitement ; tu ne sais plus si tu es à jour de tes vaccins ; tu ne connais pas ton groupe sanguin ; pas d'antécédent familial particulier ; tu te demandes si tu peux continuer le sport et ton travail.\nCOMPORTEMENT : tu es contente mais tu as plein de questions ; tu réponds à une question à la fois et tu attends les conseils. Tu ne listes pas tout spontanément. Langage courant."
+      },
+      "grading_grid": {
+        "markdown": "## Grille d'évaluation — Consultation de grossesse normale\n\n**Interrogatoire (5 pts)**\n- Datation : date des dernières règles, régularité des cycles /1\n- Antécédents médicaux, chirurgicaux, gynéco-obstétricaux /1\n- Recherche de facteurs de risque et de terrain (âge, pathologies) /1\n- Mode de vie : tabac, alcool, autres toxiques /1\n- Traitements en cours et statut vaccinal /1\n\n**Prévention et conseils (5 pts)**\n- Supplémentation en acide folique /1\n- Sevrage tabagique et arrêt de l'alcool /1\n- Règles hygiéno-diététiques, prévention de la listériose/toxoplasmose /1\n- Activité physique et travail : réassurance adaptée /1\n- Déclaration de grossesse et calendrier de suivi expliqués /1\n\n**Examens du 1er trimestre (4 pts)**\n- Bilan biologique obligatoire : groupe-Rhésus/RAI, sérologies (rubéole, toxo, syphilis, VIH proposé, hépatite B) /2\n- Échographie du 1er trimestre (11-13 SA + 6 j) pour datation et clarté nucale /1\n- Dépistage combiné de la trisomie 21 proposé /1\n\n**Communication (1 pt)**\n- Écoute, répond aux questions, ton rassurant et non culpabilisant /1"
+      }
+    },
+    {
+      "slug": "purpura-adulte",
+      "title": "Purpura de l'adulte",
+      "specialty": "Hématologie · Urgences",
+      "level": "DFASM",
+      "duration_minutes": 9,
+      "is_published": true,
+      "brief": "M. Kevin Dubois, 34 ans, consulte pour l'apparition de taches rouges sur les jambes. Menez l'interrogatoire, recherchez les signes de gravité et orientez la démarche diagnostique.",
+      "patient_profile": {
+        "role_brief": "Tu joues Kevin Dubois, 34 ans, sans antécédent.\nMOTIF : depuis hier, des petites taches rouges sont apparues sur tes deux jambes, elles ne partent pas quand on appuie dessus.\nÉLÉMENTS À NE RÉVÉLER QUE SI ON POSE LA QUESTION PRÉCISE : les taches sont surtout aux chevilles et aux jambes ; certaines sont un peu en relief (tu le diras si on te demande de décrire) ; tu n'as PAS de fièvre aujourd'hui ; pas de maux de tête ni de raideur de nuque (si on demande) ; tu te sens bien par ailleurs ; tu as eu un rhume la semaine dernière ; pas de saignement des gencives ni du nez (si on demande) ; tu ne prends pas de médicament ; pas de voyage récent.\nCOMPORTEMENT : tu réponds une info à la fois, uniquement à la question. Tu ne sais pas ce que c'est. Si l'étudiant veut examiner : décris un purpura pétéchial et un peu infiltré des membres inférieurs, symétrique, sans autre lésion.\nLangage courant."
+      },
+      "grading_grid": {
+        "markdown": "## Grille d'évaluation — Purpura de l'adulte\n\n**Reconnaissance et description (3 pts)**\n- Confirme le purpura (ne s'efface pas à la vitropression) /1\n- Décrit le type (pétéchial, ecchymotique, infiltré/vasculaire) et la topographie /1\n- Distingue purpura plaquettaire vs vasculaire /1\n\n**Recherche des signes de gravité — URGENCE (4 pts)**\n- Recherche fièvre + syndrome méningé (purpura fulminans = urgence absolue) /2\n- Recherche un syndrome hémorragique muqueux (bulles, épistaxis, gingivorragies) /1\n- Recherche une altération de l'état général, extension rapide /1\n\n**Démarche diagnostique (4 pts)**\n- Interrogatoire : contexte infectieux, médicaments, terrain /1\n- Oriente : purpura vasculaire (vascularite/IgA post-infectieux ici) vs thrombopénique /1\n- Biologie : NFS-plaquettes en urgence, bilan d'hémostase, CRP /2\n\n**Conduite et communication (2 pts)**\n- Sait que fièvre + purpura extensif impose antibiothérapie immédiate et SAMU /1\n- Explique la démarche et la surveillance /1"
+      }
+    },
+    {
+      "slug": "douleur-thoracique-suspicion-ep",
+      "title": "Douleur thoracique et demande d'imagerie",
+      "specialty": "Pneumologie · Cardiologie",
+      "level": "DFASM",
+      "duration_minutes": 10,
+      "is_published": true,
+      "brief": "Mme Nadia Cherif, 41 ans, consulte pour une douleur thoracique et un essoufflement apparus brutalement. Menez l'interrogatoire, évaluez la probabilité clinique et justifiez la stratégie d'imagerie.",
+      "patient_profile": {
+        "role_brief": "Tu joues Mme Nadia Cherif, 41 ans.\nSYMPTÔMES : depuis ce matin, une douleur dans le côté droit de la poitrine qui augmente quand tu respires à fond, et tu es essoufflée quand tu marches.\nÉLÉMENTS À NE RÉVÉLER QUE SI ON POSE LA QUESTION PRÉCISE : tu rentres d'un long voyage en avion il y a 2 jours (seulement si on demande un voyage/immobilisation) ; tu prends la pilule (seulement si on demande la contraception) ; tu fumes (si on demande) ; ta jambe droite (mollet) est un peu gonflée et douloureuse depuis hier (seulement si on demande d'examiner les jambes ou s'il y a une douleur de mollet) ; pas de fièvre ; pas de crachats de sang (si on demande) ; pas d'antécédent.\nCONSTANTES (SEULEMENT si demandées, sans interprétation) : « pouls 104, saturation 93% en air ambiant, tension 124/78, température 37,2°C, fréquence respiratoire 22 ».\nCOMPORTEMENT : tu réponds une info à la fois, précisément. Tu ne connais pas le diagnostic. Langage courant."
+      },
+      "grading_grid": {
+        "markdown": "## Grille d'évaluation — Suspicion d'embolie pulmonaire\n\n**Interrogatoire (5 pts)**\n- Caractérise la douleur (pleurale) et la dyspnée /1\n- Recherche des facteurs de risque de MTEV : voyage/immobilisation, œstroprogestatifs, tabac /2\n- Recherche des signes de TVP (douleur/œdème du mollet) /1\n- Recherche des signes de gravité (syncope, hémoptysie, malaise) /1\n\n**Raisonnement / probabilité (4 pts)**\n- Évoque l'embolie pulmonaire en priorité /2\n- Évalue la probabilité clinique (score de Wells ou Genève) /1\n- Diagnostics différentiels (SCA, pneumopathie, pneumothorax) /1\n\n**Stratégie d'examens (4 pts)**\n- ECG + gaz du sang + radiographie thoracique de débrouillage /1\n- Adapte à la probabilité : D-dimères si probabilité faible/intermédiaire /1\n- Angioscanner thoracique (ou scintigraphie V/Q) si D-dimères positifs ou probabilité forte /2\n\n**Communication (2 pts)**\n- Explique la démarche et l'urgence /1\n- Attitude rassurante et claire /1"
+      }
+    },
+    {
+      "slug": "anemie-melena-rectorragie",
+      "title": "Anémie et saignement digestif",
+      "specialty": "Hépato-gastro-entérologie",
+      "level": "DFASM",
+      "duration_minutes": 10,
+      "is_published": true,
+      "brief": "M. Robert Lemoine, 67 ans, est adressé pour une fatigue et une baisse de l'hémoglobine découverte sur un bilan. Menez l'interrogatoire, recherchez une hémorragie digestive et proposez la démarche diagnostique.",
+      "patient_profile": {
+        "role_brief": "Tu joues M. Robert Lemoine, 67 ans, retraité.\nMOTIF : ton médecin a trouvé que tu manquais de sang sur une prise de sang et t'a envoyé consulter. Tu es fatigué et essoufflé à l'effort depuis quelques semaines.\nÉLÉMENTS À NE RÉVÉLER QUE SI ON POSE LA QUESTION PRÉCISE : tu as remarqué des selles noires, très foncées et malodorantes depuis une dizaine de jours (SEULEMENT si on demande l'aspect des selles ou la présence de sang) ; pas de sang rouge visible ; tu as un peu maigri (3-4 kg) sans le vouloir ; tu prends de l'aspirine pour le cœur (si on demande les médicaments) ; tu ne bois pas beaucoup ; ton père est mort d'un cancer du côlon (si on demande les antécédents familiaux) ; tu n'as jamais fait de coloscopie ni le test de dépistage.\nEXAMEN (si l'étudiant propose un toucher rectal) : « au toucher rectal, présence de selles noires sur le doigtier, pas de masse palpable ».\nCOMPORTEMENT : tu minimises, tu réponds une info à la fois. Tu ne fais pas le lien toi-même. Langage courant."
+      },
+      "grading_grid": {
+        "markdown": "## Grille d'évaluation — Anémie et hémorragie digestive\n\n**Interrogatoire (5 pts)**\n- Signes d'anémie (asthénie, dyspnée d'effort, pâleur) /1\n- Recherche active d'un saignement extériorisé : méléna, rectorragie /2\n- Signes d'alarme : amaigrissement, altération de l'état général /1\n- Facteurs favorisants : AINS/aspirine/anticoagulant, alcool, antécédents /1\n\n**Raisonnement (4 pts)**\n- Relie l'anémie à une hémorragie digestive chronique (anémie ferriprive) /1\n- Évoque une cause haute (ulcère, œsophagite) et basse (cancer colorectal) /1\n- Devant l'âge, l'amaigrissement et l'antécédent familial, évoque le cancer colorectal /1\n- Réalise/propose le toucher rectal /1\n\n**Examens (4 pts)**\n- NFS, ferritinémie, bilan martial, groupe-RAI /1\n- Endoscopies : fibroscopie œso-gastro-duodénale ET coloscopie /2\n- Évalue la tolérance et le retentissement (transfusion si mal toléré) /1\n\n**Communication (2 pts)**\n- Explique la nécessité des endoscopies sans dramatiser /1\n- Empathie, réponses aux inquiétudes /1"
+      }
+    },
+    {
+      "slug": "interpretation-hemogramme",
+      "title": "Interprétation d'un hémogramme anormal",
+      "specialty": "Médecine interne · Hématologie",
+      "level": "DFASM",
+      "duration_minutes": 8,
+      "is_published": true,
+      "brief": "Mme Christine Aubert, 63 ans, vient chercher les résultats d'une prise de sang demandée pour une fatigue et des douleurs osseuses. Interprétez l'hémogramme, synthétisez les anomalies et expliquez la suite.",
+      "patient_profile": {
+        "role_brief": "Tu joues Mme Christine Aubert, 63 ans, qui vient pour ses résultats.\nMOTIF : tu es fatiguée depuis des mois et tu as mal au dos et aux côtes.\nRÉSULTATS À COMMUNIQUER SEULEMENT SI L'ÉTUDIANT DEMANDE À VOIR LA PRISE DE SANG (tu lis les chiffres sans les interpréter) : « Hémoglobine 9,2 g/dL, VGM 92 fL, plaquettes 210 G/L, globules blancs 6 G/L normaux ; à la biochimie : protéines totales élevées à 95 g/L, calcium élevé à 2,9 mmol/L, créatinine augmentée à 145 µmol/L. »\nÉLÉMENTS À NE RÉVÉLER QUE SI ON POSE LA QUESTION PRÉCISE : douleurs osseuses du dos et des côtes ; tu bois beaucoup et tu urines beaucoup (si on demande) ; pas de fièvre ; pas de saignement ; tu as eu récemment une infection pulmonaire.\nCOMPORTEMENT : tu apportes les résultats mais tu ne les comprends pas ; tu réponds à une question à la fois. Tu attends les explications. Langage courant."
+      },
+      "grading_grid": {
+        "markdown": "## Grille d'évaluation — Interprétation d'un hémogramme\n\n**Lecture et synthèse des résultats (5 pts)**\n- Identifie l'anémie normocytaire /1\n- Repère l'hyperprotidémie (pic ?) /1\n- Repère l'hypercalcémie /1\n- Repère l'insuffisance rénale /1\n- Fait la synthèse : association évocatrice (anémie + hyperprotidémie + hypercalcémie + IR + douleurs osseuses) /1\n\n**Raisonnement diagnostique (4 pts)**\n- Évoque un myélome multiple /2\n- Interprète l'hyperprotidémie comme une immunoglobuline monoclonale possible /1\n- Relie les douleurs osseuses aux lésions lytiques /1\n\n**Démarche complémentaire (3 pts)**\n- Électrophorèse des protéines sériques + immunofixation /1\n- Bilan : protéinurie de Bence-Jones, imagerie osseuse, myélogramme /1\n- Prise en charge de l'hypercalcémie et de l'IR si sévères /1\n\n**Communication (3 pts)**\n- Explique les anomalies en langage simple /1\n- Annonce une démarche diagnostique, pas un diagnostic définitif /1\n- Empathie, disponibilité /1"
+      }
+    },
+    {
+      "slug": "nausees-vomissements",
+      "title": "Nausées et vomissements",
+      "specialty": "Médecine générale · HGE",
+      "level": "DFASM",
+      "duration_minutes": 9,
+      "is_published": true,
+      "brief": "Mme Émilie Rousseau, 26 ans, consulte pour des nausées et des vomissements évoluant depuis 3 jours. Menez l'interrogatoire, recherchez des signes de gravité et orientez le diagnostic.",
+      "patient_profile": {
+        "role_brief": "Tu joues Mme Émilie Rousseau, 26 ans.\nMOTIF : tu as la nausée et tu vomis depuis 3 jours, tu n'arrives presque plus à manger.\nÉLÉMENTS À NE RÉVÉLER QUE SI ON POSE LA QUESTION PRÉCISE : les vomissements sont alimentaires puis bilieux, plutôt le matin ; pas de sang dedans (si on demande) ; tu n'as pas mal à la tête de façon importante ; tes dernières règles remontent à 7 semaines (SEULEMENT si on te demande la date des règles ou une possible grossesse) ; tu as des rapports sans contraception régulière ; pas de fièvre ; pas de diarrhée ; tu urines peu et tu as la bouche sèche depuis hier (signes de déshydratation, si on demande) ; pas de médicament ; pas de voyage.\nCOMPORTEMENT : tu réponds une info à la fois, précisément à la question. Tu ne penses pas spontanément à une grossesse. Tu ne connais pas la cause. Langage courant."
+      },
+      "grading_grid": {
+        "markdown": "## Grille d'évaluation — Nausées et vomissements\n\n**Interrogatoire (5 pts)**\n- Caractérise les vomissements : ancienneté, horaire, contenu, abondance /1\n- Signes digestifs associés (douleur, transit, hématémèse) /1\n- Recherche systématique d'une grossesse chez une femme en âge de procréer /2\n- Recherche de causes (médicaments, toxique, contexte infectieux, neurologique) /1\n\n**Recherche de signes de gravité (4 pts)**\n- Signes de déshydratation (soif, oligurie, muqueuses sèches, pli cutané) /2\n- Signes neurologiques (céphalées, syndrome méningé, HTIC) /1\n- Retentissement / intolérance alimentaire totale /1\n\n**Diagnostic et prise en charge (3 pts)**\n- Évoque une grossesse (vomissements gravidiques) parmi les hypothèses prioritaires /1\n- Prescrit βhCG et ionogramme, adapte le bilan au contexte /1\n- Traitement symptomatique (réhydratation, antiémétique compatible) /1\n\n**Communication (3 pts)**\n- Interroge sans jugement /1\n- Explique la démarche /1\n- Consignes de reconsultation /1"
+      }
+    },
+    {
+      "slug": "bradycardie-malaise",
+      "title": "Bradycardie et malaise",
       "specialty": "Cardiologie · Urgences",
       "level": "DFASM",
-      "duration_minutes": 10,
+      "duration_minutes": 9,
       "is_published": true,
-      "brief": "M. Bernard, 58 ans, consulte aux urgences pour une douleur thoracique depuis 2 heures. Réalisez l'interrogatoire et proposez votre démarche diagnostique.",
+      "brief": "M. Georges Petit, 74 ans, consulte après plusieurs malaises. L'infirmière note un pouls lent. Menez l'interrogatoire, demandez l'ECG et proposez votre conduite à tenir.",
       "patient_profile": {
-        "role_brief": "Tu joues le rôle du patient M. Bernard, 58 ans, cadre stressé.\nSYMPTÔMES : douleur thoracique rétrosternale en étau depuis 2h, irradiant dans le bras gauche et la mâchoire, 8/10. Sueurs, nausées. Pas de dyspnée au repos.\nATCD : HTA traitée (amlodipine), dyslipidémie (statine), tabagisme actif 30 PA, père décédé d'un IDM à 62 ans.\nCOMPORTEMENT : tu es anxieux, tu penses à une crise cardiaque. Tu réponds aux questions précisément mais n'offres pas spontanément les infos. Tu nies la consommation d'alcool.\nNe révèle pas le diagnostic. Réponds naturellement comme un patient, sans termes médicaux."
+        "role_brief": "Tu joues M. Georges Petit, 74 ans, hypertendu.\nMOTIF : tu as fait deux malaises cette semaine, avec une impression de voile noir, une fois tu es tombé.\nÉLÉMENTS À NE RÉVÉLER QUE SI ON POSE LA QUESTION PRÉCISE : les malaises surviennent brutalement, sans prévenir, parfois assis ; tu reviens à toi tout de suite ; pas de mouvements anormaux ni de morsure de langue (si on demande) ; tu te sens fatigué et essoufflé depuis quelques jours ; tu prends un médicament pour le cœur/ralentir le pouls (bêtabloquant) et un pour la tension (si on demande l'ordonnance) ; le cardiologue a récemment augmenté une dose.\nECG (à communiquer SEULEMENT si l'étudiant le demande, sans l'interpréter à sa place) : « l'ECG montre un rythme lent à 38/min, avec des ondes P qui ne sont pas toujours suivies d'un complexe (dissociation) ».\nCONSTANTES si demandées : « pouls 38, tension 105/60, saturation 97% ».\nCOMPORTEMENT : tu réponds une info à la fois. Tu ne connais pas la cause. Langage courant de personne âgée."
       },
       "grading_grid": {
-        "markdown": "## Grille d'évaluation — Douleur thoracique\n\n**Interrogatoire (6 pts)**\n- Caractéristiques de la douleur : siège, type, irradiations, intensité /2\n- Facteurs déclenchants / calmants /1\n- Signes associés : sueurs, nausées, dyspnée /1\n- ATCD cardiovasculaires personnels et familiaux /1\n- Facteurs de risque : tabac, HTA, dyslipidémie /1\n\n**Diagnostic (4 pts)**\n- Évoque SCA en premier /2\n- Diagnostics différentiels (EP, dissection aortique) /1\n- Urgence reconnue, appel SAMU /1\n\n**Examens complémentaires (3 pts)**\n- ECG en urgence /1\n- Troponines (×2 à 3h) /1\n- Bilan biologique (NFS, ionogramme, bilan de coagulation) /1\n\n**Communication (3 pts)**\n- Empathie, ton rassurant /1\n- Explication claire au patient /1\n- Appel de l'équipe médicale / organisation /1"
+        "markdown": "## Grille d'évaluation — Bradycardie et malaise\n\n**Interrogatoire (4 pts)**\n- Caractérise les malaises (brutalité, prodromes, perte de connaissance, récupération) /2\n- Élimine une crise convulsive (morsure, mouvements, confusion post-critique) /1\n- Recherche l'iatrogénie : bêtabloquant, anti-arythmique, digitalique /1\n\n**Examen et ECG (4 pts)**\n- Prend les constantes, confirme la bradycardie /1\n- Demande un ECG en urgence /1\n- Interprète : bradycardie + BAV de haut degré (ondes P bloquées) /2\n\n**Raisonnement et gravité (3 pts)**\n- Relie syncopes et trouble conductif (syncope d'Adams-Stokes) /1\n- Reconnaît le risque vital (asystolie) et l'urgence /1\n- Recherche une cause réversible (médicament, hyperkaliémie, ischémie) /1\n\n**Conduite à tenir (4 pts)**\n- Scope, voie veineuse, surveillance continue /1\n- Arrêt des médicaments bradycardisants, correction d'une cause /1\n- Atropine si mal toléré ; avis cardiologique urgent /1\n- Orientation vers entraînement électrosystolique / pacemaker /1"
       }
     },
     {
-      "slug": "cephalees-febriles",
-      "title": "Céphalées aiguës fébriles",
-      "specialty": "Neurologie · Infectiologie",
+      "slug": "prevention-cardiovasculaire",
+      "title": "Prévention chez un patient à risque cardiovasculaire",
+      "specialty": "Cardiologie · Prévention",
       "level": "DFASM",
-      "duration_minutes": 10,
+      "duration_minutes": 9,
       "is_published": true,
-      "brief": "Mme Léa, 24 ans, étudiante, consulte pour des céphalées intenses depuis 24h avec de la fièvre. Évaluez la situation et orientez votre diagnostic.",
+      "brief": "M. Pascal Giraud, 52 ans, vient en consultation de suivi après un infarctus du myocarde survenu il y a 6 mois. Faites le point sur ses facteurs de risque, son traitement et l'éducation à la prévention secondaire.",
       "patient_profile": {
-        "role_brief": "Tu joues le rôle de Léa, 24 ans, étudiante en droit, fiancée, sans ATCD.\nSYMPTÔMES : céphalée diffuse très intense (10/10) apparue brutalement hier soir, fièvre à 39°C, photophobie, nausées, nuque raide. Ce matin tu as remarqué de petites taches rouges sur les jambes.\nCOMPORTEMENT : tu es effrayée, la lumière te fait mal (grimace si on te parle de lumière), tu parles doucement car la voix résonne dans ta tête.\nENTOURAGE : ta coloc a eu une grippe la semaine passée mais elle va bien.\nNe révèle pas le diagnostic. Réponds naturellement, sans termes médicaux. Montre ta détresse."
+        "role_brief": "Tu joues M. Pascal Giraud, 52 ans, commercial, qui a fait un infarctus il y a 6 mois (stent posé).\nMOTIF : consultation de suivi.\nÉLÉMENTS À NE RÉVÉLER QUE SI ON POSE LA QUESTION PRÉCISE : tu as recommencé à fumer (10/j) « à cause du stress » (SEULEMENT si on demande le tabac) ; tu prends tes médicaments mais tu oublies souvent celui du cholestérol et tu as arrêté l'un d'eux car il te fatiguait (si on demande l'observance) ; tu ne fais pas de sport ; tu manges beaucoup de plats préparés ; tu ne connais pas tes derniers chiffres de cholestérol ; ton travail est stressant ; pas de douleur thoracique récente ; pas d'essoufflement anormal.\nCOMPORTEMENT : tu minimises un peu, tu réponds à une question à la fois. Tu attends des conseils concrets. Langage courant."
       },
       "grading_grid": {
-        "markdown": "## Grille d'évaluation — Céphalées fébriles\n\n**Interrogatoire (5 pts)**\n- Caractère brutal du début (en coup de tonnerre ?) /1\n- Fièvre, frissons /1\n- Signes méningés : photophobie, phonophobie, raideur de nuque /1\n- Purpura (taches cutanées) /1\n- Contage récent, vie en collectivité /1\n\n**Diagnostic (4 pts)**\n- Méningite bactérienne évoquée en premier /2\n- Purpura fulminans reconnu comme urgence absolue /1\n- Diagnostics différentiels (méningite virale, HSA) /1\n\n**Prise en charge (4 pts)**\n- Appel du SAMU 15 immédiat /2\n- Ceftriaxone IV sans attendre (si purpura) /1\n- Isolement / protection /1\n\n**Communication (3 pts)**\n- Rassure sans minimiser la gravité /1\n- Explique la démarche /1\n- Prévient l'entourage pour antibioprophylaxie /1"
+        "markdown": "## Grille d'évaluation — Prévention cardiovasculaire secondaire\n\n**Bilan des facteurs de risque (4 pts)**\n- Tabac : recherche de la reprise, évaluation de la dépendance /1\n- Alimentation, activité physique, surpoids /1\n- Recherche des autres FDR : HTA, diabète, dyslipidémie, hérédité /1\n- Recherche de symptômes de récidive (angor, dyspnée) /1\n\n**Évaluation du traitement (4 pts)**\n- Vérifie l'observance et connaît le traitement post-IDM (antiagrégant(s), statine, IEC/ARA2, bêtabloquant) /2\n- Repère l'arrêt/oubli de traitements et en explore la raison /1\n- Sécurise la reprise (ne pas arrêter l'antiagrégant, gérer l'effet indésirable) /1\n\n**Éducation et objectifs (4 pts)**\n- Sevrage tabagique : proposition d'accompagnement /1\n- Règles hygiéno-diététiques et activité physique adaptée (réadaptation) /1\n- Objectif de LDL-cholestérol bas en prévention secondaire /1\n- Contrôle des chiffres tensionnels et glycémiques /1\n\n**Communication (3 pts)**\n- Entretien motivationnel, sans culpabiliser /1\n- Objectifs concrets et partagés /1\n- Planifie le suivi /1"
       }
     },
     {
-      "slug": "dyspnee-aigue",
-      "title": "Dyspnée aiguë",
-      "specialty": "Cardiologie · Pneumologie",
+      "slug": "lombalgie-arret-travail",
+      "title": "Lombalgie aiguë et arrêt de travail",
+      "specialty": "Rhumatologie · Médecine générale",
       "level": "DFASM",
-      "duration_minutes": 10,
+      "duration_minutes": 9,
       "is_published": true,
-      "brief": "M. Dumont, 72 ans, est amené par son épouse pour une dyspnée progressive depuis 6h. Évaluez et prenez en charge.",
+      "brief": "M. Sébastien Marchand, 38 ans, manutentionnaire, consulte pour une douleur lombaire aiguë survenue en portant une charge. Menez l'interrogatoire, recherchez des signes d'alarme et discutez la prise en charge, y compris l'arrêt de travail.",
       "patient_profile": {
-        "role_brief": "Tu joues le rôle de M. Dumont, 72 ans, retraité, avec son épouse présente.\nSYMPTÔMES : tu es très essoufflé (tu parles par petites phrases), tu as du mal à t'allonger (orthopnée 3 oreillers), tu toussotes une mousse rosée. Œdème des chevilles depuis 3 jours.\nATCD : insuffisance cardiaque (FE 35%), fibrillation auriculaire, HTA. Médicaments : furosémide, bisoprolol, ramipril, apixaban.\nAVEU IMPORTANT : tu as arrêté le furosémide il y a 5 jours car tu avais \"trop envie d'uriner\". Tu le diras seulement si on te pose la question sur tes médicaments.\nCOMPORTEMENT : anxieux, tu transpires, tu restes assis, tu t'exprimes avec peine."
+        "role_brief": "Tu joues Sébastien Marchand, 38 ans, manutentionnaire dans un entrepôt.\nMOTIF : hier en portant un carton lourd, tu as ressenti un blocage en bas du dos ; depuis, tu as très mal et du mal à bouger.\nÉLÉMENTS À NE RÉVÉLER QUE SI ON POSE LA QUESTION PRÉCISE : la douleur reste dans le bas du dos, elle ne descend PAS dans la jambe (si on demande une irradiation) ; pas de fourmillements ni de faiblesse dans les jambes (si on demande) ; tu contrôles bien tes urines et tes selles (si on demande, pas de troubles sphinctériens) ; pas de fièvre ; pas d'amaigrissement ; pas d'antécédent de cancer ; tu n'as pas pris de traitement ; ton travail est physique et tu es inquiet de le reprendre trop tôt ; tu voudrais un arrêt.\nCOMPORTEMENT : tu réponds une info à la fois, uniquement à ce qu'on demande. Tu ne connais pas de terme médical. Tu poses la question de l'arrêt de travail si l'étudiant n'en parle pas."
       },
       "grading_grid": {
-        "markdown": "## Grille d'évaluation — Dyspnée aiguë\n\n**Interrogatoire (5 pts)**\n- Délai et mode d'installation /1\n- Orthopnée, DPN /1\n- Toux, expectoration rosée /1\n- ATCD : IC, FA, traitements /1\n- Observance médicamenteuse (arrêt furosémide) /1\n\n**Diagnostic (3 pts)**\n- Œdème aigu pulmonaire sur IC décompensée /2\n- Facteur déclenchant identifié (non-observance) /1\n\n**Prise en charge (4 pts)**\n- Position demi-assise, O2 /1\n- Diurétiques IV (furosémide) /1\n- Monitorage (SaO2, TA, ECG) /1\n- Appel réanimation si aggravation /1\n\n**Communication (4 pts)**\n- Réassurance du patient et de l'épouse /1\n- Explication simple de la situation /1\n- Importance de l'observance expliquée /1\n- Pas de jargon médical /1"
-      }
-    },
-    {
-      "slug": "douleur-abdominale",
-      "title": "Douleur abdominale aiguë",
-      "specialty": "Chirurgie · Gastroentérologie",
-      "level": "DFASM",
-      "duration_minutes": 10,
-      "is_published": true,
-      "brief": "Mme Sophie, 32 ans, consulte pour une douleur abdominale aiguë en fosse iliaque droite. Réalisez l'interrogatoire et proposez une démarche.",
-      "patient_profile": {
-        "role_brief": "Tu joues le rôle de Sophie, 32 ans, secrétaire, enceinte de 8 semaines (test positif il y a 3 semaines, grossesse non suivie).\nSYMPTÔMES : douleur en FID depuis 12h, de plus en plus intense (7/10), à bascule. Nausées. Pas de fièvre (37,2°C). Dernières règles il y a 8 semaines. Saignements vaginaux légers depuis ce matin.\nCOMPORTEMENT : tu révèles la grossesse seulement si on te demande directement si tu peux être enceinte. Tu as peur. Tu n'as pas encore dit à ton compagnon.\nPOINT CLÉ : tu ne sais pas si c'est une grossesse intra-utérine, tu as juste fait un test urinaire."
-      },
-      "grading_grid": {
-        "markdown": "## Grille d'évaluation — Douleur abdominale\n\n**Interrogatoire (6 pts)**\n- Caractéristiques de la douleur /1\n- Signes digestifs associés /1\n- Recherche active de grossesse (INTERROGATOIRE SYSTÉMATIQUE) /2\n- Méno-métrorragies /1\n- ATCD gynécologiques (GEU, salpingite, DIU, chirurgie) /1\n\n**Diagnostic (4 pts)**\n- GEU évoquée en priorité /2\n- Appendicite en diagnostic différentiel /1\n- Conscience de l'urgence /1\n\n**Examens (3 pts)**\n- β-hCG quantitatif /1\n- Échographie pelvienne en urgence /1\n- NFS, groupe sanguin, rhésus /1\n\n**Communication (3 pts)**\n- Annonce bienveillante de la situation /1\n- Urgence expliquée sans créer de panique /1\n- Confidentialité respectée /1"
+        "markdown": "## Grille d'évaluation — Lombalgie aiguë et arrêt de travail\n\n**Interrogatoire (4 pts)**\n- Caractérise la douleur : circonstance (effort de soulèvement), type mécanique /1\n- Recherche une irradiation radiculaire (sciatique/cruralgie) /1\n- Contexte professionnel et gestes à risque /1\n- Antécédents et épisodes antérieurs /1\n\n**Recherche des drapeaux rouges (5 pts)**\n- Déficit neurologique moteur/sensitif des membres inférieurs /1\n- Syndrome de la queue de cheval (troubles sphinctériens, anesthésie en selle) /2\n- Fièvre, contexte infectieux /1\n- Altération de l'état général, antécédent néoplasique, douleur non mécanique /1\n\n**Prise en charge (4 pts)**\n- Conclut à une lombalgie commune sans signe de gravité → pas d'imagerie systématique /1\n- Antalgie adaptée et poursuite d'une activité physique (éviter l'alitement prolongé) /1\n- Arrêt de travail justifié, court et réévalué (métier physique) /1\n- Information : évolution favorable habituelle, conseils de prévention/gestes /1\n\n**Communication (2 pts)**\n- Rassure sur le pronostic /1\n- Décision d'arrêt expliquée et partagée /1"
       }
     }
   ]

@@ -63,12 +63,22 @@ export async function POST(request: Request): Promise<Response> {
     }
   }
 
-  // Mode simulate — streamed
+  // Mode simulate — streamed.
+  // Les RÈGLES de comportement du patient (anti « faux positif » : ne répondre qu'à ce
+  // qui est précisément demandé) vivent dans le prompt serveur `ecos_patient` (promptStore,
+  // éditable panel admin), PAS dans le body client : le `systemPrompt` reçu n'est que la
+  // fiche de rôle du cas (identité/symptômes/éléments à révéler).
   try {
-    const runtime = await getRuntimeForFeature('ecos_simulate');
+    const [patientRules, runtime] = await Promise.all([
+      getPromptTemplate('ecos_patient'),
+      getRuntimeForFeature('ecos_simulate'),
+    ]);
+    const combinedSystem = patientRules
+      ? `${patientRules}\n\n═══ FICHE DE RÔLE DU CAS ═══\n${systemPrompt}`
+      : systemPrompt;
     const result = streamText({
       model: runtime.model,
-      system: systemPrompt,
+      system: combinedSystem,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       ...runtime.options,
     });

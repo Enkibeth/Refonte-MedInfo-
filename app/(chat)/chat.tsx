@@ -69,6 +69,7 @@ import { Icon } from '@/ui/icons';
 import { Reveal } from '@/ui/Reveal';
 import { useReducedMotion } from '@/ui/useReducedMotion';
 import { AssistantBlocks, SourcesBlock } from '@/ui/chat/AssistantBlocks';
+import { QcmLauncher } from '@/ui/chat/QcmCard';
 import { ChatbotSwitcher, CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
 import { ConversationList, HistoryPanel } from '@/ui/chat/HistoryPanel';
 import { SourceDetailModal } from '@/ui/chat/SourceDetailModal';
@@ -1153,6 +1154,23 @@ export default function ChatScreen() {
               </TouchableOpacity>
             ) : null}
           </View>
+        ) : null}
+
+        {/* ── Section QCM (chat étudiant) : mini-examen type EDN généré à la demande ── */}
+        {chatbot === 'student' && !isLoading && lastAssistant && user ? (
+          <QcmLauncher
+            token={tokenRef.current}
+            buildContext={() => {
+              const reversed = [...messages].reverse();
+              const lastUser = reversed.find((m) => m.role === 'user');
+              const parts: string[] = [];
+              if (lastUser) {
+                parts.push(`Question de l'étudiant : ${messageText(lastUser).slice(0, 1500)}`);
+              }
+              parts.push(`Réponse du cours : ${assistantTextForExport(lastAssistantText).slice(0, 3500)}`);
+              return { context: parts.join('\n\n') };
+            }}
+          />
         ) : null}
 
         {/* ── Proposition d'inscription / connexion en fin d'essai gratuit ── */}
