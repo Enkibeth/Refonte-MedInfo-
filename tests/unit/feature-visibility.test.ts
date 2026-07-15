@@ -18,12 +18,12 @@ describe('featureVisibility — matrice stricte par rôle', () => {
     expect(idsFor('public')).toEqual(['chat', 'document']);
   });
 
-  it("l'étudiant voit Chat + ECOS + Partiel + Révisions + Présentations + CV + Article (pas Document ni Audio)", () => {
-    expect(idsFor('student')).toEqual(['chat', 'ecos', 'partiel', 'revision', 'presentation', 'cv-builder', 'article']);
+  it("l'étudiant voit Chat + ECOS + Partiel + Révisions + Présentations + CV + Article + Scores (pas Document ni Audio)", () => {
+    expect(idsFor('student')).toEqual(['chat', 'ecos', 'partiel', 'revision', 'presentation', 'cv-builder', 'article', 'scores']);
   });
 
-  it('le professionnel voit Chat + Audio + Présentations + CV + Article (pas ECOS/Partiel/Document)', () => {
-    expect(idsFor('professional')).toEqual(['chat', 'audio', 'presentation', 'cv-builder', 'article']);
+  it('le professionnel voit Chat + Audio + Présentations + CV + Article + Scores (pas ECOS/Partiel/Document)', () => {
+    expect(idsFor('professional')).toEqual(['chat', 'audio', 'presentation', 'cv-builder', 'article', 'scores']);
   });
 
   it("l'admin voit toutes les fonctionnalités", () => {
@@ -117,14 +117,14 @@ describe('tabBarFeatures — répartition barre du bas / panneau Outils (lisibil
   it('professionnel : 3 outils prioritaires + le reste dans le panneau', () => {
     expect(split('professional')).toEqual({
       bar: ['chat', 'audio', 'presentation'],
-      overflow: ['cv-builder', 'article'],
+      overflow: ['cv-builder', 'article', 'scores'],
     });
   });
 
   it('étudiant : 3 outils prioritaires + le reste dans le panneau', () => {
     expect(split('student')).toEqual({
       bar: ['chat', 'ecos', 'revision'],
-      overflow: ['partiel', 'presentation', 'cv-builder', 'article'],
+      overflow: ['partiel', 'presentation', 'cv-builder', 'article', 'scores'],
     });
   });
 

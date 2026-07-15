@@ -78,6 +78,7 @@ const TOOL_CTA_LABEL: Partial<Record<AppFeatureId, string>> = {
   revision: 'Planifier mes révisions',
   audio: 'Dicter un compte rendu',
   presentation: 'Créer une présentation',
+  scores: 'Calculer un score',
 };
 
 interface NextExam {
