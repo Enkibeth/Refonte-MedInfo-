@@ -168,9 +168,26 @@ export interface ActivityEntry {
   route: string;
 }
 
+/** Libellé court du chatbot d'origine d'une conversation (affiché dans l'activité). */
+const CHATBOT_SHORT: Record<string, string> = {
+  public: 'Public',
+  student: 'Étudiant',
+  professional: 'Pro',
+};
+
+/** Libellé court du type de manuscrit (outil Rédaction d'article). */
+const DOC_TYPE_SHORT: Record<string, string> = {
+  original: 'Article original',
+  abstract: 'Abstract',
+  case_report: 'Cas clinique',
+  review: 'Revue',
+  thesis: 'Thèse',
+};
+
 export interface RecentActivityInput {
   conversations?: Array<{
     id: string;
+    chatbot?: string;
     title: string | null;
     category: string | null;
     updated_at: string;
@@ -182,17 +199,40 @@ export interface RecentActivityInput {
     created_at: string;
   }>;
   revisionPlans?: Array<{ id: string; title: string; updated_at: string }>;
+  documentAnalyses?: Array<{
+    id: string;
+    mode: string;
+    source_name: string | null;
+    created_at: string;
+  }>;
+  audioDocuments?: Array<{ id: string; title: string; created_at: string }>;
+  presentationDecks?: Array<{ id: string; title: string | null; updated_at: string }>;
+  cvDocuments?: Array<{ id: string; title: string | null; updated_at: string }>;
+  articleDocuments?: Array<{
+    id: string;
+    title: string | null;
+    doc_type: string;
+    updated_at: string;
+  }>;
 }
 
-/** Fusionne l'activité des outils en un fil trié (plus récent d'abord). */
+/**
+ * Fusionne l'activité de TOUS les outils du compte en un fil trié (plus récent
+ * d'abord) : chat, ECOS, révisions, mais aussi analyses de document, comptes
+ * rendus audio, présentations, CV et manuscrits — chaque source est optionnelle
+ * (le dashboard ne fournit que celles visibles pour le rôle, fail-soft).
+ */
 export function buildRecentActivity(input: RecentActivityInput, limit = 6): ActivityEntry[] {
   const entries: ActivityEntry[] = [];
   for (const c of input.conversations ?? []) {
+    const chatbotLabel = c.chatbot ? (CHATBOT_SHORT[c.chatbot] ?? null) : null;
     entries.push({
       key: `chat-${c.id}`,
       feature: 'chat',
       title: truncateLabel(c.title || 'Conversation'),
-      detail: c.category,
+      detail: [chatbotLabel ? `Chat ${chatbotLabel.toLowerCase()}` : null, c.category]
+        .filter(Boolean)
+        .join(' · ') || null,
       timestamp: c.updated_at,
       // Deep-link : rouvre CETTE conversation (paramètre lu par app/(chat)/chat.tsx).
       route: `/(chat)/chat?conversation=${encodeURIComponent(c.id)}`,
@@ -218,8 +258,74 @@ export function buildRecentActivity(input: RecentActivityInput, limit = 6): Acti
       route: '/(chat)/revision',
     });
   }
+  for (const d of input.documentAnalyses ?? []) {
+    entries.push({
+      key: `document-${d.id}`,
+      feature: 'document',
+      title: truncateLabel(
+        `${d.mode === 'translation' ? 'Traduction' : 'Analyse'} — ${d.source_name || 'Texte collé'}`,
+      ),
+      detail: 'Analyse de document',
+      timestamp: d.created_at,
+      route: '/(chat)/document',
+    });
+  }
+  for (const a of input.audioDocuments ?? []) {
+    entries.push({
+      key: `audio-${a.id}`,
+      feature: 'audio',
+      title: truncateLabel(`Audio — ${a.title || 'Compte rendu'}`),
+      detail: 'Compte rendu de consultation',
+      timestamp: a.created_at,
+      route: '/(chat)/audio',
+    });
+  }
+  for (const p of input.presentationDecks ?? []) {
+    entries.push({
+      key: `presentation-${p.id}`,
+      feature: 'presentation',
+      title: truncateLabel(`Présentation — ${p.title || 'Sans titre'}`),
+      detail: 'Deck mis à jour',
+      timestamp: p.updated_at,
+      route: '/(chat)/presentation',
+    });
+  }
+  for (const c of input.cvDocuments ?? []) {
+    entries.push({
+      key: `cv-${c.id}`,
+      feature: 'cv-builder',
+      title: truncateLabel(`CV — ${c.title || 'Mon CV'}`),
+      detail: 'CV mis à jour',
+      timestamp: c.updated_at,
+      route: '/(chat)/cv-builder',
+    });
+  }
+  for (const a of input.articleDocuments ?? []) {
+    entries.push({
+      key: `article-${a.id}`,
+      feature: 'article',
+      title: truncateLabel(`Article — ${a.title || 'Sans titre'}`),
+      detail: DOC_TYPE_SHORT[a.doc_type] ?? 'Manuscrit mis à jour',
+      timestamp: a.updated_at,
+      route: '/(chat)/article',
+    });
+  }
   return entries
     .filter((e) => !Number.isNaN(new Date(e.timestamp).getTime()))
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     .slice(0, limit);
+}
+
+// ── Métriques honnêtes du hero (dérivées des données réelles) ────────────────
+
+/** Nombre de conversations actives (updated_at) dans les 7 derniers jours. */
+export function conversationsThisWeek(
+  conversations: Array<{ updated_at: string }>,
+  now: Date,
+): number {
+  const cutoff = now.getTime() - 7 * 86400000;
+  return conversations.filter((c) => {
+    const t = new Date(c.updated_at).getTime();
+    return !Number.isNaN(t) && t >= cutoff && t <= now.getTime() + 60000;
+  }).length;
 }

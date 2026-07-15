@@ -8,7 +8,7 @@
  */
 import { createClient } from '@supabase/supabase-js';
 import { PUBLIC_PROMPT_V3 } from './public.v3';
-import { STUDENT_PROMPT_V3 } from './student.v3';
+import { STUDENT_PROMPT_V4 } from './student.v4';
 import { PROFESSIONAL_PROMPT_V2 } from './professional.v2';
 
 /** Prompts par défaut (fichiers TS versionnés). */
@@ -21,7 +21,7 @@ export const PROMPT_DEFAULTS: Record<string, { label: string; scope: string; tem
   student: {
     label: 'Chat — Étudiant en santé',
     scope: 'Chat personas',
-    template: STUDENT_PROMPT_V3,
+    template: STUDENT_PROMPT_V4,
   },
   professional: {
     label: 'Chat — Professionnel de santé',

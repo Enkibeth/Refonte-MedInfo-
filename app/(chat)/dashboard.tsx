@@ -33,12 +33,14 @@ import {
   type AppFeatureId,
 } from '@/ai/routing/featureVisibility';
 import { listConversations, type ChatConversation } from '@/chat/history';
+import { getSupabaseClient } from '@/db/supabase';
 import { listAttempts, type EcosAttemptRow } from '@/ecos/attemptsDb';
 import { todayISO } from '@/revision/db/plans';
 import { getPlan, listPlans, type RevisionPlanListItem } from '@/revision/db/queries';
 import type { ExamType } from '@/revision/types';
 import {
   buildRecentActivity,
+  conversationsThisWeek,
   formatMinutes,
   greetingWord,
   heroSummary,
@@ -51,6 +53,8 @@ import {
   type PlanSnapshot,
 } from '@/dashboard/overview';
 import { Button } from '@/ui/Button';
+import type { ChatbotId } from '@/ai/chat/chatContext';
+import { CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
 import { featureTint } from '@/ui/featureChips';
 import { HeroBackdrop } from '@/ui/HeroBackdrop';
 import { Icon } from '@/ui/icons';
@@ -81,6 +85,49 @@ interface NextExam {
   dateIso: string;
 }
 
+// ── Activité récente des autres outils (D1, audit chatbot 2026-07) ────────────
+// Selects LÉGERS (métadonnées seulement, jamais le contenu) sur les tables
+// own-row RLS des outils : chaque source est fail-soft — un échec renvoie [].
+
+interface DocumentAnalysisRow {
+  id: string;
+  mode: string;
+  source_name: string | null;
+  created_at: string;
+}
+interface AudioDocumentRow {
+  id: string;
+  title: string;
+  created_at: string;
+}
+interface TitledRow {
+  id: string;
+  title: string | null;
+  updated_at: string;
+}
+interface ArticleDocumentRow extends TitledRow {
+  doc_type: string;
+}
+
+async function listRecentRows<T>(
+  table: string,
+  columns: string,
+  orderColumn: string,
+): Promise<T[]> {
+  try {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+      .from(table)
+      .select(columns)
+      .order(orderColumn, { ascending: false })
+      .limit(5);
+    if (error || !data) return [];
+    return data as T[];
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Cache mémoire léger du dashboard (stale-while-revalidate) : en navigation
  * aller-retour, les dernières données du MÊME utilisateur s'affichent
@@ -97,6 +144,11 @@ interface DashboardCache {
   plans: RevisionPlanListItem[] | null;
   snapshot: PlanSnapshot | null;
   nextExam: NextExam | null;
+  docs: DocumentAnalysisRow[] | null;
+  audios: AudioDocumentRow[] | null;
+  decks: TitledRow[] | null;
+  cvs: TitledRow[] | null;
+  articles: ArticleDocumentRow[] | null;
 }
 
 let dashboardCache: DashboardCache | null = null;
@@ -108,7 +160,20 @@ function updateDashboardCache(
   const base: DashboardCache =
     dashboardCache?.userId === userId
       ? dashboardCache
-      : { userId, ts: 0, convs: null, attempts: null, plans: null, snapshot: null, nextExam: null };
+      : {
+          userId,
+          ts: 0,
+          convs: null,
+          attempts: null,
+          plans: null,
+          snapshot: null,
+          nextExam: null,
+          docs: null,
+          audios: null,
+          decks: null,
+          cvs: null,
+          articles: null,
+        };
   dashboardCache = { ...base, ...patch, userId, ts: Date.now() };
 }
 
@@ -126,6 +191,11 @@ export default function DashboardScreen() {
   const isAdmin = user ? isAdminUserId(user.id) : false;
   const canEcos = isFeatureVisible('ecos', persona, { isAdmin });
   const canRevision = isFeatureVisible('revision', persona, { isAdmin });
+  const canDocument = isFeatureVisible('document', persona, { isAdmin });
+  const canAudio = isFeatureVisible('audio', persona, { isAdmin });
+  const canPresentation = isFeatureVisible('presentation', persona, { isAdmin });
+  const canCv = isFeatureVisible('cv-builder', persona, { isAdmin });
+  const canArticle = isFeatureVisible('article', persona, { isAdmin });
 
   // null = en cours de chargement ; [] = chargé (éventuellement vide ou en échec).
   const [convs, setConvs] = useState<ChatConversation[] | null>(null);
@@ -133,6 +203,11 @@ export default function DashboardScreen() {
   const [plans, setPlans] = useState<RevisionPlanListItem[] | null>(null);
   const [snapshot, setSnapshot] = useState<PlanSnapshot | null>(null);
   const [nextExam, setNextExam] = useState<NextExam | null>(null);
+  const [docs, setDocs] = useState<DocumentAnalysisRow[] | null>(null);
+  const [audios, setAudios] = useState<AudioDocumentRow[] | null>(null);
+  const [decks, setDecks] = useState<TitledRow[] | null>(null);
+  const [cvs, setCvs] = useState<TitledRow[] | null>(null);
+  const [articles, setArticles] = useState<ArticleDocumentRow[] | null>(null);
 
   const userId = user?.id ?? null;
 
@@ -149,6 +224,11 @@ export default function DashboardScreen() {
       if (cached.plans) setPlans(cached.plans);
       setSnapshot(cached.snapshot);
       setNextExam(cached.nextExam);
+      if (cached.docs) setDocs(cached.docs);
+      if (cached.audios) setAudios(cached.audios);
+      if (cached.decks) setDecks(cached.decks);
+      if (cached.cvs) setCvs(cached.cvs);
+      if (cached.articles) setArticles(cached.articles);
     }
 
     listConversations(userId)
@@ -210,10 +290,72 @@ export default function DashboardScreen() {
       setPlans([]);
     }
 
+    // Activité des autres outils du rôle (D1) : selects légers fail-soft — un
+    // échec laisse simplement la source vide, jamais la page cassée.
+    const loadInto = <T,>(
+      enabled: boolean,
+      fetcher: () => Promise<T[]>,
+      setter: (rows: T[]) => void,
+      cacheKey: 'docs' | 'audios' | 'decks' | 'cvs' | 'articles',
+    ) => {
+      if (!enabled) {
+        setter([]);
+        return;
+      }
+      fetcher()
+        .then((rows) => {
+          if (!alive) return;
+          setter(rows);
+          updateDashboardCache(userId, { [cacheKey]: rows });
+        })
+        .catch(() => alive && setter([]));
+    };
+
+    loadInto(
+      canDocument,
+      () =>
+        listRecentRows<DocumentAnalysisRow>(
+          'document_analyses',
+          'id, mode, source_name, created_at',
+          'created_at',
+        ),
+      (rows) => setDocs(rows),
+      'docs',
+    );
+    loadInto(
+      canAudio,
+      () => listRecentRows<AudioDocumentRow>('audio_documents', 'id, title, created_at', 'created_at'),
+      (rows) => setAudios(rows),
+      'audios',
+    );
+    loadInto(
+      canPresentation,
+      () => listRecentRows<TitledRow>('presentation_decks', 'id, title, updated_at', 'updated_at'),
+      (rows) => setDecks(rows),
+      'decks',
+    );
+    loadInto(
+      canCv,
+      () => listRecentRows<TitledRow>('cv_documents', 'id, title, updated_at', 'updated_at'),
+      (rows) => setCvs(rows),
+      'cvs',
+    );
+    loadInto(
+      canArticle,
+      () =>
+        listRecentRows<ArticleDocumentRow>(
+          'article_documents',
+          'id, title, doc_type, updated_at',
+          'updated_at',
+        ),
+      (rows) => setArticles(rows),
+      'articles',
+    );
+
     return () => {
       alive = false;
     };
-  }, [userId, canEcos, canRevision]);
+  }, [userId, canEcos, canRevision, canDocument, canAudio, canPresentation, canCv, canArticle]);
 
   // Horloge vivante : salutation et horodatages relatifs (« Hier », « 18:20 »)
   // restent justes si l'onglet reste ouvert — tick chaque minute + retour de focus.
@@ -237,10 +379,15 @@ export default function DashboardScreen() {
           conversations: convs ?? undefined,
           ecosAttempts: attempts ?? undefined,
           revisionPlans: plans ?? undefined,
+          documentAnalyses: docs ?? undefined,
+          audioDocuments: audios ?? undefined,
+          presentationDecks: decks ?? undefined,
+          cvDocuments: cvs ?? undefined,
+          articleDocuments: articles ?? undefined,
         },
         6,
       ),
-    [convs, attempts, plans],
+    [convs, attempts, plans, docs, audios, decks, cvs, articles],
   );
 
   // Visiteur non connecté : la Vue d’ensemble n’existe pas (essai = chat seul).
@@ -249,9 +396,16 @@ export default function DashboardScreen() {
 
   const tools = visibleFeatures(persona, { isAdmin });
   const activityLoading =
-    convs === null || (canEcos && attempts === null) || (canRevision && plans === null);
+    convs === null ||
+    (canEcos && attempts === null) ||
+    (canRevision && plans === null) ||
+    (canDocument && docs === null) ||
+    (canAudio && audios === null) ||
+    (canPresentation && decks === null) ||
+    (canCv && cvs === null) ||
+    (canArticle && articles === null);
 
-  const chatbotCount = isAdmin || persona === 'student' || persona === 'professional' ? 3 : 1;
+  const canSwitchChatbots = isAdmin || persona === 'student' || persona === 'professional';
   const firstName = personalInfo?.firstName?.trim() || null;
   const greeting = `${greetingWord(now.getHours())}${firstName ? ` ${firstName}` : ''} · Semaine ${isoWeekNumber(now)}`;
 
@@ -276,7 +430,11 @@ export default function DashboardScreen() {
           label: 'Dernière activité',
           value: activity[0] ? relativeLabel(activity[0].timestamp, now) : '—',
         },
-        { label: 'Chatbots', value: String(chatbotCount) },
+        // Donnée réelle (7 derniers jours) — jamais une constante décorative.
+        {
+          label: 'Cette semaine',
+          value: convs ? String(conversationsThisWeek(convs, now)) : '—',
+        },
       ];
 
   const secondTool = tools.find((t) => t.id !== 'chat');
@@ -352,6 +510,32 @@ export default function DashboardScreen() {
                 Tout ce que ton rôle débloque, au même endroit.
               </Text>
             </View>
+            {/* Accès direct aux 3 chatbots (comptes étudiant/pro/admin) — le
+                deep-link ?bot= est géré par app/(chat)/chat.tsx, autorisation
+                réelle inchangée côté serveur (allowedChatbotsFor). */}
+            {canSwitchChatbots ? (
+              <View style={styles.chatbotRow}>
+                {(['public', 'student', 'professional'] as ChatbotId[]).map((id) => {
+                  const meta = CHATBOT_META[id];
+                  return (
+                    <Pressable
+                      key={id}
+                      onPress={() => router.push(`/(chat)/chat?bot=${id}` as never)}
+                      accessibilityRole="link"
+                      accessibilityLabel={`Ouvrir le chat ${meta.label}`}
+                      style={({ hovered }: { hovered?: boolean }) => [
+                        styles.chatbotChip,
+                        hovered && styles.chatbotChipHovered,
+                      ]}
+                    >
+                      <Icon name={meta.icon} size={15} color={tokens.colors.accentDeep} />
+                      <Text style={styles.chatbotChipText}>Chat {meta.shortLabel.toLowerCase()}</Text>
+                      <Icon name="arrowRight" size={13} color={tokens.colors.textMuted} />
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : null}
             <View style={styles.toolsGrid}>
               {tools.map((tool) => {
                 const tint = featureTint(tool.id);
@@ -627,6 +811,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: tokens.space.md,
+  },
+  // Rangée d'accès direct aux 3 chatbots (étudiant / pro / admin).
+  chatbotRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: tokens.space.sm,
+  },
+  chatbotChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    borderRadius: tokens.radius.pill,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surface,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.sm,
+    ...tokens.elevation.sm,
+    ...tokens.motion.transitionWeb,
+  },
+  chatbotChipHovered: {
+    borderColor: tokens.colors.borderStrong,
+    transform: [{ translateY: -1 }],
+    ...tokens.elevation.md,
+  },
+  chatbotChipText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
   },
   toolCard: {
     flexGrow: 1,

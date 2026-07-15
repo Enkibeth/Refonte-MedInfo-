@@ -1,7 +1,7 @@
 /**
  * Parseur des réponses des 3 chatbots (refonte 2026-06).
  *
- * Les prompts produit (public.v3 / student.v3 / professional.v2) imposent des formats
+ * Les prompts produit (public.v3 / student.v4 / professional.v2) imposent des formats
  * texte structurés que l'interface transforme en éléments interactifs :
  *   - SOURCES            → cartes cliquables `SRCn :: [BADGE] … :: … :: Titre :: Année` + URL + Justification ;
  *   - APPROFONDISSEMENTS → 3 boutons `n. TITRE :: Description :: Question complète` ;
@@ -112,7 +112,9 @@ type SectionKind = 'sources' | 'deepening' | 'questionsPatient' | 'interaction' 
 
 function sectionKindOf(line: string): SectionKind | null {
   const t = line.trim();
-  if (/^SOURCES$/.test(t)) return 'sources';
+  // « SOURCES UTILISÉES » : en-tête du format étudiant historique (prompt v3) —
+  // reconnu pour que les anciennes conversations archivées restent bien rendues.
+  if (/^SOURCES( UTILISÉES)?$/.test(t)) return 'sources';
   if (/^APPROFONDISSEMENTS$/.test(t)) return 'deepening';
   if (/^QUESTIONS_PATIENT$/.test(t)) return 'questionsPatient';
   if (/^INTERACTION$/.test(t)) return 'interaction';
@@ -313,6 +315,7 @@ export function parseAssistantMessage(text: string): ParsedAssistantMessage {
 
   let bodyBuffer: string[] = [];
   let section: SectionKind | null = null;
+  let sectionHeading = '';
   let sectionBuffer: string[] = [];
 
   const flushBody = () => {
@@ -327,13 +330,21 @@ export function parseAssistantMessage(text: string): ParsedAssistantMessage {
     const lines = sectionBuffer;
     sectionBuffer = [];
     const kind = section;
+    const heading = sectionHeading;
     section = null;
+    sectionHeading = '';
 
     if (kind === 'sources') {
       const sources = parseSourcesLines(lines);
       if (sources.length > 0) {
         allSources.push(...sources);
         blocks.push({ type: 'sources', sources });
+      } else {
+        // Section sources sans lignes SRCn:: exploitables (ex. bibliographie libre du
+        // format étudiant v3 archivé) : ne JAMAIS perdre le contenu — il repart dans
+        // le corps avec son titre d'origine.
+        const md = lines.join('\n').trim();
+        if (md) blocks.push({ type: 'body', markdown: `${heading}\n${md}` });
       }
     } else if (kind === 'deepening') {
       const items = parseDeepeningLines(lines);
@@ -371,6 +382,7 @@ export function parseAssistantMessage(text: string): ParsedAssistantMessage {
       flushSection();
       flushBody();
       section = kind;
+      sectionHeading = line.trim();
       continue;
     }
 
@@ -451,6 +463,49 @@ export function formatInlineCitations(markdown: string): string {
       return out;
     })
     .join('\n');
+}
+
+// ── Texte propre pour Copier / export PDF ─────────────────────────────────────
+
+/** Numéro d'une source `SRCn` en exposant (¹ ²…) pour la légende exportée. */
+function superscriptOfSourceId(id: string): string {
+  const digits = id.replace(/^SRC/, '');
+  return superscriptOf(digits);
+}
+
+/**
+ * Version « texte propre » d'une réponse assistant, partagée par le bouton Copier
+ * et l'export PDF : le corps avec les références inline en exposant, la section
+ * SOURCES en légende numérotée lisible (badge, libellé, année, URL), l'auto-réflexion
+ * conservée sous son titre. Les blocs purement interactifs (propositions à cocher,
+ * formulaire QUESTIONS_PATIENT, marqueurs CALC, relances étudiant) sont omis :
+ * ce sont des affordances d'interface, pas du contenu.
+ */
+export function assistantTextForExport(text: string): string {
+  const { blocks } = parseAssistantMessage(text);
+  const parts: string[] = [];
+
+  for (const block of blocks) {
+    if (block.type === 'body') {
+      parts.push(formatInlineCitations(block.markdown));
+    } else if (block.type === 'sources') {
+      const lines = block.sources.map((s) => {
+        const label = [s.shortLabel, s.org && s.org !== s.shortLabel ? s.org : null, s.title]
+          .filter(Boolean)
+          .join(' — ');
+        const meta = [s.badge ? `[${s.badge}]` : null, label || s.id, s.year]
+          .filter(Boolean)
+          .join(' ');
+        return `${superscriptOfSourceId(s.id)} ${meta}${s.url ? `\n   ${s.url}` : ''}`;
+      });
+      parts.push(`Sources\n${lines.join('\n')}`);
+    } else if (block.type === 'reflection') {
+      parts.push(`Auto-réflexion\n${formatInlineCitations(block.markdown)}`);
+    }
+    // deepening / questionsPatient / interaction / calc / followups : omis (interactifs).
+  }
+
+  return parts.join('\n\n').trim();
 }
 
 // ── Découpage du corps en sections MAJUSCULES (rendu) ─────────────────────────

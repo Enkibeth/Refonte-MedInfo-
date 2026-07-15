@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  assistantTextForExport,
   formatInlineCitations,
   parseAssistantMessage,
   sourceIdFromSuperscript,
@@ -333,5 +334,70 @@ describe('streaming partiel', () => {
     const parsed = parseAssistantMessage(partial);
     expect(parsed.sources).toHaveLength(1);
     expect(parsed.sources[0].title).toBe('Tit');
+  });
+});
+
+describe('assistantTextForExport — texte propre (Copier / export PDF)', () => {
+  it('convertit le corps + les sources en légende, et omet les blocs interactifs', () => {
+    const out = assistantTextForExport(PUBLIC_ANSWER);
+    // Corps conservé.
+    expect(out).toContain('MAUX DE TÊTE FRÉQUENTS');
+    expect(out).toContain('céphalées de tension');
+    // Sources en légende numérotée lisible (exposant + badge + libellé + URL).
+    expect(out).toContain('Sources');
+    expect(out).toContain('¹ [OFFICIEL] HAS');
+    expect(out).toContain('https://www.has-sante.fr/jcms/p_3309676');
+    // Aucun marqueur technique brut.
+    expect(out).not.toContain('SRC1 ::');
+    expect(out).not.toContain('QUESTIONS_PATIENT');
+    expect(out).not.toContain('APPROFONDISSEMENTS');
+    expect(out).not.toMatch(/^\[.*\]$/m);
+  });
+
+  it('rend les références inline en exposant dans le corps exporté', () => {
+    const out = assistantTextForExport(
+      'Un fait établi. (SRC1)\n\nSOURCES\n\nSRC1 :: [OFFICIEL] HAS :: HAS :: Titre :: 2024\nhttps://exemple.fr/reco',
+    );
+    expect(out).toContain('Un fait établi.¹');
+    expect(out).not.toContain('(SRC1)');
+  });
+
+  it("conserve l'auto-réflexion sous son titre", () => {
+    const out = assistantTextForExport('Réponse.\n\nAUTO-RÉFLEXION\nPoints vérifiés : dosages.');
+    expect(out).toContain('Auto-réflexion');
+    expect(out).toContain('Points vérifiés : dosages.');
+  });
+
+  it('omet le marqueur CALC et les relances étudiant', () => {
+    const out = assistantTextForExport(
+      'Corps de réponse.\n\n<!--CALC:cha2ds2vasc-->\n\n1. Question A ?\n2. Question B ?\n3. Question C ?\n[1] + [2] + [3]',
+    );
+    expect(out).toContain('Corps de réponse.');
+    expect(out).not.toContain('CALC');
+    expect(out).not.toContain('[1] + [2] + [3]');
+  });
+});
+
+describe('section SOURCES — robustesse (format étudiant historique)', () => {
+  it("reconnaît l'en-tête « SOURCES UTILISÉES » (prompt étudiant v3 archivé)", () => {
+    const text =
+      'Réponse.\n\nSOURCES UTILISÉES\n\nSRC1 :: [OFFICIEL] HAS :: HAS :: Titre :: 2024\nhttps://exemple.fr/reco';
+    const parsed = parseAssistantMessage(text);
+    expect(parsed.sources).toHaveLength(1);
+    expect(parsed.sources[0].id).toBe('SRC1');
+  });
+
+  it('ne perd JAMAIS une bibliographie libre sans lignes SRCn (repart dans le corps)', () => {
+    const text =
+      'Réponse.\n\nSOURCES UTILISÉES\n• CMIT — Item EDN 161 : Infections urinaires — p.186 — Rang A\n• CNEC — Item EDN 230 : Fibrillation atriale — p.45 — Rang A';
+    const parsed = parseAssistantMessage(text);
+    expect(parsed.sources).toHaveLength(0);
+    const bodyText = parsed.blocks
+      .filter((b): b is { type: 'body'; markdown: string } => b.type === 'body')
+      .map((b) => b.markdown)
+      .join('\n');
+    expect(bodyText).toContain('SOURCES UTILISÉES');
+    expect(bodyText).toContain('CMIT — Item EDN 161');
+    expect(bodyText).toContain('CNEC — Item EDN 230');
   });
 });

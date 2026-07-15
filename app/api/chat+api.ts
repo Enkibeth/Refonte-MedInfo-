@@ -2,7 +2,7 @@
  * Route API chat — POST /api/chat (Expo Router API route, web).
  *
  * Refonte 2026-06 (décision Hugo) : un chat DIRECT et fonctionnel d'abord.
- *   - 3 chatbots = 3 prompts produit complets (public.v3 / student.v3 / professional.v2),
+ *   - 3 chatbots = 3 prompts produit complets (public.v3 / student.v4 / professional.v2),
  *     éditables depuis le panel admin (table ai_prompts, fallback PROMPT_DEFAULTS).
  *   - Le client choisit son chatbot (`body.chatbot`) ; côté serveur, seuls les comptes
  *     vérifiés étudiant/professionnel (et admins) peuvent utiliser les chats étudiant/pro.
@@ -69,6 +69,7 @@ export async function POST(request: Request): Promise<Response> {
     chatbot?: unknown;
     personalInfo?: unknown;
     conversationId?: unknown;
+    regenerate?: unknown;
   };
   try {
     body = await request.json();
@@ -157,6 +158,10 @@ export async function POST(request: Request): Promise<Response> {
   // génération (et non plus par le client) — la propriété de la conversation est
   // vérifiée contre le user du token, jamais le body (src/chat/serverHistory.ts).
   const conversationId = resolution.verified && resolution.userId ? coerceConversationId(body.conversationId) : null;
+  // Régénération : remplacer la dernière réponse archivée au lieu d'en empiler une
+  // seconde (le flag ne donne aucun droit — la propriété de la conversation est
+  // toujours vérifiée contre le user du token dans saveAssistantMessageServer).
+  const regenerate = body.regenerate === true;
 
   const result = streamText({
     model: runtime.model,
@@ -183,6 +188,7 @@ export async function POST(request: Request): Promise<Response> {
             conversationId,
             userId: resolution.userId,
             content: fullText,
+            replaceLast: regenerate,
           });
         }
       }
