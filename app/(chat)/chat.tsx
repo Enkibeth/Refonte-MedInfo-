@@ -23,6 +23,7 @@ import {
   Easing,
   KeyboardAvoidingView,
   Platform,
+  useWindowDimensions,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   type TextInputKeyPressEventData,
@@ -54,6 +55,7 @@ import {
   generateConversationMeta,
   listConversations,
   loadMessages,
+  renameConversation,
   saveMessage,
   type ChatConversation,
 } from '@/chat/history';
@@ -68,8 +70,9 @@ import { Reveal } from '@/ui/Reveal';
 import { useReducedMotion } from '@/ui/useReducedMotion';
 import { AssistantBlocks, SourcesBlock } from '@/ui/chat/AssistantBlocks';
 import { ChatbotSwitcher, CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
-import { HistoryPanel } from '@/ui/chat/HistoryPanel';
+import { ConversationList, HistoryPanel } from '@/ui/chat/HistoryPanel';
 import { SourceDetailModal } from '@/ui/chat/SourceDetailModal';
+import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 
 // Suggestions d'amorce (état vide) : 50 questions par chatbot, rotation 3 par 3
 // toutes les 30 s — voir src/ai/chat/starterSuggestions.ts.
@@ -78,6 +81,18 @@ const DISCLAIMER: Record<ChatbotId, string> = {
   public: 'Information générale — ne remplace pas un avis médical individuel.',
   student: 'Support de révision — ne remplace pas les référentiels ni la pratique encadrée.',
   professional: "Outil d'aide à la décision — la décision finale appartient au clinicien.",
+};
+
+// Titre de l'état vide décliné par chatbot (le sous-titre vient de CHATBOT_META).
+const EMPTY_TITLE: Record<ChatbotId, string> = {
+  public: 'Posez votre question santé',
+  student: 'Que veux-tu réviser aujourd’hui ?',
+  professional: 'Quelle est votre question clinique ?',
+};
+const EMPTY_TITLE_NAMED: Record<ChatbotId, string> = {
+  public: 'comment puis-je vous aider ?',
+  student: 'que veux-tu réviser aujourd’hui ?',
+  professional: 'quelle est votre question clinique ?',
 };
 
 // Sur desktop (pointeur précis), Entrée envoie le message et Maj+Entrée insère un
@@ -145,7 +160,9 @@ function StatusBubble({ phase, toolLabel }: { phase: ChatPhase; toolLabel?: stri
   const icon =
     phase === 'searching' ? 'search' : phase === 'writing' ? 'sparkles' : phase === 'recovering' ? 'clock' : 'brain';
   return (
-    <View style={styles.statusPill} accessibilityLabel={label}>
+    // Live region : les lecteurs d'écran sont informés des changements de phase
+    // (réflexion → recherche de sources → rédaction) sans focus manuel.
+    <View style={styles.statusPill} accessibilityLabel={label} accessibilityLiveRegion="polite">
       <View style={styles.statusIconWrap}>
         <Icon name={icon} size={16} color={tokens.colors.accent} />
       </View>
@@ -354,7 +371,13 @@ export default function ChatScreen() {
   const { user, session, persona, personalInfo, loading: authLoading } = useSession();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const reducedMotion = useReducedMotion();
   const isAdmin = user ? isAdminUserId(user.id) : false;
+
+  // Desktop shell (≥ 1024 px, session) : l'historique devient une colonne
+  // persistante à gauche du fil (motif ChatGPT/Claude) au lieu d'une modale.
+  const desktopShell = Platform.OS === 'web' && width >= SHELL_BREAKPOINT && !!session;
 
   // Essai sans inscription (2026-06) : un visiteur non connecté découvre les 3 onglets
   // de chatbot et dispose d'UN message gratuit (indicateur 1/1 → 0/1), puis l'UI
@@ -381,6 +404,26 @@ export default function ChatScreen() {
   const [conversationsLoading, setConversationsLoading] = useState(true);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [detailSource, setDetailSource] = useState<ParsedSource | null>(null);
+
+  // Notice transitoire de bascule de chatbot (B4/B5) : dit ce qui vient de se
+  // passer (fil précédent archivé, chatbot d'origine indisponible…), auto-effacée.
+  const [switchNotice, setSwitchNotice] = useState<string | null>(null);
+  const switchNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showSwitchNotice = useCallback((text: string, ms = 6000) => {
+    setSwitchNotice(text);
+    if (switchNoticeTimerRef.current) clearTimeout(switchNoticeTimerRef.current);
+    switchNoticeTimerRef.current = setTimeout(() => setSwitchNotice(null), ms);
+  }, []);
+  useEffect(
+    () => () => {
+      if (switchNoticeTimerRef.current) clearTimeout(switchNoticeTimerRef.current);
+    },
+    [],
+  );
+
+  // Suggestion de l'outil Analyse de document (C4) : quand un utilisateur qui y a
+  // droit colle un très long texte dans le chat public. Heuristique 100 % client.
+  const [docHintDismissed, setDocHintDismissed] = useState(false);
 
   // Le profil charge après le premier rendu : aligne le chatbot par défaut une fois connu.
   // Un paramètre ?bot=… (cartes de l'accueil) prime s'il est autorisé pour ce compte.
@@ -477,6 +520,15 @@ export default function ChatScreen() {
 
   const isLoading = status === 'streaming' || status === 'submitted';
   const canSend = !isLoading && input.trim().length > 0 && !guestLocked;
+
+  // C4 : un long texte collé dans le chat public ressemble à un document (compte
+  // rendu, ordonnance…) — l'outil Analyse de document est fait pour ça.
+  const showDocHint =
+    chatbot === 'public' &&
+    !docHintDismissed &&
+    isFeatureVisible('document', persona, { isAdmin }) &&
+    !isGuest &&
+    (input.length > 1500 || (input.match(/\n/g)?.length ?? 0) > 12);
 
   // ── Auto-scroll du fil (fluidité type ChatGPT) ─────────────────────────────────
   // Le fil suit la réponse pendant le streaming tant que l'utilisateur est en bas ;
@@ -585,13 +637,16 @@ export default function ChatScreen() {
 
   // Rotation des suggestions d'amorce : 3 questions à la fois, renouvelées toutes
   // les 30 s tant que l'état vide est affiché (50 questions par chatbot).
+  // Suspendue au survol/focus (E2 : le contenu ne change jamais sous le curseur)
+  // et sous prefers-reduced-motion (contenu qui tourne = mouvement).
   const [suggestionTick, setSuggestionTick] = useState(0);
+  const [suggestionsPaused, setSuggestionsPaused] = useState(false);
   const showEmptyState = messages.length === 0 && !isLoading;
   useEffect(() => {
-    if (!showEmptyState) return;
+    if (!showEmptyState || suggestionsPaused || reducedMotion) return;
     const id = setInterval(() => setSuggestionTick((t) => t + 1), SUGGESTIONS_ROTATION_MS);
     return () => clearInterval(id);
-  }, [showEmptyState]);
+  }, [showEmptyState, suggestionsPaused, reducedMotion]);
   const starters = useMemo(
     () => suggestionWindow(STARTER_SUGGESTIONS[chatbot], suggestionTick),
     [chatbot, suggestionTick],
@@ -731,8 +786,17 @@ export default function ChatScreen() {
 
   const handleSwitchChatbot = (next: ChatbotId) => {
     if (next === chatbot) return;
+    const hadThread = messages.length > 0;
     // Changer de chatbot = changer d'interlocuteur : on repart sur une conversation propre.
     startNewConversation(next);
+    // B4 : dire ce qui vient de se passer au lieu d'un reset silencieux.
+    if (hadThread) {
+      showSwitchNotice(
+        user
+          ? `Conversation précédente enregistrée dans l’historique — nouveau fil ${CHATBOT_META[next].label.toLowerCase()}.`
+          : `Nouveau fil ${CHATBOT_META[next].label.toLowerCase()}.`,
+      );
+    }
   };
 
   // Lien profond ?bot=… reçu alors que l'écran est déjà monté (menu Chatbots du header,
@@ -768,10 +832,19 @@ export default function ChatScreen() {
       setConversationId(c.id);
       titleGeneratedRef.current = Boolean(c.title);
       firstUserTextRef.current = stored.find((m) => m.role === 'user')?.content ?? '';
-      if (availableChatbots.includes(c.chatbot)) setChatbot(c.chatbot);
+      if (availableChatbots.includes(c.chatbot)) {
+        setChatbot(c.chatbot);
+      } else {
+        // B5 : conversation issue d'un chatbot que ce compte ne peut plus utiliser —
+        // le dire, plutôt que de poursuivre silencieusement avec le chatbot courant.
+        showSwitchNotice(
+          `Cette conversation vient du chat ${CHATBOT_META[c.chatbot]?.label.toLowerCase() ?? c.chatbot}, non disponible avec votre rôle — la suite utilisera le chat ${CHATBOT_META[chatbotRef.current].label.toLowerCase()}.`,
+          9000,
+        );
+      }
       setHistoryOpen(false);
     },
-    [availableChatbots, setMessages, stop],
+    [availableChatbots, setMessages, stop, showSwitchNotice],
   );
 
   // Deep-link ?conversation=… (activité récente du dashboard) : rouvre la
@@ -794,6 +867,15 @@ export default function ChatScreen() {
       void refreshConversations();
     },
     [refreshConversations, startNewConversation],
+  );
+
+  // Renommage manuel d'une conversation (E3) — le titre IA reste le défaut.
+  const handleRenameConversation = useCallback(
+    async (id: string, title: string) => {
+      await renameConversation(id, title);
+      void refreshConversations();
+    },
+    [refreshConversations],
   );
 
   const handleExportPdf = () => {
@@ -831,6 +913,27 @@ export default function ChatScreen() {
           }),
         ]}
       />
+      <View style={styles.screenRow}>
+      {/* ── Colonne d'historique persistante (desktop shell, D5) ── */}
+      {desktopShell && user ? (
+        <View style={styles.historyRail}>
+          <View style={styles.historyRailHeader}>
+            <Icon name="clock" size={16} color={tokens.colors.accentDeep} />
+            <Text style={styles.historyRailTitle}>Historique</Text>
+          </View>
+          <ConversationList
+            conversations={conversations}
+            activeId={conversationId}
+            onSelect={(c) => void openConversation(c)}
+            onDelete={(id) => void handleDeleteConversation(id)}
+            onRename={(id, title) => void handleRenameConversation(id, title)}
+            onNew={() => startNewConversation()}
+            loading={conversationsLoading}
+          />
+        </View>
+      ) : null}
+
+      <View style={styles.screenMain}>
       {/* ── En-tête ── */}
       <View style={[styles.chatHeader, { paddingTop: tokens.space.md + insets.top }]}>
         <View style={styles.headerTitleBlock}>
@@ -865,7 +968,7 @@ export default function ChatScreen() {
               <Icon name="download" size={17} color={tokens.colors.accentDeep} />
             </TouchableOpacity>
           ) : null}
-          {user ? (
+          {user && !desktopShell ? (
             <TouchableOpacity
               style={styles.headerIconButton}
               onPress={() => setHistoryOpen(true)}
@@ -901,8 +1004,19 @@ export default function ChatScreen() {
         </View>
       ) : null}
 
-      {/* ── Bandeau essai sans inscription (1 message gratuit) ── */}
-      {isGuest ? (
+      {/* ── Notice transitoire de bascule (B4/B5) ── */}
+      {switchNotice ? (
+        <View style={styles.switchNotice} accessibilityLiveRegion="polite">
+          <Icon name="check" size={13} color={tokens.colors.accentDeep} />
+          <Text style={styles.switchNoticeText} numberOfLines={2}>
+            {switchNotice}
+          </Text>
+        </View>
+      ) : null}
+
+      {/* ── Bandeau essai sans inscription (1 message gratuit) — masqué sur l'état
+          vide, qui porte sa propre pastille d'essai (C3, hauteur mobile) ── */}
+      {isGuest && !showEmptyState ? (
         <View style={styles.guestBanner}>
           <Icon name="sparkles" size={15} color={tokens.colors.accentDeep} />
           <Text style={styles.guestBannerText} numberOfLines={2}>
@@ -925,16 +1039,19 @@ export default function ChatScreen() {
         </ScrollView>
       ) : null}
 
-      <HistoryPanel
-        visible={historyOpen}
-        onClose={() => setHistoryOpen(false)}
-        conversations={conversations}
-        activeId={conversationId}
-        onSelect={(c) => void openConversation(c)}
-        onDelete={(id) => void handleDeleteConversation(id)}
-        onNew={() => startNewConversation()}
-        loading={conversationsLoading}
-      />
+      {!desktopShell ? (
+        <HistoryPanel
+          visible={historyOpen}
+          onClose={() => setHistoryOpen(false)}
+          conversations={conversations}
+          activeId={conversationId}
+          onSelect={(c) => void openConversation(c)}
+          onDelete={(id) => void handleDeleteConversation(id)}
+          onRename={(id, title) => void handleRenameConversation(id, title)}
+          onNew={() => startNewConversation()}
+          loading={conversationsLoading}
+        />
+      ) : null}
 
       {/* ── Fil de messages ── */}
       <View style={styles.threadWrap}>
@@ -954,24 +1071,42 @@ export default function ChatScreen() {
             </View>
             <Text style={styles.emptyTitle}>
               {personalInfo?.firstName
-                ? `Bonjour ${personalInfo.firstName}, comment puis-je vous aider ?`
-                : 'Posez votre première question'}
+                ? `Bonjour ${personalInfo.firstName}, ${EMPTY_TITLE_NAMED[chatbot]}`
+                : EMPTY_TITLE[chatbot]}
             </Text>
             <Text style={styles.emptyText}>{meta.description}.</Text>
-            <View style={styles.starterColumn}>
+            {/* Pastille d'essai invité : remplace le bandeau du haut sur l'état vide. */}
+            {isGuest ? (
+              <View style={styles.trialPill}>
+                <Icon name="sparkles" size={13} color={tokens.colors.accentDeep} />
+                <Text style={styles.trialPillText}>
+                  {guestUsed
+                    ? 'Essai utilisé (0/1) — créez un compte gratuit pour continuer'
+                    : 'Essai gratuit : 1 message sans inscription (1/1)'}
+                </Text>
+              </View>
+            ) : null}
+            {/* La rotation des suggestions se suspend au survol : le contenu ne
+                change jamais sous le curseur au moment du clic. */}
+            <Pressable
+              style={styles.starterColumn}
+              onHoverIn={() => setSuggestionsPaused(true)}
+              onHoverOut={() => setSuggestionsPaused(false)}
+            >
               {starters.map((s) => (
                 <TouchableOpacity
                   key={s}
-                  style={styles.starterChip}
+                  style={[styles.starterChip, guestLocked && styles.starterChipDisabled]}
                   onPress={() => void sendText(s)}
                   disabled={guestLocked}
                   accessibilityRole="button"
+                  accessibilityState={{ disabled: guestLocked }}
                 >
                   <Text style={styles.starterChipText}>{s}</Text>
                   <Icon name="arrowRight" size={14} color={tokens.colors.accent} />
                 </TouchableOpacity>
               ))}
-            </View>
+            </Pressable>
           </Reveal>
         ) : null}
 
@@ -1112,6 +1247,30 @@ export default function ChatScreen() {
 
       {/* ── Composer (zone de saisie unifiée : texte + dictée + envoi/stop) ── */}
       <View style={[styles.composerZone, isGuest && { paddingBottom: tokens.space.sm + insets.bottom }]}>
+        {showDocHint ? (
+          <View style={styles.docHint}>
+            <Icon name="fileText" size={14} color={tokens.colors.accentDeep} />
+            <Text style={styles.docHintText} numberOfLines={2}>
+              Long document ? L’outil Analyse de document résume comptes rendus et ordonnances.
+            </Text>
+            <TouchableOpacity
+              onPress={() => router.push('/(chat)/document' as never)}
+              accessibilityRole="link"
+              accessibilityLabel="Ouvrir l'outil Analyse de document"
+              style={styles.docHintAction}
+            >
+              <Text style={styles.docHintActionText}>Ouvrir</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setDocHintDismissed(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Masquer la suggestion"
+              style={styles.docHintClose}
+            >
+              <Icon name="x" size={13} color={tokens.colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+        ) : null}
         <View style={[styles.composer, inputFocused && styles.composerFocused]}>
           <TextInput
             style={styles.input}
@@ -1177,6 +1336,8 @@ export default function ChatScreen() {
         </View>
         <Text style={styles.disclaimer}>{DISCLAIMER[chatbot]}</Text>
       </View>
+      </View>
+      </View>
 
       <SourceDetailModal source={detailSource} onClose={() => setDetailSource(null)} />
     </KeyboardAvoidingView>
@@ -1187,6 +1348,108 @@ export default function ChatScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: tokens.colors.background },
+  // Desktop shell : colonne d'historique persistante + écran de chat (D5).
+  screenRow: { flex: 1, flexDirection: 'row', minHeight: 0 },
+  screenMain: { flex: 1, minWidth: 0 },
+  historyRail: {
+    width: 300,
+    backgroundColor: tokens.colors.surface,
+    borderRightWidth: 1,
+    borderColor: tokens.colors.border,
+    paddingTop: tokens.space.lg,
+    paddingHorizontal: tokens.space.md,
+    gap: tokens.space.md,
+  },
+  historyRailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    paddingHorizontal: tokens.space.xs,
+  },
+  historyRailTitle: {
+    fontFamily: tokens.font.display,
+    color: tokens.colors.text,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.bold,
+  },
+
+  // Notice transitoire de bascule de chatbot (B4/B5).
+  switchNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm,
+    backgroundColor: tokens.colors.accentSurface,
+    borderBottomWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+  },
+  switchNoticeText: {
+    flex: 1,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.medium,
+  },
+
+  // Pastille d'essai invité sur l'état vide (C3).
+  trialPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.xs + 2,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accentSurface,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.xs + 2,
+    marginTop: tokens.space.xs,
+  },
+  trialPillText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+
+  // Suggestion de l'outil Analyse de document (C4).
+  docHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    backgroundColor: tokens.colors.accentSurface,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.sm,
+  },
+  docHintText: {
+    flex: 1,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
+  },
+  docHintAction: {
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accent,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.xs + 1,
+    ...tokens.motion.transitionWeb,
+  },
+  docHintActionText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.onAccent,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  docHintClose: {
+    width: 26,
+    height: 26,
+    borderRadius: tokens.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   chatHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1433,6 +1696,8 @@ const styles = StyleSheet.create({
     ...tokens.elevation.sm,
     ...tokens.motion.transitionWeb,
   },
+  // Essai invité épuisé : les chips restent visibles mais clairement inertes (C2).
+  starterChipDisabled: { opacity: 0.45 },
   starterChipText: {
     flex: 1,
     fontFamily: tokens.font.sans,

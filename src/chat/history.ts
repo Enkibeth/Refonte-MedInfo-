@@ -84,6 +84,14 @@ export async function deleteConversation(conversationId: string): Promise<void> 
   await supabase.from('chat_conversations').delete().eq('id', conversationId);
 }
 
+/** Renomme manuellement une conversation (le titre IA reste le défaut). */
+export async function renameConversation(conversationId: string, title: string): Promise<void> {
+  const trimmed = title.trim().slice(0, 120);
+  if (!trimmed) return;
+  const supabase = getSupabaseClient();
+  await supabase.from('chat_conversations').update({ title: trimmed }).eq('id', conversationId);
+}
+
 /**
  * Génère puis enregistre le titre + la catégorie de la conversation (IA, /api/chat-meta).
  * Échec silencieux : une métadonnée manquante ne doit jamais casser le chat.
