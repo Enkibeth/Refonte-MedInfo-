@@ -23,6 +23,8 @@ const FEATURE_DEFAULTS: Record<FeatureKey, { modelId: string; provider: string }
   // Sous-agent PubMed du chat pro : Claude uniquement (seul provider avec le connecteur MCP).
   pubmed_agent:  { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   analyze:       { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
+  // Génération de QCM type EDN à la demande (chat étudiant) : sortie JSON structurée fiable.
+  qcm_generate:  { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   ecos_simulate: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   ecos_evaluate: { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   audio_diarize: { modelId: 'gpt-4o-mini',       provider: 'openai' },

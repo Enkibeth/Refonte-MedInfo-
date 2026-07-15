@@ -461,12 +461,9 @@ function EcosScreenInner() {
     setMessages(newMessages);
     setAiLoading(true);
 
-    const systemPrompt = `${selectedCase.briefPatient}
-
-RÈGLES :
-- Tu joues uniquement le patient. Réponds en caractère de patient, jamais en tant qu'IA.
-- Si l'étudiant sort du cadre médical, recentre sur le motif de consultation.
-- Réponses courtes (2-4 phrases), naturelles, sans termes médicaux.`;
+    // On n'envoie QUE la fiche de rôle du cas : les RÈGLES de comportement du patient
+    // (anti « faux positif ») sont appliquées côté serveur via le prompt `ecos_patient`.
+    const systemPrompt = selectedCase.briefPatient;
 
     try {
       const res = await fetch('/api/ecos', {

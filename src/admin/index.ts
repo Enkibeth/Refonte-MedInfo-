@@ -110,6 +110,15 @@ export const AI_FEATURES = [
     providers: ['anthropic', 'openai'],
   },
   {
+    key: 'qcm_generate',
+    emoji: '📝',
+    label: 'QCM — Génération type EDN',
+    description: 'Génère à la demande un mini-examen de QCM/QCS type EDN sur le sujet du chat étudiant',
+    apiRoute: '/api/qcm',
+    promptKeys: ['qcm_generate'],
+    providers: ['anthropic', 'openai', 'google'],
+  },
+  {
     key: 'ecos_simulate',
     emoji: '🩺',
     label: 'ECOS — Simulation patient',
