@@ -222,6 +222,22 @@ describe('scores — exactitude des formules', () => {
     expect(r.value).toBeCloseTo(22.86, 1);
     expect(r.interpretation.level).toBe('low');
   });
+
+  it('Ganzoni : 70 kg, Hb 9 → 15 g/dL = 1508 mg (réserves 500)', () => {
+    const r = compute('ganzoni', { weight: 70, hbActual: 9, hbTarget: 15 });
+    expect(r.value).toBe(1508);
+  });
+
+  it('Ganzoni : Hb déjà ≥ cible → réserves seulement (500 mg ≥ 35 kg)', () => {
+    const r = compute('ganzoni', { weight: 70, hbActual: 15, hbTarget: 15 });
+    expect(r.value).toBe(500);
+    expect(r.interpretation.label).toBe('Réserves seulement');
+  });
+
+  it('Ganzoni : enfant < 35 kg → réserves = 15 mg/kg (20 kg, Hb 8 → 12 = 492 mg)', () => {
+    const r = compute('ganzoni', { weight: 20, hbActual: 8, hbTarget: 12 });
+    expect(r.value).toBe(492);
+  });
 });
 
 describe('scores — recherche par NOM', () => {
@@ -271,6 +287,11 @@ describe('scores — recherche par FONCTION (nom oublié)', () => {
     const ids = searchScores('alcool dépistage').map((s) => s.id);
     expect(ids).toContain('audit-c');
     expect(ids).toContain('cage');
+  });
+
+  it('« déficit en fer » et « carence martiale anémie » retrouvent le Ganzoni', () => {
+    expect(searchScores('déficit en fer').map((s) => s.id)).toContain('ganzoni');
+    expect(searchScores('carence fer anémie').map((s) => s.id)).toContain('ganzoni');
   });
 });
 
@@ -416,11 +437,18 @@ describe('scores — nouveaux scores (autres domaines)', () => {
     expect(r.interpretation.level).toBe('high');
   });
 
-  it('QTc Bazett : QT 400 ms à 75/min ≈ 447 ms (limite) ; ≥ 500 critique', () => {
-    const r = compute('qtc-bazett', { qt: 400, hr: 75, sex: 0 });
-    expect(r.value).toBeCloseTo(447.2, 0);
-    expect(r.interpretation.level).toBe('moderate');
-    expect(compute('qtc-bazett', { qt: 500, hr: 60, sex: 0 }).interpretation.level).toBe('critical');
+  it('QTc : 4 formules (QT 400 ms à 75/min) — Bazett 447, Fridericia 431, Framingham 431, Hodges 426', () => {
+    expect(compute('qtc', { qt: 400, hr: 75, sex: 0, formula: 0 }).value).toBeCloseTo(447.2, 0); // Bazett
+    expect(compute('qtc', { qt: 400, hr: 75, sex: 0, formula: 1 }).value).toBeCloseTo(430.9, 0); // Fridericia
+    expect(compute('qtc', { qt: 400, hr: 75, sex: 0, formula: 2 }).value).toBeCloseTo(430.8, 0); // Framingham
+    expect(compute('qtc', { qt: 400, hr: 75, sex: 0, formula: 3 }).value).toBeCloseTo(426.25, 1); // Hodges
+  });
+
+  it('QTc : à 60/min toutes les formules = QT ; ≥ 500 ms → critique', () => {
+    for (const formula of [0, 1, 2, 3]) {
+      expect(compute('qtc', { qt: 500, hr: 60, sex: 0, formula }).value).toBeCloseTo(500, 5);
+      expect(compute('qtc', { qt: 500, hr: 60, sex: 0, formula }).interpretation.level).toBe('critical');
+    }
   });
 
   it('Alvarado : sensibilité FID + hyperleucocytose = poids 2', () => {

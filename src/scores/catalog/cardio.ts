@@ -308,17 +308,29 @@ export const CARDIO_SCORES: ScoreDefinition[] = [
   ),
 
   {
-    id: 'qtc-bazett',
-    name: 'QT corrigé (formule de Bazett)',
+    id: 'qtc',
+    name: 'QT corrigé (Bazett, Fridericia, Framingham, Hodges)',
     acronym: 'QTc',
     category: 'cardio',
     purpose:
-      "Corrige l'intervalle QT en fonction de la fréquence cardiaque pour dépister un QT long (risque de torsades de pointes).",
-    aliases: ['qtc', 'qt corrige', 'bazett', 'qt long', 'intervalle qt'],
-    keywords: ['QT', 'QT long', 'torsades de pointes', 'ECG', 'arythmie', 'repolarisation', 'cardiologie'],
+      "Corrige l'intervalle QT en fonction de la fréquence cardiaque (4 formules au choix) pour dépister un QT long (risque de torsades de pointes).",
+    aliases: ['qtc', 'qt corrige', 'bazett', 'fridericia', 'framingham', 'hodges', 'qt long', 'intervalle qt'],
+    keywords: ['QT', 'QT long', 'QTc', 'torsades de pointes', 'ECG', 'arythmie', 'repolarisation', 'cardiologie'],
     fields: [
       { kind: 'number', id: 'qt', label: 'Intervalle QT mesuré', unit: 'ms', min: 200, max: 700, placeholder: 'ex. 400' },
       { kind: 'number', id: 'hr', label: 'Fréquence cardiaque', unit: '/min', min: 30, max: 220, placeholder: 'ex. 75' },
+      {
+        kind: 'choice',
+        id: 'formula',
+        label: 'Formule de correction',
+        help: 'Bazett = usuelle mais imprécise aux FC extrêmes ; Fridericia/Framingham souvent préférées.',
+        options: [
+          { label: 'Bazett (QT/√RR)', value: 0 },
+          { label: 'Fridericia (QT/RR^⅓)', value: 1 },
+          { label: 'Framingham (QT + 154 × (1 − RR))', value: 2 },
+          { label: 'Hodges (QT + 1,75 × (FC − 60))', value: 3 },
+        ],
+      },
       {
         kind: 'choice',
         id: 'sex',
@@ -329,15 +341,23 @@ export const CARDIO_SCORES: ScoreDefinition[] = [
         ],
       },
     ],
-    reference: 'Bazett 1920. QTc = QT / √(RR). Normale ≤ 450 ms (H) / 470 ms (F) ; risque de TdP si > 500 ms.',
-    caution: 'La formule de Bazett sur-corrige aux fréquences extrêmes ; recouper avec la clinique.',
+    reference:
+      'Bazett 1920, Fridericia 1920, Sagie (Framingham) 1992, Hodges 1983. RR = 60/FC (s). Normale ≤ 450 ms (H) / 470 ms (F) ; risque de TdP si > 500 ms.',
+    caution: 'Bazett sur-corrige aux fréquences extrêmes (préférer Fridericia/Framingham) ; recouper avec la clinique.',
     compute: (v) => {
       const qt = v.qt;
       const hr = v.hr;
       if (!Number.isFinite(qt) || !Number.isFinite(hr) || hr <= 0) {
         return incompleteResultCardio('Renseignez le QT et la fréquence cardiaque.');
       }
-      const qtc = qt * Math.sqrt(hr / 60);
+      const rr = 60 / hr; // intervalle RR en secondes
+      let qtc: number;
+      switch (v.formula) {
+        case 1: qtc = qt / Math.cbrt(rr); break; // Fridericia
+        case 2: qtc = qt + 154 * (1 - rr); break; // Framingham (Sagie)
+        case 3: qtc = qt + 1.75 * (hr - 60); break; // Hodges
+        default: qtc = qt / Math.sqrt(rr); // Bazett
+      }
       const female = v.sex === 1;
       let interpretation: ScoreInterpretation;
       if (qtc >= 500) interpretation = { level: 'critical', label: 'Allongement majeur', detail: 'QTc ≥ 500 ms : risque élevé de torsades de pointes — corriger les facteurs (kaliémie, magnésémie, médicaments).' };

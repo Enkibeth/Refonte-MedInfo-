@@ -401,6 +401,24 @@ export default function ChatScreen() {
   const [inputFocused, setInputFocused] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [sourcesOpen, setSourcesOpen] = useState(false);
+  // Desktop/grand écran : masquer la colonne d'historique pour gagner de la place
+  // pendant la conversation (préférence persistée, web only).
+  const [historyCollapsed, setHistoryCollapsed] = useState<boolean>(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return false;
+    try {
+      return window.localStorage.getItem('medinfo:chatHistoryCollapsed') === '1';
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem('medinfo:chatHistoryCollapsed', historyCollapsed ? '1' : '0');
+    } catch {
+      // best-effort : la préférence n'est pas critique
+    }
+  }, [historyCollapsed]);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [conversationsLoading, setConversationsLoading] = useState(true);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -916,11 +934,20 @@ export default function ChatScreen() {
       />
       <View style={styles.screenRow}>
       {/* ── Colonne d'historique persistante (desktop shell, D5) ── */}
-      {desktopShell && user ? (
+      {desktopShell && user && !historyCollapsed ? (
         <View style={styles.historyRail}>
           <View style={styles.historyRailHeader}>
             <Icon name="clock" size={16} color={tokens.colors.accentDeep} />
             <Text style={styles.historyRailTitle}>Historique</Text>
+            <View style={{ flex: 1 }} />
+            <TouchableOpacity
+              onPress={() => setHistoryCollapsed(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Masquer l’historique"
+              style={styles.historyCollapseBtn}
+            >
+              <Icon name="panelLeft" size={16} color={tokens.colors.textMuted} />
+            </TouchableOpacity>
           </View>
           <ConversationList
             conversations={conversations}
@@ -937,6 +964,16 @@ export default function ChatScreen() {
       <View style={styles.screenMain}>
       {/* ── En-tête ── */}
       <View style={[styles.chatHeader, { paddingTop: tokens.space.md + insets.top }]}>
+        {desktopShell && user && historyCollapsed ? (
+          <TouchableOpacity
+            onPress={() => setHistoryCollapsed(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Afficher l’historique"
+            style={[styles.headerIconButton, { marginRight: tokens.space.sm }]}
+          >
+            <Icon name="panelLeft" size={17} color={tokens.colors.accentDeep} />
+          </TouchableOpacity>
+        ) : null}
         <View style={styles.headerTitleBlock}>
           <Text style={styles.chatTitle} numberOfLines={1}>
             Chat {meta.label.toLowerCase()}
@@ -1389,6 +1426,13 @@ const styles = StyleSheet.create({
     color: tokens.colors.text,
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.bold,
+  },
+  historyCollapseBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: tokens.radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // Notice transitoire de bascule de chatbot (B4/B5).
