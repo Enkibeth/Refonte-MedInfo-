@@ -437,11 +437,18 @@ describe('scores — nouveaux scores (autres domaines)', () => {
     expect(r.interpretation.level).toBe('high');
   });
 
-  it('QTc Bazett : QT 400 ms à 75/min ≈ 447 ms (limite) ; ≥ 500 critique', () => {
-    const r = compute('qtc-bazett', { qt: 400, hr: 75, sex: 0 });
-    expect(r.value).toBeCloseTo(447.2, 0);
-    expect(r.interpretation.level).toBe('moderate');
-    expect(compute('qtc-bazett', { qt: 500, hr: 60, sex: 0 }).interpretation.level).toBe('critical');
+  it('QTc : 4 formules (QT 400 ms à 75/min) — Bazett 447, Fridericia 431, Framingham 431, Hodges 426', () => {
+    expect(compute('qtc', { qt: 400, hr: 75, sex: 0, formula: 0 }).value).toBeCloseTo(447.2, 0); // Bazett
+    expect(compute('qtc', { qt: 400, hr: 75, sex: 0, formula: 1 }).value).toBeCloseTo(430.9, 0); // Fridericia
+    expect(compute('qtc', { qt: 400, hr: 75, sex: 0, formula: 2 }).value).toBeCloseTo(430.8, 0); // Framingham
+    expect(compute('qtc', { qt: 400, hr: 75, sex: 0, formula: 3 }).value).toBeCloseTo(426.25, 1); // Hodges
+  });
+
+  it('QTc : à 60/min toutes les formules = QT ; ≥ 500 ms → critique', () => {
+    for (const formula of [0, 1, 2, 3]) {
+      expect(compute('qtc', { qt: 500, hr: 60, sex: 0, formula }).value).toBeCloseTo(500, 5);
+      expect(compute('qtc', { qt: 500, hr: 60, sex: 0, formula }).interpretation.level).toBe('critical');
+    }
   });
 
   it('Alvarado : sensibilité FID + hyperleucocytose = poids 2', () => {
