@@ -178,4 +178,114 @@ export const NEURO_SCORES: ScoreDefinition[] = [
       { min: 21, level: 'critical', label: 'AVC sévère', detail: 'Score 21–42 : AVC sévère.' },
     ],
   ),
+
+  additiveScore(
+    {
+      id: 'hunt-hess',
+      name: 'Classification de Hunt et Hess (hémorragie sous-arachnoïdienne)',
+      acronym: 'Hunt & Hess',
+      category: 'neuro',
+      purpose:
+        "Cote la sévérité clinique d'une hémorragie méningée (rupture d'anévrisme) et son pronostic.",
+      aliases: ['hunt hess', 'hunt et hess', 'hemorragie meningee', 'hemorragie sous arachnoidienne'],
+      keywords: ['hémorragie méningée', 'hémorragie sous-arachnoïdienne', 'anévrisme', 'céphalée brutale', 'neurochirurgie', 'pronostic'],
+      fields: [
+        {
+          kind: 'choice',
+          id: 'grade',
+          label: 'Tableau clinique',
+          options: [
+            { label: 'I — Asymptomatique ou céphalée minime', value: 1 },
+            { label: 'II — Céphalée sévère, raideur de nuque, sans déficit (hors paralysie de nerf crânien)', value: 2 },
+            { label: 'III — Somnolence, confusion, déficit focal léger', value: 3 },
+            { label: 'IV — Stupeur, hémiparésie modérée à sévère', value: 4 },
+            { label: 'V — Coma, rigidité de décérébration', value: 5 },
+          ],
+        },
+      ],
+      reference: 'Hunt & Hess 1968. Grades I–V (pronostic péjoratif croissant).',
+    },
+    [
+      { min: 1, level: 'low', label: 'Grade I', detail: 'Asymptomatique ou céphalée minime — bon pronostic.' },
+      { min: 2, level: 'moderate', label: 'Grade II', detail: 'Céphalée sévère et raideur méningée sans déficit.' },
+      { min: 3, level: 'high', label: 'Grade III', detail: 'Troubles de vigilance, déficit focal léger.' },
+      { min: 4, level: 'critical', label: 'Grade IV–V', detail: 'Stupeur/coma, déficit sévère — pronostic réservé.' },
+    ],
+    { format: (t) => `Grade ${['I', 'II', 'III', 'IV', 'V'][t - 1] ?? t}` },
+  ),
+
+  additiveScore(
+    {
+      id: 'rankin',
+      name: 'Échelle de Rankin modifiée (mRS)',
+      acronym: 'mRS',
+      category: 'neuro',
+      purpose:
+        "Mesure le handicap fonctionnel global après un AVC (0 = aucun symptôme, 6 = décès).",
+      aliases: ['rankin', 'mrs', 'modified rankin', 'handicap avc', 'echelle de rankin'],
+      keywords: ['AVC', 'handicap', 'autonomie', 'pronostic fonctionnel', 'séquelles', 'neurologie'],
+      fields: [
+        {
+          kind: 'choice',
+          id: 'grade',
+          label: 'Niveau de handicap',
+          options: [
+            { label: '0 — Aucun symptôme', value: 0 },
+            { label: '1 — Pas de handicap significatif malgré des symptômes', value: 1 },
+            { label: '2 — Handicap léger (autonome mais activités antérieures réduites)', value: 2 },
+            { label: '3 — Handicap modéré (aide nécessaire, marche seul)', value: 3 },
+            { label: '4 — Handicap modérément sévère (ne marche/ne subvient pas sans aide)', value: 4 },
+            { label: '5 — Handicap sévère (alité, incontinent, soins constants)', value: 5 },
+            { label: '6 — Décès', value: 6 },
+          ],
+        },
+      ],
+      reference: 'Rankin 1957 / van Swieten 1988. Score 0–6.',
+    },
+    [
+      { min: 0, level: 'low', label: 'Handicap absent à léger', detail: 'mRS 0–2 : autonomie conservée.' },
+      { min: 3, level: 'high', label: 'Handicap modéré à sévère', detail: 'mRS 3–5 : perte d’autonomie, aide nécessaire.' },
+      { min: 6, level: 'critical', label: 'Décès', detail: 'mRS 6.' },
+    ],
+    { format: (t) => `mRS ${fmtGrade(t)}` },
+  ),
+
+  additiveScore(
+    {
+      id: 'ich-score',
+      name: 'ICH Score (hémorragie intracérébrale)',
+      acronym: 'ICH',
+      category: 'neuro',
+      purpose:
+        "Estime la mortalité à 30 jours d'une hémorragie intraparenchymateuse spontanée.",
+      aliases: ['ich', 'ich score', 'hemorragie intracerebrale', 'hematome intraparenchymateux'],
+      keywords: ['hémorragie cérébrale', 'hématome', 'AVC hémorragique', 'pronostic', 'mortalité', 'neurologie'],
+      fields: [
+        {
+          kind: 'choice',
+          id: 'gcs',
+          label: 'Score de Glasgow',
+          options: [
+            { label: '13–15', value: 0 },
+            { label: '5–12', value: 1 },
+            { label: '3–4', value: 2 },
+          ],
+        },
+        yesNo('volume', 'Volume de l’hématome ≥ 30 cm³', 1),
+        yesNo('ivh', 'Hémorragie intraventriculaire', 1),
+        yesNo('infratentorial', 'Origine infratentorielle', 1),
+        yesNo('age', 'Âge ≥ 80 ans', 1),
+      ],
+      reference: 'Hemphill 2001. Score 0–6 ; la mortalité à 30 j croît fortement avec le score.',
+    },
+    [
+      { min: 0, level: 'low', label: 'Mortalité faible', detail: 'Score 0–1 : mortalité à 30 j ≈ 0–13 %.' },
+      { min: 2, level: 'high', label: 'Mortalité élevée', detail: 'Score 2–3 : mortalité à 30 j ≈ 26–72 %.' },
+      { min: 4, level: 'critical', label: 'Mortalité très élevée', detail: 'Score ≥ 4 : mortalité à 30 j ≈ 97–100 %.' },
+    ],
+  ),
 ];
+
+function fmtGrade(t: number): string {
+  return Number.isFinite(t) ? String(Math.round(t)) : '—';
+}

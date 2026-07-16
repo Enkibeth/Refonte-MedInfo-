@@ -302,4 +302,33 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
       { min: 6, level: 'high', label: 'Probabilité forte', detail: 'Score 6–8 : arrêt de l’héparine + anticoagulant alternatif, sérologie anti-PF4.' },
     ],
   ),
+
+  additiveScore(
+    {
+      id: 'perc',
+      name: 'Règle PERC (exclusion d’embolie pulmonaire)',
+      acronym: 'PERC',
+      category: 'thrombose',
+      purpose:
+        "Chez un patient à faible probabilité clinique, permet d'écarter une embolie pulmonaire sans D-dimères si AUCUN des 8 critères n'est présent.",
+      aliases: ['perc', 'perc rule', 'pulmonary embolism rule out'],
+      keywords: ['embolie pulmonaire', 'EP', 'exclusion', 'd-dimères', 'faible probabilité', 'urgences', 'MTEV'],
+      fields: [
+        yesNo('age', 'Âge ≥ 50 ans', 1),
+        yesNo('hr', 'Fréquence cardiaque ≥ 100/min', 1),
+        yesNo('spo2', 'SaO₂ < 95 %', 1),
+        yesNo('hemoptysis', 'Hémoptysie', 1),
+        yesNo('estrogen', 'Prise d’œstrogènes', 1),
+        yesNo('priorVte', 'ATCD de TVP / EP', 1),
+        yesNo('legSwelling', 'Œdème unilatéral d’un membre inférieur', 1),
+        yesNo('surgery', 'Chirurgie / traumatisme (< 4 semaines, avec hospitalisation)', 1),
+      ],
+      reference: 'Kline 2004. À n’utiliser que si la probabilité clinique est déjà FAIBLE.',
+      caution: 'La règle PERC ne s’applique QUE lorsque la probabilité clinique pré-test est faible.',
+    },
+    [
+      { min: 0, level: 'low', label: 'PERC négatif', detail: 'Aucun critère présent : embolie pulmonaire écartée sans D-dimères (si probabilité clinique faible).' },
+      { min: 1, level: 'moderate', label: 'PERC positif', detail: 'Au moins un critère présent : la règle ne permet pas d’exclure — poursuivre par les D-dimères.' },
+    ],
+  ),
 ];

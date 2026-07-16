@@ -6,7 +6,7 @@
  * ⚠️ Bilirubine et créatinine saisies en µmol/L (usage FR), converties dans les
  * formules (bili ÷ 17,1 ; créat ÷ 88,4). Formules couvertes par des tests.
  */
-import { additiveScore, fmt, type ScoreDefinition, type ScoreInterpretation } from '../types';
+import { additiveScore, fmt, yesNo, type ScoreDefinition, type ScoreInterpretation } from '../types';
 
 const UMOL_TO_MGDL_BILI = 1 / 17.1;
 const UMOL_TO_MGDL_CREAT = 1 / 88.4;
@@ -378,4 +378,103 @@ export const HEPATO_SCORES: ScoreDefinition[] = [
       return { value: df, display: fmt(df, 1), interpretation };
     },
   },
+
+  additiveScore(
+    {
+      id: 'rockall',
+      name: 'Score de Rockall (hémorragie digestive haute)',
+      acronym: 'Rockall',
+      category: 'hepato',
+      purpose:
+        "Évalue le risque de récidive hémorragique et de mortalité après une hémorragie digestive haute (score complet, post-endoscopie).",
+      aliases: ['rockall', 'hemorragie digestive rockall'],
+      keywords: ['hémorragie digestive', 'ulcère', 'endoscopie', 'récidive', 'mortalité', 'méléna', 'gastro'],
+      fields: [
+        {
+          kind: 'choice',
+          id: 'age',
+          label: 'Âge',
+          options: [
+            { label: '< 60 ans', value: 0 },
+            { label: '60–79 ans', value: 1 },
+            { label: '≥ 80 ans', value: 2 },
+          ],
+        },
+        {
+          kind: 'choice',
+          id: 'shock',
+          label: 'État hémodynamique',
+          options: [
+            { label: 'Pas de choc (PAS ≥ 100, FC < 100)', value: 0 },
+            { label: 'Tachycardie (FC ≥ 100, PAS ≥ 100)', value: 1 },
+            { label: 'Hypotension (PAS < 100)', value: 2 },
+          ],
+        },
+        {
+          kind: 'choice',
+          id: 'comorbidity',
+          label: 'Comorbidités',
+          options: [
+            { label: 'Aucune majeure', value: 0 },
+            { label: 'Insuffisance cardiaque, cardiopathie ischémique', value: 2 },
+            { label: 'Insuffisance rénale/hépatique, cancer métastatique', value: 3 },
+          ],
+        },
+        {
+          kind: 'choice',
+          id: 'diagnosis',
+          label: 'Diagnostic endoscopique',
+          options: [
+            { label: 'Mallory-Weiss ou pas de lésion', value: 0 },
+            { label: 'Autres diagnostics', value: 1 },
+            { label: 'Cancer digestif haut', value: 2 },
+          ],
+        },
+        {
+          kind: 'choice',
+          id: 'stigmata',
+          label: 'Stigmates d’hémorragie récente',
+          options: [
+            { label: 'Aucun ou tache pigmentée', value: 0 },
+            { label: 'Sang, caillot adhérent, vaisseau visible', value: 2 },
+          ],
+        },
+      ],
+      reference: 'Rockall 1996. Score 0–11.',
+    },
+    [
+      { min: 0, level: 'low', label: 'Risque faible', detail: 'Score < 3 : faible risque de récidive et de mortalité.' },
+      { min: 3, level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 3–4 : risque intermédiaire.' },
+      { min: 5, level: 'high', label: 'Risque élevé', detail: 'Score ≥ 5 : risque élevé de récidive / mortalité — surveillance rapprochée.' },
+    ],
+  ),
+
+  additiveScore(
+    {
+      id: 'alvarado',
+      name: 'Score d’Alvarado (appendicite aiguë)',
+      acronym: 'Alvarado',
+      category: 'hepato',
+      purpose:
+        "Estime la probabilité d'une appendicite aiguë devant une douleur de la fosse iliaque droite.",
+      aliases: ['alvarado', 'mantrels', 'appendicite score'],
+      keywords: ['appendicite', 'fosse iliaque droite', 'douleur abdominale', 'urgences', 'chirurgie', 'gastro'],
+      fields: [
+        yesNo('migration', 'Migration de la douleur en fosse iliaque droite', 1),
+        yesNo('anorexia', 'Anorexie', 1),
+        yesNo('nausea', 'Nausées / vomissements', 1),
+        yesNo('tenderness', 'Sensibilité de la fosse iliaque droite', 2),
+        yesNo('rebound', 'Douleur à la décompression (rebond)', 1),
+        yesNo('fever', 'Température ≥ 37,3 °C', 1),
+        yesNo('leukocytosis', 'Hyperleucocytose (> 10 000/mm³)', 2),
+        yesNo('shift', 'Polynucléose neutrophile (> 75 %)', 1),
+      ],
+      reference: 'Alvarado 1986 (MANTRELS). Score 0–10.',
+    },
+    [
+      { min: 0, level: 'low', label: 'Peu probable', detail: 'Score 1–4 : appendicite peu probable.' },
+      { min: 5, level: 'moderate', label: 'Possible', detail: 'Score 5–6 : appendicite possible — surveillance / imagerie.' },
+      { min: 7, level: 'high', label: 'Probable', detail: 'Score 7–10 : appendicite probable — avis chirurgical.' },
+    ],
+  ),
 ];

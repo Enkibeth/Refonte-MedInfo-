@@ -20,6 +20,7 @@ export type ScoreCategory =
   | 'nephro'
   | 'hepato'
   | 'neuro'
+  | 'geriatrie'
   | 'anesthesie'
   | 'general';
 
@@ -171,6 +172,20 @@ export function yesNo(id: string, label: string, points = 1, help?: string): Sco
     options: [
       { label: 'Non', value: 0 },
       { label: 'Oui', value: points },
+    ],
+  };
+}
+
+/** Champ oui/non INVERSÉ : vaut `points` si « non », 0 si « oui » (items « positifs » du GDS). */
+export function noYes(id: string, label: string, points = 1, help?: string): ScoreField {
+  return {
+    kind: 'choice',
+    id,
+    label,
+    help,
+    options: [
+      { label: 'Oui', value: 0 },
+      { label: 'Non', value: points },
     ],
   };
 }

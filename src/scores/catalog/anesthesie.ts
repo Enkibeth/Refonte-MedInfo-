@@ -105,4 +105,108 @@ export const ANESTHESIE_SCORES: ScoreDefinition[] = [
     ],
     { format: (t) => `Classe ASA ${ASA_ROMAN[t - 1] ?? t}` },
   ),
+
+  additiveScore(
+    {
+      id: 'mallampati',
+      name: 'Classification de Mallampati',
+      acronym: 'Mallampati',
+      category: 'anesthesie',
+      purpose:
+        "Prédit la difficulté d'intubation à partir de la visibilité des structures oropharyngées, bouche grande ouverte.",
+      aliases: ['mallampati', 'intubation difficile', 'classe mallampati'],
+      keywords: ['intubation difficile', 'voies aériennes', 'anesthésie', 'oropharynx', 'ventilation'],
+      fields: [
+        {
+          kind: 'choice',
+          id: 'class',
+          label: 'Structures visibles (bouche ouverte, langue tirée)',
+          options: [
+            { label: 'I — Voile, luette, piliers visibles', value: 1 },
+            { label: 'II — Voile et luette visibles', value: 2 },
+            { label: 'III — Voile et base de la luette', value: 3 },
+            { label: 'IV — Palais dur seulement (voile non visible)', value: 4 },
+          ],
+        },
+      ],
+      reference: 'Mallampati 1985 (modifié Samsoon). Classes III–IV : intubation potentiellement difficile.',
+      caution: 'Prédiction imparfaite : à combiner aux autres critères d’intubation difficile.',
+    },
+    [
+      { min: 1, level: 'low', label: 'Classe I–II', detail: 'Intubation a priori non difficile sur ce critère.' },
+      { min: 3, level: 'moderate', label: 'Classe III', detail: 'Intubation potentiellement difficile — anticiper.' },
+      { min: 4, level: 'high', label: 'Classe IV', detail: 'Risque élevé d’intubation difficile — préparer une stratégie dédiée.' },
+    ],
+    { format: (t) => `Classe ${ASA_ROMAN[t - 1] ?? t}` },
+  ),
+
+  additiveScore(
+    {
+      id: 'aldrete',
+      name: 'Score d’Aldrete (sortie de salle de réveil)',
+      acronym: 'Aldrete',
+      category: 'anesthesie',
+      purpose:
+        "Évalue l'aptitude d'un patient à quitter la salle de surveillance post-interventionnelle (SSPI).",
+      aliases: ['aldrete', 'score de sortie sspi', 'salle de reveil'],
+      keywords: ['salle de réveil', 'SSPI', 'post-opératoire', 'anesthésie', 'sortie', 'surveillance'],
+      fields: [
+        {
+          kind: 'choice',
+          id: 'activity',
+          label: 'Activité motrice',
+          options: [
+            { label: 'Bouge les 4 membres', value: 2 },
+            { label: 'Bouge 2 membres', value: 1 },
+            { label: 'Aucun mouvement', value: 0 },
+          ],
+        },
+        {
+          kind: 'choice',
+          id: 'respiration',
+          label: 'Respiration',
+          options: [
+            { label: 'Respire et tousse librement', value: 2 },
+            { label: 'Dyspnée / respiration limitée', value: 1 },
+            { label: 'Apnée', value: 0 },
+          ],
+        },
+        {
+          kind: 'choice',
+          id: 'circulation',
+          label: 'Circulation (PA vs pré-op)',
+          options: [
+            { label: '± 20 % de la valeur pré-op', value: 2 },
+            { label: '± 20 à 50 %', value: 1 },
+            { label: '± 50 %', value: 0 },
+          ],
+        },
+        {
+          kind: 'choice',
+          id: 'consciousness',
+          label: 'Conscience',
+          options: [
+            { label: 'Pleinement réveillé', value: 2 },
+            { label: 'Réveillable à l’appel', value: 1 },
+            { label: 'Non réactif', value: 0 },
+          ],
+        },
+        {
+          kind: 'choice',
+          id: 'saturation',
+          label: 'Saturation en oxygène',
+          options: [
+            { label: 'SpO₂ > 92 % à l’air ambiant', value: 2 },
+            { label: 'O₂ nécessaire pour SpO₂ > 90 %', value: 1 },
+            { label: 'SpO₂ < 90 % même sous O₂', value: 0 },
+          ],
+        },
+      ],
+      reference: 'Aldrete 1970/1995. Score 0–10. Sortie de SSPI généralement à ≥ 9.',
+    },
+    [
+      { min: 0, level: 'high', label: 'Surveillance poursuivie', detail: 'Score < 9 : critères de sortie non réunis — poursuivre la surveillance en SSPI.' },
+      { min: 9, level: 'low', label: 'Sortie envisageable', detail: 'Score ≥ 9 : critères de sortie de SSPI réunis (selon protocole du service).' },
+    ],
+  ),
 ];

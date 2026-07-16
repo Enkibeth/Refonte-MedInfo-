@@ -315,4 +315,65 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
       return { value: fena, display: `${fmt(fena, 1)} %`, interpretation };
     },
   },
+
+  {
+    id: 'feurea',
+    name: 'Fraction d’excrétion de l’urée',
+    acronym: 'FeUrée',
+    category: 'nephro',
+    purpose:
+      "Distingue une insuffisance rénale aiguë fonctionnelle d'une organique — reste interprétable SOUS diurétiques (contrairement à la FeNa).",
+    aliases: ['feuree', 'fraction excretion uree', 'excretion uree'],
+    keywords: ['insuffisance rénale aiguë', 'IRA', 'fonctionnelle', 'organique', 'diurétiques', 'urée urinaire', 'oligurie'],
+    fields: [
+      { kind: 'number', id: 'uUrea', label: 'Urée urinaire', unit: 'mmol/L', min: 10, max: 1000, placeholder: 'ex. 300' },
+      { kind: 'number', id: 'pUrea', label: 'Urée plasmatique', unit: 'mmol/L', min: 1, max: 60, step: 0.1, placeholder: 'ex. 15' },
+      { kind: 'number', id: 'uCreat', label: 'Créatinine urinaire', unit: 'µmol/L', min: 100, max: 100000, placeholder: 'ex. 8000' },
+      { kind: 'number', id: 'pCreat', label: 'Créatinine plasmatique', unit: 'µmol/L', min: 10, max: 2000, placeholder: 'ex. 180' },
+    ],
+    reference: 'Carvounis 2002. FeUrée = (Uurée × Pcréat) / (Purée × Ucréat) × 100.',
+    compute: (v) => {
+      const { uUrea, pUrea, uCreat, pCreat } = v;
+      if (![uUrea, pUrea, uCreat, pCreat].every(Number.isFinite) || pUrea <= 0 || uCreat <= 0) {
+        return incompleteResult('Renseignez l’urée et la créatinine, urinaires et plasmatiques.');
+      }
+      const feurea = ((uUrea * pCreat) / (pUrea * uCreat)) * 100;
+      let interpretation: ScoreInterpretation;
+      if (feurea < 35) interpretation = { level: 'moderate', label: 'IRA fonctionnelle', detail: 'FeUrée < 35 % : origine pré-rénale (fonctionnelle) — y compris sous diurétiques.' };
+      else if (feurea > 50) interpretation = { level: 'high', label: 'IRA organique', detail: 'FeUrée > 50 % : origine rénale (nécrose tubulaire aiguë).' };
+      else interpretation = { level: 'info', label: 'Zone intermédiaire', detail: 'FeUrée 35–50 % : indéterminé — recouper avec la clinique.' };
+      return { value: feurea, display: `${fmt(feurea, 1)} %`, interpretation };
+    },
+  },
+
+  {
+    id: 'winter',
+    name: 'Formule de Winter (compensation d’une acidose métabolique)',
+    acronym: 'Winter',
+    category: 'nephro',
+    purpose:
+      "Calcule la PaCO₂ attendue en réponse à une acidose métabolique ; l'écart avec la PaCO₂ mesurée révèle un trouble respiratoire associé.",
+    aliases: ['winter', 'formule de winter', 'compensation acidose', 'paco2 attendue'],
+    keywords: ['acidose métabolique', 'compensation', 'gaz du sang', 'PaCO2', 'bicarbonates', 'équilibre acido-basique'],
+    fields: [
+      { kind: 'number', id: 'bicarbonate', label: 'Bicarbonates (HCO₃⁻)', unit: 'mmol/L', min: 2, max: 40, step: 0.1, placeholder: 'ex. 12' },
+      { kind: 'number', id: 'measuredPaco2', label: 'PaCO₂ mesurée (facultatif)', unit: 'mmHg', min: 10, max: 100, step: 0.1, placeholder: 'ex. 28' },
+    ],
+    reference: 'Albert 1967. PaCO₂ attendue = 1,5 × [HCO₃⁻] + 8 (± 2).',
+    compute: (v) => {
+      const hco3 = v.bicarbonate;
+      if (!Number.isFinite(hco3)) return incompleteResult('Renseignez les bicarbonates.');
+      const expected = 1.5 * hco3 + 8;
+      const measured = v.measuredPaco2;
+      let interpretation: ScoreInterpretation;
+      if (Number.isFinite(measured)) {
+        if (measured > expected + 2) interpretation = { level: 'high', label: 'Acidose respiratoire associée', detail: `PaCO₂ mesurée (${fmt(measured)} mmHg) > attendue (${fmt(expected)} ± 2) : hypoventilation — acidose respiratoire surajoutée.` };
+        else if (measured < expected - 2) interpretation = { level: 'high', label: 'Alcalose respiratoire associée', detail: `PaCO₂ mesurée (${fmt(measured)} mmHg) < attendue (${fmt(expected)} ± 2) : hyperventilation — alcalose respiratoire surajoutée.` };
+        else interpretation = { level: 'low', label: 'Compensation adéquate', detail: `PaCO₂ mesurée conforme à l’attendue (${fmt(expected)} ± 2 mmHg) : compensation respiratoire appropriée.` };
+      } else {
+        interpretation = { level: 'info', label: 'PaCO₂ attendue', detail: `PaCO₂ attendue ≈ ${fmt(expected)} ± 2 mmHg. Comparez à la PaCO₂ mesurée pour détecter un trouble respiratoire associé.` };
+      }
+      return { value: expected, display: `${fmt(expected)} ± 2 mmHg`, interpretation };
+    },
+  },
 ];

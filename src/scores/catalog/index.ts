@@ -11,6 +11,7 @@ import { URGENCES_SCORES } from './urgences';
 import { NEPHRO_SCORES } from './nephro';
 import { HEPATO_SCORES } from './hepato';
 import { NEURO_SCORES } from './neuro';
+import { GERIATRIE_SCORES } from './geriatrie';
 import { ANESTHESIE_SCORES } from './anesthesie';
 import { GENERAL_SCORES } from './general';
 
@@ -23,6 +24,7 @@ export const CATEGORIES: CategoryMeta[] = [
   { id: 'nephro', label: 'Néphro / Métabolique', icon: 'testTube' },
   { id: 'hepato', label: 'Hépato-gastro', icon: 'pill' },
   { id: 'neuro', label: 'Neurologie', icon: 'brain' },
+  { id: 'geriatrie', label: 'Gériatrie', icon: 'personStanding' },
   { id: 'anesthesie', label: 'Anesthésie', icon: 'moon' },
   { id: 'general', label: 'Général', icon: 'scale' },
 ];
@@ -36,6 +38,7 @@ export const ALL_SCORES: ScoreDefinition[] = [
   ...NEPHRO_SCORES,
   ...HEPATO_SCORES,
   ...NEURO_SCORES,
+  ...GERIATRIE_SCORES,
   ...ANESTHESIE_SCORES,
   ...GENERAL_SCORES,
 ];

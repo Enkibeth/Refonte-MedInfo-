@@ -76,6 +76,7 @@ export const ICON_PATHS = {
   testTube: 'M14.5 2v17.5c0 1.4-1.1 2.5-2.5 2.5s-2.5-1.1-2.5-2.5V2 M8.5 2h7 M14.5 16h-5',
   scale: 'M12 3v18 M7 8l-4 7a4 4 0 0 0 8 0z M17 8l-4 7a4 4 0 0 0 8 0z M7 8h10 M5 21h14',
   moon: 'M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z',
+  personStanding: 'M12 5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z M9 20l3-6 3 6 M6 8l6 2 6-2 M12 10v4',
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

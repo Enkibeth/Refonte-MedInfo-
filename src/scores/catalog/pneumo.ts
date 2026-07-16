@@ -2,7 +2,7 @@
  * Scores PNEUMOLOGIE / INFECTIOLOGIE.
  * Gravité de pneumonie, sepsis au lit du patient, angine à streptocoque.
  */
-import { additiveScore, yesNo, type ScoreDefinition } from '../types';
+import { additiveScore, yesNo, type ScoreDefinition, type ScoreInterpretation } from '../types';
 
 export const PNEUMO_SCORES: ScoreDefinition[] = [
   additiveScore(
@@ -139,4 +139,66 @@ export const PNEUMO_SCORES: ScoreDefinition[] = [
       { min: 4, level: 'high', label: 'Probabilité forte', detail: 'Score ≥ 4 : probabilité de SGA élevée (~ 50 %) — TDR puis antibiothérapie si positif.' },
     ],
   ),
+
+  additiveScore(
+    {
+      id: 'stop-bang',
+      name: 'Questionnaire STOP-BANG (apnées du sommeil)',
+      acronym: 'STOP-BANG',
+      category: 'pneumo',
+      purpose:
+        "Dépiste le risque de syndrome d'apnées obstructives du sommeil (8 items oui/non).",
+      aliases: ['stop bang', 'stop-bang', 'stopbang', 'apnee du sommeil', 'saos'],
+      keywords: ['apnée du sommeil', 'SAOS', 'ronflement', 'somnolence', 'sommeil', 'dépistage', 'anesthésie'],
+      fields: [
+        yesNo('snore', 'Ronflement bruyant (S)', 1),
+        yesNo('tired', 'Fatigue / somnolence diurne (T)', 1),
+        yesNo('observed', 'Pauses respiratoires observées (O)', 1),
+        yesNo('pressure', 'Hypertension artérielle (P)', 1),
+        yesNo('bmi', 'IMC > 35 kg/m² (B)', 1),
+        yesNo('age', 'Âge > 50 ans (A)', 1),
+        yesNo('neck', 'Tour de cou > 40 cm (N)', 1),
+        yesNo('gender', 'Sexe masculin (G)', 1),
+      ],
+      reference: 'Chung 2008. 0–2 faible, 3–4 intermédiaire, ≥ 5 élevé.',
+    },
+    [
+      { min: 0, level: 'low', label: 'Risque faible', detail: 'Score 0–2 : faible risque de SAOS.' },
+      { min: 3, level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 3–4 : risque intermédiaire — évaluation à discuter.' },
+      { min: 5, level: 'high', label: 'Risque élevé', detail: 'Score 5–8 : risque élevé de SAOS — polygraphie / polysomnographie.' },
+    ],
+  ),
+
+  {
+    id: 'light-criteria',
+    name: 'Critères de Light (épanchement pleural)',
+    acronym: 'Light',
+    category: 'pneumo',
+    purpose:
+      "Distingue un exsudat d'un transsudat devant un épanchement pleural (exsudat si AU MOINS un critère est rempli).",
+    aliases: ['light', 'criteres de light', 'epanchement pleural', 'exsudat transsudat', 'pleuresie'],
+    keywords: ['épanchement pleural', 'pleurésie', 'exsudat', 'transsudat', 'plèvre', 'protéines', 'LDH'],
+    fields: [
+      { kind: 'number', id: 'pleuralProtein', label: 'Protéines pleurales', unit: 'g/L', min: 1, max: 90, step: 0.1, placeholder: 'ex. 35' },
+      { kind: 'number', id: 'serumProtein', label: 'Protéines sériques', unit: 'g/L', min: 20, max: 120, step: 0.1, placeholder: 'ex. 70' },
+      { kind: 'number', id: 'pleuralLdh', label: 'LDH pleurales', unit: 'UI/L', min: 10, max: 5000, placeholder: 'ex. 250' },
+      { kind: 'number', id: 'serumLdh', label: 'LDH sériques', unit: 'UI/L', min: 50, max: 3000, placeholder: 'ex. 200' },
+      { kind: 'number', id: 'serumLdhUln', label: 'LDH sériques — limite normale', unit: 'UI/L', min: 100, max: 400, default: 250, placeholder: '250' },
+    ],
+    reference: 'Light 1972. Exsudat si : prot. pleu/sérique > 0,5, OU LDH pleu/sérique > 0,6, OU LDH pleu > ⅔ de la limite normale.',
+    compute: (v) => {
+      const { pleuralProtein, serumProtein, pleuralLdh, serumLdh, serumLdhUln } = v;
+      if (![pleuralProtein, serumProtein, pleuralLdh, serumLdh, serumLdhUln].every(Number.isFinite) || serumProtein <= 0 || serumLdh <= 0) {
+        return { value: NaN, display: '—', incomplete: true, interpretation: { level: 'info', label: 'Champs à compléter', detail: 'Renseignez les protéines et LDH, pleurales et sériques.' } };
+      }
+      const proteinRatio = pleuralProtein / serumProtein;
+      const ldhRatio = pleuralLdh / serumLdh;
+      const ldhAbove = pleuralLdh > (2 / 3) * serumLdhUln;
+      const exudate = proteinRatio > 0.5 || ldhRatio > 0.6 || ldhAbove;
+      const interpretation: ScoreInterpretation = exudate
+        ? { level: 'moderate', label: 'Exsudat', detail: 'Au moins un critère de Light rempli : exsudat — étiologies (infection, néoplasie, embolie, inflammation).' }
+        : { level: 'low', label: 'Transsudat', detail: 'Aucun critère rempli : transsudat — étiologies (insuffisance cardiaque, cirrhose, syndrome néphrotique).' };
+      return { value: exudate ? 1 : 0, display: exudate ? 'Exsudat' : 'Transsudat', interpretation };
+    },
+  },
 ];

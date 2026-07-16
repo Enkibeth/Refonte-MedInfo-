@@ -164,4 +164,83 @@ export const GENERAL_SCORES: ScoreDefinition[] = [
       { min: 2, level: 'high', label: 'Dépistage positif', detail: 'Score ≥ 2 : forte suspicion de consommation problématique — approfondir (AUDIT, entretien).' },
     ],
   ),
+
+  additiveScore(
+    {
+      id: 'fagerstrom',
+      name: 'Test de Fagerström (dépendance à la nicotine)',
+      acronym: 'Fagerström',
+      category: 'general',
+      purpose:
+        "Évalue l'intensité de la dépendance physique à la nicotine pour adapter l'aide au sevrage.",
+      aliases: ['fagerstrom', 'ftnd', 'dependance nicotine', 'tabac dependance'],
+      keywords: ['tabac', 'nicotine', 'dépendance', 'sevrage', 'addiction', 'cigarette', 'substituts'],
+      fields: [
+        {
+          kind: 'choice',
+          id: 'delay',
+          label: 'Délai entre le réveil et la 1re cigarette',
+          options: [
+            { label: '> 60 min', value: 0 },
+            { label: '31–60 min', value: 1 },
+            { label: '6–30 min', value: 2 },
+            { label: '≤ 5 min', value: 3 },
+          ],
+        },
+        {
+          kind: 'choice',
+          id: 'forbidden',
+          label: 'Difficile de s’abstenir dans les lieux interdits',
+          options: [
+            { label: 'Non', value: 0 },
+            { label: 'Oui', value: 1 },
+          ],
+        },
+        {
+          kind: 'choice',
+          id: 'giveUp',
+          label: 'Cigarette la plus difficile à abandonner',
+          options: [
+            { label: 'N’importe quelle autre', value: 0 },
+            { label: 'La première du matin', value: 1 },
+          ],
+        },
+        {
+          kind: 'choice',
+          id: 'number',
+          label: 'Nombre de cigarettes par jour',
+          options: [
+            { label: '≤ 10', value: 0 },
+            { label: '11–20', value: 1 },
+            { label: '21–30', value: 2 },
+            { label: '≥ 31', value: 3 },
+          ],
+        },
+        {
+          kind: 'choice',
+          id: 'morning',
+          label: 'Fume davantage le matin',
+          options: [
+            { label: 'Non', value: 0 },
+            { label: 'Oui', value: 1 },
+          ],
+        },
+        {
+          kind: 'choice',
+          id: 'sick',
+          label: 'Fume même alité(e), malade',
+          options: [
+            { label: 'Non', value: 0 },
+            { label: 'Oui', value: 1 },
+          ],
+        },
+      ],
+      reference: 'Heatherton 1991 (FTND). Score 0–10.',
+    },
+    [
+      { min: 0, level: 'low', label: 'Dépendance faible', detail: 'Score 0–2 : dépendance faible ou absente.' },
+      { min: 3, level: 'moderate', label: 'Dépendance modérée', detail: 'Score 3–4 : dépendance modérée.' },
+      { min: 5, level: 'high', label: 'Dépendance forte', detail: 'Score 5–10 : dépendance forte à très forte — substituts nicotiniques / aide au sevrage recommandés.' },
+    ],
+  ),
 ];

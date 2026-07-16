@@ -2,7 +2,7 @@
  * Scores URGENCES / RÉANIMATION.
  * Profondeur de coma, détérioration clinique précoce, index de choc.
  */
-import { additiveScore, fmt, type ScoreDefinition } from '../types';
+import { additiveScore, fmt, yesNo, type ScoreDefinition } from '../types';
 
 export const URGENCES_SCORES: ScoreDefinition[] = [
   additiveScore(
@@ -216,4 +216,123 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
       return { value: ratio, display: fmt(ratio, 2), interpretation };
     },
   },
+
+  additiveScore(
+    {
+      id: 'sofa',
+      name: 'Sequential Organ Failure Assessment (SOFA)',
+      acronym: 'SOFA',
+      category: 'urgences',
+      purpose:
+        "Quantifie la défaillance de 6 organes en réanimation ; une hausse ≥ 2 points sur un terrain infectieux définit le sepsis (Sepsis-3).",
+      aliases: ['sofa', 'sequential organ failure', 'defaillance multiviscerale'],
+      keywords: ['sepsis', 'réanimation', 'défaillance d’organe', 'gravité', 'mortalité', 'choc septique', 'pronostic'],
+      fields: [
+        {
+          kind: 'choice',
+          id: 'respiration',
+          label: 'Respiration — PaO₂/FiO₂ (mmHg)',
+          options: [
+            { label: '≥ 400', value: 0 },
+            { label: '< 400', value: 1 },
+            { label: '< 300', value: 2 },
+            { label: '< 200 avec support ventilatoire', value: 3 },
+            { label: '< 100 avec support ventilatoire', value: 4 },
+          ],
+        },
+        {
+          kind: 'choice',
+          id: 'coagulation',
+          label: 'Coagulation — plaquettes (×10³/µL)',
+          options: [
+            { label: '≥ 150', value: 0 },
+            { label: '< 150', value: 1 },
+            { label: '< 100', value: 2 },
+            { label: '< 50', value: 3 },
+            { label: '< 20', value: 4 },
+          ],
+        },
+        {
+          kind: 'choice',
+          id: 'liver',
+          label: 'Foie — bilirubine (µmol/L)',
+          options: [
+            { label: '< 20', value: 0 },
+            { label: '20–32', value: 1 },
+            { label: '33–101', value: 2 },
+            { label: '102–204', value: 3 },
+            { label: '> 204', value: 4 },
+          ],
+        },
+        {
+          kind: 'choice',
+          id: 'cardiovascular',
+          label: 'Cardiovasculaire',
+          options: [
+            { label: 'PAM ≥ 70 mmHg', value: 0 },
+            { label: 'PAM < 70 mmHg', value: 1 },
+            { label: 'Dopamine ≤ 5 ou dobutamine', value: 2 },
+            { label: 'Dopamine > 5 ou noradrénaline ≤ 0,1', value: 3 },
+            { label: 'Dopamine > 15 ou noradrénaline > 0,1', value: 4 },
+          ],
+        },
+        {
+          kind: 'choice',
+          id: 'cns',
+          label: 'Neurologique — Glasgow',
+          options: [
+            { label: '15', value: 0 },
+            { label: '13–14', value: 1 },
+            { label: '10–12', value: 2 },
+            { label: '6–9', value: 3 },
+            { label: '< 6', value: 4 },
+          ],
+        },
+        {
+          kind: 'choice',
+          id: 'renal',
+          label: 'Rénal — créatinine (µmol/L)',
+          options: [
+            { label: '< 110', value: 0 },
+            { label: '110–170', value: 1 },
+            { label: '171–299', value: 2 },
+            { label: '300–440', value: 3 },
+            { label: '> 440', value: 4 },
+          ],
+        },
+      ],
+      reference: 'Vincent 1996 / Sepsis-3. Score 0–24. Sepsis = hausse ≥ 2 sur infection.',
+    },
+    [
+      { min: 0, level: 'low', label: 'Défaillance faible', detail: 'Score 0–6 : mortalité globalement < 10 %.' },
+      { min: 7, level: 'moderate', label: 'Défaillance modérée', detail: 'Score 7–9 : mortalité ≈ 15–20 %.' },
+      { min: 10, level: 'high', label: 'Défaillance sévère', detail: 'Score 10–12 : mortalité ≈ 40–50 %.' },
+      { min: 13, level: 'critical', label: 'Défaillance très sévère', detail: 'Score ≥ 13 : mortalité > 50 %.' },
+    ],
+  ),
+
+  additiveScore(
+    {
+      id: 'sirs',
+      name: 'Critères de SIRS (réponse inflammatoire systémique)',
+      acronym: 'SIRS',
+      category: 'urgences',
+      purpose:
+        "Repère un syndrome de réponse inflammatoire systémique (≥ 2 critères) ; sensible mais peu spécifique.",
+      aliases: ['sirs', 'reponse inflammatoire systemique', 'syndrome inflammatoire'],
+      keywords: ['sepsis', 'infection', 'inflammation', 'fièvre', 'tachycardie', 'urgences'],
+      fields: [
+        yesNo('temp', 'Température > 38 °C ou < 36 °C', 1),
+        yesNo('hr', 'Fréquence cardiaque > 90/min', 1),
+        yesNo('rr', 'Fréquence respiratoire > 20/min (ou PaCO₂ < 32 mmHg)', 1),
+        yesNo('wbc', 'Leucocytes > 12 000 ou < 4 000 /mm³ (ou > 10 % formes jeunes)', 1),
+      ],
+      reference: 'Bone 1992. Seuil : ≥ 2 critères.',
+      caution: 'Peu spécifique : un SIRS peut être non infectieux (pancréatite, brûlure, chirurgie).',
+    },
+    [
+      { min: 0, level: 'low', label: 'Pas de SIRS', detail: 'Moins de 2 critères : pas de SIRS.' },
+      { min: 2, level: 'moderate', label: 'SIRS présent', detail: '≥ 2 critères : SIRS — rechercher une cause (infectieuse ou non).' },
+    ],
+  ),
 ];
