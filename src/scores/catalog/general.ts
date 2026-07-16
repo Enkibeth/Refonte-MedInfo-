@@ -74,6 +74,51 @@ export const GENERAL_SCORES: ScoreDefinition[] = [
   },
 
   {
+    id: 'ganzoni',
+    name: 'Déficit en fer (formule de Ganzoni)',
+    acronym: 'Ganzoni',
+    category: 'general',
+    purpose:
+      "Estime le déficit TOTAL en fer d'un patient (mg) à recharger, pour calculer la dose d'une supplémentation martiale (souvent par voie intraveineuse).",
+    aliases: ['ganzoni', 'deficit en fer', 'déficit martial', 'dose de fer', 'carence martiale', 'iron deficit'],
+    keywords: [
+      'fer',
+      'carence en fer',
+      'anémie',
+      'anémie ferriprive',
+      'déficit martial',
+      'supplémentation en fer',
+      'fer injectable',
+      'fer intraveineux',
+      'besoin en fer',
+      'hémoglobine',
+    ],
+    fields: [
+      { kind: 'number', id: 'weight', label: 'Poids', unit: 'kg', min: 3, max: 250, step: 0.1, placeholder: 'ex. 70' },
+      { kind: 'number', id: 'hbActual', label: 'Hémoglobine actuelle', unit: 'g/dL', min: 3, max: 20, step: 0.1, placeholder: 'ex. 9' },
+      { kind: 'number', id: 'hbTarget', label: 'Hémoglobine cible', unit: 'g/dL', min: 10, max: 18, step: 0.1, default: 15, placeholder: '15' },
+    ],
+    reference:
+      'Ganzoni 1970. Déficit (mg) = poids × (Hb cible − Hb actuelle) × 2,4 + réserves (500 mg si ≥ 35 kg, sinon 15 mg/kg).',
+    caution:
+      'Hémoglobine à saisir en g/dL. Estimation pour le calcul de dose (ferrothérapie IV) : vérifier bilan martial, cause du déficit et protocole du produit.',
+    compute: (v) => {
+      const { weight, hbActual, hbTarget } = v;
+      if (![weight, hbActual, hbTarget].every(Number.isFinite) || weight <= 0) {
+        return incompleteResult('Renseignez le poids, l’Hb actuelle et l’Hb cible.');
+      }
+      const depot = weight >= 35 ? 500 : 15 * weight;
+      const deltaHb = Math.max(0, hbTarget - hbActual);
+      const deficit = weight * deltaHb * 2.4 + depot;
+      const interpretation: ScoreInterpretation =
+        deltaHb === 0
+          ? { level: 'info', label: 'Réserves seulement', detail: `Hb déjà ≥ cible : seule la reconstitution des réserves est estimée (${fmt(depot)} mg).` }
+          : { level: 'info', label: 'Déficit en fer estimé', detail: `Déficit total ≈ ${fmt(deficit)} mg de fer à recharger (dont ${fmt(depot)} mg de réserves). Adapter à la ferrothérapie choisie (souvent IV).` };
+      return { value: deficit, display: `${fmt(deficit)} mg`, interpretation };
+    },
+  },
+
+  {
     id: 'audit-c',
     name: 'AUDIT-C (repérage de la consommation d’alcool)',
     acronym: 'AUDIT-C',

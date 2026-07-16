@@ -222,6 +222,22 @@ describe('scores — exactitude des formules', () => {
     expect(r.value).toBeCloseTo(22.86, 1);
     expect(r.interpretation.level).toBe('low');
   });
+
+  it('Ganzoni : 70 kg, Hb 9 → 15 g/dL = 1508 mg (réserves 500)', () => {
+    const r = compute('ganzoni', { weight: 70, hbActual: 9, hbTarget: 15 });
+    expect(r.value).toBe(1508);
+  });
+
+  it('Ganzoni : Hb déjà ≥ cible → réserves seulement (500 mg ≥ 35 kg)', () => {
+    const r = compute('ganzoni', { weight: 70, hbActual: 15, hbTarget: 15 });
+    expect(r.value).toBe(500);
+    expect(r.interpretation.label).toBe('Réserves seulement');
+  });
+
+  it('Ganzoni : enfant < 35 kg → réserves = 15 mg/kg (20 kg, Hb 8 → 12 = 492 mg)', () => {
+    const r = compute('ganzoni', { weight: 20, hbActual: 8, hbTarget: 12 });
+    expect(r.value).toBe(492);
+  });
 });
 
 describe('scores — recherche par NOM', () => {
@@ -271,6 +287,11 @@ describe('scores — recherche par FONCTION (nom oublié)', () => {
     const ids = searchScores('alcool dépistage').map((s) => s.id);
     expect(ids).toContain('audit-c');
     expect(ids).toContain('cage');
+  });
+
+  it('« déficit en fer » et « carence martiale anémie » retrouvent le Ganzoni', () => {
+    expect(searchScores('déficit en fer').map((s) => s.id)).toContain('ganzoni');
+    expect(searchScores('carence fer anémie').map((s) => s.id)).toContain('ganzoni');
   });
 });
 
