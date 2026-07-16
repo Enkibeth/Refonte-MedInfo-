@@ -114,6 +114,7 @@ export const tokens = {
       rose: { fg: '#B01E45', bg: '#FCE5EC' },
       violet: { fg: '#5B34C7', bg: '#ECE6FC' },
       teal: { fg: '#0C6E67', bg: '#DCF2F0' },
+      indigo: { fg: '#4338CA', bg: '#E7E9FE' },
       slate: { fg: palette.neutral700, bg: palette.neutral100 },
     },
   },

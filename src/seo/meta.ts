@@ -269,6 +269,13 @@ export const PAGE_SEO = {
       'Structurez votre manuscrit scientifique : gabarits IMRaD, compteurs par section, ' +
       'bibliographie DOI/PMID, citations Vancouver ou APA, export Word.',
   },
+  scores: {
+    path: '/scores',
+    title: 'Scores médicaux — calculateurs cliniques et interprétation',
+    description:
+      'Calculez les scores médicaux courants (CHA₂DS₂-VASc, Glasgow, CURB-65, CKD-EPI, MELD…) : ' +
+      'boutons interactifs, interprétation immédiate, recherche par nom ou par fonction.',
+  },
 
   // ── Pages légales : indexables, description honnête (confiance E-E-A-T). ──
   mentionsLegales: {

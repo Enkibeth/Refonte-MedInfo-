@@ -29,6 +29,7 @@ const FEATURE_TINTS: Record<AppFeatureId, FeatureTint> = {
   presentation: tokens.colors.tints.violet,
   'cv-builder': tokens.colors.tints.teal,
   article: tokens.colors.tints.slate,
+  scores: tokens.colors.tints.indigo,
 };
 
 export function featureTint(id: AppFeatureId): FeatureTint {

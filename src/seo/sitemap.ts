@@ -29,6 +29,7 @@ export const STATIC_SITEMAP_ENTRIES: SitemapEntry[] = [
   { path: PAGE_SEO.presentation.path, changefreq: 'monthly', priority: 0.6 },
   { path: PAGE_SEO.cvBuilder.path, changefreq: 'monthly', priority: 0.6 },
   { path: PAGE_SEO.article.path, changefreq: 'monthly', priority: 0.6 },
+  { path: PAGE_SEO.scores.path, changefreq: 'monthly', priority: 0.6 },
   { path: PAGE_SEO.contact.path, changefreq: 'monthly', priority: 0.5 },
   { path: PAGE_SEO.mentionsLegales.path, changefreq: 'yearly', priority: 0.3 },
   { path: PAGE_SEO.cgu.path, changefreq: 'yearly', priority: 0.3 },

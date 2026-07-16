@@ -15,7 +15,7 @@
  */
 import type { Persona } from '@/ai/prompts/_schema';
 
-export type AppFeatureId = 'chat' | 'document' | 'ecos' | 'partiel' | 'revision' | 'audio' | 'presentation' | 'cv-builder' | 'article';
+export type AppFeatureId = 'chat' | 'document' | 'ecos' | 'partiel' | 'revision' | 'audio' | 'presentation' | 'cv-builder' | 'article' | 'scores';
 
 /** Nom d'icône (src/ui/icons.tsx) — l'UI n'utilise plus d'emojis (refonte 2026-06). */
 export type AppFeatureIcon =
@@ -27,7 +27,8 @@ export type AppFeatureIcon =
   | 'micVoice'
   | 'presentation'
   | 'idCard'
-  | 'penLine';
+  | 'penLine'
+  | 'calculator';
 
 export interface AppFeatureMeta {
   id: AppFeatureId;
@@ -137,6 +138,16 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     icon: 'penLine',
     description:
       'Rédige ton article ou ta thèse : plan IMRaD, compteurs de caractères, bibliographie Vancouver, aides IA et contrôle d’originalité.',
+    personas: ['student', 'professional'],
+  },
+  {
+    id: 'scores',
+    route: '/(chat)/scores',
+    label: 'Scores',
+    emoji: '🧮',
+    icon: 'calculator',
+    description:
+      'Scores et calculateurs cliniques interactifs (CHA₂DS₂-VASc, Glasgow, CKD-EPI…) avec interprétation, recherche par nom ou par fonction.',
     personas: ['student', 'professional'],
   },
 ];
