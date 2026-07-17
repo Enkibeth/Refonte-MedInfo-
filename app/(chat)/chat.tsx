@@ -72,6 +72,8 @@ import { AssistantBlocks, SourcesBlock } from '@/ui/chat/AssistantBlocks';
 import { QcmLauncher } from '@/ui/chat/QcmCard';
 import { ChatbotSwitcher, CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
 import { ConversationList, HistoryPanel } from '@/ui/chat/HistoryPanel';
+import { CountrySelector } from '@/ui/chat/CountrySelector';
+import { coerceCountry, type CountryCode } from '@/ai/chat/country';
 import { SourceDetailModal } from '@/ui/chat/SourceDetailModal';
 import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 
@@ -419,6 +421,24 @@ export default function ChatScreen() {
       // best-effort : la préférence n'est pas critique
     }
   }, [historyCollapsed]);
+  // Pays d'exercice : oriente les sources privilégiées par l'assistant (envoyé dans
+  // le body de /api/chat, persistance localStorage web only).
+  const [country, setCountry] = useState<CountryCode | null>(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
+    try {
+      return coerceCountry(window.localStorage.getItem('medinfo:chatCountry'));
+    } catch {
+      return null;
+    }
+  });
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !country) return;
+    try {
+      window.localStorage.setItem('medinfo:chatCountry', country);
+    } catch {
+      // best-effort
+    }
+  }, [country]);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [conversationsLoading, setConversationsLoading] = useState(true);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -474,6 +494,8 @@ export default function ChatScreen() {
   chatbotRef.current = chatbot;
   const personalInfoRef = useRef(personalInfo);
   personalInfoRef.current = personalInfo;
+  const countryRef = useRef(country);
+  countryRef.current = country;
   const conversationIdRef = useRef<string | null>(null);
   const titleGeneratedRef = useRef(false);
   const firstUserTextRef = useRef('');
@@ -490,6 +512,7 @@ export default function ChatScreen() {
         body: () => ({
           chatbot: chatbotRef.current,
           personalInfo: personalInfoRef.current ?? undefined,
+          country: countryRef.current ?? undefined,
           // Résilience hors-ligne : le serveur archive la réponse dans cette conversation
           // même si la page est suspendue pendant le streaming (voir /api/chat).
           conversationId: conversationIdRef.current ?? undefined,
@@ -983,6 +1006,7 @@ export default function ChatScreen() {
           </Text>
         </View>
         <View style={styles.headerActions}>
+          <CountrySelector value={country} onChange={setCountry} />
           {latestSources.length > 0 ? (
             <TouchableOpacity
               style={[styles.sourcesPill, sourcesOpen && styles.sourcesPillActive]}

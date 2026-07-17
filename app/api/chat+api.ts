@@ -35,6 +35,8 @@ import {
   coercePersonalInfo,
   type ChatbotId,
 } from '@/ai/chat/chatContext';
+import { buildCountryContextSection, coerceCountry } from '@/ai/chat/country';
+import { buildPharmacologySection } from '@/ai/chat/pharmacology';
 import {
   buildChatTools,
   buildChatToolsSection,
@@ -68,6 +70,7 @@ export async function POST(request: Request): Promise<Response> {
     messages?: unknown[];
     chatbot?: unknown;
     personalInfo?: unknown;
+    country?: unknown;
     conversationId?: unknown;
     regenerate?: unknown;
   };
@@ -79,6 +82,7 @@ export async function POST(request: Request): Promise<Response> {
 
   const uiMessages = Array.isArray(body.messages) ? body.messages : [];
   const personalInfo = coercePersonalInfo(body.personalInfo);
+  const country = coerceCountry(body.country);
 
   // Persona vérifiée côté serveur (token → profil). Le body ne donne JAMAIS de droits :
   // il exprime seulement quel chatbot l'utilisateur veut utiliser, parmi ceux autorisés.
@@ -142,7 +146,7 @@ export async function POST(request: Request): Promise<Response> {
     Boolean(process.env.ANTHROPIC_API_KEY) &&
     resolvePubmedMcpUrl() !== null;
 
-  const system = `${template}${buildUserContextSection(personalInfo)}${buildChatToolsSection(chatbot, { pubmedMcp: mcpServers !== null, pubmedAgent })}`;
+  const system = `${template}${buildUserContextSection(personalInfo)}${buildCountryContextSection(country)}${buildChatToolsSection(chatbot, { pubmedMcp: mcpServers !== null, pubmedAgent })}${buildPharmacologySection(chatbot)}`;
 
   // Workflow agents (ADR-0030) : le modèle orchestre des outils qualité serveur
   // (Europe PMC, ClinicalTrials.gov pour le pro, vérification des liens sources).
