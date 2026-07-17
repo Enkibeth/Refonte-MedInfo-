@@ -1,0 +1,52 @@
+# MedInfo AI — pentest agentique Strix sur les pull requests
+name: strix-security
+
+on:
+  pull_request:
+    branches: [dev, staging, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: strix-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security-scan:
+    name: "Strix — quick security scan"
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Verify Strix secrets
+        env:
+          STRIX_LLM: ${{ secrets.STRIX_LLM }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        run: |
+          if [ -z "$STRIX_LLM" ] || [ -z "$LLM_API_KEY" ]; then
+            echo "Missing repository secrets: STRIX_LLM and/or LLM_API_KEY." >&2
+            echo "Example STRIX_LLM: anthropic/claude-sonnet-4-6" >&2
+            exit 1
+          fi
+
+      - name: Install Strix
+        run: curl --fail --silent --show-error --location https://strix.ai/install | bash
+
+      - name: Run Strix on pull-request diff
+        env:
+          STRIX_LLM: ${{ secrets.STRIX_LLM }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          STRIX_REASONING_EFFORT: medium
+        run: |
+          strix -n \
+            --target ./ \
+            --scan-mode quick \
+            --scope-mode diff \
+            --diff-base "origin/${{ github.base_ref }}"
