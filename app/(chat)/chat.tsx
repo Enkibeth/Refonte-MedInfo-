@@ -74,6 +74,11 @@ import { ChatbotSwitcher, CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
 import { ConversationList, HistoryPanel } from '@/ui/chat/HistoryPanel';
 import { CountrySelector } from '@/ui/chat/CountrySelector';
 import { coerceCountry, type CountryCode } from '@/ai/chat/country';
+import {
+  ATTACHMENT_ACCEPT,
+  ATTACHMENT_MAX_BYTES,
+  type ChatAttachment,
+} from '@/ai/chat/attachment';
 import { SourceDetailModal } from '@/ui/chat/SourceDetailModal';
 import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 
@@ -368,6 +373,24 @@ function activeToolLabel(message: UIMessage | undefined): string | null {
   return null;
 }
 
+/** Type MIME d'un fichier joint (déclaré par le navigateur, sinon déduit de l'extension). */
+function guessAttachmentMediaType(name: string, declared: string): string {
+  const clean = (declared || '').toLowerCase().split(';')[0].trim();
+  if (clean) return clean;
+  const ext = name.toLowerCase().split('.').pop() ?? '';
+  const map: Record<string, string> = {
+    pdf: 'application/pdf',
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp',
+    md: 'text/markdown',
+    csv: 'text/csv',
+    txt: 'text/plain',
+  };
+  return map[ext] ?? '';
+}
+
 // ── Écran principal ────────────────────────────────────────────────────────────
 
 export default function ChatScreen() {
@@ -393,6 +416,9 @@ export default function ChatScreen() {
   const guestLocked = isGuest && guestUsed;
 
   const canSwitch = isAdmin || persona === 'student' || persona === 'professional';
+  // Pièce jointe : réservée aux comptes vérifiés étudiant/pro (+ admin), web only
+  // (extraction/lecture du fichier côté navigateur). Le serveur regarde la persona.
+  const canAttach = Platform.OS === 'web' && !!session && canSwitch;
   const availableChatbots: ChatbotId[] =
     canSwitch || isGuest ? ['public', 'student', 'professional'] : ['public'];
   const defaultChatbot: ChatbotId =
@@ -439,6 +465,9 @@ export default function ChatScreen() {
       // best-effort
     }
   }, [country]);
+  // Pièce jointe (document) — réservé aux comptes vérifiés étudiant/pro (+ admin), web only.
+  const [attachment, setAttachment] = useState<ChatAttachment | null>(null);
+  const [attachError, setAttachError] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [conversationsLoading, setConversationsLoading] = useState(true);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -496,6 +525,8 @@ export default function ChatScreen() {
   personalInfoRef.current = personalInfo;
   const countryRef = useRef(country);
   countryRef.current = country;
+  const attachmentRef = useRef(attachment);
+  attachmentRef.current = attachment;
   const conversationIdRef = useRef<string | null>(null);
   const titleGeneratedRef = useRef(false);
   const firstUserTextRef = useRef('');
@@ -513,6 +544,7 @@ export default function ChatScreen() {
           chatbot: chatbotRef.current,
           personalInfo: personalInfoRef.current ?? undefined,
           country: countryRef.current ?? undefined,
+          attachment: attachmentRef.current ?? undefined,
           // Résilience hors-ligne : le serveur archive la réponse dans cette conversation
           // même si la page est suspendue pendant le streaming (voir /api/chat).
           conversationId: conversationIdRef.current ?? undefined,
@@ -561,7 +593,7 @@ export default function ChatScreen() {
   statusRef.current = status;
 
   const isLoading = status === 'streaming' || status === 'submitted';
-  const canSend = !isLoading && input.trim().length > 0 && !guestLocked;
+  const canSend = !isLoading && (input.trim().length > 0 || !!attachment) && !guestLocked;
 
   // C4 : un long texte collé dans le chat public ressemble à un document (compte
   // rendu, ordonnance…) — l'outil Analyse de document est fait pour ça.
@@ -740,7 +772,11 @@ export default function ChatScreen() {
   const sendText = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed) return;
+      const att = attachmentRef.current;
+      if (!trimmed && !att) return;
+      // Marqueur visible/archivé de la pièce jointe ; le fichier lui-même part dans
+      // le body (transitoire, jamais stocké).
+      const displayText = att ? `${trimmed}${trimmed ? '\n\n' : ''}📎 ${att.name}` : trimmed;
 
       // Essai sans inscription : un seul message gratuit, l'indicateur passe à 0/1.
       if (isGuest) {
@@ -756,16 +792,21 @@ export default function ChatScreen() {
           conversationIdRef.current = id;
           setConversationId(id);
           titleGeneratedRef.current = false;
-          firstUserTextRef.current = trimmed;
+          firstUserTextRef.current = displayText;
         }
       }
       if (user && conversationIdRef.current) {
-        void saveMessage(conversationIdRef.current, user.id, 'user', trimmed);
+        void saveMessage(conversationIdRef.current, user.id, 'user', displayText);
       }
       awaitingRef.current = true;
       regenerateRef.current = false;
       setStoppedNotice(false);
-      sendMessage({ text: trimmed });
+      sendMessage({ text: displayText });
+      // La pièce jointe (lue par le transport ci-dessus) ne vaut que pour ce message.
+      if (att) {
+        setAttachment(null);
+        setAttachError(null);
+      }
       // Envoyer ramène toujours le fil en bas, même si on relisait plus haut.
       scrollToBottom();
     },
@@ -788,6 +829,43 @@ export default function ChatScreen() {
       (e as unknown as { preventDefault?: () => void }).preventDefault?.();
       handleSend();
     }
+  };
+
+  // Sélection d'un document (web only) : input DOM éphémère → lecture base64 côté client.
+  // Le fichier ne quitte l'appareil qu'au moment de l'envoi (body de /api/chat) et n'est
+  // jamais stocké côté serveur (seule la réponse est archivée).
+  const pickAttachment = () => {
+    if (typeof document === 'undefined') return;
+    setAttachError(null);
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = ATTACHMENT_ACCEPT;
+    input.onchange = () => {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      if (file.size > ATTACHMENT_MAX_BYTES) {
+        setAttachError('Fichier trop volumineux (maximum 6 Mo).');
+        return;
+      }
+      const mediaType = guessAttachmentMediaType(file.name, file.type);
+      if (!mediaType) {
+        setAttachError('Format non pris en charge (PDF, image ou texte).');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = typeof reader.result === 'string' ? reader.result : '';
+        const base64 = result.includes(',') ? result.slice(result.indexOf(',') + 1) : '';
+        if (!base64) {
+          setAttachError('Lecture du fichier impossible.');
+          return;
+        }
+        setAttachment({ name: file.name || 'Document', mediaType, dataBase64: base64 });
+      };
+      reader.onerror = () => setAttachError('Lecture du fichier impossible.');
+      reader.readAsDataURL(file);
+    };
+    input.click();
   };
 
   // Arrêt volontaire de la génération : on n'attend plus la réponse (pas de reprise
@@ -1350,6 +1428,23 @@ export default function ChatScreen() {
             </TouchableOpacity>
           </View>
         ) : null}
+        {attachment ? (
+          <View style={styles.attachmentChip}>
+            <Icon name="paperclip" size={14} color={tokens.colors.accentDeep} />
+            <Text style={styles.attachmentName} numberOfLines={1}>
+              {attachment.name}
+            </Text>
+            <Pressable
+              onPress={() => setAttachment(null)}
+              accessibilityRole="button"
+              accessibilityLabel="Retirer le document"
+              hitSlop={8}
+            >
+              <Icon name="x" size={14} color={tokens.colors.textMuted} />
+            </Pressable>
+          </View>
+        ) : null}
+        {attachError ? <Text style={styles.attachError}>{attachError}</Text> : null}
         <View style={[styles.composer, inputFocused && styles.composerFocused]}>
           <TextInput
             style={styles.input}
@@ -1374,6 +1469,17 @@ export default function ChatScreen() {
             onKeyPress={handleInputKeyPress}
           />
           <View style={styles.composerActions}>
+            {canAttach ? (
+              <Pressable
+                onPress={pickAttachment}
+                accessibilityRole="button"
+                accessibilityLabel="Joindre un document"
+                disabled={isLoading}
+                style={styles.attachButton}
+              >
+                <Icon name="paperclip" size={18} color={tokens.colors.accentDeep} />
+              </Pressable>
+            ) : null}
             {!isGuest ? (
               <DictationButton
                 onTranscript={(text) => setInput((prev) => (prev.trim() ? `${prev.trim()} ${text}` : text))}
@@ -1977,6 +2083,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.space.xs,
   },
   composerSpacer: { flex: 1 },
+  attachButton: {
+    width: tokens.size.iconButton,
+    height: tokens.size.iconButton,
+    borderRadius: tokens.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: tokens.colors.accentSurface,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+  },
+  attachmentChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accentSurface,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.xs + 2,
+    marginBottom: tokens.space.sm,
+  },
+  attachmentName: {
+    flexShrink: 1,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  attachError: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.danger,
+    fontSize: tokens.type.caption.fontSize,
+    marginBottom: tokens.space.sm,
+  },
   input: {
     minHeight: 36,
     maxHeight: 140,

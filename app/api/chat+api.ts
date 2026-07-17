@@ -37,6 +37,8 @@ import {
 } from '@/ai/chat/chatContext';
 import { buildCountryContextSection, coerceCountry } from '@/ai/chat/country';
 import { buildPharmacologySection } from '@/ai/chat/pharmacology';
+import { appendAttachmentToModelMessages, coerceChatAttachment } from '@/ai/chat/attachment';
+import { isAdminUserId } from '@/admin/index';
 import {
   buildChatTools,
   buildChatToolsSection,
@@ -71,6 +73,7 @@ export async function POST(request: Request): Promise<Response> {
     chatbot?: unknown;
     personalInfo?: unknown;
     country?: unknown;
+    attachment?: unknown;
     conversationId?: unknown;
     regenerate?: unknown;
   };
@@ -125,6 +128,20 @@ export async function POST(request: Request): Promise<Response> {
   ]);
 
   const modelMessages = await convertToModelMessages(uiMessages as any);
+
+  // Pièce jointe (document) : réservée aux comptes vérifiés étudiant/pro (+ admin).
+  // Le body ne donne AUCUN droit : la garde est dérivée de la persona serveur. Le
+  // document est transmis au modèle multimodal puis OUBLIÉ (jamais stocké).
+  const attachment = coerceChatAttachment(body.attachment);
+  const canAttach =
+    resolution.verified &&
+    (resolution.persona === 'student' ||
+      resolution.persona === 'professional' ||
+      (!!resolution.userId && isAdminUserId(resolution.userId)));
+  if (attachment && canAttach) {
+    appendAttachmentToModelMessages(modelMessages as any, attachment);
+  }
+
   const { tools: webTools, ...callOptions } = runtime.options;
 
   // PubMed pour le chatbot pro (suivi ADR-0030), deux voies :

@@ -77,6 +77,8 @@ export const ICON_PATHS = {
   scale: 'M12 3v18 M7 8l-4 7a4 4 0 0 0 8 0z M17 8l-4 7a4 4 0 0 0 8 0z M7 8h10 M5 21h14',
   moon: 'M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z',
   personStanding: 'M12 5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z M9 20l3-6 3 6 M6 8l6 2 6-2 M12 10v4',
+  paperclip:
+    'M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48',
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;
