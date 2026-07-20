@@ -83,7 +83,7 @@ function ScoresInner() {
         </View>
         <Text style={styles.title}>Scores médicaux</Text>
         <Text style={styles.subtitle}>
-          {ALL_SCORES.length} scores et calculateurs cliniques — boutons interactifs et
+          {ALL_SCORES.length} scores et calculateurs cliniques : boutons interactifs et
           interprétation immédiate. Calcul privé, sur ton appareil.
         </Text>
       </View>
@@ -315,7 +315,7 @@ function ScoreDetail({ def, onBack }: { def: ScoreDefinition; onBack: () => void
         </View>
       ) : null}
       <Text style={styles.disclaimer}>
-        Aide à la décision destinée aux professionnels et étudiants en santé — ne remplace ni le
+        Aide à la décision destinée aux professionnels et étudiants en santé. Ne remplace ni le
         jugement clinique ni les recommandations en vigueur.
       </Text>
     </ScrollView>

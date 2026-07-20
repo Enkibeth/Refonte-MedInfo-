@@ -63,7 +63,7 @@ export const HEPATO_SCORES: ScoreDefinition[] = [
       acronym: 'Child-Pugh',
       category: 'hepato',
       purpose:
-        "Évalue la gravité d'une cirrhose (classes A/B/C) — pronostic, opérabilité et adaptation de certains traitements.",
+        "Évalue la gravité d'une cirrhose (classes A/B/C) : pronostic, opérabilité et adaptation de certains traitements.",
       aliases: ['child pugh', 'child', 'child-pugh-turcotte', 'cirrhose score'],
       keywords: [
         'cirrhose',

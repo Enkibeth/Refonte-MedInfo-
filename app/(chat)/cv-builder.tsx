@@ -54,7 +54,7 @@ function CvBuilderInner() {
         <Text style={styles.title}>Créateur de CV</Text>
         <Text style={styles.subtitle}>
           Construis ton CV médical, fais-le relire par l'IA (suggestions à valider) et exporte
-          un PDF propre — la création, l'édition et l'export sont gratuits.
+          un PDF propre. La création, l'édition et l'export sont gratuits.
         </Text>
       </View>
 

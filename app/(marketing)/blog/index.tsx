@@ -58,7 +58,7 @@ export default function BlogScreen() {
             <Text style={styles.title}>Comprendre la santé, un article à la fois.</Text>
             <Text style={styles.lead}>
               Prévention, recherche, idées reçues : des articles d'information générale, sourcés
-              et relus — jamais un avis médical individuel.
+              et relus. Jamais un avis médical individuel.
             </Text>
           </Reveal>
 
@@ -75,7 +75,7 @@ export default function BlogScreen() {
               <View style={styles.emptyCard}>
                 <Text style={styles.emptyTitle}>Les premiers articles arrivent bientôt</Text>
                 <Text style={styles.emptyText}>
-                  En attendant, posez vos questions directement au chat MedInfo AI — le premier
+                  En attendant, posez vos questions directement au chat MedInfo AI : le premier
                   message est sans inscription.
                 </Text>
               </View>

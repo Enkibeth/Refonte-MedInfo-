@@ -20,7 +20,7 @@ export const DEFAULT_SITE_URL = 'https://refonte-med-info.vercel.app';
 
 export const DEFAULT_DESCRIPTION =
   "Assistant IA d'information médicale en français : réponses sourcées (HAS, ANSM, PubMed), " +
-  'liens vérifiés, 3 chatbots — grand public, étudiants et professionnels de santé.';
+  'liens vérifiés, 3 chatbots pour le grand public, les étudiants et les professionnels de santé.';
 
 /** Base absolue du site, sans slash final. */
 export function siteUrl(): string {
@@ -282,7 +282,7 @@ export const PAGE_SEO = {
     path: '/mentions-legales',
     title: 'Mentions légales',
     description:
-      'Éditeur, hébergement et contacts du site MedInfo AI — les informations prévues par ' +
+      'Éditeur, hébergement et contacts du site MedInfo AI : les informations prévues par ' +
       "la loi pour la confiance dans l'économie numérique (LCEN).",
   },
   cgu: {

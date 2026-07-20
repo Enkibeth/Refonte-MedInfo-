@@ -86,7 +86,7 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
     acronym: 'Cockcroft-Gault',
     category: 'nephro',
     purpose:
-      "Estime la clairance de la créatinine (non indexée à la surface corporelle) — reste la référence pour l'adaptation posologique de nombreux médicaments (AOD, aminosides…).",
+      "Estime la clairance de la créatinine (non indexée à la surface corporelle) ; reste la référence pour l'adaptation posologique de nombreux médicaments (AOD, aminosides…).",
     aliases: ['cockcroft', 'cockroft', 'cockcroft gault', 'clairance créatinine'],
     keywords: [
       'clairance',
@@ -322,7 +322,7 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
     acronym: 'FeUrée',
     category: 'nephro',
     purpose:
-      "Distingue une insuffisance rénale aiguë fonctionnelle d'une organique — reste interprétable SOUS diurétiques (contrairement à la FeNa).",
+      "Distingue une insuffisance rénale aiguë fonctionnelle d'une organique ; reste interprétable SOUS diurétiques (contrairement à la FeNa).",
     aliases: ['feuree', 'fraction excretion uree', 'excretion uree'],
     keywords: ['insuffisance rénale aiguë', 'IRA', 'fonctionnelle', 'organique', 'diurétiques', 'urée urinaire', 'oligurie'],
     fields: [

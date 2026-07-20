@@ -131,7 +131,7 @@
   .gauge > i.over { background: var(--danger); }
 
   /* ── Éditeur de section ────────────────────────────────────── */
-  .sec-title { font-family: 'Fraunces', Georgia, serif; font-size: 22px; color: var(--accent-deep); border: none; width: 100%; padding: 4px 0 6px; background: transparent; }
+  .sec-title { font-family: 'Source Serif 4', Georgia, serif; font-size: 22px; color: var(--accent-deep); border: none; width: 100%; padding: 4px 0 6px; background: transparent; }
   .sec-title:focus { outline: none; }
   .guide { font-size: 12px; color: var(--muted); background: var(--bg); border-left: 3px solid var(--accent-tint); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px; line-height: 1.5; }
   .sec-text {
@@ -164,10 +164,10 @@
 
   /* ── Aperçu ────────────────────────────────────────────────── */
   .paper { max-width: 760px; margin: 0 auto; background: var(--surface); }
-  .paper h1 { font-family: 'Fraunces', Georgia, serif; font-size: 26px; color: var(--ink); line-height: 1.25; margin-bottom: 6px; }
+  .paper h1 { font-family: 'Source Serif 4', Georgia, serif; font-size: 26px; color: var(--ink); line-height: 1.25; margin-bottom: 6px; }
   .paper .byline { font-size: 13px; color: var(--ink2); margin-bottom: 2px; }
   .paper .kw { font-size: 12px; color: var(--muted); margin-bottom: 18px; }
-  .paper h2 { font-family: 'Fraunces', Georgia, serif; font-size: 18px; color: var(--accent-deep); margin: 22px 0 8px; }
+  .paper h2 { font-family: 'Source Serif 4', Georgia, serif; font-size: 18px; color: var(--accent-deep); margin: 22px 0 8px; }
   .paper p { margin: 0 0 10px; font-size: 14.5px; line-height: 1.75; white-space: pre-wrap; }
   .paper ol.refs { padding-left: 22px; font-size: 13px; line-height: 1.6; }
   .paper ol.refs li { margin-bottom: 7px; }
@@ -177,7 +177,7 @@
   .drawer { position: fixed; top: 0; right: 0; height: 100vh; width: 420px; max-width: 94vw; background: var(--surface); border-left: 1px solid var(--line); box-shadow: -8px 0 28px rgba(8,40,60,.14); transform: translateX(100%); transition: transform .22s ease; z-index: 40; display: flex; flex-direction: column; }
   .drawer.open { transform: translateX(0); }
   .drawer header { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; }
-  .drawer header h2 { font-family: 'Fraunces', Georgia, serif; font-size: 16px; color: var(--accent-deep); flex: 1; }
+  .drawer header h2 { font-family: 'Source Serif 4', Georgia, serif; font-size: 16px; color: var(--accent-deep); flex: 1; }
   .drawer .scroll { flex: 1; overflow-y: auto; padding: 14px 16px; }
   .proposal { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg); padding: 10px 12px; font-size: 13px; line-height: 1.65; white-space: pre-wrap; max-height: 320px; overflow-y: auto; }
   .chgline { font-size: 12px; color: var(--ink2); padding: 3px 0 3px 14px; position: relative; }
@@ -205,7 +205,7 @@
   .modal.open { display: flex; }
   .modal .sheet2 { background: #fff; border-radius: var(--radius); width: 500px; max-width: 94vw; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 18px 50px rgba(8,40,60,.3); }
   .modal header { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; }
-  .modal header h2 { font-family: 'Fraunces', serif; font-size: 16px; color: var(--accent-deep); flex: 1; }
+  .modal header h2 { font-family: 'Source Serif 4', serif; font-size: 16px; color: var(--accent-deep); flex: 1; }
   .modal .list { overflow-y: auto; padding: 8px; }
   .histrow { display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: 8px; cursor: pointer; }
   .histrow:hover { background: var(--accent-soft); }
@@ -613,7 +613,7 @@
         gTxt.style.display = '';
         gBar.style.width = Math.min(100, (gv / gl.max) * 100) + '%';
         gBar.className = gaugeClass(gv, gl.max);
-        gTxt.textContent = fmtN(gv) + ' / ' + fmtN(gl.max) + ' ' + KIND_SHORT[gl.kind] + (gv > gl.max ? ' — limite dépassée' : '');
+        gTxt.textContent = fmtN(gv) + ' / ' + fmtN(gl.max) + ' ' + KIND_SHORT[gl.kind] + (gv > gl.max ? ' · limite dépassée' : '');
         gTxt.style.color = gv > gl.max ? 'var(--danger)' : 'var(--muted)';
       } else {
         gBar.parentElement.style.display = 'none';
@@ -895,7 +895,7 @@
     root.innerHTML = '';
     var order = citationOrder();
 
-    root.appendChild(el('h2', { style: "font-family:'Fraunces',Georgia,serif;font-size:20px;color:var(--accent-deep);margin-bottom:10px" }, ['Bibliographie (' + art.references.length + ')']));
+    root.appendChild(el('h2', { style: "font-family:'Source Serif 4',Georgia,serif;font-size:20px;color:var(--accent-deep);margin-bottom:10px" }, ['Bibliographie (' + art.references.length + ')']));
 
     // Style
     var segV = el('button', { class: art.meta.refStyle !== 'apa' ? 'on' : '' }, ['Vancouver [1]']);
@@ -905,7 +905,7 @@
     root.appendChild(el('div', { style: 'margin-bottom:12px' }, [el('span', { class: 'seg' }, [segV, segA])]));
 
     // Import DOI / PMID
-    var impIn = el('input', { placeholder: 'DOI (10.xxxx/…) ou PMID (ex. 34320281) — métadonnées réelles via CrossRef / Europe PMC', id: 'imp-in' });
+    var impIn = el('input', { placeholder: 'DOI (10.xxxx/…) ou PMID (ex. 34320281) : métadonnées réelles via CrossRef / Europe PMC', id: 'imp-in' });
     var impBtn = el('button', { class: 'btn btn-accent' }, ['Ajouter']);
     impBtn.addEventListener('click', function () { importRef(impIn.value, impBtn); });
     impIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') importRef(impIn.value, impBtn); });
@@ -913,7 +913,7 @@
 
     // Alertes cohérence
     if (order.unknown.length) {
-      root.appendChild(el('div', { class: 'warnbox' }, ['Appels sans référence : ' + order.unknown.map(function (u) { return '[@' + u + ']'; }).join(', ') + ' — corrige le texte ou ajoute la référence.']));
+      root.appendChild(el('div', { class: 'warnbox' }, ['Appels sans référence : ' + order.unknown.map(function (u) { return '[@' + u + ']'; }).join(', ') + '. Corrige le texte ou ajoute la référence.']));
     }
     if (order.uncited.length) {
       root.appendChild(el('div', { class: 'warnbox' }, [String(order.uncited.length) + ' référence(s) jamais citée(s) dans le texte (marquées ci-dessous). Elles restent en fin de bibliographie.']));
@@ -1121,7 +1121,7 @@
     var totals = 'Texte assemblé : ' + countLabel(g);
     if (gl && gl.max) {
       var gv = pickCount(g, gl.kind);
-      totals += ' — limite globale ' + fmtN(gv) + '/' + fmtN(gl.max) + ' ' + KIND_SHORT[gl.kind] + (gv > gl.max ? ' ⚠ DÉPASSÉE' : ' ✓');
+      totals += ' · limite globale ' + fmtN(gv) + '/' + fmtN(gl.max) + ' ' + KIND_SHORT[gl.kind] + (gv > gl.max ? ' ⚠ DÉPASSÉE' : ' ✓');
     }
     paper.appendChild(el('div', { class: 'totals' }, [totals]));
 
@@ -1277,7 +1277,7 @@
   }
 
   function saveCloud(silent) {
-    if (!authToken) { if (!silent) alert('Connecte-toi (compte étudiant ou professionnel) pour sauvegarder dans le cloud — la sauvegarde locale reste active.'); return; }
+    if (!authToken) { if (!silent) alert('Connecte-toi (compte étudiant ou professionnel) pour sauvegarder dans le cloud ; la sauvegarde locale reste active.'); return; }
     // Une requête déjà en vol : re-tenter après, sinon un POST sans id partirait en
     // parallèle et créerait une ligne en double.
     if (saveInFlight) {
@@ -1303,7 +1303,7 @@
         saveLocal();
         setStatus(editAtSave === editSeq ? 'Enregistré ✓' : 'Modifié…');
       })
-      .catch(function () { saveInFlight = false; if (genAtSave === docGen) setStatus('Hors-ligne — sauvegarde locale'); });
+      .catch(function () { saveInFlight = false; if (genAtSave === docGen) setStatus('Hors-ligne · sauvegarde locale'); });
   }
 
   function openHistory() {
@@ -1421,7 +1421,7 @@
       body.appendChild(el('div', { class: 'proposal' }, [rep.revisedText]));
       if (rep.changes && rep.changes.length) {
         body.appendChild(el('h3', { style: 'font-size:13px;margin:12px 0 4px' }, ['Modifications effectuées']));
-        rep.changes.forEach(function (c) { body.appendChild(el('div', { class: 'chgline' }, [(c.kind ? c.kind + ' — ' : '') + (c.description || '')])); });
+        rep.changes.forEach(function (c) { body.appendChild(el('div', { class: 'chgline' }, [(c.kind ? c.kind + ' : ' : '') + (c.description || '')])); });
       }
       var apply = el('button', { class: 'btn btn-accent' }, ['Appliquer à la section']);
       var refuse = el('button', { class: 'btn' }, ['Refuser']);
@@ -1445,7 +1445,7 @@
     var def = sec.limit && sec.limit.max ? sec.limit : (art.meta.globalLimit || { kind: 'chars', max: 2500 });
     var raw = prompt(
       'Réduire « ' + (sec.title || 'Section') + ' » à combien ?\n' +
-      'Format : nombre + unité — « 2500 c » (caractères esp. comprises), « 1800 h » (hors espaces), « 250 m » (mots).',
+      'Format : nombre + unité, par exemple « 2500 c » (caractères esp. comprises), « 1800 h » (hors espaces), « 250 m » (mots).',
       def.max + ' ' + (def.kind === 'words' ? 'm' : def.kind === 'chars_no_spaces' ? 'h' : 'c')
     );
     if (!raw) return;
@@ -1469,7 +1469,7 @@
         body.appendChild(el('div', { class: rep.withinLimit ? 'okline' : 'caution' }, [
           rep.withinLimit
             ? 'Objectif atteint : ' + fmtN(achieved) + ' / ' + fmtN(max) + ' ' + KIND_SHORT[kind] + ' ✓ (vérifié par comptage, pas sur parole de l’IA)'
-            : 'Objectif non atteint : ' + fmtN(achieved) + ' / ' + fmtN(max) + ' ' + KIND_SHORT[kind] + ' — vois les compromis listés, ou relance.'
+            : 'Objectif non atteint : ' + fmtN(achieved) + ' / ' + fmtN(max) + ' ' + KIND_SHORT[kind] + '. Vois les compromis listés, ou relance.'
         ]));
         (rep.cautions || []).forEach(function (c) { body.appendChild(el('div', { class: 'caution' }, [c])); });
         body.appendChild(el('h3', { style: 'font-size:13px;margin:10px 0 6px' }, ['Texte réduit proposé']));

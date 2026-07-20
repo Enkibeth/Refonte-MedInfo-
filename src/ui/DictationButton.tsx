@@ -102,7 +102,7 @@ export function DictationButton({
       setError(null);
     } catch {
       setState('idle');
-      flashError('Micro indisponible — vérifie les autorisations du navigateur.');
+      flashError('Micro indisponible : vérifie les autorisations du navigateur.');
     }
   }
 
@@ -129,11 +129,11 @@ export function DictationButton({
           if (mountedRef.current) onTranscript(text);
         } else flashError('Aucune parole détectée.');
       } else {
-        flashError('Dictée indisponible — réessaie.');
+        flashError('Dictée indisponible, réessaie.');
       }
     } catch {
       // dictée indisponible → l'utilisateur peut taper au clavier
-      flashError('Dictée indisponible — réessaie.');
+      flashError('Dictée indisponible, réessaie.');
     } finally {
       if (mountedRef.current) setState('idle');
     }

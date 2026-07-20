@@ -29,7 +29,7 @@ export default function ContactScreen() {
     {
       icon: 'messageCircle',
       title: 'Une question santé ?',
-      text: "Le chat MedInfo AI répond à vos questions d'information générale, avec sources — sans inscription pour le premier message.",
+      text: "Le chat MedInfo AI répond à vos questions d'information générale, avec sources. Le premier message ne demande pas d'inscription.",
       cta: 'Ouvrir le chat',
       onPress: () => router.push('/(chat)/chat'),
     },
@@ -70,9 +70,9 @@ export default function ContactScreen() {
             <Text style={styles.eyebrow}>Contact</Text>
             <Text style={styles.title}>Parlons-en.</Text>
             <Text style={styles.lead}>
-              Une question, une suggestion, un problème ? Choisissez le bon canal — et en cas
-              d'urgence médicale, composez le 15 (SAMU) ou le 112 : MedInfo AI n'est pas une
-              plateforme d'urgence.
+              Une question, une suggestion, un problème ? Choisissez le bon canal ci-dessous.
+              En cas d'urgence médicale, composez le 15 (SAMU) ou le 112 : MedInfo AI n'est
+              pas une plateforme d'urgence.
             </Text>
           </Reveal>
 

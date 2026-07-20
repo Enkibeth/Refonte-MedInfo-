@@ -33,7 +33,7 @@ const TRUST_POINTS: { icon: IconName; title: string; text: string }[] = [
   {
     icon: 'shieldCheck',
     title: 'Liens vérifiés un à un',
-    text: 'Chaque lien cité est testé avant la rédaction de la réponse — zéro lien mort dans les sources.',
+    text: 'Chaque lien cité est testé avant la rédaction de la réponse : zéro lien mort dans les sources.',
   },
   {
     icon: 'sparkles',
@@ -52,12 +52,12 @@ const WORKFLOW_STEPS: { icon: IconName; title: string; text: string }[] = [
   {
     icon: 'messageCircle',
     title: 'Vous posez votre question',
-    text: 'Dans le chatbot adapté à votre profil — grand public, étudiant ou professionnel — au clavier ou à la voix.',
+    text: 'Dans le chatbot adapté à votre profil (grand public, étudiant ou professionnel), au clavier ou à la voix.',
   },
   {
     icon: 'search',
     title: 'L’IA recherche de vraies sources',
-    text: 'Recommandations HAS/ANSM/ESC, études via Europe PMC, essais cliniques ClinicalTrials.gov — et PubMed pour le chatbot professionnel.',
+    text: 'Recommandations HAS/ANSM/ESC, études via Europe PMC, essais cliniques ClinicalTrials.gov, et PubMed pour le chatbot professionnel.',
   },
   {
     icon: 'shieldCheck',
@@ -147,8 +147,8 @@ const PERSONAS: {
   {
     id: 'student',
     eyebrow: 'Étudiant',
-    title: 'Apprendre, comprendre, réviser',
-    description: 'Cours fondés sur les Collèges (EDN/R2C), cas cliniques, ECOS, révisions — raisonnement guidé pas à pas.',
+    title: 'Comprendre et réviser',
+    description: 'Cours fondés sur les Collèges (EDN/R2C), cas cliniques, ECOS, révisions, avec un raisonnement guidé pas à pas.',
     cta: 'Poser ma question',
     icon: 'brain',
     route: '/(account)/choose-role',
@@ -156,8 +156,8 @@ const PERSONAS: {
   {
     id: 'public',
     eyebrow: 'Grand public',
-    title: 'Vos questions de santé, simplement',
-    description: 'Comprenez votre traitement, vos symptômes, vos résultats — sans jargon, jamais un avis individuel.',
+    title: 'Vos questions de santé, en clair',
+    description: "Comprenez votre traitement ou vos résultats d'analyses, sans jargon. Information générale, jamais un avis individuel.",
     cta: 'Commencer à parler ici',
     icon: 'users',
     route: '/(chat)/chat',
@@ -208,14 +208,14 @@ export default function HomeScreen() {
           </Reveal>
           <Reveal delay={tokens.motion.revealStagger}>
             <Text style={styles.headline}>
-              Des réponses santé claires,{'\n'}sourcées et sans détour.
+              Des réponses santé sourcées,{'\n'}vérifiées lien par lien.
             </Text>
           </Reveal>
           <Reveal delay={tokens.motion.revealStagger * 2}>
             <Text style={styles.subhead}>
               Posez vos questions médicales et pharmacologiques. MedInfo AI recherche les
               recommandations et études en direct (HAS, ANSM, Europe PMC, ClinicalTrials.gov),
-              vérifie chaque lien cité et répond avec ses sources — information générale, jamais
+              vérifie chaque lien cité et répond avec ses sources. Information générale, jamais
               un avis individuel.
             </Text>
           </Reveal>
@@ -243,7 +243,7 @@ export default function HomeScreen() {
           {!isAuthed ? (
             <Reveal delay={tokens.motion.revealStagger * 4}>
               <Text style={styles.trialHint}>
-                Testez et envoyez votre premier message sans inscription — 1 message gratuit.
+                Le premier message est gratuit, sans créer de compte.
               </Text>
             </Reveal>
           ) : null}
@@ -324,7 +324,7 @@ export default function HomeScreen() {
             Comment MedInfo AI répond
           </Text>
           <Text style={styles.sectionSubtitle}>
-            Pas de réponse « de mémoire » : l’assistant recherche, vérifie, puis rédige.
+            L’assistant recherche ses sources et les vérifie avant de rédiger.
           </Text>
         </Reveal>
         <View style={styles.workflowGrid}>
@@ -351,11 +351,11 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <Reveal style={styles.sectionHead}>
             <Text style={styles.sectionTitle} accessibilityRole="header">
-              Une plateforme complète, au-delà du chat
+              Les outils, au-delà du chat
             </Text>
             <Text style={styles.sectionSubtitle}>
-              Des outils dédiés à chaque profil — inclus avec votre compte, selon votre rôle
-              vérifié.
+              Simulation ECOS, analyse de document, présentations, CV médical : chaque rôle
+              vérifié débloque les siens, inclus avec le compte.
             </Text>
           </Reveal>
           <View style={styles.toolsGridWide}>
@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
     letterSpacing: tokens.tracking.capsWide,
     textTransform: 'uppercase',
   },
-  // Titre en Fraunces (serif éditoriale) : signature typographique de la marque.
+  // Titre en Source Serif 4 (serif éditoriale) : signature typographique de la marque.
   headline: {
     fontFamily: tokens.font.serif,
     color: tokens.colors.onAccent,

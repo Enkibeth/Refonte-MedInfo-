@@ -263,7 +263,7 @@ export function QcmRunner({
                     {submitted ? (
                       <Text style={styles.propExplain}>
                         {isCorrect ? '✓ Vrai' : '✗ Faux'}
-                        {prop.explanation ? ` — ${prop.explanation}` : ''}
+                        {prop.explanation ? ` : ${prop.explanation}` : ''}
                       </Text>
                     ) : null}
                   </View>

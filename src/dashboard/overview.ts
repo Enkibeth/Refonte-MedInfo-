@@ -113,7 +113,7 @@ export function heroSummary(facts: HeroFacts): string {
     parts.push(`une conversation « ${truncateLabel(facts.lastConversationTitle, 48)} » à poursuivre`);
   }
   if (parts.length === 0) {
-    return 'Pose une question au chat médical ou ouvre un outil — tout est prêt.';
+    return 'Pose une question au chat médical ou ouvre un outil : tout est prêt.';
   }
   return `Tu as ${joinSentence(parts)}.`;
 }

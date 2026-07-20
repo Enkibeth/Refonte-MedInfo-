@@ -17,7 +17,7 @@ hors-ligne, CSP stricte).
 | `xlsx.full.min.js` | SheetJS xlsx | 0.18.5 | cdnjs |
 
 ## `fonts/` — sous-ensemble latin
-`fonts.css` + 5 `.woff2` (Fraunces, Public Sans, JetBrains Mono). Sous-ensemble
+`fonts.css` + 5 `.woff2` (Source Serif 4, Public Sans, JetBrains Mono). Sous-ensemble
 **latin** uniquement (couvre les accents français) pour rester léger. Généré
 depuis `fonts.googleapis.com/css2`. Repli système conservé dans les CSS des
 outils (`Georgia`, `system-ui`, `ui-monospace`).

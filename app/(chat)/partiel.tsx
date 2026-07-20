@@ -23,7 +23,7 @@ function PartielInner() {
         </View>
         <Text style={styles.title}>Analyse des partiels</Text>
         <Text style={styles.subtitle}>
-          Importe les notes de ta promo (.xlsx, .csv, .pdf) et situe-toi — calcul privé, sur ton
+          Importe les notes de ta promo (.xlsx, .csv, .pdf) et situe-toi : calcul privé, sur ton
           appareil.
         </Text>
       </View>

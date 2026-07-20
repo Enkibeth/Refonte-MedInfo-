@@ -995,7 +995,7 @@ function EcosScreenInner() {
           <Text style={styles.evalTitle}>Évaluation</Text>
           <Text style={styles.evalSubtitle}>
             {evalCaseTitle}
-            {viewedAttempt ? ` — ${formatDay(viewedAttempt.created_at)}` : ''}
+            {viewedAttempt ? ` · ${formatDay(viewedAttempt.created_at)}` : ''}
           </Text>
         </View>
 

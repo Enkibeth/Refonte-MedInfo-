@@ -377,11 +377,20 @@ EXIGENCES DE FOND :
 - Angle innovant et concret : actualités de la recherche, prévention, idées reçues décryptées, nouvelles technologies de santé.
 - Public : grand public curieux ; ton clair, vivant, sans jargon non expliqué.
 
+STYLE — ÉCRIS COMME UN RÉDACTEUR HUMAIN (anti-tics IA) :
+- JAMAIS de tiret cadratin « — » au milieu d'une phrase : utilise virgule, deux-points ou parenthèses.
+- Pas de négation-pivot (« Ce n'est pas X, c'est Y », « pas seulement X ») : dis directement ce que c'est.
+- Pas de règle de trois systématique (trois adjectifs, trois exemples, trois bénéfices partout) : varie la longueur des énumérations.
+- Pas de connecteurs creux (« Concrètement », « En résumé », « Il est important de », « Notez que ») ni d'adverbes de remplissage (simplement, facilement, véritablement).
+- Pas de superlatifs invérifiables (« incontournable », « révolutionnaire », « unique ») ni de doublets symétriques (« au bon endroit, au bon moment »).
+- Préfère les détails concrets et situés (nom de l'organisme, année, chiffre attribué dans la phrase) au texte qui pourrait décrire n'importe quel sujet.
+- Varie le rythme des phrases ; si une tournure ne se dirait pas à l'oral, reformule.
+
 STRUCTURE (markdown) :
 - 4 à 6 sections titrées avec « ## » (elles forment le sommaire cliquable de l'article).
 - Sous-titres « ### » autorisés à l'intérieur des sections, listes « - » et gras « **…** » avec parcimonie.
 - PAS de titre « # » (le titre de l'article est fourni séparément), pas d'emoji.
-- 900 à 1400 mots. Termine par une section « ## Ce qu'il faut retenir » (3-5 puces) puis la phrase en italique : *Article d'information générale généré avec une IA et relu par l'équipe MedInfo AI — il ne remplace pas un avis médical individuel.*
+- 900 à 1400 mots. Termine par une section « ## Ce qu'il faut retenir » (3-5 puces) puis la phrase en italique : *Article d'information générale généré avec une IA et relu par l'équipe MedInfo AI ; il ne remplace pas un avis médical individuel.*
 
 RÉPONds UNIQUEMENT avec un objet JSON valide, sans balise de code, avec exactement ces clés :
 {
@@ -422,7 +431,8 @@ RÉPONDS UNIQUEMENT avec un objet JSON valide, sans balise de code :
 CORRIGE :
 - Orthographe, grammaire, typographie française (espaces insécables devant : ; ! ?, guillemets « »).
 - Style : phrases lourdes ou répétitives, jargon non expliqué, transitions manquantes, ton (clair, vivant, grand public).
-- Structure markdown : sections « ## » (jamais de titre « # »), sous-titres « ### » à bon escient, listes et gras avec parcimonie, pas d'emoji, 900 à 1400 mots, dernière section « ## Ce qu'il faut retenir » suivie de la phrase en italique : *Article d'information générale généré avec une IA et relu par l'équipe MedInfo AI — il ne remplace pas un avis médical individuel.* (ajoute-la si elle manque).
+- Tics d'écriture IA : supprime les tirets cadratins « — » en milieu de phrase (remplace par virgule, deux-points ou parenthèses), les négations-pivots (« ce n'est pas X, c'est Y »), les triplets systématiques, les connecteurs creux (« Concrètement », « En résumé », « Il est important de ») et adverbes de remplissage, les superlatifs invérifiables.
+- Structure markdown : sections « ## » (jamais de titre « # »), sous-titres « ### » à bon escient, listes et gras avec parcimonie, pas d'emoji, 900 à 1400 mots, dernière section « ## Ce qu'il faut retenir » suivie de la phrase en italique : *Article d'information générale généré avec une IA et relu par l'équipe MedInfo AI ; il ne remplace pas un avis médical individuel.* (ajoute-la si elle manque).
 
 NE MODIFIE JAMAIS le fond : aucun fait, chiffre, source ou affirmation médicale ne doit être ajouté, retiré ou altéré. En cas de doute entre forme et fond, laisse la phrase telle quelle.
 
@@ -464,7 +474,7 @@ RÉPONDS UNIQUEMENT avec un objet JSON valide, sans balise de code, avec exactem
 VÉRIFIE DANS L'ORDRE :
 1. SÉCURITÉ — information générale uniquement : aucun conseil médical individuel, aucune posologie personnalisée, aucun diagnostic, aucune affirmation susceptible de retarder une prise en charge (les signes d'urgence doivent renvoyer vers le 15/112 ou un médecin).
 2. EXACTITUDE — faits cohérents avec les recommandations en vigueur (HAS, ANSM, OMS, sociétés savantes) ; aucun chiffre invraisemblable, aucune source ou URL inventée.
-3. FORME — sections « ## » (jamais de titre « # »), pas d'emoji, ton clair et grand public, environ 900 à 1400 mots, se termine par une section « ## Ce qu'il faut retenir » puis la phrase en italique : *Article d'information générale généré avec une IA et relu par l'équipe MedInfo AI — il ne remplace pas un avis médical individuel.* (ajoute-la si elle manque).
+3. FORME — sections « ## » (jamais de titre « # »), pas d'emoji, ton clair et grand public, environ 900 à 1400 mots, se termine par une section « ## Ce qu'il faut retenir » puis la phrase en italique : *Article d'information générale généré avec une IA et relu par l'équipe MedInfo AI ; il ne remplace pas un avis médical individuel.* (ajoute-la si elle manque).
 
 VERDICT :
 - "publish" : l'article est publiable tel quel.

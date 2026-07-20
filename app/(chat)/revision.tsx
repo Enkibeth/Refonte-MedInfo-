@@ -652,7 +652,7 @@ function RevisionScreenInner() {
               <Text style={styles.cardTitle}>Coup de pouce IA</Text>
               <Text style={styles.hint}>
                 Conseils d'organisation à partir de TON plan. L'IA ne modifie rien et n'invente
-                aucun volume — tu restes décideur.
+                aucun volume : tu restes décideur.
               </Text>
               <View style={styles.boostRow}>
                 {BOOST_INTENTS.map((b) => (
