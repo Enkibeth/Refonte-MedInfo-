@@ -14,6 +14,7 @@
  * Module PUR (aucune dépendance UI/réseau) : testé dans tests/unit/parse-assistant-message.test.ts.
  * Tolérant au streaming : un texte partiel produit simplement des blocs partiels.
  */
+import { replaceDiagramsWithText } from '@/ai/chat/diagram';
 
 export type SourceBadge = 'OFFICIEL' | 'GUIDELINE' | 'ÉTUDE' | 'RCP';
 
@@ -487,7 +488,8 @@ export function assistantTextForExport(text: string): string {
 
   for (const block of blocks) {
     if (block.type === 'body') {
-      parts.push(formatInlineCitations(block.markdown));
+      // Les diagrammes (blocs ```medinfo-diagram```) deviennent un plan texte lisible.
+      parts.push(formatInlineCitations(replaceDiagramsWithText(block.markdown)));
     } else if (block.type === 'sources') {
       const lines = block.sources.map((s) => {
         const label = [s.shortLabel, s.org && s.org !== s.shortLabel ? s.org : null, s.title]

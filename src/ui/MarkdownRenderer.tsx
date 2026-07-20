@@ -7,6 +7,8 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Platform, Linking, Image } from 'react-native';
 import { tokens } from './tokens';
+import { DIAGRAM_FENCE, parseDiagramSpec, type DiagramSpec } from '@/ai/chat/diagram';
+import { DiagramView } from '@/ui/chat/DiagramView';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -19,6 +21,8 @@ type Block =
   | { kind: 'listItem'; text: string; ordered: boolean; index: number }
   | { kind: 'table'; rows: TableRow[] }
   | { kind: 'image'; url: string; caption: string }
+  | { kind: 'diagram'; spec: DiagramSpec }
+  | { kind: 'codeblock'; code: string; lang: string | null }
   | { kind: 'paragraph'; text: string }
   | { kind: 'spacer' };
 
@@ -128,6 +132,29 @@ function parseBlocks(text: string): Block[] {
   while (i < lines.length) {
     const line = lines[i];
     const trimmed = line.trim();
+
+    // Bloc de code balisé ``` … ``` (dont ```medinfo-diagram) : on consomme tout
+    // jusqu'à la fence fermante pour que le contenu ne soit pas parsé comme markdown.
+    if (trimmed.startsWith('```')) {
+      const lang = trimmed.slice(3).trim() || null;
+      const codeLines: string[] = [];
+      i++;
+      while (i < lines.length && lines[i].trim() !== '```') {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      if (i < lines.length) i++; // saute la fence fermante
+      const code = codeLines.join('\n');
+      if (lang === DIAGRAM_FENCE) {
+        const spec = parseDiagramSpec(code);
+        // Bloc invalide (JSON cassé, streaming incomplet) : on n'affiche rien,
+        // jamais de JSON brut à l'écran.
+        if (spec) blocks.push({ kind: 'diagram', spec });
+      } else {
+        blocks.push({ kind: 'codeblock', code, lang });
+      }
+      continue;
+    }
 
     // H3 before H2 (### has 3 chars, ## has 2)
     if (trimmed.startsWith('### ')) {
@@ -393,6 +420,22 @@ export function MarkdownRenderer({
               </View>
             );
 
+          case 'diagram':
+            return <DiagramView key={i} spec={block.spec} />;
+
+          case 'codeblock':
+            return (
+              <View key={i} style={mdStyles.codeBlock}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={Platform.OS === 'web'}
+                  contentContainerStyle={mdStyles.codeScrollContent}
+                >
+                  <Text style={mdStyles.codeText}>{block.code}</Text>
+                </ScrollView>
+              </View>
+            );
+
           case 'paragraph':
             return parseInline(
               block.text,
@@ -450,6 +493,22 @@ const mdStyles = StyleSheet.create({
     lineHeight: tokens.type.body.lineHeight,
   },
   spacer: { height: 6 },
+  codeBlock: {
+    marginVertical: tokens.space.sm,
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surfaceSunken,
+    paddingVertical: tokens.space.sm,
+    paddingHorizontal: tokens.space.md,
+  },
+  codeScrollContent: { flexGrow: 1 },
+  codeText: {
+    fontFamily: tokens.font.mono,
+    fontSize: tokens.type.caption.fontSize,
+    lineHeight: tokens.type.caption.lineHeight + 2,
+    color: tokens.colors.text,
+  },
   figure: { marginVertical: tokens.space.sm, gap: 4 },
   figureImage: {
     width: '100%',
