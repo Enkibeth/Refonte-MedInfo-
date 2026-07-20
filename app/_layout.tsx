@@ -35,6 +35,10 @@ function useProtectedRoute() {
       segments[0] === undefined ||
       segments[0] === '(legal)' ||
       segments[0] === '(chat)' ||
+      // Tarifs : page marketing publique et indexable (header public + SEO). L'écran
+      // gère lui-même le visiteur (« S'abonner » → création de compte) ; sans ce
+      // groupe, un visiteur cliquant « Tarifs » était renvoyé vers sign-in.
+      segments[0] === '(billing)' ||
       // Pages marketing publiques (audit landing 2026-06) : à propos, contact, blog.
       segments[0] === '(marketing)';
 

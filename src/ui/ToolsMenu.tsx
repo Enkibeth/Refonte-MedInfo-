@@ -65,6 +65,10 @@ export function ToolsMenu() {
     : [
         { key: 'dashboard', label: "Vue d’ensemble", icon: 'home', route: '/(chat)/dashboard' },
         { key: 'account', label: 'Mon compte', icon: 'userRound', route: '/(account)/account' },
+        // Ressources publiques : le blog n'était atteignable qu'en repassant par la
+        // landing une fois connecté (retour signalé par Hugo).
+        { key: 'blog', label: 'Blog santé', icon: 'bookOpen', route: '/(marketing)/blog' },
+        { key: 'pricing', label: 'Tarifs', icon: 'scale', route: '/(billing)/pricing' },
       ];
   if (isAdmin) extras.push({ key: 'admin', label: 'Panel admin', icon: 'settings', route: '/(admin)' });
 

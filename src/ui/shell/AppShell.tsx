@@ -239,6 +239,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       match: '__admin__', // géré via le groupe de segments, pas le pathname
     });
   }
+  // Ressources publiques (blog, tarifs) : sans elles, un compte connecté ne pouvait
+  // atteindre le blog qu'en repassant par la landing (retour signalé par Hugo).
+  // Ces pages vivent hors du shell (groupe (marketing)/(billing)) : au clic, le
+  // shell se retire et le header public prend le relais — navigation cohérente.
+  const resourceEntries: NavEntry[] = [
+    { key: 'blog', label: 'Blog santé', icon: 'bookOpen', route: '/(marketing)/blog', match: '__external__' },
+    { key: 'pricing', label: 'Tarifs', icon: 'scale', route: '/(billing)/pricing', match: '/pricing' },
+  ];
 
   const adminGroup = segments[0] === '(admin)';
   const isActive = (entry: NavEntry) =>
@@ -370,6 +378,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Text style={[styles.sectionLabel, styles.sectionLabelSpaced]}>Compte</Text>
           )}
           {accountEntries.map(renderEntry)}
+          {collapsed ? (
+            <View style={styles.navDivider} />
+          ) : (
+            <Text style={[styles.sectionLabel, styles.sectionLabelSpaced]}>Ressources</Text>
+          )}
+          {resourceEntries.map(renderEntry)}
         </ScrollView>
 
         {/* Rappel confidentialité (véridique : RLS own-row + sources gratuites). */}
