@@ -37,6 +37,12 @@ import {
 } from '@/ai/chat/chatContext';
 import { buildCountryContextSection, coerceCountry } from '@/ai/chat/country';
 import { buildPharmacologySection } from '@/ai/chat/pharmacology';
+import {
+  buildResponseModeSection,
+  coerceResponseMode,
+  responseModeRuntime,
+} from '@/ai/chat/responseMode';
+import { buildOutputToolsSection, coerceChatOutputTools } from '@/ai/chat/outputTools';
 import { appendAttachmentToModelMessages, coerceChatAttachment } from '@/ai/chat/attachment';
 import { isAdminUserId } from '@/admin/index';
 import {
@@ -76,6 +82,8 @@ export async function POST(request: Request): Promise<Response> {
     attachment?: unknown;
     conversationId?: unknown;
     regenerate?: unknown;
+    responseMode?: unknown;
+    tools?: unknown;
   };
   try {
     body = await request.json();
@@ -113,17 +121,25 @@ export async function POST(request: Request): Promise<Response> {
   const allowed = allowedChatbotsFor(resolution.persona, { guestTrial: !resolution.verified });
   const chatbot: ChatbotId = allowed.includes(requestedChatbot) ? requestedChatbot : 'public';
 
+  // Réglages utilisateur par requête (2026-07) : « profondeur » de réponse et outils de
+  // sortie optionnels (diagramme, points clés, tableau comparatif). Purs, bornés, sans droit.
+  const responseMode = coerceResponseMode(body.responseMode);
+  const outputTools = coerceChatOutputTools(body.tools);
+  // Le mode définit effort/verbosité/budget de sortie + le plafond d'étapes de la boucle
+  // agentique. Il REMPLACE l'ancien plafond `minimal` du chat public (mode standard public
+  // = même comportement qu'avant ; mode approfondi public = jusqu'à `medium`, jamais `high`).
+  const modeRuntime = responseModeRuntime(responseMode, chatbot);
+
   const [template, runtime] = await Promise.all([
     getPromptTemplate(chatbot),
     // Recherche web ON par défaut pour le chat : les prompts exigent des sources réelles
     // (URLs vérifiables HAS/ESC/PubMed…) — sans web search le modèle ne peut pas les fournir.
-    // Balance rapidité/qualité par chatbot (2026-07) : le chat public plafonne l'effort de
-    // raisonnement à `minimal` — l'ancrage factuel vient du workflow d'outils (recherche,
-    // lecture des résumés, vérification des liens), pas du thinking, et l'effort se paie à
-    // CHAQUE étape de la boucle agentique. Étudiant/pro gardent la config admin (profondeur).
     getRuntimeForFeature('chat', {
       webSearch: true,
-      ...(chatbot === 'public' ? { capReasoningEffort: 'minimal' as const } : {}),
+      reasoningEffort: modeRuntime.reasoningEffort,
+      ...(modeRuntime.capReasoningEffort ? { capReasoningEffort: modeRuntime.capReasoningEffort } : {}),
+      verbosity: modeRuntime.verbosity,
+      ...(modeRuntime.maxOutputTokens != null ? { maxOutputTokens: modeRuntime.maxOutputTokens } : {}),
     }),
   ]);
 
@@ -163,7 +179,7 @@ export async function POST(request: Request): Promise<Response> {
     Boolean(process.env.ANTHROPIC_API_KEY) &&
     resolvePubmedMcpUrl() !== null;
 
-  const system = `${template}${buildUserContextSection(personalInfo)}${buildCountryContextSection(country)}${buildChatToolsSection(chatbot, { pubmedMcp: mcpServers !== null, pubmedAgent })}${buildPharmacologySection(chatbot)}`;
+  const system = `${template}${buildUserContextSection(personalInfo)}${buildCountryContextSection(country)}${buildChatToolsSection(chatbot, { pubmedMcp: mcpServers !== null, pubmedAgent })}${buildPharmacologySection(chatbot)}${buildResponseModeSection(responseMode)}${buildOutputToolsSection(outputTools)}`;
 
   // Workflow agents (ADR-0030) : le modèle orchestre des outils qualité serveur
   // (Europe PMC, ClinicalTrials.gov pour le pro, vérification des liens sources).
@@ -191,9 +207,9 @@ export async function POST(request: Request): Promise<Response> {
     ...(Object.keys(tools).length > 0 ? { tools } : {}),
     // Boucle agentique evidence-first : le modèle enchaîne recherche → lecture des
     // résumés des articles retenus → vérification des liens → rédaction. Borné pour ne
-    // jamais boucler indéfiniment (chaque étape = un appel LLM) ; 12 laisse la place à
-    // plusieurs recherches + la lecture de 2-3 abstracts avant la rédaction finale.
-    stopWhen: stepCountIs(12),
+    // jamais boucler indéfiniment (chaque étape = un appel LLM). Le plafond dépend du mode
+    // de réponse choisi (rapide = boucle courte ; approfondi = plus d'étapes).
+    stopWhen: stepCountIs(modeRuntime.maxSteps),
     ...callOptions,
     onFinish: async ({ text, steps, usage }) => {
       // En multi-étapes, `text` ne contient que la DERNIÈRE étape : on archive la

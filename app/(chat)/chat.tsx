@@ -74,6 +74,9 @@ import { ChatbotSwitcher, CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
 import { ConversationList, HistoryPanel } from '@/ui/chat/HistoryPanel';
 import { CountrySelector } from '@/ui/chat/CountrySelector';
 import { coerceCountry, type CountryCode } from '@/ai/chat/country';
+import { ResponseControls } from '@/ui/chat/ResponseControls';
+import { coerceResponseMode, type ResponseMode } from '@/ai/chat/responseMode';
+import { coerceChatOutputTools, type ChatOutputTool } from '@/ai/chat/outputTools';
 import {
   ATTACHMENT_ACCEPT,
   ATTACHMENT_MAX_BYTES,
@@ -465,6 +468,44 @@ export default function ChatScreen() {
       // best-effort
     }
   }, [country]);
+
+  // Réglages de réponse (2026-07) : profondeur (rapide/classique/complexe) + outils de
+  // sortie optionnels (diagramme, points clés, tableau comparatif). Envoyés dans le body
+  // de /api/chat, persistés en localStorage (web only). Aucun droit : cf. serveur.
+  const [responseMode, setResponseMode] = useState<ResponseMode>(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return 'standard';
+    try {
+      return coerceResponseMode(window.localStorage.getItem('medinfo:chatResponseMode'));
+    } catch {
+      return 'standard';
+    }
+  });
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem('medinfo:chatResponseMode', responseMode);
+    } catch {
+      // best-effort
+    }
+  }, [responseMode]);
+
+  const [outputTools, setOutputTools] = useState<ChatOutputTool[]>(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return [];
+    try {
+      return coerceChatOutputTools(JSON.parse(window.localStorage.getItem('medinfo:chatTools') ?? '[]'));
+    } catch {
+      return [];
+    }
+  });
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem('medinfo:chatTools', JSON.stringify(outputTools));
+    } catch {
+      // best-effort
+    }
+  }, [outputTools]);
+
   // Pièce jointe (document) — réservé aux comptes vérifiés étudiant/pro (+ admin), web only.
   const [attachment, setAttachment] = useState<ChatAttachment | null>(null);
   const [attachError, setAttachError] = useState<string | null>(null);
@@ -525,6 +566,10 @@ export default function ChatScreen() {
   personalInfoRef.current = personalInfo;
   const countryRef = useRef(country);
   countryRef.current = country;
+  const responseModeRef = useRef(responseMode);
+  responseModeRef.current = responseMode;
+  const outputToolsRef = useRef(outputTools);
+  outputToolsRef.current = outputTools;
   const attachmentRef = useRef(attachment);
   attachmentRef.current = attachment;
   const conversationIdRef = useRef<string | null>(null);
@@ -544,6 +589,8 @@ export default function ChatScreen() {
           chatbot: chatbotRef.current,
           personalInfo: personalInfoRef.current ?? undefined,
           country: countryRef.current ?? undefined,
+          responseMode: responseModeRef.current,
+          tools: outputToolsRef.current.length > 0 ? outputToolsRef.current : undefined,
           attachment: attachmentRef.current ?? undefined,
           // Résilience hors-ligne : le serveur archive la réponse dans cette conversation
           // même si la page est suspendue pendant le streaming (voir /api/chat).
@@ -1445,6 +1492,15 @@ export default function ChatScreen() {
           </View>
         ) : null}
         {attachError ? <Text style={styles.attachError}>{attachError}</Text> : null}
+        {!guestLocked ? (
+          <ResponseControls
+            mode={responseMode}
+            onModeChange={setResponseMode}
+            tools={outputTools}
+            onToolsChange={setOutputTools}
+            disabled={isLoading}
+          />
+        ) : null}
         <View style={[styles.composer, inputFocused && styles.composerFocused]}>
           <TextInput
             style={styles.input}
