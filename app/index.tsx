@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
     letterSpacing: tokens.tracking.capsWide,
     textTransform: 'uppercase',
   },
-  // Titre en Fraunces (serif éditoriale) : signature typographique de la marque.
+  // Titre en Source Serif 4 (serif éditoriale) : signature typographique de la marque.
   headline: {
     fontFamily: tokens.font.serif,
     color: tokens.colors.onAccent,

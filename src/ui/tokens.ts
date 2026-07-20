@@ -131,11 +131,12 @@ export const tokens = {
       web: "'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       default: 'System',
     }) as string,
-    // Fraunces — serif éditoriale pour les grands titres (hero, têtes de section).
-    // Signature typographique de la marque : évite le combo Inter/sans générique
-    // omniprésent. Réservée aux niveaux display/h1 ; jamais en corps de texte.
+    // Source Serif 4 — serif éditoriale pour les grands titres (hero, têtes de
+    // section). Choisie pour son ancrage édition scientifique/longue lecture,
+    // hors des serifs par défaut des générateurs (ex-Fraunces, remplacée 2026-07).
+    // Réservée aux niveaux display/h1 ; jamais en corps de texte.
     serif: Platform.select({
-      web: "'Fraunces', 'Georgia', 'Times New Roman', serif",
+      web: "'Source Serif 4', 'Georgia', 'Times New Roman', serif",
       default: Platform.OS === 'ios' ? 'Georgia' : 'serif',
     }) as string,
     mono: Platform.select({

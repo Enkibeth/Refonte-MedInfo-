@@ -285,7 +285,7 @@ toute conversation anonyme contenant plus d'un message utilisateur.
 > `docs/05_DESIGN.md` (+ rapport `docs/audits/DESIGN_AUDIT_2026-06.md`). Sur react-native-web,
 > la ref d'`Animated.View` n'expose PAS le nœud DOM : un `IntersectionObserver` posé dessus ne
 > s'attache jamais (échec silencieux) — observer une sentinelle `View` 1×1 à la place (cf.
-> `src/ui/Reveal.tsx`). Titres de page en Fraunces (`tokens.font.serif`), jamais en corps de
+> `src/ui/Reveal.tsx`). Titres de page en Source Serif 4 (`tokens.font.serif`), jamais en corps de
 > texte. Tout mouvement doit rester coupé sous `prefers-reduced-motion`.
 
 | Outil | Grand public | Étudiant | Professionnel | Admin |

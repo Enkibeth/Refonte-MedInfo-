@@ -76,14 +76,16 @@ sélection, scrollbar), `app.json` (splash `#141E4E`), exports PDF (`src/chat/ex
 
 | Rôle | Police | Token | Poids |
 |---|---|---|---|
-| Titres de page (hero, H1, têtes de section) | **Fraunces** (serif éditoriale) / Georgia | `tokens.font.serif` | 600 |
+| Titres de page (hero, H1, têtes de section) | **Source Serif 4** (serif éditoriale) / Georgia | `tokens.font.serif` | 600 |
 | Titres UI (cartes, panneaux, modales) | DM Sans / system-ui | `tokens.font.display` | 600-700 |
 | Corps, labels | Inter / system-ui | `tokens.font.sans` | 400-600 |
 | Mono (code, items EDN) | JetBrains Mono / monospace | `tokens.font.mono` | 400 |
 
-**Fraunces est la signature typographique de la marque** (audit 2026-06) : elle évite le
-combo Inter/sans générique omniprésent dans les UIs générées. Strictement réservée aux
-titres de page — jamais en corps de texte ni sur les petits titres UI.
+**Source Serif 4 est la signature typographique de la marque** (remplace Fraunces,
+passe anti-tics 2026-07 : Fraunces figure parmi les serifs par défaut des générateurs
+IA). Serif d'édition scientifique/longue lecture, elle évite le combo Inter/sans
+générique omniprésent dans les UIs générées. Strictement réservée aux titres de
+page — jamais en corps de texte ni sur les petits titres UI.
 
 **Règle d'application (uniformisation 2026-06)** — vérifiée sur toutes les pages :
 - **Titre de page / d'écran** (un par écran : hero, H1 des pages pleines, en-tête des
