@@ -74,7 +74,7 @@ export const ANESTHESIE_SCORES: ScoreDefinition[] = [
       acronym: 'ASA',
       category: 'anesthesie',
       purpose:
-        "Décrit l'état physique du patient avant l'anesthésie (I à VI) — communication du risque, jamais un calcul de mortalité en soi.",
+        "Décrit l'état physique du patient avant l'anesthésie (I à VI) : communication du risque, jamais un calcul de mortalité en soi.",
       aliases: ['asa', 'classification asa', 'score asa', 'american society anesthesiologists'],
       keywords: ['anesthésie', 'préopératoire', 'état physique', 'risque anesthésique', 'consultation anesthésie'],
       fields: [

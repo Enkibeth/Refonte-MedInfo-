@@ -85,7 +85,7 @@ export function SiteFooter() {
 
         <View style={styles.bottom}>
           <Text style={styles.disclaimer}>
-            MedInfo AI fournit de l’information médicale générale — jamais un avis médical
+            MedInfo AI fournit de l’information médicale générale, jamais un avis médical
             individuel. En cas d’urgence, composez le 15 (SAMU) ou le 112.
           </Text>
           <Text style={styles.copyright}>© {new Date().getFullYear()} MedInfo AI</Text>

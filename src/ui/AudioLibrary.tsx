@@ -122,7 +122,7 @@ export function AudioLibrary({ refreshToken }: { refreshToken: number }) {
       }
     } catch {
       // L'audio est purgé au bout de 24 h : on l'explique au lieu d'échouer en silence.
-      setError("Lecture impossible — l'audio a peut-être expiré (conservation 24 h).");
+      setError("Lecture impossible : l'audio a peut-être expiré (conservation 24 h).");
     }
   }
 

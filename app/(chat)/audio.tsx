@@ -229,7 +229,7 @@ function AudioFeature() {
         // elle, a réussi) : on le dit clairement au lieu d'afficher un résultat vide.
         else
           setError(
-            "Le compte rendu n'a pas pu être généré cette fois — la transcription ci-dessous reste disponible. Relance un enregistrement pour réessayer.",
+            "Le compte rendu n'a pas pu être généré cette fois ; la transcription ci-dessous reste disponible. Relance un enregistrement pour réessayer.",
           );
       }
       setRecordState('done');

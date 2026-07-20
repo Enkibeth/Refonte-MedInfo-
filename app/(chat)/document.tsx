@@ -285,7 +285,7 @@ function DocumentScreenInner() {
         <Text style={styles.title}>Analyse de document</Text>
         <Text style={styles.subtitle}>
           Importez un PDF, une photo ou collez le texte d'un compte rendu, d'une ordonnance ou de
-          résultats — pour un résumé patient clair ou une traduction.
+          résultats, pour un résumé patient clair ou une traduction.
         </Text>
       </View>
 
@@ -340,7 +340,7 @@ function DocumentScreenInner() {
               ))
             )}
             <Text style={styles.historyNote}>
-              Seul le résultat de l'analyse est conservé — jamais le document importé.
+              Seul le résultat de l'analyse est conservé, jamais le document importé.
             </Text>
           </View>
         ) : null}
@@ -408,7 +408,7 @@ function DocumentScreenInner() {
               <Text style={styles.uploadButtonText}>
                 Importer un fichier (PDF, photo JPEG/PNG, texte)
               </Text>
-              <Text style={styles.uploadButtonHint}>15 Mo maximum — ou collez le texte ci-dessous</Text>
+              <Text style={styles.uploadButtonHint}>15 Mo maximum, ou collez le texte ci-dessous</Text>
             </TouchableOpacity>
           )
         ) : null}

@@ -1221,7 +1221,7 @@ export default function ChatScreen() {
                 <Icon name="sparkles" size={13} color={tokens.colors.accentDeep} />
                 <Text style={styles.trialPillText}>
                   {guestUsed
-                    ? 'Essai utilisé (0/1) — créez un compte gratuit pour continuer'
+                    ? 'Essai utilisé (0/1) : créez un compte gratuit pour continuer'
                     : 'Essai gratuit : 1 message sans inscription (1/1)'}
                 </Text>
               </View>
@@ -1350,7 +1350,7 @@ export default function ChatScreen() {
           <View style={styles.stoppedNotice} accessibilityLiveRegion="polite">
             <Icon name="clock" size={14} color={tokens.colors.textMuted} />
             <Text style={styles.stoppedNoticeText}>
-              Génération arrêtée — la réponse complète restera disponible dans l’historique.
+              Génération arrêtée. La réponse complète restera disponible dans l’historique.
             </Text>
           </View>
         ) : null}
@@ -1358,7 +1358,7 @@ export default function ChatScreen() {
         {error && !recovering && errorKind === 'session' && (
           <View style={styles.errorBanner} accessibilityLiveRegion="polite">
             <Text style={styles.errorText}>
-              Votre session a expiré — reconnectez-vous pour continuer la conversation.
+              Votre session a expiré : reconnectez-vous pour continuer la conversation.
             </Text>
             <TouchableOpacity
               style={styles.retryButton}
@@ -1374,7 +1374,7 @@ export default function ChatScreen() {
         {error && !recovering && errorKind === 'generic' && (
           <View style={styles.errorBanner} accessibilityLiveRegion="polite">
             <Text style={styles.errorText}>
-              Une erreur est survenue — la réponse a peut-être été interrompue.
+              Une erreur est survenue ; la réponse a peut-être été interrompue.
             </Text>
             <TouchableOpacity
               style={styles.retryButton}

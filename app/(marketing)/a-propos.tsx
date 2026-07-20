@@ -17,7 +17,7 @@ const VALUES: { icon: IconName; title: string; text: string }[] = [
   {
     icon: 'bookOpen',
     title: 'Accessibilité',
-    text: "Une information médicale claire, en français, compréhensible sans bagage scientifique — et des sources toujours consultables gratuitement.",
+    text: "Une information médicale claire, en français, compréhensible sans bagage scientifique, et des sources toujours consultables gratuitement.",
   },
   {
     icon: 'sparkles',
@@ -27,7 +27,7 @@ const VALUES: { icon: IconName; title: string; text: string }[] = [
   {
     icon: 'shield',
     title: 'Fiabilité',
-    text: 'Des réponses appuyées sur les référentiels français et européens : HAS, ANSM, sociétés savantes, littérature scientifique — avec chaque lien cité vérifié avant la rédaction.',
+    text: 'Des réponses appuyées sur les référentiels français et européens (HAS, ANSM, sociétés savantes, littérature scientifique) ; chaque lien cité est vérifié avant la rédaction.',
   },
   {
     icon: 'refresh',
@@ -67,12 +67,12 @@ export default function AboutScreen() {
               confiance.
             </Text>
             <Text style={styles.paragraph}>
-              Notre réponse : une intelligence artificielle qui ne répond pas « de mémoire ».
-              Pour chaque question, l'assistant recherche en direct dans des sources réelles —
-              recommandations HAS, ANSM et sociétés savantes, littérature scientifique via
-              Europe PMC et PubMed, essais cliniques ClinicalTrials.gov — puis vérifie un à un
-              les liens qu'il va citer avant de rédiger. Chaque réponse affiche ses sources,
-              avec leur niveau de preuve.
+              Notre réponse : une intelligence artificielle qui appuie chaque réponse sur une
+              recherche en direct. L'assistant interroge des sources réelles (recommandations
+              HAS, ANSM et sociétés savantes, littérature scientifique via Europe PMC et
+              PubMed, essais cliniques ClinicalTrials.gov), puis vérifie un à un les liens
+              qu'il va citer avant de rédiger. Chaque réponse affiche ses sources, avec leur
+              niveau de preuve.
             </Text>
             <Text style={styles.paragraph}>
               Trois assistants spécialisés accompagnent chacun à son niveau : le grand public

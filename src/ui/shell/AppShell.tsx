@@ -413,7 +413,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <View style={styles.topBarRight}>
             <View style={styles.disclosurePill}>
               <Icon name="sparkles" size={13} color={tokens.colors.accentDeep} />
-              <Text style={styles.disclosurePillText}>IA — information générale</Text>
+              <Text style={styles.disclosurePillText}>IA · information générale</Text>
             </View>
             <Pressable
               onPress={() => router.push('/(marketing)/contact' as never)}

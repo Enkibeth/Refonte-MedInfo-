@@ -246,7 +246,7 @@
   <div class="layout">
     <aside class="editor" id="editor"></aside>
     <main class="previewWrap">
-      <div class="printNote">Aperçu A4 — le PDF reprend exactement cette feuille (rendu image haute définition).</div>
+      <div class="printNote">Aperçu A4 : le PDF reprend exactement cette feuille (rendu image haute définition).</div>
       <div class="sheet" id="sheet"></div>
     </main>
   </div>
@@ -763,7 +763,7 @@
         saveLocal();
         setStatus(editAtSave === editSeq ? 'Enregistré ✓' : 'Modifié…');
       })
-      .catch(function () { saveInFlight = false; if (genAtSave === docGen) setStatus('Hors-ligne — sauvegarde locale'); });
+      .catch(function () { saveInFlight = false; if (genAtSave === docGen) setStatus('Hors-ligne · sauvegarde locale'); });
   }
 
   function openHistory() {
@@ -909,7 +909,7 @@
       if (!confirm('Remplacer le CV actuel par le contenu importé ? (tu pourras tout corriger ensuite)')) return;
       cv = Object.assign(blankCv(), j.document);
       serverId = null; touch();
-      setStatus('CV importé — vérifie et corrige les champs');
+      setStatus('CV importé : vérifie et corrige les champs');
     } catch (e) {
       console.error('import error', e);
       alert('Échec de la lecture du fichier. Formats acceptés : PDF, Word (.docx), texte.');

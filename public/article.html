@@ -613,7 +613,7 @@
         gTxt.style.display = '';
         gBar.style.width = Math.min(100, (gv / gl.max) * 100) + '%';
         gBar.className = gaugeClass(gv, gl.max);
-        gTxt.textContent = fmtN(gv) + ' / ' + fmtN(gl.max) + ' ' + KIND_SHORT[gl.kind] + (gv > gl.max ? ' — limite dépassée' : '');
+        gTxt.textContent = fmtN(gv) + ' / ' + fmtN(gl.max) + ' ' + KIND_SHORT[gl.kind] + (gv > gl.max ? ' · limite dépassée' : '');
         gTxt.style.color = gv > gl.max ? 'var(--danger)' : 'var(--muted)';
       } else {
         gBar.parentElement.style.display = 'none';
@@ -905,7 +905,7 @@
     root.appendChild(el('div', { style: 'margin-bottom:12px' }, [el('span', { class: 'seg' }, [segV, segA])]));
 
     // Import DOI / PMID
-    var impIn = el('input', { placeholder: 'DOI (10.xxxx/…) ou PMID (ex. 34320281) — métadonnées réelles via CrossRef / Europe PMC', id: 'imp-in' });
+    var impIn = el('input', { placeholder: 'DOI (10.xxxx/…) ou PMID (ex. 34320281) : métadonnées réelles via CrossRef / Europe PMC', id: 'imp-in' });
     var impBtn = el('button', { class: 'btn btn-accent' }, ['Ajouter']);
     impBtn.addEventListener('click', function () { importRef(impIn.value, impBtn); });
     impIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') importRef(impIn.value, impBtn); });
@@ -913,7 +913,7 @@
 
     // Alertes cohérence
     if (order.unknown.length) {
-      root.appendChild(el('div', { class: 'warnbox' }, ['Appels sans référence : ' + order.unknown.map(function (u) { return '[@' + u + ']'; }).join(', ') + ' — corrige le texte ou ajoute la référence.']));
+      root.appendChild(el('div', { class: 'warnbox' }, ['Appels sans référence : ' + order.unknown.map(function (u) { return '[@' + u + ']'; }).join(', ') + '. Corrige le texte ou ajoute la référence.']));
     }
     if (order.uncited.length) {
       root.appendChild(el('div', { class: 'warnbox' }, [String(order.uncited.length) + ' référence(s) jamais citée(s) dans le texte (marquées ci-dessous). Elles restent en fin de bibliographie.']));
@@ -1121,7 +1121,7 @@
     var totals = 'Texte assemblé : ' + countLabel(g);
     if (gl && gl.max) {
       var gv = pickCount(g, gl.kind);
-      totals += ' — limite globale ' + fmtN(gv) + '/' + fmtN(gl.max) + ' ' + KIND_SHORT[gl.kind] + (gv > gl.max ? ' ⚠ DÉPASSÉE' : ' ✓');
+      totals += ' · limite globale ' + fmtN(gv) + '/' + fmtN(gl.max) + ' ' + KIND_SHORT[gl.kind] + (gv > gl.max ? ' ⚠ DÉPASSÉE' : ' ✓');
     }
     paper.appendChild(el('div', { class: 'totals' }, [totals]));
 
@@ -1277,7 +1277,7 @@
   }
 
   function saveCloud(silent) {
-    if (!authToken) { if (!silent) alert('Connecte-toi (compte étudiant ou professionnel) pour sauvegarder dans le cloud — la sauvegarde locale reste active.'); return; }
+    if (!authToken) { if (!silent) alert('Connecte-toi (compte étudiant ou professionnel) pour sauvegarder dans le cloud ; la sauvegarde locale reste active.'); return; }
     // Une requête déjà en vol : re-tenter après, sinon un POST sans id partirait en
     // parallèle et créerait une ligne en double.
     if (saveInFlight) {
@@ -1303,7 +1303,7 @@
         saveLocal();
         setStatus(editAtSave === editSeq ? 'Enregistré ✓' : 'Modifié…');
       })
-      .catch(function () { saveInFlight = false; if (genAtSave === docGen) setStatus('Hors-ligne — sauvegarde locale'); });
+      .catch(function () { saveInFlight = false; if (genAtSave === docGen) setStatus('Hors-ligne · sauvegarde locale'); });
   }
 
   function openHistory() {
@@ -1421,7 +1421,7 @@
       body.appendChild(el('div', { class: 'proposal' }, [rep.revisedText]));
       if (rep.changes && rep.changes.length) {
         body.appendChild(el('h3', { style: 'font-size:13px;margin:12px 0 4px' }, ['Modifications effectuées']));
-        rep.changes.forEach(function (c) { body.appendChild(el('div', { class: 'chgline' }, [(c.kind ? c.kind + ' — ' : '') + (c.description || '')])); });
+        rep.changes.forEach(function (c) { body.appendChild(el('div', { class: 'chgline' }, [(c.kind ? c.kind + ' : ' : '') + (c.description || '')])); });
       }
       var apply = el('button', { class: 'btn btn-accent' }, ['Appliquer à la section']);
       var refuse = el('button', { class: 'btn' }, ['Refuser']);
@@ -1445,7 +1445,7 @@
     var def = sec.limit && sec.limit.max ? sec.limit : (art.meta.globalLimit || { kind: 'chars', max: 2500 });
     var raw = prompt(
       'Réduire « ' + (sec.title || 'Section') + ' » à combien ?\n' +
-      'Format : nombre + unité — « 2500 c » (caractères esp. comprises), « 1800 h » (hors espaces), « 250 m » (mots).',
+      'Format : nombre + unité, par exemple « 2500 c » (caractères esp. comprises), « 1800 h » (hors espaces), « 250 m » (mots).',
       def.max + ' ' + (def.kind === 'words' ? 'm' : def.kind === 'chars_no_spaces' ? 'h' : 'c')
     );
     if (!raw) return;
@@ -1469,7 +1469,7 @@
         body.appendChild(el('div', { class: rep.withinLimit ? 'okline' : 'caution' }, [
           rep.withinLimit
             ? 'Objectif atteint : ' + fmtN(achieved) + ' / ' + fmtN(max) + ' ' + KIND_SHORT[kind] + ' ✓ (vérifié par comptage, pas sur parole de l’IA)'
-            : 'Objectif non atteint : ' + fmtN(achieved) + ' / ' + fmtN(max) + ' ' + KIND_SHORT[kind] + ' — vois les compromis listés, ou relance.'
+            : 'Objectif non atteint : ' + fmtN(achieved) + ' / ' + fmtN(max) + ' ' + KIND_SHORT[kind] + '. Vois les compromis listés, ou relance.'
         ]));
         (rep.cautions || []).forEach(function (c) { body.appendChild(el('div', { class: 'caution' }, [c])); });
         body.appendChild(el('h3', { style: 'font-size:13px;margin:10px 0 6px' }, ['Texte réduit proposé']));

@@ -943,12 +943,12 @@ function BlogTab({ session }: { session: { access_token: string } | null }) {
         cliquable, image de couverture si la clé OpenAI est configurée). L'article arrive en
         brouillon : ouvre-le avec « Modifier » pour le relire en aperçu, ajuster le texte et
         les images (remplacer la couverture par une vraie photo, en insérer dans le corps),
-        puis publie-le — seuls les articles publiés sont visibles sur le blog public. Un
+        puis publie-le : seuls les articles publiés sont visibles sur le blog public. Un
         article reste modifiable après publication.
       </Text>
 
       <View style={blogStyles.generateCard}>
-        <Text style={blogStyles.generateLabel}>Sujet (optionnel — sinon l'IA choisit)</Text>
+        <Text style={blogStyles.generateLabel}>Sujet (optionnel, sinon l'IA choisit)</Text>
         <TextInput
           style={blogStyles.topicInput}
           value={topic}
@@ -1030,7 +1030,7 @@ function BlogTab({ session }: { session: { access_token: string } | null }) {
         ))
       )}
       {!loading && posts.length === 0 ? (
-        <Text style={blogStyles.empty}>Aucun article pour l'instant — génère le premier !</Text>
+        <Text style={blogStyles.empty}>Aucun article pour l'instant : génère le premier !</Text>
       ) : null}
 
       {editingId && session?.access_token ? (

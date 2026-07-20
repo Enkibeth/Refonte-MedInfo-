@@ -43,7 +43,7 @@ export default function LegalScreen() {
       <Text style={styles.title}>Informations légales</Text>
       <Text style={styles.lead}>
         Mentions légales, finalité du service, statut réglementaire, information sur l’IA et
-        protection des données — conformément à la LCEN (art. 6), au RGPD et à l’EU AI Act.
+        protection des données, conformément à la LCEN (art. 6), au RGPD et à l’EU AI Act.
       </Text>
 
       {/* Finalité prévue (intended purpose verbatim — 01_REGULATION §1) */}
@@ -101,7 +101,7 @@ export default function LegalScreen() {
         <Text style={styles.body}>
           Application web hébergée par Vercel Inc.{'\n'}
           340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis{'\n'}
-          Base de données et authentification : Supabase ({PENDING} — région UE).
+          Base de données et authentification : Supabase ({PENDING}, région UE).
         </Text>
       </Card>
 

@@ -206,7 +206,7 @@ export function BlogEditorModal({
       if (!res.ok) throw new Error(data.error ?? 'Échec.');
       changedRef.current = true;
       setPost({ ...post, status: publish ? 'published' : 'draft' });
-      setNotice(publish ? 'Article publié — visible sur le blog public.' : 'Article dépublié (brouillon).');
+      setNotice(publish ? 'Article publié : visible sur le blog public.' : 'Article dépublié (brouillon).');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Échec de la publication.');
     } finally {
@@ -226,7 +226,7 @@ export function BlogEditorModal({
     }
     if (!picked) {
       if (Platform.OS !== 'web') {
-        setError("L'import de fichier n'est disponible que sur le web — utilise l'option URL.");
+        setError("L'import de fichier n'est disponible que sur le web : utilise l'option URL.");
       }
       return;
     }
@@ -252,7 +252,7 @@ export function BlogEditorModal({
         setNotice('Photo de couverture remplacée.');
       } else {
         insertSnippet(`\n\n![Légende de l'image](${data.url})\n\n`);
-        setNotice("Image insérée dans l'article — pense à adapter la légende.");
+        setNotice("Image insérée dans l'article, pense à adapter la légende.");
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Échec de l'envoi de l'image.");
