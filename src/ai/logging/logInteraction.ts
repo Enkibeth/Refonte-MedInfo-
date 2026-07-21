@@ -1,9 +1,8 @@
 /**
  * Logging ai_interactions — service_role only (03_SECURITY §6).
  * Aucune donnée santé identifiable : pas de contenu de message.
- * Utilisé par la route API chat pour chaque interaction (refus ou réponse).
+ * Utilisé par les routes API IA (chat + autres features) pour chaque interaction.
  */
-import type { Persona } from '@/ai/prompts/_schema';
 import { createServerSupabaseClient } from '@/db/serverSupabase';
 
 export type GuardrailLayer = 'classifier' | 'prompt' | 'output_validation' | 'rag_cite_or_refuse' | 'none';
@@ -19,8 +18,11 @@ export type IntentCategory =
 
 export interface InteractionLog {
   user_id?: string;
-  persona: Persona;
+  /** Chatbot (public/student/professional) OU clé de feature (analyze, chat_meta…). */
+  persona: string;
   model_used: string;
+  /** Conversation chat associée (coût par conversation) — absent hors chat. */
+  conversation_id?: string;
   tokens_in?: number;
   tokens_out?: number;
   latency_ms?: number;

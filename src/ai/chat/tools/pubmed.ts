@@ -20,6 +20,7 @@ import { generateText, stepCountIs, tool } from 'ai';
 import { z } from 'zod';
 
 import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
+import { logFeatureUsage } from '@/ai/logging/logFeatureUsage';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import type { ChatbotId } from '@/ai/chat/chatContext';
 
@@ -93,6 +94,7 @@ export async function runPubmedAgent(
     stopWhen: stepCountIs(6),
     abortSignal: AbortSignal.timeout(AGENT_TIMEOUT_MS),
   });
+  logFeatureUsage({ feature: 'pubmed_agent', modelId: runtime.modelId, usage: result.usage });
   const text = result.text.trim();
   if (!text) throw new Error('Réponse vide du sous-agent PubMed');
   return text;

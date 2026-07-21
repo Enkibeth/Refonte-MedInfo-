@@ -28,6 +28,7 @@ import { z } from 'zod';
 
 import { isAdminUserId } from '@/admin/index';
 import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
+import { logFeatureUsage } from '@/ai/logging/logFeatureUsage';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { resolveChatPersona } from '@/ai/routing/serverPersona';
 import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
@@ -166,13 +167,14 @@ async function assist(body: Body): Promise<Response> {
     `\n\nTEXTE DE LA SECTION (les appels de citation [1], [2]… doivent être conservés) :\n"""${ctx.text}"""`;
 
   try {
-    const { object } = await generateObject({
+    const { object, usage } = await generateObject({
       model: runtime.model,
       system,
       schema: assistSchema,
       prompt,
       ...callOptions,
     });
+    logFeatureUsage({ feature: 'article_assist', modelId: runtime.modelId, usage });
     return Response.json({
       ...object,
       counts: object.revisedText ? countText(object.revisedText) : null,
@@ -228,13 +230,14 @@ async function reduce(body: Body): Promise<Response> {
     `\n\nTEXTE À RÉDUIRE (conserve tous les faits, chiffres et appels [1], [2]…) :\n"""${ctx.text}"""`;
 
   try {
-    const { object } = await generateObject({
+    const { object, usage } = await generateObject({
       model: runtime.model,
       system,
       schema: reduceSchema,
       prompt,
       ...callOptions,
     });
+    logFeatureUsage({ feature: 'article_reduce', modelId: runtime.modelId, usage });
     // Vérification DÉTERMINISTE : on recompte nous-mêmes, jamais sur parole de l'IA.
     const counts = countText(object.revisedText);
     const achieved = kind === 'chars' ? counts.withSpaces : kind === 'chars_no_spaces' ? counts.withoutSpaces : counts.words;
@@ -269,7 +272,7 @@ async function originality(body: Body): Promise<Response> {
   const { tools: webTools, ...callOptions } = runtime.options;
 
   try {
-    const { text: raw } = await generateText({
+    const { text: raw, usage } = await generateText({
       model: runtime.model,
       system,
       prompt:
@@ -279,6 +282,7 @@ async function originality(body: Body): Promise<Response> {
       ...callOptions,
       ...(webTools ? { tools: webTools } : {}),
     });
+    logFeatureUsage({ feature: 'article_originality', modelId: runtime.modelId, usage });
     const report = parseOriginalityReport(raw);
     if (!report) {
       // Fail-closed : rapport inexploitable → erreur claire, jamais un faux « ok ».

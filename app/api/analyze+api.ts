@@ -18,6 +18,7 @@ import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
 import { resolveVerifiedUserId } from '@/auth/serverIdentity';
 import { createServerSupabaseClient } from '@/db/serverSupabase';
 import { saveAnalysisServer } from '@/document/serverAnalysisHistory';
+import { logFeatureUsage } from '@/ai/logging/logFeatureUsage';
 import { buildCitationsFooter } from '@/document/citations';
 import type { AnalysisMode } from '@/document/analysisHistory';
 
@@ -194,12 +195,21 @@ export async function POST(request: Request): Promise<Response> {
           ]
         : [{ type: 'text', text: `${instruction}\n\n${input.text}` }];
 
+    const startMs = Date.now();
     const result = streamText({
       model: runtime.model,
       system: systemPrompt,
       messages: [{ role: 'user', content: userContent }],
       ...runtime.options,
-      onFinish: async ({ text, sources }) => {
+      onFinish: async ({ text, sources, usage }) => {
+        // Coût (2026-07) : tokens de l'analyse par modèle (feature `analyze`).
+        logFeatureUsage({
+          feature: 'analyze',
+          modelId: runtime.modelId,
+          usage,
+          userId,
+          latencyMs: Date.now() - startMs,
+        });
         // Archivage du seul RÉSULTAT (jamais du document) pour les comptes connectés.
         // Le pied CITATIONS est archivé avec le texte : l'historique ré-affiche la
         // même section « Passages du document cités » que le direct.

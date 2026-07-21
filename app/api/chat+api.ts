@@ -236,6 +236,8 @@ export async function POST(request: Request): Promise<Response> {
       await logInteraction({
         persona: chatbot,
         model_used: runtime.modelId,
+        // Coût par conversation (2026-07) : rattache les tokens à la conversation.
+        conversation_id: conversationId ?? undefined,
         tokens_in: usage?.inputTokens,
         tokens_out: usage?.outputTokens,
         latency_ms: Date.now() - startMs,

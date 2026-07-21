@@ -18,6 +18,7 @@ import { generateText } from 'ai';
 
 import { isAdminUserId } from '@/admin/index';
 import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
+import { logFeatureUsage } from '@/ai/logging/logFeatureUsage';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { resolveChatPersona } from '@/ai/routing/serverPersona';
 import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
@@ -62,12 +63,13 @@ export async function POST(request: Request): Promise<Response> {
   const system = `${template}${buildRevisionContext(stored, today)}`;
 
   try {
-    const { text } = await generateText({
+    const { text, usage } = await generateText({
       model: runtime.model,
       system,
       messages: [{ role: 'user', content: intentInstruction(intent) }],
       ...runtime.options,
     });
+    logFeatureUsage({ feature: 'revision_plan_assist', modelId: runtime.modelId, usage });
     return Response.json({ text });
   } catch (e) {
     console.error('Revision boost error:', e);
