@@ -408,6 +408,12 @@ export default function ChatScreen() {
   // persistante à gauche du fil (motif ChatGPT/Claude) au lieu d'une modale.
   const desktopShell = Platform.OS === 'web' && width >= SHELL_BREAKPOINT && !!session;
 
+  // Contrôles de réponse (profondeur + outils) : sur petit écran (mobile), on n'affiche
+  // PAS la rangée segmentée au-dessus du composer — on la remplace par deux boutons-icônes
+  // (🧠 profondeur + 🧰 outils) DANS la barre du composer, pour gagner de la hauteur de
+  // chat (demande Hugo). Au-delà, la rangée complète a la place de s'afficher.
+  const compactControls = width < 700;
+
   // Essai sans inscription (2026-06) : un visiteur non connecté découvre les 3 onglets
   // de chatbot et dispose d'UN message gratuit (indicateur 1/1 → 0/1), puis l'UI
   // propose inscription / connexion. Verrou serveur correspondant dans /api/chat.
@@ -1492,13 +1498,16 @@ export default function ChatScreen() {
           </View>
         ) : null}
         {attachError ? <Text style={styles.attachError}>{attachError}</Text> : null}
-        {!guestLocked ? (
+        {/* Écran large : rangée complète au-dessus du composer. Sur mobile, les mêmes
+            réglages passent dans la barre du composer (variante inline ci-dessous). */}
+        {!guestLocked && !compactControls ? (
           <ResponseControls
             mode={responseMode}
             onModeChange={setResponseMode}
             tools={outputTools}
             onToolsChange={setOutputTools}
             disabled={isLoading}
+            variant="bar"
           />
         ) : null}
         <View style={[styles.composer, inputFocused && styles.composerFocused]}>
@@ -1540,6 +1549,17 @@ export default function ChatScreen() {
               <DictationButton
                 onTranscript={(text) => setInput((prev) => (prev.trim() ? `${prev.trim()} ${text}` : text))}
                 disabled={isLoading}
+              />
+            ) : null}
+            {/* Mobile : profondeur (🧠) + outils (🧰) compacts, intégrés à la barre. */}
+            {!guestLocked && compactControls ? (
+              <ResponseControls
+                mode={responseMode}
+                onModeChange={setResponseMode}
+                tools={outputTools}
+                onToolsChange={setOutputTools}
+                disabled={isLoading}
+                variant="inline"
               />
             ) : null}
             <View style={styles.composerSpacer} />

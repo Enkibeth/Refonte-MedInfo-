@@ -26,6 +26,7 @@ import { useRouter } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId, AI_FEATURES } from '@/admin/index';
+import { aggregateCosts, hasPricing, MODEL_PRICING, type UsageRow } from '@/admin/cost';
 import { BlogEditorModal } from '@/ui/admin/BlogEditorModal';
 import { Icon, type IconName } from '@/ui/icons';
 import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
@@ -90,7 +91,7 @@ interface Config {
   prompts: PromptRow[];
 }
 
-type Tab = 'models' | 'prompts' | 'ecos' | 'blog';
+type Tab = 'models' | 'prompts' | 'ecos' | 'blog' | 'costs';
 
 const PROVIDER_COLORS: Record<string, string> = {
   anthropic: '#C96442',
@@ -1047,6 +1048,305 @@ function BlogTab({ session }: { session: { access_token: string } | null }) {
   );
 }
 
+// ── Onglet Coûts (usage de tokens par chatbot) ────────────────────────────────
+
+const COST_WINDOWS = [7, 30, 90] as const;
+
+const COST_PERSONA_LABELS: Record<string, string> = {
+  public: 'Chat grand public',
+  student: 'Chat étudiant',
+  professional: 'Chat professionnel',
+};
+
+function costPersonaLabel(persona: string): string {
+  return COST_PERSONA_LABELS[persona] ?? persona;
+}
+
+function fmtTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)} M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)} k`;
+  return String(n);
+}
+
+function fmtUsd(n: number): string {
+  if (n <= 0) return '$0';
+  if (n < 0.01) return '< $0,01';
+  return `$${n.toFixed(2)}`;
+}
+
+function CostsTab({ session }: { session: { access_token: string } | null }) {
+  const [usage, setUsage] = useState<UsageRow[]>([]);
+  const [days, setDays] = useState<(typeof COST_WINDOWS)[number]>(30);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/costs?days=${days}`, {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? 'Erreur');
+      setUsage((await res.json()).usage ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erreur de chargement.');
+    } finally {
+      setLoading(false);
+    }
+  }, [session?.access_token, days]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const summary = aggregateCosts(usage);
+
+  return (
+    <ScrollView style={costStyles.scroll} contentContainerStyle={costStyles.content}>
+      {/* Fenêtre temporelle */}
+      <View style={costStyles.windowRow}>
+        {COST_WINDOWS.map((w) => {
+          const active = days === w;
+          return (
+            <TouchableOpacity
+              key={w}
+              onPress={() => setDays(w)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              style={[costStyles.windowBtn, active && costStyles.windowBtnActive]}
+            >
+              <Text style={[costStyles.windowLabel, active && costStyles.windowLabelActive]}>
+                {w} jours
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Avertissement prix indicatifs */}
+      <View style={costStyles.notice}>
+        <Icon name="scale" size={15} color={tokens.colors.warningText} />
+        <Text style={costStyles.noticeText}>
+          Les tokens sont réels ; le coût est une ESTIMATION à partir de prix indicatifs
+          (USD / million de tokens), à ajuster dans src/admin/cost.ts selon ta facturation.
+        </Text>
+      </View>
+
+      {loading ? (
+        <View style={costStyles.center}>
+          <ActivityIndicator color={tokens.colors.accent} />
+        </View>
+      ) : error ? (
+        <View style={costStyles.errorBox}>
+          <Text style={costStyles.errorText}>{error}</Text>
+          <TouchableOpacity onPress={load} style={costStyles.retryBtn}>
+            <Text style={costStyles.retryText}>Réessayer</Text>
+          </TouchableOpacity>
+        </View>
+      ) : summary.chatbots.length === 0 ? (
+        <Text style={costStyles.empty}>Aucune interaction sur cette période.</Text>
+      ) : (
+        <>
+          {/* Total */}
+          <View style={costStyles.totalCard}>
+            <Text style={costStyles.totalLabel}>Coût total estimé ({days} j)</Text>
+            <Text style={costStyles.totalValue}>{fmtUsd(summary.totalCostUsd)}</Text>
+            <Text style={costStyles.totalMeta}>
+              {summary.totalRequests} requêtes · {fmtTokens(summary.totalTokensIn)} tokens in ·{' '}
+              {fmtTokens(summary.totalTokensOut)} tokens out
+            </Text>
+            {summary.hasUnpriced ? (
+              <Text style={costStyles.unpriced}>
+                ⚠ Certains modèles n’ont pas de prix défini : total sous-estimé.
+              </Text>
+            ) : null}
+          </View>
+
+          {/* Par chatbot */}
+          {summary.chatbots.map((c) => (
+            <View key={c.persona} style={costStyles.card}>
+              <View style={costStyles.cardHead}>
+                <Text style={costStyles.cardTitle}>{costPersonaLabel(c.persona)}</Text>
+                <Text style={costStyles.cardCost}>{fmtUsd(c.costUsd)}</Text>
+              </View>
+              <Text style={costStyles.cardMeta}>
+                {c.requests} requêtes · {fmtTokens(c.tokensIn)} in · {fmtTokens(c.tokensOut)} out
+              </Text>
+              {/* Détail par modèle */}
+              <View style={costStyles.modelList}>
+                {c.models.map((m) => (
+                  <View key={m.model} style={costStyles.modelRow}>
+                    <View style={costStyles.modelInfo}>
+                      <Text style={costStyles.modelName}>{m.model}</Text>
+                      <Text style={costStyles.modelPrice}>
+                        {hasPricing(m.model)
+                          ? `${MODEL_PRICING[m.model].inputPerM}$ / ${MODEL_PRICING[m.model].outputPerM}$ par M · ${fmtTokens(m.tokensIn)}+${fmtTokens(m.tokensOut)}`
+                          : `prix non défini · ${fmtTokens(m.tokensIn)}+${fmtTokens(m.tokensOut)}`}
+                      </Text>
+                    </View>
+                    <Text style={[costStyles.modelCost, !m.priced && costStyles.modelCostMuted]}>
+                      {m.priced ? fmtUsd(m.costUsd) : '—'}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ))}
+        </>
+      )}
+    </ScrollView>
+  );
+}
+
+const costStyles = StyleSheet.create({
+  scroll: { flex: 1 },
+  content: { padding: tokens.space.lg, gap: tokens.space.md, paddingBottom: tokens.space['3xl'] },
+  windowRow: { flexDirection: 'row', gap: tokens.space.sm },
+  windowBtn: {
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm,
+    borderRadius: tokens.radius.pill,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surface,
+  },
+  windowBtnActive: { backgroundColor: tokens.colors.accent, borderColor: tokens.colors.accent },
+  windowLabel: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textSubtle,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  windowLabelActive: { color: tokens.colors.onAccent },
+  notice: {
+    flexDirection: 'row',
+    gap: tokens.space.sm,
+    alignItems: 'flex-start',
+    backgroundColor: tokens.colors.warningBackground,
+    borderRadius: tokens.radius.md,
+    padding: tokens.space.md,
+  },
+  noticeText: {
+    flex: 1,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.warningText,
+    fontSize: tokens.type.caption.fontSize,
+    lineHeight: tokens.type.caption.lineHeight,
+  },
+  center: { paddingVertical: tokens.space['2xl'], alignItems: 'center' },
+  empty: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.body.fontSize,
+    paddingVertical: tokens.space.xl,
+    textAlign: 'center',
+  },
+  errorBox: { gap: tokens.space.sm, padding: tokens.space.lg },
+  errorText: { fontFamily: tokens.font.sans, color: tokens.colors.danger, fontSize: tokens.type.label.fontSize },
+  retryBtn: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.sm,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.accentSurface,
+  },
+  retryText: { fontFamily: tokens.font.sans, color: tokens.colors.accentDeep, fontWeight: tokens.weight.semibold },
+  totalCard: {
+    backgroundColor: tokens.colors.accentDarker,
+    borderRadius: tokens.radius.lg,
+    padding: tokens.space.lg,
+    gap: 2,
+  },
+  totalLabel: {
+    fontFamily: tokens.font.sans,
+    color: 'rgba(255,255,255,0.72)',
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+    textTransform: 'uppercase',
+    letterSpacing: tokens.tracking.caps,
+  },
+  totalValue: {
+    fontFamily: tokens.font.display,
+    color: tokens.colors.onAccent,
+    fontSize: tokens.type.display.fontSize,
+    lineHeight: tokens.type.display.lineHeight,
+    fontWeight: tokens.weight.bold,
+  },
+  totalMeta: {
+    fontFamily: tokens.font.sans,
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: tokens.type.caption.fontSize,
+    marginTop: 2,
+  },
+  unpriced: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.warningText,
+    backgroundColor: tokens.colors.warningBackground,
+    fontSize: tokens.type.caption.fontSize,
+    borderRadius: tokens.radius.sm,
+    paddingHorizontal: tokens.space.sm,
+    paddingVertical: 4,
+    marginTop: tokens.space.sm,
+  },
+  card: {
+    backgroundColor: tokens.colors.surface,
+    borderRadius: tokens.radius.lg,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    padding: tokens.space.lg,
+    gap: tokens.space.xs,
+    ...tokens.elevation.sm,
+  },
+  cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  cardTitle: {
+    fontFamily: tokens.font.display,
+    color: tokens.colors.text,
+    fontSize: tokens.type.h3.fontSize,
+    fontWeight: tokens.weight.bold,
+  },
+  cardCost: {
+    fontFamily: tokens.font.display,
+    color: tokens.colors.accent,
+    fontSize: tokens.type.h3.fontSize,
+    fontWeight: tokens.weight.bold,
+  },
+  cardMeta: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+  },
+  modelList: { marginTop: tokens.space.sm, gap: tokens.space.xs },
+  modelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: tokens.space.sm,
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.border,
+    paddingTop: tokens.space.sm,
+  },
+  modelInfo: { flex: 1, gap: 1 },
+  modelName: {
+    fontFamily: tokens.font.mono,
+    color: tokens.colors.text,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  modelPrice: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.micro.fontSize,
+  },
+  modelCost: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.bold,
+  },
+  modelCostMuted: { color: tokens.colors.textMuted },
+});
+
 const blogStyles = StyleSheet.create({
   generateCard: {
     borderRadius: tokens.radius.md,
@@ -1154,6 +1454,7 @@ const ADMIN_TABS: Array<{ key: Tab; label: string; icon: IconName }> = [
   { key: 'prompts', label: 'Prompts', icon: 'penLine' },
   { key: 'ecos', label: 'Cas ECOS', icon: 'stethoscope' },
   { key: 'blog', label: 'Blog', icon: 'bookOpen' },
+  { key: 'costs', label: 'Coûts', icon: 'scale' },
 ];
 
 export default function AdminScreen() {
@@ -1264,6 +1565,8 @@ export default function AdminScreen() {
         <EcosTab session={session} />
       ) : tab === 'blog' ? (
         <BlogTab session={session} />
+      ) : tab === 'costs' ? (
+        <CostsTab session={session} />
       ) : loading ? (
         <View style={styles.loading}>
           <ActivityIndicator color={tokens.colors.accent} size="large" />
