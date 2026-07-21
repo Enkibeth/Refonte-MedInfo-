@@ -10,7 +10,7 @@
  */
 import { createClient } from '@supabase/supabase-js';
 import { requireAdmin } from '@/admin/index';
-import { groupUsage } from '@/admin/cost';
+import { groupConversationUsage, groupUsage } from '@/admin/cost';
 
 function serviceClient() {
   const url = process.env.SUPABASE_URL ?? process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
@@ -33,12 +33,19 @@ export async function GET(request: Request): Promise<Response> {
   const db = serviceClient();
   const { data, error } = await db
     .from('ai_interactions')
-    .select('persona, model_used, tokens_in, tokens_out')
+    .select('persona, model_used, tokens_in, tokens_out, conversation_id, created_at')
     .gte('created_at', since)
     .limit(100000);
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  // Groupage persona × modèle côté serveur (le prix est appliqué côté client).
-  return Response.json({ days, usage: groupUsage(data ?? []) });
+  // Groupage côté serveur (le prix est appliqué côté client, une seule grille) :
+  //  - `usage` : par feature/chatbot × modèle (global) ;
+  //  - `conversations` : par conversation × modèle (lignes portant un conversation_id).
+  const rows = data ?? [];
+  return Response.json({
+    days,
+    usage: groupUsage(rows),
+    conversations: groupConversationUsage(rows),
+  });
 }

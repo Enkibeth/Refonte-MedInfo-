@@ -116,6 +116,7 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 | `0037_ecos_cases_annales_2024.sql` | Corpus ECOS « Annales 2024 » : insert idempotent de 15 stations ECOS FICTIVES (couvrant les SDD des annales 2024) dans `ecos_cases` | Non (cas pédagogiques fictifs, aucun contenu tiers copyrighté) | Lecture cas publiés (RLS 0013 inchangée) ; écriture service_role | Miroir de `data/ecos-cases.json` ; ON CONFLICT (slug) DO UPDATE ; appliquée via MCP le 2026-07-15 ; ADR-0017 |
 | `0038_ecos_cases_cleanup_legacy.sql` | Nettoyage ECOS : DELETE idempotent des 17 cas de démonstration antérieurs (placeholder 0013 + corpus de démo) pour ne garder que les 15 stations « Annales 2024 » (0037) | Non (cas fictifs) | Écriture service_role ; RLS 0013 inchangée | Les passages `ecos_attempts` référencent le slug en texte (pas de FK) → historique des notes conservé ; appliquée via MCP le 2026-07-15 ; décision Hugo |
 | `0035_ecos_attempts.sql` | Dashboard ECOS : table `ecos_attempts` (`case_slug`, `case_title`, `specialty`, `score` numeric CHECK 0–20 nullable, `evaluation` markdown) — historique des passages avec note | Non (entraînement sur cas FICTIFS ; la transcription de la simulation n'est jamais conservée) | Own-row stricte select/insert/delete (client anon → RLS) ; passage IMMUABLE : aucun UPDATE (ni policy ni grant) | Test `tests/rls/ecos-attempts.test.ts` ; note extraite du markdown par `src/ecos/score.ts` (null si introuvable, jamais inventée) ; appliquée sur le projet via MCP le 2026-07-08 ; ADR-0032 |
+| `0039_ai_interactions_conversation.sql` | Coût par conversation : colonne `conversation_id` (uuid, nullable) sur `ai_interactions` pour rattacher les tokens du chat à leur conversation (onglet Coûts admin) | Non (identifiant de conversation + compteurs de tokens seulement — jamais de contenu ni de titre) | Service role only (hérite du verrou 0002 : RLS sans policy) | NULL hors chat / anonyme ; renseignée par `/api/chat` ; nourrit `groupConversationUsage`/`aggregateConversationCosts` (`src/admin/cost.ts`, testé) ; appliquée via MCP le 2026-07-21 |
 
 > Si une migration ci-dessus n'existe pas encore dans `supabase/migrations/`, la documenter comme décision attendue et ne pas modifier le schéma sans tests RLS correspondants.
 > Note : `supabase/setup/` contient le setup Supabase-spécifique (bucket Storage `consultation-audio`, RLS Storage, purge `pg_cron`) NON rejoué par le harness RLS CI ; appliqué directement sur le projet via MCP.
@@ -233,12 +234,19 @@ Comptes admin : `medaifr1@gmail.com`, `h.bilal0@icloud.com`
 Pour ajouter un admin : modifier `ADMIN_USER_IDS` dans `src/admin/index.ts`.
 
 Onglets : Modèles IA · Prompts · Cas ECOS · Blog · **Coûts** (2026-07). L'onglet Coûts
-agrège `ai_interactions` (tokens réels) par chatbot × modèle sur 7/30/90 jours
-(`app/api/admin/costs+api.ts`, `requireAdmin` + service role, ne lit que persona/modèle/
-compteurs de tokens) et applique une grille de prix ÉDITABLE `src/admin/cost.ts`
-(module pur testé `tests/unit/admin-cost.test.ts`) — les tokens sont réels, le coût est
-INDICATIF (prix USD/M tokens à ajuster selon la facturation ; un modèle sans prix est
-compté 0 $ et signalé). Aucune migration, aucun appel LLM.
+agrège `ai_interactions` (tokens réels) par feature/chatbot × modèle ET **par
+conversation** sur 7/30/90 jours (`app/api/admin/costs+api.ts`, `requireAdmin` + service
+role, ne lit que persona/modèle/`conversation_id`/compteurs de tokens — jamais de
+contenu ni de titre). Grille de prix ÉDITABLE `src/admin/cost.ts` : prix EXACT pour les
+modèles courants + repli PAR FAMILLE (mini/nano/pro/flash…) pour couvrir tous les
+modèles configurables, module pur testé `tests/unit/admin-cost.test.ts`. Coût INDICATIF
+(un modèle sans prix — ex. Whisper à la minute — est compté 0 $ et signalé).
+**Instrumentation complète (2026-07)** : toutes les routes IA loguent via le helper
+`src/ai/logging/logFeatureUsage.ts` — chat (+ `conversation_id`), chat_meta, sous-agent
+PubMed, analyze, ECOS (simulate/evaluate), présentation, CV (review/import), article
+(assist/reduce/originality), QCM, révision, audio (diarize/report). Reste non instrumenté :
+le pipeline blog hebdo (faible fréquence). Migration `0039` (colonne `conversation_id`),
+aucun appel LLM ajouté.
 
 ## Fonctionnalités IA actuelles
 

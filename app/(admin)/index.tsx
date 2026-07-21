@@ -26,7 +26,13 @@ import { useRouter } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId, AI_FEATURES } from '@/admin/index';
-import { aggregateCosts, hasPricing, MODEL_PRICING, type UsageRow } from '@/admin/cost';
+import {
+  aggregateConversationCosts,
+  aggregateCosts,
+  resolveModelPrice,
+  type ConvUsageRow,
+  type UsageRow,
+} from '@/admin/cost';
 import { BlogEditorModal } from '@/ui/admin/BlogEditorModal';
 import { Icon, type IconName } from '@/ui/icons';
 import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
@@ -1053,9 +1059,26 @@ function BlogTab({ session }: { session: { access_token: string } | null }) {
 const COST_WINDOWS = [7, 30, 90] as const;
 
 const COST_PERSONA_LABELS: Record<string, string> = {
+  // Chatbots
   public: 'Chat grand public',
   student: 'Chat étudiant',
   professional: 'Chat professionnel',
+  // Autres features IA (clé loguée dans ai_interactions.persona)
+  chat_meta: 'Titres & catégories (chat_meta)',
+  pubmed_agent: 'Sous-agent PubMed',
+  analyze: 'Analyse de document',
+  ecos_simulate: 'ECOS — simulation',
+  ecos_evaluate: 'ECOS — évaluation',
+  presentation_generate: 'Générateur de présentations',
+  cv_review: 'CV — relecture',
+  cv_import: 'CV — import',
+  article_assist: 'Article — aide',
+  article_reduce: 'Article — réduction',
+  article_originality: 'Article — originalité',
+  qcm_generate: 'QCM',
+  revision_plan_assist: 'Révisions — coup de pouce',
+  audio_diarize: 'Audio — diarisation',
+  audio_report: 'Audio — compte rendu',
 };
 
 function costPersonaLabel(persona: string): string {
@@ -1074,8 +1097,25 @@ function fmtUsd(n: number): string {
   return `$${n.toFixed(2)}`;
 }
 
+/** Ligne de prix affichée sous un modèle (exact / par famille / non défini). */
+function modelPriceLine(model: string, tokensIn: number, tokensOut: number): string {
+  const p = resolveModelPrice(model);
+  const tokens = `${fmtTokens(tokensIn)}+${fmtTokens(tokensOut)}`;
+  if (p.source === 'unknown') return `prix non défini · ${tokens}`;
+  const tag = p.source === 'family' ? ' (est. famille)' : '';
+  return `${p.inputPerM}$ / ${p.outputPerM}$ par M${tag} · ${tokens}`;
+}
+
+/** Étiquette courte d'une conversation (id abrégé + date) — jamais le titre (confidentialité). */
+function convShortLabel(conversationId: string, lastAt: string): string {
+  const shortId = conversationId.slice(0, 8);
+  const date = lastAt ? new Date(lastAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : '';
+  return date ? `${shortId} · ${date}` : shortId;
+}
+
 function CostsTab({ session }: { session: { access_token: string } | null }) {
   const [usage, setUsage] = useState<UsageRow[]>([]);
+  const [conversations, setConversations] = useState<ConvUsageRow[]>([]);
   const [days, setDays] = useState<(typeof COST_WINDOWS)[number]>(30);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1088,7 +1128,9 @@ function CostsTab({ session }: { session: { access_token: string } | null }) {
         headers: { Authorization: `Bearer ${session?.access_token}` },
       });
       if (!res.ok) throw new Error((await res.json()).error ?? 'Erreur');
-      setUsage((await res.json()).usage ?? []);
+      const json = await res.json();
+      setUsage(json.usage ?? []);
+      setConversations(json.conversations ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur de chargement.');
     } finally {
@@ -1101,6 +1143,7 @@ function CostsTab({ session }: { session: { access_token: string } | null }) {
   }, [load]);
 
   const summary = aggregateCosts(usage);
+  const convCosts = aggregateConversationCosts(conversations).slice(0, 20);
 
   return (
     <ScrollView style={costStyles.scroll} contentContainerStyle={costStyles.content}>
@@ -1180,9 +1223,7 @@ function CostsTab({ session }: { session: { access_token: string } | null }) {
                     <View style={costStyles.modelInfo}>
                       <Text style={costStyles.modelName}>{m.model}</Text>
                       <Text style={costStyles.modelPrice}>
-                        {hasPricing(m.model)
-                          ? `${MODEL_PRICING[m.model].inputPerM}$ / ${MODEL_PRICING[m.model].outputPerM}$ par M · ${fmtTokens(m.tokensIn)}+${fmtTokens(m.tokensOut)}`
-                          : `prix non défini · ${fmtTokens(m.tokensIn)}+${fmtTokens(m.tokensOut)}`}
+                        {modelPriceLine(m.model, m.tokensIn, m.tokensOut)}
                       </Text>
                     </View>
                     <Text style={[costStyles.modelCost, !m.priced && costStyles.modelCostMuted]}>
@@ -1193,6 +1234,34 @@ function CostsTab({ session }: { session: { access_token: string } | null }) {
               </View>
             </View>
           ))}
+
+          {/* Conversations les plus coûteuses (sans titre — confidentialité). */}
+          {convCosts.length > 0 ? (
+            <View style={costStyles.card}>
+              <Text style={costStyles.cardTitle}>Conversations les plus coûteuses</Text>
+              <Text style={costStyles.cardMeta}>
+                Identifiées par un id court + date, sans le titre (contenu de santé jamais exposé).
+              </Text>
+              <View style={costStyles.modelList}>
+                {convCosts.map((c) => (
+                  <View key={c.conversationId} style={costStyles.modelRow}>
+                    <View style={costStyles.modelInfo}>
+                      <Text style={costStyles.modelName}>{convShortLabel(c.conversationId, c.lastAt)}</Text>
+                      <Text style={costStyles.modelPrice}>
+                        {costPersonaLabel(c.persona)} · {c.requests} req · {fmtTokens(c.tokensIn)}+{fmtTokens(c.tokensOut)}
+                      </Text>
+                    </View>
+                    <Text style={costStyles.modelCost}>{fmtUsd(c.costUsd)}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : (
+            <Text style={costStyles.hint}>
+              Le détail par conversation apparaîtra à mesure des nouveaux échanges (depuis
+              l’activation du suivi par conversation).
+            </Text>
+          )}
         </>
       )}
     </ScrollView>
@@ -1345,6 +1414,14 @@ const costStyles = StyleSheet.create({
     fontWeight: tokens.weight.bold,
   },
   modelCostMuted: { color: tokens.colors.textMuted },
+  hint: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+    lineHeight: tokens.type.caption.lineHeight,
+    fontStyle: 'italic',
+    paddingHorizontal: tokens.space.xs,
+  },
 });
 
 const blogStyles = StyleSheet.create({

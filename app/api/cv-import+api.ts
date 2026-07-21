@@ -18,6 +18,7 @@ import { z } from 'zod';
 
 import { isAdminUserId } from '@/admin/index';
 import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
+import { logFeatureUsage } from '@/ai/logging/logFeatureUsage';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { resolveChatPersona } from '@/ai/routing/serverPersona';
 import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
@@ -102,7 +103,7 @@ export async function POST(request: Request): Promise<Response> {
   const { tools: _tools, ...callOptions } = runtime.options;
 
   try {
-    const { object } = await generateObject({
+    const { object, usage } = await generateObject({
       model: runtime.model,
       system,
       schema: importSchema,
@@ -113,6 +114,7 @@ export async function POST(request: Request): Promise<Response> {
         'pour toute information absente du CV.\n\n"""' + text + '"""',
       ...callOptions,
     });
+    logFeatureUsage({ feature: 'cv_import', modelId: runtime.modelId, usage });
     return Response.json({ document: normalizeImportedCv(object) });
   } catch (e) {
     console.error('CV import error:', e);

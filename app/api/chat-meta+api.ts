@@ -14,6 +14,7 @@ import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { resolveVerifiedUserId } from '@/auth/serverIdentity';
 import { createServerSupabaseClient } from '@/db/serverSupabase';
+import { logFeatureUsage } from '@/ai/logging/logFeatureUsage';
 
 export const CHAT_CATEGORIES = [
   'Symptômes',
@@ -57,7 +58,8 @@ export async function POST(request: Request): Promise<Response> {
     ]);
     const { tools: _tools, ...callOptions } = runtime.options;
 
-    const { object } = await generateObject({
+    const startMs = Date.now();
+    const { object, usage } = await generateObject({
       model: runtime.model,
       system,
       schema: metaSchema,
@@ -67,6 +69,13 @@ export async function POST(request: Request): Promise<Response> {
       ...callOptions,
     });
 
+    logFeatureUsage({
+      feature: 'chat_meta',
+      modelId: runtime.modelId,
+      usage,
+      userId,
+      latencyMs: Date.now() - startMs,
+    });
     return Response.json(object);
   } catch (e) {
     // Repli déterministe : jamais d'échec bloquant pour une simple métadonnée.

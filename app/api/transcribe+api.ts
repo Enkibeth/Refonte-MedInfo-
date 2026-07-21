@@ -10,6 +10,7 @@
  */
 import { generateText } from 'ai';
 import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
+import { logFeatureUsage } from '@/ai/logging/logFeatureUsage';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { sanitizeMedicalReport } from '@/ai/audio/sanitizeReport';
 
@@ -91,12 +92,13 @@ export async function POST(request: Request): Promise<Response> {
       getPromptTemplate('audio_diarize'),
     ]);
 
-    const { text: labelled } = await generateText({
+    const { text: labelled, usage } = await generateText({
       model: diarizeRuntime.model,
       system: diarizePrompt,
       messages: [{ role: 'user', content: rawTranscription }],
       ...diarizeRuntime.options,
     });
+    logFeatureUsage({ feature: 'audio_diarize', modelId: diarizeRuntime.modelId, usage });
 
     if (labelled.trim()) labelledTranscription = labelled.trim();
   } catch (e) {
@@ -115,7 +117,7 @@ export async function POST(request: Request): Promise<Response> {
       getPromptTemplate('audio_report'),
     ]);
 
-    const { text: report } = await generateText({
+    const { text: report, usage: reportUsage } = await generateText({
       model: reportRuntime.model,
       system: reportPrompt,
       ...reportRuntime.options,
@@ -126,6 +128,7 @@ export async function POST(request: Request): Promise<Response> {
         },
       ],
     });
+    logFeatureUsage({ feature: 'audio_report', modelId: reportRuntime.modelId, usage: reportUsage });
 
     // Nettoyage : retrait des emojis/symboles décoratifs et normalisation markdown
     // pour un compte rendu médical sobre, propre et exportable en PDF.

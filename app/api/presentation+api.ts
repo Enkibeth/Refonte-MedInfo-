@@ -18,6 +18,7 @@ import { generateText } from 'ai';
 
 import { isAdminUserId } from '@/admin/index';
 import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
+import { logFeatureUsage } from '@/ai/logging/logFeatureUsage';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { resolveChatPersona } from '@/ai/routing/serverPersona';
 import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
@@ -87,12 +88,13 @@ export async function POST(request: Request): Promise<Response> {
   const system = `${template}${buildPresentationContextSection(options, body.deck)}`;
 
   try {
-    const { text } = await generateText({
+    const { text, usage } = await generateText({
       model: runtime.model,
       system,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       ...runtime.options,
     });
+    logFeatureUsage({ feature: 'presentation_generate', modelId: runtime.modelId, usage });
     return Response.json({ text });
   } catch (e) {
     console.error('Presentation generation error:', e);

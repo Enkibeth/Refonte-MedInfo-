@@ -9,6 +9,7 @@ import { streamText, generateText } from 'ai';
 import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
+import { logFeatureUsage } from '@/ai/logging/logFeatureUsage';
 
 interface EcosMessage {
   role: 'user' | 'assistant';
@@ -50,12 +51,13 @@ export async function POST(request: Request): Promise<Response> {
     const combinedSystem = `${systemPrompt}\n\n${evalPromptSuffix}`;
 
     try {
-      const { text } = await generateText({
+      const { text, usage } = await generateText({
         model: runtime.model,
         system: combinedSystem,
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
         ...runtime.options,
       });
+      logFeatureUsage({ feature: 'ecos_evaluate', modelId: runtime.modelId, usage });
       return Response.json({ evaluation: text });
     } catch (e) {
       console.error('ECOS evaluation error:', e);
@@ -81,6 +83,9 @@ export async function POST(request: Request): Promise<Response> {
       system: combinedSystem,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       ...runtime.options,
+      onFinish: ({ usage }) => {
+        logFeatureUsage({ feature: 'ecos_simulate', modelId: runtime.modelId, usage });
+      },
     });
     return result.toTextStreamResponse();
   } catch (e) {
