@@ -44,6 +44,7 @@ import {
 } from '@/ai/chat/responseMode';
 import { buildOutputToolsSection, coerceChatOutputTools } from '@/ai/chat/outputTools';
 import { appendAttachmentToModelMessages, coerceChatAttachment } from '@/ai/chat/attachment';
+import { isConversationalTurn, latestUserText } from '@/ai/chat/turnKind';
 import { isAdminUserId } from '@/admin/index';
 import {
   buildChatTools,
@@ -160,12 +161,22 @@ export async function POST(request: Request): Promise<Response> {
 
   const { tools: webTools, ...callOptions } = runtime.options;
 
+  // Assemblage conditionnel du prompt (audit latence 2026-07, item I) : un tour PUREMENT
+  // conversationnel (« bonjour », « merci », « ok ») n'a besoin ni du workflow outils, ni de
+  // la section pharmaco, ni d'une recherche web — on les charge À LA DEMANDE. Détecteur
+  // CONSERVATEUR (turnKind.ts) : au moindre signal de substance → tour substantiel = prompt
+  // complet + outils. On ne touche JAMAIS au cœur clinique du prompt produit (toujours
+  // envoyé) ; pas de routage des blocs cliniques (pas de classifieur pré-LLM, cf. ADR-0024).
+  // Une pièce jointe rend toujours le tour substantiel (document à analyser).
+  const conversational =
+    !(attachment && canAttach) && isConversationalTurn(latestUserText(uiMessages));
+
   // PubMed pour le chatbot pro (suivi ADR-0030), deux voies :
   //  - modèle Claude → connecteur MCP direct sur l'appel principal ;
   //  - autre modèle (gpt-5.2 par défaut) → délégation : l'orchestrateur reçoit l'outil
   //    `pubmed_search`, exécuté par un SOUS-AGENT Claude (feature `pubmed_agent`) qui
   //    monte le connecteur MCP. Requiert ANTHROPIC_API_KEY ; `PUBMED_MCP_URL=off` coupe tout.
-  const mcpServers = pubmedMcpServers(runtime.provider, chatbot);
+  const mcpServers = conversational ? null : pubmedMcpServers(runtime.provider, chatbot);
   if (mcpServers) {
     callOptions.providerOptions = {
       ...(callOptions.providerOptions ?? {}),
@@ -174,20 +185,27 @@ export async function POST(request: Request): Promise<Response> {
   }
   const pubmedAgent =
     !mcpServers &&
+    !conversational &&
     chatbot === 'professional' &&
     runtime.provider !== 'anthropic' &&
     Boolean(process.env.ANTHROPIC_API_KEY) &&
     resolvePubmedMcpUrl() !== null;
 
-  const system = `${template}${buildUserContextSection(personalInfo)}${buildCountryContextSection(country)}${buildChatToolsSection(chatbot, { pubmedMcp: mcpServers !== null, pubmedAgent })}${buildPharmacologySection(chatbot)}${buildResponseModeSection(responseMode)}${buildOutputToolsSection(outputTools)}`;
+  // Cœur clinique du prompt produit : TOUJOURS envoyé (rôle, sécurité, recueil, formats).
+  const coreSystem = `${template}${buildUserContextSection(personalInfo)}${buildCountryContextSection(country)}`;
+  const system = conversational
+    ? coreSystem
+    : `${coreSystem}${buildChatToolsSection(chatbot, { pubmedMcp: mcpServers !== null, pubmedAgent })}${buildPharmacologySection(chatbot)}${buildResponseModeSection(responseMode)}${buildOutputToolsSection(outputTools)}`;
 
   // Workflow agents (ADR-0030) : le modèle orchestre des outils qualité serveur
   // (Europe PMC, ClinicalTrials.gov pour le pro, vérification des liens sources).
   // Gemini n'accepte pas de mélanger googleSearch et function tools : dans ce cas
   // on garde la recherche web du provider et on renonce aux outils custom.
-  const qualityTools = buildChatTools(chatbot, { pubmedAgent });
-  const tools =
-    runtime.provider === 'google' && webTools
+  // Tour conversationnel → aucun outil (réponse directe, instantanée, sans recherche web).
+  const qualityTools = conversational ? {} : buildChatTools(chatbot, { pubmedAgent });
+  const tools = conversational
+    ? {}
+    : runtime.provider === 'google' && webTools
       ? webTools
       : { ...(webTools ?? {}), ...qualityTools };
 

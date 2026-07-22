@@ -76,6 +76,7 @@ import { CountrySelector } from '@/ui/chat/CountrySelector';
 import { coerceCountry, type CountryCode } from '@/ai/chat/country';
 import { ResponseControls } from '@/ui/chat/ResponseControls';
 import { coerceResponseMode, type ResponseMode } from '@/ai/chat/responseMode';
+import { summarizeChatProgress, type ChatProgressStep } from '@/ai/chat/progress';
 import { coerceChatOutputTools, type ChatOutputTool } from '@/ai/chat/outputTools';
 import {
   ATTACHMENT_ACCEPT,
@@ -179,6 +180,30 @@ function StatusBubble({ phase, toolLabel }: { phase: ChatPhase; toolLabel?: stri
       </View>
       <Text style={styles.statusText}>{label}</Text>
       <PulsingDots />
+    </View>
+  );
+}
+
+/**
+ * Trace de progression du workflow evidence-first (latence PERÇUE, audit 2026-07, item H) :
+ * au lieu d'une seule ligne qui « tourne », l'utilisateur voit les étapes déjà franchies
+ * s'empiler (recherche → lecture → vérification), ce qui rend l'attente légitime et donne
+ * un sentiment d'avancement. Données déjà présentes dans le flux (parts d'appel d'outil) —
+ * aucun appel réseau ajouté. La phase en cours reste affichée par la bulle de statut.
+ */
+function ProgressTrace({ steps }: { steps: ChatProgressStep[] }) {
+  if (steps.length === 0) return null;
+  return (
+    <View style={styles.progressTrace} accessibilityLabel="Étapes de recherche effectuées">
+      {steps.map((s, i) => (
+        <View key={`${s.tool}-${i}`} style={styles.progressRow}>
+          <Icon name="check" size={12} color={tokens.colors.success} />
+          <Text style={styles.progressText}>
+            {s.label}
+            {s.count > 1 ? ` (${s.count})` : ''}
+          </Text>
+        </View>
+      ))}
     </View>
   );
 }
@@ -1316,7 +1341,12 @@ export default function ChatScreen() {
           </Reveal>
         ))}
         {(showStatus || recovering) && (
-          <StatusBubble phase={recovering ? 'recovering' : phase} toolLabel={activeToolLabel(lastAssistant)} />
+          <View style={styles.statusStack}>
+            {!recovering ? (
+              <ProgressTrace steps={summarizeChatProgress(lastAssistant?.parts)} />
+            ) : null}
+            <StatusBubble phase={recovering ? 'recovering' : phase} toolLabel={activeToolLabel(lastAssistant)} />
+          </View>
         )}
 
         {/* ── Passerelles étudiant : prolonger la révision avec les outils du rôle ── */}
@@ -2015,6 +2045,19 @@ const styles = StyleSheet.create({
   },
   messageActionTextDone: { color: tokens.colors.success },
 
+  statusStack: { alignSelf: 'flex-start', gap: tokens.space.xs },
+  progressTrace: {
+    alignSelf: 'flex-start',
+    gap: tokens.space.xs,
+    paddingHorizontal: tokens.space.sm,
+  },
+  progressRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.xs },
+  progressText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.medium,
+  },
   statusPill: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
