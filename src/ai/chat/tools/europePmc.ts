@@ -138,7 +138,10 @@ export function europePmcSearchTool(fetchImpl: typeof fetch = fetch) {
 // le résumé COMPLET d'un article identifié (PMID ou DOI) pour que la synthèse s'appuie
 // sur le contenu réel de l'étude — jamais sur son seul titre.
 
-const MAX_ABSTRACT_CHARS = 3_000;
+// Audit latence 2026-07 : les résumés lus s'accumulent dans le contexte à chaque étape
+// (2-3 lectures/réponse). 2000 caractères couvrent l'essentiel d'un abstract structuré
+// (contexte/méthode/résultats/conclusion) tout en réduisant d'un tiers les tokens injectés.
+const MAX_ABSTRACT_CHARS = 2_000;
 
 /**
  * URL Europe PMC pour lire un article par PMID (endpoint article) ou DOI (recherche
