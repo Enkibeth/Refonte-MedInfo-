@@ -82,6 +82,16 @@ export const AI_FEATURES = [
     providers: ['anthropic', 'openai', 'google'],
   },
   {
+    key: 'chat_researcher',
+    emoji: '🔎',
+    label: 'Chat — Agent chercheur (orchestrateur)',
+    description:
+      'Split orchestrateur/rédacteur (flag CHAT_ORCHESTRATOR_SPLIT) : modèle bon marché qui rassemble un dossier de preuves vérifié, la rédaction restant sur le modèle du chat',
+    apiRoute: '/api/chat',
+    promptKeys: ['chat_researcher'],
+    providers: ['openai', 'anthropic', 'google'],
+  },
+  {
     key: 'chat_meta',
     emoji: '🏷️',
     label: 'Chat — Titre & catégorie',
