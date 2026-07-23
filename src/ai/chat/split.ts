@@ -8,17 +8,21 @@
  * modèle fiable (gpt-5.2, feature `chat`) qui écrit la réponse À PARTIR du dossier, sans
  * outils. Bénéfice : ~-29 % de coût estimé, la rédaction patient reste sur le modèle fort.
  *
- * ⚠️ Derrière un flag (`CHAT_ORCHESTRATOR_SPLIT`), OFF par défaut : le split est une refonte
- * du cœur clinique dont le comportement en streaming réel se valide en conditions live. Tant
- * que le flag est OFF, `/api/chat` garde le pipeline mono-modèle historique, inchangé.
+ * Flag `CHAT_ORCHESTRATOR_SPLIT` = KILL-SWITCH : le split est ACTIF PAR DÉFAUT (décision
+ * Hugo 2026-07). Pour revenir au pipeline mono-modèle historique, poser
+ * `CHAT_ORCHESTRATOR_SPLIT=off` (aucun redéploiement de code nécessaire). Fail-open par
+ * ailleurs : si la phase de recherche échoue, `/api/chat` retombe sur le mono-modèle.
  *
  * Module PUR (server-safe, aucun réseau, aucune donnée de santé) : testé dans
  * tests/unit/chat-split.test.ts.
  */
 
-/** Le split orchestrateur/rédacteur est-il activé ? (env `CHAT_ORCHESTRATOR_SPLIT=on`). */
+/**
+ * Le split orchestrateur/rédacteur est-il activé ? ACTIF par défaut (kill-switch) :
+ * seul `CHAT_ORCHESTRATOR_SPLIT=off` le désactive ; toute autre valeur (ou absence) = ON.
+ */
 export function splitModeEnabled(env: Record<string, string | undefined> = process.env): boolean {
-  return (env.CHAT_ORCHESTRATOR_SPLIT ?? '').trim().toLowerCase() === 'on';
+  return (env.CHAT_ORCHESTRATOR_SPLIT ?? '').trim().toLowerCase() !== 'off';
 }
 
 /**

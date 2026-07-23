@@ -2,19 +2,19 @@ import { describe, it, expect } from 'vitest';
 
 import { splitModeEnabled, buildBriefSection } from '@/ai/chat/split';
 
-describe('splitModeEnabled — flag serveur (OFF par défaut)', () => {
-  it('activé uniquement par CHAT_ORCHESTRATOR_SPLIT=on (insensible à la casse/espaces)', () => {
+describe('splitModeEnabled — kill-switch (ACTIF par défaut)', () => {
+  it('actif par défaut (absence de variable) et pour toute valeur non-off', () => {
+    expect(splitModeEnabled({})).toBe(true);
+    expect(splitModeEnabled({ CHAT_ORCHESTRATOR_SPLIT: '' })).toBe(true);
     expect(splitModeEnabled({ CHAT_ORCHESTRATOR_SPLIT: 'on' })).toBe(true);
-    expect(splitModeEnabled({ CHAT_ORCHESTRATOR_SPLIT: 'ON' })).toBe(true);
-    expect(splitModeEnabled({ CHAT_ORCHESTRATOR_SPLIT: '  On  ' })).toBe(true);
+    expect(splitModeEnabled({ CHAT_ORCHESTRATOR_SPLIT: 'true' })).toBe(true);
+    expect(splitModeEnabled({ CHAT_ORCHESTRATOR_SPLIT: '1' })).toBe(true);
   });
 
-  it('désactivé par défaut et pour toute autre valeur', () => {
-    expect(splitModeEnabled({})).toBe(false);
-    expect(splitModeEnabled({ CHAT_ORCHESTRATOR_SPLIT: '' })).toBe(false);
+  it('désactivé UNIQUEMENT par CHAT_ORCHESTRATOR_SPLIT=off (insensible à la casse/espaces)', () => {
     expect(splitModeEnabled({ CHAT_ORCHESTRATOR_SPLIT: 'off' })).toBe(false);
-    expect(splitModeEnabled({ CHAT_ORCHESTRATOR_SPLIT: 'true' })).toBe(false);
-    expect(splitModeEnabled({ CHAT_ORCHESTRATOR_SPLIT: '1' })).toBe(false);
+    expect(splitModeEnabled({ CHAT_ORCHESTRATOR_SPLIT: 'OFF' })).toBe(false);
+    expect(splitModeEnabled({ CHAT_ORCHESTRATOR_SPLIT: '  Off  ' })).toBe(false);
   });
 });
 
