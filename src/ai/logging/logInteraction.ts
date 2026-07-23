@@ -25,6 +25,8 @@ export interface InteractionLog {
   conversation_id?: string;
   tokens_in?: number;
   tokens_out?: number;
+  /** Part de tokens_in lue depuis le cache du provider (justesse des coûts, migration 0040). */
+  cached_tokens_in?: number;
   latency_ms?: number;
   /** Nombre d'étapes LLM de la boucle agentique (diagnostic latence, migration 0034). */
   steps?: number;

@@ -258,6 +258,10 @@ export async function POST(request: Request): Promise<Response> {
         conversation_id: conversationId ?? undefined,
         tokens_in: usage?.inputTokens,
         tokens_out: usage?.outputTokens,
+        // Justesse des coûts (audit 2026-07, item K) : `inputTokens` INCLUT les tokens lus
+        // depuis le cache du provider (préfixe système caché d'un appel à l'autre), facturés
+        // ~10 %. On loggue la part cachée pour ne pas la tarifer au plein prix (cost.ts).
+        cached_tokens_in: usage?.inputTokenDetails?.cacheReadTokens ?? usage?.cachedInputTokens,
         latency_ms: Date.now() - startMs,
         steps: metrics?.steps,
         tool_calls: metrics?.toolCalls,

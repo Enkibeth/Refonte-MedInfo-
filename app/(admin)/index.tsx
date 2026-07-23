@@ -1172,7 +1172,8 @@ function CostsTab({ session }: { session: { access_token: string } | null }) {
         <Icon name="scale" size={15} color={tokens.colors.warningText} />
         <Text style={costStyles.noticeText}>
           Les tokens sont réels ; le coût est une ESTIMATION à partir de prix indicatifs
-          (USD / million de tokens), à ajuster dans src/admin/cost.ts selon ta facturation.
+          (USD / million de tokens + facturation par appel de recherche web ; part cachée
+          tarifée ~10 %), à ajuster dans src/admin/cost.ts selon ta facturation.
         </Text>
       </View>
 
@@ -1199,6 +1200,12 @@ function CostsTab({ session }: { session: { access_token: string } | null }) {
               {summary.totalRequests} requêtes · {fmtTokens(summary.totalTokensIn)} tokens in ·{' '}
               {fmtTokens(summary.totalTokensOut)} tokens out
             </Text>
+            {summary.totalWebSearchCostUsd > 0 || summary.totalCachedTokensIn > 0 ? (
+              <Text style={costStyles.totalMeta}>
+                dont recherche web ≈ {fmtUsd(summary.totalWebSearchCostUsd)} ·{' '}
+                {fmtTokens(summary.totalCachedTokensIn)} tokens cachés (tarifés ~10 %)
+              </Text>
+            ) : null}
             {summary.hasUnpriced ? (
               <Text style={costStyles.unpriced}>
                 ⚠ Certains modèles n’ont pas de prix défini : total sous-estimé.

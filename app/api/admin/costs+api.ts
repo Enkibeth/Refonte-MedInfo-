@@ -33,7 +33,7 @@ export async function GET(request: Request): Promise<Response> {
   const db = serviceClient();
   const { data, error } = await db
     .from('ai_interactions')
-    .select('persona, model_used, tokens_in, tokens_out, conversation_id, created_at')
+    .select('persona, model_used, tokens_in, tokens_out, cached_tokens_in, tool_calls, conversation_id, created_at')
     .gte('created_at', since)
     .limit(100000);
 
