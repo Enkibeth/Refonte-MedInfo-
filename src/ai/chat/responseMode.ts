@@ -71,14 +71,18 @@ export function responseModeRuntime(
 
   if (mode === 'deep') {
     return isPublic
-      ? { capReasoningEffort: 'medium', verbosity: 'high', maxOutputTokens: 4096, maxSteps: 14 }
-      : { reasoningEffort: 'high', verbosity: 'high', maxOutputTokens: 4096, maxSteps: 14 };
+      ? { capReasoningEffort: 'medium', verbosity: 'high', maxOutputTokens: 4096, maxSteps: 8 }
+      : { reasoningEffort: 'high', verbosity: 'high', maxOutputTokens: 4096, maxSteps: 8 };
   }
 
-  // standard : conserve le comportement historique (public plafonné à `minimal`).
+  // standard : plafond abaissé à 5 étapes (audit latence 2026-07). Les données de prod
+  // montraient une latence linéaire dans le nombre d'étapes (~15-18 s/étape) SANS gain de
+  // qualité au-delà de ~5 : le workflow evidence-first tient en 5 étapes (recherche →
+  // lecture des résumés → vérification des liens → rédaction). Public toujours plafonné
+  // à un effort de raisonnement `minimal` (ancrage factuel par les outils, pas le thinking).
   return isPublic
-    ? { capReasoningEffort: 'minimal', maxSteps: 12 }
-    : { maxSteps: 12 };
+    ? { capReasoningEffort: 'minimal', maxSteps: 5 }
+    : { maxSteps: 5 };
 }
 
 /**

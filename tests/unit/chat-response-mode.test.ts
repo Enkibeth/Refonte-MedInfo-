@@ -29,35 +29,37 @@ describe('responseModeRuntime — mapping vers les surcharges', () => {
       const r = responseModeRuntime('fast', bot);
       expect(r.reasoningEffort).toBe('minimal');
       expect(r.verbosity).toBe('low');
-      expect(r.maxSteps).toBeLessThan(12);
+      expect(r.maxSteps).toBeLessThan(5);
     }
   });
 
-  it('standard public : conserve le plafond minimal (comportement historique)', () => {
+  it('standard public : conserve le plafond minimal, boucle bornée à 5 étapes (audit latence)', () => {
     const r = responseModeRuntime('standard', 'public');
     expect(r.capReasoningEffort).toBe('minimal');
     expect(r.reasoningEffort).toBeUndefined();
-    expect(r.maxSteps).toBe(12);
+    expect(r.maxSteps).toBe(5);
   });
 
-  it('standard étudiant/pro : aucune surcharge d’effort (config admin telle quelle)', () => {
+  it('standard étudiant/pro : aucune surcharge d’effort (config admin telle quelle), 5 étapes', () => {
     const r = responseModeRuntime('standard', 'student');
     expect(r.capReasoningEffort).toBeUndefined();
     expect(r.reasoningEffort).toBeUndefined();
-    expect(r.maxSteps).toBe(12);
+    expect(r.maxSteps).toBe(5);
   });
 
-  it('approfondi public : plafonné à medium, jamais high (cloisonnement coût)', () => {
+  it('approfondi public : plafonné à medium, jamais high (cloisonnement coût), plus d’étapes que standard', () => {
     const r = responseModeRuntime('deep', 'public');
     expect(r.capReasoningEffort).toBe('medium');
     expect(r.reasoningEffort).toBeUndefined();
-    expect(r.maxSteps).toBeGreaterThan(12);
+    expect(r.maxSteps).toBe(8);
+    expect(r.maxSteps).toBeGreaterThan(responseModeRuntime('standard', 'public').maxSteps);
   });
 
-  it('approfondi étudiant/pro : effort high explicite', () => {
+  it('approfondi étudiant/pro : effort high explicite, plus d’étapes que standard', () => {
     const r = responseModeRuntime('deep', 'professional');
     expect(r.reasoningEffort).toBe('high');
-    expect(r.maxSteps).toBeGreaterThan(12);
+    expect(r.maxSteps).toBe(8);
+    expect(r.maxSteps).toBeGreaterThan(responseModeRuntime('standard', 'professional').maxSteps);
   });
 
   it('chaque mode déclare un plafond d’étapes strictement positif', () => {

@@ -127,10 +127,14 @@ export async function getRuntimeForFeature(
     if (caps.webSearch && settings.webSearch) {
       // L'API exacte de l'outil varie selon la version du provider ; on tente les
       // deux formes connues et on ignore silencieusement si indisponible.
+      // Audit latence 2026-07 : `searchContextSize: 'low'` = « least context, lowest cost,
+      // fastest response » (doc SDK) — bride le contenu web injecté dans le contexte, qui
+      // était le premier poste de tokens d'entrée (jusqu'à ~30 k/réponse) et de latence.
+      const webSearchArgs = { searchContextSize: 'low' as const };
       const t = openai as unknown as { tools?: Record<string, (...args: unknown[]) => unknown> };
       try {
-        if (t.tools?.webSearch) tools.web_search = t.tools.webSearch({});
-        else if (t.tools?.webSearchPreview) tools.web_search = t.tools.webSearchPreview({});
+        if (t.tools?.webSearch) tools.web_search = t.tools.webSearch(webSearchArgs);
+        else if (t.tools?.webSearchPreview) tools.web_search = t.tools.webSearchPreview(webSearchArgs);
       } catch {
         /* outil indisponible dans cette version du SDK → on n'ajoute rien */
       }
@@ -151,7 +155,9 @@ export async function getRuntimeForFeature(
     if (caps.webSearch && settings.webSearch) {
       const t = anthropic as unknown as { tools?: Record<string, (...args: unknown[]) => unknown> };
       try {
-        if (t.tools?.webSearch_20250305) tools.web_search = t.tools.webSearch_20250305({ maxUses: 5 });
+        // maxUses abaissé 5 → 3 (audit latence 2026-07) : borne le nombre de recherches
+        // web du provider Anthropic, alignée sur la boucle agentique raccourcie (5 étapes).
+        if (t.tools?.webSearch_20250305) tools.web_search = t.tools.webSearch_20250305({ maxUses: 3 });
       } catch {
         /* idem */
       }
