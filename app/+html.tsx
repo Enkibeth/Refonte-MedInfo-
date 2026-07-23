@@ -3,7 +3,9 @@ import type { PropsWithChildren } from 'react';
 
 /**
  * Document HTML racine (web uniquement, expo-router).
- * - Charge Inter + JetBrains Mono (typographie « dessinée », cf 05_DESIGN §3).
+ * - Charge Inter (corps) + Schibsted Grotesk (titres UI/display, grotesk éditoriale
+ *   open-source issue de Free Faces — remplace le DM Sans « générique » 2026-07) +
+ *   Source Serif 4 (titres de page) + JetBrains Mono (cf 05_DESIGN §3).
  * - Active le lissage des polices et un rendu net (anti-aliasing) pour éviter
  *   l'aspect générique « système brut ».
  * Ce fichier ne s'exécute pas sur natif ; n'y mettre aucune logique applicative.
@@ -21,7 +23,7 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,500;9..40,600;9..40,700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Schibsted+Grotesk:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500&display=swap"
         />
 
         <ScrollViewStyleReset />
@@ -80,6 +82,19 @@ body { overflow-x: hidden; }
   animation: medinfo-ecg-draw 9000ms cubic-bezier(0.4, 0, 0.2, 1) 300ms infinite;
 }
 
+/* Source de lumière du hero qui « respire » lentement (esprit Supahero) : profondeur
+   ambiante moderne, une SEULE source (jamais d'orbes multiples). Amplitude volontairement
+   contenue — on ne vole jamais la vedette au contenu. Origine calée sur le foyer lumineux. */
+@keyframes medinfo-hero-breathe {
+  0%, 100% { opacity: 0.82; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.06); }
+}
+.medinfo-hero-glow {
+  transform-origin: 16% -6%;
+  animation: medinfo-hero-breathe 14000ms cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: opacity, transform;
+}
+
 /* Shimmer de chargement (squelettes) : balayage discret gauche → droite. */
 @keyframes medinfo-shimmer {
   from { background-position: -200% 0; }
@@ -101,6 +116,7 @@ body { overflow-x: hidden; }
   }
   .medinfo-reveal { animation: none !important; }
   .medinfo-ecg-path { animation: none !important; stroke-dasharray: none; }
+  .medinfo-hero-glow { animation: none !important; transform: none !important; }
   .medinfo-shimmer { animation: none !important; }
 }
 `;
