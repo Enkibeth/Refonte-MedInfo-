@@ -1,18 +1,23 @@
+import { GrainOverlay } from './GrainOverlay';
+
 /**
  * Fond du hero — implémentation WEB.
- * Trois couches intentionnelles, liées au métier (pas de décor générique) :
+ * Couches intentionnelles, liées au métier (pas de décor générique) :
  *   1. grille millimétrée très discrète (papier d'observation clinique) ;
- *   2. une seule source de lumière bleue en haut à gauche (éclairage assumé,
- *      pas d'orbes dégradés multiples) ;
+ *   2. une seule source de lumière bleue en haut à gauche qui « respire »
+ *      lentement (`.medinfo-hero-glow`, cycle 14 s) — profondeur ambiante moderne
+ *      (esprit Supahero) SANS multiplier les orbes ; coupée sous reduced-motion ;
  *   3. tracé ECG qui se dessine une fois au chargement (`.medinfo-ecg-path`,
- *      keyframes dans app/+html.tsx, neutralisé sous prefers-reduced-motion).
+ *      keyframes dans app/+html.tsx, neutralisé sous prefers-reduced-motion) ;
+ *   4. grain filmique (concept Grainient, `GrainOverlay`) : donne une matière au
+ *      dégradé bleu nuit — statique, aucun mouvement à neutraliser.
  * Rendu DOM inline (même approche éprouvée que icons.web.tsx).
  */
 export function HeroBackdrop() {
   return (
     <div aria-hidden="true" style={layerStyle}>
       <div style={gridStyle} />
-      <div style={lightStyle} />
+      <div className="medinfo-hero-glow" style={lightStyle} />
       <svg
         viewBox="0 0 1200 160"
         preserveAspectRatio="none"
@@ -30,6 +35,7 @@ export function HeroBackdrop() {
           vectorEffect="non-scaling-stroke"
         />
       </svg>
+      <GrainOverlay opacity={0.32} blend="overlay" />
     </div>
   );
 }

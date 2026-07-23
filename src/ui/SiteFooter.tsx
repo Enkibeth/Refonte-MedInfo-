@@ -12,6 +12,7 @@
 import { Link } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { GrainOverlay } from '@/ui/GrainOverlay';
 import { Logo } from '@/ui/Logo';
 import { tokens } from '@/ui/tokens';
 
@@ -61,6 +62,8 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
 export function SiteFooter() {
   return (
     <View style={styles.footer}>
+      {/* Grain filmique (Grainient) : matière sur le bleu nuit, no-op en natif. */}
+      <GrainOverlay opacity={0.28} blend="overlay" />
       <View style={styles.inner}>
         <View style={styles.brandBlock}>
           <Logo size="sm" tone="light" />
@@ -106,6 +109,9 @@ const styles = StyleSheet.create({
     paddingTop: tokens.space['2xl'],
     paddingBottom: tokens.space.xl,
     alignItems: 'center',
+    // Contient la couche de grain (absolue) au cadre du footer.
+    overflow: 'hidden',
+    position: 'relative',
   },
   inner: { width: '100%', maxWidth: 960, gap: tokens.space.xl },
   brandBlock: { gap: tokens.space.sm },

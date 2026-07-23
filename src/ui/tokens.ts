@@ -126,9 +126,11 @@ export const tokens = {
       web: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
       default: 'System',
     }) as string,
-    // DM Sans — réservée aux titres / display (design system §3). Inter en repli.
+    // Schibsted Grotesk — grotesk éditoriale open-source (Free Faces), réservée aux
+    // titres / display (design system §3). Remplace DM Sans (2026-07) pour sortir du
+    // combo « Inter/DM Sans » générique pointé par l'audit design. Inter en repli.
     display: Platform.select({
-      web: "'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      web: "'Schibsted Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       default: 'System',
     }) as string,
     // Source Serif 4 — serif éditoriale pour les grands titres (hero, têtes de
