@@ -178,8 +178,8 @@ export async function POST(request: Request): Promise<Response> {
   // PREUVES vérifié. PHASE 2 (streamText plus bas) : le modèle du chat (gpt-5.2) RÉDIGE la
   // réponse clinique À PARTIR du dossier, sans outils. But : couper le coût d'entrée (porté
   // par le modèle bon marché pendant la recherche) en gardant la rédaction patient sur le
-  // modèle fiable. OFF par défaut (le flag préserve le pipeline mono-modèle historique) ;
-  // FAIL-OPEN : si la recherche échoue, dossier vide → repli mono-modèle avec outils.
+  // modèle fiable. ACTIF par défaut (kill-switch `CHAT_ORCHESTRATOR_SPLIT=off` pour revenir
+  // au mono-modèle) ; FAIL-OPEN : si la recherche échoue, dossier vide → repli mono-modèle.
   const splitActive = splitModeEnabled() && !conversational && !(attachment && canAttach);
 
   let briefSection = '';
