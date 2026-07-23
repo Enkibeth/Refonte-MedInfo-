@@ -56,4 +56,12 @@ describe('getRuntimeForFeature — plafond par requête (chat public → minimal
     const rt = await getRuntimeForFeature('chat', { reasoningEffort: 'high' });
     expect(rt.settings.reasoningEffort).toBe('high');
   });
+
+  it('split (audit 2026-07) : chercheur = gpt-5-mini, rédacteur (chat) = gpt-5.2', async () => {
+    const researcher = await getRuntimeForFeature('chat_researcher', { webSearch: true });
+    expect(researcher.modelId).toBe('gpt-5-mini');
+    expect(researcher.provider).toBe('openai');
+    const writer = await getRuntimeForFeature('chat');
+    expect(writer.modelId).toBe('gpt-5.2');
+  });
 });

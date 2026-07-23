@@ -18,6 +18,10 @@ import type { FeatureKey } from '@/admin/index';
 const FEATURE_DEFAULTS: Record<FeatureKey, { modelId: string; provider: string }> = {
   // Choix Hugo (refonte 2026-06) : GPT-5.2 par défaut pour le chat (rapport coût/qualité).
   chat:          { modelId: 'gpt-5.2',           provider: 'openai' },
+  // Agent chercheur (split orchestrateur/rédacteur, flag CHAT_ORCHESTRATOR_SPLIT) : modèle
+  // bon marché qui porte la boucle d'outils et rassemble un dossier de preuves vérifié ;
+  // la rédaction clinique reste sur le modèle `chat` (gpt-5.2). Audit 2026-07.
+  chat_researcher: { modelId: 'gpt-5-mini',      provider: 'openai' },
   // Titre + catégorie d'historique : modèle flash économique.
   chat_meta:     { modelId: 'gemini-2.5-flash',  provider: 'google' },
   // Sous-agent PubMed du chat pro : Claude uniquement (seul provider avec le connecteur MCP).
