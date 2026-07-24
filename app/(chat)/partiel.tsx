@@ -1,10 +1,15 @@
 /**
- * Analyse des partiels (v2) — outil étudiant (persona student).
+ * Analyse des partiels (v3) — outil étudiant (persona student).
  *
  * L'outil complet vit dans la page autonome `public/partiel.html` (import .xlsx/.csv/.pdf,
- * statistiques par épreuve, distributions, comparaison A/B, export PDF), embarquée ici en
- * iframe. Traitement 100 % CÔTÉ CLIENT : les notes ne quittent jamais l'appareil
- * (aucune IA, aucun réseau, aucune persistance) — confidentialité des données de tiers.
+ * coefficients, statistiques et distribution RÉELLE par épreuve, z-scores, simulateur
+ * « et si », comparaison A/B, suivi de progression local, exports CSV/PDF), embarquée ici
+ * en iframe. Traitement 100 % CÔTÉ CLIENT : les notes ne quittent jamais l'appareil
+ * (aucune IA, aucun réseau) — confidentialité des données de tiers. Seuls les résultats
+ * DÉRIVÉS de l'étudiant lui-même peuvent être mémorisés, sur son appareil (ADR-0035).
+ *
+ * L'en-tête de page vit ici (côté natif) : la page embarquée n'en a plus, pour éviter
+ * le double titre sous le shell applicatif.
  */
 import { View, Text, StyleSheet, Platform } from 'react-native';
 
@@ -23,8 +28,8 @@ function PartielInner() {
         </View>
         <Text style={styles.title}>Analyse des partiels</Text>
         <Text style={styles.subtitle}>
-          Importe les notes de ta promo (.xlsx, .csv, .pdf) et situe-toi : calcul privé, sur ton
-          appareil.
+          Importe les notes de ta promo (.xlsx, .csv, .pdf) : rang, coefficients, points forts et
+          simulateur. Calcul privé, sur ton appareil.
         </Text>
       </View>
 

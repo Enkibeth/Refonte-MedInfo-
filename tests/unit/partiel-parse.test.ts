@@ -1,31 +1,14 @@
 /**
- * Tests de la logique pure de l'analyseur de partiels (`public/partiel.html`).
+ * Tests du PARSING de l'analyseur de partiels (`public/partiel.html`) : détection
+ * de l'en-tête, de la colonne identifiant, de l'échelle, reconstruction PDF.
  *
- * Le code vit dans une page HTML autonome (traitement 100 % client). Pour le tester
- * sans dupliquer, on extrait le bloc délimité par `@partiel-logic:start/end` et on
- * l'exécute dans un contexte `vm` Node — ce sont donc les fonctions RÉELLEMENT livrées
- * qui sont vérifiées.
+ * Le moteur statistique (stats, classement, pondération, simulation, synthèse) est
+ * couvert par `partiel-engine.test.ts`. Les deux suites exécutent le bloc
+ * `@partiel-logic` RÉELLEMENT livré (cf. `helpers/partielLogic.ts`).
  */
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import vm from 'node:vm';
 import { describe, expect, it } from 'vitest';
 
-const here = dirname(fileURLToPath(import.meta.url));
-const html = readFileSync(resolve(here, '../../public/partiel.html'), 'utf-8');
-
-const startMarker = html.indexOf('@partiel-logic:start');
-const endComment = html.indexOf('/* @partiel-logic:end');
-if (startMarker < 0 || endComment < 0) throw new Error('Bloc @partiel-logic introuvable dans partiel.html');
-// Le bloc s'ouvre par `/* @partiel-logic:start ... */` : on prend le code APRÈS la
-// fermeture de ce commentaire et AVANT le commentaire de fin.
-const codeStart = html.indexOf('*/', startMarker) + 2;
-const code = html.slice(codeStart, endComment);
-
-const sandbox: { module: { exports: Record<string, any> } } = { module: { exports: {} } };
-vm.runInNewContext(code, sandbox);
-const L = sandbox.module.exports;
+import { L } from './helpers/partielLogic';
 
 type Item = { x: number; y: number; str: string };
 
@@ -45,6 +28,49 @@ describe('coerceCell', () => {
   it('conserve les chaînes non numériques (noms, identifiants alphanum.)', () => {
     expect(L.coerceCell('DUPONT')).toBe('DUPONT');
     expect(L.coerceCell('2604403RANKOVICNICOLAS')).toBe('2604403RANKOVICNICOLAS');
+  });
+});
+
+describe('parseDelimited (CSV/TSV)', () => {
+  it('NE transforme PAS « 7,5 » en 75 — le piège du séparateur de milliers', () => {
+    const rows = L.parseDelimited('Num;Anat\n28710001;7,5\n28710002;12');
+    expect(rows).toEqual([
+      ['Num', 'Anat'],
+      ['28710001', '7,5'],
+      ['28710002', '12'],
+    ]);
+    expect(L.coerceCell(rows[1][1])).toBe(7.5);
+  });
+  it('détecte le séparateur point-virgule, tabulation, barre et virgule', () => {
+    expect(L.detectDelimiter(['a;b;c', '1;2;3'])).toBe(';');
+    expect(L.detectDelimiter(['a\tb\tc', '1\t2\t3'])).toBe('\t');
+    expect(L.detectDelimiter(['a|b|c', '1|2|3'])).toBe('|');
+    expect(L.detectDelimiter(['a,b,c', '1,2,3'])).toBe(',');
+  });
+  it('privilégie « ; » quand les notes contiennent des virgules décimales', () => {
+    expect(L.detectDelimiter(['Num;Anat;Bioch', '1;7,5;12,25', '2;8,5;11,75'])).toBe(';');
+  });
+  it('respecte les guillemets, y compris autour d’un saut de ligne', () => {
+    expect(L.parseDelimitedWith('a;"b;c";d', ';')).toEqual([['a', 'b;c', 'd']]);
+    expect(L.parseDelimitedWith('a;"li1\nli2";c', ';')).toEqual([['a', 'li1\nli2', 'c']]);
+    expect(L.parseDelimitedWith('a;"dit ""oui""";c', ';')).toEqual([['a', 'dit "oui"', 'c']]);
+  });
+  it('ignore BOM, lignes vides et fins de ligne Windows/Mac', () => {
+    expect(L.parseDelimited('﻿a;b\r\n1;2\r\n\r\n3;4')).toEqual([['a', 'b'], ['1', '2'], ['3', '4']]);
+    expect(L.parseDelimited('a;b\r1;2')).toEqual([['a', 'b'], ['1', '2']]);
+    expect(L.parseDelimited('')).toEqual([]);
+  });
+});
+
+describe('decodeText', () => {
+  const enc = (s: string) => new TextEncoder().encode(s);
+  it('lit de l’UTF-8 et retire le BOM', () => {
+    expect(L.decodeText(enc('﻿Numéro étudiant'))).toBe('Numéro étudiant');
+  });
+  it('bascule en windows-1252 quand le fichier n’est pas de l’UTF-8 valide', () => {
+    // « Numéro » encodé en latin-1 : 0xE9 seul est invalide en UTF-8.
+    const latin = Uint8Array.from([0x4e, 0x75, 0x6d, 0xe9, 0x72, 0x6f]);
+    expect(L.decodeText(latin)).toBe('Numéro');
   });
 });
 

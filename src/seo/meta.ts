@@ -238,8 +238,8 @@ export const PAGE_SEO = {
     path: '/partiel',
     title: 'Analyse des partiels — classement de promo et statistiques',
     description:
-      'Importez les notes de votre promo (Excel, CSV, PDF) : rang, quantiles, distributions ' +
-      "et comparaison d'épreuves. Calcul 100 % local, aucune note envoyée.",
+      'Importez les notes de votre promo (Excel, CSV, PDF) : rang, coefficients, points forts ' +
+      'par z-score, distribution réelle et simulateur. Calcul 100 % local, aucune note envoyée.',
   },
   audio: {
     path: '/audio',

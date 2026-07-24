@@ -43,7 +43,7 @@ export default function ChatLayout() {
       <Tabs.Screen name="chat" options={{ title: 'Chat', href: hrefFor('chat') }} />
       <Tabs.Screen name="document" options={{ title: 'Document', href: hrefFor('document') }} />
       <Tabs.Screen name="ecos" options={{ title: 'ECOS', href: hrefFor('ecos') }} />
-      <Tabs.Screen name="partiel" options={{ title: 'Classement', href: hrefFor('partiel') }} />
+      <Tabs.Screen name="partiel" options={{ title: 'Partiels', href: hrefFor('partiel') }} />
       <Tabs.Screen name="revision" options={{ title: 'Révisions', href: hrefFor('revision') }} />
       <Tabs.Screen name="audio" options={{ title: 'Audio', href: hrefFor('audio') }} />
       <Tabs.Screen name="presentation" options={{ title: 'Présentations', href: hrefFor('presentation') }} />
