@@ -85,10 +85,11 @@ export const APP_FEATURES: AppFeatureMeta[] = [
   {
     id: 'partiel',
     route: '/(chat)/partiel',
-    label: 'Classement',
+    label: 'Partiels',
     emoji: '📊',
     icon: 'barChart',
-    description: 'Classement de promo : importe les notes et situe-toi (rang, comparaison).',
+    description:
+      'Analyse tes partiels : rang dans la promo, coefficients, points forts et simulateur.',
     personas: ['student'],
   },
   {

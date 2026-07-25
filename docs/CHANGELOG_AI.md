@@ -18,6 +18,46 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-07-24] – Claude (Refonte v3 de l'analyse des partiels)
+### Files modified
+- public/partiel.html (moteur pur étendu dans `@partiel-logic` + refonte complète de l'interface)
+- tests/unit/helpers/partielLogic.ts (nouveau : extraction du bloc livré, partagée par les deux suites)
+- tests/unit/partiel-engine.test.ts (nouveau : 55 tests du cœur mathématique, jusqu'ici NON couvert)
+- tests/unit/partiel-parse.test.ts (+ parseur CSV maison, décodage UTF-8/windows-1252, pipeline PDF complet)
+- scripts/dev/partiel-smoke.mjs, scripts/dev/partiel-smoke-xlsx.mjs (nouveaux : fumigation navigateur opt-in, hors CI)
+- app/(chat)/partiel.tsx, app/(chat)/_layout.tsx, src/ai/routing/featureVisibility.ts, src/seo/meta.ts (libellés + en-tête unique)
+- docs/DECISIONS/0035-refonte-analyse-partiels.md (nouveau), CLAUDE.md
+### Purpose
+Trois corrections de justesse et un élargissement fonctionnel, à périmètre technique
+constant (100 % client, aucune IA, aucun réseau, aucune table, aucune migration) :
+1. la section « Distributions » traçait une **gaussienne théorique** à la place des
+   données (une promo est souvent bimodale) → **histogramme des effectifs réels**, la loi
+   normale devenant une option décochée libellée « repère théorique » ;
+2. les CSV étaient découpés par SheetJS, qui lit **« 7,5 » comme 75** (virgule =
+   séparateur de milliers) et corrompait les accents → parseur + décodeur maison testés ;
+3. aucun z-score, donc aucun moyen de comparer des épreuves de difficulté inégale.
+Ajouts : coefficients (moyenne ET rang pondérés), seuil de validation, synthèse
+forces/faiblesses vs promo, simulateur « et si » + note requise pour un objectif,
+suggestions d'identifiant, tri, feuilles Excel multiples, export CSV, suivi de
+progression local. Perf : chargement paresseux des 4 librairies (~1,9 Mo évités au
+premier rendu ; un CSV n'en charge aucune).
+
+L'import PDF est désormais couvert : unitairement (items → statistiques, avec
+l'exigence de chiffres identiques au même relevé en CSV ; cellule manquante,
+fragments, pagination) et en navigateur sur un vrai PDF 2 pages. Ces tests ont
+révélé qu'une cellule fragmentée par pdf.js créait une colonne fantôme qui
+décalait l'en-tête par rapport aux notes — corrigé par `mergeLineFragments()`.
+### Regulatory impact
+None. Aucune donnée de santé, aucun envoi réseau, aucune route IA. Le suivi de
+progression (`localStorage`) ne conserve que les résultats DÉRIVÉS de l'étudiant
+lui-même — jamais les notes des autres étudiants (données de tiers) — sur
+enregistrement explicite et suppressible ; un test verrouille cette garantie.
+### Rollback plan
+Restaurer la version précédente de `public/partiel.html` (aucune autre partie de
+l'application ne dépend de son contenu) et supprimer les tests associés, ou masquer
+l'onglet en retirant `partiel` de `featureVisibility`.
+
+
 ## [2026-07-04] – Claude (Fix import CV : schéma refusé par l'API Anthropic)
 ### Files modified
 - app/api/cv-import+api.ts (schéma Zod tout-requis : plus aucun `.partial()`/`.optional()` ; prompt précisé « champ absent = chaîne vide »)
