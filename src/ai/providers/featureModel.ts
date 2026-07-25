@@ -22,6 +22,9 @@ const FEATURE_DEFAULTS: Record<FeatureKey, { modelId: string; provider: string }
   // bon marché qui porte la boucle d'outils et rassemble un dossier de preuves vérifié ;
   // la rédaction clinique reste sur le modèle `chat` (gpt-5.2). Audit 2026-07.
   chat_researcher: { modelId: 'gpt-5-mini',      provider: 'openai' },
+  // Mode « Rapide » du chat : une réponse directe, sans outil ni recherche web — le
+  // modèle bon marché suffit et c'est ce qui rend le mode réellement rapide.
+  chat_fast:     { modelId: 'gpt-5-mini',        provider: 'openai' },
   // Titre + catégorie d'historique : modèle flash économique.
   chat_meta:     { modelId: 'gemini-2.5-flash',  provider: 'google' },
   // Sous-agent PubMed du chat pro : Claude uniquement (seul provider avec le connecteur MCP).

@@ -18,6 +18,60 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-07-25] – Claude (Base de classement des partiels + 3 correctifs chatbot)
+### Files modified
+- public/partiel.html (base de classement explicite : `cohortMeans(..., basis)`, carte « hors classement », sélecteur Réglages, avertissements et simulateur alignés)
+- tests/unit/partiel-engine.test.ts (+7 tests de comparabilité), scripts/dev/partiel-smoke.mjs (+10 contrôles navigateur)
+- src/ai/chat/responseMode.ts (mode rapide = réponse DIRECTE), src/ai/chat/progress.ts (`inFlightAssistant`, `elapsedLabel`, `LONG_WAIT_MS`)
+- src/server/keepAlive.ts (nouveau), app/api/chat+api.ts (mode rapide + keepAlive), app/(chat)/chat.tsx (trace du message en cours, reprise élargie, compteur d'attente)
+- src/admin/index.ts, src/ai/providers/featureModel.ts, supabase/migrations/0042_chat_fast_mode.sql (feature `chat_fast`)
+- tests/unit/keep-alive.test.ts (nouveau), tests/unit/chat-progress.test.ts, tests/unit/chat-response-mode.test.ts, tests/rls/isolation.test.ts (compteur 22 → 23)
+- CLAUDE.md, docs/DECISIONS/0035-refonte-analyse-partiels.md
+### Purpose
+**Partiels** — le classement général mélangeait un étudiant noté sur 2 épreuves et un
+autre noté sur 12 : la v3 le signalait sans le corriger. Une BASE DE CLASSEMENT explicite
+est introduite ; par défaut seuls les étudiants notés sur toutes les épreuves incluses
+sont classés. Un incomplet garde sa moyenne mais est affiché « hors classement » avec la
+raison — jamais un rang calculé contre des moyennes qui ne portent pas sur les mêmes
+épreuves. La base « tous les notés » reste disponible et est signalée comme un mélange.
+Corrige aussi un défaut du simulateur : pour un étudiant hors classement, `removeOnce`
+pouvait retirer la moyenne d'un AUTRE étudiant de valeur égale.
+
+**Chat, 1/3 — mode Rapide en erreur.** Il enchaînait DEUX modèles (agent chercheur puis
+rédacteur) avec un budget de sortie de 1400 tokens raisonnement inclus : c'était le chemin
+le plus LENT et la réponse pouvait revenir vide (« la réponse a peut-être été interrompue »).
+Il devient UN appel direct sur un modèle bon marché (feature `chat_fast`, gpt-5-mini), sans
+outil ni recherche web. Le prompt du mode interdit explicitement toute URL, référence ou
+chiffre non vérifié, ne produit pas de section SOURCES et oriente vers le mode Classique
+quand une source est nécessaire ; il porte aussi le cadrage de sécurité que le volet
+pharmacologie (couplé au workflow d'outils, donc exclu ici) n'apporte plus.
+
+**Chat, 2/3 — génération perdue en quittant le navigateur.** `consumeStream()` seul ne
+suffit pas en serverless : l'invocation est gelée dès que la réponse HTTP est avortée, donc
+`onFinish` n'archivait jamais rien. `keepAlive()` prolonge l'invocation via le contexte de
+requête Vercel (mécanisme vérifié sur `@vercel/functions` 3.7.6, lu directement pour éviter
+une dépendance). Côté client, la fenêtre de reprise passe de 60 s à ~4 min (une réponse
+evidence-first dépasse la minute), se déclenche aussi sur `pageshow` et automatiquement à
+l'erreur, sans attendre un clic « Réessayer » qui relançait un appel LLM pour rien.
+
+**Chat, 3/3 — attente.** La bulle de statut affichait la trace du tour PRÉCÉDENT tant que
+la nouvelle réponse n'avait pas commencé (compteurs « Vérification des liens (2) » de la
+réponse d'avant, puis bascule brutale) : elle ne lit plus que le message réellement en
+cours. Ajout d'un compteur de secondes et, au-delà de 25 s, d'un rappel que l'on peut
+quitter l'app — la réponse continue et attend dans la conversation.
+### Regulatory impact
+Potential (maîtrisé). Le mode Rapide répond SANS recherche : le risque serait une source
+ou un chiffre inventés. Il est traité par prompt (interdiction explicite d'URL/référence/
+chiffre non vérifiés, pas de section SOURCES, renvoi vers un mode qui vérifie) et couvert
+par des tests. Aucune donnée de santé nouvelle, aucune table, aucun droit modifié : la
+persona serveur et `allowedChatbotsFor` restent la barrière d'accès.
+### Rollback plan
+Partiels : `S.rankingBasis = 'partial'` rétablit le comportement v3 (ou retirer le bloc
+`basis` de `cohortMeans`). Chat : rendre `directAnswer` optionnel côté `responseModeRuntime`
+(le mode rapide repasse alors sur `chat` + outils) ; remplacer `keepAlive(...)` par
+`void result.consumeStream()`. La migration `0042` est un simple seed idempotent.
+
+
 ## [2026-07-24] – Claude (Refonte v3 de l'analyse des partiels)
 ### Files modified
 - public/partiel.html (moteur pur étendu dans `@partiel-logic` + refonte complète de l'interface)
