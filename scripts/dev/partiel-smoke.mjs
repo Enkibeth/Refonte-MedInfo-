@@ -305,7 +305,54 @@ const legendOverflow = await page.evaluate(() => {
 });
 ok(legendOverflow === 0, 'la légende ne déborde pas de sa carte', String(legendOverflow));
 
-console.log('\n[16] Import .xlsx (SheetJS à la demande)');
+console.log('\n[17] Base du classement (comparabilité)');
+await page.click('#btnreload');
+// 28710010 n'a PAS de note de Physiologie : en base « tous les notés » il capte un rang
+// calculé sur 2 épreuves seulement, alors que les autres en ont 3.
+await page.setInputFiles('#fi', { name: 'partiels-s1.csv', mimeType: 'text/csv', buffer: Buffer.from(csv, 'utf-8') });
+await page.waitForSelector('#bar:not([hidden])');
+await page.fill('#idinput', '28710010');
+await page.waitForTimeout(250);
+const heroTxt = await page.textContent('#block-hero');
+ok(/Hors\s*classement/.test(heroTxt), 'étudiant incomplet → « hors classement », jamais un rang trompeur', heroTxt.replace(/\s+/g, ' ').slice(0, 120));
+ok(/il te manque 1 épreuve/i.test(heroTxt.replace(/\s+/g, ' ')), 'la raison est explicite');
+const synth = await page.textContent('#synthsub');
+ok(/classement sur 11 étudiant/.test(synth) && /1 écarté/.test(synth), 'base = 11 classés, 1 écarté', synth);
+const warn = await page.textContent('#reswarn');
+ok(/hors du classement général/.test(warn), 'avertissement cohérent avec la base', warn.replace(/\s+/g, ' ').slice(0, 120));
+const simTxt = await page.textContent('#simout');
+ok(/Pas de rang/.test(simTxt), 'le simulateur n’invente pas de rang pour un incomplet');
+// Combler l'épreuve manquante avec le curseur doit le rendre classable.
+await page.evaluate(() => {
+  const rows = [...document.querySelectorAll('#simlist .simrow')];
+  const target = rows.find((r) => r.querySelector('.sval').textContent.trim() === '—');
+  const range = target.querySelector('input[type=range]');
+  range.value = '15';
+  range.dispatchEvent(new Event('input', { bubbles: true }));
+});
+await page.waitForTimeout(150);
+ok(/Rang/.test(await page.textContent('#simout')), 'curseur qui comble l’épreuve manquante → rang affiché');
+
+// Bascule vers « tous les notés » depuis la carte
+await page.click('#btnsettings');
+await page.waitForSelector('#sec-settings:not([hidden])');
+await page.click('#basisseg button[data-v="partial"]');
+await page.waitForTimeout(200);
+const heroPartial = await page.textContent('#block-hero');
+ok(!/Hors\s*classement/.test(heroPartial), 'base « tous les notés » → l’étudiant est classé');
+ok(/mélange/.test(await page.textContent('#reswarn')), 'la base permissive reste signalée comme un mélange');
+const basisKept = await page.evaluate(() => localStorage.getItem('medinfo:partiel:basis'));
+ok(basisKept === 'partial', 'base persistée localement', String(basisKept));
+await page.click('#basisseg button[data-v="complete"]');
+await page.waitForTimeout(150);
+await page.click('#btnsettings');
+// Un étudiant complet garde un rang normal, calculé sur la base restreinte.
+await page.fill('#idinput', '28710012');
+await page.waitForTimeout(250);
+const k = await page.$$eval('#block-hero .kval', (els) => els.map((e) => e.textContent.trim()));
+ok(k[1].startsWith('1') && /\/\s*11/.test(k[1]), 'étudiant complet : rang 1 / 11 (base restreinte)', k[1]);
+
+console.log('\n[18] Import .xlsx (SheetJS à la demande)');
 await page.setViewportSize({ width: 1280, height: 900 });
 await page.click('#btnreload');
 const XLSXmod = await import('./partiel-smoke-xlsx.mjs');
@@ -326,7 +373,7 @@ const anatMed = await page.evaluate(() => {
 ok(anatMed === '8,00', 'médiane Anatomie identique en .xlsx', anatMed);
 ok(await page.isVisible('#sheetsel') === false || true, 'sélecteur de feuille géré');
 
-console.log('\n[17] Import PDF (pdf.js à la demande, 2 pages)');
+console.log('\n[19] Import PDF (pdf.js à la demande, 2 pages)');
 await page.click('#btnreload');
 const header = rows[0];
 const pdfBuf = await makeGradesPdf(browser, header, rows.slice(1));
@@ -351,7 +398,7 @@ const pdfK = await page.$$eval('#block-hero .kval', (els) => els.map((e) => e.te
 ok(pdfK[0].startsWith('13,33'), 'moyenne identique depuis le PDF (7,5 non corrompu)', pdfK[0]);
 ok(pdfK[1].startsWith('1'), 'rang identique depuis le PDF', pdfK[1]);
 
-console.log('\n[18] PDF sans texte sélectionnable (scanné)');
+console.log('\n[20] PDF sans texte sélectionnable (scanné)');
 await page.click('#btnreload');
 const scanned = await makeGradesPdf(browser, [], [], { blank: true });
 await page.setInputFiles('#fi', { name: 'scan.pdf', mimeType: 'application/pdf', buffer: scanned });
@@ -360,7 +407,7 @@ const scanMsg = await page.textContent('#errbox .errbox');
 ok(/texte sélectionnable|OCR/.test(scanMsg), 'message explicite pour un PDF scanné', scanMsg.trim());
 ok(await page.isHidden('#bar'), 'aucune analyse fantôme après un PDF illisible');
 
-console.log('\n[19] Console');
+console.log('\n[21] Console');
 ok(httpErrors.length === 0, 'aucune ressource manquante', JSON.stringify(httpErrors));
 ok(consoleErrors.length === 0, 'aucune erreur console', JSON.stringify(consoleErrors.slice(0, 4)));
 

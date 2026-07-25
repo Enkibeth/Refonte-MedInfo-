@@ -79,3 +79,42 @@ describe('buildResponseModeSection — consigne système', () => {
     expect(buildResponseModeSection('deep')).toContain('APPROFONDI');
   });
 });
+
+describe('mode rapide — une réponse DIRECTE (retour Hugo 2026-07)', () => {
+  it('demande un appel unique, sans outil ni split', () => {
+    for (const bot of ['public', 'student', 'professional'] as const) {
+      const r = responseModeRuntime('fast', bot);
+      expect(r.directAnswer).toBe(true);
+      expect(r.maxSteps).toBe(1);
+      expect(r.reasoningEffort).toBe('minimal');
+    }
+  });
+
+  it('laisse un budget de sortie viable : trop serré, la réponse revient vide', () => {
+    // L'ancien plafond (1400 tokens, raisonnement compris) produisait « la réponse a
+    // peut-être été interrompue ».
+    expect(responseModeRuntime('fast', 'student').maxOutputTokens).toBeGreaterThanOrEqual(2048);
+  });
+
+  it('les autres modes gardent la boucle d’outils', () => {
+    expect(responseModeRuntime('standard', 'student').directAnswer).toBeUndefined();
+    expect(responseModeRuntime('deep', 'student').directAnswer).toBeUndefined();
+    expect(responseModeRuntime('standard', 'student').maxSteps).toBeGreaterThan(1);
+  });
+
+  it('interdit explicitement de citer des sources qu’il ne peut pas vérifier', () => {
+    const section = buildResponseModeSection('fast');
+    expect(section).toMatch(/SANS recherche/i);
+    expect(section).toMatch(/n.invente jamais d.url/i);
+    expect(section).toMatch(/pas de section SOURCES/i);
+    // Et il doit orienter vers un mode qui, lui, vérifie.
+    expect(section).toMatch(/Classique|Approfondi/);
+  });
+
+  it('conserve le cadrage de sécurité que le volet pharmacologie n’apporte plus ici', () => {
+    const section = buildResponseModeSection('fast');
+    expect(section).toMatch(/INDICATIVE/i);
+    expect(section).toMatch(/n.invente jamais un chiffre/i);
+    expect(section).toMatch(/sécurité/i);
+  });
+});

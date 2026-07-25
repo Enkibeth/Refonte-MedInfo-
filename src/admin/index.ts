@@ -92,6 +92,16 @@ export const AI_FEATURES = [
     providers: ['openai', 'anthropic', 'google'],
   },
   {
+    key: 'chat_fast',
+    emoji: '⚡',
+    label: 'Chat — Mode rapide',
+    description:
+      'Mode « Rapide » du chat : UNE réponse directe, sans outil ni recherche web (modèle bon marché). Le mode Classique/Approfondi reste sur le modèle « Chat santé ».',
+    apiRoute: '/api/chat',
+    promptKeys: ['public', 'student', 'professional'],
+    providers: ['openai', 'anthropic', 'google'],
+  },
+  {
     key: 'chat_meta',
     emoji: '🏷️',
     label: 'Chat — Titre & catégorie',

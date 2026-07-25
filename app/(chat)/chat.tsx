@@ -76,7 +76,13 @@ import { CountrySelector } from '@/ui/chat/CountrySelector';
 import { coerceCountry, type CountryCode } from '@/ai/chat/country';
 import { ResponseControls } from '@/ui/chat/ResponseControls';
 import { coerceResponseMode, type ResponseMode } from '@/ai/chat/responseMode';
-import { summarizeChatProgress, type ChatProgressStep } from '@/ai/chat/progress';
+import {
+  LONG_WAIT_MS,
+  elapsedLabel,
+  inFlightAssistant,
+  summarizeChatProgress,
+  type ChatProgressStep,
+} from '@/ai/chat/progress';
 import { coerceChatOutputTools, type ChatOutputTool } from '@/ai/chat/outputTools';
 import {
   ATTACHMENT_ACCEPT,
@@ -154,13 +160,26 @@ function PulsingDots() {
   );
 }
 
+/** Reprise après coupure : intervalle et nombre d'essais (~4 min au total). */
+const RECOVERY_INTERVAL_MS = 4000;
+const RECOVERY_MAX_ATTEMPTS = 60;
+
 type ChatPhase = 'thinking' | 'searching' | 'writing' | 'recovering';
 
 /**
  * Bulle de statut affichée tant que la réponse n'a pas commencé à s'écrire : rassure
  * l'utilisateur que ça charge (réflexion, puis recherche de sources le cas échéant).
  */
-function StatusBubble({ phase, toolLabel }: { phase: ChatPhase; toolLabel?: string | null }) {
+function StatusBubble({
+  phase,
+  toolLabel,
+  startedAt,
+}: {
+  phase: ChatPhase;
+  toolLabel?: string | null;
+  /** Horodatage du début d'attente : alimente le compteur de secondes. */
+  startedAt?: number | null;
+}) {
   const label =
     phase === 'searching'
       ? (toolLabel ?? 'Recherche de sources fiables…')
@@ -171,15 +190,38 @@ function StatusBubble({ phase, toolLabel }: { phase: ChatPhase; toolLabel?: stri
           : 'MedInfo réfléchit…';
   const icon =
     phase === 'searching' ? 'search' : phase === 'writing' ? 'sparkles' : phase === 'recovering' ? 'clock' : 'brain';
+
+  // Compteur de secondes : une attente CHIFFRÉE se supporte bien mieux qu'un spinner
+  // muet — l'utilisateur voit que ça avance et sait à quoi s'en tenir.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!startedAt) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [startedAt]);
+  const waited = startedAt ? now - startedAt : 0;
+  const elapsed = elapsedLabel(waited);
+
   return (
-    // Live region : les lecteurs d'écran sont informés des changements de phase
-    // (réflexion → recherche de sources → rédaction) sans focus manuel.
-    <View style={styles.statusPill} accessibilityLabel={label} accessibilityLiveRegion="polite">
-      <View style={styles.statusIconWrap}>
-        <Icon name={icon} size={16} color={tokens.colors.accent} />
+    <View>
+      {/* Live region : les lecteurs d'écran sont informés des changements de phase
+          (réflexion → recherche de sources → rédaction) sans focus manuel. */}
+      <View style={styles.statusPill} accessibilityLabel={label} accessibilityLiveRegion="polite">
+        <View style={styles.statusIconWrap}>
+          <Icon name={icon} size={16} color={tokens.colors.accent} />
+        </View>
+        <Text style={styles.statusText}>{label}</Text>
+        {elapsed ? <Text style={styles.statusElapsed}>{elapsed}</Text> : null}
+        <PulsingDots />
       </View>
-      <Text style={styles.statusText}>{label}</Text>
-      <PulsingDots />
+      {/* Attente longue : la génération va au bout côté serveur, l'utilisateur n'a pas
+          besoin de rester sur la page (et surtout pas de relancer). */}
+      {waited >= LONG_WAIT_MS && phase !== 'recovering' ? (
+        <Text style={styles.statusHint}>
+          Tu peux quitter l’app : la réponse continue de se générer et t’attendra dans cette
+          conversation.
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -709,9 +751,15 @@ export default function ChatScreen() {
   }, []);
 
   // ── Reprise après coupure (page suspendue / réseau) ────────────────────────────
+  // Cadence et durée de la reprise : ~4 min, largement au-delà du pire cas de génération
+  // evidence-first observé (l'ancienne fenêtre de 60 s abandonnait trop tôt).
+
   // La génération continue côté serveur et la réponse est archivée dans l'historique :
   // on la récupère depuis Supabase au lieu de la perdre.
   const [recovering, setRecovering] = useState(false);
+  const recoveryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recoveryRunningRef = useRef(false);
+  const recoveryCancelledRef = useRef(false);
   // Arrêt volontaire pendant le streaming : note honnête « la réponse complète est
   // dans l'historique » (le serveur va au bout et archive — résilience hors-ligne).
   const [stoppedNotice, setStoppedNotice] = useState(false);
@@ -734,43 +782,63 @@ export default function ChatScreen() {
     return true;
   }, [setMessages, clearError]);
 
+  // Fenêtre de reprise : une réponse evidence-first peut demander bien plus d'une minute
+  // (recherche → lecture → vérification → rédaction). L'ancienne fenêtre de 60 s abandonnait
+  // AVANT que le serveur n'ait fini, et l'utilisateur retrouvait une erreur alors que sa
+  // réponse arrivait quelques secondes plus tard. ~4 min couvrent le pire cas observé.
+  const startRecovery = useCallback(() => {
+    if (!awaitingRef.current || !conversationIdRef.current) return;
+    if (recoveryRunningRef.current) return;
+    recoveryRunningRef.current = true;
+    setRecovering(true);
+
+    const stop = () => {
+      recoveryRunningRef.current = false;
+      setRecovering(false);
+    };
+
+    const poll = async (attempt: number) => {
+      if (recoveryCancelledRef.current || !awaitingRef.current) return stop();
+      // Le flux tourne encore (retour rapide dans l'onglet) : on le laisse finir.
+      const busy = statusRef.current === 'streaming' || statusRef.current === 'submitted';
+      if (!busy && (await recoverFromHistory())) return stop();
+      if (attempt >= RECOVERY_MAX_ATTEMPTS) return stop();
+      recoveryTimerRef.current = setTimeout(() => void poll(attempt + 1), RECOVERY_INTERVAL_MS);
+    };
+    void poll(0);
+  }, [recoverFromHistory]);
+
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof document === 'undefined') return;
-    let cancelled = false;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-
-    // Poll l'historique (~1 min) : la génération serveur peut encore être en cours.
-    const poll = async (attempt: number) => {
-      if (cancelled || !awaitingRef.current) {
-        setRecovering(false);
-        return;
-      }
-      const busy = statusRef.current === 'streaming' || statusRef.current === 'submitted';
-      if (!busy && (await recoverFromHistory())) {
-        setRecovering(false);
-        return;
-      }
-      if (attempt >= 15) {
-        setRecovering(false);
-        return;
-      }
-      timer = setTimeout(() => void poll(attempt + 1), 4000);
-    };
+    recoveryCancelledRef.current = false;
 
     const onVisible = () => {
       if (document.visibilityState !== 'visible') return;
-      if (!awaitingRef.current || !conversationIdRef.current) return;
-      setRecovering(true);
-      void poll(0);
+      startRecovery();
     };
 
     document.addEventListener('visibilitychange', onVisible);
+    // Retour depuis le cache arrière/avant (iOS) : `visibilitychange` ne se déclenche pas
+    // toujours, `pageshow` si.
+    window.addEventListener('pageshow', onVisible);
+    // Onglet déjà visible au montage (l'app a été rouverte sur cet écran) : on tente aussi.
+    onVisible();
+
     return () => {
-      cancelled = true;
-      if (timer) clearTimeout(timer);
+      recoveryCancelledRef.current = true;
+      if (recoveryTimerRef.current) clearTimeout(recoveryTimerRef.current);
       document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('pageshow', onVisible);
     };
-  }, [recoverFromHistory]);
+  }, [startRecovery]);
+
+  // Le flux a cassé alors qu'une réponse était attendue : la génération continue côté
+  // serveur (keepAlive) — on va la chercher SANS attendre que l'utilisateur clique
+  // « Réessayer », qui relancerait un appel LLM pour rien.
+  useEffect(() => {
+    if (!error || !awaitingRef.current || !conversationIdRef.current) return;
+    startRecovery();
+  }, [error, startRecovery]);
 
   // Réessayer après erreur : la réponse a pu aboutir côté serveur malgré la coupure —
   // on vérifie d'abord l'historique, sinon on renvoie la même requête (sans re-saisie).
@@ -809,6 +877,11 @@ export default function ChatScreen() {
     [messages],
   );
 
+  // Message assistant EN COURS de génération (≠ dernière réponse affichée) : tant que la
+  // nouvelle réponse n'a pas commencé, il n'y en a pas — la bulle de statut ne doit donc
+  // montrer AUCUNE étape, et surtout pas celles du tour précédent.
+  const activeAssistant = useMemo(() => inFlightAssistant(messages) ?? undefined, [messages]);
+
   // ── Classification des erreurs serveur (au lieu d'une bannière générique) ──────
   // 401 `signup_required` : essai invité épuisé côté serveur (localStorage purgé…)
   // ou session expirée pour un compte connecté — deux parcours différents.
@@ -837,13 +910,23 @@ export default function ChatScreen() {
 
   // Phase de chargement : pendant l'attente (submitted) ou tant qu'aucun texte n'est encore
   // arrivé, on montre une bulle de statut (réflexion → recherche de sources → rédaction).
-  const lastAssistantText = lastAssistant ? messageText(lastAssistant) : '';
+  const lastAssistantText = activeAssistant ? messageText(activeAssistant) : '';
   const showStatus =
     status === 'submitted' || (status === 'streaming' && lastAssistantText.trim().length === 0);
+
+  // Début de l'attente : posé au passage en « submitted », remis à zéro à la fin.
+  const [waitStartedAt, setWaitStartedAt] = useState<number | null>(null);
+  useEffect(() => {
+    if (status === 'submitted') setWaitStartedAt((prev) => prev ?? Date.now());
+    else if (status !== 'streaming') setWaitStartedAt(null);
+  }, [status]);
+  useEffect(() => {
+    if (recovering) setWaitStartedAt((prev) => prev ?? Date.now());
+  }, [recovering]);
   const phase: ChatPhase =
     status === 'submitted'
       ? 'thinking'
-      : hasToolActivity(lastAssistant)
+      : hasToolActivity(activeAssistant)
         ? 'searching'
         : 'writing';
 
@@ -1343,9 +1426,13 @@ export default function ChatScreen() {
         {(showStatus || recovering) && (
           <View style={styles.statusStack}>
             {!recovering ? (
-              <ProgressTrace steps={summarizeChatProgress(lastAssistant?.parts)} />
+              <ProgressTrace steps={summarizeChatProgress(activeAssistant?.parts)} />
             ) : null}
-            <StatusBubble phase={recovering ? 'recovering' : phase} toolLabel={activeToolLabel(lastAssistant)} />
+            <StatusBubble
+              phase={recovering ? 'recovering' : phase}
+              toolLabel={activeToolLabel(activeAssistant)}
+              startedAt={waitStartedAt}
+            />
           </View>
         )}
 
@@ -2081,6 +2168,21 @@ const styles = StyleSheet.create({
     color: tokens.colors.textSubtle,
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.medium,
+  },
+  statusElapsed: {
+    fontFamily: tokens.font.mono ?? tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption?.fontSize ?? 11,
+    fontVariant: ['tabular-nums'],
+  },
+  statusHint: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption?.fontSize ?? 11,
+    lineHeight: 16,
+    marginTop: tokens.space.xs,
+    marginLeft: tokens.space.sm,
+    maxWidth: 420,
   },
   typingRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.xs + 2 },
   typingDot: {

@@ -184,6 +184,71 @@ describe('cohortMeans / duplicateIds', () => {
   });
 });
 
+describe('base du classement (comparabilité)', () => {
+  // 3 étudiants notés sur les 2 épreuves + 1 seulement sur Anat : classer ce dernier
+  // avec les autres compare des moyennes qui ne portent pas sur la même chose.
+  const students = [
+    { id: 'complet-1', grades: { Anat: 10, Bioch: 10 } },
+    { id: 'complet-2', grades: { Anat: 12, Bioch: 12 } },
+    { id: 'complet-3', grades: { Anat: 8, Bioch: 8 } },
+    { id: 'partiel', grades: { Anat: 18, Bioch: null } },
+  ];
+  const subjects = ['Anat', 'Bioch'];
+
+  it('par défaut, seuls les étudiants notés sur TOUTES les épreuves incluses sont classés', () => {
+    const c = L.cohortMeans(students, subjects, {});
+    expect(c.basis).toBe('complete');
+    expect(c.counted).toBe(2);
+    expect(c.stats.n).toBe(3);
+    expect(c.excluded).toBe(1);
+    expect(c.byStudent['partiel'].ranked).toBe(false);
+    expect(c.byStudent['complet-1'].ranked).toBe(true);
+  });
+
+  it('conserve la MOYENNE de l’étudiant hors classement (la base ne change aucune note)', () => {
+    const c = L.cohortMeans(students, subjects, {});
+    near(c.byStudent['partiel'].mean, 18);
+    expect(c.byStudent['partiel'].complete).toBe(false);
+    expect(c.byStudent['partiel'].n).toBe(1);
+  });
+
+  it('la base « partial » reproduit le comportement précédent', () => {
+    const c = L.cohortMeans(students, subjects, {}, 'partial');
+    expect(c.basis).toBe('partial');
+    expect(c.stats.n).toBe(4);
+    expect(c.excluded).toBe(0);
+    expect(c.byStudent['partiel'].ranked).toBe(true);
+  });
+
+  it('le rang change réellement selon la base (c’est tout l’enjeu)', () => {
+    const complete = L.cohortMeans(students, subjects, {});
+    const partial = L.cohortMeans(students, subjects, {}, 'partial');
+    // Le 18/— capte le rang 1 en base « partial » et disparaît du classement en « complete ».
+    expect(L.rankOf(12, complete.stats.sorted)).toBe(1);
+    expect(L.rankOf(12, partial.stats.sorted)).toBe(2);
+  });
+
+  it('une épreuve à coefficient 0 ne rend personne « incomplet »', () => {
+    const c = L.cohortMeans(students, subjects, { Bioch: 0 });
+    expect(c.counted).toBe(1);
+    expect(c.stats.n).toBe(4);
+    expect(c.byStudent['partiel'].ranked).toBe(true);
+  });
+
+  it('borne la valeur reçue et retombe sur la base par défaut', () => {
+    expect(L.coerceRankingBasis('partial')).toBe('partial');
+    expect(L.coerceRankingBasis('n’importe quoi')).toBe('complete');
+    expect(L.coerceRankingBasis(undefined)).toBe(L.DEFAULT_RANKING_BASIS);
+    expect(L.RANKING_BASES).toEqual(['complete', 'partial']);
+  });
+
+  it('aucun étudiant complet → classement vide plutôt qu’un rang trompeur', () => {
+    const c = L.cohortMeans([{ id: 'a', grades: { Anat: 10, Bioch: null } }], subjects, {});
+    expect(c.stats).toBeNull();
+    expect(c.excluded).toBe(1);
+  });
+});
+
 describe('removeOnce', () => {
   it('retire une seule occurrence, avec tolérance flottante', () => {
     expect(L.removeOnce([1, 2, 2, 3], 2)).toEqual([1, 2, 3]);

@@ -151,3 +151,31 @@ Restaurer la version précédente de `public/partiel.html` (le reste de l'applic
 pas de dépendance à son contenu), ou masquer l'onglet en retirant `partiel` de
 `featureVisibility`. Les tests `partiel-engine.test.ts` et le helper deviendraient alors
 caducs et seraient supprimés avec.
+
+## Addendum 2026-07-25 — Base du classement général
+
+La v3 se contentait de **signaler** que le classement mélangeait des étudiants notés sur un
+nombre d'épreuves différent ; le filtre était laissé à l'arbitrage de Hugo, qui l'a tranché :
+il faut pouvoir choisir les épreuves du classement total et ne comparer que le comparable.
+
+`cohortMeans(students, subjects, weights, basis)` prend désormais une **base de classement** :
+
+- `complete` (**défaut**) : seuls les étudiants notés sur **toutes** les épreuves incluses
+  (coefficient > 0) entrent au classement. Les moyennes comparées portent alors toutes sur
+  les mêmes épreuves.
+- `partial` : comportement v3 (tout étudiant ayant au moins une note incluse), conservé pour
+  les scolarités qui classent ainsi — et signalé à l'écran comme un mélange.
+
+La base ne modifie **aucune note** : elle décide seulement qui est classé. Un étudiant hors
+base garde sa moyenne, affichée avec « **hors classement** » et le nombre d'épreuves qui lui
+manquent, **jamais un rang** — lui en donner un le comparerait à des moyennes qui ne portent
+pas sur les mêmes épreuves. Le simulateur suit la même règle : il n'affiche un rang que si
+les curseurs comblent toutes les épreuves manquantes.
+
+Défaut corrigé au passage : pour un étudiant hors classement, `simulateOverall` retirait du
+classement une moyenne « la sienne » qui n'y figurait pas — et pouvait donc retirer celle
+d'un **autre** étudiant de valeur égale. L'ancienne moyenne n'est plus retirée que si
+l'étudiant est effectivement classé.
+
+Sélecteur dans Réglages (mémorisé localement), bascule directe depuis la carte de résultat,
+et 7 tests unitaires + 10 contrôles navigateur dédiés.
