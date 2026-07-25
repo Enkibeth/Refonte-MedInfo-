@@ -23,7 +23,7 @@ None | Potential | Confirmed
 - public/partiel.html (moteur pur étendu dans `@partiel-logic` + refonte complète de l'interface)
 - tests/unit/helpers/partielLogic.ts (nouveau : extraction du bloc livré, partagée par les deux suites)
 - tests/unit/partiel-engine.test.ts (nouveau : 55 tests du cœur mathématique, jusqu'ici NON couvert)
-- tests/unit/partiel-parse.test.ts (+ parseur CSV maison, décodage UTF-8/windows-1252)
+- tests/unit/partiel-parse.test.ts (+ parseur CSV maison, décodage UTF-8/windows-1252, pipeline PDF complet)
 - scripts/dev/partiel-smoke.mjs, scripts/dev/partiel-smoke-xlsx.mjs (nouveaux : fumigation navigateur opt-in, hors CI)
 - app/(chat)/partiel.tsx, app/(chat)/_layout.tsx, src/ai/routing/featureVisibility.ts, src/seo/meta.ts (libellés + en-tête unique)
 - docs/DECISIONS/0035-refonte-analyse-partiels.md (nouveau), CLAUDE.md
@@ -41,6 +41,12 @@ forces/faiblesses vs promo, simulateur « et si » + note requise pour un object
 suggestions d'identifiant, tri, feuilles Excel multiples, export CSV, suivi de
 progression local. Perf : chargement paresseux des 4 librairies (~1,9 Mo évités au
 premier rendu ; un CSV n'en charge aucune).
+
+L'import PDF est désormais couvert : unitairement (items → statistiques, avec
+l'exigence de chiffres identiques au même relevé en CSV ; cellule manquante,
+fragments, pagination) et en navigateur sur un vrai PDF 2 pages. Ces tests ont
+révélé qu'une cellule fragmentée par pdf.js créait une colonne fantôme qui
+décalait l'en-tête par rapport aux notes — corrigé par `mergeLineFragments()`.
 ### Regulatory impact
 None. Aucune donnée de santé, aucun envoi réseau, aucune route IA. Le suivi de
 progression (`localStorage`) ne conserve que les résultats DÉRIVÉS de l'étudiant

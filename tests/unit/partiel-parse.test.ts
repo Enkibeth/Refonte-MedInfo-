@@ -152,6 +152,198 @@ describe('reconstructTableFromItems', () => {
     expect(dataRows.length).toBe(3);
     expect(dataRows[0][2]).toBe('1');
   });
+
+  it('UNE NOTE MANQUANTE laisse un trou et ne décale pas les suivantes', () => {
+    // Le risque majeur d'un PDF : si l'absence de cellule décalait la ligne, un 14
+    // de Physio serait lu comme une note d'Anatomie — une note fausse, attribuée
+    // à la mauvaise épreuve.
+    const cols = [40, 200, 360];
+    const items: Item[] = [];
+    ['Num', 'Anatomie', 'Physio'].forEach((s, c) => items.push({ x: cols[c], y: 20, str: s }));
+    [
+      ['28710015', '12,5', '14'],
+      ['28710020', '9', '11'],
+      ['28710030', '15', '13'],
+    ].forEach((row, r) => row.forEach((s, c) => items.push({ x: cols[c], y: 40 + r * 20, str: s })));
+    // 4e ligne : pas de note d'Anatomie (colonne du milieu vide).
+    items.push({ x: cols[0], y: 100, str: '28710040' });
+    items.push({ x: cols[2], y: 100, str: '17' });
+
+    const rows = L.reconstructTableFromItems(items);
+    const incomplete = rows.find((r: any[]) => r[0] === '28710040');
+    expect(incomplete).toEqual(['28710040', null, '17']);
+  });
+
+  it('recolle les fragments d’une même cellule au lieu d’inventer une colonne', () => {
+    // pdf.js découpe fréquemment un libellé en plusieurs items voisins.
+    const cols = [40, 200, 360];
+    const items: Item[] = [];
+    ['Num', 'Épreuve', 'Note'].forEach((s, c) => items.push({ x: cols[c], y: 20, str: s }));
+    [40, 60, 80].forEach((y, i) => {
+      items.push({ x: cols[0], y, str: `287100${i}` });
+      items.push({ x: cols[1], y, str: 'Santé' });
+      items.push({ x: cols[1] + 24, y, str: 'publique' });
+      items.push({ x: cols[2], y, str: '12' });
+    });
+    const rows = L.reconstructTableFromItems(items);
+    const data = rows.filter((r: any[]) => /^287100/.test(String(r[0])));
+    expect(data).toHaveLength(3);
+    expect(data[0][1]).toBe('Santé publique');
+    expect(data[0][2]).toBe('12');
+  });
+
+  it('enchaîne plusieurs pages sans mélanger les lignes', () => {
+    // `extractRowsFromPdf` décale le y de chaque page (yOffset) : les lignes de la
+    // page 2 doivent se suivre, pas se confondre avec celles de la page 1.
+    const cols = [40, 200];
+    const PAGE = 800;
+    const items: Item[] = [];
+    ['Num', 'Anatomie'].forEach((s, c) => items.push({ x: cols[c], y: 20, str: s }));
+    for (let p = 0; p < 2; p++) {
+      for (let r = 0; r < 4; r++) {
+        const y = p * PAGE + 40 + r * 20;
+        items.push({ x: cols[0], y, str: String(28710000 + p * 4 + r) });
+        items.push({ x: cols[1], y, str: String(10 + p * 4 + r) });
+      }
+    }
+    const rows = L.reconstructTableFromItems(items);
+    const ids = rows.map((r: any[]) => String(r[0])).filter((s: string) => /^287100\d\d$/.test(s));
+    expect(ids).toEqual(['28710000', '28710001', '28710002', '28710003', '28710004', '28710005', '28710006', '28710007']);
+  });
+
+  it('ignore les items vides et supporte les entrées dégénérées', () => {
+    expect(L.reconstructTableFromItems([])).toEqual([]);
+    expect(L.reconstructTableFromItems(null)).toEqual([]);
+    expect(L.reconstructTableFromItems([{ x: 1, y: 1, str: '   ' }])).toEqual([]);
+    // Une seule colonne : pas de découpage à inventer.
+    const single = L.reconstructTableFromItems([
+      { x: 40, y: 10, str: 'a' },
+      { x: 40, y: 30, str: 'b' },
+    ]);
+    expect(single).toEqual([['a'], ['b']]);
+  });
+});
+
+describe('mergeLineFragments (recollage conservateur)', () => {
+  const line = (xs: number[], strs: string[]) => xs.map((x, i) => ({ x, y: 10, str: strs[i] }));
+
+  it('recolle un écart très inférieur à l’écart entre colonnes', () => {
+    const lines = [
+      line([40, 200, 224, 360], ['1', 'Santé', 'publique', '12']),
+      line([40, 200, 224, 360], ['2', 'Santé', 'publique', '14']),
+    ];
+    const out = L.mergeLineFragments(lines);
+    expect(out[0].map((c: any) => c.str)).toEqual(['1', 'Santé publique', '12']);
+    expect(out[0][1].x).toBe(200); // la cellule garde le x de son premier fragment
+  });
+
+  it('NE fusionne PAS des colonnes réellement rapprochées mais régulières', () => {
+    const lines = [
+      line([40, 70, 100, 130], ['1', '12', '13', '14']),
+      line([40, 70, 100, 130], ['2', '15', '16', '17']),
+    ];
+    const out = L.mergeLineFragments(lines);
+    expect(out[0]).toHaveLength(4);
+  });
+
+  it('ne touche à rien quand il n’y a pas assez d’écarts pour décider', () => {
+    const lines = [line([40], ['a']), line([40], ['b'])];
+    expect(L.mergeLineFragments(lines)).toEqual(lines);
+    expect(L.mergeLineFragments(lines)).not.toBe(lines);
+    expect(L.mergeLineFragments([])).toEqual([]);
+    expect(L.mergeLineFragments(null)).toEqual([]);
+  });
+
+  it('ne renvoie jamais le tableau d’entrée (pas d’aliasing pour l’appelant)', () => {
+    const lines = [line([40, 200, 224, 360], ['1', 'Santé', 'publique', '12'])];
+    const out = L.mergeLineFragments(lines);
+    expect(out).not.toBe(lines);
+    expect(lines[0]).toHaveLength(4); // l'entrée n'est pas mutée
+  });
+});
+
+describe('pipeline PDF complet (items → statistiques)', () => {
+  // Vérifie que la chaîne réellement enchaînée par `handleFile` pour un PDF —
+  // reconstruction, en-tête, colonne identifiant, échelle, notes — donne EXACTEMENT
+  // les mêmes chiffres que le même relevé importé en CSV.
+  const grades = [
+    ['28710001', '4', '18', '10'],
+    ['28710002', '6', '17', '11'],
+    ['28710003', '6', '16', '12'],
+    ['28710004', '7', '16', '9'],
+    ['28710005', '7,5', '15', '13'],
+    ['28710006', '8', '15', '8'],
+    ['28710007', '8', '14', '14'],
+    ['28710008', '9', '14', '10'],
+    ['28710009', '10', '13', '11'],
+    ['28710010', '11', '12', 'ABS'],
+    ['28710011', '12', '11', '15'],
+    ['28710012', '14', '10', '16'],
+  ];
+  const header = ['Numéro étudiant', 'Anatomie', 'Biochimie', 'Physiologie'];
+
+  const analyze = (rows: any[][]) => {
+    const { hdrs, body } = L.normalizeTable(rows);
+    const idCol = L.detectIdCol(body, hdrs);
+    const { subjects, students } = L.parseBody(body, hdrs, idCol);
+    const scaleMax = L.rawScale(body, hdrs, idCol);
+    const subStats: Record<string, any> = {};
+    for (const s of subjects) subStats[s] = L.computeStats(students.map((r: any) => r.grades[s]));
+    return { hdrs, idCol, subjects, students, scaleMax, subStats };
+  };
+
+  const pdfItems = () => {
+    const cols = [40, 220, 380, 540];
+    const items: Item[] = [];
+    // Bandeau de scolarité au-dessus du tableau, comme sur un vrai relevé.
+    items.push({ x: 40, y: 12, str: 'Faculté de santé — relevé de notes' });
+    header.forEach((s, c) => items.push({ x: cols[c], y: 46, str: s }));
+    grades.forEach((row, r) => row.forEach((s, c) => items.push({ x: cols[c], y: 70 + r * 18, str: s })));
+    return items;
+  };
+
+  it('retrouve l’en-tête, la colonne identifiant et l’échelle depuis un PDF', () => {
+    const res = analyze(L.reconstructTableFromItems(pdfItems()));
+    expect(res.idCol).toBe(0);
+    expect(res.subjects).toEqual(['Anatomie', 'Biochimie', 'Physiologie']);
+    expect(res.scaleMax).toBe(20);
+    expect(res.students).toHaveLength(12);
+  });
+
+  it('donne les mêmes statistiques qu’en CSV, virgule décimale comprise', () => {
+    const fromPdf = analyze(L.reconstructTableFromItems(pdfItems()));
+    const fromCsv = analyze(L.parseDelimited([header, ...grades].map((r) => r.join(';')).join('\n')));
+
+    expect(fromPdf.subjects).toEqual(fromCsv.subjects);
+    for (const s of fromCsv.subjects) {
+      expect(fromPdf.subStats[s].n).toBe(fromCsv.subStats[s].n);
+      expect(fromPdf.subStats[s].mean).toBeCloseTo(fromCsv.subStats[s].mean, 10);
+      expect(fromPdf.subStats[s].median).toBeCloseTo(fromCsv.subStats[s].median, 10);
+    }
+    // Le 7,5 reste 7,5 (et non 75) par les deux chemins.
+    expect(fromPdf.students[4].grades.Anatomie).toBe(7.5);
+    expect(fromCsv.students[4].grades.Anatomie).toBe(7.5);
+    // L'absence reste une absence : ni 0, ni décalage de colonne.
+    expect(fromPdf.students[9].grades.Physiologie).toBeNull();
+    expect(fromPdf.subStats.Physiologie.n).toBe(11);
+    // Le classement général est identique par les deux chemins.
+    const meansOf = (r: typeof fromPdf) =>
+      L.cohortMeans(r.students, r.subjects, {}).stats.sorted;
+    expect(meansOf(fromPdf)).toEqual(meansOf(fromCsv));
+  });
+
+  it('refuse une liste d’affichage extraite d’un PDF (aucune vraie note)', () => {
+    const cols = [40, 400, 560];
+    const items: Item[] = [];
+    ['NUMÉRO ÉTUDIANT', 'SALLE', 'PLACE N°'].forEach((s, c) => items.push({ x: cols[c], y: 20, str: s }));
+    for (let i = 0; i < 8; i++) {
+      items.push({ x: cols[0], y: 44 + i * 18, str: `28710${100 + i}DUPONT` });
+      items.push({ x: cols[1], y: 44 + i * 18, str: 'salle 1-2' });
+      items.push({ x: cols[2], y: 44 + i * 18, str: String(i + 1) });
+    }
+    const res = analyze(L.reconstructTableFromItems(items));
+    expect(L.gradeColumnsOf(res.subjects, res.students, res.scaleMax)).toEqual([]);
+  });
 });
 
 describe('isLikelySequence', () => {

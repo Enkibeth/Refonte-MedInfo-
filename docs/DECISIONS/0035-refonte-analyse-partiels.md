@@ -52,8 +52,27 @@ du parsing : quantiles (type 7), écart-type d'échantillon, rang en compétitio
 centile, z-score, histogramme, pondération, simulation, synthèse, suggestions
 d'identifiant, CSV et suivi local.
 Suites : `tests/unit/partiel-parse.test.ts` (parsing) et `tests/unit/partiel-engine.test.ts`
-(moteur) — **75 tests**, contre 13 en v2, et surtout **le cœur mathématique était
+(moteur) — **86 tests**, contre 13 en v2, et surtout **le cœur mathématique était
 auparavant totalement non couvert**.
+
+L'**import PDF** est couvert à deux niveaux :
+- unitaire, sur la chaîne complète items → reconstruction → en-tête → colonne
+  identifiant → échelle → statistiques, avec l'exigence que les chiffres soient
+  **identiques à ceux du même relevé en CSV** (y compris « 7,5 » et une absence) ;
+  plus les cas qui corrompent silencieusement un relevé : cellule manquante (elle
+  laisse un trou et ne décale pas les notes suivantes dans la mauvaise épreuve),
+  fragments d'une même cellule, pagination, entrées dégénérées ;
+- navigateur, sur un **vrai PDF réparti sur deux pages** fabriqué avec le jsPDF
+  vendored puis relu par le pdf.js vendored — donc le chemin exact de production,
+  décalage `yOffset` inter-pages compris. Le cas du PDF scanné (aucun texte
+  sélectionnable) doit produire un message explicite et **aucune analyse**.
+
+Ces tests ont mis au jour un défaut de la reconstruction : pdf.js découpant souvent
+un libellé en plusieurs items, une cellule fragmentée créait une **colonne fantôme**
+et décalait l'en-tête par rapport aux notes. `mergeLineFragments()` recolle les
+fragments dont l'écart est très inférieur à l'écart typique entre colonnes du
+document (seuil conservateur, vérifié pour ne pas fusionner des colonnes réellement
+rapprochées mais régulières).
 
 ### 2. La distribution réelle remplace la gaussienne
 
@@ -123,7 +142,8 @@ compactées sur mobile.
 - La page reste un fichier autonome : toute évolution du calcul doit passer par le bloc
   `@partiel-logic` et être couverte par les deux suites de tests.
 - Vérification navigateur opt-in : `scripts/dev/partiel-smoke.mjs` (Chromium + Playwright,
-  hors CI) rejoue le parcours réel — c'est lui qui a mis au jour la lecture « 7,5 » → 75.
+  hors CI) rejoue le parcours réel sur les trois formats — CSV, .xlsx et PDF 2 pages
+  générés à la volée. C'est lui qui a mis au jour la lecture « 7,5 » → 75.
 
 ## Rollback
 

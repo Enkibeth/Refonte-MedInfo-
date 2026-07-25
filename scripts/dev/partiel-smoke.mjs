@@ -74,6 +74,46 @@ const rows = [
 ];
 const csv = rows.map((r) => r.join(';')).join('\n');
 
+
+/**
+ * Fabrique un VRAI PDF de relevé de notes avec le jsPDF vendored (celui que la page
+ * charge pour l'export), sur une page isolée pour ne pas polluer les assertions de
+ * chargement paresseux de la page testée. Le tableau est réparti sur DEUX pages :
+ * c'est le seul moyen d'exercer le décalage `yOffset` de `extractRowsFromPdf`.
+ */
+async function makeGradesPdf(browser, header, grades, opts = {}) {
+  const gen = await browser.newPage();
+  await gen.goto('about:blank');
+  await gen.addScriptTag({ path: path.join(ROOT, 'vendor/js/jspdf.umd.min.js') });
+  const b64 = await gen.evaluate(
+    ({ header, grades, blank, rowsFirstPage }) => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+      if (blank) {
+        // PDF « scanné » : de l'encre, aucun texte sélectionnable.
+        doc.setFillColor(210, 210, 210);
+        doc.rect(40, 40, 300, 200, 'F');
+        return doc.output('datauristring').split(',')[1];
+      }
+      const cols = [40, 220, 340, 460];
+      doc.setFontSize(11);
+      doc.text('Faculte de sante - releve de notes', 40, 40);
+      doc.setFontSize(9);
+      header.forEach((h, c) => doc.text(String(h), cols[c], 70));
+      let y = 95;
+      grades.forEach((row, i) => {
+        if (i === rowsFirstPage) { doc.addPage(); y = 60; }
+        row.forEach((v, c) => doc.text(String(v), cols[c], y));
+        y += 22;
+      });
+      return doc.output('datauristring').split(',')[1];
+    },
+    { header, grades, blank: !!opts.blank, rowsFirstPage: opts.rowsFirstPage ?? 7 },
+  );
+  await gen.close();
+  return Buffer.from(b64, 'base64');
+}
+
 const browser = await chromium.launch({ executablePath: CHROMIUM, args: ['--no-sandbox'] });
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 const consoleErrors = [];
@@ -286,7 +326,41 @@ const anatMed = await page.evaluate(() => {
 ok(anatMed === '8,00', 'médiane Anatomie identique en .xlsx', anatMed);
 ok(await page.isVisible('#sheetsel') === false || true, 'sélecteur de feuille géré');
 
-console.log('\n[17] Console');
+console.log('\n[17] Import PDF (pdf.js à la demande, 2 pages)');
+await page.click('#btnreload');
+const header = rows[0];
+const pdfBuf = await makeGradesPdf(browser, header, rows.slice(1));
+await page.setInputFiles('#fi', { name: 'releve-notes.pdf', mimeType: 'application/pdf', buffer: pdfBuf });
+await page.waitForSelector('#bar:not([hidden])', { timeout: 20000 });
+const pdfVendor = await page.evaluate(() =>
+  [...document.querySelectorAll('script[src]')].map((s) => s.getAttribute('src')));
+ok(pdfVendor.some((s) => s.includes('pdf.min.js')), 'pdf.js chargé seulement pour le PDF', JSON.stringify(pdfVendor));
+const pdfSub = await page.textContent('#bfsub');
+ok(/12 étudiants/.test(pdfSub), 'les 12 lignes des 2 pages sont lues', pdfSub);
+ok(/3 épreuves/.test(pdfSub) && /35 notes/.test(pdfSub), 'colonnes et absence identiques au CSV', pdfSub);
+const pdfSubjects = await page.$$eval('#stbody tr td:first-child', (t) => t.map((x) => x.textContent.trim()));
+ok(pdfSubjects[0].startsWith('Anatomie'), 'en-tête de la page 1 correctement associé', JSON.stringify(pdfSubjects));
+const pdfMed = await page.evaluate(() => {
+  const tr = [...document.querySelectorAll('#stbody tr')].find((t) => t.cells[0].textContent.startsWith('Anatomie'));
+  return [tr.cells[1].textContent.trim(), tr.cells[4].textContent.trim(), tr.cells[7].textContent.trim()];
+});
+ok(pdfMed[0] === '12' && pdfMed[1] === '4,00' && pdfMed[2] === '8,00', 'mêmes n/min/médiane qu’en CSV', JSON.stringify(pdfMed));
+await page.fill('#idinput', '28710012');
+await page.waitForTimeout(200);
+const pdfK = await page.$$eval('#block-hero .kval', (els) => els.map((e) => e.textContent.trim()));
+ok(pdfK[0].startsWith('13,33'), 'moyenne identique depuis le PDF (7,5 non corrompu)', pdfK[0]);
+ok(pdfK[1].startsWith('1'), 'rang identique depuis le PDF', pdfK[1]);
+
+console.log('\n[18] PDF sans texte sélectionnable (scanné)');
+await page.click('#btnreload');
+const scanned = await makeGradesPdf(browser, [], [], { blank: true });
+await page.setInputFiles('#fi', { name: 'scan.pdf', mimeType: 'application/pdf', buffer: scanned });
+await page.waitForSelector('#errbox .errbox', { timeout: 20000 });
+const scanMsg = await page.textContent('#errbox .errbox');
+ok(/texte sélectionnable|OCR/.test(scanMsg), 'message explicite pour un PDF scanné', scanMsg.trim());
+ok(await page.isHidden('#bar'), 'aucune analyse fantôme après un PDF illisible');
+
+console.log('\n[19] Console');
 ok(httpErrors.length === 0, 'aucune ressource manquante', JSON.stringify(httpErrors));
 ok(consoleErrors.length === 0, 'aucune erreur console', JSON.stringify(consoleErrors.slice(0, 4)));
 
