@@ -29,6 +29,7 @@ import { logInteraction } from '@/ai/logging/logInteraction';
 import { summarizeSteps } from '@/ai/logging/stepMetrics';
 import { coerceConversationId, saveAssistantMessageServer } from '@/chat/serverHistory';
 import { createServerSupabaseClient } from '@/db/serverSupabase';
+import { keepAlive } from '@/server/keepAlive';
 import {
   buildUserContextSection,
   coerceChatbot,
@@ -132,12 +133,21 @@ export async function POST(request: Request): Promise<Response> {
   // = même comportement qu'avant ; mode approfondi public = jusqu'à `medium`, jamais `high`).
   const modeRuntime = responseModeRuntime(responseMode, chatbot);
 
+  // MODE RAPIDE (retour Hugo 2026-07) : UNE réponse directe, sur un modèle bon marché
+  // (feature `chat_fast`, gpt-5-mini), SANS outil, SANS recherche web et SANS split.
+  // L'ancien mode « rapide » enchaînait deux modèles et plafonnait la sortie à 1400
+  // tokens (raisonnement compris) : il était le chemin le plus lent et pouvait renvoyer
+  // une réponse vide. Le prompt du mode interdit explicitement de citer des sources non
+  // vérifiées (buildResponseModeSection) — le modèle n'a plus rien pour les vérifier.
+  const directMode = modeRuntime.directAnswer === true;
+
   const [template, runtime] = await Promise.all([
     getPromptTemplate(chatbot),
     // Recherche web ON par défaut pour le chat : les prompts exigent des sources réelles
     // (URLs vérifiables HAS/ESC/PubMed…) — sans web search le modèle ne peut pas les fournir.
-    getRuntimeForFeature('chat', {
-      webSearch: true,
+    // En mode rapide elle est coupée (réponse de mémoire, assumée par le prompt du mode).
+    getRuntimeForFeature(directMode ? 'chat_fast' : 'chat', {
+      webSearch: !directMode,
       reasoningEffort: modeRuntime.reasoningEffort,
       ...(modeRuntime.capReasoningEffort ? { capReasoningEffort: modeRuntime.capReasoningEffort } : {}),
       verbosity: modeRuntime.verbosity,
@@ -180,7 +190,8 @@ export async function POST(request: Request): Promise<Response> {
   // par le modèle bon marché pendant la recherche) en gardant la rédaction patient sur le
   // modèle fiable. ACTIF par défaut (kill-switch `CHAT_ORCHESTRATOR_SPLIT=off` pour revenir
   // au mono-modèle) ; FAIL-OPEN : si la recherche échoue, dossier vide → repli mono-modèle.
-  const splitActive = splitModeEnabled() && !conversational && !(attachment && canAttach);
+  const splitActive =
+    splitModeEnabled() && !conversational && !directMode && !(attachment && canAttach);
 
   let briefSection = '';
   let researcherLog:
@@ -234,7 +245,7 @@ export async function POST(request: Request): Promise<Response> {
   //    monte le connecteur MCP. Requiert ANTHROPIC_API_KEY ; `PUBMED_MCP_URL=off` coupe tout.
   // En mode rédacteur-depuis-dossier (split), le rédacteur n'a PAS d'outils : ni MCP PubMed,
   // ni sous-agent, ni recherche web (la recherche a été faite en phase 1).
-  const noWriterTools = conversational || writerFromBrief;
+  const noWriterTools = conversational || writerFromBrief || directMode;
   const mcpServers = noWriterTools ? null : pubmedMcpServers(runtime.provider, chatbot);
   if (mcpServers) {
     callOptions.providerOptions = {
@@ -254,7 +265,13 @@ export async function POST(request: Request): Promise<Response> {
   const coreSystem = `${template}${buildUserContextSection(personalInfo)}${buildCountryContextSection(country)}`;
   const system = conversational
     ? coreSystem
-    : writerFromBrief
+    : directMode
+      ? // Rapide : cœur clinique + consigne du mode (qui porte le cadrage de sécurité) +
+        // outils de sortie. PAS de workflow d'outils, PAS de volet pharmacologie : celui-ci
+        // impose « applique le WORKFLOW DE RECHERCHE ci-dessus » et `verify_source_links`,
+        // absents ici — l'y laisser inviterait à fabriquer des sources.
+        `${coreSystem}${buildResponseModeSection(responseMode)}${buildOutputToolsSection(outputTools)}`
+      : writerFromBrief
       ? // Rédacteur (phase 2) : cœur clinique + pharmaco/mode/outils de sortie + le dossier de
         // preuves (à la fin, contexte frais). Pas de workflow d'outils (il ne cherche pas).
         `${coreSystem}${buildPharmacologySection(chatbot)}${buildResponseModeSection(responseMode)}${buildOutputToolsSection(outputTools)}${briefSection}`
@@ -358,9 +375,14 @@ export async function POST(request: Request): Promise<Response> {
   });
 
   // Si le client se déconnecte en plein stream (page suspendue par iOS, réseau coupé),
-  // la génération va quand même au bout : onFinish archive la réponse, que l'utilisateur
-  // retrouvera dans son historique au retour dans l'app.
-  void result.consumeStream();
+  // la génération doit aller au bout : `onFinish` archive alors la réponse, que
+  // l'utilisateur retrouve dans son historique au retour dans l'app.
+  //
+  // `consumeStream()` seul ne suffit PAS en serverless : l'invocation est gelée dès que la
+  // réponse HTTP est terminée ou avortée, et le travail restant n'est jamais exécuté —
+  // c'est la cause du « la génération ne se fait pas si je quitte le navigateur ».
+  // `keepAlive` prolonge l'invocation jusqu'à la fin de la génération (no-op en local).
+  keepAlive(result.consumeStream());
 
   return result.toUIMessageStreamResponse();
 }

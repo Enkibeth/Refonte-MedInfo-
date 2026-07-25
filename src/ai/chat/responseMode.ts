@@ -45,6 +45,14 @@ export interface ResponseModeRuntime {
   maxOutputTokens?: number;
   /** Plafond d'étapes de la boucle agentique (stepCountIs). */
   maxSteps: number;
+  /**
+   * Réponse DIRECTE (mode rapide) : UN SEUL appel LLM sur un modèle bon marché, sans
+   * aucun outil, sans split orchestrateur/rédacteur et sans recherche web. Corrige le
+   * paradoxe du mode « rapide » d'origine, qui enchaînait DEUX modèles (chercheur puis
+   * rédacteur) et était donc le chemin le PLUS LENT, avec un budget de sortie si serré
+   * (1400 tokens, raisonnement inclus) que la réponse pouvait revenir vide.
+   */
+  directAnswer?: boolean;
 }
 
 /**
@@ -61,11 +69,16 @@ export function responseModeRuntime(
   const isPublic = chatbot === 'public';
 
   if (mode === 'fast') {
+    // Un seul appel, aucun outil : la latence est celle d'un unique aller-retour.
+    // Le budget de sortie doit rester confortable — sur les modèles à raisonnement,
+    // les tokens de réflexion sont décomptés du même budget : trop bas, la réponse
+    // revient vide et l'utilisateur voit « la réponse a peut-être été interrompue ».
     return {
       reasoningEffort: 'minimal',
       verbosity: 'low',
-      maxOutputTokens: 1400,
-      maxSteps: 4,
+      maxOutputTokens: 3000,
+      maxSteps: 1,
+      directAnswer: true,
     };
   }
 
@@ -92,11 +105,26 @@ export function responseModeRuntime(
  */
 export function buildResponseModeSection(mode: ResponseMode): string {
   if (mode === 'fast') {
+    // ⚠️ En mode rapide, le modèle n'a NI recherche web NI outil de vérification de
+    // liens : il répond de mémoire. La consigne doit donc lui interdire explicitement
+    // de produire des sources qu'il ne peut pas vérifier, et porter le cadrage de
+    // sécurité que le volet pharmacologie (couplé au workflow d'outils) n'apporte pas ici.
     return (
       `\n\nMODE DE RÉPONSE : RAPIDE\n` +
-      `Va droit au but : l'essentiel en quelques phrases, sans développement superflu. ` +
-      `Limite-toi à l'information la plus utile ; n'ouvre pas de longues sections. ` +
-      `Reste dans le format exigé par tes consignes, en version condensée.`
+      `Tu réponds SANS recherche : ni web, ni littérature, ni vérification de liens. ` +
+      `Va droit au but — l'essentiel en quelques phrases, sans développement superflu ` +
+      `ni longues sections.\n` +
+      `RÈGLES ABSOLUES DE CE MODE :\n` +
+      `- N'invente JAMAIS d'URL, de référence, de titre d'étude ni de numéro NCT. ` +
+      `Ne produis PAS de section SOURCES : tu n'as rien vérifié.\n` +
+      `- N'invente JAMAIS un chiffre (posologie, seuil, incidence). Si un chiffre précis ` +
+      `ou une source à jour est nécessaire, dis-le en une phrase et invite à relancer la ` +
+      `question en mode Classique ou Approfondi, qui recherche et vérifie ses sources.\n` +
+      `- Toute équivalence de doses reste INDICATIVE et doit être validée par le ` +
+      `prescripteur selon le RCP et le contexte ; signale les points de sécurité majeurs ` +
+      `(marge thérapeutique étroite, insuffisance rénale/hépatique, grossesse, interactions).\n` +
+      `- Les consignes de sécurité et d'orientation de tes instructions principales ` +
+      `s'appliquent intégralement : la brièveté ne les suspend jamais.`
     );
   }
   if (mode === 'deep') {

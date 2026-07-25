@@ -402,7 +402,15 @@ tr.me:hover{background:var(--a1m);}
           <span class="clabel">Seuil de validation</span>
           <input class="f" id="passinput" type="number" step="0.5" min="0" style="width:96px">
         </div>
+        <div class="field">
+          <span class="clabel">Base du classement g&eacute;n&eacute;ral</span>
+          <div class="seg" id="basisseg">
+            <button type="button" data-v="complete" title="Ne classe que les étudiants notés sur toutes les épreuves incluses">Notes compl&egrave;tes</button>
+            <button type="button" data-v="partial" title="Classe tout étudiant ayant au moins une note incluse">Tous les not&eacute;s</button>
+          </div>
+        </div>
       </div>
+      <p class="notice" id="basishint"></p>
 
       <div class="psep"></div>
 
@@ -875,15 +883,37 @@ function weightedMean(grades,subjects,weights){
   return den>0?{mean:num/den,n,weight:den}:{mean:null,n:0,weight:0};
 }
 // Moyennes de TOUTE la promo (une par étudiant) — base du classement général.
-function cohortMeans(students,subjects,weights){
+// BASE DU CLASSEMENT (2026-07) — le défaut de la v3 : classer ensemble un étudiant
+// noté sur 2 épreuves et un autre noté sur 12 compare des moyennes qui ne portent pas
+// sur la même chose. Deux bases explicites :
+//   - 'complete' (défaut) : SEULS les étudiants notés sur TOUTES les épreuves incluses
+//     entrent au classement — strictement comparable ;
+//   - 'partial'  : tout étudiant ayant au moins une note incluse (comportement v3).
+// Dans les deux cas la MOYENNE de chacun reste calculée sur ses propres notes : la base
+// ne change pas les notes, elle décide seulement QUI est classé.
+const RANKING_BASES=['complete','partial'];
+const DEFAULT_RANKING_BASIS='complete';
+function coerceRankingBasis(v){return RANKING_BASES.includes(v)?v:DEFAULT_RANKING_BASIS;}
+
+function cohortMeans(students,subjects,weights,basis){
+  const mode=coerceRankingBasis(basis);
+  const subs=subjects||[];
+  // Nombre d'épreuves incluses réellement notables (coefficient > 0).
+  const counted=subs.filter(s=>weightOf(weights,s)>0);
   const byStudent={},values=[];
+  let excluded=0;
   for(const st of students||[]){
-    const wm=weightedMean(st.grades,subjects,weights);
+    const wm=weightedMean(st.grades,subs,weights);
     if(wm.mean==null)continue;
-    byStudent[st.id]={mean:wm.mean,n:wm.n,weight:wm.weight};
-    values.push(wm.mean);
+    const complete=wm.n===counted.length;
+    // La moyenne reste consultable pour TOUS (elle s'affiche même hors classement) ;
+    // `ranked` dit si l'étudiant entre dans le classement de la base courante.
+    const ranked=mode==='partial'||complete;
+    byStudent[st.id]={mean:wm.mean,n:wm.n,weight:wm.weight,complete,ranked};
+    if(ranked)values.push(wm.mean);
+    else excluded++;
   }
-  return {byStudent,stats:computeStats(values)};
+  return {byStudent,stats:computeStats(values),basis:mode,excluded,counted:counted.length};
 }
 // Identifiants présents plusieurs fois : le classement les compterait deux fois.
 function duplicateIds(students){
@@ -1125,6 +1155,7 @@ if(typeof module!=='undefined'&&module.exports){
     binCountFor,histogramBins,normalCurvePoints,
     // pondération
     DEFAULT_WEIGHT,weightOf,weightedMean,cohortMeans,duplicateIds,
+    RANKING_BASES,DEFAULT_RANKING_BASIS,coerceRankingBasis,
     // simulation
     removeOnce,requiredGrade,simulateOverall,
     // synthèse
@@ -1152,7 +1183,7 @@ const csvNum=x=>x==null||(typeof x==='number'&&isNaN(x))?'':String(x).replace('.
 const $=id=>document.getElementById(id);
 
 /* ---------- Stockage local (jamais de note de tiers, cf. @partiel-logic §9) ---------- */
-const LS={coefs:sig=>`medinfo:partiel:coefs:${sig}`,history:'medinfo:partiel:history',prefs:'medinfo:partiel:prefs'};
+const LS={coefs:sig=>`medinfo:partiel:coefs:${sig}`,history:'medinfo:partiel:history',basis:'medinfo:partiel:basis'};
 function lsGet(k){try{return window.localStorage.getItem(k);}catch(_){return null;}}
 function lsSet(k,v){try{window.localStorage.setItem(k,v);}catch(_){}}
 
@@ -1189,6 +1220,7 @@ const S={
   fileName:'',isPdf:false,wb:null,sheetNames:[],sheetIdx:0,
   headers:[],rawBody:null,idColIdx:0,subjects:[],rows:null,gradeCols:[],dupIds:[],
   excluded:new Set(),weights:{},scaleMax:20,passMark:10,passTouched:false,
+  rankingBasis:DEFAULT_RANKING_BASIS,
   subStats:{},overall:null,
   ids:['',''],compare:false,stu1:null,stu2:null,
   selSub:null,showNormal:false,settingsOpen:false,
@@ -1197,6 +1229,7 @@ const S={
   history:[],
 };
 S.history=parseHistory(lsGet(LS.history));
+S.rankingBasis=coerceRankingBasis(lsGet(LS.basis));
 
 /* ---------- Extraction PDF (I/O seulement) ---------- */
 async function extractRowsFromPdf(file,pdfjs){
@@ -1311,8 +1344,8 @@ function recompute(){
   S.subStats={};
   for(const s of S.subjects)S.subStats[s]=computeStats(S.rows.map(r=>r.grades[s]));
   const inc=S.subjects.filter(s=>!S.excluded.has(s)&&weightOf(S.weights,s)>0);
-  const c=cohortMeans(S.rows,inc,S.weights);
-  S.overall={inc,byStu:c.byStudent,stats:c.stats};
+  const c=cohortMeans(S.rows,inc,S.weights,S.rankingBasis);
+  S.overall={inc,byStu:c.byStudent,stats:c.stats,basis:c.basis,excluded:c.excluded,counted:c.counted};
 }
 function resolveStudents(){
   S.stu1=S.rows?findStudent(S.rows,S.ids[0]):null;
@@ -1390,6 +1423,10 @@ function renderSettings(){
   const sel=$('idcolsel');sel.innerHTML='';
   S.headers.forEach((h,i)=>{const o=document.createElement('option');o.value=i;o.textContent=`Col. ${i+1} — ${h||'(sans nom)'}`;if(i===S.idColIdx)o.selected=true;sel.appendChild(o);});
   document.querySelectorAll('#scaleseg button').forEach(b=>b.classList.toggle('on',Number(b.dataset.v)===S.scaleMax));
+  document.querySelectorAll('#basisseg button').forEach(b=>b.classList.toggle('on',b.dataset.v===S.rankingBasis));
+  $('basishint').innerHTML=S.rankingBasis==='complete'
+    ?`Seuls les étudiants notés sur les <b>${fi(S.overall?S.overall.counted:0)} épreuves incluses</b> sont classés — les moyennes comparées portent alors toutes sur les mêmes épreuves. <b>${fi(S.overall?S.overall.excluded:0)}</b> étudiant(s) écarté(s) du classement (leur moyenne reste affichée).`
+    :`Tout étudiant ayant au moins une note incluse est classé : le classement <b>mélange</b> des moyennes portant sur un nombre d'épreuves différent. À n'utiliser que si ta scolarité classe ainsi.`;
   $('passinput').value=S.passMark;
   $('passinput').max=S.scaleMax;
 
@@ -1442,11 +1479,16 @@ function badge(p){
   if(p>=50)return'<span class="badge bg-mid">Au-dessus de la médiane</span>';
   return'<span class="badge bg-low">Sous la médiane</span>';
 }
+// Un étudiant HORS base de classement garde sa moyenne mais n'a NI rang NI centile :
+// lui en afficher un le comparerait à des moyennes qui ne portent pas sur les mêmes
+// épreuves. `ranked:false` est rendu explicitement à l'écran.
 function overallOf(stu){
   const o=S.overall.byStu[stu.id];
   const sorted=(S.overall.stats&&S.overall.stats.sorted)||[];
-  if(!o)return{mean:null,n:0,rank:null,pct:null,total:sorted.length};
-  return{mean:o.mean,n:o.n,rank:rankOf(o.mean,sorted),pct:percentileOf(o.mean,sorted),total:sorted.length};
+  if(!o)return{mean:null,n:0,rank:null,pct:null,total:sorted.length,ranked:false,complete:false};
+  if(!o.ranked)return{mean:o.mean,n:o.n,rank:null,pct:null,total:sorted.length,ranked:false,complete:o.complete};
+  return{mean:o.mean,n:o.n,rank:rankOf(o.mean,sorted),pct:percentileOf(o.mean,sorted),
+    total:sorted.length,ranked:true,complete:o.complete};
 }
 
 function renderResults(){
@@ -1489,8 +1531,14 @@ function renderWarnings(){
   const inc=S.overall.inc;
   if(S.stu1&&inc.length){
     const got=inc.filter(s=>typeof S.stu1.grades[s]==='number').length;
-    if(got<inc.length)w.push(`Ta moyenne porte sur <b>${got} épreuve(s) sur ${inc.length}</b> : les épreuves non notées sont ignorées (jamais comptées 0), mais le classement mélange des étudiants notés sur des nombres d'épreuves différents.`);
+    if(got<S.overall.counted){
+      w.push(S.rankingBasis==='complete'
+        ?`Ta moyenne porte sur <b>${got} épreuve(s) sur ${fi(S.overall.counted)}</b> (une épreuve non notée n'est jamais comptée 0). Tu es donc <b>hors du classement général</b>, qui ne retient que les étudiants notés sur toutes les épreuves incluses.`
+        :`Ta moyenne porte sur <b>${got} épreuve(s) sur ${fi(S.overall.counted)}</b> et la base « tous les notés » te classe quand même : ton rang se compare à des moyennes qui ne portent pas sur les mêmes épreuves.`);
+    }
   }
+  if(S.rankingBasis==='partial'&&S.overall.stats)
+    w.push(`Base de classement <b>« tous les notés »</b> : le classement mélange des étudiants notés sur un nombre d'épreuves différent. Repasse sur « notes complètes » (Réglages) pour un classement strictement comparable.`);
   if(!inc.length)w.push('Aucune épreuve n’est incluse dans la moyenne : ouvre <b>Réglages</b> pour en réactiver.');
   $('reswarn').innerHTML=w.length?`<div class="warnbox">${w.join('<br>')}</div>`:'';
 }
@@ -1498,7 +1546,9 @@ function renderHero(){
   const hero=$('block-hero');hero.innerHTML='';
   hero.className='herogrid'+((S.stu1&&S.stu2)?' two':'');
   const o=S.overall.stats;
-  $('synthsub').innerHTML=o?`promo : moy. ${fm(o.mean)} · méd. ${fm(o.median)} · σ ${fm(o.stdev)} · n ${fi(o.n)}`:'';
+  $('synthsub').innerHTML=o
+    ?`classement sur ${fi(o.n)} étudiant(s)${S.rankingBasis==='complete'&&S.overall.excluded?` (${fi(S.overall.excluded)} écarté(s))`:''} · moy. ${fm(o.mean)} · méd. ${fm(o.median)} · σ ${fm(o.stdev)}`
+    :`aucun étudiant noté sur les ${fi(S.overall.counted)} épreuves incluses`;
   if(S.stu1)hero.appendChild(heroCard('A','a',SVGC.a1,S.stu1));
   if(S.stu2)hero.appendChild(heroCard('B','b',SVGC.a2,S.stu2));
   if(!S.stu1&&!S.stu2){
@@ -1508,6 +1558,16 @@ function renderHero(){
 function heroCard(lbl,cls,color,stu){
   const r=overallOf(stu);
   const pw=r.pct!=null?Math.max(0,Math.min(100,r.pct)):0;
+  const missing=Math.max(0,(S.overall.counted||0)-r.n);
+  // Hors base de classement : on affiche « hors classement » et JAMAIS un rang calculé
+  // contre des moyennes qui ne portent pas sur les mêmes épreuves.
+  const rankBlock=r.ranked
+    ?`<div class="kval ff">${r.rank!=null?fi(r.rank):'—'}<span class="kunit mono"> /${fi(r.total)}</span></div>
+      <div class="klabel">Rang général</div>
+      <div>${badge(r.pct)}</div>`
+    :`<div class="kval ff" style="font-size:.5em;line-height:1.15">Hors<br>classement</div>
+      <div class="klabel">Rang général</div>
+      <div><span class="badge bg-mid">épreuves manquantes</span></div>`;
   const el=document.createElement('div');
   el.className=`herocard ${cls}`;
   el.innerHTML=`
@@ -1520,23 +1580,27 @@ function heroCard(lbl,cls,color,stu){
             <div class="klabel">Moyenne générale</div>
             <div class="ksub">${fi(r.n)} / ${fi(S.overall.inc.length)} épreuves · coefs appliqués</div>
           </div>
-          <div class="kright">
-            <div class="kval ff">${r.rank!=null?fi(r.rank):'—'}<span class="kunit mono"> /${fi(r.total)}</span></div>
-            <div class="klabel">Rang général</div>
-            <div>${badge(r.pct)}</div>
-          </div>
+          <div class="kright">${rankBlock}</div>
         </div>
-        <div class="pctbar">
+        ${r.ranked?`<div class="pctbar">
           <div class="ptrow"><span>Position dans la promo</span><span class="ptval mono">${fp(r.pct)}</span></div>
           <div class="ptrack"><div class="pfill" style="width:${pw}%"></div></div>
-        </div>
+        </div>`:`<div class="pctbar"><p class="iempty" style="margin:0">Il te manque ${fi(missing)} épreuve(s) sur ${fi(S.overall.counted)} : te classer contre des étudiants notés sur toutes les épreuves comparerait des moyennes qui ne portent pas sur la même chose. <button class="lbtn" data-basis="partial">classer quand même</button></p></div>`}
       </div>
       <div class="radar-wrap"></div>
     </div>`;
   const wrap=el.querySelector('.radar-wrap');
   const svg=buildRadar(stu,color);
   if(svg)wrap.appendChild(svg);else wrap.style.display='none';
+  const sw=el.querySelector('[data-basis]');
+  if(sw)sw.onclick=()=>setRankingBasis(sw.dataset.basis);
   return el;
+}
+function setRankingBasis(basis){
+  S.rankingBasis=coerceRankingBasis(basis);
+  lsSet(LS.basis,S.rankingBasis);
+  S.sim={};
+  recompute();renderSettings();renderResults();
 }
 function buildRadar(stu,color){
   const inc=S.overall.inc.slice(0,12);
@@ -1678,9 +1742,18 @@ function renderSimOut(){
   const inc=S.overall.inc;
   const sorted=(S.overall.stats&&S.overall.stats.sorted)||[];
   const ref=overallOf(S.stu1);
-  const sim=simulateOverall(S.stu1.grades,inc,S.weights,S.sim,sorted,ref.mean);
+  // L'ancienne moyenne n'est retirée du classement QUE si l'étudiant y figure —
+  // sinon `removeOnce` retirerait la moyenne d'un AUTRE étudiant de valeur égale.
+  const sim=simulateOverall(S.stu1.grades,inc,S.weights,S.sim,sorted,ref.ranked?ref.mean:null);
+  // Un étudiant hors base ne devient classable que si la simulation comble TOUTES ses
+  // épreuves manquantes : sinon on n'affiche pas de rang (il serait incomparable).
+  const simNoted=inc.filter(sub=>{
+    const v=typeof S.sim[sub]==='number'?S.sim[sub]:S.stu1.grades[sub];
+    return typeof v==='number'&&!isNaN(v)&&weightOf(S.weights,sub)>0;
+  }).length;
+  const simRanked=S.rankingBasis==='partial'||simNoted>=(S.overall.counted||0);
   const dMean=(sim.mean!=null&&ref.mean!=null)?sim.mean-ref.mean:null;
-  const dRank=(sim.rank!=null&&ref.rank!=null)?ref.rank-sim.rank:null;
+  const dRank=(simRanked&&ref.ranked&&sim.rank!=null&&ref.rank!=null)?ref.rank-sim.rank:null;
   const cls=v=>v==null?'flat':(v>0.0001?'up':(v<-0.0001?'down':'flat'));
   const sgn=v=>v==null?'—':(v>0?'+':(v<0?'−':'±'));
   const goalSubject=S.simSubject||inc[0];
@@ -1697,8 +1770,10 @@ function renderSimOut(){
     <p class="ptitle">Résultat simulé</p>
     <div class="simbig ff">${sim.mean!=null?fm(sim.mean):'—'}<span class="kunit mono" style="font-size:.34em;color:var(--muted)"> /${S.scaleMax}</span></div>
     <div class="simdelta ${cls(dMean)}">${sgn(dMean)}${dMean==null?'':fm(Math.abs(dMean))} pt vs ta moyenne réelle (${fm(ref.mean)})</div>
-    <div class="simdelta" style="margin-top:10px">Rang <b>${sim.rank!=null?fi(sim.rank):'—'}</b> / ${fi(sim.total)} <span class="${cls(dRank)}">(${sgn(dRank)}${dRank==null?'':fi(Math.abs(dRank))} place${dRank!=null&&Math.abs(dRank)>1?'s':''})</span></div>
-    <div class="simdelta">Centile ${fp(sim.pct)}</div>
+    ${simRanked
+      ?`<div class="simdelta" style="margin-top:10px">Rang <b>${sim.rank!=null?fi(sim.rank):'—'}</b> / ${fi(sim.total)} ${dRank!=null?`<span class="${cls(dRank)}">(${sgn(dRank)}${fi(Math.abs(dRank))} place${Math.abs(dRank)>1?'s':''})</span>`:''}</div>
+        <div class="simdelta">Centile ${fp(sim.pct)}</div>`
+      :`<div class="simdelta flat" style="margin-top:10px">Pas de rang : il te manque ${fi(Math.max(0,(S.overall.counted||0)-simNoted))} épreuve(s) sur ${fi(S.overall.counted)}. Renseigne-les avec les curseurs pour voir ton rang.</div>`}
     <div class="goalrow">
       <div class="field"><span class="clabel">Objectif de moyenne</span><input class="f" id="goalinput" type="number" step="0.5" min="0" max="${S.scaleMax}" style="width:92px" value="${typeof S.goal==='number'?S.goal:''}" placeholder="${fm(S.scaleMax/2,0)}"></div>
       <div class="field" style="flex:1 1 130px"><span class="clabel">dans l’épreuve</span><select class="f" id="goalsel">${goalOpts}</select></div>
@@ -2181,6 +2256,7 @@ $('passinput').addEventListener('change',e=>{
   e.target.value=S.passMark;
   renderResults();
 });
+document.querySelectorAll('#basisseg button').forEach(b=>b.addEventListener('click',()=>setRankingBasis(b.dataset.v)));
 $('btnallin').addEventListener('click',()=>setAllSubjects(true));
 $('btnallout').addEventListener('click',()=>setAllSubjects(false));
 $('btncoef1').addEventListener('click',resetWeights);
