@@ -19,6 +19,8 @@
 import { generateText, stepCountIs, tool } from 'ai';
 import { z } from 'zod';
 
+import type { ResearchEvent } from '@/ai/chat/researchTimeline';
+
 import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 import { logFeatureUsage } from '@/ai/logging/logFeatureUsage';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
@@ -104,7 +106,10 @@ export async function runPubmedAgent(
  * Outil `pubmed_search` exposé à l'orchestrateur (modèle non-Claude, chatbot pro) :
  * délégation orchestrateur → sous-agent. Ne lève jamais — repli textuel actionnable.
  */
-export function pubmedResearchTool(run: (query: string) => Promise<string> = runPubmedAgent) {
+export function pubmedResearchTool(
+  onEvent?: (e: ResearchEvent) => void,
+  run: (query: string) => Promise<string> = runPubmedAgent,
+) {
   return tool({
     description:
       'Délègue une recherche bibliographique à un sous-agent spécialisé disposant d’un accès direct à PubMed (MeSH, abstracts, PMID). ' +
@@ -118,6 +123,7 @@ export function pubmedResearchTool(run: (query: string) => Promise<string> = run
         .describe('Question de recherche complète et autonome (français ou anglais)'),
     }),
     execute: async ({ query }: { query: string }) => {
+      onEvent?.({ kind: 'pubmed' });
       try {
         return await run(query);
       } catch {

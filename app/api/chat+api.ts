@@ -20,7 +20,14 @@
  * panel admin (app/(admin)/index.tsx). Si tu ajoutes une étape IA ici, déclare-la dans
  * src/admin/index.ts AI_FEATURES.
  */
-import { streamText, generateText, convertToModelMessages, stepCountIs } from 'ai';
+import {
+  streamText,
+  generateText,
+  convertToModelMessages,
+  stepCountIs,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+} from 'ai';
 
 import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
@@ -47,6 +54,13 @@ import { buildOutputToolsSection, coerceChatOutputTools } from '@/ai/chat/output
 import { appendAttachmentToModelMessages, coerceChatAttachment } from '@/ai/chat/attachment';
 import { isConversationalTurn, latestUserText } from '@/ai/chat/turnKind';
 import { splitModeEnabled, buildBriefSection } from '@/ai/chat/split';
+import {
+  RESEARCH_DATA_PART_ID,
+  buildResearchTimeline,
+  webSearchCallsOfStep,
+  type ResearchEvent,
+  type ResearchPhase,
+} from '@/ai/chat/researchTimeline';
 import { isAdminUserId } from '@/admin/index';
 import {
   buildChatTools,
@@ -193,102 +207,6 @@ export async function POST(request: Request): Promise<Response> {
   const splitActive =
     splitModeEnabled() && !conversational && !directMode && !(attachment && canAttach);
 
-  let briefSection = '';
-  let researcherLog:
-    | { modelId: string; usage: unknown; metrics: ReturnType<typeof summarizeSteps> }
-    | null = null;
-
-  if (splitActive) {
-    try {
-      const researcher = await getRuntimeForFeature('chat_researcher', { webSearch: true });
-      const researcherPrompt = await getPromptTemplate('chat_researcher');
-      const { tools: researcherWebTools, ...researcherCall } = researcher.options;
-      const researcherPubmedAgent =
-        chatbot === 'professional' &&
-        researcher.provider !== 'anthropic' &&
-        Boolean(process.env.ANTHROPIC_API_KEY) &&
-        resolvePubmedMcpUrl() !== null;
-      const researcherQualityTools = buildChatTools(chatbot, { pubmedAgent: researcherPubmedAgent });
-      const researcherTools =
-        researcher.provider === 'google' && researcherWebTools
-          ? researcherWebTools
-          : { ...(researcherWebTools ?? {}), ...researcherQualityTools };
-      const researcherSystem = `${researcherPrompt}${buildUserContextSection(personalInfo)}${buildCountryContextSection(country)}${buildChatToolsSection(chatbot, { pubmedMcp: false, pubmedAgent: researcherPubmedAgent })}${buildPharmacologySection(chatbot)}`;
-      const research = await generateText({
-        model: researcher.model,
-        system: researcherSystem,
-        messages: modelMessages,
-        ...(Object.keys(researcherTools).length > 0 ? { tools: researcherTools } : {}),
-        stopWhen: stepCountIs(modeRuntime.maxSteps),
-        ...researcherCall,
-      });
-      briefSection = buildBriefSection(research.text);
-      researcherLog = {
-        modelId: researcher.modelId,
-        usage: research.usage,
-        metrics: summarizeSteps(research.steps),
-      };
-    } catch {
-      // Recherche indisponible → repli mono-modèle (le rédacteur garde ses propres outils).
-      briefSection = '';
-    }
-  }
-
-  // Le rédacteur travaille À PARTIR du dossier (sans outils) seulement si la recherche a
-  // produit un dossier ; sinon on garde le pipeline mono-modèle (outils sur le modèle du chat).
-  const writerFromBrief = briefSection !== '';
-
-  // PubMed pour le chatbot pro (suivi ADR-0030), deux voies :
-  //  - modèle Claude → connecteur MCP direct sur l'appel principal ;
-  //  - autre modèle (gpt-5.2 par défaut) → délégation : l'orchestrateur reçoit l'outil
-  //    `pubmed_search`, exécuté par un SOUS-AGENT Claude (feature `pubmed_agent`) qui
-  //    monte le connecteur MCP. Requiert ANTHROPIC_API_KEY ; `PUBMED_MCP_URL=off` coupe tout.
-  // En mode rédacteur-depuis-dossier (split), le rédacteur n'a PAS d'outils : ni MCP PubMed,
-  // ni sous-agent, ni recherche web (la recherche a été faite en phase 1).
-  const noWriterTools = conversational || writerFromBrief || directMode;
-  const mcpServers = noWriterTools ? null : pubmedMcpServers(runtime.provider, chatbot);
-  if (mcpServers) {
-    callOptions.providerOptions = {
-      ...(callOptions.providerOptions ?? {}),
-      anthropic: { ...(callOptions.providerOptions?.anthropic ?? {}), mcpServers },
-    };
-  }
-  const pubmedAgent =
-    !mcpServers &&
-    !noWriterTools &&
-    chatbot === 'professional' &&
-    runtime.provider !== 'anthropic' &&
-    Boolean(process.env.ANTHROPIC_API_KEY) &&
-    resolvePubmedMcpUrl() !== null;
-
-  // Cœur clinique du prompt produit : TOUJOURS envoyé (rôle, sécurité, recueil, formats).
-  const coreSystem = `${template}${buildUserContextSection(personalInfo)}${buildCountryContextSection(country)}`;
-  const system = conversational
-    ? coreSystem
-    : directMode
-      ? // Rapide : cœur clinique + consigne du mode (qui porte le cadrage de sécurité) +
-        // outils de sortie. PAS de workflow d'outils, PAS de volet pharmacologie : celui-ci
-        // impose « applique le WORKFLOW DE RECHERCHE ci-dessus » et `verify_source_links`,
-        // absents ici — l'y laisser inviterait à fabriquer des sources.
-        `${coreSystem}${buildResponseModeSection(responseMode)}${buildOutputToolsSection(outputTools)}`
-      : writerFromBrief
-      ? // Rédacteur (phase 2) : cœur clinique + pharmaco/mode/outils de sortie + le dossier de
-        // preuves (à la fin, contexte frais). Pas de workflow d'outils (il ne cherche pas).
-        `${coreSystem}${buildPharmacologySection(chatbot)}${buildResponseModeSection(responseMode)}${buildOutputToolsSection(outputTools)}${briefSection}`
-      : `${coreSystem}${buildChatToolsSection(chatbot, { pubmedMcp: mcpServers !== null, pubmedAgent })}${buildPharmacologySection(chatbot)}${buildResponseModeSection(responseMode)}${buildOutputToolsSection(outputTools)}`;
-
-  // Workflow agents (ADR-0030) : le modèle orchestre des outils qualité serveur
-  // (Europe PMC, ClinicalTrials.gov pour le pro, vérification des liens sources).
-  // Gemini n'accepte pas de mélanger googleSearch et function tools : dans ce cas
-  // on garde la recherche web du provider et on renonce aux outils custom.
-  // Tour conversationnel OU rédacteur-depuis-dossier → aucun outil (réponse directe).
-  const qualityTools = noWriterTools ? {} : buildChatTools(chatbot, { pubmedAgent });
-  const tools = noWriterTools
-    ? {}
-    : runtime.provider === 'google' && webTools
-      ? webTools
-      : { ...(webTools ?? {}), ...qualityTools };
-
   // Résilience hors-ligne (2026-06) : la réponse est archivée CÔTÉ SERVEUR en fin de
   // génération (et non plus par le client) — la propriété de la conversation est
   // vérifiée contre le user du token, jamais le body (src/chat/serverHistory.ts).
@@ -298,91 +216,265 @@ export async function POST(request: Request): Promise<Response> {
   // toujours vérifiée contre le user du token dans saveAssistantMessageServer).
   const regenerate = body.regenerate === true;
 
-  const result = streamText({
-    model: runtime.model,
-    system,
-    messages: modelMessages,
-    ...(Object.keys(tools).length > 0 ? { tools } : {}),
-    // Boucle agentique evidence-first : le modèle enchaîne recherche → lecture des
-    // résumés des articles retenus → vérification des liens → rédaction. Borné pour ne
-    // jamais boucler indéfiniment (chaque étape = un appel LLM). Le plafond dépend du mode
-    // de réponse choisi (rapide = boucle courte ; approfondi = plus d'étapes).
-    stopWhen: stepCountIs(modeRuntime.maxSteps),
-    ...callOptions,
-    onFinish: async ({ text, steps, usage }) => {
-      // En multi-étapes, `text` ne contient que la DERNIÈRE étape : on archive la
-      // concaténation de toutes les étapes (= ce que le client a affiché).
-      const fullText =
-        Array.isArray(steps) && steps.length > 1
-          ? steps.map((s) => s.text ?? '').join('')
-          : text;
-      if (conversationId && resolution.userId) {
-        const supabase = createServerSupabaseClient();
-        if (supabase) {
-          await saveAssistantMessageServer(supabase, {
-            conversationId,
-            userId: resolution.userId,
-            content: fullText,
-            replaceLast: regenerate,
+  // ── Timeline des étapes de recherche (2026-07, « Étapes » à la Vera Health) ──────────
+  // La réponse HTTP démarre TOUT DE SUITE (createUIMessageStream) et la progression réelle
+  // de la boucle d'outils — y compris la phase 1 du split, jusqu'ici invisible — est
+  // streamée en data parts `data-research` réconciliées (id stable). Les compteurs
+  // viennent des outils eux-mêmes (hitCount Europe PMC, verdicts de liens…), jamais du
+  // modèle. Tour conversationnel / mode rapide : pas de recherche, pas de timeline.
+  const showTimeline = !conversational && !directMode;
+
+  const stream = createUIMessageStream({
+    onError: () => 'Une erreur est survenue pendant la génération.',
+    execute: async ({ writer }) => {
+      const events: ResearchEvent[] = [];
+      let timelinePhase: ResearchPhase = 'analyzing';
+      let timelineClosed = false;
+      const writeTimeline = () => {
+        if (!showTimeline || timelineClosed) return;
+        try {
+          writer.write({
+            type: 'data-research',
+            id: RESEARCH_DATA_PART_ID,
+            data: buildResearchTimeline(events, timelinePhase),
           });
+        } catch {
+          // Flux client fermé : la génération continue (keepAlive), sans timeline.
+          timelineClosed = true;
         }
-      }
-      // Instrumentation latence (2026-07) : nombre d'étapes LLM + décompte d'appels par
-      // outil (noms seulement, jamais les arguments) — pour savoir OÙ part le temps
-      // (sous-agent PubMed ? lectures séquentielles ? rédaction ?). Migration 0034.
-      const metrics = summarizeSteps(steps);
-      await logInteraction({
-        persona: chatbot,
-        model_used: runtime.modelId,
-        // Coût par conversation (2026-07) : rattache les tokens à la conversation.
-        conversation_id: conversationId ?? undefined,
-        tokens_in: usage?.inputTokens,
-        tokens_out: usage?.outputTokens,
-        // Justesse des coûts (audit 2026-07, item K) : `inputTokens` INCLUT les tokens lus
-        // depuis le cache du provider (préfixe système caché d'un appel à l'autre), facturés
-        // ~10 %. On loggue la part cachée pour ne pas la tarifer au plein prix (cost.ts).
-        cached_tokens_in: usage?.inputTokenDetails?.cacheReadTokens ?? usage?.cachedInputTokens,
-        latency_ms: Date.now() - startMs,
-        steps: metrics?.steps,
-        tool_calls: metrics?.toolCalls,
-        refusal_triggered: false,
-        guardrail_layer: 'none',
-        intent_category: 'general_info',
-      });
-      // Split (phase 1) : logue AUSSI l'agent chercheur, comme une interaction distincte
-      // (modèle bon marché) — l'onglet Coûts attribue alors correctement les tokens à
-      // CHAQUE modèle. tool_calls du chercheur = la boucle de recherche (déplacée hors du
-      // modèle du chat). Aucun contenu, seulement des compteurs (03_SECURITY §6).
-      if (researcherLog) {
-        const u = researcherLog.usage as
-          | { inputTokens?: number; outputTokens?: number; inputTokenDetails?: { cacheReadTokens?: number }; cachedInputTokens?: number }
-          | undefined;
-        await logInteraction({
-          persona: chatbot,
-          model_used: researcherLog.modelId,
-          conversation_id: conversationId ?? undefined,
-          tokens_in: u?.inputTokens,
-          tokens_out: u?.outputTokens,
-          cached_tokens_in: u?.inputTokenDetails?.cacheReadTokens ?? u?.cachedInputTokens,
-          steps: researcherLog.metrics?.steps,
-          tool_calls: researcherLog.metrics?.toolCalls,
-          refusal_triggered: false,
-          guardrail_layer: 'none',
-          intent_category: 'general_info',
+      };
+      const onEvent = (e: ResearchEvent) => {
+        events.push(e);
+        if (timelinePhase === 'analyzing') timelinePhase = 'searching';
+        writeTimeline();
+      };
+      // Recherches web (outil exécuté par le provider) : elles ne passent pas par nos
+      // hooks d'outils — comptées à la fin de chaque étape (generateText) ou au fil des
+      // chunks (streamText).
+      const onWebSearchCalls = (count: number) => {
+        for (let i = 0; i < count; i++) events.push({ kind: 'web' });
+        if (count > 0) {
+          if (timelinePhase === 'analyzing') timelinePhase = 'searching';
+          writeTimeline();
+        }
+      };
+
+      // Le pipeline complet (phase 1 + rédaction) vit dans UNE promesse couverte par
+      // keepAlive : si le client se déconnecte (page suspendue par iOS, réseau coupé),
+      // la génération va au bout et onFinish archive la réponse, que l'utilisateur
+      // retrouve dans son historique au retour dans l'app. `consumeStream()` seul ne
+      // suffit pas en serverless : l'invocation est gelée dès que la réponse HTTP est
+      // avortée — `keepAlive` la prolonge (no-op en local).
+      const pipeline = (async () => {
+        // Ouvre le message assistant TOUT DE SUITE (protocole UI stream : les data parts
+        // doivent suivre un `start`) ; le stream de texte mergé plus bas n'en renvoie pas
+        // de second (sendStart: false).
+        writer.write({ type: 'start' });
+        writeTimeline(); // « Analyse de la question » visible immédiatement.
+
+        // ── Phase 1 du split (voir bloc `splitActive` ci-dessus) ────────────────────
+        let briefSection = '';
+        let researcherLog:
+          | { modelId: string; usage: unknown; metrics: ReturnType<typeof summarizeSteps> }
+          | null = null;
+
+        if (splitActive) {
+          try {
+            const researcher = await getRuntimeForFeature('chat_researcher', { webSearch: true });
+            const researcherPrompt = await getPromptTemplate('chat_researcher');
+            const { tools: researcherWebTools, ...researcherCall } = researcher.options;
+            const researcherPubmedAgent =
+              chatbot === 'professional' &&
+              researcher.provider !== 'anthropic' &&
+              Boolean(process.env.ANTHROPIC_API_KEY) &&
+              resolvePubmedMcpUrl() !== null;
+            const researcherQualityTools = buildChatTools(chatbot, {
+              pubmedAgent: researcherPubmedAgent,
+              onEvent,
+            });
+            const researcherTools =
+              researcher.provider === 'google' && researcherWebTools
+                ? researcherWebTools
+                : { ...(researcherWebTools ?? {}), ...researcherQualityTools };
+            const researcherSystem = `${researcherPrompt}${buildUserContextSection(personalInfo)}${buildCountryContextSection(country)}${buildChatToolsSection(chatbot, { pubmedMcp: false, pubmedAgent: researcherPubmedAgent })}${buildPharmacologySection(chatbot)}`;
+            const research = await generateText({
+              model: researcher.model,
+              system: researcherSystem,
+              messages: modelMessages,
+              ...(Object.keys(researcherTools).length > 0 ? { tools: researcherTools } : {}),
+              stopWhen: stepCountIs(modeRuntime.maxSteps),
+              ...researcherCall,
+              onStepFinish: (step) => onWebSearchCalls(webSearchCallsOfStep(step)),
+            });
+            briefSection = buildBriefSection(research.text);
+            researcherLog = {
+              modelId: researcher.modelId,
+              usage: research.usage,
+              metrics: summarizeSteps(research.steps),
+            };
+          } catch {
+            // Recherche indisponible → repli mono-modèle (le rédacteur garde ses propres outils).
+            briefSection = '';
+          }
+        }
+
+        // Le rédacteur travaille À PARTIR du dossier (sans outils) seulement si la recherche a
+        // produit un dossier ; sinon on garde le pipeline mono-modèle (outils sur le modèle du chat).
+        const writerFromBrief = briefSection !== '';
+
+        // PubMed pour le chatbot pro (suivi ADR-0030), deux voies :
+        //  - modèle Claude → connecteur MCP direct sur l'appel principal ;
+        //  - autre modèle (gpt-5.2 par défaut) → délégation : l'orchestrateur reçoit l'outil
+        //    `pubmed_search`, exécuté par un SOUS-AGENT Claude (feature `pubmed_agent`) qui
+        //    monte le connecteur MCP. Requiert ANTHROPIC_API_KEY ; `PUBMED_MCP_URL=off` coupe tout.
+        // En mode rédacteur-depuis-dossier (split), le rédacteur n'a PAS d'outils : ni MCP PubMed,
+        // ni sous-agent, ni recherche web (la recherche a été faite en phase 1).
+        const noWriterTools = conversational || writerFromBrief || directMode;
+        const mcpServers = noWriterTools ? null : pubmedMcpServers(runtime.provider, chatbot);
+        if (mcpServers) {
+          callOptions.providerOptions = {
+            ...(callOptions.providerOptions ?? {}),
+            anthropic: { ...(callOptions.providerOptions?.anthropic ?? {}), mcpServers },
+          };
+        }
+        const pubmedAgent =
+          !mcpServers &&
+          !noWriterTools &&
+          chatbot === 'professional' &&
+          runtime.provider !== 'anthropic' &&
+          Boolean(process.env.ANTHROPIC_API_KEY) &&
+          resolvePubmedMcpUrl() !== null;
+
+        // Cœur clinique du prompt produit : TOUJOURS envoyé (rôle, sécurité, recueil, formats).
+        const coreSystem = `${template}${buildUserContextSection(personalInfo)}${buildCountryContextSection(country)}`;
+        const system = conversational
+          ? coreSystem
+          : directMode
+            ? // Rapide : cœur clinique + consigne du mode (qui porte le cadrage de sécurité) +
+              // outils de sortie. PAS de workflow d'outils, PAS de volet pharmacologie : celui-ci
+              // impose « applique le WORKFLOW DE RECHERCHE ci-dessus » et `verify_source_links`,
+              // absents ici — l'y laisser inviterait à fabriquer des sources.
+              `${coreSystem}${buildResponseModeSection(responseMode)}${buildOutputToolsSection(outputTools)}`
+            : writerFromBrief
+            ? // Rédacteur (phase 2) : cœur clinique + pharmaco/mode/outils de sortie + le dossier de
+              // preuves (à la fin, contexte frais). Pas de workflow d'outils (il ne cherche pas).
+              `${coreSystem}${buildPharmacologySection(chatbot)}${buildResponseModeSection(responseMode)}${buildOutputToolsSection(outputTools)}${briefSection}`
+            : `${coreSystem}${buildChatToolsSection(chatbot, { pubmedMcp: mcpServers !== null, pubmedAgent })}${buildPharmacologySection(chatbot)}${buildResponseModeSection(responseMode)}${buildOutputToolsSection(outputTools)}`;
+
+        // Workflow agents (ADR-0030) : le modèle orchestre des outils qualité serveur
+        // (Europe PMC, ClinicalTrials.gov pour le pro, vérification des liens sources).
+        // Gemini n'accepte pas de mélanger googleSearch et function tools : dans ce cas
+        // on garde la recherche web du provider et on renonce aux outils custom.
+        // Tour conversationnel OU rédacteur-depuis-dossier → aucun outil (réponse directe).
+        const qualityTools = noWriterTools ? {} : buildChatTools(chatbot, { pubmedAgent, onEvent });
+        const tools = noWriterTools
+          ? {}
+          : runtime.provider === 'google' && webTools
+            ? webTools
+            : { ...(webTools ?? {}), ...qualityTools };
+
+        // Dossier prêt : la phase 2 est une pure rédaction — l'étape passe tout de suite
+        // à « Rédaction » (le premier texte peut mettre quelques secondes à arriver).
+        if (writerFromBrief) {
+          timelinePhase = 'writing';
+          writeTimeline();
+        }
+
+        const result = streamText({
+          model: runtime.model,
+          system,
+          messages: modelMessages,
+          ...(Object.keys(tools).length > 0 ? { tools } : {}),
+          // Boucle agentique evidence-first : le modèle enchaîne recherche → lecture des
+          // résumés des articles retenus → vérification des liens → rédaction. Borné pour ne
+          // jamais boucler indéfiniment (chaque étape = un appel LLM). Le plafond dépend du mode
+          // de réponse choisi (rapide = boucle courte ; approfondi = plus d'étapes).
+          stopWhen: stepCountIs(modeRuntime.maxSteps),
+          ...callOptions,
+          // Timeline (chemin mono-modèle) : recherches web du provider au fil des chunks,
+          // bascule sur « Rédaction » au premier fragment de texte.
+          onChunk: ({ chunk }) => {
+            const c = chunk as { type?: string; toolName?: string };
+            if (c.type === 'tool-call' && (c.toolName === 'web_search' || c.toolName === 'google_search')) {
+              onWebSearchCalls(1);
+            } else if (c.type === 'text-delta' && timelinePhase !== 'writing') {
+              timelinePhase = 'writing';
+              writeTimeline();
+            }
+          },
+          onFinish: async ({ text, steps, usage }) => {
+            // En multi-étapes, `text` ne contient que la DERNIÈRE étape : on archive la
+            // concaténation de toutes les étapes (= ce que le client a affiché).
+            const fullText =
+              Array.isArray(steps) && steps.length > 1
+                ? steps.map((s) => s.text ?? '').join('')
+                : text;
+            if (conversationId && resolution.userId) {
+              const supabase = createServerSupabaseClient();
+              if (supabase) {
+                await saveAssistantMessageServer(supabase, {
+                  conversationId,
+                  userId: resolution.userId,
+                  content: fullText,
+                  replaceLast: regenerate,
+                });
+              }
+            }
+            // Instrumentation latence (2026-07) : nombre d'étapes LLM + décompte d'appels par
+            // outil (noms seulement, jamais les arguments) — pour savoir OÙ part le temps
+            // (sous-agent PubMed ? lectures séquentielles ? rédaction ?). Migration 0034.
+            const metrics = summarizeSteps(steps);
+            await logInteraction({
+              persona: chatbot,
+              model_used: runtime.modelId,
+              // Coût par conversation (2026-07) : rattache les tokens à la conversation.
+              conversation_id: conversationId ?? undefined,
+              tokens_in: usage?.inputTokens,
+              tokens_out: usage?.outputTokens,
+              // Justesse des coûts (audit 2026-07, item K) : `inputTokens` INCLUT les tokens lus
+              // depuis le cache du provider (préfixe système caché d'un appel à l'autre), facturés
+              // ~10 %. On loggue la part cachée pour ne pas la tarifer au plein prix (cost.ts).
+              cached_tokens_in: usage?.inputTokenDetails?.cacheReadTokens ?? usage?.cachedInputTokens,
+              latency_ms: Date.now() - startMs,
+              steps: metrics?.steps,
+              tool_calls: metrics?.toolCalls,
+              refusal_triggered: false,
+              guardrail_layer: 'none',
+              intent_category: 'general_info',
+            });
+            // Split (phase 1) : logue AUSSI l'agent chercheur, comme une interaction distincte
+            // (modèle bon marché) — l'onglet Coûts attribue alors correctement les tokens à
+            // CHAQUE modèle. tool_calls du chercheur = la boucle de recherche (déplacée hors du
+            // modèle du chat). Aucun contenu, seulement des compteurs (03_SECURITY §6).
+            if (researcherLog) {
+              const u = researcherLog.usage as
+                | { inputTokens?: number; outputTokens?: number; inputTokenDetails?: { cacheReadTokens?: number }; cachedInputTokens?: number }
+                | undefined;
+              await logInteraction({
+                persona: chatbot,
+                model_used: researcherLog.modelId,
+                conversation_id: conversationId ?? undefined,
+                tokens_in: u?.inputTokens,
+                tokens_out: u?.outputTokens,
+                cached_tokens_in: u?.inputTokenDetails?.cacheReadTokens ?? u?.cachedInputTokens,
+                steps: researcherLog.metrics?.steps,
+                tool_calls: researcherLog.metrics?.toolCalls,
+                refusal_triggered: false,
+                guardrail_layer: 'none',
+                intent_category: 'general_info',
+              });
+            }
+          },
         });
-      }
+
+        writer.merge(result.toUIMessageStream({ sendStart: false }));
+        await result.consumeStream();
+      })();
+
+      keepAlive(pipeline);
+      await pipeline;
     },
   });
 
-  // Si le client se déconnecte en plein stream (page suspendue par iOS, réseau coupé),
-  // la génération doit aller au bout : `onFinish` archive alors la réponse, que
-  // l'utilisateur retrouve dans son historique au retour dans l'app.
-  //
-  // `consumeStream()` seul ne suffit PAS en serverless : l'invocation est gelée dès que la
-  // réponse HTTP est terminée ou avortée, et le travail restant n'est jamais exécuté —
-  // c'est la cause du « la génération ne se fait pas si je quitte le navigateur ».
-  // `keepAlive` prolonge l'invocation jusqu'à la fin de la génération (no-op en local).
-  keepAlive(result.consumeStream());
-
-  return result.toUIMessageStreamResponse();
+  return createUIMessageStreamResponse({ stream });
 }

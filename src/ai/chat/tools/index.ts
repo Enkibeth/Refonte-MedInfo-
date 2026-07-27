@@ -11,9 +11,11 @@
  * exécutés au sein de la feature `chat` (aucun appel LLM supplémentaire).
  */
 import type { ChatbotId } from '@/ai/chat/chatContext';
+import type { ResearchEvent } from '@/ai/chat/researchTimeline';
 import { europePmcSearchTool, europePmcArticleTool } from './europePmc';
 import { clinicalTrialsSearchTool } from './clinicalTrials';
 import { verifySourceLinksTool } from './verifyLinks';
+import { planResearchTool } from './planResearch';
 import { pubmedResearchTool } from './pubmed';
 
 export {
@@ -21,9 +23,17 @@ export {
   formatEuropePmcResults,
   buildEuropePmcArticleUrl,
   formatEuropePmcArticle,
+  europePmcHitCount,
+  articlesFromEuropePmcResults,
+  articleFromEuropePmcArticle,
   type EuropePmcSort,
 } from './europePmc';
-export { buildClinicalTrialsSearchUrl, formatClinicalTrialsResults } from './clinicalTrials';
+export {
+  buildClinicalTrialsSearchUrl,
+  formatClinicalTrialsResults,
+  clinicalTrialsTotalCount,
+} from './clinicalTrials';
+export { planResearchTool, formatPlanResearchResult } from './planResearch';
 export {
   formatLinkCheckResults,
   verdictForHttpStatus,
@@ -43,6 +53,7 @@ export {
 
 /** Noms d'outils exposés — utilisés aussi par le client pour la bulle de statut. */
 export const CHAT_TOOL_NAMES = {
+  planResearch: 'plan_research',
   europePmc: 'europe_pmc_search',
   europePmcArticle: 'europe_pmc_article',
   clinicalTrials: 'clinical_trials_search',
@@ -58,6 +69,12 @@ export interface BuildChatToolsOptions {
    * l'exécution lance un sous-agent Claude porteur du connecteur MCP PubMed.
    */
   pubmedAgent?: boolean;
+  /**
+   * Timeline de progression (data part `data-research`) : chaque outil signale son
+   * activité réelle (requête, hitCount, titres lus, verdicts de liens) au fil de l'eau —
+   * la route les stream au client pendant que la boucle tourne.
+   */
+  onEvent?: (e: ResearchEvent) => void;
 }
 
 /**
@@ -71,15 +88,17 @@ export function buildChatTools(
   opts: BuildChatToolsOptions = {},
 ): Record<string, unknown> {
   const fetchImpl = opts.fetchImpl ?? fetch;
+  const onEvent = opts.onEvent;
   const tools: Record<string, unknown> = {
-    [CHAT_TOOL_NAMES.europePmc]: europePmcSearchTool(fetchImpl),
-    [CHAT_TOOL_NAMES.europePmcArticle]: europePmcArticleTool(fetchImpl),
-    [CHAT_TOOL_NAMES.verifyLinks]: verifySourceLinksTool(fetchImpl),
+    [CHAT_TOOL_NAMES.planResearch]: planResearchTool(onEvent),
+    [CHAT_TOOL_NAMES.europePmc]: europePmcSearchTool(fetchImpl, onEvent),
+    [CHAT_TOOL_NAMES.europePmcArticle]: europePmcArticleTool(fetchImpl, onEvent),
+    [CHAT_TOOL_NAMES.verifyLinks]: verifySourceLinksTool(fetchImpl, onEvent),
   };
   if (chatbot === 'professional') {
-    tools[CHAT_TOOL_NAMES.clinicalTrials] = clinicalTrialsSearchTool(fetchImpl);
+    tools[CHAT_TOOL_NAMES.clinicalTrials] = clinicalTrialsSearchTool(fetchImpl, onEvent);
     if (opts.pubmedAgent) {
-      tools[CHAT_TOOL_NAMES.pubmedAgent] = pubmedResearchTool();
+      tools[CHAT_TOOL_NAMES.pubmedAgent] = pubmedResearchTool(onEvent);
     }
   }
   return tools;
@@ -106,7 +125,7 @@ export function buildChatToolsSection(
   // réservé en seconde intention (voir sa ligne « Outils disponibles » ci-dessous).
 
   const steps = [
-    `1. DÉCOMPOSE la question en 1 à 3 requêtes de recherche ciblées (anglais pour la littérature, syntaxe PubMed acceptée).`,
+    `1. IDENTIFIE les concepts médicaux clés de la question et DÉCOMPOSE-la en 1 à 3 requêtes de recherche ciblées (anglais pour la littérature, syntaxe PubMed acceptée). Annonce ce plan via ${CHAT_TOOL_NAMES.planResearch} (concepts + requêtes), appelé EN PARALLÈLE de tes premières recherches — dans le MÊME tour que l'étape 2, jamais dans un tour dédié.`,
     `2. RECHERCHE AVANT DE RÉDIGER : lance en parallèle la recherche web (recommandations en vigueur : HAS, ESC, sociétés savantes…) et ${searchTools.join(' + ')}. Aucune affirmation actionnable ne doit précéder cette étape. Privilégie le récent et le fortement cité (paramètre sort : recent / cited).`,
     `3. LIS LES RÉSUMÉS : pour les 2-3 articles qui fonderont ta réponse, appelle ${CHAT_TOOL_NAMES.europePmcArticle} (PMID ou DOI, + le paramètre title repris du résultat de recherche) pour CHAQUE article EN PARALLÈLE — tous les appels dans le MÊME tour, jamais un article par tour — et appuie chaque affirmation sur le contenu réel du résumé, jamais sur le seul titre d'un résultat de recherche.`,
     `4. VÉRIFIE LES LIENS : appelle ${CHAT_TOOL_NAMES.verifyLinks} UNE SEULE fois, juste avant de rédiger la section SOURCES, avec toutes les URLs que tu prévois de citer ; remplace toute URL cassée (DOI, page officielle de niveau supérieur) ou retire la source.`,
@@ -114,6 +133,7 @@ export function buildChatToolsSection(
   ];
 
   const lines = [
+    `- ${CHAT_TOOL_NAMES.planResearch} : annonce du plan de recherche (concepts clés + requêtes prévues), affiché à l'utilisateur pendant qu'il attend. Une seule fois, en parallèle des premières recherches — ne remplace aucune recherche.`,
     `- ${CHAT_TOOL_NAMES.europePmc} : littérature biomédicale réelle (PubMed/Europe PMC : auteurs, journal, année, DOI, citations). Ne cite jamais un article que tu n'as pas retrouvé par cet outil ou la recherche web.`,
     `- ${CHAT_TOOL_NAMES.europePmcArticle} : résumé complet d'un article (PMID/DOI) retrouvé par la recherche — la lecture qui fonde la synthèse.`,
   ];

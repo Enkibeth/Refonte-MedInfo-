@@ -13,6 +13,8 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 
+import type { ResearchArticle, ResearchEvent } from '@/ai/chat/researchTimeline';
+
 const EUROPE_PMC_ENDPOINT = 'https://www.ebi.ac.uk/europepmc/webservices/rest/search';
 const EUROPE_PMC_ARTICLE_ENDPOINT = 'https://www.ebi.ac.uk/europepmc/webservices/rest/article';
 const FETCH_TIMEOUT_MS = 8_000;
@@ -62,6 +64,48 @@ function bestUrl(r: EuropePmcResult): string | null {
   return null;
 }
 
+// ── Timeline de progression (data part `data-research`) ───────────────────────
+
+/**
+ * Nombre TOTAL de résultats correspondant à la requête (hitCount Europe PMC) — le
+ * « Found N sources » de la timeline, distinct des quelques résultats affichés au modèle.
+ */
+export function europePmcHitCount(json: unknown): number | null {
+  const n = (json as { hitCount?: unknown } | null)?.hitCount;
+  return typeof n === 'number' && Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+function articleOfResult(r: EuropePmcResult): ResearchArticle | null {
+  if (!r.title) return null;
+  return {
+    title: r.title.replace(/\.$/, ''),
+    journal: r.journalTitle ?? null,
+    year: r.pubYear ?? null,
+    pubType: r.pubType ?? null,
+    citedByCount: typeof r.citedByCount === 'number' ? r.citedByCount : null,
+    url: bestUrl(r),
+    doi: r.doi ?? null,
+    pmid: r.pmid ?? null,
+  };
+}
+
+/** Métadonnées réelles des résultats d'une recherche (fiches sources côté client). */
+export function articlesFromEuropePmcResults(json: unknown): ResearchArticle[] {
+  const results = (json as { resultList?: { result?: EuropePmcResult[] } } | null)?.resultList
+    ?.result;
+  if (!Array.isArray(results)) return [];
+  return results.map(articleOfResult).filter((a): a is ResearchArticle => a !== null);
+}
+
+/** Métadonnées réelles d'un article lu (endpoint article ou recherche DOI). */
+export function articleFromEuropePmcArticle(json: unknown): ResearchArticle | null {
+  const record = json as
+    | { result?: EuropePmcResult; resultList?: { result?: EuropePmcResult[] } }
+    | null;
+  const r = record?.result ?? record?.resultList?.result?.[0];
+  return r ? articleOfResult(r) : null;
+}
+
 /** Formate la réponse JSON d'Europe PMC en liste compacte lisible par le modèle. */
 export function formatEuropePmcResults(json: unknown): string {
   const results = (json as { resultList?: { result?: EuropePmcResult[] } } | null)?.resultList
@@ -98,7 +142,10 @@ export function formatEuropePmcResults(json: unknown): string {
   return lines.join('\n');
 }
 
-export function europePmcSearchTool(fetchImpl: typeof fetch = fetch) {
+export function europePmcSearchTool(
+  fetchImpl: typeof fetch = fetch,
+  onEvent?: (e: ResearchEvent) => void,
+) {
   return tool({
     description:
       'Recherche dans la littérature biomédicale réelle (Europe PMC : PubMed/MEDLINE, PMC). ' +
@@ -122,9 +169,20 @@ export function europePmcSearchTool(fetchImpl: typeof fetch = fetch) {
           signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
           headers: { accept: 'application/json' },
         });
-        if (!res.ok) return `Recherche Europe PMC indisponible (HTTP ${res.status}). Appuie-toi sur la recherche web.`;
-        return formatEuropePmcResults(await res.json());
+        if (!res.ok) {
+          onEvent?.({ kind: 'search', query, found: null });
+          return `Recherche Europe PMC indisponible (HTTP ${res.status}). Appuie-toi sur la recherche web.`;
+        }
+        const json = await res.json();
+        onEvent?.({
+          kind: 'search',
+          query,
+          found: europePmcHitCount(json),
+          articles: articlesFromEuropePmcResults(json),
+        });
+        return formatEuropePmcResults(json);
       } catch {
+        onEvent?.({ kind: 'search', query, found: null });
         return 'Recherche Europe PMC indisponible (réseau). Appuie-toi sur la recherche web.';
       }
     },
@@ -198,7 +256,10 @@ export function formatEuropePmcArticle(json: unknown): string {
   return [head, meta || null, url ? `URL : ${url}` : null, abstract].filter(Boolean).join('\n');
 }
 
-export function europePmcArticleTool(fetchImpl: typeof fetch = fetch) {
+export function europePmcArticleTool(
+  fetchImpl: typeof fetch = fetch,
+  onEvent?: (e: ResearchEvent) => void,
+) {
   return tool({
     description:
       "Lit le résumé COMPLET d'un article scientifique identifié par son PMID ou son DOI (Europe PMC). " +
@@ -214,7 +275,7 @@ export function europePmcArticleTool(fetchImpl: typeof fetch = fetch) {
         .optional()
         .describe("Titre de l'article, repris du résultat de recherche (affiché à l'utilisateur pendant la lecture)"),
     }),
-    execute: async ({ id }: { id: string; title?: string }) => {
+    execute: async ({ id, title }: { id: string; title?: string }) => {
       const url = buildEuropePmcArticleUrl(id);
       if (!url) {
         return 'Identifiant non reconnu : fournis un PMID numérique ou un DOI (10.xxxx/…).';
@@ -224,9 +285,16 @@ export function europePmcArticleTool(fetchImpl: typeof fetch = fetch) {
           signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
           headers: { accept: 'application/json' },
         });
-        if (!res.ok) return `Lecture Europe PMC indisponible (HTTP ${res.status}). Appuie-toi sur les métadonnées de la recherche.`;
-        return formatEuropePmcArticle(await res.json());
+        if (!res.ok) {
+          onEvent?.({ kind: 'read', title: title ?? null });
+          return `Lecture Europe PMC indisponible (HTTP ${res.status}). Appuie-toi sur les métadonnées de la recherche.`;
+        }
+        const json = await res.json();
+        const article = articleFromEuropePmcArticle(json);
+        onEvent?.({ kind: 'read', title: title ?? article?.title ?? null, article });
+        return formatEuropePmcArticle(json);
       } catch {
+        onEvent?.({ kind: 'read', title: title ?? null });
         return 'Lecture Europe PMC indisponible (réseau). Appuie-toi sur les métadonnées de la recherche.';
       }
     },
