@@ -18,6 +18,28 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-07-28] – Claude (Pays du chat persisté au profil + drapeaux Windows)
+### Files modified
+- supabase/migrations/0043_profile_chat_country.sql (colonne `profiles.chat_country`, CHECK codes connus, own-row — appliquée via MCP le 2026-07-28)
+- src/auth/AuthProvider.tsx (`chatCountry` chargé avec le profil + `updateChatCountry`), app/(chat)/chat.tsx (profil = source de vérité connecté, localStorage = repli invité, migration silencieuse du choix local vers le profil)
+- src/ui/chat/CountryFlag.tsx + CountryFlag.web.tsx (nouveaux), src/ui/chat/CountrySelector.tsx
+- tests/rls/profile-personal-info.test.ts (3 cas 0043), CLAUDE.md
+### Purpose
+Le pays d'exercice (oriente les sources : agence du médicament, RCP, recommandations) ne
+vivait qu'en localStorage : « à chaque reconnexion il est oublié » (retour Hugo — autre
+appareil/navigateur = choix perdu). Il devient une préférence de PROFIL own-row (comme
+les infos perso 0017), synchronisée entre appareils. Drapeaux : Windows n'a aucun emoji
+drapeau (Segoe UI Emoji affiche « FR » en lettres) → petits drapeaux SVG inline sur
+Windows uniquement (zéro dépendance, zéro requête), emoji natifs conservés ailleurs.
+### Regulatory impact
+None (préférence d'affichage ; jamais une source de vérité serveur — body borné par
+coerceCountry ; hors verrou anti-élévation, RLS own-row testée : 106/106)
+### Rollback plan
+Revert du commit ; la colonne `chat_country` peut rester en base (nullable, ignorée).
+
+---
+
+
 ## [2026-07-28] – Claude (Timeline « Étapes » du chat + garde anti-réponse-vide)
 ### Files modified
 - src/ai/chat/researchTimeline.ts (nouveau, pur), src/ai/chat/tools/planResearch.ts (nouveau : outil déterministe `plan_research`)

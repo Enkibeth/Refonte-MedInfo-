@@ -70,3 +70,39 @@ describe('profiles — infos perso own-row', () => {
     ).rejects.toThrow();
   });
 });
+
+describe('profiles — pays du chat (migration 0043)', () => {
+  it('user A enregistre SON pays (own-row, persona intacte)', async () => {
+    await db.asUser(USER_A, async (q) => {
+      const { rowCount } = await q("UPDATE profiles SET chat_country = 'FR' WHERE id = $1", [
+        USER_A,
+      ]);
+      expect(rowCount).toBe(1);
+      const { rows } = await q('SELECT chat_country, persona FROM profiles WHERE id = $1', [
+        USER_A,
+      ]);
+      expect(rows[0].chat_country).toBe('FR');
+      // Préférence hors verrou anti-élévation : la persona ne bouge pas.
+      expect(rows[0].persona).toBe('public');
+    });
+  });
+
+  it('user A NE PEUT PAS écrire le pays de user B', async () => {
+    const { rowCount } = await db.asUser(USER_A, (q) =>
+      q("UPDATE profiles SET chat_country = 'US' WHERE id = $1", [USER_B]),
+    );
+    expect(rowCount).toBe(0);
+  });
+
+  it('rejette un code pays hors liste (contrainte CHECK) ; null autorisé (effacement)', async () => {
+    await expect(
+      db.asUser(USER_A, (q) =>
+        q("UPDATE profiles SET chat_country = 'ZZ' WHERE id = $1", [USER_A]),
+      ),
+    ).rejects.toThrow();
+    const { rowCount } = await db.asUser(USER_A, (q) =>
+      q('UPDATE profiles SET chat_country = NULL WHERE id = $1', [USER_A]),
+    );
+    expect(rowCount).toBe(1);
+  });
+});

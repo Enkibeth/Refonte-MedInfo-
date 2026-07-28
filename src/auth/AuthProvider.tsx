@@ -21,6 +21,7 @@ import * as Linking from 'expo-linking';
 
 import { getSupabaseClient } from '@/db/supabase';
 import type { Persona } from '@/ai/prompts/_schema';
+import { coerceCountry, type CountryCode } from '@/ai/chat/country';
 import type { PersonalInfo } from '@/profile/personalInfo';
 
 export function getAuthRedirectTo(): string {
@@ -77,6 +78,8 @@ export interface SessionState {
   verifiedPersonas: Persona[];
   /** Infos perso de profil (prénom/nom/âge/sexe) — personnalisation du chat (ADR-0021). */
   personalInfo: PersonalInfo | null;
+  /** Pays d'exercice du chat, persisté au profil (migration 0043) — synchronisé entre appareils. */
+  chatCountry: CountryCode | null;
   loading: boolean;
   /** True après l'ouverture d'un lien de réinitialisation (événement PASSWORD_RECOVERY). */
   passwordRecovery: boolean;
@@ -97,6 +100,8 @@ export interface SessionState {
   clearPasswordRecovery: () => void;
   /** Met à jour les infos perso de profil (own-row RLS). */
   updatePersonalInfo: (info: PersonalInfo) => Promise<{ error: string | null }>;
+  /** Met à jour le pays d'exercice du chat (own-row RLS, best-effort). */
+  updateChatCountry: (code: CountryCode | null) => Promise<{ error: string | null }>;
   /** Connexion OAuth (Google / Apple), redirection web. */
   signInWithOAuth: (provider: OAuthProvider) => Promise<{ error: string | null }>;
   /** Magic link OTP (option conservée, ADR-0007). */
@@ -119,6 +124,7 @@ interface ProfileState {
   status: VerificationStatus;
   verifiedPersonas: Persona[];
   personalInfo: PersonalInfo | null;
+  chatCountry: CountryCode | null;
 }
 
 function rowToPersonalInfo(data: Record<string, unknown> | null | undefined): PersonalInfo | null {
@@ -136,7 +142,7 @@ async function fetchProfile(userId: string): Promise<ProfileState> {
   const supabase = getSupabaseClient();
   const { data } = await supabase
     .from('profiles')
-    .select('persona, status, verified_personas, first_name, last_name, age, sex')
+    .select('persona, status, verified_personas, first_name, last_name, age, sex, chat_country')
     .eq('id', userId)
     .single();
   const persona = (data?.persona as Persona) ?? 'public';
@@ -146,6 +152,7 @@ async function fetchProfile(userId: string): Promise<ProfileState> {
     status: (data?.status as VerificationStatus) ?? 'unverified',
     verifiedPersonas: verified.includes('public') ? verified : ['public', ...verified],
     personalInfo: rowToPersonalInfo(data as Record<string, unknown> | null),
+    chatCountry: coerceCountry((data as Record<string, unknown> | null)?.chat_country),
   };
 }
 
@@ -155,6 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<VerificationStatus>('unverified');
   const [verifiedPersonas, setVerifiedPersonas] = useState<Persona[]>(['public']);
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
+  const [chatCountry, setChatCountry] = useState<CountryCode | null>(null);
   const [loading, setLoading] = useState(true);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
 
@@ -163,6 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus(p?.status ?? 'unverified');
     setVerifiedPersonas(p?.verifiedPersonas ?? ['public']);
     setPersonalInfo(p?.personalInfo ?? null);
+    setChatCountry(p?.chatCountry ?? null);
   }
 
   useEffect(() => {
@@ -179,7 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         applyProfile(next?.user ? await fetchProfile(next.user.id) : null);
       } catch {
         // Profil illisible : on retombe sur un état neutre plutôt que de bloquer l'UI.
-        if (active) applyProfile(next?.user ? { persona: 'public', status: 'unverified', verifiedPersonas: ['public'], personalInfo: null } : null);
+        if (active) applyProfile(next?.user ? { persona: 'public', status: 'unverified', verifiedPersonas: ['public'], personalInfo: null, chatCountry: null } : null);
       } finally {
         if (active) setLoading(false);
       }
@@ -214,6 +223,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       status,
       verifiedPersonas,
       personalInfo,
+      chatCountry,
       loading,
       passwordRecovery,
       async signInWithPassword(email: string, password: string) {
@@ -312,6 +322,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return { error: toFriendlyAuthError(e) };
         }
       },
+      async updateChatCountry(code: CountryCode | null) {
+        const userId = session?.user?.id;
+        if (!userId) return { error: 'Non authentifié.' };
+        try {
+          const supabase = getSupabaseClient();
+          // Own-row RLS (0043) : préférence de profil, hors verrou anti-élévation.
+          const { error } = await supabase
+            .from('profiles')
+            .update({ chat_country: code, updated_at: new Date().toISOString() })
+            .eq('id', userId);
+          if (error) return { error: toFriendlyAuthError(error.message) };
+          setChatCountry(code);
+          return { error: null };
+        } catch (e) {
+          return { error: toFriendlyAuthError(e) };
+        }
+      },
       async signInWithOAuth(provider: OAuthProvider) {
         try {
           const supabase = getSupabaseClient();
@@ -371,7 +398,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await getSupabaseClient().auth.signOut();
       },
     }),
-    [session, persona, status, verifiedPersonas, personalInfo, loading, passwordRecovery],
+    [session, persona, status, verifiedPersonas, personalInfo, chatCountry, loading, passwordRecovery],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

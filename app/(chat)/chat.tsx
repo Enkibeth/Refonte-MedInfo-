@@ -485,7 +485,15 @@ function guessAttachmentMediaType(name: string, declared: string): string {
 // ── Écran principal ────────────────────────────────────────────────────────────
 
 export default function ChatScreen() {
-  const { user, session, persona, personalInfo, loading: authLoading } = useSession();
+  const {
+    user,
+    session,
+    persona,
+    personalInfo,
+    chatCountry: profileCountry,
+    updateChatCountry,
+    loading: authLoading,
+  } = useSession();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -545,7 +553,9 @@ export default function ChatScreen() {
     }
   }, [historyCollapsed]);
   // Pays d'exercice : oriente les sources privilégiées par l'assistant (envoyé dans
-  // le body de /api/chat, persistance localStorage web only).
+  // le body de /api/chat). Persisté au PROFIL depuis 2026-07 (migration 0043) — le
+  // localStorage seul était perdu à chaque changement d'appareil/navigateur ; il reste
+  // le repli des visiteurs non connectés et l'amorce avant l'hydratation du profil.
   const [country, setCountry] = useState<CountryCode | null>(() => {
     if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
     try {
@@ -554,6 +564,30 @@ export default function ChatScreen() {
       return null;
     }
   });
+  // Le profil fait foi dès qu'il est chargé (synchronisation entre appareils) ; s'il
+  // n'a encore AUCUN pays mais qu'un choix local existe (utilisateur d'avant la
+  // migration), on remonte ce choix au profil une fois pour toutes.
+  const countryMigratedRef = useRef(false);
+  useEffect(() => {
+    if (authLoading || !session) return;
+    if (profileCountry) {
+      setCountry(profileCountry);
+    } else if (country && !countryMigratedRef.current) {
+      countryMigratedRef.current = true;
+      void updateChatCountry(country);
+    }
+    // `country` volontairement hors dépendances : cet effet ne réagit qu'à
+    // l'hydratation du profil, jamais aux changements locaux (gérés par onChange).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, session, profileCountry, updateChatCountry]);
+  // Choix explicite de l'utilisateur : état local + localStorage + profil (best-effort).
+  const handleCountryChange = useCallback(
+    (code: CountryCode) => {
+      setCountry(code);
+      if (session) void updateChatCountry(code);
+    },
+    [session, updateChatCountry],
+  );
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof window === 'undefined' || !country) return;
     try {
@@ -1294,7 +1328,7 @@ export default function ChatScreen() {
           </Text>
         </View>
         <View style={styles.headerActions}>
-          <CountrySelector value={country} onChange={setCountry} />
+          <CountrySelector value={country} onChange={handleCountryChange} />
           {latestSources.length > 0 ? (
             <TouchableOpacity
               style={[styles.sourcesPill, sourcesOpen && styles.sourcesPillActive]}

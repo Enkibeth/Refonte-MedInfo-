@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { COUNTRIES, getCountry, type CountryCode } from '@/ai/chat/country';
+import { CountryFlag } from '@/ui/chat/CountryFlag';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
 
@@ -32,7 +33,9 @@ export function CountrySelector({
         style={styles.trigger}
       >
         {current ? (
-          <Text style={styles.triggerFlag}>{current.flag}</Text>
+          // Drapeau via CountryFlag : emoji natif partout, SVG inline sur Windows
+          // (Segoe UI Emoji n'a pas les drapeaux — ils s'affichaient « FR » en lettres).
+          <CountryFlag code={current.code} size={14} />
         ) : (
           <Icon name="globe" size={14} color={tokens.colors.accentDeep} />
         )}
@@ -61,7 +64,9 @@ export function CountrySelector({
                     accessibilityState={{ selected: active }}
                     style={[styles.item, active && styles.itemActive]}
                   >
-                    <Text style={styles.itemFlag}>{c.flag}</Text>
+                    <View style={styles.itemFlag}>
+                      <CountryFlag code={c.code} size={18} />
+                    </View>
                     <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>{c.name}</Text>
                     {active ? <Icon name="check" size={16} color={tokens.colors.accentDeep} /> : <View />}
                   </Pressable>
@@ -87,7 +92,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: tokens.colors.accentSurfaceStrong,
   },
-  triggerFlag: { fontSize: 14 },
   triggerLabel: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.accentDeep,
@@ -138,7 +142,7 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radius.md,
   },
   itemActive: { backgroundColor: tokens.colors.accentSurface },
-  itemFlag: { fontSize: 18 },
+  itemFlag: { width: 28, alignItems: 'center' },
   itemLabel: {
     flex: 1,
     fontFamily: tokens.font.sans,
