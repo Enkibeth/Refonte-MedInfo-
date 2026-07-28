@@ -1,27 +1,60 @@
 /**
- * Modale de détail d'une source (refonte 2026-06).
+ * Modale de détail d'une source (refonte 2026-06, enrichie 2026-07).
  * Ouverte au clic sur une carte source ou une référence inline : montre le niveau
  * de preuve, la justification et un bouton « Accéder à la source » — plutôt que
  * d'ouvrir directement le lien.
+ *
+ * Enrichissement 2026-07 (timeline de recherche) : quand la source correspond à un
+ * article réellement retrouvé pendant la recherche (Europe PMC), la fiche affiche ses
+ * métadonnées RÉELLES — journal, année, type de publication, citations, PMID/DOI — et
+ * une pastille « Lien vérifié » si l'URL a répondu OK (verify_source_links). Jamais de
+ * métadonnée générée par le modèle.
  */
 import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { evidenceLevelFor, type ParsedSource } from '@/ai/chat/parseAssistantMessage';
+import { domainOfUrl, type ResearchArticle } from '@/ai/chat/researchTimeline';
 import { SourceBadgePill } from '@/ui/chat/AssistantBlocks';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
 
+function MetaRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.metaRow}>
+      <Text style={styles.metaLabel}>{label}</Text>
+      <Text style={styles.metaValue}>{value}</Text>
+    </View>
+  );
+}
+
 export function SourceDetailModal({
   source,
   onClose,
+  article = null,
+  verified = false,
 }: {
   source: ParsedSource | null;
   onClose: () => void;
+  /** Métadonnées réelles Europe PMC rapprochées de la source (jamais générées). */
+  article?: ResearchArticle | null;
+  /** URL vérifiée OK pendant la recherche (verify_source_links). */
+  verified?: boolean;
 }) {
   const evidence = source ? evidenceLevelFor(source.badge) : null;
   const open = () => {
     if (source?.url) Linking.openURL(source.url).catch(() => {});
   };
+  const domain = domainOfUrl(source?.url);
+  const metaRows: { label: string; value: string }[] = [];
+  if (article?.journal) metaRows.push({ label: 'Journal', value: article.journal });
+  const year = article?.year ?? source?.year;
+  if (year) metaRows.push({ label: 'Année', value: year });
+  if (article?.pubType) metaRows.push({ label: 'Type de publication', value: article.pubType });
+  if (article?.citedByCount != null && article.citedByCount > 0) {
+    metaRows.push({ label: 'Citations', value: String(article.citedByCount) });
+  }
+  if (article?.pmid) metaRows.push({ label: 'PMID', value: article.pmid });
+  else if (article?.doi) metaRows.push({ label: 'DOI', value: article.doi });
 
   return (
     <Modal visible={!!source} transparent animationType="fade" onRequestClose={onClose}>
@@ -32,6 +65,12 @@ export function SourceDetailModal({
               <View style={styles.header}>
                 <Text style={styles.srcId}>{source.id}</Text>
                 {source.badge ? <SourceBadgePill badge={source.badge} /> : null}
+                {verified ? (
+                  <View style={styles.verifiedPill}>
+                    <Icon name="check" size={10} color={tokens.colors.success} />
+                    <Text style={styles.verifiedPillText}>Lien vérifié</Text>
+                  </View>
+                ) : null}
                 <Pressable onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Fermer">
                   <Icon name="x" size={18} color={tokens.colors.textMuted} />
                 </Pressable>
@@ -55,10 +94,20 @@ export function SourceDetailModal({
                 </View>
               ) : null}
 
+              {metaRows.length > 0 ? (
+                <View style={styles.metaBox}>
+                  {metaRows.map((row) => (
+                    <MetaRow key={row.label} label={row.label} value={row.value} />
+                  ))}
+                </View>
+              ) : null}
+
               {source.url ? (
                 <Pressable style={styles.accessButton} onPress={open} accessibilityRole="link">
                   <Icon name="externalLink" size={16} color={tokens.colors.onAccent} />
-                  <Text style={styles.accessButtonText}>Accéder à la source</Text>
+                  <Text style={styles.accessButtonText}>
+                    Accéder à la source{domain ? ` (${domain})` : ''}
+                  </Text>
                 </Pressable>
               ) : (
                 <Text style={styles.noUrl}>Lien non fourni par la réponse.</Text>
@@ -166,4 +215,44 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
   noUrl: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.caption.fontSize },
+  verifiedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.successBackground,
+    paddingHorizontal: tokens.space.sm,
+    paddingVertical: 2,
+  },
+  verifiedPillText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.success,
+    fontSize: tokens.type.micro.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  metaBox: {
+    borderRadius: tokens.radius.md,
+    backgroundColor: tokens.colors.surfaceSunken,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.sm,
+    gap: 6,
+  },
+  metaRow: { flexDirection: 'row', alignItems: 'flex-start', gap: tokens.space.md },
+  metaLabel: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+    width: 130,
+    flexShrink: 0,
+  },
+  metaValue: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.medium,
+    flex: 1,
+    textAlign: 'right',
+  },
 });

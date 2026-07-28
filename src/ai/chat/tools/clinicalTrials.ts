@@ -11,6 +11,8 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 
+import type { ResearchEvent } from '@/ai/chat/researchTimeline';
+
 const CTGOV_ENDPOINT = 'https://clinicaltrials.gov/api/v2/studies';
 const FETCH_TIMEOUT_MS = 8_000;
 
@@ -23,6 +25,9 @@ export function buildClinicalTrialsSearchUrl(
     'query.term': query.trim().slice(0, 300),
     pageSize: String(pageSize),
     sort: '@relevance',
+    // Timeline de progression : totalCount = nombre TOTAL d'essais correspondants
+    // (« ≈ N essais »), distinct des quelques résultats affichés au modèle.
+    countTotal: 'true',
   });
   if (opts.recruitingOnly) params.set('filter.overallStatus', 'RECRUITING');
   return `${CTGOV_ENDPOINT}?${params.toString()}`;
@@ -36,6 +41,12 @@ interface CtGovStudy {
     conditionsModule?: { conditions?: string[] };
     sponsorCollaboratorsModule?: { leadSponsor?: { name?: string } };
   };
+}
+
+/** Nombre TOTAL d'essais correspondant à la requête (champ totalCount de l'API v2). */
+export function clinicalTrialsTotalCount(json: unknown): number | null {
+  const n = (json as { totalCount?: unknown } | null)?.totalCount;
+  return typeof n === 'number' && Number.isFinite(n) && n >= 0 ? n : null;
 }
 
 /** Formate la réponse JSON de ClinicalTrials.gov v2 en liste compacte pour le modèle. */
@@ -71,7 +82,10 @@ export function formatClinicalTrialsResults(json: unknown): string {
   return lines.join('\n');
 }
 
-export function clinicalTrialsSearchTool(fetchImpl: typeof fetch = fetch) {
+export function clinicalTrialsSearchTool(
+  fetchImpl: typeof fetch = fetch,
+  onEvent?: (e: ResearchEvent) => void,
+) {
   return tool({
     description:
       'Recherche les essais cliniques enregistrés sur ClinicalTrials.gov (registre officiel). ' +
@@ -100,10 +114,15 @@ export function clinicalTrialsSearchTool(fetchImpl: typeof fetch = fetch) {
           signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
           headers: { accept: 'application/json' },
         });
-        if (!res.ok)
+        if (!res.ok) {
+          onEvent?.({ kind: 'trials', query, found: null });
           return `Recherche ClinicalTrials.gov indisponible (HTTP ${res.status}). Appuie-toi sur la recherche web et signale l'incertitude.`;
-        return formatClinicalTrialsResults(await res.json());
+        }
+        const json = await res.json();
+        onEvent?.({ kind: 'trials', query, found: clinicalTrialsTotalCount(json) });
+        return formatClinicalTrialsResults(json);
       } catch {
+        onEvent?.({ kind: 'trials', query, found: null });
         return "Recherche ClinicalTrials.gov indisponible (réseau). Appuie-toi sur la recherche web et signale l'incertitude.";
       }
     },

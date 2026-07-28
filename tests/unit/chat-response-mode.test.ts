@@ -4,6 +4,7 @@ import {
   RESPONSE_MODES,
   buildResponseModeSection,
   coerceResponseMode,
+  forceFinalAnswerStep,
   responseModeRuntime,
 } from '@/ai/chat/responseMode';
 
@@ -116,5 +117,24 @@ describe('mode rapide — une réponse DIRECTE (retour Hugo 2026-07)', () => {
     expect(section).toMatch(/INDICATIVE/i);
     expect(section).toMatch(/n.invente jamais un chiffre/i);
     expect(section).toMatch(/sécurité/i);
+  });
+});
+
+describe('forceFinalAnswerStep — garde anti-réponse-vide (incident prod 2026-07-28)', () => {
+  it('laisse les outils libres avant la dernière étape, puis force la rédaction', () => {
+    const prepare = forceFinalAnswerStep(5);
+    expect(prepare({ stepNumber: 0 })).toEqual({});
+    expect(prepare({ stepNumber: 3 })).toEqual({});
+    // Dernière étape autorisée (stepCountIs(5) → étapes 0..4) : plus AUCUN appel d'outil
+    // possible — le modèle doit écrire sa réponse avec ce qu'il a rassemblé.
+    expect(prepare({ stepNumber: 4 })).toEqual({ toolChoice: 'none' });
+    // Défensif : au-delà du plafond (ne devrait pas arriver), toujours forcé.
+    expect(prepare({ stepNumber: 9 })).toEqual({ toolChoice: 'none' });
+  });
+
+  it('plafond d’une seule étape → réponse directe dès la première', () => {
+    expect(forceFinalAnswerStep(1)({ stepNumber: 0 })).toEqual({ toolChoice: 'none' });
+    // Valeur dégénérée : jamais d'indice négatif.
+    expect(forceFinalAnswerStep(0)({ stepNumber: 0 })).toEqual({ toolChoice: 'none' });
   });
 });

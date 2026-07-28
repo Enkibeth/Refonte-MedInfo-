@@ -13,6 +13,8 @@
  */
 import { tool } from 'ai';
 import { z } from 'zod';
+
+import type { ResearchEvent } from '@/ai/chat/researchTimeline';
 import { isSafePublicHttpUrl } from './urlSafety';
 
 const FETCH_TIMEOUT_MS = 4_000;
@@ -140,7 +142,10 @@ export function formatLinkCheckResults(results: LinkCheckResult[]): string {
   return `${lines.join('\n')}\n${summary}`;
 }
 
-export function verifySourceLinksTool(fetchImpl: typeof fetch = fetch) {
+export function verifySourceLinksTool(
+  fetchImpl: typeof fetch = fetch,
+  onEvent?: (e: ResearchEvent) => void,
+) {
   return tool({
     description:
       "Vérifie que des URLs répondent réellement (statut HTTP, redirections) avant de les citer. " +
@@ -156,6 +161,14 @@ export function verifySourceLinksTool(fetchImpl: typeof fetch = fetch) {
     execute: async ({ urls }: { urls: string[] }) => {
       const unique = [...new Set(urls)].slice(0, MAX_URLS_PER_CALL);
       const results = await Promise.all(unique.map((u) => checkOneCached(u, fetchImpl)));
+      const ok = results.filter((r) => r.status === 'ok');
+      onEvent?.({
+        kind: 'verify',
+        checked: results.length,
+        ok: ok.length,
+        // URL finale si redirigée : c'est elle que la section SOURCES citera le plus souvent.
+        okUrls: ok.flatMap((r) => (r.finalUrl ? [r.url, r.finalUrl] : [r.url])),
+      });
       return formatLinkCheckResults(results);
     },
   });

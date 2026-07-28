@@ -83,6 +83,14 @@ import {
   summarizeChatProgress,
   type ChatProgressStep,
 } from '@/ai/chat/progress';
+import {
+  finalizeResearchTimeline,
+  isVerifiedUrl,
+  matchArticleForSource,
+  researchTimelineOfParts,
+  type ResearchTimelineData,
+} from '@/ai/chat/researchTimeline';
+import { ResearchStepsToggle, ResearchTimeline } from '@/ui/chat/ResearchTimeline';
 import { coerceChatOutputTools, type ChatOutputTool } from '@/ai/chat/outputTools';
 import {
   ATTACHMENT_ACCEPT,
@@ -342,7 +350,7 @@ function MessageRow({
   message: UIMessage;
   onSend: (text: string) => void;
   disabled: boolean;
-  onOpenSource: (s: ParsedSource) => void;
+  onOpenSource: (s: ParsedSource, research: ResearchTimelineData | null) => void;
   isLastAssistant: boolean;
   onRegenerate: () => void;
 }) {
@@ -360,9 +368,22 @@ function MessageRow({
     );
   }
   const streamingThisMessage = disabled && isLastAssistant;
+  // Timeline de recherche de CETTE réponse (data part `data-research`) : panneau
+  // « Étapes » repliable + liens vérifiés/métadonnées réelles pour les fiches sources.
+  const rawResearch = researchTimelineOfParts(message.parts);
+  const research = rawResearch && !streamingThisMessage ? finalizeResearchTimeline(rawResearch) : rawResearch;
   return (
     <View style={styles.assistantRow}>
-      <AssistantBlocks text={text} onSend={onSend} disabled={disabled} onOpenSource={onOpenSource} />
+      {research && !streamingThisMessage && research.steps.length > 2 ? (
+        <ResearchStepsToggle data={research} />
+      ) : null}
+      <AssistantBlocks
+        text={text}
+        onSend={onSend}
+        disabled={disabled}
+        onOpenSource={(s) => onOpenSource(s, research)}
+        research={research}
+      />
       {!streamingThisMessage ? (
         <MessageActions
           // Copier colle la version « texte propre » (références en exposant, légende
@@ -586,6 +607,13 @@ export default function ChatScreen() {
   const [conversationsLoading, setConversationsLoading] = useState(true);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [detailSource, setDetailSource] = useState<ParsedSource | null>(null);
+  // Timeline de recherche de la réponse dont provient la source ouverte : métadonnées
+  // réelles (journal, type, citations) + pastille « Lien vérifié » dans la modale.
+  const [detailResearch, setDetailResearch] = useState<ResearchTimelineData | null>(null);
+  const openSourceDetail = useCallback((s: ParsedSource, research: ResearchTimelineData | null) => {
+    setDetailSource(s);
+    setDetailResearch(research);
+  }, []);
 
   // Notice transitoire de bascule de chatbot (B4/B5) : dit ce qui vient de se
   // passer (fil précédent archivé, chatbot d'origine indisponible…), auto-effacée.
@@ -907,6 +935,18 @@ export default function ChatScreen() {
     () => (lastAssistant ? parseAssistantMessage(messageText(lastAssistant)).sources : []),
     [lastAssistant],
   );
+  // Timeline de recherche de la dernière réponse (pour l'onglet sources global).
+  const latestResearch = useMemo(() => {
+    const data = researchTimelineOfParts(lastAssistant?.parts);
+    return data ? finalizeResearchTimeline(data) : null;
+  }, [lastAssistant]);
+
+  // Timeline VIVANTE du message en cours (data part `data-research` streamée par la
+  // route — couvre aussi la phase de recherche du split, invisible autrement).
+  const liveResearch = useMemo(
+    () => researchTimelineOfParts(activeAssistant?.parts),
+    [activeAssistant],
+  );
 
   // Phase de chargement : pendant l'attente (submitted) ou tant qu'aucun texte n'est encore
   // arrivé, on montre une bulle de statut (réflexion → recherche de sources → rédaction).
@@ -923,12 +963,21 @@ export default function ChatScreen() {
   useEffect(() => {
     if (recovering) setWaitStartedAt((prev) => prev ?? Date.now());
   }, [recovering]);
+  // La timeline streamée (data part) fait foi quand elle existe : en mode split, la
+  // recherche tourne côté serveur SANS parts d'outil — sans elle, la bulle afficherait
+  // « Rédaction » pendant toute la recherche.
   const phase: ChatPhase =
     status === 'submitted'
       ? 'thinking'
-      : hasToolActivity(activeAssistant)
-        ? 'searching'
-        : 'writing';
+      : liveResearch
+        ? liveResearch.phase === 'writing'
+          ? 'writing'
+          : liveResearch.phase === 'analyzing'
+            ? 'thinking'
+            : 'searching'
+        : hasToolActivity(activeAssistant)
+          ? 'searching'
+          : 'writing';
 
   const sendText = useCallback(
     async (text: string) => {
@@ -1336,7 +1385,12 @@ export default function ChatScreen() {
       {/* ── Onglet sources global ── */}
       {sourcesOpen && latestSources.length > 0 ? (
         <ScrollView style={styles.sourcesPane} contentContainerStyle={styles.sourcesPaneContent}>
-          <SourcesBlock sources={latestSources} startOpen onOpenSource={setDetailSource} />
+          <SourcesBlock
+            sources={latestSources}
+            startOpen
+            onOpenSource={(s) => openSourceDetail(s, latestResearch)}
+            research={latestResearch}
+          />
         </ScrollView>
       ) : null}
 
@@ -1417,7 +1471,7 @@ export default function ChatScreen() {
               message={m}
               onSend={(t) => void sendText(t)}
               disabled={isLoading}
-              onOpenSource={setDetailSource}
+              onOpenSource={openSourceDetail}
               isLastAssistant={m.role === 'assistant' && m.id === lastAssistant?.id}
               onRegenerate={handleRegenerate}
             />
@@ -1425,8 +1479,15 @@ export default function ChatScreen() {
         ))}
         {(showStatus || recovering) && (
           <View style={styles.statusStack}>
+            {/* Timeline structurée (data part `data-research`) quand la route l'émet —
+                elle couvre AUSSI la phase de recherche du split, invisible autrement ;
+                repli sur l'ancienne trace dérivée des parts d'outil sinon. */}
             {!recovering ? (
-              <ProgressTrace steps={summarizeChatProgress(activeAssistant?.parts)} />
+              liveResearch ? (
+                <ResearchTimeline data={liveResearch} />
+              ) : (
+                <ProgressTrace steps={summarizeChatProgress(activeAssistant?.parts)} />
+              )
             ) : null}
             <StatusBubble
               phase={recovering ? 'recovering' : phase}
@@ -1717,7 +1778,12 @@ export default function ChatScreen() {
       </View>
       </View>
 
-      <SourceDetailModal source={detailSource} onClose={() => setDetailSource(null)} />
+      <SourceDetailModal
+        source={detailSource}
+        onClose={() => setDetailSource(null)}
+        article={matchArticleForSource(detailSource, detailResearch?.articles)}
+        verified={isVerifiedUrl(detailSource?.url, detailResearch?.verifiedUrls)}
+      />
     </KeyboardAvoidingView>
   );
 }

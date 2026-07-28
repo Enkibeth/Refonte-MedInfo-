@@ -18,6 +18,36 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-07-28] – Claude (Timeline « Étapes » du chat + garde anti-réponse-vide)
+### Files modified
+- src/ai/chat/researchTimeline.ts (nouveau, pur), src/ai/chat/tools/planResearch.ts (nouveau : outil déterministe `plan_research`)
+- src/ai/chat/tools/{europePmc,clinicalTrials,verifyLinks,pubmed,index}.ts (hooks `onEvent`, hitCount/totalCount réels, section workflow : étape 1 = concepts clés via plan_research en parallèle du même tour)
+- app/api/chat+api.ts (restructuration `createUIMessageStream` : data parts `data-research` streamées en direct, y compris pendant la phase 1 du split ; keepAlive sur tout le pipeline ; `prepareStep` anti-réponse-vide)
+- src/ai/chat/responseMode.ts (`forceFinalAnswerStep`), src/ui/chat/ResearchTimeline.tsx (nouveau), src/ui/chat/{AssistantBlocks,SourceDetailModal}.tsx (fiches sources enrichies : métadonnées réelles Europe PMC, pastille « Lien vérifié », domaine), app/(chat)/chat.tsx (timeline vivante + panneau « Étapes » + modale enrichie)
+- tests/unit/chat-research-timeline.test.ts (nouveau), tests/unit/{chat-tools,chat-response-mode}.test.ts, CLAUDE.md
+### Purpose
+**Timeline « Étapes » (à la Vera Health)** : la progression réelle de la recherche
+(analyse → concepts clés → recherche « ≈ N publications identifiées » (hitCount réels) →
+lecture → vérification → rédaction) est streamée en data parts et rendue en timeline
+vivante + panneau repliable par réponse ; fiches sources enrichies de métadonnées réelles
+Europe PMC et d'une pastille « Lien vérifié ». Aucun appel LLM ajouté, aucune migration.
+
+**Incident prod 2026-07-28 (« rien n'est généré » / « réponse interrompue »)** : les
+données ai_interactions montrent le rédacteur gpt-5.2 dépensant ses 5 étapes
+(`stopWhen: stepCountIs(5)`, audit latence) en appels d'outils — jusqu'à 8 web_search —
+et coupé AVANT d'écrire un mot : flux 200 sans texte, rien d'archivé, reprise impossible.
+Même défaut côté chercheur (dossier vide → repli mono-modèle silencieux, double coût).
+Correctif : `forceFinalAnswerStep` (prepareStep → toolChoice 'none') force la dernière
+étape autorisée en rédaction pure, sur les deux appels.
+### Regulatory impact
+None (qualité/transparence ; compteurs et métadonnées déterministes, jamais générés)
+### Rollback plan
+Revert du commit ; `CHAT_ORCHESTRATOR_SPLIT=off` reste disponible pour couper le split
+indépendamment. La timeline est purement additive (data parts ignorées par un client ancien).
+
+---
+
+
 ## [2026-07-25] – Claude (Base de classement des partiels + 3 correctifs chatbot)
 ### Files modified
 - public/partiel.html (base de classement explicite : `cohortMeans(..., basis)`, carte « hors classement », sélecteur Réglages, avertissements et simulateur alignés)

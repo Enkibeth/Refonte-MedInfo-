@@ -397,9 +397,10 @@ describe('verify_source_links (execute, fetch mocké)', () => {
 // ── Disponibilité par chatbot + section système ───────────────────────────────
 
 describe('buildChatTools — disponibilité par chatbot', () => {
-  it('les 3 chatbots ont littérature + lecture d’article + vérification des liens', () => {
+  it('les 3 chatbots ont plan + littérature + lecture d’article + vérification des liens', () => {
     for (const bot of ['public', 'student', 'professional'] as const) {
       const tools = buildChatTools(bot);
+      expect(Object.keys(tools)).toContain(CHAT_TOOL_NAMES.planResearch);
       expect(Object.keys(tools)).toContain(CHAT_TOOL_NAMES.europePmc);
       expect(Object.keys(tools)).toContain(CHAT_TOOL_NAMES.europePmcArticle);
       expect(Object.keys(tools)).toContain(CHAT_TOOL_NAMES.verifyLinks);
@@ -431,7 +432,7 @@ describe('pubmed_search — délégation orchestrateur → sous-agent Claude', (
 
   it("renvoie la synthèse du sous-agent à l'orchestrateur", async () => {
     const run = vi.fn(async () => '1. Étude X — PMID : 12345');
-    const out = await runTool(pubmedResearchTool(run), 'anticoagulation FA sujet âgé');
+    const out = await runTool(pubmedResearchTool(undefined, run), 'anticoagulation FA sujet âgé');
     expect(run).toHaveBeenCalledWith('anticoagulation FA sujet âgé');
     expect(out).toContain('PMID : 12345');
   });
@@ -440,7 +441,7 @@ describe('pubmed_search — délégation orchestrateur → sous-agent Claude', (
     const run = vi.fn(async () => {
       throw new Error('boom');
     });
-    const out = await runTool(pubmedResearchTool(run), 'question');
+    const out = await runTool(pubmedResearchTool(undefined, run), 'question');
     expect(out).toContain('Sous-agent PubMed indisponible');
     expect(out).toContain('europe_pmc_search');
   });
@@ -502,6 +503,17 @@ describe('buildChatToolsSection — consigne système', () => {
     expect(section).toContain(CHAT_TOOL_NAMES.europePmcArticle);
     // Une conversation purement conversationnelle est exemptée du protocole.
     expect(section).toContain('salutation');
+  });
+
+  it('annonce du plan (concepts clés) via plan_research, en parallèle du même tour — jamais un tour dédié', () => {
+    const section = buildChatToolsSection('public');
+    const step1 = section.split('\n').find((l) => l.startsWith('1.'));
+    expect(step1).toBeDefined();
+    expect(step1).toContain('concepts médicaux clés');
+    expect(step1).toContain(CHAT_TOOL_NAMES.planResearch);
+    // Garde latence : le plan ne doit JAMAIS coûter une étape LLM supplémentaire.
+    expect(step1).toContain('MÊME tour');
+    expect(section).toContain('ne remplace aucune recherche');
   });
 
   it('impose la lecture des résumés EN PARALLÈLE en un seul tour (latence, 2026-07)', () => {
