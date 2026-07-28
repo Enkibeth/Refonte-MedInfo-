@@ -99,6 +99,30 @@ export function responseModeRuntime(
 }
 
 /**
+ * Garde anti-réponse-vide (incident prod 2026-07-28) : avec le plafond d'étapes abaissé
+ * (audit latence, 12 → 5), le modèle pouvait dépenser TOUTES ses étapes en appels d'outils
+ * (jusqu'à 8 web_search + Europe PMC + vérifications observés dans ai_interactions) et se
+ * faire couper par `stopWhen: stepCountIs(maxSteps)` AVANT d'écrire le moindre mot : flux
+ * HTTP 200 « propre », zéro texte, rien d'archivé — l'utilisateur voyait « rien n'est
+ * généré » puis « la réponse a été interrompue » au retour dans l'app.
+ *
+ * Ce `prepareStep` force la DERNIÈRE étape autorisée à être une étape de RÉDACTION pure
+ * (`toolChoice: 'none'`) : le modèle ne peut plus finir sur un appel d'outil, il répond
+ * avec ce qu'il a rassemblé. Appliqué au rédacteur ET à l'agent chercheur (un chercheur
+ * coupé en plein outil rendait un dossier vide → repli mono-modèle silencieux qui refaisait
+ * toute la recherche… et se faisait couper à son tour).
+ */
+export interface ForcedAnswerStep {
+  toolChoice?: 'none';
+}
+
+export function forceFinalAnswerStep(maxSteps: number) {
+  const lastStep = Math.max(0, Math.floor(maxSteps) - 1);
+  return ({ stepNumber }: { stepNumber: number }): ForcedAnswerStep =>
+    stepNumber >= lastStep ? { toolChoice: 'none' } : {};
+}
+
+/**
  * Courte consigne concaténée au system prompt pour aligner la LONGUEUR/PROFONDEUR sur
  * le mode choisi. Subordonnée au format imposé par les prompts produit (elle ajuste la
  * densité, ne remplace jamais la structure exigée). Vide en mode `standard`.

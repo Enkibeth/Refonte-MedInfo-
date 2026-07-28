@@ -48,6 +48,7 @@ import { buildPharmacologySection } from '@/ai/chat/pharmacology';
 import {
   buildResponseModeSection,
   coerceResponseMode,
+  forceFinalAnswerStep,
   responseModeRuntime,
 } from '@/ai/chat/responseMode';
 import { buildOutputToolsSection, coerceChatOutputTools } from '@/ai/chat/outputTools';
@@ -303,6 +304,10 @@ export async function POST(request: Request): Promise<Response> {
               messages: modelMessages,
               ...(Object.keys(researcherTools).length > 0 ? { tools: researcherTools } : {}),
               stopWhen: stepCountIs(modeRuntime.maxSteps),
+              // Garde anti-dossier-vide : coupé en plein appel d'outil par le plafond
+              // d'étapes, le chercheur rendait un brief VIDE → repli mono-modèle silencieux
+              // (double recherche, double coût). La dernière étape est forcée en rédaction.
+              prepareStep: forceFinalAnswerStep(modeRuntime.maxSteps),
               ...researcherCall,
               onStepFinish: (step) => onWebSearchCalls(webSearchCallsOfStep(step)),
             });
@@ -390,6 +395,13 @@ export async function POST(request: Request): Promise<Response> {
           // jamais boucler indéfiniment (chaque étape = un appel LLM). Le plafond dépend du mode
           // de réponse choisi (rapide = boucle courte ; approfondi = plus d'étapes).
           stopWhen: stepCountIs(modeRuntime.maxSteps),
+          // Garde anti-réponse-vide (incident prod 2026-07-28) : la dernière étape autorisée
+          // est FORCÉE en rédaction pure (toolChoice none) — le modèle ne peut plus dépenser
+          // tout son plafond en recherches et se faire couper sans avoir écrit un mot
+          // (flux 200 sans texte : « rien n'est généré » + rien d'archivé pour la reprise).
+          ...(Object.keys(tools).length > 0
+            ? { prepareStep: forceFinalAnswerStep(modeRuntime.maxSteps) }
+            : {}),
           ...callOptions,
           // Timeline (chemin mono-modèle) : recherches web du provider au fil des chunks,
           // bascule sur « Rédaction » au premier fragment de texte.
