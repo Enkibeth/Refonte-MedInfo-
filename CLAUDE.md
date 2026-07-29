@@ -127,6 +127,18 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
 
 ## Points de vigilance
 
+- **Amorçage de l'authentification (incident « chargement infini », 2026-07-28)** : ne JAMAIS
+  attendre Supabase sans plafond de temps dans le chemin d'amorçage, et ne JAMAIS appeler une
+  API Supabase (profil, table…) **dans** le callback `onAuthStateChange` — auth-js attend ce
+  callback pendant son initialisation, et `getSession()` déclenche un rafraîchissement réseau
+  rejoué en backoff sans `AbortSignal` : une requête qui pend bloquait `loading` à `true`
+  pour toujours (le site ne repartait qu'après vidage des cookies, qui supprime le token).
+  Plafonds et outils dans `src/auth/bootGuard.ts` (pur, testé `tests/unit/auth-boot-guard.test.ts`) :
+  profil 6 s < session 8 s < chien de garde 10 s ; mode `bootDegraded` (session probable mais
+  non récupérée) → jamais traité comme un visiteur, jamais redirigé vers la connexion, écran
+  `SessionRecovery` (Réessayer / Réinitialiser la session, cette dernière effaçant le token
+  stocké SANS réseau — `signOut({scope:'local'})` appelle quand même `/logout` et peut pendre).
+
 - `chat_meta` (titre/catégorie d'historique) requiert `GOOGLE_GENERATIVE_AI_API_KEY` côté serveur (Vercel) ; sans clé, repli déterministe sur les premiers mots de la question (l'archivage fonctionne quand même).
 - L'agent hebdo du blog requiert `CRON_SECRET` côté Vercel (sinon le déclenchement cron est refusé, fail-closed) ; le verdict `reject` du relecteur laisse l'article en brouillon — surveiller l'onglet Blog du panel admin.
 

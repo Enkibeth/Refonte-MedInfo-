@@ -18,7 +18,17 @@ vi.mock('@/db/supabase', () => ({
       signOut: vi.fn(async () => ({ error: null })),
     },
     from: () => ({
-      select: () => ({ eq: () => ({ single: async () => ({ data: { persona: 'public' } }) }) }),
+      select: () => ({
+        eq: () => {
+          // Le vrai builder postgrest expose `abortSignal` (plafond de lecture du profil,
+          // cf. bootGuard) : le mock doit le refléter pour rester fidèle.
+          const builder = {
+            abortSignal: () => builder,
+            single: async () => ({ data: { persona: 'public' } }),
+          };
+          return builder;
+        },
+      }),
     }),
   }),
 }));

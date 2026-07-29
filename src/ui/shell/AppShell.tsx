@@ -25,6 +25,7 @@ import {
 import { useRouter, usePathname, useSegments } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
+import { readSessionHint } from '@/auth/bootGuard';
 import { isAdminUserId } from '@/admin/index';
 import type { Persona } from '@/ai/prompts/_schema';
 import { APP_FEATURES, visibleFeatures } from '@/ai/routing/featureVisibility';
@@ -67,15 +68,14 @@ function storeCollapsedPref(collapsed: boolean) {
  * quand une session est confirmée, retiré dès qu'une absence de session est
  * confirmée (déconnexion, autre navigateur…).
  */
-const SHELL_SEEN_KEY = 'medinfo.shell.hadSession';
-
+/**
+ * Indice « ce navigateur a déjà eu une session » : désormais détenu et maintenu par la
+ * couche auth (src/auth/bootGuard.ts), qui s'en sert aussi pour distinguer un visiteur
+ * d'une session en cours de récupération. Le shell ne fait plus que le LIRE.
+ */
 function readHadSession(): boolean {
   if (Platform.OS !== 'web' || typeof window === 'undefined') return false;
-  try {
-    return window.localStorage.getItem(SHELL_SEEN_KEY) === '1';
-  } catch {
-    return false;
-  }
+  return readSessionHint();
 }
 
 /** Groupes de routes qui vivent DANS le shell (espace connecté). */
@@ -122,7 +122,7 @@ interface NavEntry {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { width } = useWindowDimensions();
-  const { session, user, persona, personalInfo, loading } = useSession();
+  const { session, user, persona, personalInfo, loading, bootDegraded } = useSession();
   const segments = useSegments() as string[];
   const pathname = usePathname();
   const router = useRouter();
@@ -138,7 +138,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const shellReady = desktop && !!session && inShellGroup;
   // Hydratation au rechargement : session pas encore connue mais probable → on
   // réserve la place de la sidebar pour éviter le saut de layout à son arrivée.
-  const shellPending = desktop && inShellGroup && !session && loading && readHadSession();
+  // Squelette réservé aussi pendant une récupération de session (amorçage dégradé) :
+  // sinon la sidebar disparaissait puis resurgissait à l'arrivée de la session.
+  const shellPending =
+    desktop && inShellGroup && !session && (loading || bootDegraded) && readHadSession();
 
   const toggleCollapsed = useCallback(() => {
     setRailTip(null);
@@ -148,16 +151,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // Mémorise si une session a été confirmée sur ce navigateur (cf. SHELL_SEEN_KEY).
-  useEffect(() => {
-    if (Platform.OS !== 'web' || typeof window === 'undefined' || loading) return;
-    try {
-      if (session) window.localStorage.setItem(SHELL_SEEN_KEY, '1');
-      else window.localStorage.removeItem(SHELL_SEEN_KEY);
-    } catch {
-      // Stockage indisponible : l'indice n'est simplement pas mémorisé.
-    }
-  }, [session, loading]);
+  // (L'indice de session est écrit par l'AuthProvider — voir readHadSession ci-dessus.)
 
   // Raccourci clavier Ctrl/Cmd + B : replier/déplier la sidebar (hors saisie).
   useEffect(() => {
