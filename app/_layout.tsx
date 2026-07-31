@@ -19,12 +19,22 @@ import { AppShell } from '@/ui/shell/AppShell';
  *   aucune surface UI pro servie.
  */
 function useProtectedRoute() {
-  const { session, persona, loading, passwordRecovery } = useSession();
+  const { session, persona, loading, bootDegraded, passwordRecovery } = useSession();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
     if (loading) return;
+    // Amorçage dégradé (session probable mais pas encore récupérée, cf. bootGuard) :
+    // surtout NE PAS rediriger vers la connexion — l'utilisateur EST connecté, sa session
+    // est en cours de récupération. L'écran courant reste affiché ; la redirection se fera
+    // normalement dès que `onAuthStateChange` livre la session (l'état dégradé se lève).
+    if (bootDegraded && !session) return;
+    // Session connue mais profil pas encore appliqué : la persona arrive au tour suivant
+    // (le repli neutre garantit qu'elle ne reste jamais nulle). Sans cette garde, la
+    // redirection post-connexion partait vers « Mon compte » au lieu de la Vue d'ensemble,
+    // faute de persona résolue au moment du calcul.
+    if (session && !persona) return;
     const inAuthGroup = segments[0] === '(auth)';
     // Groupes publics accessibles sans session : accueil (landing/hero), authentification,
     // pages légales (LCEN art. 6 : mentions légales accessibles à tous) et le groupe (chat) —
@@ -62,7 +72,7 @@ function useProtectedRoute() {
       // Persona reportée (professional) : pas d'accès au chat MVP.
       router.replace('/(account)/account');
     }
-  }, [session, persona, loading, passwordRecovery, segments, router]);
+  }, [session, persona, loading, bootDegraded, passwordRecovery, segments, router]);
 }
 
 function RootNavigator() {

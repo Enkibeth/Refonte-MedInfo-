@@ -65,6 +65,7 @@ import { SeoHead } from '@/ui/SeoHead';
 import { tokens } from '@/ui/tokens';
 import { DictationButton } from '@/ui/DictationButton';
 import { ToolsMenu } from '@/ui/ToolsMenu';
+import { SessionRecovery } from '@/ui/RoleGate';
 import { Icon } from '@/ui/icons';
 import { Reveal } from '@/ui/Reveal';
 import { useReducedMotion } from '@/ui/useReducedMotion';
@@ -493,6 +494,7 @@ export default function ChatScreen() {
     chatCountry: profileCountry,
     updateChatCountry,
     loading: authLoading,
+    bootDegraded,
   } = useSession();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -513,7 +515,11 @@ export default function ChatScreen() {
   // Essai sans inscription (2026-06) : un visiteur non connecté découvre les 3 onglets
   // de chatbot et dispose d'UN message gratuit (indicateur 1/1 → 0/1), puis l'UI
   // propose inscription / connexion. Verrou serveur correspondant dans /api/chat.
-  const isGuest = !authLoading && !session;
+  // Amorçage dégradé (session probable mais pas encore récupérée, cf. bootGuard) : ce
+  // n'est PAS un visiteur — on ne lui applique ni l'essai gratuit ni la carte d'inscription
+  // (l'écran de récupération prend le relais plus bas).
+  const sessionRecovering = bootDegraded && !session;
+  const isGuest = !authLoading && !session && !sessionRecovering;
   const [guestUsed, setGuestUsed] = useState(false);
   useEffect(() => {
     if (isGuest) setGuestUsed(isGuestMessageUsed());
@@ -1254,6 +1260,11 @@ export default function ChatScreen() {
   };
 
   const meta = CHATBOT_META[chatbot];
+
+  // Session non rétablie sur un navigateur qui en avait une : écran de récupération
+  // (réessayer / réinitialiser) plutôt qu'un chat en mode visiteur qui échouerait à
+  // archiver, ou l'ancien chargement infini.
+  if (sessionRecovering) return <SessionRecovery />;
 
   return (
     <KeyboardAvoidingView

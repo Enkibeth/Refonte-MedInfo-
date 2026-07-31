@@ -18,6 +18,36 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-07-28] – Claude (Correctif « chargement infini » : amorçage auth borné dans le temps)
+### Files modified
+- src/auth/bootGuard.ts (nouveau, pur : plafonds de temps, `withTimeout`, indice de session, `clearStoredSession` sans réseau, `abortAfter`)
+- src/auth/AuthProvider.tsx (amorçage plafonné + chien de garde + callback `onAuthStateChange` SYNCHRONE + `bootDegraded`/`retryAuthBoot`/`resetLocalSession`)
+- app/_layout.tsx (pas de redirection pendant une récupération de session ni avant la persona), src/ui/RoleGate.tsx (+ `SessionRecovery`), app/(chat)/chat.tsx, src/ui/shell/AppShell.tsx
+- tests/unit/auth-boot-guard.test.ts (nouveau), tests/unit/auth-provider.test.ts, CLAUDE.md
+### Purpose
+Retour Hugo : « à chaque fois il faut que je supprime les cookies pour que le site
+fonctionne, sinon chargement infini ». Cause : l'amorçage attendait Supabase SANS plafond
+de temps, et l'écran est gardé par `loading` (RoleGate, squelette du shell).
+(1) `auth.getSession()` déclenche, quand un token est stocké, un rafraîchissement réseau
+rejoué en backoff par auth-js, sans `AbortSignal` : une connexion qui pend ne rend jamais
+la main → `loading` reste `true` indéfiniment. (2) La lecture du profil n'avait pas de délai
+non plus et était `await`ée DANS le callback `onAuthStateChange`, que auth-js attend pendant
+son initialisation (Supabase déconseille explicitement d'y appeler ses API). Sans token
+stocké, aucune des deux requêtes n'a lieu — d'où le contournement par vidage des cookies.
+Correctif : chaque étape est plafonnée (profil 6 s < session 8 s < chien de garde 10 s),
+le callback devient synchrone (profil différé hors du callback), le profil retombe sur un
+profil neutre transitoire + une nouvelle tentative, et un mode DÉGRADÉ explicite distingue
+« visiteur » de « session à récupérer » (pas de redirection vers la connexion, écran
+`SessionRecovery` avec Réessayer / Réinitialiser la session — cette dernière efface le token
+stocké SANS réseau, car `signOut({scope:'local'})` appelle quand même /logout et peut pendre).
+### Regulatory impact
+None (fiabilité de l'amorçage ; aucune donnée de santé, aucune migration, RLS inchangée)
+### Rollback plan
+Revert du commit — l'ancien comportement (attente non bornée) revient tel quel.
+
+---
+
+
 ## [2026-07-28] – Claude (Pays du chat persisté au profil + drapeaux Windows)
 ### Files modified
 - supabase/migrations/0043_profile_chat_country.sql (colonne `profiles.chat_country`, CHECK codes connus, own-row — appliquée via MCP le 2026-07-28)

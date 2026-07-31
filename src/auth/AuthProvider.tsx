@@ -13,6 +13,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -23,6 +24,17 @@ import { getSupabaseClient } from '@/db/supabase';
 import type { Persona } from '@/ai/prompts/_schema';
 import { coerceCountry, type CountryCode } from '@/ai/chat/country';
 import type { PersonalInfo } from '@/profile/personalInfo';
+import {
+  AUTH_BOOT_TIMEOUT_MS,
+  PROFILE_RETRY_DELAY_MS,
+  PROFILE_TIMEOUT_MS,
+  SESSION_TIMEOUT_MS,
+  abortAfter,
+  clearStoredSession,
+  readSessionHint,
+  withTimeout,
+  writeSessionHint,
+} from '@/auth/bootGuard';
 
 export function getAuthRedirectTo(): string {
   const configured = process.env.EXPO_PUBLIC_AUTH_REDIRECT_URL?.trim();
@@ -81,6 +93,22 @@ export interface SessionState {
   /** Pays d'exercice du chat, persisté au profil (migration 0043) — synchronisé entre appareils. */
   chatCountry: CountryCode | null;
   loading: boolean;
+  /**
+   * Amorçage DÉGRADÉ (incident « chargement infini » 2026-07-28) : le plafond de temps a
+   * expiré alors qu'une session existait probablement sur ce navigateur. L'app s'affiche
+   * quand même (jamais de spinner sans fin) mais `session` n'est pas encore connue : les
+   * écrans doivent proposer de réessayer / réinitialiser, JAMAIS traiter l'utilisateur
+   * comme un visiteur (ni le rediriger vers la connexion).
+   */
+  bootDegraded: boolean;
+  /** Nouvelle tentative de récupération de session (bouton « Réessayer »). */
+  retryAuthBoot: () => Promise<void>;
+  /**
+   * Réinitialise la session LOCALE (efface le token stocké, sans appel réseau) : automatise
+   * le « vider les cookies » que l'utilisateur faisait à la main quand la session stockée
+   * était irrécupérable.
+   */
+  resetLocalSession: () => Promise<void>;
   /** True après l'ouverture d'un lien de réinitialisation (événement PASSWORD_RECOVERY). */
   passwordRecovery: boolean;
   /** Connexion email + mot de passe. */
@@ -138,13 +166,25 @@ function rowToPersonalInfo(data: Record<string, unknown> | null | undefined): Pe
   return info;
 }
 
+/** Profil neutre de repli : jamais d'écran bloqué si le profil est illisible. */
+const NEUTRAL_PROFILE: ProfileState = {
+  persona: 'public',
+  status: 'unverified',
+  verifiedPersonas: ['public'],
+  personalInfo: null,
+  chatCountry: null,
+};
+
 async function fetchProfile(userId: string): Promise<ProfileState> {
   const supabase = getSupabaseClient();
-  const { data } = await supabase
+  const query = supabase
     .from('profiles')
     .select('persona, status, verified_personas, first_name, last_name, age, sex, chat_country')
-    .eq('id', userId)
-    .single();
+    .eq('id', userId);
+  // AbortSignal : libère RÉELLEMENT la requête si elle pend (un simple plafond de temps
+  // côté JS laisserait le socket ouvert et le blocage réapparaîtrait au tour suivant).
+  const signal = abortAfter(PROFILE_TIMEOUT_MS);
+  const { data } = await (signal ? query.abortSignal(signal) : query).single();
   const persona = (data?.persona as Persona) ?? 'public';
   const verified = (data?.verified_personas as Persona[] | null) ?? ['public'];
   return {
@@ -164,7 +204,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
   const [chatCountry, setChatCountry] = useState<CountryCode | null>(null);
   const [loading, setLoading] = useState(true);
+  const [bootDegraded, setBootDegraded] = useState(false);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
+  // Un profil RÉEL a-t-il déjà été chargé ? Empêche un échec réseau tardif de rétrograder
+  // un étudiant/pro vérifié vers le profil neutre (il perdrait l'accès à ses outils).
+  const profileLoadedRef = useRef(false);
+  // Actions d'échappatoire, câblées par l'effet d'amorçage (voir plus bas).
+  const bootActionsRef = useRef<{ retry: () => Promise<void> } | null>(null);
 
   function applyProfile(p: ProfileState | null) {
     setPersona(p?.persona ?? null);
@@ -174,43 +220,143 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setChatCountry(p?.chatCountry ?? null);
   }
 
+  // ── Amorçage borné dans le temps (incident « chargement infini », 2026-07-28) ────────
+  // Aucune étape ne peut plus retenir l'écran indéfiniment : `getSession()` (qui déclenche
+  // un rafraîchissement réseau rejoué en backoff quand un token est stocké) et la lecture
+  // du profil sont plafonnées, et un chien de garde relâche l'affichage quoi qu'il arrive.
+  // Voir src/auth/bootGuard.ts pour le détail du mécanisme de la panne.
   useEffect(() => {
     const supabase = getSupabaseClient();
     let active = true;
+    let released = false;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    // Chargement de profil en cours, partagé entre les deux déclencheurs (getSession et
+    // l'événement INITIAL_SESSION) : une seule requête, et les deux attendent la même.
+    let pendingProfile: { userId: string; promise: Promise<void> } | null = null;
 
-    // Charge la session + le profil et garantit que `loading` repasse à false même
-    // si `fetchProfile` échoue (réseau/RLS). Sans ce try/finally, une erreur ici
-    // laissait le spinner tourner indéfiniment (email « Mon compte », écrans <RoleGate>).
-    async function hydrate(next: Session | null) {
+    const releaseLoading = () => {
+      if (!active || released) return;
+      released = true;
+      setLoading(false);
+    };
+
+    /** Session indisponible à temps : afficher l'app, en signalant l'état dégradé. */
+    const degrade = () => {
+      if (!active) return;
+      if (readSessionHint()) setBootDegraded(true);
+      releaseLoading();
+    };
+
+    const loadProfile = (userId: string): Promise<void> => {
+      if (pendingProfile?.userId === userId) return pendingProfile.promise;
+      const run = async () => {
+        const { value } = await withTimeout(fetchProfile(userId), PROFILE_TIMEOUT_MS, null);
+        if (!active) return;
+        if (value) {
+          profileLoadedRef.current = true;
+          applyProfile(value);
+          return;
+        }
+        // Profil illisible (réseau/RLS) : état neutre pour ne jamais bloquer l'écran,
+        // puis UNE nouvelle tentative — le neutre reste donc transitoire.
+        if (!profileLoadedRef.current) applyProfile(NEUTRAL_PROFILE);
+        if (retryTimer) clearTimeout(retryTimer);
+        retryTimer = setTimeout(() => {
+          if (!active || profileLoadedRef.current) return;
+          pendingProfile = null;
+          void loadProfile(userId);
+        }, PROFILE_RETRY_DELAY_MS);
+      };
+      const promise = run();
+      pendingProfile = { userId, promise };
+      void promise.then(() => {
+        if (pendingProfile?.promise === promise) pendingProfile = null;
+      });
+      return promise;
+    };
+
+    /** Applique une session connue (amorçage ou événement auth). */
+    const applySession = (next: Session | null): Promise<void> | void => {
       if (!active) return;
       setSession(next);
-      try {
-        applyProfile(next?.user ? await fetchProfile(next.user.id) : null);
-      } catch {
-        // Profil illisible : on retombe sur un état neutre plutôt que de bloquer l'UI.
-        if (active) applyProfile(next?.user ? { persona: 'public', status: 'unverified', verifiedPersonas: ['public'], personalInfo: null, chatCountry: null } : null);
-      } finally {
-        if (active) setLoading(false);
+      writeSessionHint(!!next);
+      if (next) setBootDegraded(false);
+      if (!next?.user) {
+        profileLoadedRef.current = false;
+        applyProfile(null);
+        releaseLoading();
+        return;
       }
-    }
+      return loadProfile(next.user.id).then(releaseLoading);
+    };
 
-    supabase.auth
-      .getSession()
-      .then(({ data }) => hydrate(data.session))
-      .catch(() => {
-        // getSession lui-même peut rejeter (réseau) : ne jamais rester bloqué sur loading.
-        if (active) setLoading(false);
-      });
+    // Chien de garde : dernier filet, si même les étapes plafonnées ne rendaient pas la main.
+    const watchdog = setTimeout(degrade, AUTH_BOOT_TIMEOUT_MS);
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (event, next) => {
+    void (async () => {
+      const { value, timedOut } = await withTimeout(
+        supabase.auth.getSession(),
+        SESSION_TIMEOUT_MS,
+        null,
+      );
+      if (!active) return;
+      if (timedOut || !value) {
+        // auth-js continue ses tentatives en arrière-plan : dès que la session revient,
+        // `onAuthStateChange` nous la livre et l'état dégradé se lève tout seul.
+        degrade();
+        return;
+      }
+      await applySession(value.data.session);
+    })();
+
+    // ⚠️ Callback SYNCHRONE : Supabase attend ce callback pendant l'initialisation de
+    // l'auth — y `await` une requête (le profil) couplait notre réseau à l'init et
+    // pouvait la retenir. Le chargement du profil est donc différé hors du callback.
+    const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
       if (!active) return;
       // Lien de réinitialisation ouvert : on bascule en mode récupération (cf garde de route).
       if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
-      await hydrate(next);
+      setSession(next);
+      writeSessionHint(!!next);
+      if (next) setBootDegraded(false);
+      if (!next?.user) {
+        profileLoadedRef.current = false;
+        applyProfile(null);
+        releaseLoading();
+        return;
+      }
+      const userId = next.user.id;
+      setTimeout(() => {
+        if (!active) return;
+        void loadProfile(userId).then(releaseLoading);
+      }, 0);
     });
+
+    // « Réessayer » du mode dégradé : force un rafraîchissement, puis relit la session.
+    bootActionsRef.current = {
+      retry: async () => {
+        if (!active) return;
+        const refreshed = await withTimeout(
+          supabase.auth.refreshSession(),
+          SESSION_TIMEOUT_MS,
+          null,
+        );
+        if (!active) return;
+        let next = refreshed.value?.data.session ?? null;
+        if (!next) {
+          const got = await withTimeout(supabase.auth.getSession(), SESSION_TIMEOUT_MS, null);
+          if (!active) return;
+          next = got.value?.data.session ?? null;
+        }
+        if (next) await applySession(next);
+      },
+    };
 
     return () => {
       active = false;
+      clearTimeout(watchdog);
+      if (retryTimer) clearTimeout(retryTimer);
+      bootActionsRef.current = null;
       sub.subscription.unsubscribe();
     };
   }, []);
@@ -225,6 +371,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       personalInfo,
       chatCountry,
       loading,
+      bootDegraded,
+      async retryAuthBoot() {
+        await bootActionsRef.current?.retry();
+      },
+      async resetLocalSession() {
+        // Efface le token stocké SANS réseau (clearStoredSession) : `signOut({scope:'local'})`
+        // appelle quand même /logout et peut pendre — c'est la panne qu'on corrige.
+        // L'appel réseau est tenté ensuite, en best-effort et plafonné, pour révoquer
+        // proprement la session côté serveur quand le réseau répond.
+        clearStoredSession(process.env.EXPO_PUBLIC_SUPABASE_URL);
+        setBootDegraded(false);
+        setSession(null);
+        profileLoadedRef.current = false;
+        applyProfile(null);
+        setLoading(false);
+        try {
+          await withTimeout(getSupabaseClient().auth.signOut({ scope: 'local' }), 3_000, null);
+        } catch {
+          // révocation serveur indisponible : le token local est déjà parti, c'est l'essentiel
+        }
+      },
       passwordRecovery,
       async signInWithPassword(email: string, password: string) {
         try {
@@ -398,7 +565,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await getSupabaseClient().auth.signOut();
       },
     }),
-    [session, persona, status, verifiedPersonas, personalInfo, chatCountry, loading, passwordRecovery],
+    [
+      session,
+      persona,
+      status,
+      verifiedPersonas,
+      personalInfo,
+      chatCountry,
+      loading,
+      bootDegraded,
+      passwordRecovery,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
