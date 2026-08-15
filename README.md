@@ -32,15 +32,30 @@ npm install
 npm run dev
 ```
 
-## Déploiement Vercel
+## Déploiement
 
-Le repo contient la configuration Vercel pour Expo Router en sortie serveur :
+Deux cibles sont supportées, à partir du **même code** :
+
+### Hostinger / serveur Node autonome (runbook : `docs/09_DEPLOYMENT_HOSTINGER.md`)
+
+```bash
+npm run build:node   # expo export -p web + pré-compression Brotli/gzip
+npm start            # node server/index.mjs — sert dist/client ET les routes API
+npm run smoke:node   # fumigation du serveur (statiques, cache, streaming, 304, sécurité)
+```
+
+Un seul processus Node sert le bundle web et toutes les routes `+api.ts`
+(`expo-server/adapter/http`). Poser `EXPO_PUBLIC_DEPLOY_TARGET=hostinger` **au build**.
+
+### Vercel (configuration historique, conservée)
 
 ```bash
 npm run build:web
 ```
 
-Configurer ensuite les variables Vercel/Supabase décrites dans `docs/09_DEPLOYMENT.md`, puis vérifier `GET /api/health` après déploiement.
+Variables Vercel/Supabase décrites dans `docs/09_DEPLOYMENT.md`.
+
+Dans les deux cas, vérifier `GET /api/health` après déploiement.
 
 ## Commandes de validation
 

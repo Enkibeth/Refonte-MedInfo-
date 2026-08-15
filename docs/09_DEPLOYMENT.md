@@ -1,5 +1,10 @@
 # Déploiement Vercel + Supabase dédié
 
+> ℹ️ **Migration Node/Hostinger (2026-08)** : le projet peut aussi tourner sur un serveur
+> Node autonome (`server/index.mjs`). Runbook dédié : **`docs/09_DEPLOYMENT_HOSTINGER.md`**.
+> Le présent document reste la référence Vercel — configuration conservée et fonctionnelle
+> (`vercel.json`, `api/index.js`), donc utilisable comme chemin de repli.
+
 ```yaml
 title: Deployment Runbook
 version: 1.0.0

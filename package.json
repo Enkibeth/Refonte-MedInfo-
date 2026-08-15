@@ -5,7 +5,8 @@
   "main": "expo-router/entry",
   "scripts": {
     "dev": "expo start --web",
-    "start": "expo start",
+    "start": "node server/index.mjs",
+    "start:expo": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
@@ -27,6 +28,9 @@
     "compliance": "npm run compliance:grep && npm run test:rls && npm run validate:rag",
     "build:web": "expo export -p web && node scripts/vercel/copy-server-html-to-client.mjs",
     "vercel-build": "npm run build:web",
+    "build:node": "expo export -p web && node scripts/hostinger/precompress.mjs",
+    "precompress": "node scripts/hostinger/precompress.mjs",
+    "smoke:node": "node scripts/hostinger/smoke.mjs",
     "setup:rls:ubuntu": "bash scripts/dev/install-rls-postgres-ubuntu.sh"
   },
   "engines": {

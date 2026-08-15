@@ -10,6 +10,7 @@ import { MedInfoThemeProvider } from '@/ui/MedInfoThemeProvider';
 import { AuthProvider, useSession } from '@/auth/AuthProvider';
 import { resolvePersonaRoute } from '@/ai/routing/persona';
 import { AppShell } from '@/ui/shell/AppShell';
+import { isVercelAnalyticsEnabled } from '@/deploy/target';
 
 /**
  * Garde de navigation par persona (02_ARCHITECTURE §4).
@@ -104,8 +105,10 @@ export default function RootLayout() {
         </AuthProvider>
         <StatusBar style="auto" />
       </MedInfoThemeProvider>
-      {/* Web Analytics + Speed Insights Vercel : web uniquement (no-op natif). */}
-      {Platform.OS === 'web' && (
+      {/* Web Analytics + Speed Insights Vercel : web uniquement (no-op natif), et
+          seulement si le site est SERVI par Vercel — sur un hébergement Node autonome
+          (Hostinger), leurs scripts n'existent pas et échouent en 404 à chaque page. */}
+      {Platform.OS === 'web' && isVercelAnalyticsEnabled() && (
         <>
           <Analytics />
           <SpeedInsights />

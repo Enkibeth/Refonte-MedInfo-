@@ -21,6 +21,7 @@ Base documentaire du projet MedInfo AI v4. **À lire avant toute contribution** 
 | `07_CLASSIFIER.md` | Classifieur d'intention (couche 1 safe-box) — composant critique |
 | `08_RAG.md` | Pipeline RAG, qualité réponses, corpus FR, citation grounding |
 | `09_DEPLOYMENT.md` | Runbook Vercel + Supabase dédié, variables, smoke-test |
+| `09_DEPLOYMENT_HOSTINGER.md` | Runbook serveur Node autonome (Hostinger) : build, proxy, PM2, cron, recette |
 | `DECISIONS/` | ADRs (1 fichier = 1 décision) — 17 décisions actées |
 
 ## Règle pour les agents IA

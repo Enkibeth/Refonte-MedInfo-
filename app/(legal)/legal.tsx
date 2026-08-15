@@ -6,6 +6,7 @@ import {
   INTENDED_PURPOSE,
   getAiDisclosure,
 } from '@/compliance/disclosures';
+import { getHostingProvider } from '@/deploy/target';
 import { PAGE_SEO, breadcrumbJsonLd } from '@/seo/meta';
 import { Card } from '@/ui/Card';
 import { Logo } from '@/ui/Logo';
@@ -99,8 +100,11 @@ export default function LegalScreen() {
 
         <Text style={styles.h3}>Hébergeur</Text>
         <Text style={styles.body}>
-          Application web hébergée par Vercel Inc.{'\n'}
-          340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis{'\n'}
+          {/* Hébergeur = cible de déploiement réelle (src/deploy/target.ts). */}
+          Application web hébergée par {getHostingProvider().name}
+          {'\n'}
+          {getHostingProvider().address}
+          {'\n'}
           Base de données et authentification : Supabase ({PENDING}, région UE).
         </Text>
       </Card>

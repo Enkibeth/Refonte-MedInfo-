@@ -139,6 +139,19 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
   `SessionRecovery` (Réessayer / Réinitialiser la session, cette dernière effaçant le token
   stocké SANS réseau — `signOut({scope:'local'})` appelle quand même `/logout` et peut pendre).
 
+- **Hébergement Node autonome (migration Hostinger, 2026-08)** : le projet tourne au choix
+  sur Vercel (`vercel.json` + `api/index.js`, conservés) ou sur un **serveur Node unique**
+  (`server/index.mjs` → `expo-server/adapter/http`), qui sert `dist/client` ET toutes les
+  routes `+api.ts`. Runbook : `docs/09_DEPLOYMENT_HOSTINGER.md`. Points qui se cassent en
+  silence : (1) les variables `EXPO_PUBLIC_*` sont figées AU BUILD — `EXPO_PUBLIC_DEPLOY_TARGET=hostinger`
+  coupe les scripts Vercel Analytics et nomme le bon hébergeur dans les mentions légales
+  (`src/deploy/target.ts`, LCEN art. 6-III) ; (2) le reverse proxy DOIT être en
+  `proxy_buffering off` avec un `proxy_read_timeout` large, sinon le streaming du chat
+  n'arrive qu'à la fin ou se coupe ; (3) `expo-server` doit être chargé par `require`
+  (`createRequire`) — sa build ESM publiée est cassée (imports sans extension) ;
+  (4) `keepAlive()` devient un no-op assumé (le processus reste vivant, `consumeStream()`
+  suffit). Runtime vérifié : **une seule dépendance** (`expo-server`), les routes API sont
+  bundlées et autonomes. Fumigation : `npm run smoke:node` (nécessite un build).
 - `chat_meta` (titre/catégorie d'historique) requiert `GOOGLE_GENERATIVE_AI_API_KEY` côté serveur (Vercel) ; sans clé, repli déterministe sur les premiers mots de la question (l'archivage fonctionne quand même).
 - L'agent hebdo du blog requiert `CRON_SECRET` côté Vercel (sinon le déclenchement cron est refusé, fail-closed) ; le verdict `reject` du relecteur laisse l'article en brouillon — surveiller l'onglet Blog du panel admin.
 
