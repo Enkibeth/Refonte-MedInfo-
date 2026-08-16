@@ -17,6 +17,7 @@
  * pour NIER toute finalité de soin sans déclencher de faux positif.
  */
 import { CANONICAL_REFUSAL, INTENDED_PURPOSE, getAiDisclosure } from './disclosures';
+import { getHostingProvider } from '@/deploy/hosting';
 
 export type LegalSection = {
   heading: string;
@@ -61,7 +62,9 @@ export const mentionsLegales: LegalDocument = {
     {
       heading: 'Hébergement',
       body: [
-        "L'application web est hébergée par Vercel Inc. (340 S Lemon Ave #4133, Walnut, CA 91789, USA).",
+        // Hébergeur réel du service (src/deploy/hosting.ts) : une mention légale doit
+        // nommer QUI sert le site.
+        getHostingProvider().sentence,
         "La base de données et l'authentification sont fournies par Supabase (hébergement applicatif au sein de l'Union européenne, région eu-west-3).",
       ],
     },
@@ -122,7 +125,7 @@ export const confidentialite: LegalDocument = {
       heading: 'Sous-traitants et destinataires',
       body: [
         "Supabase — hébergement de la base de données et authentification (UE).",
-        "Vercel — hébergement applicatif et diffusion de l'interface.",
+        getHostingProvider().processorLine,
         "Anthropic (Claude) et/ou OpenAI (GPT) — fournisseurs des modèles d'intelligence artificielle qui génèrent les réponses. Le système d'IA réellement servi est indiqué dans l'application.",
         "Stripe — traitement des paiements pour les abonnés.",
         "Ces prestataires agissent comme sous-traitants au sens de l'art. 28 RGPD, encadrés par des accords de traitement (DPA) et, lorsque le traitement a lieu hors UE, par des clauses contractuelles types.",

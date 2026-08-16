@@ -1,10 +1,7 @@
 import { useEffect } from 'react';
-import { Platform } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Analytics } from '@vercel/analytics/react';
-import { SpeedInsights } from '@vercel/speed-insights/react';
 
 import { MedInfoThemeProvider } from '@/ui/MedInfoThemeProvider';
 import { AuthProvider, useSession } from '@/auth/AuthProvider';
@@ -104,13 +101,6 @@ export default function RootLayout() {
         </AuthProvider>
         <StatusBar style="auto" />
       </MedInfoThemeProvider>
-      {/* Web Analytics + Speed Insights Vercel : web uniquement (no-op natif). */}
-      {Platform.OS === 'web' && (
-        <>
-          <Analytics />
-          <SpeedInsights />
-        </>
-      )}
     </SafeAreaProvider>
   );
 }

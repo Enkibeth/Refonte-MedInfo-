@@ -1,15 +1,15 @@
 /**
  * Agent éditorial hebdomadaire du blog (ADR-0025) : pipeline multi-agents
- * exécuté par /api/cron/weekly-blog (cron Vercel, 1 fois par semaine).
+ * exécuté par /api/cron/weekly-blog (cron système, 1 fois par semaine).
  *
  *   1. Choix du sujet  (feature "blog_topic")   — évite les doublons avec les
  *      articles existants, privilégie l'actualité santé.
  *   2. Rédaction       (feature "blog_generate") — writeArticle() partagé avec
  *      la génération manuelle admin. L'article est inséré en BROUILLON dès
- *      cette étape : si le pipeline échoue ou est tué ensuite (maxDuration
- *      Vercel), l'article existe déjà dans le panel admin au lieu de
- *      disparaître sans trace. Chaque appel LLM porte son propre timeout
- *      (STEP_TIMEOUT_MS) et chaque étape est tracée dans les logs Vercel.
+ *      cette étape : si le pipeline échoue ou est interrompu ensuite, l'article
+ *      existe déjà dans le panel admin au lieu de disparaître sans trace.
+ *      Chaque appel LLM porte son propre timeout (STEP_TIMEOUT_MS) et chaque
+ *      étape est tracée dans les journaux d'exécution.
  *   3. En PARALLÈLE (sous-agents fail-open : un échec n'empêche jamais la
  *      relecture finale, qui reste la barrière fail-closed) :
  *      - Vérification des faits/sources (feature "blog_fact_check", web_search)
@@ -49,8 +49,8 @@ import { blogServiceClient, generateArticleImage, writeArticle } from '@/blog/se
 
 const GUARD_WINDOW_DAYS = 6;
 
-// Budgets par étape : la fonction Vercel est tuée à maxDuration (300 s) ; un
-// seul appel LLM qui traîne ne doit jamais consommer tout le budget du pipeline.
+// Budgets par étape : un seul appel LLM qui traîne ne doit jamais consommer tout le
+// budget du pipeline (le cron système coupe la requête au bout de son propre timeout).
 // Les étapes fail-open (sujet, fact-check, copyedit) avortent silencieusement ;
 // la relecture finale avortée laisse l'article en brouillon (fail-closed).
 export const STEP_TIMEOUT_MS = {
@@ -239,8 +239,8 @@ async function reviewArticle(
 /** Exécute le pipeline complet. `force` saute la garde anti-doublon (tests admin). */
 export async function runWeeklyBlogAgent(force = false): Promise<WeeklyAgentResult> {
   const t0 = Date.now();
-  // Trace chaque étape dans les logs Vercel : le pipeline dure plusieurs minutes
-  // et peut être tué par maxDuration — sans ces logs, un échec est indiagnosticable.
+  // Trace chaque étape dans les journaux d'exécution (Runtime Logs) : le pipeline dure
+  // plusieurs minutes et peut être interrompu — sans ces logs, un échec est indiagnosticable.
   const step = (msg: string) =>
     console.log(`[weekly-blog] ${msg} (+${Math.round((Date.now() - t0) / 1000)}s)`);
   const db = blogServiceClient();
@@ -285,9 +285,9 @@ export async function runWeeklyBlogAgent(force = false): Promise<WeeklyAgentResu
   }
   step(`article rédigé : ${article.title.slice(0, 80)}`);
 
-  // 3. Brouillon inséré IMMÉDIATEMENT : si une étape suivante échoue ou si la
-  //    fonction est tuée (maxDuration Vercel), l'article existe déjà dans le
-  //    panel admin au lieu de disparaître sans trace — et la garde anti-doublon
+  // 3. Brouillon inséré IMMÉDIATEMENT : si une étape suivante échoue ou si le
+  //    pipeline est interrompu, l'article existe déjà dans le panel admin au
+  //    lieu de disparaître sans trace — et la garde anti-doublon
   //    voit le run. Le slug est donc figé sur le titre du rédacteur.
   const slug = `${slugify(article.title)}-${Math.random().toString(36).slice(2, 6)}`;
   const { data: draftRow, error: draftError } = await db
