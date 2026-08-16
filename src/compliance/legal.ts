@@ -17,7 +17,7 @@
  * pour NIER toute finalité de soin sans déclencher de faux positif.
  */
 import { CANONICAL_REFUSAL, INTENDED_PURPOSE, getAiDisclosure } from './disclosures';
-import { getHostingProvider } from '@/deploy/target';
+import { getHostingProvider } from '@/deploy/hosting';
 
 export type LegalSection = {
   heading: string;
@@ -62,8 +62,8 @@ export const mentionsLegales: LegalDocument = {
     {
       heading: 'Hébergement',
       body: [
-        // L'hébergeur suit la cible de déploiement réelle (src/deploy/target.ts) :
-        // une mention légale doit nommer QUI sert le site, pas l'hébergeur d'hier.
+        // Hébergeur réel du service (src/deploy/hosting.ts) : une mention légale doit
+        // nommer QUI sert le site.
         getHostingProvider().sentence,
         "La base de données et l'authentification sont fournies par Supabase (hébergement applicatif au sein de l'Union européenne, région eu-west-3).",
       ],

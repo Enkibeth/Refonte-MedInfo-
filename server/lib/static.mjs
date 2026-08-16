@@ -1,20 +1,18 @@
 /**
  * Politique de service des fichiers statiques du serveur Node autonome (Hostinger).
  *
- * Sur Vercel, `dist/client` était servi par la plateforme (CDN + en-têtes de `vercel.json`)
- * et la fonction ne voyait que les routes HTML/API. En Node autonome, l'application sert
- * elle-même ses assets : ce module contient la logique PURE (aucune I/O, aucun `http`)
- * de cette responsabilité — résolution de chemin, en-têtes de cache, négociation
- * d'encodage, ETag. Testé dans `tests/unit/hostinger-static.test.ts`.
+ * L'application sert elle-même ses assets (aucun CDN devant) : ce module contient la
+ * logique PURE (aucune I/O, aucun `http`) de cette responsabilité — résolution de chemin,
+ * en-têtes de cache, négociation d'encodage, ETag. Testé dans
+ * `tests/unit/hostinger-server.test.ts`.
  *
- * Les durées de cache reproduisent `vercel.json` :
+ * Durées de cache :
  *   - `/_expo/static/*` : bundles au nom haché → immuables 1 an ;
  *   - `/assets/*` : assets Expo → 1 jour + revalidation en arrière-plan ;
  *   - tout le reste : `no-store` (coquilles HTML, pages autonomes, robots.txt…).
- * Ajout propre à l'auto-hébergement : `/vendor/*` (librairies des pages autonomes —
- * pdf.js, SheetJS, jsPDF… — plusieurs Mo, jamais modifiées hors mise à jour du dépôt)
- * suit la politique `/assets/*`, sinon chaque ouverture de page les retélécharge
- * intégralement sans CDN devant.
+ * `/vendor/*` (librairies des pages autonomes — pdf.js, SheetJS, jsPDF… — plusieurs Mo,
+ * jamais modifiées hors mise à jour du dépôt) suit la politique `/assets/*`, sinon chaque
+ * ouverture de page les retélécharge intégralement.
  */
 import path from 'node:path';
 

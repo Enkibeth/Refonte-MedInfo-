@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# Déclencheur de l'agent éditorial hebdomadaire du blog (ADR-0025) hors Vercel.
+# Déclencheur de l'agent éditorial hebdomadaire du blog (ADR-0025).
 #
-# Sur Vercel, `vercel.json` → "crons" appelait /api/cron/weekly-blog le lundi 06:00 UTC en
-# envoyant `Authorization: Bearer $CRON_SECRET`. En auto-hébergement, c'est le cron système
-# (crontab VPS ou « Cron Jobs » de hPanel) qui joue ce rôle — ce script reproduit exactement
-# la même requête sans jamais écrire le secret dans la crontab (visible en clair).
+# Le cron système (« Cron Jobs » de hPanel ou crontab VPS) appelle /api/cron/weekly-blog le
+# lundi 06:00 UTC avec `Authorization: Bearer $CRON_SECRET` — ce script construit cette
+# requête sans jamais écrire le secret dans la crontab (visible en clair).
 #
 # Installation (VPS, crontab de l'utilisateur qui possède l'app) :
 #   crontab -e

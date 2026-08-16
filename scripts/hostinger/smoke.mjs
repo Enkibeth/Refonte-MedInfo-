@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Fumigation du serveur Node autonome (hors CI, nécessite un build : `npm run build:node`).
+ * Fumigation du serveur Node autonome (hors CI, nécessite un build : `npm run build`).
  *
  * Démarre le vrai serveur sur un port éphémère et vérifie le contrat de la migration
  * Hostinger : routes API servies, HTML pré-rendu servi, statiques avec les bons en-têtes de
@@ -19,10 +19,13 @@ import { createServer } from '../../server/index.mjs';
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 for (const dir of ['dist/client', 'dist/server']) {
   if (!existsSync(path.join(projectRoot, dir))) {
-    console.error(`[smoke:node] ${dir} absent — lancer d'abord « npm run build:node ».`);
+    console.error(`[smoke:node] ${dir} absent — lancer d'abord « npm run build ».`);
     process.exit(1);
   }
 }
+
+// Le journal d'accès du serveur brouillerait la liste des vérifications.
+process.env.ACCESS_LOG ??= 'off';
 
 const server = createServer();
 await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -59,8 +62,7 @@ await check('GET / → 200 HTML no-store', async () => {
 });
 
 await check('routes de groupe rendues par le moteur Expo (/chat, /pricing, /mentions-legales)', async () => {
-  // Sur Vercel, ces pages avaient une copie statique de secours (`copy-server-html-to-client`) ;
-  // ici elles doivent venir de `dist/server` — c'est le cœur du remplacement de la Function.
+  // Ces pages viennent de `dist/server` : c'est le cœur du rendu serveur Expo.
   for (const route of ['/chat', '/pricing', '/mentions-legales']) {
     const res = await fetch(`${base}${route}`);
     assert.equal(res.status, 200, `${route} → ${res.status}`);

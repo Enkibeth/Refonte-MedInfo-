@@ -6,18 +6,19 @@
  *   pm2 save && pm2 startup      # redémarrage automatique après reboot
  *   pm2 logs medinfo-ai
  *
- * En hébergement mutualisé hPanel (« Node.js app » / Passenger), ce fichier ne sert pas :
- * le panneau démarre lui-même `server.js`. Voir docs/09_DEPLOYMENT_HOSTINGER.md.
+ * Avec le déploiement git de hPanel (« Node.js app »), ce fichier ne sert pas : le panneau
+ * démarre lui-même le fichier d'entrée `server.js`. Voir docs/09_DEPLOYMENT.md.
  */
 module.exports = {
   apps: [
     {
       name: 'medinfo-ai',
       script: 'server/index.mjs',
-      // Un seul processus : l'application n'a aucun état en mémoire partagé, mais le
-      // rate-limit et les caches de config (featureModel, 60 s) sont par processus —
-      // passer en cluster multiplierait les appels de configuration sans gain réel tant
-      // que le trafic tient sur un cœur. Augmenter `instances` seulement après mesure.
+      // Un seul processus : les caches de configuration des features IA (60 s) sont par
+      // processus, donc un cluster multiplierait les appels de config sans gain réel tant
+      // que le trafic tient sur un cœur. Augmenter `instances` seulement après mesure —
+      // et après avoir vérifié que `SUPABASE_SERVICE_ROLE_KEY` est bien posée (sans elle,
+      // le rate-limit retombe sur un compteur mémoire, faussé en multi-instances).
       instances: 1,
       exec_mode: 'fork',
       autorestart: true,

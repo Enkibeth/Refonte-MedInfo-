@@ -6,7 +6,7 @@ import {
   INTENDED_PURPOSE,
   getAiDisclosure,
 } from '@/compliance/disclosures';
-import { getHostingProvider } from '@/deploy/target';
+import { getHostingProvider } from '@/deploy/hosting';
 import { PAGE_SEO, breadcrumbJsonLd } from '@/seo/meta';
 import { Card } from '@/ui/Card';
 import { Logo } from '@/ui/Logo';
@@ -100,7 +100,7 @@ export default function LegalScreen() {
 
         <Text style={styles.h3}>Hébergeur</Text>
         <Text style={styles.body}>
-          {/* Hébergeur = cible de déploiement réelle (src/deploy/target.ts). */}
+          {/* Hébergeur réel du service (src/deploy/hosting.ts). */}
           Application web hébergée par {getHostingProvider().name}
           {'\n'}
           {getHostingProvider().address}

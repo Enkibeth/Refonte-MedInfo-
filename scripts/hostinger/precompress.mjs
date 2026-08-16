@@ -2,9 +2,8 @@
 /**
  * Pré-compression des assets statiques de `dist/client` (Brotli + gzip).
  *
- * Sur Vercel, la compression était faite par le CDN. En auto-hébergement Node, personne ne
- * la fait à notre place : sans ce passage, le bundle web (plusieurs Mo de JS) part en clair
- * à chaque premier chargement. On compresse UNE FOIS au build plutôt qu'à chaque requête —
+ * Sans CDN devant l'application, personne ne compresse à notre place : sans ce passage, le
+ * bundle web (plusieurs Mo de JS) part en clair à chaque premier chargement. On compresse UNE FOIS au build plutôt qu'à chaque requête —
  * le serveur (`server/lib/serve-static.mjs`) sert ensuite `fichier.br` / `fichier.gz` selon
  * l'en-tête `Accept-Encoding`.
  *

@@ -1,7 +1,7 @@
 /**
  * Service des fichiers de `dist/client` (I/O) — pendant « exécutable » de `static.mjs`.
  *
- * Rôle repris à Vercel lors de la migration Node : lire le fichier, poser les en-têtes de
+ * Rôle : lire le fichier, poser les en-têtes de
  * cache/validation, servir la variante précompressée (`.br`/`.gz`) quand le client
  * l'accepte, répondre 304 quand le client a déjà la bonne version.
  *
@@ -72,7 +72,7 @@ export function createStaticHandler({ root, onError }) {
       return true;
     }
 
-    // Variante précompressée (générée par `npm run build:node`) : le fichier d'origine
+    // Variante précompressée (générée par `npm run build`) : le fichier d'origine
     // reste la source de l'ETag et du Last-Modified — c'est la même entité.
     let bodyPath = filePath;
     let bodySize = stat.size;

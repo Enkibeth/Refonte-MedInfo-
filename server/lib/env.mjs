@@ -1,10 +1,8 @@
 /**
  * Chargement des variables d'environnement pour le serveur Node autonome (Hostinger).
  *
- * Sur Vercel, les variables sont injectées par la plateforme. Sur un hébergement Node
- * classique (hPanel « Node.js app » ou VPS + PM2), elles viennent soit de l'environnement
- * du processus (panneau hPanel, `pm2 ecosystem`, systemd), soit d'un fichier `.env` déposé
- * à côté de l'application.
+ * Les variables viennent soit de l'environnement du processus (panneau hPanel,
+ * `pm2 ecosystem`, systemd), soit d'un fichier `.env` déposé à côté de l'application.
  *
  * RÈGLE : l'environnement du processus GAGNE toujours sur le fichier. Un `.env` oublié sur
  * le serveur ne peut donc jamais écraser une clé posée dans le panneau d'hébergement —
@@ -13,7 +11,7 @@
  *
  * ⚠️  Les variables `EXPO_PUBLIC_*` sont figées DANS LE BUNDLE à la compilation
  * (`expo export`). Les poser ici ne change rien au client déjà construit : elles doivent
- * être présentes au moment du build. Voir docs/09_DEPLOYMENT_HOSTINGER.md.
+ * être présentes au moment du build. Voir docs/09_DEPLOYMENT.md.
  */
 import fs from 'node:fs';
 import path from 'node:path';

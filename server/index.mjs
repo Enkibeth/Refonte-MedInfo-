@@ -2,16 +2,16 @@
 /**
  * Serveur Node autonome de MedInfo AI — cible Hostinger (hPanel « Node.js app » ou VPS).
  *
- * Remplace le couple `vercel.json` + `api/index.js` : ce processus sert à la fois
- *   - les fichiers statiques de `dist/client` (rôle tenu par le CDN Vercel) ;
- *   - les coquilles HTML pré-rendues et TOUTES les routes `+api.ts` de `dist/server`
- *     (rôle tenu par la Vercel Function), via `expo-server/adapter/http`.
+ * Ce processus unique sert à la fois
+ *   - les fichiers statiques de `dist/client` ;
+ *   - les coquilles HTML pré-rendues et TOUTES les routes `+api.ts` de `dist/server`,
+ *     via `expo-server/adapter/http`.
  *
- * Démarrage : `npm run build:node` (une fois) puis `npm start`.
+ * Démarrage : `npm run build` (une fois) puis `npm start`.
  * Variables : `PORT` (fourni par l'hébergeur), `HOST`, `TRUST_PROXY`, plus toutes les
- * variables applicatives (voir `.env.example` et docs/09_DEPLOYMENT_HOSTINGER.md).
+ * variables applicatives (voir `.env.example` et docs/09_DEPLOYMENT.md).
  *
- * Différence de fond avec le serverless (utile à connaître) : le processus reste vivant
+ * Différence de fond avec l'ancien hébergement serverless : le processus reste vivant
  * entre les requêtes. La génération d'une réponse de chat continue donc jusqu'au bout même
  * si le client se déconnecte (`consumeStream()` dans `/api/chat`), et l'archivage
  * `onFinish` s'exécute normalement — `keepAlive()` devient un no-op assumé.
@@ -76,7 +76,7 @@ function assertBuildExists() {
       ...missing.map((dir) => `  - ${dir}`),
       '',
       'Construire le site avant de démarrer le serveur :',
-      '  npm run build:node',
+      '  npm run build',
       '',
       'Les variables EXPO_PUBLIC_* doivent être présentes AU MOMENT DU BUILD',
       '(elles sont figées dans le bundle client).',
@@ -98,8 +98,8 @@ export function createServer() {
   const handleExpoRequest = createRequestHandler(
     { build: BUILD_DIR, environment: process.env.NODE_ENV ?? 'production' },
     {
-      // Parité avec `vercel.json` : les coquilles HTML ne doivent jamais être mises en
-      // cache, sinon un déploiement laisse des clients sur l'ancien bundle.
+      // Les coquilles HTML ne doivent jamais être mises en cache, sinon un déploiement
+      // laisse des clients sur l'ancien bundle.
       beforeHTMLResponse(responseInit) {
         if (!responseInit.headers.has('cache-control')) {
           responseInit.headers.set('cache-control', NO_STORE_CACHE_CONTROL);
@@ -109,7 +109,7 @@ export function createServer() {
     },
   );
 
-  // Journal d'accès : remplace les logs de fonction Vercel. Volontairement limité au
+  // Journal d'accès (lu dans les « Runtime Logs » hPanel). Volontairement limité au
   // CHEMIN (jamais la query string, jamais un en-tête, jamais un corps) — aucune donnée
   // utilisateur ni contenu de message ne doit atterrir dans les logs (03_SECURITY §6).
   // Les fichiers statiques ne sont pas journalisés : ils noieraient les lignes utiles.
