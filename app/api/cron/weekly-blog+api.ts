@@ -3,9 +3,9 @@
  * (pipeline sujet → rédaction → relecture → publication, src/blog/weeklyAgent.ts).
  *
  * Déclenchement :
- *   - Cron système (hPanel « Cron Jobs » ou crontab, lundi 06:00 UTC) via
- *     `scripts/hostinger/weekly-blog-cron.sh`, qui envoie
- *     `Authorization: Bearer ${CRON_SECRET}`. Sans CRON_SECRET côté serveur,
+ *   - Cron Vercel (vercel.json "crons", lundi 06:00 UTC) — Vercel envoie
+ *     automatiquement `Authorization: Bearer ${CRON_SECRET}` si la variable
+ *     d'environnement CRON_SECRET est définie sur le projet. Sans CRON_SECRET,
  *     le déclenchement cron est refusé (fail-closed).
  *   - Manuel par un admin (token Supabase admin) — `?force=1` permet de passer
  *     la garde anti-doublon pour tester le pipeline.
@@ -18,7 +18,7 @@
 import { requireAdmin } from '@/admin/index';
 import { runWeeklyBlogAgent } from '@/blog/weeklyAgent';
 
-function isCronRequest(request: Request): boolean {
+function isVercelCron(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
   const auth = request.headers.get('authorization') ?? '';
@@ -28,7 +28,7 @@ function isCronRequest(request: Request): boolean {
 export async function GET(request: Request): Promise<Response> {
   let force = false;
 
-  if (!isCronRequest(request)) {
+  if (!isVercelCron(request)) {
     const auth = await requireAdmin(request);
     if (!auth.ok) return auth.response;
     force = new URL(request.url).searchParams.get('force') === '1';

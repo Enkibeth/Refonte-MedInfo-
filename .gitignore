@@ -26,8 +26,6 @@ supabase/.temp/
 # Logs
 *.log
 npm-debug.*
-# Journaux d'exploitation du serveur Node autonome (cron hebdo, PM2)
-logs/
 
 # Boucle opératoire autonome (marqueur transitoire + pyc du hook)
 .claude/loop-active

@@ -1,6 +1,6 @@
 # MedInfo AI v4 — Refonte
 
-Plateforme d'information médicale générale et éducative (web + iOS + Android). Stack cible : **Expo · Supabase · AI SDK · Stripe**, servie par un serveur Node autonome (Hostinger).
+Plateforme d'information médicale générale et éducative (web + iOS + Android). Stack cible : **Expo · Supabase · Vercel AI SDK · Stripe**.
 
 ## ⚠️ Point d'entrée obligatoire
 
@@ -13,7 +13,7 @@ Le projet opère sous doctrine **safe-box non-MDSW** (hors dispositif médical, 
 
 ## Statut actuel
 
-- App Expo + routes API Expo Router : **présentes**, avec chat streaming côté `POST /api/chat`.
+- App Expo + API Vercel : **présentes**, avec chat streaming côté `POST /api/chat`.
 - Safe-box non-MDSW : **active** (classifieur avant LLM, refus canonique, validation de sortie, RAG cite-or-refuse).
 - Classifieur : **étage 1 regex prioritaire** + **étage 2 LLM léger conditionnel** (Claude Haiku 4.5, fail-closed).
 - RAG : corpus HAS/ANSM MVP, pgvector, retrieval lexical + fusion dense prête ; embeddings réels `text-embedding-3-small` à peupler après configuration OpenAI prod.
@@ -32,20 +32,15 @@ npm install
 npm run dev
 ```
 
-## Déploiement — Hostinger (Node.js)
+## Déploiement Vercel
 
-Runbook complet : **`docs/09_DEPLOYMENT.md`**.
+Le repo contient la configuration Vercel pour Expo Router en sortie serveur :
 
 ```bash
-npm run build        # expo export -p web + pré-compression Brotli/gzip
-npm start            # node server/index.mjs — sert dist/client ET les routes API
-npm run smoke:node   # fumigation du serveur (statiques, cache, 304, sécurité)
+npm run build:web
 ```
 
-Un seul processus Node sert le bundle web et toutes les routes `+api.ts`
-(`expo-server/adapter/http`). Dans hPanel : preset **Other**, build `npm run build`,
-fichier d'entrée `server.js`, Node 22.x. Vérifier `GET /api/health` après déploiement
-(`deployTarget: "hostinger"`).
+Configurer ensuite les variables Vercel/Supabase décrites dans `docs/09_DEPLOYMENT.md`, puis vérifier `GET /api/health` après déploiement.
 
 ## Commandes de validation
 
