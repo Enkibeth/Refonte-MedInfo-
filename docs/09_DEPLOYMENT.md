@@ -51,7 +51,7 @@ Dans **hPanel → Site web → Node.js → Déployer depuis GitHub** :
 | **Branche** | `main` (fusionner la branche de migration avant, cf. §7) |
 | **Version de Node** | **22.x** |
 | **Répertoire root** | `/` |
-| **Commande de build** | `npm run build` |
+| **Commande de build** | `npm run build` (`npm run build:web` reste un alias équivalent — c'est la valeur historique que le panneau peut avoir gardée en mémoire) |
 | **Répertoire de sortie** | laisser vide (c'est le serveur qui sert `dist/`, pas l'hébergeur) |
 | **Fichier d'entrée** | `server.js` |
 | **Variables d'environnement** | tout le §3 — sans elles, le build produit un site inutilisable |
@@ -128,6 +128,11 @@ oublié ne peut pas écraser une clé de hPanel.
 ```bash
 npm run build   # expo export -p web  +  pré-compression Brotli/gzip
 ```
+
+> `npm run build:web` est un **alias** de `npm run build`, conservé parce que le panneau
+> d'hébergement peut avoir mémorisé ce nom lors d'une configuration antérieure : une commande
+> de build stockée qui ne correspond plus à un script existant fait échouer le déploiement
+> avec un message peu explicite. Les deux noms font exactement la même chose.
 
 - `dist/client/` — bundle web, assets, pages autonomes (`partiel.html`, `cv-builder.html`,
   `presentation.html`, `article.html`) et leurs variantes `.br`/`.gz` ;
