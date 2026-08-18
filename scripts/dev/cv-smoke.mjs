@@ -176,6 +176,42 @@ await page.click('.swatch >> nth=2');
 await page.waitForTimeout(300);
 ok(await page.evaluate(() => document.querySelectorAll('.page svg rect').length > 0), 'fond du bandeau rendu');
 
+console.log('\n▶ Photo (import, redimensionnement, masque)');
+await page.click('#btn-header');
+await page.waitForTimeout(200);
+const pngB64 = await page.evaluate(() => {
+  const c = document.createElement('canvas');
+  c.width = 1400; c.height = 1000;            // grande image : doit être réduite à 600 px
+  const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 1400, 1000);
+  g.addColorStop(0, '#7c1f3d'); g.addColorStop(1, '#f7c8d8');
+  x.fillStyle = g; x.fillRect(0, 0, 1400, 1000);
+  return c.toDataURL('image/png').split(',')[1];
+});
+await page.setInputFiles('.pane-right input[type="file"]', {
+  name: 'photo.png', mimeType: 'image/png', buffer: Buffer.from(pngB64, 'base64'),
+});
+await page.waitForTimeout(700);
+ok((await page.locator('.page img').count()) > 0, 'la photo apparaît dans l\'aperçu A4');
+const stored = await page.evaluate(() => {
+  const key = Object.keys(localStorage).find((k) => k.startsWith('medinfo:cv:doc:'));
+  const photo = JSON.parse(localStorage.getItem(key)).doc.header.photo;
+  return { len: photo.dataUrl.length, isJpeg: photo.dataUrl.slice(0, 22) };
+});
+ok(stored.isJpeg.indexOf('image/jpeg') > 0, 'la photo est ré-encodée côté client', stored.isJpeg);
+ok(stored.len < 300000, 'la photo est redimensionnée avant stockage (' + stored.len + ' octets base64)');
+
+console.log('\n▶ Ajuster la mise en page');
+await page.click('#btn-fit');
+await page.waitForTimeout(200);
+await page.fill('.modal input[type="number"]', '1');
+await page.click('.modal-foot .btn-primary');
+await page.waitForTimeout(500);
+const fitMessage = await page.locator('.modal-body .hint').last().textContent();
+ok(!!fitMessage && fitMessage.length > 10, 'l\'ajustement rend un verdict explicite : ' + (fitMessage || '').slice(0, 60));
+await page.click('.modal-head .btn-ghost');
+await page.waitForTimeout(150);
+
 console.log('\n▶ Annuler / rétablir');
 const before = await page.locator('.tx').allTextContents();
 await page.keyboard.press('Control+z');
@@ -203,7 +239,13 @@ ok(pages.length >= 1, 'PDF non vide : ' + pages.length + ' page(s)');
 ok(flat.includes('Camille Rousseau'), 'le nom est du VRAI TEXTE dans le PDF (lisible par un ATS)');
 ok(flat.some((t) => t.includes('MOBILITÉS INTERNATIONALES')), 'la rubrique libre est dans le texte extrait');
 ok(flat.some((t) => t.includes('médecine interne')), 'accents et tirets cadratins corrects après extraction');
-ok(!/\/Filter\s*\/DCTDecode/.test(buf.toString('latin1')), 'aucune page rastérisée (pas de JPEG plein cadre)');
+// La photo est une image (c'est normal) ; ce qui est interdit, c'est une image
+// AUSSI GRANDE QUE LA PAGE, signe d'une capture d'écran déguisée en PDF.
+const images = [...buf.toString('latin1').matchAll(/\/Subtype\s*\/Image[\s\S]{0,300}?\/Width (\d+)[\s\S]{0,120}?\/Height (\d+)/g)]
+  .map((m) => ({ w: Number(m[1]), h: Number(m[2]) }));
+ok(images.length <= 1, 'une seule image dans le PDF, la photo (pas de couche alpha séparée) : ' + JSON.stringify(images));
+ok(buf.length < 200000, 'PDF léger malgré la photo (' + Math.round(buf.length / 1024) + ' ko)');
+ok(images.every((i) => i.w <= 900 && i.h <= 900), 'aucune image de la taille d\'une page (pas de capture d\'écran)');
 const seen = new Set();
 const dup = runs.filter((r) => {
   const key = r.x.toFixed(1) + '|' + r.y.toFixed(1) + '|' + r.text;

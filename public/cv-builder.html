@@ -2205,11 +2205,24 @@
     return null;
   }
 
+  /**
+   * Couleur du papier DERRIÈRE la photo. Elle est peinte dans l'image découpée :
+   * le masque (cercle, coins arrondis) n'a alors plus besoin de transparence, donc
+   * la photo part en JPEG et non en PNG + couche alpha — un PNG avec alpha pèse
+   * ~800 ko dans le PDF là où le JPEG en fait ~30, pour un rendu identique.
+   */
+  function photoBackdrop() {
+    var t = S.doc.theme;
+    var inSidebar = t.headerStyle === 'split' && t.sidebar.enabled;
+    return inSidebar ? t.sidebarBackground : '#ffffff';
+  }
+
   /** Photo recadrée + masquée : générée UNE fois, puis réutilisée à l'écran ET dans le PDF. */
   function ensurePhotoRender() {
     var photo = S.doc.header.photo;
     if (!photo) { S.photoCache = { key: '', url: '' }; return; }
-    var key = [photo.dataUrl.length, photo.dataUrl.slice(-24), photo.shape, photo.zoom, photo.offsetX, photo.offsetY].join('|');
+    var backdrop = photoBackdrop();
+    var key = [photo.dataUrl.length, photo.dataUrl.slice(-24), photo.shape, photo.zoom, photo.offsetX, photo.offsetY, backdrop].join('|');
     if (S.photoCache.key === key) return;
     var img = new Image();
     img.onload = function () {
@@ -2217,6 +2230,8 @@
       var canvas = document.createElement('canvas');
       canvas.width = size; canvas.height = size;
       var ctx = canvas.getContext('2d');
+      ctx.fillStyle = backdrop;
+      ctx.fillRect(0, 0, size, size);
       ctx.save();
       if (photo.shape === 'circle') {
         ctx.beginPath(); ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2); ctx.clip();
@@ -2235,7 +2250,7 @@
       var y = (size - h) / 2 + ((h - size) / 2) * photo.offsetY;
       ctx.drawImage(img, x, y, w, h);
       ctx.restore();
-      S.photoCache = { key: key, url: canvas.toDataURL('image/png') };
+      S.photoCache = { key: key, url: canvas.toDataURL('image/jpeg', 0.9) };
       renderPreview();
     };
     img.onerror = function () { S.photoCache = { key: key, url: '' }; };
@@ -3553,7 +3568,7 @@
         var ctor = res[0];
         var images = {};
         var photo = S.doc.header.photo;
-        if (photo && S.photoCache.url) images[photo.dataUrl] = { dataUrl: S.photoCache.url, format: 'PNG' };
+        if (photo && S.photoCache.url) images[photo.dataUrl] = { dataUrl: S.photoCache.url, format: 'JPEG' };
         var result = E.layout(S.doc);
         var pdf = E.renderPdf(result, ctor, { images: images, title: S.doc.meta.title });
         pdf.save(E.pdfFileName(S.doc));
