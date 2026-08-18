@@ -229,8 +229,16 @@
   .sugg .acts { display: flex; gap: 6px; margin-top: 7px; }
 
   /* ── Mobile / tablette ────────────────────────────────────────────────── */
+  .lbl-short { display: none; }
   .mobile-tabs { display: none; }
   @media (max-width: 1023px) {
+    /* La barre ne défile pas (body en overflow:hidden) : tout ce qui ne tient pas
+       serait INATTEIGNABLE. Les réglages secondaires passent dans le menu « ⋯ ». */
+    .topbar { padding: 0 8px; gap: 5px; }
+    .topbar .seg, #pages-badge, #btn-fit { display: none; }
+    .status { max-width: 90px; overflow: hidden; text-overflow: ellipsis; }
+    .lbl-full { display: none; }
+    .lbl-short { display: inline; }
     .layout { grid-template-columns: 1fr; }
     .pane-left, .pane-right, .pane-center { display: none; }
     body.m-edit .pane-left, body.m-edit .pane-right { display: block; }
@@ -264,8 +272,8 @@
   <span id="pages-badge" class="badge" aria-live="polite">1 page</span>
   <button id="btn-fit" class="btn btn-sm" title="Resserrer la mise en page pour tenir en moins de pages">Ajuster…</button>
 
-  <button id="btn-review" class="btn">Relecture IA</button>
-  <button id="btn-pdf" class="btn btn-primary">Télécharger le PDF</button>
+  <button id="btn-review" class="btn"><span class="lbl-full">Relecture IA</span><span class="lbl-short">IA</span></button>
+  <button id="btn-pdf" class="btn btn-primary"><span class="lbl-full">Télécharger le PDF</span><span class="lbl-short">PDF</span></button>
   <button id="btn-menu" class="btn btn-icon" aria-haspopup="true" aria-expanded="false" aria-label="Autres actions">⋯</button>
 </header>
 
@@ -1973,6 +1981,7 @@
     serverId: null,
     selection: null,        // { kind:'header'|'section'|'entry', si, ei }
     zoom: 1,
+    zoomAuto: true,
     tab: 'content',
     history: [], hIndex: -1, hKey: '', hTime: 0,
     layout: null,
@@ -3489,7 +3498,7 @@
   function exportPdf() {
     var btn = $('btn-pdf');
     btn.disabled = true;
-    var label = btn.textContent;
+    var label = btn.innerHTML;
     btn.textContent = 'Génération…';
     setStatus('Génération du PDF…');
     Promise.all([loadJsPdf(), whenPhotoReady()])
@@ -3507,7 +3516,7 @@
         console.error('Export PDF', err);
         setStatus('Échec de la génération du PDF.', 'err');
       })
-      .then(function () { btn.disabled = false; btn.textContent = label; });
+      .then(function () { btn.disabled = false; btn.innerHTML = label; });
   }
 
   // ── Avertissements au-dessus de l'aperçu ─────────────────────────────────
@@ -3574,13 +3583,19 @@
   }
 
   // ── Zoom ─────────────────────────────────────────────────────────────────
+  /**
+   * Zoom « au plus juste ». Sur mobile l'aperçu est masqué au démarrage
+   * (clientWidth = 0) : on retombe alors sur la largeur de la fenêtre, sinon la
+   * page A4 sortirait de l'écran sans moyen de la faire défiler.
+   */
   function fitZoom() {
     var pane = document.querySelector('.pane-center');
-    if (!pane || !pane.clientWidth) return 1;
-    return Math.max(0.5, Math.min(1.5, (pane.clientWidth - 56) / E.A4.w));
+    var width = pane && pane.clientWidth ? pane.clientWidth : window.innerWidth;
+    return Math.max(0.35, Math.min(1.5, (width - 44) / E.A4.w));
   }
-  function setZoom(z) {
-    S.zoom = Math.max(0.5, Math.min(1.5, Math.round(z * 100) / 100));
+  function setZoom(z, auto) {
+    S.zoomAuto = auto === true;
+    S.zoom = Math.max(0.35, Math.min(1.5, Math.round(z * 100) / 100));
     renderPreview();
     updateTopbar();
   }
@@ -3593,6 +3608,7 @@
       el('button', { text: 'Modèles de CV…', onclick: function () { closeMenu(); openTemplates(); } }),
       el('button', { text: 'Mes CV…', onclick: function () { closeMenu(); openLibrary(); } }),
       el('button', { text: 'Importer un CV existant (PDF, Word)…', onclick: function () { closeMenu(); openImport(); } }),
+      el('button', { text: 'Ajuster la mise en page…', onclick: function () { closeMenu(); openFit(); } }),
       el('div', { class: 'sep' }),
       el('button', { text: 'Enregistrer sur mon compte', onclick: function () { closeMenu(); saveCloud(false); } }),
       el('button', { text: 'Télécharger le document (.json)', onclick: function () { closeMenu(); exportJson(); } }),
@@ -3624,9 +3640,14 @@
     }
     pushHistory('');
     saveLocal();
-    S.zoom = fitZoom();
+    setZoomInitial();
     renderAll();
     if (!loaded) setStatus('Modèle « CV étudiant en médecine » chargé — menu ⋯ pour en changer.');
+  }
+
+  function setZoomInitial() {
+    S.zoom = fitZoom();
+    S.zoomAuto = true;
   }
 
   function wire() {
@@ -3638,7 +3659,7 @@
     $('btn-redo').addEventListener('click', redo);
     $('zoom-in').addEventListener('click', function () { setZoom(S.zoom + 0.1); });
     $('zoom-out').addEventListener('click', function () { setZoom(S.zoom - 0.1); });
-    $('zoom-val').addEventListener('click', function () { setZoom(fitZoom()); });
+    $('zoom-val').addEventListener('click', function () { setZoom(fitZoom(), true); });
     $('btn-fit').addEventListener('click', openFit);
     $('btn-pdf').addEventListener('click', exportPdf);
     $('btn-review').addEventListener('click', openReview);
@@ -3663,7 +3684,8 @@
       document.body.className = 'm-preview';
       $('tab-edit').setAttribute('aria-selected', 'false');
       $('tab-preview').setAttribute('aria-selected', 'true');
-      renderPreview();
+      // L'aperçu vient d'apparaître : sa largeur n'était pas mesurable avant.
+      if (S.zoomAuto) setZoom(fitZoom(), true); else renderPreview();
     });
 
     document.addEventListener('keydown', function (ev) {
@@ -3675,7 +3697,9 @@
       else if (key === 's') { ev.preventDefault(); saveCloud(false); }
     });
 
-    window.addEventListener('resize', debounce(function () { renderPreview(); }, 200));
+    window.addEventListener('resize', debounce(function () {
+      if (S.zoomAuto) setZoom(fitZoom(), true); else renderPreview();
+    }, 200));
     // Filet anti-perte : dernière écriture locale avant de quitter la page.
     window.addEventListener('pagehide', function () { saveLocal(); });
   }
