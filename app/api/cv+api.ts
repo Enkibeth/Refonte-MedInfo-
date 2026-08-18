@@ -6,6 +6,10 @@
  * format) que l'utilisateur accepte ou refuse une par une côté client. Il n'archive RIEN
  * (la sauvegarde du CV passe par /api/cv-docs, own-row RLS).
  *
+ * Le CV envoyé est un document v2 (sections libres) MINIMISÉ : ni photo, ni contacts.
+ * Les `fieldPath` renvoyés (`sections.2.entries.0.bullets.1`) s'appliquent tels quels
+ * au document côté client — d'où l'obligation de ne jamais filtrer les index.
+ *
  * Sécurité (ADR-0018) : outil réservé aux comptes vérifiés ÉTUDIANT / PROFESSIONNEL (et
  * admins). L'autorisation est dérivée du PROFIL VÉRIFIÉ côté serveur (resolveChatPersona),
  * jamais du body. Minimisation RGPD : le client envoie déjà un CV nettoyé (sanitizeCvForAi),
@@ -50,7 +54,7 @@ const reviewSchema = z.object({
         type: z.enum(['spelling', 'grammar', 'style', 'coherence', 'impact', 'format']),
         severity: z.enum(['high', 'medium', 'low']),
         section: z.string().max(60),
-        /** Chemin du champ visé côté client (ex. experiences.2.bullets.0). */
+        /** Chemin du champ visé côté client (ex. sections.2.entries.0.bullets.1). */
         fieldPath: z.string().max(120),
         originalText: z.string().max(2000),
         suggestedText: z.string().max(2000),
@@ -77,7 +81,7 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  let body: { document?: unknown; includeReferenceContactDetails?: unknown };
+  let body: { document?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -85,17 +89,15 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // Minimisation RGPD : on re-nettoie côté serveur (le client l'a déjà fait — défense en
-  // profondeur). Jamais la photo ; coordonnées des référents seulement sur demande explicite.
-  const cv = sanitizeCvForAi(body.document, {
-    includeReferenceContactDetails: body.includeReferenceContactDetails === true,
-  });
+  // profondeur). Jamais la photo, jamais les contacts : seul le texte à relire part.
+  const cv = sanitizeCvForAi(body.document);
 
-  const sections = Object.entries(cv).filter(([, v]) => {
+  const hasContent = Object.entries(cv).some(([, v]) => {
     if (Array.isArray(v)) return v.length > 0;
     if (v && typeof v === 'object') return Object.keys(v).length > 0;
     return Boolean(v);
   });
-  if (sections.length === 0) {
+  if (!hasContent) {
     return Response.json({ error: 'Ajoute du contenu au CV avant de demander une relecture.' }, { status: 400 });
   }
 
