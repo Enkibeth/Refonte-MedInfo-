@@ -1143,21 +1143,37 @@
     for (var i = 0; i < section.entries.length; i++) {
       var label = section.entries[i].title;
       if (!label) continue;
-      var w = Math.min(width, measureText(label, f.base) + padX * 2);
-      if (row.length && x + w > width) { rows.push(row); row = []; x = 0; }
-      row.push({ label: label, w: w, x: x, path: 'sections.' + index + '.entries.' + i + '.title' });
-      x += w + gapX;
+      var path = 'sections.' + index + '.entries.' + i + '.title';
+      var natural = measureText(label, f.base) + padX * 2;
+      if (natural > width) {
+        // Étiquette plus large que la colonne : elle prend sa propre ligne et son
+        // texte est COUPÉ (jamais tronqué : on ne perd pas un mot du CV).
+        if (row.length) { rows.push(row); row = []; x = 0; }
+        rows.push([{ label: label, w: width, x: 0, path: path, wrap: true }]);
+        continue;
+      }
+      if (row.length && x + natural > width) { rows.push(row); row = []; x = 0; }
+      row.push({ label: label, w: natural, x: x, path: path });
+      x += natural + gapX;
     }
     if (row.length) rows.push(row);
 
     return rows.map(function (r, ri) {
       var prims = [];
       var lb = lineBox(f.base.size, 1);
+      var h = chipH;
       for (var j = 0; j < r.length; j++) {
+        if (r[j].wrap) {
+          var par = paragraphBlock(r[j].label, f.base, theme.accent, r[j].w - padX * 2, 1.2, { path: r[j].path });
+          h = Math.max(h, par.h + padY * 2);
+          prims.push({ t: 'rect', x: 0, y: 0, w: r[j].w, h: par.h + padY * 2, fill: mixColor(theme.accent, '#ffffff', 0.88), r: chipH / 2 });
+          prims = prims.concat(translate(par.prims, padX, padY));
+          continue;
+        }
         prims.push({ t: 'rect', x: r[j].x, y: 0, w: r[j].w, h: chipH, fill: mixColor(theme.accent, '#ffffff', 0.88), r: chipH / 2 });
         prims.push(textPrim(r[j].label, r[j].x + padX, padY + lb.baseline, f.base, theme.accent, { path: r[j].path }));
       }
-      return { kind: 'entry', h: chipH + (ri < rows.length - 1 ? gapY : 0), prims: prims, path: 'sections.' + index };
+      return { kind: 'entry', h: h + (ri < rows.length - 1 ? gapY : 0), prims: prims, path: 'sections.' + index };
     });
   }
 
@@ -2461,6 +2477,33 @@
     S.selection = { kind: 'entry', si: toSi, ei: dst.entries.indexOf(entry) };
   }
 
+  /**
+   * Déplace une rubrique d'un cran dans SA colonne. Le glisser-déposer n'est pas
+   * utilisable au clavier : ces boutons sont le chemin accessible équivalent.
+   */
+  function nudgeSection(si, delta) {
+    var section = S.doc.sections[si];
+    if (!section) return;
+    var list = sectionsOf(section.column);
+    var pos = -1;
+    list.forEach(function (item, i) { if (item.i === si) pos = i; });
+    var target = pos + delta;
+    if (pos < 0 || target < 0 || target >= list.length) return;
+    moveSection(section.id, section.column, target);
+    commit();
+    announce('Rubrique déplacée.');
+  }
+
+  function nudgeEntry(si, ei, delta) {
+    var section = S.doc.sections[si];
+    if (!section || ei + delta < 0 || ei + delta >= section.entries.length) return;
+    var entry = section.entries.splice(ei, 1)[0];
+    section.entries.splice(ei + delta, 0, entry);
+    S.selection = { kind: 'entry', si: si, ei: ei + delta };
+    commit();
+    announce('Entrée déplacée.');
+  }
+
   /** Index d'insertion déduit de la position du curseur dans une liste. */
   function dropIndex(container, clientY, selector) {
     var items = container.querySelectorAll(selector);
@@ -2780,6 +2823,10 @@
     ]));
     host.appendChild(toggleInput('Commencer sur une nouvelle page', s.pageBreakBefore, function (v) { s.pageBreakBefore = v; commit(); }));
     host.appendChild(actionRow([
+      el('button', { class: 'btn btn-sm', text: '↑ Monter', title: 'Monter dans la colonne', onclick: function () { nudgeSection(si, -1); } }),
+      el('button', { class: 'btn btn-sm', text: '↓ Descendre', title: 'Descendre dans la colonne', onclick: function () { nudgeSection(si, 1); } }),
+    ]));
+    host.appendChild(actionRow([
       el('button', { class: 'btn btn-sm', text: '+ Entrée', onclick: function () { addEntry(si); } }),
       el('button', { class: 'btn btn-sm', text: 'Dupliquer', onclick: function () { duplicateSection(si); } }),
       el('button', { class: 'btn btn-sm btn-danger', text: 'Supprimer', onclick: function () { deleteSection(si); } }),
@@ -2847,6 +2894,10 @@
       var to = parseInt(v, 10);
       if (to !== si) { moveEntry(si, ei, to, S.doc.sections[to].entries.length); commit(); }
     })));
+    host.appendChild(actionRow([
+      el('button', { class: 'btn btn-sm', text: '↑ Monter', onclick: function () { nudgeEntry(si, ei, -1); } }),
+      el('button', { class: 'btn btn-sm', text: '↓ Descendre', onclick: function () { nudgeEntry(si, ei, 1); } }),
+    ]));
     host.appendChild(actionRow([
       el('button', { class: 'btn btn-sm', text: 'Dupliquer', onclick: function () { duplicateEntry(si, ei); } }),
       el('button', { class: 'btn btn-sm btn-danger', text: 'Supprimer', onclick: function () { deleteEntry(si, ei); } }),
@@ -3074,9 +3125,9 @@
     var d = S.doc;
     return !d.header.fullName && !d.header.headline && !d.header.contacts.length && !d.sections.length;
   }
-  function replaceDocument(doc, label) {
+  function replaceDocument(doc, label, serverId) {
     S.doc = E.migrate(doc);
-    S.serverId = null;
+    S.serverId = serverId || null;
     S.selection = null;
     S.photoCache = { key: '', url: '' };
     S.history = []; S.hIndex = -1;
@@ -3187,9 +3238,7 @@
           if (!loaded) { setStatus('CV introuvable.', 'err'); return; }
           saveLocal();
           closeModal();
-          S.serverId = loaded.serverId;
-          replaceDocument(loaded.doc, 'CV ouvert.');
-          S.serverId = loaded.serverId;
+          replaceDocument(loaded.doc, 'CV ouvert.', loaded.serverId);
         } }),
         el('button', { class: 'btn btn-sm', text: 'Dupliquer', onclick: function () {
           var loaded = current ? { doc: S.doc } : loadLocal(item.id);
@@ -3232,9 +3281,7 @@
                 if (!res || !res.cv) { setStatus('Lecture impossible.', 'err'); return; }
                 saveLocal();
                 closeModal();
-                replaceDocument(res.cv.document, 'CV chargé depuis ton compte.');
-                S.serverId = res.cv.id;
-                saveLocal();
+                replaceDocument(res.cv.document, 'CV chargé depuis ton compte.', res.cv.id);
               }).catch(function () { setStatus('Réseau indisponible.', 'err'); });
             } }),
             el('button', { class: 'btn btn-sm btn-danger', text: '✕', title: 'Supprimer du compte', onclick: function () {

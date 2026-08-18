@@ -226,6 +226,39 @@ describe('cv-engine — pagination', () => {
     expect(result.pages.every((p: any) => p.fill >= 0 && p.fill <= 1)).toBe(true);
   });
 
+  it('ne laisse JAMAIS un texte déborder de sa colonne', () => {
+    // Un débordement ne se voit pas dans les chiffres : il se voit sur le CV envoyé.
+    // Cas piégeux réunis ici : titre de rubrique très long dans un bandeau étroit,
+    // étiquette plus large que la colonne, mot insécable interminable.
+    const d = doc(
+      [
+        { title: 'Formations complémentaires et diplômes universitaires', column: 'side', layout: 'entries', entries: [entry('Attestation de formation aux gestes et soins d\'urgence de niveau 2')] },
+        { title: 'Compétences', column: 'side', layout: 'tags', entries: [
+          { title: 'Échographie clinique ciblée en médecine d\'urgence' },
+          { title: 'ECG' },
+          { title: 'anticonstitutionnellementaussilongquepossible' },
+        ] },
+        { title: 'Stages', column: 'main', layout: 'entries', entries: [entry('Externe', [LOREM])] },
+      ],
+      { sidebar: { enabled: true, width: 130, side: 'left', gap: 22, padding: 18 } },
+    );
+    const result = CV.layout(d);
+    const geo = result.geo;
+    result.pages.forEach((pg: any) => {
+      pg.prims.filter((p: any) => p.t === 'text' && p.s).forEach((p: any) => {
+        const width = CV.measureText(p.s, { family: p.fam, size: p.size, bold: p.bold, italic: p.italic, tracking: p.tr });
+        const left = p.align === 'right' ? p.x - width : p.x;
+        const right = left + width;
+        expect(left, 'déborde à gauche : ' + p.s).toBeGreaterThanOrEqual(-0.5);
+        expect(right, 'déborde à droite : ' + p.s).toBeLessThanOrEqual(result.page.width + 0.5);
+        const inSidebar = left < geo.sideX + geo.sideW;
+        if (geo.sidebarOn && inSidebar) {
+          expect(right, 'sort du bandeau latéral : ' + p.s).toBeLessThanOrEqual(geo.sideContentX + geo.sideContentW + 0.5);
+        }
+      });
+    });
+  });
+
   it('rend le texte dans l\'ordre de lecture : en-tête, colonne principale, bandeau', () => {
     const d = doc([
       { title: 'Formation', column: 'main', layout: 'entries', entries: [entry('DFASM')] },

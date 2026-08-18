@@ -135,6 +135,41 @@ if (await target.count()) {
   ok(false, 'accroche éditable trouvée dans l\'aperçu');
 }
 
+console.log('\n▶ Glisser-déposer d\'une rubrique');
+const titlesInPreview = async () => (await page.locator('.tx').allTextContents())
+  .filter((t) => /^[A-ZÉÈÀÇÎÔÛ' ]{4,}$/.test(t));
+const beforeOrder = await titlesInPreview();
+const sections = page.locator('.pane-left .sec');
+if ((await sections.count()) >= 3) {
+  // `locator.dragTo()` ne déclenche pas le glisser-déposer HTML5 dans ce Chromium :
+  // on pilote la souris pas à pas, c'est le geste réel de l'utilisateur.
+  const from = await sections.nth(2).boundingBox();
+  const to = await sections.nth(0).boundingBox();
+  await page.mouse.move(from.x + 20, from.y + 10);
+  await page.mouse.down();
+  await page.mouse.move(from.x + 22, from.y + 4, { steps: 3 });
+  await page.mouse.move(to.x + 20, to.y + 20, { steps: 12 });
+  await page.mouse.move(to.x + 20, to.y + 3, { steps: 6 });
+  await page.mouse.up();
+  await page.waitForTimeout(400);
+  const afterOrder = await titlesInPreview();
+  ok(JSON.stringify(afterOrder) !== JSON.stringify(beforeOrder),
+    'le glisser-déposer réordonne les rubriques dans l\'aperçu',
+    JSON.stringify(beforeOrder.slice(0, 3)) + ' → ' + JSON.stringify(afterOrder.slice(0, 3)));
+} else {
+  ok(false, 'au moins trois rubriques pour tester le glisser-déposer');
+}
+
+console.log('\n▶ Réordonnancement au clavier (accessibilité)');
+await page.locator('.pane-left .sec .sec-name').nth(2).click();
+await page.waitForTimeout(150);
+const orderBeforeKb = await titlesInPreview();
+await page.getByRole('button', { name: '↑ Monter' }).first().click();
+await page.waitForTimeout(400);
+const orderAfterKb = await titlesInPreview();
+ok(JSON.stringify(orderAfterKb) !== JSON.stringify(orderBeforeKb),
+  'le bouton « Monter » réordonne sans souris');
+
 console.log('\n▶ Thème');
 await page.click('#itab-theme');
 await page.click('.swatch >> nth=2');
