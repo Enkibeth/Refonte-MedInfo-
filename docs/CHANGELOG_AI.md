@@ -18,6 +18,42 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-08-18] – Claude (Refonte du créateur de CV : sections libres + PDF vectoriel)
+### Files modified
+- public/cv-builder.html (réécriture complète : moteur pur `@cv-engine` + interface 3 volets + export PDF vectoriel)
+- src/cv/cvDocument.ts (types v2, `sanitizeCvForAi` v2 préservant les index, titre dérivé de `meta.title`/`header.fullName`)
+- app/api/cv+api.ts (option `includeReferenceContactDetails` retirée), src/ai/prompts/promptStore.ts (prompt `cv_review` : structure v2 et format des `fieldPath`)
+- app/(chat)/cv-builder.tsx, src/seo/meta.ts (copie produit)
+- tests/unit/cv-engine.test.ts (nouveau, 31), tests/unit/cv-pdf.test.ts (nouveau, 10), tests/unit/helpers/cvEngine.ts (nouveau), tests/unit/cv-document.test.ts
+- scripts/dev/cv-smoke.mjs (nouveau, opt-in), scripts/dev/extract-pdf-font-metrics.cjs (nouveau)
+- docs/CV_BUILDER.md (nouveau), docs/DECISIONS/0036-refonte-cv-builder.md (nouveau), CLAUDE.md
+### Purpose
+Retour Hugo : la fonctionnalité CV est « très pauvre avec une interface basique ».
+Trois défauts de fond. (1) L'export passait par html2canvas : chaque page du PDF était une
+IMAGE. Les logiciels de tri (ATS) des CHU n'en extraient rien — le CV est écarté avant
+d'être lu, sans que l'étudiant sache pourquoi. (2) Les rubriques étaient codées en dur
+(experiences[], education[]…) : impossible d'ajouter « Communications » ou « Mobilités
+internationales », donc aucun CV académique. (3) Aucune maîtrise de la mise en page :
+un seul thème, aucun réglage, et une pagination subie (entrée coupée en deux, titre
+orphelin), sans moyen de resserrer un CV qui déborde de trois lignes.
+Refonte : document v2 versionné à sections libres avec migration idempotente de l'ancien
+format ; moteur de mise en page PUR produisant des primitives positionnées, consommées à
+l'identique par l'aperçu et par le PDF, mesurées avec les métriques des polices PDF
+standard (égalité avec jsPDF verrouillée par test à 0,001 pt près) ; export PDF VECTORIEL
+à texte sélectionnable ; pagination testée (entrée insécable, titre jamais orphelin, saut
+forçable) ; « Ajuster pour tenir en N pages » qui échoue honnêtement plutôt que de rendre
+le CV illisible ; thème complet avec contrôle de contraste WCAG AA ; interface à trois
+volets avec glisser-déposer et édition en ligne dans l'aperçu.
+### Regulatory impact
+None — aucune nouvelle feature IA, aucune table, aucune migration. La minimisation avant
+l'IA est RENFORCÉE (la photo et désormais tous les contacts sont retirés) et la sauvegarde
+cloud devient explicite. Garde persona serveur, rate-limit et RLS own-row inchangés.
+### Rollback plan
+`git revert` des commits de la refonte : `public/cv-builder.html` et `src/cv/cvDocument.ts`
+reviennent à la v1. Les CV enregistrés au format v2 (cloud ou local) ne seraient alors plus
+lisibles par l'ancien éditeur — d'où l'intérêt de ne revenir en arrière qu'immédiatement.
+
+
 ## [2026-07-28] – Claude (Correctif « chargement infini » : amorçage auth borné dans le temps)
 ### Files modified
 - src/auth/bootGuard.ts (nouveau, pur : plafonds de temps, `withTimeout`, indice de session, `clearStoredSession` sans réseau, `abortAfter`)
