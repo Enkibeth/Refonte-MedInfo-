@@ -93,9 +93,16 @@ cesse de ressembler au modèle, la CI le dit.
 | Indentation des puces | 20 pt |
 
 La police par défaut est **Helvetica** : les CV de référence sont composés en Liberation Sans,
-dont les métriques sont celles d'Arial/Helvetica. Le rendu est donc identique au point près,
-sans embarquer le moindre fichier de police. Les six autres familles restent disponibles dans
-l'onglet Thème.
+qui appartient à la même famille métrique (Arial/Helvetica) et lui ressemble trait pour trait.
+La correspondance n'est pas parfaite pour autant — sur les 486 fragments de texte comparés
+entre notre mesure et les avancées réelles du modèle, 39 % tombent à moins de 0,05 pt et le
+pire écart atteint **0,55 pt sur un fragment de 71 pt** (moins de 1 %). Autrement dit : même
+dessin, même densité, mais un mot peut occasionnellement basculer à la ligne à un endroit
+différent de l'original. En échange, le PDF ne transporte aucun fichier de police.
+Les six autres familles restent disponibles dans l'onglet Thème.
+
+Cet écart ne touche PAS la garantie interne de l'outil : l'aperçu et le PDF exporté sont
+mesurés avec les mêmes chiffres, vérifiés contre jsPDF à 0,001 pt près.
 
 Deux palettes sont relevées telles quelles — **Rouge médical** (`#ad4040` / `#faf5f5`) et
 **Bleu nuit** (`#0b1b7a` / `#f2f5f7`) — et quatre autres suivent la même construction : accent

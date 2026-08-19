@@ -142,8 +142,10 @@ posées comme valeurs par défaut du moteur : liseré de 30 pt au bord de la pag
 rubrique en **romain** 13,6 pt soulignés d'un filet gris 0,5 pt à 7,5 pt de la ligne de base,
 intitulés d'entrée gras `#333333`, dates grasses en accent alignées à droite, contacts espacés
 de 30 pt sous un titre « Informations personnelles ». Les deux palettes sont reprises telles
-quelles ; la police par défaut passe à Helvetica, dont les métriques sont exactement celles du
-Liberation Sans des originaux.
+quelles ; la police par défaut passe à Helvetica, de la même famille métrique que le Liberation
+Sans des originaux — la correspondance a été mesurée : sur 486 fragments comparés, l'écart
+maximal est de 0,55 pt sur 71 pt (moins de 1 %), donc même densité mais pas une reproduction
+au glyphe près des retours à la ligne.
 
 Le moteur gagne ce qu'il fallait pour y arriver sans bricolage : liseré découpé au bord de la
 bande (et non à l'intérieur), présentation `list` (puces carrées des centres d'intérêt),
