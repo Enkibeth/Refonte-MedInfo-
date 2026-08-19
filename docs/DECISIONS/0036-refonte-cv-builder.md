@@ -129,6 +129,32 @@ celui de `partiel.html`), autour d'un **moteur de mise en page explicite** :
 - `scripts/dev/cv-smoke.mjs` (opt-in, hors CI) : parcours navigateur complet et vérification du
   fichier téléchargé.
 
+## Addendum 2026-08-19 — l'apparence par défaut est celle du modèle fourni
+
+Hugo a transmis deux CV (le sien et celui d'une consœur) : même modèle, deux couleurs, et la
+consigne « il faut que les CV finaux ressemblent à ceux-là, à l'identique dans la qualité
+typo, couleur et mise en forme ».
+
+Les cotes ont été **relevées dans les PDF** (flux de contenu décompressés : positions des
+aplats, tailles, couleurs et écarts de ligne à ligne) plutôt qu'estimées d'après l'image, puis
+posées comme valeurs par défaut du moteur : liseré de 30 pt au bord de la page, bandeau de
+208,584 pt, colonne principale de 218,584 à 565,28, corps à 8 pt d'interligne 8,8, titres de
+rubrique en **romain** 13,6 pt soulignés d'un filet gris 0,5 pt à 7,5 pt de la ligne de base,
+intitulés d'entrée gras `#333333`, dates grasses en accent alignées à droite, contacts espacés
+de 30 pt sous un titre « Informations personnelles ». Les deux palettes sont reprises telles
+quelles ; la police par défaut passe à Helvetica, dont les métriques sont exactement celles du
+Liberation Sans des originaux.
+
+Le moteur gagne ce qu'il fallait pour y arriver sans bricolage : liseré découpé au bord de la
+bande (et non à l'intérieur), présentation `list` (puces carrées des centres d'intérêt),
+pictogrammes de contact pleins et redimensionnables, couleurs réglables par rôle (nom,
+intitulé, puces, filets), graisse des titres et italique des structures optionnelles,
+espacements explicites (`sectionGap`, `headerGap`, `photoGap`, `contactGap`, `bulletIndent`).
+
+Sept tests figent ces cotes (`conformité au modèle de référence`). Ce ne sont pas des tests
+cosmétiques : ils protègent la promesse faite à l'utilisateur, à savoir que le CV qu'il
+téléchargera aura l'allure du modèle qu'on lui a montré.
+
 ## Suivi
 
 - Le contenu du CV reste une **donnée personnelle** : toute évolution qui l'enverrait ailleurs

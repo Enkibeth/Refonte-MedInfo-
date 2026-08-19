@@ -150,7 +150,7 @@ describe('cv-pdf — polices embarquées', () => {
     const families = CV.usedFonts(result).map((f: { family: string }) => f.family);
     expect(new Set(families).size).toBe(2);
     const { buffer } = build(d);
-    expect(readPdfRuns(buffer).pages.flat().map((r) => r.text)).toContain('FORMATION');
+    expect(readPdfRuns(buffer).pages.flat().map((r) => r.text)).toContain('Formation');
   });
 
   it('sans les fichiers de police, l\'export ne casse pas : repli lisible', () => {

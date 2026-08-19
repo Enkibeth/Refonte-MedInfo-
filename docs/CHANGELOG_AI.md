@@ -18,6 +18,33 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-08-19] – Claude (CV : l'apparence par défaut reproduit le modèle fourni)
+### Files modified
+- public/cv-builder.html (géométrie du liseré et du bandeau, valeurs de thème par défaut, polices par rôle, rythme vertical, présentation `list`, pictogrammes de contact pleins, titre du bloc contacts, panneau Thème réorganisé)
+- tests/unit/cv-engine.test.ts (bloc « conformité au modèle de référence », 7 tests ; attentes mises à jour), scripts/dev/cv-smoke.mjs
+- docs/CV_BUILDER.md (section « Le modèle de référence » avec les cotes relevées), docs/DECISIONS/0036-refonte-cv-builder.md (addendum), CLAUDE.md
+### Purpose
+Hugo a fourni deux CV (même modèle, deux couleurs) : « il faut que les CV finaux ressemblent
+à ceux-là, à l'identique dans la qualité typo, couleur et mise en forme ». Les cotes ont été
+RELEVÉES dans les PDF (flux de contenu décompressés : aplats, tailles, couleurs, écarts de
+ligne à ligne) plutôt qu'estimées d'après l'image, puis posées comme valeurs par défaut :
+liseré 30 pt au bord de la page, bandeau 208,584 pt, colonne principale 218,584 → 565,28,
+corps 8 pt d'interligne 8,8, titres de rubrique en romain 13,6 pt + filet gris 0,5 pt à
+7,5 pt de la ligne de base, intitulés d'entrée gras #333333, dates grasses en accent alignées
+à droite, contacts espacés de 30 pt sous un titre « Informations personnelles », centres
+d'intérêt en liste à puces carrées. Police par défaut : Helvetica, dont les métriques sont
+celles du Liberation Sans des originaux — rendu identique sans embarquer de police.
+Le moteur gagne ce qu'il fallait : liseré découpé au bord de la bande, présentation `list`,
+pictogrammes pleins et redimensionnables, couleurs par rôle, graisse des titres et italique
+des structures optionnelles, espacements explicites.
+### Regulatory impact
+None — présentation uniquement. Aucune donnée, aucune route, aucune feature IA touchée.
+Aucun contenu des CV fournis n'est repris : seules les COTES de mise en page le sont.
+### Rollback plan
+`git revert` du commit : les documents déjà enregistrés se rouvrent (leur thème est stocké
+dans le document et `normalizeTheme` borne tout champ inconnu).
+
+
 ## [2026-08-19] – Claude (CV : sept polices au choix, embarquées dans le PDF)
 ### Files modified
 - public/vendor/fonts/cv/ (nouveau : 5 familles SIL OFL × 4 styles, sous-ensemblées WinAnsi, + licences + README)

@@ -614,20 +614,22 @@
   //  « Communications affichées » sans toucher au code.
   // ══════════════════════════════════════════════════════════════════════════
 
-  var CONTACT_KINDS = ['phone', 'email', 'location', 'globe', 'linkedin', 'calendar', 'id'];
+  var CONTACT_KINDS = ['person', 'email', 'phone', 'home', 'location', 'flag', 'globe', 'linkedin', 'calendar', 'id'];
   var CONTACT_LABELS = {
-    phone: 'Tél.', email: 'Email', location: 'Adresse', globe: 'Web',
-    linkedin: 'LinkedIn', calendar: 'Né(e) le', id: 'Réf.',
+    person: 'Nom', email: 'Email', phone: 'Tél.', home: 'Adresse', location: 'Ville',
+    flag: 'Nationalité', globe: 'Web', linkedin: 'LinkedIn', calendar: 'Né(e) le', id: 'Réf.',
   };
-  var SECTION_LAYOUTS = ['entries', 'tags', 'ratings', 'text'];
+  var SECTION_LAYOUTS = ['entries', 'tags', 'ratings', 'text', 'list'];
   var BULLET_STYLES = ['disc', 'square', 'dash', 'none'];
 
   var LIMITS = {
     baseSize: [7, 12], lineHeight: [1, 1.6], blockGap: [2, 22], ruleGap: [2, 26],
     sectionTitleSize: [8, 18], nameSize: [14, 42], entryGap: [0, 14],
-    margin: [14, 72], sidebarWidth: [100, 280], sidebarGap: [8, 40],
-    sidebarPadding: [6, 34], ruleThickness: [0.2, 3], stripeWidth: [0, 14],
-    photoSize: [40, 200],
+    margin: [14, 72], sidebarWidth: [100, 300], sidebarGap: [4, 40],
+    sidebarPadding: [4, 34], ruleThickness: [0.2, 3], stripeWidth: [0, 60],
+    photoSize: [40, 200], sectionGap: [0, 40], headlineSize: [6, 20],
+    bulletIndent: [4, 40], contactGap: [4, 44], contactIconSize: [6, 24],
+    headerGap: [0, 60], photoGap: [0, 60],
   };
 
   function clampNum(value, range, fallback) {
@@ -660,40 +662,64 @@
       .filter(function (v) { return v.length > 0; });
   }
 
+  /**
+   * Palettes. Les deux premières sont relevées AU POINT PRÈS dans les CV de
+   * référence fournis (même modèle, deux couleurs) : accent, fond de bandeau très
+   * désaturé de la même famille, filet gris clair, intitulés d'entrée gris foncé.
+   */
   var THEME_PRESETS = [
-    { key: 'bordeaux', label: 'Bordeaux', accent: '#7c1f3d', sidebarBackground: '#f6eef1', textColor: '#181818', mutedColor: '#5a5a5a' },
-    { key: 'nuit', label: 'Bleu nuit', accent: '#1e3a5f', sidebarBackground: '#eef2f7', textColor: '#15202b', mutedColor: '#55616f' },
-    { key: 'sapin', label: 'Vert sapin', accent: '#1f5138', sidebarBackground: '#edf4ef', textColor: '#16211b', mutedColor: '#556158' },
-    { key: 'ardoise', label: 'Gris ardoise', accent: '#3f4a55', sidebarBackground: '#f1f3f5', textColor: '#1b1f23', mutedColor: '#5b6570' },
-    { key: 'prune', label: 'Prune', accent: '#5b2a63', sidebarBackground: '#f5eef7', textColor: '#1d1620', mutedColor: '#5f5566' },
+    { key: 'rouge', label: 'Rouge médical', accent: '#ad4040', sidebarBackground: '#faf5f5', textColor: '#000000', mutedColor: '#4a4a4a', entryTitleColor: '#333333' },
+    { key: 'nuit', label: 'Bleu nuit', accent: '#0b1b7a', sidebarBackground: '#f2f5f7', textColor: '#000000', mutedColor: '#454b52', entryTitleColor: '#333333' },
+    { key: 'bordeaux', label: 'Bordeaux', accent: '#7c1f3d', sidebarBackground: '#faf4f6', textColor: '#000000', mutedColor: '#4a4a4a', entryTitleColor: '#333333' },
+    { key: 'sapin', label: 'Vert sapin', accent: '#1f5138', sidebarBackground: '#f2f7f4', textColor: '#000000', mutedColor: '#45514a', entryTitleColor: '#333333' },
+    { key: 'ardoise', label: 'Gris ardoise', accent: '#3f4a55', sidebarBackground: '#f4f5f6', textColor: '#000000', mutedColor: '#4b535b', entryTitleColor: '#333333' },
+    { key: 'prune', label: 'Prune', accent: '#5b2a63', sidebarBackground: '#f8f4f9', textColor: '#000000', mutedColor: '#4d4550', entryTitleColor: '#333333' },
   ];
 
+  /**
+   * Réglages par défaut = le modèle de référence, coté au point près
+   * (cf. l'entrée « modèle de référence » de docs/CV_BUILDER.md).
+   * `sidebar.width` est la largeur TOTALE de la bande, liseré compris.
+   */
   function defaultTheme(presetKey) {
     var p = THEME_PRESETS.filter(function (t) { return t.key === presetKey; })[0] || THEME_PRESETS[0];
     return {
       preset: p.key,
       accent: p.accent,
       sidebarBackground: p.sidebarBackground,
-      stripe: { enabled: false, color: p.accent, width: 5 },
+      stripe: { enabled: true, color: p.accent, width: 30 },
       textColor: p.textColor,
       mutedColor: p.mutedColor,
-      fontFamily: 'inter',
+      nameColor: '',            // vide = couleur d'accent
+      entryTitleColor: p.entryTitleColor || '',
+      bulletColor: '',          // vide = couleur du texte
+      fontFamily: 'helvetica',
       headingFamily: '',        // vide = même police que le corps
-      baseSize: 9.5,
-      lineHeight: 1.28,
-      blockGap: 9,
-      entryGap: 3,
-      ruleGap: 7,
-      sectionTitleSize: 10.5,
-      sectionTitleUppercase: true,
+      baseSize: 8,
+      lineHeight: 1.1,
+      blockGap: 10,             // espace ajouté entre deux entrées
+      entryGap: 4,             // entre deux lignes d'une liste ou d'une jauge
+      ruleGap: 14.95,           // filet de rubrique → première entrée (29.6 pt de ligne à ligne)
+      sectionGap: 14.9,         // avant un titre de rubrique (28.7 pt de ligne à ligne)
+      sectionTitleSize: 13.6,
+      sectionTitleUppercase: false,
+      sectionTitleBold: false,
+      organisationItalic: false,
       nameSize: 25,
-      margins: { top: 40, right: 40, bottom: 36, left: 40 },
-      sidebar: { enabled: true, width: 178, side: 'left', gap: 22, padding: 18 },
-      rules: { enabled: true, color: p.accent, thickness: 0.8 },
+      headlineSize: 8.8,
+      bulletIndent: 20,
+      margins: { top: 30, right: 30, bottom: 30, left: 30 },
+      sidebar: { enabled: true, width: 208.584, side: 'left', gap: 10, padding: 10 },
+      rules: { enabled: true, color: '#d9d9d9', thickness: 0.5 },
       bulletStyle: 'disc',
       headerStyle: 'split',
       contactStyle: 'icon',
-      photoSize: 96,
+      contactsTitle: 'Informations personnelles',
+      contactGap: 30,           // d'un contact à l'autre, de ligne à ligne
+      contactIconSize: 14,
+      headerGap: 19.3,          // sous le nom + accroche (33,9 pt jusqu'au 1er titre)
+      photoGap: 25.3,           // sous la photo, dans le bandeau
+      photoSize: 118.6,
     };
   }
 
@@ -711,12 +737,16 @@
       accent: color(t.accent, d.accent),
       sidebarBackground: color(t.sidebarBackground, d.sidebarBackground),
       stripe: {
-        enabled: st.enabled === true,
+        // Absent du document → on garde le défaut du préréglage (liseré actif).
+        enabled: st.enabled === undefined ? d.stripe.enabled : st.enabled !== false,
         color: color(st.color, color(t.accent, d.accent)),
         width: clampNum(st.width, LIMITS.stripeWidth, d.stripe.width),
       },
       textColor: color(t.textColor, d.textColor),
       mutedColor: color(t.mutedColor, d.mutedColor),
+      nameColor: parseColor(t.nameColor) ? toHex(parseColor(t.nameColor)) : '',
+      entryTitleColor: parseColor(t.entryTitleColor) ? toHex(parseColor(t.entryTitleColor)) : (t.entryTitleColor === '' ? '' : d.entryTitleColor),
+      bulletColor: parseColor(t.bulletColor) ? toHex(parseColor(t.bulletColor)) : '',
       fontFamily: FAMILY_BY_KEY[t.fontFamily] ? t.fontFamily : d.fontFamily,
       headingFamily: FAMILY_BY_KEY[t.headingFamily] ? t.headingFamily : '',
       baseSize: clampNum(t.baseSize, LIMITS.baseSize, d.baseSize),
@@ -724,9 +754,14 @@
       blockGap: clampNum(t.blockGap, LIMITS.blockGap, d.blockGap),
       entryGap: clampNum(t.entryGap, LIMITS.entryGap, d.entryGap),
       ruleGap: clampNum(t.ruleGap, LIMITS.ruleGap, d.ruleGap),
+      sectionGap: clampNum(t.sectionGap, LIMITS.sectionGap, d.sectionGap),
       sectionTitleSize: clampNum(t.sectionTitleSize, LIMITS.sectionTitleSize, d.sectionTitleSize),
-      sectionTitleUppercase: t.sectionTitleUppercase !== false,
+      sectionTitleUppercase: t.sectionTitleUppercase === true,
+      sectionTitleBold: t.sectionTitleBold === true,
+      organisationItalic: t.organisationItalic === true,
       nameSize: clampNum(t.nameSize, LIMITS.nameSize, d.nameSize),
+      headlineSize: clampNum(t.headlineSize, LIMITS.headlineSize, d.headlineSize),
+      bulletIndent: clampNum(t.bulletIndent, LIMITS.bulletIndent, d.bulletIndent),
       margins: {
         top: clampNum(m.top, LIMITS.margin, d.margins.top),
         right: clampNum(m.right, LIMITS.margin, d.margins.right),
@@ -742,12 +777,18 @@
       },
       rules: {
         enabled: ru.enabled !== false,
-        color: color(ru.color, color(t.accent, d.accent)),
+        // Le filet reste gris clair quelle que soit la palette (cote du modèle).
+        color: color(ru.color, d.rules.color),
         thickness: clampNum(ru.thickness, LIMITS.ruleThickness, d.rules.thickness),
       },
       bulletStyle: BULLET_STYLES.indexOf(t.bulletStyle) >= 0 ? t.bulletStyle : d.bulletStyle,
       headerStyle: t.headerStyle === 'band' ? 'band' : 'split',
       contactStyle: t.contactStyle === 'label' || t.contactStyle === 'plain' ? t.contactStyle : 'icon',
+      contactsTitle: typeof t.contactsTitle === 'string' ? str(t.contactsTitle, 120).replace(/\n/g, ' ').trim() : d.contactsTitle,
+      contactGap: clampNum(t.contactGap, LIMITS.contactGap, d.contactGap),
+      contactIconSize: clampNum(t.contactIconSize, LIMITS.contactIconSize, d.contactIconSize),
+      headerGap: clampNum(t.headerGap, LIMITS.headerGap, d.headerGap),
+      photoGap: clampNum(t.photoGap, LIMITS.photoGap, d.photoGap),
       photoSize: clampNum(t.photoSize, LIMITS.photoSize, d.photoSize),
     };
   }
@@ -798,7 +839,7 @@
     if (!/^data:image\/(png|jpe?g|webp);base64,/i.test(raw.dataUrl)) return null;
     return {
       dataUrl: raw.dataUrl,
-      shape: raw.shape === 'circle' || raw.shape === 'rect' ? raw.shape : 'rounded',
+      shape: raw.shape === 'circle' || raw.shape === 'rounded' ? raw.shape : 'rect',
       zoom: clampNum(raw.zoom, [1, 4], 1),
       offsetX: clampNum(raw.offsetX, [-1, 1], 0),
       offsetY: clampNum(raw.offsetY, [-1, 1], 0),
@@ -931,7 +972,7 @@
     }
     var interests = Array.isArray(v1.interests) ? v1.interests : [];
     if (interests.length) {
-      sections.push(section("Centres d'intérêt", 'side', 'tags', interests.map(function (e) {
+      sections.push(section("Centres d'intérêt", 'side', 'list', interests.map(function (e) {
         return normalizeEntry({ title: typeof e === 'string' ? e : str(e && e.label, 160) });
       })));
     }
@@ -1044,26 +1085,41 @@
     return { h: lines.length * lb.h, prims: prims, lines: lines.length };
   }
 
-  /** Petites icônes de contact, dessinées en VECTORIEL (jamais une image). */
+  /**
+   * Pictogrammes de contact, dessinés en VECTORIEL (le modèle de référence utilise
+   * des images bitmap ; en vectoriel ils restent nets à toutes les tailles et ne
+   * pèsent rien). Silhouettes PLEINES, comme sur le modèle.
+   */
   function contactIcon(kind, x, y, size, color) {
     var s = size, p = [];
-    var lw = Math.max(0.5, s * 0.09);
+    var lw = Math.max(0.6, s * 0.1);
     if (kind === 'email') {
-      p.push({ t: 'rect', x: x, y: y + s * 0.15, w: s, h: s * 0.7, stroke: color, lw: lw, r: s * 0.08 });
-      p.push({ t: 'line', x1: x, y1: y + s * 0.15, x2: x + s / 2, y2: y + s * 0.55, stroke: color, lw: lw });
-      p.push({ t: 'line', x1: x + s, y1: y + s * 0.15, x2: x + s / 2, y2: y + s * 0.55, stroke: color, lw: lw });
+      p.push({ t: 'rect', x: x, y: y + s * 0.2, w: s, h: s * 0.62, fill: color, r: s * 0.06 });
+      p.push({ t: 'poly', pts: [[x + s * 0.06, y + s * 0.26], [x + s * 0.5, y + s * 0.58], [x + s * 0.94, y + s * 0.26]], fill: '#ffffff', close: true });
     } else if (kind === 'phone') {
-      p.push({ t: 'rect', x: x + s * 0.22, y: y + s * 0.05, w: s * 0.56, h: s * 0.9, stroke: color, lw: lw, r: s * 0.12 });
-      p.push({ t: 'line', x1: x + s * 0.4, y1: y + s * 0.18, x2: x + s * 0.6, y2: y + s * 0.18, stroke: color, lw: lw });
-      p.push({ t: 'circle', cx: x + s * 0.5, cy: y + s * 0.78, r: s * 0.06, fill: color });
+      // Combiné : deux embouts arrondis reliés par une barre en diagonale.
+      p.push({ t: 'rect', x: x + s * 0.04, y: y + s * 0.06, w: s * 0.34, h: s * 0.34, fill: color, r: s * 0.1 });
+      p.push({ t: 'rect', x: x + s * 0.62, y: y + s * 0.6, w: s * 0.34, h: s * 0.34, fill: color, r: s * 0.1 });
+      p.push({ t: 'poly', pts: [[x + s * 0.14, y + s * 0.32], [x + s * 0.32, y + s * 0.16], [x + s * 0.86, y + s * 0.7], [x + s * 0.7, y + s * 0.88]], fill: color, close: true });
     } else if (kind === 'location') {
-      p.push({ t: 'poly', pts: [[x + s * 0.5, y + s], [x + s * 0.12, y + s * 0.45], [x + s * 0.88, y + s * 0.45]], fill: color, close: true });
-      p.push({ t: 'circle', cx: x + s * 0.5, cy: y + s * 0.38, r: s * 0.34, fill: color });
-      p.push({ t: 'circle', cx: x + s * 0.5, cy: y + s * 0.38, r: s * 0.13, fill: '#ffffff' });
+      p.push({ t: 'poly', pts: [[x + s * 0.5, y + s * 0.98], [x + s * 0.16, y + s * 0.5], [x + s * 0.84, y + s * 0.5]], fill: color, close: true });
+      p.push({ t: 'circle', cx: x + s * 0.5, cy: y + s * 0.42, r: s * 0.34, fill: color });
+      p.push({ t: 'circle', cx: x + s * 0.5, cy: y + s * 0.42, r: s * 0.13, fill: '#ffffff' });
+    } else if (kind === 'home') {
+      p.push({ t: 'poly', pts: [[x + s * 0.5, y + s * 0.08], [x + s * 0.98, y + s * 0.5], [x + s * 0.02, y + s * 0.5]], fill: color, close: true });
+      p.push({ t: 'rect', x: x + s * 0.16, y: y + s * 0.48, w: s * 0.68, h: s * 0.44, fill: color });
+      p.push({ t: 'rect', x: x + s * 0.42, y: y + s * 0.64, w: s * 0.16, h: s * 0.28, fill: '#ffffff' });
+    } else if (kind === 'person') {
+      p.push({ t: 'circle', cx: x + s * 0.5, cy: y + s * 0.3, r: s * 0.22, fill: color });
+      p.push({ t: 'poly', pts: [[x + s * 0.12, y + s * 0.94], [x + s * 0.18, y + s * 0.66], [x + s * 0.82, y + s * 0.66], [x + s * 0.88, y + s * 0.94]], fill: color, close: true });
+    } else if (kind === 'flag') {
+      p.push({ t: 'rect', x: x + s * 0.1, y: y + s * 0.08, w: s * 0.1, h: s * 0.86, fill: color });
+      p.push({ t: 'poly', pts: [[x + s * 0.2, y + s * 0.12], [x + s * 0.9, y + s * 0.12], [x + s * 0.72, y + s * 0.34], [x + s * 0.9, y + s * 0.56], [x + s * 0.2, y + s * 0.56]], fill: color, close: true });
     } else if (kind === 'globe') {
-      p.push({ t: 'circle', cx: x + s * 0.5, cy: y + s * 0.5, r: s * 0.45, stroke: color, lw: lw });
-      p.push({ t: 'line', x1: x + s * 0.05, y1: y + s * 0.5, x2: x + s * 0.95, y2: y + s * 0.5, stroke: color, lw: lw });
-      p.push({ t: 'ellipse', x: x + s * 0.5, y: y + s * 0.5, rx: s * 0.2, ry: s * 0.45, stroke: color, lw: lw });
+      p.push({ t: 'circle', cx: x + s * 0.5, cy: y + s * 0.5, r: s * 0.46, fill: color });
+      p.push({ t: 'circle', cx: x + s * 0.5, cy: y + s * 0.5, r: s * 0.46 - lw, fill: '#ffffff' });
+      p.push({ t: 'rect', x: x + s * 0.04, y: y + s * 0.44, w: s * 0.92, h: lw, fill: color });
+      p.push({ t: 'ellipse', x: x + s * 0.5, y: y + s * 0.5, rx: s * 0.2, ry: s * 0.46, stroke: color, lw: lw });
     } else if (kind === 'linkedin') {
       p.push({ t: 'rect', x: x, y: y + s * 0.05, w: s, h: s * 0.9, fill: color, r: s * 0.12 });
       p.push({ t: 'rect', x: x + s * 0.18, y: y + s * 0.38, w: s * 0.14, h: s * 0.38, fill: '#ffffff' });
@@ -1072,13 +1128,14 @@
       p.push({ t: 'rect', x: x + s * 0.56, y: y + s * 0.38, w: s * 0.26, h: s * 0.14, fill: '#ffffff' });
       p.push({ t: 'rect', x: x + s * 0.68, y: y + s * 0.44, w: s * 0.14, h: s * 0.32, fill: '#ffffff' });
     } else if (kind === 'calendar') {
-      p.push({ t: 'rect', x: x, y: y + s * 0.15, w: s, h: s * 0.8, stroke: color, lw: lw, r: s * 0.08 });
-      p.push({ t: 'line', x1: x, y1: y + s * 0.4, x2: x + s, y2: y + s * 0.4, stroke: color, lw: lw });
-      p.push({ t: 'line', x1: x + s * 0.28, y1: y + s * 0.02, x2: x + s * 0.28, y2: y + s * 0.25, stroke: color, lw: lw });
-      p.push({ t: 'line', x1: x + s * 0.72, y1: y + s * 0.02, x2: x + s * 0.72, y2: y + s * 0.25, stroke: color, lw: lw });
+      p.push({ t: 'rect', x: x, y: y + s * 0.15, w: s, h: s * 0.8, fill: color, r: s * 0.08 });
+      p.push({ t: 'rect', x: x + s * 0.08, y: y + s * 0.42, w: s * 0.84, h: s * 0.45, fill: '#ffffff' });
+      p.push({ t: 'rect', x: x + s * 0.22, y: y + s * 0.04, w: s * 0.12, h: s * 0.2, fill: color });
+      p.push({ t: 'rect', x: x + s * 0.66, y: y + s * 0.04, w: s * 0.12, h: s * 0.2, fill: color });
     } else {
-      p.push({ t: 'circle', cx: x + s * 0.5, cy: y + s * 0.5, r: s * 0.42, stroke: color, lw: lw });
-      p.push({ t: 'circle', cx: x + s * 0.5, cy: y + s * 0.5, r: s * 0.14, fill: color });
+      p.push({ t: 'circle', cx: x + s * 0.5, cy: y + s * 0.5, r: s * 0.46, fill: color });
+      p.push({ t: 'rect', x: x + s * 0.44, y: y + s * 0.22, w: s * 0.12, h: s * 0.12, fill: '#ffffff' });
+      p.push({ t: 'rect', x: x + s * 0.44, y: y + s * 0.42, w: s * 0.12, h: s * 0.36, fill: '#ffffff' });
     }
     return p;
   }
@@ -1092,12 +1149,12 @@
     return {
       base: { family: fam, size: b },
       small: { family: fam, size: Math.max(6, b - 1) },
-      entryTitle: { family: fam, size: b + 0.5, bold: true },
-      date: { family: fam, size: Math.max(6.5, b - 0.5) },
-      org: { family: fam, size: b, italic: true },
-      sectionTitle: { family: head, size: theme.sectionTitleSize, bold: true },
+      entryTitle: { family: fam, size: b, bold: true },
+      date: { family: fam, size: b, bold: true },
+      org: { family: fam, size: b, italic: theme.organisationItalic },
+      sectionTitle: { family: head, size: theme.sectionTitleSize, bold: theme.sectionTitleBold },
       name: { family: head, size: theme.nameSize, bold: true },
-      headline: { family: head, size: Math.min(theme.nameSize * 0.5, b + 2.5) },
+      headline: { family: head, size: theme.headlineSize },
     };
   }
 
@@ -1130,55 +1187,64 @@
     return out;
   }
 
-  function sectionTitleBlock(section, index, width, theme) {
+  /** Titre de rubrique + filet : la brique commune aux rubriques et au bloc contacts. */
+  function titleBlock(rawLabel, width, theme, path) {
+    return sectionTitleBlock({ title: rawLabel }, null, width, theme, path);
+  }
+
+  function sectionTitleBlock(section, index, width, theme, explicitPath) {
     var f = fonts(theme);
     var label = theme.sectionTitleUppercase ? section.title.toUpperCase() : section.title;
     // Le titre est COUPÉ à la largeur de sa colonne : dans un bandeau latéral étroit,
     // « FORMATIONS COMPLÉMENTAIRES » doit passer à la ligne, pas déborder sur le texte.
     var font = {
-      family: f.sectionTitle.family, size: f.sectionTitle.size, bold: true,
+      family: f.sectionTitle.family, size: f.sectionTitle.size, bold: f.sectionTitle.bold,
       tracking: theme.sectionTitleUppercase ? theme.sectionTitleSize * 0.07 : 0,
     };
-    var block = paragraphBlock(label, font, theme.accent, width, 1.15, { path: 'sections.' + index + '.title' });
+    var titlePath = explicitPath || ('sections.' + index + '.title');
+    var block = paragraphBlock(label, font, theme.accent, width, 1.15, { path: titlePath });
     var prims = block.prims;
     var h = block.h;
     if (theme.rules.enabled) {
-      h += 2.5;
+      h += 3.5;   // → filet à 7,5 pt sous la ligne de base du titre (cote du modèle)
       prims.push({ t: 'rect', x: 0, y: h, w: width, h: theme.rules.thickness, fill: theme.rules.color });
       h += theme.rules.thickness;
     }
     h += theme.ruleGap;
-    return { kind: 'title', h: h, prims: prims, keepWithNext: true, path: 'sections.' + index, sectionIndex: index };
+    return { kind: 'title', h: h, prims: prims, keepWithNext: true, path: titlePath, sectionIndex: index };
   }
 
   /** Une entrée classique : titre + date alignée à droite, organisation, texte, puces. */
-  function entryBlock(entry, path, width, theme) {
+  function entryBlock(entry, path, width, theme, opts) {
     var f = fonts(theme);
     var lh = theme.lineHeight;
+    // Dans la colonne principale, la ligne « structure / lieu » porte la couleur
+    // d'accent ; dans le bandeau latéral elle reste noire (cote du modèle).
+    var orgColor = (opts && opts.orgColor) || theme.accent;
     var prims = [];
     var y = 0;
 
     var dateW = entry.date ? measureText(entry.date, f.date) : 0;
+    var titleColor = theme.entryTitleColor || theme.textColor;
     if (entry.title || entry.date) {
       var titleW = entry.date ? Math.max(20, width - dateW - 10) : width;
-      var block = paragraphBlock(entry.title || '', f.entryTitle, theme.textColor, titleW, 1.2, { path: path + '.title' });
+      var block = paragraphBlock(entry.title || '', f.entryTitle, titleColor, titleW, lh, { path: path + '.title' });
       prims = prims.concat(translate(block.prims, 0, y));
       if (entry.date) {
-        var dlb = lineBox(f.entryTitle.size, 1.2);
-        var dateLb = lineBox(f.date.size, 1.2);
-        prims.push(textPrim(entry.date, width, y + dlb.baseline - (dlb.baseline - dateLb.baseline) * 0, f.date, theme.accent, {
+        var dlb = lineBox(f.date.size, lh);
+        prims.push(textPrim(entry.date, width, y + dlb.baseline, f.date, theme.accent, {
           align: 'right', path: path + '.date',
         }));
       }
-      y += Math.max(block.h, entry.date ? lineBox(f.entryTitle.size, 1.2).h : 0);
+      y += Math.max(block.h, entry.date ? lineBox(f.entryTitle.size, lh).h : 0);
     }
     if (entry.organisation) {
-      var org = paragraphBlock(entry.organisation, f.org, theme.accent, width, lh, { path: path + '.organisation' });
+      var org = paragraphBlock(entry.organisation, f.org, orgColor, width, lh, { path: path + '.organisation' });
       prims = prims.concat(translate(org.prims, 0, y));
       y += org.h;
     }
     for (var i = 0; i < entry.description.length; i++) {
-      if (i > 0 || entry.title || entry.organisation) y += theme.entryGap * 0.5;
+      // Pas d'espace ajouté : un paragraphe suit l'organisation à l'interligne courant.
       var par = paragraphBlock(entry.description[i], f.base, theme.textColor, width, lh, {
         path: path + '.description.' + i,
         underline: i === 0 ? entry.underline : '',
@@ -1187,20 +1253,22 @@
       y += par.h;
     }
     if (entry.bullets.length) {
-      var indent = theme.baseSize * 1.15;
-      var glyphW = Math.max(1.4, theme.baseSize * 0.16);
-      y += theme.entryGap * 0.5;
+      var indent = theme.bulletIndent;
+      var glyphW = Math.max(1.1, theme.baseSize * 0.16);
+      var bulletColor = theme.bulletColor || theme.textColor;
+      // Le modèle saute une ligne entière avant la première puce.
+      if (y > 0) y += lineBox(f.base.size, lh).h;
       for (var b = 0; b < entry.bullets.length; b++) {
         var bp = paragraphBlock(entry.bullets[b], f.base, theme.textColor, width - indent, lh, {
           path: path + '.bullets.' + b,
         });
         var blb = lineBox(f.base.size, lh);
         if (theme.bulletStyle === 'disc') {
-          prims.push({ t: 'circle', cx: indent * 0.42, cy: y + blb.baseline - theme.baseSize * 0.28, r: glyphW, fill: theme.accent });
+          prims.push({ t: 'circle', cx: indent * 0.5, cy: y + blb.baseline - theme.baseSize * 0.28, r: glyphW, fill: bulletColor });
         } else if (theme.bulletStyle === 'square') {
-          prims.push({ t: 'rect', x: indent * 0.42 - glyphW, y: y + blb.baseline - theme.baseSize * 0.28 - glyphW, w: glyphW * 2, h: glyphW * 2, fill: theme.accent });
+          prims.push({ t: 'rect', x: indent * 0.5 - glyphW, y: y + blb.baseline - theme.baseSize * 0.28 - glyphW, w: glyphW * 2, h: glyphW * 2, fill: bulletColor });
         } else if (theme.bulletStyle === 'dash') {
-          prims.push({ t: 'rect', x: indent * 0.2, y: y + blb.baseline - theme.baseSize * 0.28, w: theme.baseSize * 0.42, h: Math.max(0.5, theme.baseSize * 0.07), fill: theme.accent });
+          prims.push({ t: 'rect', x: indent * 0.28, y: y + blb.baseline - theme.baseSize * 0.28, w: theme.baseSize * 0.42, h: Math.max(0.5, theme.baseSize * 0.07), fill: bulletColor });
         }
         prims = prims.concat(translate(bp.prims, indent, y));
         y += bp.h;
@@ -1215,12 +1283,12 @@
     var lh = theme.lineHeight;
     var prims = [];
     var lb = lineBox(f.base.size, lh);
-    var dotR = theme.baseSize * 0.19;
-    var gap = dotR * 3.1;
+    var dotR = theme.baseSize * 0.26;
+    var gap = dotR * 3.4;
     var hasRating = typeof entry.rating === 'number' && entry.rating > 0;
     var gaugeW = hasRating ? gap * 4 + dotR * 2 : 0;
     var labelW = Math.max(20, width - gaugeW - (hasRating ? 8 : 0));
-    var label = paragraphBlock(entry.title || '', { family: f.base.family, size: f.base.size, bold: true }, theme.textColor, labelW, lh, { path: path + '.title' });
+    var label = paragraphBlock(entry.title || '', f.base, theme.textColor, labelW, lh, { path: path + '.title' });
     prims = prims.concat(label.prims);
     var y = label.h;
     if (hasRating) {
@@ -1228,7 +1296,7 @@
       for (var i = 0; i < 5; i++) {
         prims.push({
           t: 'circle', cx: width - gaugeW + dotR + i * gap, cy: cy, r: dotR,
-          fill: i < entry.rating ? theme.accent : mixColor(theme.accent, '#ffffff', 0.75),
+          fill: i < entry.rating ? theme.accent : mixColor(theme.accent, '#ffffff', 0.5),
         });
       }
     }
@@ -1288,6 +1356,22 @@
     });
   }
 
+  /**
+   * Liste à puces simple (centres d'intérêt, compétences) : une entrée = une ligne
+   * précédée d'une petite puce carrée. C'est la forme du modèle de référence, plus
+   * sobre que les étiquettes arrondies.
+   */
+  function listBlock(entry, path, width, theme) {
+    var f = fonts(theme);
+    var indent = theme.baseSize * 1.75;
+    var glyph = Math.max(1.1, theme.baseSize * 0.19);
+    var color = theme.bulletColor || theme.accent;
+    var par = paragraphBlock(entry.title || '', f.base, theme.textColor, width - indent, theme.lineHeight, { path: path + '.title' });
+    var lb = lineBox(f.base.size, theme.lineHeight);
+    var prims = [{ t: 'rect', x: 0, y: lb.baseline - theme.baseSize * 0.28 - glyph, w: glyph * 2, h: glyph * 2, fill: color }];
+    return { kind: 'entry', h: par.h, prims: prims.concat(translate(par.prims, indent, 0)), path: path };
+  }
+
   /** Construit tous les blocs d'une section (titre + contenu selon le layout). */
   function sectionBlocks(section, index, width, theme) {
     var blocks = [];
@@ -1296,10 +1380,18 @@
 
     if (section.layout === 'tags') {
       blocks = blocks.concat(tagBlocks(section, index, width, theme));
+    } else if (section.layout === 'list') {
+      section.entries.forEach(function (e, i) {
+        var b = listBlock(e, path(i), width, theme);
+        b.h += theme.entryGap;
+        b.trailingGap = theme.entryGap;
+        blocks.push(b);
+      });
     } else if (section.layout === 'ratings') {
       section.entries.forEach(function (e, i) {
         var b = ratingBlock(e, path(i), width, theme);
         b.h += theme.entryGap;
+        b.trailingGap = theme.entryGap;
         blocks.push(b);
       });
     } else if (section.layout === 'text') {
@@ -1314,67 +1406,78 @@
         });
       });
     } else {
+      var orgColor = section.column === 'side' ? theme.textColor : theme.accent;
       section.entries.forEach(function (e, i) {
-        var b = entryBlock(e, path(i), width, theme);
+        var b = entryBlock(e, path(i), width, theme, { orgColor: orgColor });
         b.h += theme.blockGap;
+        b.trailingGap = theme.blockGap;
         blocks.push(b);
       });
     }
     if (blocks.length) {
+      // La dernière entrée ne porte pas l'espace inter-entrées : c'est `sectionGap`
+      // qui sépare deux rubriques (28,7 pt de ligne à ligne dans le modèle).
       var last = blocks[blocks.length - 1];
-      last.h += theme.blockGap * 0.6;   // respiration avant la rubrique suivante
+      if (last.trailingGap) last.h -= last.trailingGap;
+      last.h += theme.sectionGap;
       last.isSectionEnd = true;
     }
     if (blocks.length && section.pageBreakBefore) blocks[0].pageBreakBefore = true;
     return blocks;
   }
 
-  /** Liste de contacts (icône vectorielle + valeur), en colonne ou en ligne. */
+  /**
+   * Liste de contacts : pictogramme + valeur. En colonne (bandeau) l'écart d'un
+   * contact à l'autre est `contactGap` de ligne à ligne — c'est l'air du modèle de
+   * référence, qui aère beaucoup cette zone.
+   */
   function contactsBlock(contacts, width, theme, opts) {
     opts = opts || {};
     var f = fonts(theme);
     var color = opts.color || theme.textColor;
     var iconColor = opts.iconColor || theme.accent;
     var prims = [];
-    var iconSize = theme.baseSize * 0.92;
-    var indent = theme.contactStyle === 'icon' ? iconSize + theme.baseSize * 0.5 : 0;
-    var lh = Math.max(1.25, theme.lineHeight);
+    var iconSize = theme.contactIconSize;
+    var indent = theme.contactStyle === 'icon' ? iconSize + theme.baseSize * 1.25 : 0;
+    var lh = theme.lineHeight;
     var y = 0;
 
     if (opts.inline) {
-      // Bandeau : les contacts s'enroulent sur une ou plusieurs lignes.
+      // Bandeau pleine largeur : les contacts s'enroulent sur une ou plusieurs lignes.
       var x = 0;
-      var lb = lineBox(f.small.size, lh);
-      var gapX = theme.baseSize * 1.1;
+      var lb = lineBox(f.small.size, Math.max(1.25, lh));
+      var gapX = theme.baseSize * 1.4;
       for (var k = 0; k < contacts.length; k++) {
         var c = contacts[k];
         var label = theme.contactStyle === 'label' ? CONTACT_LABELS[c.icon] + ' ' + c.value : c.value;
-        var w = measureText(label, f.small) + (theme.contactStyle === 'icon' ? iconSize + theme.baseSize * 0.35 : 0);
-        if (x > 0 && x + w > width) { x = 0; y += lb.h; }
+        var w = measureText(label, f.small) + (theme.contactStyle === 'icon' ? iconSize * 0.8 + theme.baseSize * 0.4 : 0);
+        if (x > 0 && x + w > width) { x = 0; y += Math.max(lb.h, iconSize * 0.9); }
         if (theme.contactStyle === 'icon') {
-          prims = prims.concat(contactIcon(c.icon, x, y + lb.baseline - iconSize * 0.82, iconSize, iconColor));
-          x += iconSize + theme.baseSize * 0.35;
+          prims = prims.concat(contactIcon(c.icon, x, y + lb.baseline - iconSize * 0.4 - f.small.size * 0.05, iconSize * 0.8, iconColor));
+          x += iconSize * 0.8 + theme.baseSize * 0.4;
         }
         prims.push(textPrim(label, x, y + lb.baseline, f.small, color, {
           path: 'header.contacts.' + k + '.value', link: c.href || '',
         }));
         x += measureText(label, f.small) + gapX;
       }
-      return { h: y + lb.h, prims: prims };
+      return { h: y + Math.max(lb.h, iconSize * 0.9), prims: prims };
     }
 
     for (var i = 0; i < contacts.length; i++) {
       var ct = contacts[i];
       var text = theme.contactStyle === 'label' ? CONTACT_LABELS[ct.icon] + ' : ' + ct.value : ct.value;
-      var par = paragraphBlock(text, f.small, color, width - indent, lh, {
+      var par = paragraphBlock(text, f.base, color, width - indent, lh, {
         path: 'header.contacts.' + i + '.value', link: ct.href || '',
       });
-      var lbc = lineBox(f.small.size, lh);
+      var lbc = lineBox(f.base.size, lh);
       if (theme.contactStyle === 'icon') {
-        prims = prims.concat(contactIcon(ct.icon, 0, y + lbc.baseline - iconSize * 0.82, iconSize, iconColor));
+        // Pictogramme centré sur la ligne de base, comme dans le modèle.
+        prims = prims.concat(contactIcon(ct.icon, 0, lbc.baseline - iconSize * 0.5 - f.base.size * 0.05 + y, iconSize, iconColor));
       }
       prims = prims.concat(translate(par.prims, indent, y));
-      y += par.h + theme.baseSize * 0.28;
+      var rowH = theme.contactGap + Math.max(0, par.h - lbc.h);
+      y += i === contacts.length - 1 ? Math.max(par.h, iconSize) : rowH;
     }
     return { h: y, prims: prims };
   }
@@ -1401,12 +1504,17 @@
       if (h.photo) {
         var size = Math.min(theme.photoSize, geo.sideContentW);
         sPrims = sPrims.concat(photoPrims(h.photo, (geo.sideContentW - size) / 2, sy, size));
-        sy += size + theme.blockGap * 1.2;
+        sy += size + theme.photoGap;
       }
       if (h.contacts.length) {
+        if (theme.contactsTitle) {
+          var tb = titleBlock(theme.contactsTitle, geo.sideContentW, theme, 'theme.contactsTitle');
+          sPrims = sPrims.concat(translate(tb.prims, 0, sy));
+          sy += tb.h;
+        }
         var cb = contactsBlock(h.contacts, geo.sideContentW, theme, {});
         sPrims = sPrims.concat(translate(cb.prims, 0, sy));
-        sy += cb.h + theme.blockGap * 0.8;
+        sy += cb.h + theme.sectionGap;
       }
       out.sidePrims = translate(sPrims, geo.sideContentX, geo.contentTop);
       out.sideTop = geo.contentTop + sy;
@@ -1414,24 +1522,17 @@
       var my = 0;
       var mPrims = [];
       if (h.fullName) {
-        var nb = paragraphBlock(h.fullName, f.name, theme.textColor, geo.mainW, 1.1, { path: 'header.fullName' });
+        var nb = paragraphBlock(h.fullName, f.name, theme.nameColor || theme.accent, geo.mainW, 1.4, { path: 'header.fullName' });
         mPrims = mPrims.concat(nb.prims);
         my += nb.h;
       }
       if (h.headline) {
-        my += theme.baseSize * 0.35;
-        var hb = paragraphBlock(h.headline, f.headline, theme.accent, geo.mainW, 1.25, { path: 'header.headline' });
+        my += theme.baseSize * 0.4;
+        var hb = paragraphBlock(h.headline, f.headline, theme.textColor, geo.mainW, 1.25, { path: 'header.headline' });
         mPrims = mPrims.concat(translate(hb.prims, 0, my));
         my += hb.h;
       }
-      if (my > 0) {
-        if (theme.rules.enabled) {
-          my += theme.baseSize * 0.5;
-          mPrims.push({ t: 'rect', x: 0, y: my, w: geo.mainW, h: theme.rules.thickness, fill: theme.rules.color });
-          my += theme.rules.thickness;
-        }
-        my += theme.blockGap * 1.4;
-      }
+      if (my > 0) my += theme.headerGap;
       out.mainPrims = translate(mPrims, geo.mainX, geo.contentTop);
       out.mainTop = geo.contentTop + my;
       return out;
@@ -1445,13 +1546,13 @@
     var prims = [];
     var y = 0;
     if (h.fullName) {
-      var n2 = paragraphBlock(h.fullName, f.name, theme.textColor, textW, 1.1, { path: 'header.fullName' });
+      var n2 = paragraphBlock(h.fullName, f.name, theme.nameColor || theme.accent, textW, 1.2, { path: 'header.fullName' });
       prims = prims.concat(n2.prims);
       y += n2.h;
     }
     if (h.headline) {
       y += theme.baseSize * 0.3;
-      var h2 = paragraphBlock(h.headline, f.headline, theme.accent, textW, 1.25, { path: 'header.headline' });
+      var h2 = paragraphBlock(h.headline, f.headline, theme.textColor, textW, 1.25, { path: 'header.headline' });
       prims = prims.concat(translate(h2.prims, 0, y));
       y += h2.h;
     }
@@ -1486,14 +1587,19 @@
       sidebarOn: sidebarOn,
       contentTop: m.top,
       contentBottom: A4.h - m.bottom,
-      sideX: 0, sideW: 0, sideContentX: 0, sideContentW: 0,
+      sideX: 0, sideW: 0, sideContentX: 0, sideContentW: 0, stripeX: 0, stripeW: 0,
       mainX: m.left, mainW: A4.w - m.left - m.right,
     };
     if (sidebarOn) {
+      // `sidebar.width` est la largeur TOTALE de la bande ; le liseré est découpé
+      // dedans, au bord de la page (c'est ainsi que le modèle de référence est bâti).
+      var stripeW = theme.stripe.enabled ? Math.min(theme.stripe.width, sb.width - 2 * sb.padding - 10) : 0;
+      geo.stripeW = Math.max(0, stripeW);
       geo.sideW = sb.width;
       geo.sideX = sb.side === 'left' ? 0 : A4.w - sb.width;
-      geo.sideContentX = geo.sideX + sb.padding;
-      geo.sideContentW = sb.width - sb.padding * 2;
+      geo.stripeX = sb.side === 'left' ? 0 : A4.w - geo.stripeW;
+      geo.sideContentX = geo.sideX + (sb.side === 'left' ? geo.stripeW : 0) + sb.padding;
+      geo.sideContentW = sb.width - geo.stripeW - sb.padding * 2;
       geo.mainX = sb.side === 'left' ? sb.width + sb.gap : m.left;
       geo.mainW = sb.side === 'left' ? A4.w - geo.mainX - m.right : A4.w - sb.width - sb.gap - m.left;
     }
@@ -1567,14 +1673,14 @@
       for (var pi = 0; pi < pageCount; pi++) {
         var topY = pi === 0 && theme.headerStyle === 'band' ? header.bandBottom - theme.blockGap * 0.6 : 0;
         pages[pi].bg.push({ t: 'rect', x: geo.sideX, y: topY, w: geo.sideW, h: A4.h - topY, fill: theme.sidebarBackground });
-        if (theme.stripe.enabled && theme.stripe.width > 0) {
-          var sx = theme.sidebar.side === 'left' ? geo.sideX + geo.sideW - theme.stripe.width : geo.sideX;
-          pages[pi].bg.push({ t: 'rect', x: sx, y: topY, w: theme.stripe.width, h: A4.h - topY, fill: theme.stripe.color });
+        if (geo.stripeW > 0) {
+          pages[pi].bg.push({ t: 'rect', x: geo.stripeX, y: topY, w: geo.stripeW, h: A4.h - topY, fill: theme.stripe.color });
         }
       }
     } else if (theme.stripe.enabled && theme.stripe.width > 0) {
       for (var pj = 0; pj < pageCount; pj++) {
-        pages[pj].bg.push({ t: 'rect', x: 0, y: 0, w: theme.stripe.width, h: A4.h, fill: theme.stripe.color });
+        var stripeX = theme.sidebar.side === 'right' ? A4.w - theme.stripe.width : 0;
+        pages[pj].bg.push({ t: 'rect', x: stripeX, y: 0, w: theme.stripe.width, h: A4.h, fill: theme.stripe.color });
       }
     }
 
@@ -1782,18 +1888,20 @@
 
   function buildTemplate(key) {
     var doc = blankDocument();
-    doc.theme = defaultTheme(key === 'academique' ? 'nuit' : key === 'assistanat-ch' ? 'sapin' : 'bordeaux');
+    doc.theme = defaultTheme(key === 'academique' ? 'bordeaux' : key === 'assistanat-ch' ? 'nuit' : 'rouge');
     doc.header.contacts = [
-      normalizeContact({ icon: 'phone', value: '+33 6 00 00 00 00' }),
+      normalizeContact({ icon: 'person', value: 'Prénom NOM' }),
       normalizeContact({ icon: 'email', value: 'prenom.nom@exemple.fr' }),
-      normalizeContact({ icon: 'location', value: 'Ville, France' }),
+      normalizeContact({ icon: 'phone', value: '+33 6 00 00 00 00' }),
+      normalizeContact({ icon: 'home', value: 'Ville, France' }),
+      normalizeContact({ icon: 'flag', value: 'Française' }),
     ];
 
     if (key === 'assistanat-ch') {
-      doc.theme.fontFamily = 'sourcesans3';
+      doc.theme.fontFamily = 'helvetica';
       doc.meta.title = 'CV candidature assistanat (Suisse)';
-      doc.header.headline = 'Médecin diplômé(e) — candidature au poste de médecin assistant(e)';
-      doc.header.contacts[2] = normalizeContact({ icon: 'location', value: 'Ville, Suisse' });
+      doc.header.headline = 'Médecin diplômé(e) — candidature au poste de médecin assistant(e).';
+      doc.header.contacts[3] = normalizeContact({ icon: 'home', value: 'Ville, Suisse' });
       doc.header.contacts.push(normalizeContact({ icon: 'calendar', value: '01.01.1998' }));
       doc.sections = [
         S('Formation', 'main', 'entries', [
@@ -1801,7 +1909,7 @@
           E('Examen fédéral / reconnaissance MEBEKO', '20XX', 'Statut de la procédure'),
         ]),
         S('Expérience clinique', 'main', 'entries', [
-          E('Interne / médecin assistant(e)', '20XX – 20XX', 'Service — Hôpital, Ville', [], [
+          E('Interne / médecin assistant(e)', 'de 20XX à 20XX', 'Service — Hôpital, Ville', [], [
             'Prise en charge des patients hospitalisés sous supervision.',
             'Gestes techniques réalisés en autonomie (à préciser).',
           ]),
@@ -1809,14 +1917,17 @@
         S('Formations complémentaires', 'main', 'entries', [
           E('Attestation de formation aux gestes et soins d\'urgence (AFGSU 2)', '20XX', 'Organisme'),
         ]),
+        S('Références', 'main', 'entries', [
+          E('Nom du référent', '', 'Fonction — Service, Hôpital', ['Téléphone, adresse électronique']),
+        ]),
+        S('Certificats', 'side', 'entries', [
+          E('Intitulé du certificat', '', 'Organisme — score ou niveau'),
+        ]),
+        S('Centres d\'intérêt', 'side', 'list', [E('À compléter')]),
         S('Langues', 'side', 'ratings', [
           normalizeEntry({ title: 'Français', organisation: 'Langue maternelle', rating: 5 }),
           normalizeEntry({ title: 'Allemand', organisation: 'Niveau à préciser', rating: 3 }),
           normalizeEntry({ title: 'Anglais', organisation: 'Niveau à préciser', rating: 4 }),
-        ]),
-        S('Compétences', 'side', 'tags', [E('Urgences'), E('Échographie ciblée'), E('Sutures'), E('Dossier informatisé')]),
-        S('Références', 'side', 'entries', [
-          E('Nom du référent', '', 'Fonction — Service, Hôpital'),
         ]),
       ];
       return migrate(doc);
@@ -1824,20 +1935,17 @@
 
     if (key === 'academique') {
       doc.meta.title = 'CV académique / recherche';
-      doc.theme.fontFamily = 'ebgaramond';
-      doc.theme.headerStyle = 'band';
-      doc.theme.sidebar.enabled = false;
-      doc.header.headline = 'Interne / chef(fe) de clinique — activité de recherche clinique';
+      doc.header.headline = 'Interne / chef(fe) de clinique — activité de recherche clinique.';
       doc.sections = [
         S('Positions académiques', 'main', 'entries', [
-          E('Fonction occupée', '20XX – 20XX', 'Laboratoire / service — Université'),
+          E('Fonction occupée', 'de 20XX à 20XX', 'Laboratoire / service — Université'),
         ]),
         S('Formation', 'main', 'entries', [
           E('Master 2 recherche', '20XX', 'Mention — Université'),
           E('Diplôme d\'État de docteur en médecine', '20XX', 'Faculté de médecine — Ville'),
         ]),
         S('Publications', 'main', 'entries', [
-          E('Auteurs. Titre de l\'article. Revue. Année;Vol(No):pages.', '', '', [], []),
+          E('Auteurs. Titre de l\'article. Revue. Année;Vol(No):pages.', '', ''),
         ]),
         S('Communications', 'main', 'entries', [
           E('Titre de la communication', '20XX', 'Congrès — Ville (orale / affichée)'),
@@ -1846,47 +1954,48 @@
           E('Intitulé du financement ou du prix', '20XX', 'Organisme'),
         ]),
         S('Enseignement', 'main', 'entries', [
-          E('Enseignement dispensé', '20XX – 20XX', 'Université — volume horaire'),
+          E('Enseignement dispensé', 'de 20XX à 20XX', 'Université — volume horaire'),
         ]),
-        S('Compétences méthodologiques', 'main', 'tags', [
+        S('Compétences méthodologiques', 'side', 'list', [
           E('Méthodologie d\'étude'), E('Statistiques (R)'), E('Rédaction scientifique'), E('Bonnes pratiques cliniques'),
+        ]),
+        S('Langues', 'side', 'ratings', [
+          normalizeEntry({ title: 'Français', organisation: 'Langue maternelle', rating: 5 }),
+          normalizeEntry({ title: 'Anglais', organisation: 'Niveau à préciser', rating: 4 }),
         ]),
       ];
       return migrate(doc);
     }
 
     doc.meta.title = 'CV étudiant en médecine';
-    doc.header.headline = 'Étudiant(e) en Xe année de médecine — Faculté de Ville';
+    doc.header.headline = 'Étudiant(e) en Xe année de médecine à l\'Université de Ville.';
     doc.sections = [
-      S('Profil', 'main', 'text', [
-        normalizeEntry({ description: ['Deux à trois lignes : année d\'études, orientation envisagée, ce que tu recherches (stage, remplacement, poste). Reste factuel.'] }),
+      S('Expériences professionnelles', 'main', 'entries', [
+        E('Médecin stagiaire — externat de médecine', 'de sept. 20XX à juil. 20XX', 'CHU de Ville, France', [], [
+          'Service de Cardiologie du Pr. Nom, 3 mois',
+          'Service des Urgences du Pr. Nom, 3 mois',
+        ]),
+        E('Médecin stagiaire', 'août 20XX', 'Hôpital, Ville, Pays',
+          ['Stage réalisé dans l\'équipe du Pr. Nom.']),
       ]),
       S('Formation', 'main', 'entries', [
-        E('Diplôme de formation approfondie en sciences médicales (DFASM)', '20XX – 20XX', 'Faculté de médecine — Ville'),
-        E('Diplôme de formation générale en sciences médicales (DFGSM)', '20XX – 20XX', 'Faculté de médecine — Ville'),
+        E('Diplôme de formation approfondie en sciences médicales (DFASM)', 'de 20XX à 20XX', 'Faculté de médecine — Ville',
+          ['Obtention du diplôme : prévue en 20XX.']),
+        E('Diplôme de formation générale en sciences médicales (DFGSM)', 'de 20XX à 20XX', 'Faculté de médecine — Ville'),
         E('Baccalauréat général', '20XX', 'Lycée — Ville'),
       ]),
-      S('Stages hospitaliers', 'main', 'entries', [
-        E('Externe', '20XX (X mois)', 'Service — CHU de Ville', [], [
-          'Participation aux visites, observations et transmissions.',
-          'Gestes réalisés (à préciser) : prélèvements, sutures, pose de voies.',
-        ]),
-        E('Externe', '20XX (X mois)', 'Service — Hôpital de Ville', [], [
-          'Missions confiées (à préciser).',
-        ]),
-      ]),
       S('Expériences associatives et encadrement', 'main', 'entries', [
-        E('Fonction associative', '20XX – 20XX', 'Association — Ville', [], ['Ce que tu as concrètement organisé ou encadré.']),
+        E('Fonction associative', 'de 20XX à 20XX', 'Association — Ville', [], ['Ce que tu as concrètement organisé ou encadré.']),
       ]),
-      S('Formations complémentaires', 'side', 'entries', [
-        E('AFGSU 2', '20XX', 'Organisme'),
+      S('Certificats', 'side', 'entries', [
+        E('AFGSU 2', '', 'Organisme — niveau 2'),
+        E('Lecture critique d\'article en anglais', '', 'Score : XX %'),
       ]),
+      S('Centres d\'intérêt', 'side', 'list', [E('À compléter'), E('À compléter')]),
       S('Langues', 'side', 'ratings', [
         normalizeEntry({ title: 'Français', organisation: 'Langue maternelle', rating: 5 }),
         normalizeEntry({ title: 'Anglais', organisation: 'Niveau à préciser', rating: 4 }),
       ]),
-      S('Compétences', 'side', 'tags', [E('Sémiologie'), E('Suture'), E('ECG'), E('Bureautique'), E('Travail en équipe')]),
-      S('Centres d\'intérêt', 'side', 'tags', [E('À compléter')]),
     ];
     return migrate(doc);
   }
@@ -2716,7 +2825,7 @@
       }),
     ]);
     var meta = el('div', { class: 'sec-meta' }, [
-      el('span', { class: 'chip', text: section.layout === 'entries' ? 'entrées' : section.layout === 'tags' ? 'étiquettes' : section.layout === 'ratings' ? 'niveaux' : 'texte' }),
+      el('span', { class: 'chip', text: { entries: 'entrées', tags: 'étiquettes', ratings: 'niveaux', list: 'liste', text: 'texte' }[section.layout] || section.layout }),
       el('span', { class: 'chip', text: section.entries.length + ' élément' + (section.entries.length > 1 ? 's' : '') }),
       section.pageBreakBefore ? el('span', { class: 'chip', text: '⤓ saut de page' }) : null,
     ]);
@@ -2983,10 +3092,11 @@
     { title: 'Communications', column: 'main', layout: 'entries' },
     { title: 'Enseignement', column: 'main', layout: 'entries' },
     { title: 'Profil', column: 'main', layout: 'text' },
-    { title: 'Compétences', column: 'side', layout: 'tags' },
+    { title: 'Compétences', column: 'side', layout: 'list' },
     { title: 'Langues', column: 'side', layout: 'ratings' },
+    { title: 'Certificats', column: 'side', layout: 'entries' },
     { title: 'Formations complémentaires', column: 'side', layout: 'entries' },
-    { title: "Centres d'intérêt", column: 'side', layout: 'tags' },
+    { title: "Centres d'intérêt", column: 'side', layout: 'list' },
     { title: 'Références', column: 'side', layout: 'entries' },
   ];
 
@@ -3032,7 +3142,8 @@
       ], function (v) { s.column = v; commit(); })),
       field('Présentation', selectInput(s.layout, [
         { value: 'entries', label: 'Entrées' }, { value: 'text', label: 'Texte' },
-        { value: 'tags', label: 'Étiquettes' }, { value: 'ratings', label: 'Niveaux' },
+        { value: 'list', label: 'Liste à puces' }, { value: 'tags', label: 'Étiquettes' },
+        { value: 'ratings', label: 'Niveaux' },
       ], function (v) { s.layout = v; commit(); })),
     ]));
     host.appendChild(toggleInput('Commencer sur une nouvelle page', s.pageBreakBefore, function (v) { s.pageBreakBefore = v; commit(); }));
@@ -3077,8 +3188,8 @@
     host.appendChild(el('h3', { text: s.title || 'Rubrique', style: { fontSize: '14px', marginBottom: '2px' } }));
     host.appendChild(el('div', { class: 'hint', style: { marginBottom: '10px' }, text: 'Entrée ' + (ei + 1) + ' sur ' + s.entries.length }));
 
-    if (s.layout === 'tags') {
-      host.appendChild(field('Étiquette', textInput(e.title, function (v) { e.title = v; touch(); }, 'Ex. Échographie ciblée')));
+    if (s.layout === 'tags' || s.layout === 'list') {
+      host.appendChild(field(s.layout === 'list' ? 'Ligne' : 'Étiquette', textInput(e.title, function (v) { e.title = v; touch(); }, 'Ex. Échographie ciblée')));
     } else if (s.layout === 'ratings') {
       host.appendChild(field('Libellé', textInput(e.title, function (v) { e.title = v; touch(); }, 'Ex. Anglais')));
       host.appendChild(field('Précision', textInput(e.organisation, function (v) { e.organisation = v; touch(); }, 'Ex. C1 — courant')));
@@ -3118,11 +3229,27 @@
     ]));
   }
 
+  /** Bloc repliable, pour ranger les réglages fins sans encombrer le panneau. */
+  function foldout(title, build) {
+    var box = el('details', { style: { margin: '10px 0' } });
+    var head = el('summary', { text: title, style: { cursor: 'pointer', fontSize: '11px', fontWeight: '700', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em', padding: '4px 0' } });
+    box.appendChild(head);
+    var body = el('div', { style: { paddingTop: '6px' } });
+    build(body);
+    box.appendChild(body);
+    return box;
+  }
+
+  function groupLabel(text) {
+    return el('div', { text: text, style: { fontSize: '11px', fontWeight: '700', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em', margin: '14px 0 6px' } });
+  }
+
   function renderThemeInspector(host) {
     var t = S.doc.theme;
-    var touch = function (key) { return function () { S.doc.theme = E.normalizeTheme(t); t = S.doc.theme; commitLight('theme.' + key); }; };
     var apply = function (key) { commitLight('theme.' + key); };
+    var pt = function (v) { return v + ' pt'; };
 
+    // ── Couleurs ───────────────────────────────────────────────────────────
     var swatches = el('div', { class: 'swatches' });
     E.THEME_PRESETS.forEach(function (p) {
       swatches.appendChild(el('button', {
@@ -3130,19 +3257,26 @@
         'aria-pressed': t.preset === p.key ? 'true' : 'false',
         style: { background: p.accent },
         onclick: function () {
-          var keep = { headerStyle: t.headerStyle, fontFamily: t.fontFamily, baseSize: t.baseSize, sidebar: t.sidebar };
+          var keep = { headerStyle: t.headerStyle, fontFamily: t.fontFamily, headingFamily: t.headingFamily, baseSize: t.baseSize, sidebar: t.sidebar };
           S.doc.theme = E.normalizeTheme(Object.assign(E.defaultTheme(p.key), keep));
           commit();
         },
       }));
     });
     host.appendChild(field('Palette', swatches));
-    host.appendChild(field('Couleur d\'accent', colorInput(t.accent, function (v) { t.accent = v; t.rules.color = v; t.stripe.color = v; apply('accent'); })));
+    host.appendChild(field('Couleur d\'accent', colorInput(t.accent, function (v) { t.accent = v; t.stripe.color = v; apply('accent'); }),
+      'Nom, titres de rubrique, dates, structures et pictogrammes.'));
     host.appendChild(field('Fond du bandeau', colorInput(t.sidebarBackground, function (v) { t.sidebarBackground = v; apply('bg'); })));
     host.appendChild(el('div', { class: 'row' }, [
       field('Texte', colorInput(t.textColor, function (v) { t.textColor = v; apply('text'); })),
       field('Texte secondaire', colorInput(t.mutedColor, function (v) { t.mutedColor = v; apply('muted'); })),
     ]));
+    host.appendChild(foldout('Couleurs par rôle', function (box) {
+      box.appendChild(field('Nom', colorInput(t.nameColor || t.accent, function (v) { t.nameColor = v; apply('nameColor'); })));
+      box.appendChild(field('Intitulés d\'entrée', colorInput(t.entryTitleColor || t.textColor, function (v) { t.entryTitleColor = v; apply('entryTitleColor'); })));
+      box.appendChild(field('Puces', colorInput(t.bulletColor || t.textColor, function (v) { t.bulletColor = v; apply('bulletColor'); })));
+      box.appendChild(field('Filets', colorInput(t.rules.color, function (v) { t.rules.color = v; apply('ruleColor'); })));
+    }));
 
     var report = E.contrastReport(S.doc);
     var box = el('div', { class: 'contrast' });
@@ -3152,65 +3286,87 @@
         el('span', { class: c.ok ? '' : 'ko', text: c.ratio.toFixed(2) + ':1' + (c.ok ? ' ✓' : ' ✗') }),
       ]));
     });
-    var failing = report.filter(function (c) { return !c.ok; });
-    if (failing.length) {
+    if (report.filter(function (c) { return !c.ok; }).length) {
       box.appendChild(el('div', { style: { display: 'block', marginTop: '6px', color: 'var(--danger)' }, text: 'Contraste insuffisant (WCAG AA, 4,5:1) : illisible à l\'impression ou en noir et blanc. Fonce la couleur.' }));
     }
     host.appendChild(field('Contraste', box));
 
-    host.appendChild(el('div', { class: 'divider' }));
+    // ── Typographie ────────────────────────────────────────────────────────
+    host.appendChild(groupLabel('Typographie'));
     host.appendChild(field('Police du texte', fontSelect(t.fontFamily, function (v) { t.fontFamily = v; commit(); })));
     host.appendChild(field('Police des titres', fontSelect(t.headingFamily, function (v) { t.headingFamily = v; commit(); }, true),
-      'Le nom, l\'accroche et les titres de rubrique. Une association serif + sans serif donne un CV plus lisible.'));
+      'Le nom, l\'accroche et les titres de rubrique.'));
     host.appendChild(el('div', { class: 'hint', style: { marginTop: '-4px', marginBottom: '10px' } }, [
       el('span', { text: familyMeta(t.fontFamily).note + ' ' }),
       el('span', { text: fontWeightNote() }),
     ]));
-    host.appendChild(field('Corps du texte', rangeInput(t.baseSize, 7, 12, 0.25, function (v) { t.baseSize = v; apply('baseSize'); }, function (v) { return v + ' pt'; })));
+    host.appendChild(field('Corps du texte', rangeInput(t.baseSize, 7, 12, 0.25, function (v) { t.baseSize = v; apply('baseSize'); }, pt)));
     host.appendChild(field('Interligne', rangeInput(t.lineHeight, 1, 1.6, 0.02, function (v) { t.lineHeight = v; apply('lineHeight'); }, function (v) { return v.toFixed(2); })));
-    host.appendChild(field('Espace entre blocs', rangeInput(t.blockGap, 2, 22, 0.5, function (v) { t.blockGap = v; apply('blockGap'); }, function (v) { return v + ' pt'; })));
-    host.appendChild(field('Filet → contenu', rangeInput(t.ruleGap, 2, 26, 0.5, function (v) { t.ruleGap = v; apply('ruleGap'); }, function (v) { return v + ' pt'; })));
-    host.appendChild(field('Taille des titres', rangeInput(t.sectionTitleSize, 8, 18, 0.5, function (v) { t.sectionTitleSize = v; apply('titleSize'); }, function (v) { return v + ' pt'; })));
-    host.appendChild(field('Taille du nom', rangeInput(t.nameSize, 14, 42, 0.5, function (v) { t.nameSize = v; apply('nameSize'); }, function (v) { return v + ' pt'; })));
+    host.appendChild(field('Taille du nom', rangeInput(t.nameSize, 14, 42, 0.5, function (v) { t.nameSize = v; apply('nameSize'); }, pt)));
+    host.appendChild(field('Taille de l\'accroche', rangeInput(t.headlineSize, 6, 20, 0.2, function (v) { t.headlineSize = v; apply('headlineSize'); }, pt)));
+    host.appendChild(field('Taille des titres', rangeInput(t.sectionTitleSize, 8, 18, 0.2, function (v) { t.sectionTitleSize = v; apply('titleSize'); }, pt)));
+    host.appendChild(toggleInput('Titres de rubrique en gras', t.sectionTitleBold, function (v) { t.sectionTitleBold = v; commit(); }));
     host.appendChild(toggleInput('Titres de rubrique en majuscules', t.sectionTitleUppercase, function (v) { t.sectionTitleUppercase = v; commit(); }));
+    host.appendChild(toggleInput('Structure / lieu en italique', t.organisationItalic, function (v) { t.organisationItalic = v; commit(); }));
 
-    host.appendChild(el('div', { class: 'divider' }));
+    // ── Mise en page ───────────────────────────────────────────────────────
+    host.appendChild(groupLabel('Mise en page'));
     host.appendChild(field('Disposition de l\'en-tête', selectInput(t.headerStyle, [
       { value: 'split', label: 'Photo et contacts dans le bandeau' },
       { value: 'band', label: 'Bandeau pleine largeur en haut' },
     ], function (v) { t.headerStyle = v; commit(); })));
-    host.appendChild(field('Contacts', selectInput(t.contactStyle, [
-      { value: 'icon', label: 'Icônes' }, { value: 'label', label: 'Libellés (Tél., Email…)' }, { value: 'plain', label: 'Valeur seule' },
-    ], function (v) { t.contactStyle = v; commit(); })));
-    host.appendChild(field('Taille de la photo', rangeInput(t.photoSize, 40, 200, 2, function (v) { t.photoSize = v; apply('photoSize'); }, function (v) { return v + ' pt'; })));
-
-    host.appendChild(el('div', { class: 'divider' }));
     host.appendChild(toggleInput('Bandeau latéral', t.sidebar.enabled, function (v) { t.sidebar.enabled = v; commit(); }));
     if (t.sidebar.enabled) {
-      host.appendChild(field('Largeur du bandeau', rangeInput(t.sidebar.width, 100, 280, 2, function (v) { t.sidebar.width = v; apply('sbw'); }, function (v) { return v + ' pt'; })));
+      host.appendChild(field('Largeur du bandeau', rangeInput(t.sidebar.width, 100, 300, 1, function (v) { t.sidebar.width = v; apply('sbw'); }, pt),
+        'Liseré compris.'));
       host.appendChild(field('Position', selectInput(t.sidebar.side, [
         { value: 'left', label: 'À gauche' }, { value: 'right', label: 'À droite' },
       ], function (v) { t.sidebar.side = v; commit(); })));
     }
-    host.appendChild(toggleInput('Liseré coloré', t.stripe.enabled, function (v) { t.stripe.enabled = v; commit(); }));
+    host.appendChild(toggleInput('Liseré coloré au bord de la page', t.stripe.enabled, function (v) { t.stripe.enabled = v; commit(); }));
     if (t.stripe.enabled) {
-      host.appendChild(field('Épaisseur du liseré', rangeInput(t.stripe.width, 0, 14, 0.5, function (v) { t.stripe.width = v; apply('stripe'); }, function (v) { return v + ' pt'; })));
+      host.appendChild(field('Largeur du liseré', rangeInput(t.stripe.width, 0, 60, 1, function (v) { t.stripe.width = v; apply('stripe'); }, pt)));
     }
     host.appendChild(toggleInput('Filet sous les titres', t.rules.enabled, function (v) { t.rules.enabled = v; commit(); }));
-    host.appendChild(field('Style de puces', selectInput(t.bulletStyle, [
-      { value: 'disc', label: 'Rond' }, { value: 'square', label: 'Carré' }, { value: 'dash', label: 'Tiret' }, { value: 'none', label: 'Aucune' },
-    ], function (v) { t.bulletStyle = v; commit(); })));
+    host.appendChild(field('Taille de la photo', rangeInput(t.photoSize, 40, 200, 1, function (v) { t.photoSize = v; apply('photoSize'); }, pt)));
+    host.appendChild(el('div', { class: 'row' }, [
+      field('Style de puces', selectInput(t.bulletStyle, [
+        { value: 'disc', label: 'Rond' }, { value: 'square', label: 'Carré' }, { value: 'dash', label: 'Tiret' }, { value: 'none', label: 'Aucune' },
+      ], function (v) { t.bulletStyle = v; commit(); })),
+      field('Indentation', rangeInput(t.bulletIndent, 4, 40, 1, function (v) { t.bulletIndent = v; apply('bulletIndent'); }, pt)),
+    ]));
 
-    host.appendChild(el('div', { class: 'divider' }));
-    host.appendChild(el('label', { text: 'Marges (pt)', style: { display: 'block', fontSize: '11px', fontWeight: '700', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: '4px' } }));
-    ['top', 'right', 'bottom', 'left'].forEach(function (side) {
-      var labels = { top: 'Haut', right: 'Droite', bottom: 'Bas', left: 'Gauche' };
-      host.appendChild(field(labels[side], rangeInput(t.margins[side], 14, 72, 1, function (v) { t.margins[side] = v; apply('margin'); }, function (v) { return v + ' pt'; })));
-    });
+    // ── Contacts ───────────────────────────────────────────────────────────
+    host.appendChild(groupLabel('Contacts'));
+    host.appendChild(field('Titre du bloc', textInput(t.contactsTitle, function (v) { t.contactsTitle = v; apply('contactsTitle'); }, 'Laisser vide pour aucun titre')));
+    host.appendChild(field('Présentation', selectInput(t.contactStyle, [
+      { value: 'icon', label: 'Pictogrammes' }, { value: 'label', label: 'Libellés (Tél., Email…)' }, { value: 'plain', label: 'Valeur seule' },
+    ], function (v) { t.contactStyle = v; commit(); })));
+    host.appendChild(el('div', { class: 'row' }, [
+      field('Écart', rangeInput(t.contactGap, 4, 44, 0.5, function (v) { t.contactGap = v; apply('contactGap'); }, pt)),
+      field('Pictogramme', rangeInput(t.contactIconSize, 6, 24, 0.5, function (v) { t.contactIconSize = v; apply('contactIconSize'); }, pt)),
+    ]));
+
+    // ── Espacements fins ───────────────────────────────────────────────────
+    host.appendChild(foldout('Espacements', function (b) {
+      b.appendChild(field('Entre deux entrées', rangeInput(t.blockGap, 2, 22, 0.5, function (v) { t.blockGap = v; apply('blockGap'); }, pt)));
+      b.appendChild(field('Entre lignes de liste', rangeInput(t.entryGap, 0, 14, 0.5, function (v) { t.entryGap = v; apply('entryGap'); }, pt)));
+      b.appendChild(field('Filet → contenu', rangeInput(t.ruleGap, 2, 26, 0.05, function (v) { t.ruleGap = v; apply('ruleGap'); }, pt)));
+      b.appendChild(field('Avant un titre de rubrique', rangeInput(t.sectionGap, 0, 40, 0.1, function (v) { t.sectionGap = v; apply('sectionGap'); }, pt)));
+      b.appendChild(field('Sous l\'en-tête', rangeInput(t.headerGap, 0, 60, 0.1, function (v) { t.headerGap = v; apply('headerGap'); }, pt)));
+      b.appendChild(field('Sous la photo', rangeInput(t.photoGap, 0, 60, 0.1, function (v) { t.photoGap = v; apply('photoGap'); }, pt)));
+      b.appendChild(field('Marge intérieure du bandeau', rangeInput(t.sidebar.padding, 4, 34, 1, function (v) { t.sidebar.padding = v; apply('sbpad'); }, pt)));
+      b.appendChild(field('Gouttière entre colonnes', rangeInput(t.sidebar.gap, 4, 40, 1, function (v) { t.sidebar.gap = v; apply('sbgap'); }, pt)));
+      ['top', 'right', 'bottom', 'left'].forEach(function (side) {
+        var labels = { top: 'Marge haut', right: 'Marge droite', bottom: 'Marge bas', left: 'Marge gauche' };
+        b.appendChild(field(labels[side], rangeInput(t.margins[side], 14, 72, 1, function (v) { t.margins[side] = v; apply('margin'); }, pt)));
+      });
+    }));
 
     host.appendChild(el('div', { class: 'divider' }));
     host.appendChild(el('button', {
-      class: 'btn btn-sm', text: 'Réinitialiser le thème',
+      class: 'btn btn-sm', text: 'Revenir au modèle',
+      title: 'Rétablit toutes les valeurs du modèle de référence, en gardant la palette',
       onclick: function () { S.doc.theme = E.defaultTheme(t.preset); commit(); },
     }));
   }

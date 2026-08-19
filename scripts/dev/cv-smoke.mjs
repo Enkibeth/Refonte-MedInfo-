@@ -169,8 +169,8 @@ await page.waitForTimeout(200);
 ok((await page.locator('.sec').count()) > 0, 'rubrique ajoutée dans l\'arborescence');
 await page.fill('.pane-right input[type="text"] >> nth=0', 'Mobilités internationales');
 await page.waitForTimeout(350);
-ok((await page.locator('.tx').allTextContents()).includes('MOBILITÉS INTERNATIONALES'),
-  'la rubrique libre apparaît dans l\'aperçu, en majuscules');
+ok((await page.locator('.tx').allTextContents()).includes('Mobilités internationales'),
+  'la rubrique libre apparaît dans l\'aperçu');
 
 console.log('\n▶ Édition en ligne dans l\'aperçu');
 const target = page.locator('.tx[data-path="header.headline"]').first();
@@ -186,8 +186,8 @@ if (await target.count()) {
 }
 
 console.log('\n▶ Glisser-déposer d\'une rubrique');
-const titlesInPreview = async () => (await page.locator('.tx').allTextContents())
-  .filter((t) => /^[A-ZÉÈÀÇÎÔÛ' ]{4,}$/.test(t));
+// L'ordre des rubriques se lit dans l'arborescence : c'est lui que le déplacement change.
+const titlesInPreview = async () => page.locator('.pane-left .sec .sec-name').allTextContents();
 const beforeOrder = await titlesInPreview();
 const sections = page.locator('.pane-left .sec');
 if ((await sections.count()) >= 3) {
@@ -227,21 +227,19 @@ await page.waitForTimeout(300);
 ok(await page.evaluate(() => document.querySelectorAll('.page svg rect').length > 0), 'fond du bandeau rendu');
 
 console.log('\n▶ Polices');
-ok(fontRequests.length > 0, 'la police du document est chargée pour l\'aperçu : ' + fontRequests.join(', '));
-ok(fontRequests.every((f) => f.startsWith('inter-')),
-  'aucune police non utilisée n\'est téléchargée', fontRequests.join(', '));
-ok(!fontRequests.includes('inter-bolditalic.ttf'),
-  'même la graisse inutilisée de la famille reste au repos');
+ok(fontRequests.length === 0,
+  'le modèle par défaut utilise une police standard du PDF : aucun fichier téléchargé',
+  fontRequests.join(', '));
 await page.click('#itab-theme');
-await page.waitForTimeout(200);
+await page.waitForTimeout(250);
 const fontSelect = page.locator('.pane-right select').first();
-await fontSelect.selectOption('ebgaramond');
-await page.waitForTimeout(1000);
-ok(fontRequests.some((f) => f.startsWith('ebgaramond-')), 'changer de police charge la nouvelle famille');
-const weightNote = await page.locator('.pane-right .hint').last().textContent();
-ok(/ko dans le PDF/.test(weightNote || ''), 'le poids ajouté au PDF est annoncé : ' + (weightNote || '').slice(0, 70));
 await fontSelect.selectOption('inter');
-await page.waitForTimeout(600);
+await page.waitForTimeout(1200);
+ok(fontRequests.length > 0, 'changer de police charge la famille choisie : ' + fontRequests.join(', '));
+ok(fontRequests.every((f) => f.startsWith('inter-')), 'et elle seule', fontRequests.join(', '));
+ok(!fontRequests.includes('inter-bolditalic.ttf'), 'même la graisse inutilisée reste au repos');
+const themePane = await page.locator('.pane-right').innerText();
+ok(/ko dans le PDF/.test(themePane), 'le poids ajouté au PDF est annoncé');
 await page.click('#itab-content');
 
 console.log('\n▶ Photo (import, redimensionnement, masque)');
@@ -305,7 +303,7 @@ const runs = pages.flat();
 const flat = runs.map((r) => r.text);
 ok(pages.length >= 1, 'PDF non vide : ' + pages.length + ' page(s)');
 ok(flat.includes('Camille Rousseau'), 'le nom est du VRAI TEXTE dans le PDF (lisible par un ATS)');
-ok(flat.some((t) => t.includes('MOBILITÉS INTERNATIONALES')), 'la rubrique libre est dans le texte extrait');
+ok(flat.some((t) => t.includes('Mobilités internationales')), 'la rubrique libre est dans le texte extrait');
 ok(flat.some((t) => t.includes('médecine interne')), 'accents et tirets cadratins corrects après extraction');
 ok(/\/FontFile2/.test(buf.toString('latin1')), 'la police choisie est embarquée dans le PDF');
 ok(!flat.join('').includes('\uFFFD'), 'aucun glyphe non décodable (table ToUnicode complète)');
@@ -325,7 +323,7 @@ const dup = runs.filter((r) => {
 });
 ok(dup.length === 0, 'aucun texte superposé au même point (pas de calque masqué)', JSON.stringify(dup.slice(0, 2)));
 const nameIndex = flat.indexOf('Camille Rousseau');
-const sectionIndex = flat.findIndex((t) => t.includes('MOBILITÉS'));
+const sectionIndex = flat.findIndex((t) => t.includes('Mobilités'));
 ok(nameIndex >= 0 && nameIndex < sectionIndex, 'ordre de lecture : en-tête avant les rubriques');
 
 console.log('\n▶ Erreurs de console cumulées');

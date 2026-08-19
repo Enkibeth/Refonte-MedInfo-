@@ -48,6 +48,137 @@ describe('cv-engine — mesure du texte', () => {
   });
 });
 
+describe('cv-engine — conformité au modèle de référence', () => {
+  /**
+   * Les valeurs ci-dessous sont RELEVÉES dans les deux CV fournis par Hugo (même
+   * modèle, deux palettes), en lisant directement les flux PDF : positions des
+   * aplats, tailles et couleurs de chaque rôle typographique, écarts de ligne à
+   * ligne. Elles fixent l'apparence du CV produit par défaut ; une régression ici
+   * signifie que les CV exportés ne ressemblent plus au modèle demandé.
+   */
+  const reference = () => CV.migrate({
+    schemaVersion: 2,
+    meta: { id: 'ref', title: 'Référence' },
+    header: {
+      fullName: 'Camille Rousseau',
+      headline: 'Étudiante en 6ème année de médecine.',
+      photo: { dataUrl: 'data:image/png;base64,AAAA', shape: 'rect', zoom: 1, offsetX: 0, offsetY: 0 },
+      contacts: [
+        { icon: 'person', value: 'Camille Rousseau' },
+        { icon: 'email', value: 'camille@exemple.fr' },
+        { icon: 'phone', value: '+33 6 00 00 00 00' },
+      ],
+    },
+    sections: [
+      { title: 'Expériences professionnelles', column: 'main', layout: 'entries', entries: [
+        { title: 'Médecin stagiaire', date: 'de sept. 2025 à févr. 2026', organisation: 'AP-HP, Paris', bullets: ['Service A', 'Service B'] },
+        { title: 'Médecin stagiaire', date: 'août 2025', organisation: 'HUG, Genève', description: ['Stage de neurologie.'] },
+      ] },
+      { title: 'Formation', column: 'main', layout: 'entries', entries: [{ title: 'DFASM', organisation: 'Sorbonne Université' }] },
+      { title: 'Certificats', column: 'side', layout: 'entries', entries: [{ title: 'AFGSU 2', organisation: 'Organisme' }] },
+    ],
+    theme: {},
+  });
+
+  const layoutOf = () => CV.layout(reference());
+  const texts = (result: any, page = 0) => result.pages[page].prims.filter((p: any) => p.t === 'text' && p.s);
+  const find = (result: any, needle: string) => texts(result).filter((p: any) => p.s === needle)[0];
+
+  it('place les bandes verticales aux cotes du modèle', () => {
+    const geo = layoutOf().geo;
+    expect(geo.stripeX).toBe(0);
+    expect(geo.stripeW).toBe(30);                     // liseré accent au bord de la page
+    expect(geo.sideX).toBe(0);
+    expect(geo.sideW).toBeCloseTo(208.584, 3);        // bandeau, liseré compris
+    expect(geo.sideContentX).toBeCloseTo(40, 3);
+    expect(geo.sideContentX + geo.sideContentW).toBeCloseTo(198.584, 3);
+    expect(geo.mainX).toBeCloseTo(218.584, 3);        // gouttière de 10 pt
+    expect(geo.mainX + geo.mainW).toBeCloseTo(565.28, 2);  // marge droite de 30 pt
+    expect(geo.contentTop).toBe(30);
+  });
+
+  it('peint le liseré, le bandeau et la photo au bon endroit', () => {
+    const result = layoutOf();
+    const bg = result.pages[0].bg;
+    const sidebar = bg.filter((p: any) => p.t === 'rect' && Math.abs(p.w - 208.584) < 0.01)[0];
+    const stripe = bg.filter((p: any) => p.t === 'rect' && p.w === 30)[0];
+    expect(sidebar.h).toBeCloseTo(841.89, 2);         // pleine hauteur, bord à bord
+    expect(sidebar.fill).toBe('#faf5f5');
+    expect(stripe.fill).toBe('#ad4040');
+    expect(stripe.x).toBe(0);
+    const photo = result.pages[0].prims.filter((p: any) => p.t === 'image')[0];
+    expect(photo.w).toBeCloseTo(118.6, 1);
+    expect(photo.h).toBeCloseTo(118.6, 1);
+    expect(photo.x).toBeCloseTo(60, 1);               // centrée dans le bandeau
+    expect(photo.y).toBe(30);
+    expect(photo.shape).toBe('rect');
+  });
+
+  it('respecte le rythme vertical relevé (de ligne de base à ligne de base)', () => {
+    const result = layoutOf();
+    const y = (needle: string) => find(result, needle).y;
+    expect(y('Service B') - y('Service A')).toBeCloseTo(8.8, 2);                    // interligne
+    expect(y('Service A') - y('AP-HP, Paris')).toBeCloseTo(17.6, 2);                // ligne sautée avant les puces
+    expect(texts(result).filter((p: any) => p.s === 'Médecin stagiaire')[1].y
+      - y('Service B')).toBeCloseTo(18.8, 2);                                       // entre deux entrées
+    expect(y('Médecin stagiaire') - y('Expériences professionnelles')).toBeCloseTo(29.6, 2);
+    expect(y('Formation') - y('Stage de neurologie.')).toBeCloseTo(28.7, 1);        // entre deux rubriques
+    expect(y('Étudiante en 6ème année de médecine.') - y('Camille Rousseau')).toBeCloseTo(21.7, 1);
+    expect(y('Expériences professionnelles') - y('Étudiante en 6ème année de médecine.')).toBeCloseTo(34, 1);
+  });
+
+  it('aère les contacts du bandeau de 30 pt et aligne le texte à 64 pt', () => {
+    const result = layoutOf();
+    const email = find(result, 'camille@exemple.fr');
+    const phone = find(result, '+33 6 00 00 00 00');
+    expect(phone.y - email.y).toBeCloseTo(30, 2);
+    expect(email.x).toBeCloseTo(64, 1);
+    expect(find(result, 'Informations personnelles').x).toBeCloseTo(40, 1);
+  });
+
+  it('applique la typographie de chaque rôle', () => {
+    const result = layoutOf();
+    const name = find(result, 'Camille Rousseau');
+    expect(name.size).toBe(25);
+    expect(name.bold).toBe(true);
+    expect(name.color).toBe('#ad4040');
+    const headline = find(result, 'Étudiante en 6ème année de médecine.');
+    expect(headline.size).toBe(8.8);
+    expect(headline.color).toBe('#000000');
+    const title = find(result, 'Formation');
+    expect(title.size).toBe(13.6);
+    expect(title.bold, 'les titres de rubrique du modèle sont en romain').toBe(false);
+    expect(title.color).toBe('#ad4040');
+    const entryTitle = find(result, 'Médecin stagiaire');
+    expect(entryTitle.size).toBe(8);
+    expect(entryTitle.bold).toBe(true);
+    expect(entryTitle.color).toBe('#333333');
+    const date = find(result, 'août 2025');
+    expect(date.bold).toBe(true);
+    expect(date.color).toBe('#ad4040');
+    expect(date.align).toBe('right');
+    expect(date.x).toBeCloseTo(565.28, 2);
+    expect(find(result, 'AP-HP, Paris').color, 'structure en accent dans la colonne principale').toBe('#ad4040');
+    expect(find(result, 'Organisme').color, 'structure en noir dans le bandeau').toBe('#000000');
+    expect(find(result, 'Service A').color).toBe('#000000');
+  });
+
+  it('trace le filet des titres à 7,5 pt sous la ligne de base, en gris clair', () => {
+    const result = layoutOf();
+    const title = find(result, 'Formation');
+    const rules = result.pages[0].prims.filter((p: any) => p.t === 'rect' && p.h === 0.5 && p.fill === '#d9d9d9');
+    expect(rules.length).toBeGreaterThan(2);
+    const under = rules.filter((r: any) => r.y > title.y && r.y < title.y + 12)[0];
+    expect(under.y - title.y).toBeCloseTo(7.5, 1);
+    expect(under.w).toBeCloseTo(346.7, 1);            // toute la largeur de la colonne
+  });
+
+  it('indente les puces de 20 pt', () => {
+    const result = layoutOf();
+    expect(find(result, 'Service A').x - find(result, 'Médecin stagiaire').x).toBe(20);
+  });
+});
+
 describe('cv-engine — choix de polices', () => {
   it('livre sept familles, dont deux standard du PDF (sans fichier à embarquer)', () => {
     expect(CV.FONT_FAMILIES.length).toBe(7);
@@ -74,7 +205,7 @@ describe('cv-engine — choix de polices', () => {
   it('retombe sur Helvetica pour une famille inconnue (jamais de mesure fantaisiste)', () => {
     const unknown = CV.measureText('Cardiologie', { family: 'comic-sans-du-web', size: 10 });
     expect(unknown).toBe(CV.measureText('Cardiologie', { family: 'helvetica', size: 10 }));
-    expect(CV.normalizeTheme({ fontFamily: 'comic-sans-du-web' }).fontFamily).toBe('inter');
+    expect(CV.normalizeTheme({ fontFamily: 'comic-sans-du-web' }).fontFamily).toBe('helvetica');
     expect(CV.normalizeTheme({ headingFamily: 'comic-sans-du-web' }).headingFamily).toBe('');
   });
 
@@ -86,7 +217,7 @@ describe('cv-engine — choix de polices', () => {
     const prims = CV.layout(d).pages[0].prims.filter((p: any) => p.t === 'text');
     const byText = (s: string) => prims.filter((p: any) => p.s === s)[0];
     expect(byText('Camille Rousseau').fam).toBe('ebgaramond');
-    expect(byText('FORMATION').fam).toBe('ebgaramond');
+    expect(byText('Formation').fam).toBe('ebgaramond');
     expect(byText('DFASM').fam).toBe('inter');
     expect(byText('Une puce.').fam).toBe('inter');
   });
@@ -182,7 +313,7 @@ describe('cv-engine — migration de schéma', () => {
     expect(xp.bullets).toEqual(['b1', 'b2']);
     expect(migrated.sections[4].layout).toBe('ratings');
     expect(migrated.sections[4].entries[0].rating).toBe(4);
-    expect(migrated.sections[5].layout).toBe('tags');
+    expect(migrated.sections[5].layout).toBe('list');
   });
 
   it('est idempotente (v2 → v2 ne change rien)', () => {
@@ -205,7 +336,7 @@ describe('cv-engine — migration de schéma', () => {
   it('rejette une photo qui n\'est pas une image en data-URI', () => {
     expect(CV.normalizePhoto({ dataUrl: 'https://exemple.fr/photo.jpg' })).toBeNull();
     expect(CV.normalizePhoto({ dataUrl: 'data:text/html;base64,AAAA' })).toBeNull();
-    expect(CV.normalizePhoto({ dataUrl: 'data:image/png;base64,AAAA' })!.shape).toBe('rounded');
+    expect(CV.normalizePhoto({ dataUrl: 'data:image/png;base64,AAAA' })!.shape).toBe('rect');
   });
 
   it('borne un thème hors limites au lieu de le rejeter', () => {
@@ -214,7 +345,7 @@ describe('cv-engine — migration de schéma', () => {
     expect(t.lineHeight).toBeGreaterThanOrEqual(1);
     expect(t.accent).toMatch(/^#[0-9a-f]{6}$/i);
     expect(t.margins.top).toBeGreaterThanOrEqual(14);
-    expect(t.sidebar.width).toBeLessThanOrEqual(280);
+    expect(t.sidebar.width).toBeLessThanOrEqual(300);
   });
 });
 
@@ -247,9 +378,9 @@ describe('cv-engine — pagination', () => {
       const result = CV.layout(d);
       result.pages.forEach((pg: any) => {
         const texts = pg.prims.filter((p: any) => p.t === 'text').map((p: any) => p.s);
-        const at = texts.indexOf('RECHERCHE');
+        const at = texts.indexOf('Recherche');
         if (at >= 0) {
-          expect(texts.length, 'titre RECHERCHE seul en bas de page (n=' + n + ')').toBeGreaterThan(at + 1);
+          expect(texts.length, 'titre Recherche seul en bas de page (n=' + n + ')').toBeGreaterThan(at + 1);
         }
       });
     }
@@ -263,11 +394,11 @@ describe('cv-engine — pagination', () => {
     const result = CV.layout(d);
     expect(result.pageCount).toBe(2);
     const page2 = result.pages[1].prims.filter((p: any) => p.t === 'text').map((p: any) => p.s);
-    expect(page2[0]).toBe('PUBLICATIONS');
+    expect(page2[0]).toBe('Publications');
   });
 
   it('signale une entrée plus haute qu\'une page entière au lieu de la masquer', () => {
-    const huge = entry('Monstre', Array.from({ length: 60 }, () => LOREM));
+    const huge = entry('Monstre', Array.from({ length: 140 }, () => LOREM));
     const result = CV.layout(doc([{ title: 'Stages', column: 'main', layout: 'entries', entries: [huge] }]));
     expect(result.warnings.some((w: any) => w.code === 'oversize')).toBe(true);
   });
@@ -280,7 +411,7 @@ describe('cv-engine — pagination', () => {
     const result = CV.layout(d);
     expect(result.pageCount).toBeGreaterThan(1);
     const page1 = result.pages[0].prims.filter((p: any) => p.t === 'text').map((p: any) => p.s);
-    expect(page1).toContain('LANGUES');   // le bandeau reste en page 1
+    expect(page1).toContain('Langues');   // le bandeau reste en page 1
   });
 
   it('avertit quand la dernière page est presque vide', () => {
@@ -332,7 +463,7 @@ describe('cv-engine — pagination', () => {
     ], {}, { headline: 'Interne' });
     const text = CV.extractText(CV.layout(d)).split('\n');
     expect(text.indexOf('Camille Rousseau')).toBe(0);
-    expect(text.indexOf('FORMATION')).toBeLessThan(text.indexOf('LANGUES'));
+    expect(text.indexOf('Formation')).toBeLessThan(text.indexOf('Langues'));
   });
 });
 

@@ -47,6 +47,65 @@ adr: ADR-0028 (module initial), ADR-0036 (refonte v2)
 | `app/api/cv-import+api.ts` | Import d'un CV existant (`cv_import`). |
 | `app/(chat)/cv-builder.tsx` | Écran natif : `RoleGate`, iframe, transmission du token par `postMessage`. |
 
+## Le modèle de référence
+
+L'apparence par défaut n'est pas une invention : elle reproduit **au point près** les deux CV
+fournis par Hugo (le même modèle en deux couleurs). Les cotes ci-dessous ont été **relevées
+dans les fichiers PDF eux-mêmes** — positions des aplats, tailles, couleurs et écarts de ligne
+à ligne lus dans les flux de contenu — et non estimées à l'œil. Elles sont verrouillées par
+`tests/unit/cv-engine.test.ts` (bloc « conformité au modèle de référence ») : si un CV exporté
+cesse de ressembler au modèle, la CI le dit.
+
+### Géométrie (A4 595,28 × 841,89 pt)
+
+| Élément | Cote |
+|---|---|
+| Liseré accent | x 0 → 30 pt, pleine hauteur, **au bord de la page** |
+| Bandeau latéral | x 30 → 208,584 pt, pleine hauteur (le liseré est découpé dedans) |
+| Contenu du bandeau | x 40 → 198,584 pt (marge intérieure 10 pt) |
+| Colonne principale | x 218,584 → 565,28 pt (gouttière 10 pt, marge droite 30 pt) |
+| Marges haut / bas | 30 pt |
+| Photo | 118,6 pt de côté, carrée, centrée dans le bandeau, haut à 30 pt |
+| Filet sous les titres | 0,5 pt, `#d9d9d9`, 7,5 pt sous la ligne de base, largeur de la colonne |
+
+### Typographie
+
+| Rôle | Taille | Graisse | Couleur |
+|---|---|---|---|
+| Nom | 25 pt | gras | accent |
+| Accroche | 8,8 pt | normal | texte |
+| Titre de rubrique | 13,6 pt | **romain** | accent |
+| Intitulé d'entrée | 8 pt | gras | `#333333` |
+| Date | 8 pt | gras | accent, aligné à droite |
+| Structure / lieu | 8 pt | romain | accent (colonne principale) · texte (bandeau) |
+| Corps et puces | 8 pt | normal | texte |
+
+### Rythme vertical (de ligne de base à ligne de base)
+
+| Écart | Cote |
+|---|---|
+| Interligne | 8,8 pt (1,10) |
+| Entre deux entrées | 18,8 pt |
+| Titre de rubrique → première entrée | 29,6 pt |
+| Dernière ligne → titre de rubrique suivant | 28,7 pt |
+| Avant la première puce | 17,6 pt (une ligne sautée) |
+| Entre deux contacts | 30 pt |
+| Indentation des puces | 20 pt |
+
+La police par défaut est **Helvetica** : les CV de référence sont composés en Liberation Sans,
+dont les métriques sont celles d'Arial/Helvetica. Le rendu est donc identique au point près,
+sans embarquer le moindre fichier de police. Les six autres familles restent disponibles dans
+l'onglet Thème.
+
+Deux palettes sont relevées telles quelles — **Rouge médical** (`#ad4040` / `#faf5f5`) et
+**Bleu nuit** (`#0b1b7a` / `#f2f5f7`) — et quatre autres suivent la même construction : accent
+soutenu, fond de bandeau très désaturé de la même famille, filet gris neutre, intitulés
+`#333333`.
+
+Tous ces réglages restent modifiables dans l'onglet Thème (couleurs par rôle, graisse des
+titres, espacements fins) : le modèle est le point de départ, pas une prison. « Revenir au
+modèle » remet toutes les valeurs d'origine en gardant la palette choisie.
+
 ## Modèle de document (v2)
 
 Un CV est un JSON versionné. **Aucune rubrique n'est codée en dur** : c'est une liste
@@ -62,7 +121,7 @@ s'inventent sans toucher au code.
   sections: [{
     id, title,
     column: 'main' | 'side',                       // colonne principale ou bandeau
-    layout: 'entries' | 'tags' | 'ratings' | 'text',
+    layout: 'entries' | 'tags' | 'ratings' | 'text' | 'list',
     pageBreakBefore,
     entries: [{ id, title, date, organisation, description:[], bullets:[], rating, underline }],
   }],
