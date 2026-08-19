@@ -59,59 +59,65 @@ describe('sanitizeCvPayload — validation avant écriture', () => {
   });
 });
 
-describe('sanitizeCvForAi — minimisation RGPD', () => {
+describe('sanitizeCvForAi — minimisation RGPD (document v2)', () => {
   const doc = {
-    personalInfo: {
-      firstName: 'Marie',
-      lastName: 'Curie',
+    schemaVersion: 2,
+    meta: { id: 'x', title: 'CV Marie Curie' },
+    header: {
+      fullName: 'Marie Curie',
       headline: 'Interne',
-      email: 'marie@example.com',
-      phone: '0600000000',
-      photoUrl: 'data:image/png;base64,AAAA',
-      city: 'Paris',
+      photo: { dataUrl: 'data:image/png;base64,AAAA' },
+      contacts: [
+        { id: 'c1', icon: 'email', value: 'marie@example.com' },
+        { id: 'c2', icon: 'phone', value: '0600000000' },
+      ],
     },
-    summary: 'Résumé',
-    experiences: [
-      { id: 'e1', title: 'Stage', institution: 'CHU', isCurrent: true, bullets: ['a', 'b', ''] },
+    sections: [
+      { id: 's1', title: 'Stages', column: 'main', layout: 'entries', entries: [
+        { id: 'e1', title: 'Stage', organisation: 'CHU', date: '2024', bullets: ['a', 'b', ''], description: [] },
+      ] },
+      { id: 's2', title: '', column: 'side', layout: 'tags', entries: [{ id: 'e2', title: '' }] },
     ],
-    references: [
-      { id: 'r1', name: 'Pr X', institution: 'CHU', phone: '0611111111', email: 'x@chu.fr' },
-    ],
-    interests: [{ id: 'i1', label: 'Course' }, { id: 'i2', label: '' }],
+    theme: { accent: '#7c1f3d' },
   };
 
-  it('retire la photo et les coordonnées perso', () => {
+  it('retire la photo et les contacts (téléphone, e-mail)', () => {
     const out = sanitizeCvForAi(doc) as Record<string, any>;
-    expect(out.personalInfo.photoUrl).toBeUndefined();
-    expect(out.personalInfo.email).toBeUndefined();
-    expect(out.personalInfo.phone).toBeUndefined();
-    expect(out.personalInfo.firstName).toBe('Marie');
+    expect(out.header.fullName).toBe('Marie Curie');
+    expect(out.header.headline).toBe('Interne');
+    expect(out.header.contacts).toBeUndefined();
+    expect(JSON.stringify(out)).not.toContain('marie@example.com');
+    expect(JSON.stringify(out)).not.toContain('data:image');
   });
 
-  it('retire les coordonnées des référents par défaut', () => {
+  it('inclut les contacts seulement sur demande explicite', () => {
+    const out = sanitizeCvForAi(doc, { includeContacts: true }) as Record<string, any>;
+    expect(out.header.contacts).toEqual(['marie@example.com', '0600000000']);
+  });
+
+  it('PRÉSERVE LES INDEX : une section ou une entrée vide n\'est jamais retirée', () => {
+    // Les suggestions de l'IA reviennent sous forme de chemin « sections.1.entries.0.title » :
+    // filtrer un élément vide décalerait tout et appliquerait la correction au mauvais champ.
     const out = sanitizeCvForAi(doc) as Record<string, any>;
-    expect(out.references[0].phone).toBeUndefined();
-    expect(out.references[0].email).toBeUndefined();
-    expect(out.references[0].name).toBe('Pr X');
+    expect(out.sections.length).toBe(2);
+    expect(out.sections[1].entries.length).toBe(1);
+    expect(out.sections[0].entries[0].title).toBe('Stage');
   });
 
-  it('inclut les coordonnées des référents si demandé explicitement', () => {
-    const out = sanitizeCvForAi(doc, { includeReferenceContactDetails: true }) as Record<string, any>;
-    expect(out.references[0].phone).toBe('0611111111');
-    expect(out.references[0].email).toBe('x@chu.fr');
-  });
-
-  it('normalise expériences (présent, bullets vides retirées) et intérêts', () => {
+  it('retire les chaînes vides et les tableaux vides d\'une entrée', () => {
     const out = sanitizeCvForAi(doc) as Record<string, any>;
-    expect(out.experiences[0].endDate).toBe('présent');
-    expect(out.experiences[0].bullets).toEqual(['a', 'b']);
-    expect(out.interests).toEqual(['Course']);
+    expect(out.sections[0].entries[0].bullets).toEqual(['a', 'b']);
+    expect(out.sections[0].entries[0].description).toBeUndefined();
+    expect(out.sections[1].entries[0]).toEqual({});
   });
 
-  it('ne renvoie pas de champs vides parasites', () => {
-    const out = sanitizeCvForAi({ personalInfo: {} }) as Record<string, any>;
-    expect(out.summary).toBeUndefined();
-    expect(out.experiences ?? []).toEqual([]);
+  it('ne casse pas sur un document absurde', () => {
+    // `compact` retire aussi les tableaux vides : un document vide ne renvoie rien d'exploitable
+    // (c'est ce qui déclenche le refus « ajoute du contenu » côté route).
+    expect(sanitizeCvForAi(null)).toEqual({ header: {} });
+    expect(sanitizeCvForAi({ sections: 'non' })).toEqual({ header: {} });
+    // Les positions restent, même pour des sections illisibles (index préservés).
+    expect(sanitizeCvForAi({ sections: [null, 3] })).toEqual({ header: {}, sections: [{}, {}] });
   });
 });
 

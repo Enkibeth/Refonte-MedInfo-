@@ -259,8 +259,9 @@ export const PAGE_SEO = {
     path: '/cv-builder',
     title: 'Créateur de CV médical en ligne — modèle pro, export PDF',
     description:
-      'Rédigez un CV médical convaincant : gabarit deux colonnes, aperçu A4 en direct, ' +
-      'import de votre CV existant, relecture IA et export PDF net.',
+      'Construisez un CV médical avec vos propres rubriques : aperçu A4 fidèle, ' +
+      'relecture IA et export PDF au texte sélectionnable, lisible par les ' +
+      'logiciels de tri des hôpitaux.',
   },
   article: {
     path: '/article',

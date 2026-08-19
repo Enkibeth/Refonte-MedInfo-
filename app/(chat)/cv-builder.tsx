@@ -1,12 +1,13 @@
 /**
  * Module CV Builder — outil étudiant + professionnel (personas student/professional).
  *
- * L'outil complet vit dans la page autonome `public/cv-builder.html` (éditeur structuré,
- * aperçu A4 live, export PDF par impression vectorielle, relecture IA, historique cloud),
- * embarquée ici en iframe.
+ * L'outil complet vit dans la page autonome `public/cv-builder.html` (éditeur à
+ * rubriques libres, aperçu A4 fidèle au point près, export PDF VECTORIEL, relecture
+ * IA, bibliothèque locale + historique cloud), embarquée ici en iframe. Architecture
+ * et décisions : docs/CV_BUILDER.md, ADR-0036.
  *  - Édition / aperçu / export PDF : 100 % côté client (aucune donnée envoyée).
  *  - Relecture IA : POST /api/cv (compte vérifié étudiant/pro/admin) — CV minimisé (RGPD).
- *  - Sauvegarde cloud : /api/cv-docs (own-row RLS).
+ *  - Sauvegarde cloud : /api/cv-docs (own-row RLS), sur action explicite.
  *
  * Le token de session est transmis à l'iframe (même origine) par postMessage : la page
  * autonome l'ajoute en `Authorization: Bearer …`. RoleGate conservé en défense en
@@ -53,8 +54,9 @@ function CvBuilderInner() {
         </View>
         <Text style={styles.title}>Créateur de CV</Text>
         <Text style={styles.subtitle}>
-          Construis ton CV médical, fais-le relire par l'IA (suggestions à valider) et exporte
-          un PDF propre. La création, l'édition et l'export sont gratuits.
+          Construis ton CV avec tes propres rubriques, fais-le relire par l'IA (suggestions à
+          valider) et exporte un PDF dont le texte reste sélectionnable — donc lisible par les
+          logiciels de tri des hôpitaux. Création, édition et export illimités et gratuits.
         </Text>
       </View>
 

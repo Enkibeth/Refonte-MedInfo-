@@ -18,6 +18,99 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-08-19] – Claude (CV : l'apparence par défaut reproduit le modèle fourni)
+### Files modified
+- public/cv-builder.html (géométrie du liseré et du bandeau, valeurs de thème par défaut, polices par rôle, rythme vertical, présentation `list`, pictogrammes de contact pleins, titre du bloc contacts, panneau Thème réorganisé)
+- tests/unit/cv-engine.test.ts (bloc « conformité au modèle de référence », 7 tests ; attentes mises à jour), scripts/dev/cv-smoke.mjs
+- docs/CV_BUILDER.md (section « Le modèle de référence » avec les cotes relevées), docs/DECISIONS/0036-refonte-cv-builder.md (addendum), CLAUDE.md
+### Purpose
+Hugo a fourni deux CV (même modèle, deux couleurs) : « il faut que les CV finaux ressemblent
+à ceux-là, à l'identique dans la qualité typo, couleur et mise en forme ». Les cotes ont été
+RELEVÉES dans les PDF (flux de contenu décompressés : aplats, tailles, couleurs, écarts de
+ligne à ligne) plutôt qu'estimées d'après l'image, puis posées comme valeurs par défaut :
+liseré 30 pt au bord de la page, bandeau 208,584 pt, colonne principale 218,584 → 565,28,
+corps 8 pt d'interligne 8,8, titres de rubrique en romain 13,6 pt + filet gris 0,5 pt à
+7,5 pt de la ligne de base, intitulés d'entrée gras #333333, dates grasses en accent alignées
+à droite, contacts espacés de 30 pt sous un titre « Informations personnelles », centres
+d'intérêt en liste à puces carrées. Police par défaut : Helvetica, dont les métriques sont
+celles du Liberation Sans des originaux — rendu identique sans embarquer de police.
+Le moteur gagne ce qu'il fallait : liseré découpé au bord de la bande, présentation `list`,
+pictogrammes pleins et redimensionnables, couleurs par rôle, graisse des titres et italique
+des structures optionnelles, espacements explicites.
+### Regulatory impact
+None — présentation uniquement. Aucune donnée, aucune route, aucune feature IA touchée.
+Aucun contenu des CV fournis n'est repris : seules les COTES de mise en page le sont.
+### Rollback plan
+`git revert` du commit : les documents déjà enregistrés se rouvrent (leur thème est stocké
+dans le document et `normalizeTheme` borne tout champ inconnu).
+
+
+## [2026-08-19] – Claude (CV : sept polices au choix, embarquées dans le PDF)
+### Files modified
+- public/vendor/fonts/cv/ (nouveau : 5 familles SIL OFL × 4 styles, sous-ensemblées WinAnsi, + licences + README)
+- public/cv-builder.html (table de largeurs des 7 familles, `FONT_FAMILIES`, `fontFile`/`usedFonts`, police des titres dissociable, `@font-face` à la demande, embarquement dans le PDF, repli si le fichier manque)
+- scripts/dev/build-cv-fonts.mjs (nouveau : téléchargement + `pyftsubset`), scripts/dev/extract-pdf-font-metrics.cjs (7 familles, unités de police + `upm`, option `--write`)
+- tests/unit/helpers/pdfText.ts (nouveau : extracteur WinAnsi ET Identity-H via `/ToUnicode`)
+- tests/unit/cv-engine.test.ts (+8), tests/unit/cv-pdf.test.ts (+7), scripts/dev/cv-smoke.mjs
+- docs/CV_BUILDER.md, docs/DECISIONS/0036-refonte-cv-builder.md, CLAUDE.md
+### Purpose
+Arbitrage Hugo : « mets des choix de police ». La refonte de la veille se limitait aux deux
+polices standard du format PDF (Helvetica, Times) pour garder un fichier minuscule et une
+mesure exacte. Cinq familles SIL OFL sont ajoutées (Inter, Source Sans 3, Public Sans,
+EB Garamond, Lora), sous-ensemblées au jeu WinAnsi avant livraison (~300 ko → 18-34 ko par
+graisse) ; seules les graisses réellement écrites sont téléchargées puis embarquées, pour
+7 à 9 ko ajoutés au PDF chacune — chiffre mesuré et affiché dans l'onglet Thème. Le même
+.ttf sert à l'aperçu et au PDF, donc l'écran ne peut pas montrer une police absente du
+fichier. La police des titres peut différer de celle du corps.
+Point de vigilance traité : avec une police embarquée, jsPDF passe en Identity-H et écrit
+des NUMÉROS DE GLYPHE — le PDF serait illisible pour un ATS sans la table `/ToUnicode` qui
+les retraduit. L'extracteur de test la décode comme `pdftotext` et les tests échouent si un
+seul glyphe ne revient pas, dans les cinq familles. Si les fichiers de police ne peuvent pas
+être récupérés à l'export, le PDF sort quand même en police standard.
+### Regulatory impact
+None — aucune donnée, aucune route, aucune feature IA touchée. Licences SIL OFL livrées avec
+les polices (redistribution et embarquement dans un PDF autorisés).
+### Rollback plan
+`git revert` du commit : le moteur retombe sur Helvetica/Times (les documents enregistrés
+avec une autre famille se rouvrent, `normalizeTheme` repliant toute famille inconnue).
+
+
+## [2026-08-18] – Claude (Refonte du créateur de CV : sections libres + PDF vectoriel)
+### Files modified
+- public/cv-builder.html (réécriture complète : moteur pur `@cv-engine` + interface 3 volets + export PDF vectoriel)
+- src/cv/cvDocument.ts (types v2, `sanitizeCvForAi` v2 préservant les index, titre dérivé de `meta.title`/`header.fullName`)
+- app/api/cv+api.ts (option `includeReferenceContactDetails` retirée), src/ai/prompts/promptStore.ts (prompt `cv_review` : structure v2 et format des `fieldPath`)
+- app/(chat)/cv-builder.tsx, src/seo/meta.ts (copie produit)
+- tests/unit/cv-engine.test.ts (nouveau, 31), tests/unit/cv-pdf.test.ts (nouveau, 10), tests/unit/helpers/cvEngine.ts (nouveau), tests/unit/cv-document.test.ts
+- scripts/dev/cv-smoke.mjs (nouveau, opt-in), scripts/dev/extract-pdf-font-metrics.cjs (nouveau)
+- docs/CV_BUILDER.md (nouveau), docs/DECISIONS/0036-refonte-cv-builder.md (nouveau), CLAUDE.md
+### Purpose
+Retour Hugo : la fonctionnalité CV est « très pauvre avec une interface basique ».
+Trois défauts de fond. (1) L'export passait par html2canvas : chaque page du PDF était une
+IMAGE. Les logiciels de tri (ATS) des CHU n'en extraient rien — le CV est écarté avant
+d'être lu, sans que l'étudiant sache pourquoi. (2) Les rubriques étaient codées en dur
+(experiences[], education[]…) : impossible d'ajouter « Communications » ou « Mobilités
+internationales », donc aucun CV académique. (3) Aucune maîtrise de la mise en page :
+un seul thème, aucun réglage, et une pagination subie (entrée coupée en deux, titre
+orphelin), sans moyen de resserrer un CV qui déborde de trois lignes.
+Refonte : document v2 versionné à sections libres avec migration idempotente de l'ancien
+format ; moteur de mise en page PUR produisant des primitives positionnées, consommées à
+l'identique par l'aperçu et par le PDF, mesurées avec les métriques des polices PDF
+standard (égalité avec jsPDF verrouillée par test à 0,001 pt près) ; export PDF VECTORIEL
+à texte sélectionnable ; pagination testée (entrée insécable, titre jamais orphelin, saut
+forçable) ; « Ajuster pour tenir en N pages » qui échoue honnêtement plutôt que de rendre
+le CV illisible ; thème complet avec contrôle de contraste WCAG AA ; interface à trois
+volets avec glisser-déposer et édition en ligne dans l'aperçu.
+### Regulatory impact
+None — aucune nouvelle feature IA, aucune table, aucune migration. La minimisation avant
+l'IA est RENFORCÉE (la photo et désormais tous les contacts sont retirés) et la sauvegarde
+cloud devient explicite. Garde persona serveur, rate-limit et RLS own-row inchangés.
+### Rollback plan
+`git revert` des commits de la refonte : `public/cv-builder.html` et `src/cv/cvDocument.ts`
+reviennent à la v1. Les CV enregistrés au format v2 (cloud ou local) ne seraient alors plus
+lisibles par l'ancien éditeur — d'où l'intérêt de ne revenir en arrière qu'immédiatement.
+
+
 ## [2026-07-28] – Claude (Correctif « chargement infini » : amorçage auth borné dans le temps)
 ### Files modified
 - src/auth/bootGuard.ts (nouveau, pur : plafonds de temps, `withTimeout`, indice de session, `clearStoredSession` sans réseau, `abortAfter`)

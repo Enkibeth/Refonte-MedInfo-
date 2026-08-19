@@ -1,14 +1,25 @@
 /**
- * Modèle de données + validation/minimisation du module CV Builder (ADR-0028).
+ * Modèle de données + validation/minimisation du module CV Builder
+ * (ADR-0028, refonte v2 : ADR-0036).
  *
  * Module PUR et testable :
  *  - `sanitizeCvPayload` borne et valide le payload venu de l'iframe AVANT écriture
  *    en base (table `cv_documents`, own-row RLS, migration 0029).
  *  - `sanitizeCvForAi` applique la MINIMISATION des données personnelles (RGPD/CNIL)
- *    avant tout envoi au service d'IA de relecture : on retire la photo et, par défaut,
- *    les coordonnées (téléphone/email) des référents.
+ *    avant tout envoi au service d'IA de relecture : jamais la photo, jamais les
+ *    contacts (téléphone, e-mail, adresse) — seul le texte à corriger part.
+ *  - `normalizeImportedCv` normalise la sortie de l'IA d'import.
  *
- * ⚠️  Un CV contient des DONNÉES PERSONNELLES (identité, parfois celles des référents).
+ * ⚠️  SCHÉMA : depuis la refonte, un CV est un document VERSIONNÉ à sections libres
+ * (`schemaVersion: 2` — en-tête + liste ordonnée de sections, chacune avec ses
+ * entrées). La MIGRATION des anciens documents (rubriques figées : experiences[],
+ * education[]…) vit à UN SEUL endroit : `migrate()` dans le moteur de
+ * `public/cv-builder.html`, appliquée par le client à l'ouverture. Le serveur ne
+ * migre rien : il valide, borne et stocke le document tel quel (colonne jsonb).
+ * C'est pourquoi `normalizeImportedCv` renvoie encore la structure « rubriques »
+ * (elle est le format d'EXTRACTION de l'IA, que le client convertit en sections).
+ *
+ * ⚠️  Un CV contient des DONNÉES PERSONNELLES (identité, parfois celles de référents).
  * Toujours appliquer une logique de minimisation : n'envoyer à l'IA que le texte
  * strictement nécessaire à la correction.
  */
@@ -19,8 +30,53 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export const MAX_TITLE_CHARS = 200;
 export const MAX_CV_JSON_CHARS = 600_000; // ~ couvre une photo base64 raisonnable
 
-/** Un seul thème en v1 (schéma extensible : on ajoutera des thèmes plus tard). */
+/**
+ * Colonne `theme` de la table : elle reste 'medical' (le thème RÉEL du CV vit
+ * désormais dans `document.theme`, avec ses couleurs et sa typographie).
+ */
 export type CvTheme = 'medical';
+
+/** Version de schéma du document produite par l'éditeur (cf. `migrate()` côté client). */
+export const CV_SCHEMA_VERSION = 2;
+
+// ── Document v2 (sections libres) ───────────────────────────────────────────
+
+export interface CvV2Entry {
+  id?: string;
+  title?: string;
+  date?: string;
+  organisation?: string;
+  description?: string[];
+  bullets?: string[];
+  rating?: number;
+  underline?: string;
+}
+
+export interface CvV2Section {
+  id?: string;
+  title?: string;
+  column?: 'main' | 'side';
+  layout?: 'entries' | 'tags' | 'ratings' | 'text';
+  pageBreakBefore?: boolean;
+  entries?: CvV2Entry[];
+}
+
+export interface CvV2Document {
+  schemaVersion: number;
+  meta?: { id?: string; title?: string; updatedAt?: string };
+  header?: {
+    fullName?: string;
+    headline?: string;
+    photo?: { dataUrl?: string } | null;
+    contacts?: Array<{ id?: string; icon?: string; value?: string; href?: string }>;
+  };
+  sections?: CvV2Section[];
+  theme?: Record<string, unknown>;
+}
+
+// ── Format d'EXTRACTION d'un CV existant (sortie de /api/cv-import) ─────────
+//  Ce n'est PAS le format de stockage : le client le convertit en document v2
+//  via `migrate()`. Les rubriques figées ci-dessous guident l'extraction de l'IA.
 
 export interface CvPersonalInfo {
   firstName?: string;
@@ -169,12 +225,19 @@ export function sanitizeCvPayload(body: unknown): SanitizeResult {
   }
 
   const document = b.document as Record<string, unknown>;
-  // Titre : explicite, sinon dérivé du nom de la personne.
+  // Titre : explicite, sinon celui du document, sinon dérivé du nom de la personne.
+  const meta = (document.meta as Record<string, unknown> | undefined) ?? {};
+  const header = (document.header as Record<string, unknown> | undefined) ?? {};
   const info = (document.personalInfo as Record<string, unknown> | undefined) ?? {};
-  const derived = [info.firstName, info.lastName]
+  const legacyName = [info.firstName, info.lastName]
     .filter((v) => typeof v === 'string' && v.trim())
     .join(' ');
-  const title = coerceTitle(b.title) || coerceTitle(derived ? `CV ${derived}` : '') || 'CV sans titre';
+  const name = typeof header.fullName === 'string' && header.fullName.trim() ? header.fullName : legacyName;
+  const title =
+    coerceTitle(b.title) ||
+    coerceTitle(meta.title) ||
+    coerceTitle(name ? `CV ${name}` : '') ||
+    'CV sans titre';
 
   return { ok: true, value: { title, theme: coerceTheme(b.theme), document } };
 }
@@ -182,8 +245,8 @@ export function sanitizeCvPayload(body: unknown): SanitizeResult {
 // ── Minimisation RGPD avant envoi à l'IA ────────────────────────────────────
 
 export interface SanitizeForAiOptions {
-  /** Inclure téléphone/email des référents (OFF par défaut : minimisation). */
-  includeReferenceContactDetails?: boolean;
+  /** Inclure les contacts (téléphone, e-mail, adresse). OFF par défaut : minimisation. */
+  includeContacts?: boolean;
 }
 
 function s(value: unknown): string | undefined {
@@ -209,88 +272,52 @@ function compact<T extends Record<string, unknown>>(obj: T): Partial<T> {
 
 /**
  * Construit la version MINIMISÉE du CV envoyée au service de relecture IA.
- *  - jamais la photo (`photoUrl`) ;
- *  - jamais les coordonnées des référents par défaut (téléphone/email) ;
+ *  - jamais la photo ;
+ *  - jamais les contacts (téléphone, e-mail, adresse) sauf demande explicite ;
  *  - uniquement le texte utile à la correction (orthographe, style, cohérence).
  *
- * Le `fieldPath` conservé reste stable pour rapprocher les suggestions de l'IA des
- * champs côté client (cf. applyCvSuggestion dans public/cv-builder.html).
+ * ⚠️  Les INDEX sont préservés à l'identique (aucune section ni entrée n'est filtrée,
+ * même vide) : c'est ce qui rend le `fieldPath` renvoyé par l'IA
+ * (`sections.2.entries.0.bullets.1`) directement applicable au document côté client.
+ * Filtrer les vides décalerait les index et appliquerait une suggestion au mauvais champ.
  */
 export function sanitizeCvForAi(
   document: unknown,
   options: SanitizeForAiOptions = {},
 ): Record<string, unknown> {
   const doc = (document && typeof document === 'object' ? document : {}) as Record<string, unknown>;
-  const info = (doc.personalInfo as Record<string, unknown> | undefined) ?? {};
-  const arr = (key: string): Record<string, unknown>[] => {
-    const v = doc[key];
-    return Array.isArray(v) ? (v.filter((x) => x && typeof x === 'object') as Record<string, unknown>[]) : [];
-  };
+  const header = (doc.header as Record<string, unknown> | undefined) ?? {};
+  const sections = Array.isArray(doc.sections) ? doc.sections : [];
+
+  const contacts = options.includeContacts && Array.isArray(header.contacts)
+    ? (header.contacts as Record<string, unknown>[]).map((c) => s(c?.value)).filter((v): v is string => !!v)
+    : undefined;
 
   return compact({
-    personalInfo: compact({
-      // Identité utile au ton, JAMAIS la photo, l'email perso, le téléphone.
-      firstName: s(info.firstName),
-      lastName: s(info.lastName),
-      headline: s(info.headline),
-      city: s(info.city),
-      country: s(info.country),
-      nationality: s(info.nationality),
+    header: compact({
+      fullName: s(header.fullName),
+      headline: s(header.headline),
+      contacts,
     }),
-    summary: s(doc.summary),
-    experiences: arr('experiences').map((e) =>
-      compact({
-        title: s(e.title),
-        institution: s(e.institution),
-        location: s(e.location),
-        startDate: s(e.startDate),
-        endDate: e.isCurrent ? 'présent' : s(e.endDate),
-        description: s(e.description),
-        bullets: strArray(e.bullets),
-      }),
-    ),
-    education: arr('education').map((e) =>
-      compact({
-        degree: s(e.degree),
-        institution: s(e.institution),
-        location: s(e.location),
-        startDate: s(e.startDate),
-        endDate: s(e.endDate),
-        description: s(e.description),
-        bullets: strArray(e.bullets),
-      }),
-    ),
-    researchProjects: arr('researchProjects').map((e) =>
-      compact({
-        title: s(e.title),
-        institution: s(e.institution),
-        department: s(e.department),
-        startDate: s(e.startDate),
-        endDate: e.isCurrent ? 'présent' : s(e.endDate),
-        bullets: strArray(e.bullets),
-      }),
-    ),
-    certificates: arr('certificates').map((e) =>
-      compact({ title: s(e.title), subtitle: s(e.subtitle), score: s(e.score), date: s(e.date) }),
-    ),
-    languages: arr('languages').map((e) => compact({ name: s(e.name), levelLabel: s(e.levelLabel) })),
-    interests: arr('interests')
-      .map((e) => s(e.label))
-      .filter((x): x is string => !!x),
-    personalProjects: arr('personalProjects').map((e) =>
-      compact({ title: s(e.title), description: s(e.description), url: s(e.url) }),
-    ),
-    references: arr('references').map((r) =>
-      compact({
-        name: s(r.name),
-        title: s(r.title),
-        institution: s(r.institution),
-        location: s(r.location),
-        // Minimisation : coordonnées seulement si l'utilisateur l'a explicitement demandé.
-        phone: options.includeReferenceContactDetails ? s(r.phone) : undefined,
-        email: options.includeReferenceContactDetails ? s(r.email) : undefined,
-      }),
-    ),
+    sections: sections.map((raw) => {
+      const section = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+      const entries = Array.isArray(section.entries) ? section.entries : [];
+      return compact({
+        title: s(section.title),
+        layout: s(section.layout),
+        // `map` sans `filter` : un index d'entrée ne bouge jamais.
+        entries: entries.map((rawEntry) => {
+          const e = (rawEntry && typeof rawEntry === 'object' ? rawEntry : {}) as Record<string, unknown>;
+          return compact({
+            title: s(e.title),
+            date: s(e.date),
+            organisation: s(e.organisation),
+            description: strArray(e.description),
+            bullets: strArray(e.bullets),
+          });
+        }),
+      });
+    }),
   });
 }
 
