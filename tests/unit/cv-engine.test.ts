@@ -179,6 +179,38 @@ describe('cv-engine — conformité au modèle de référence', () => {
   });
 });
 
+describe('cv-engine — éléments vides (ce que l\'utilisateur vient d\'ajouter)', () => {
+  it('ne dessine pas de puce orpheline pour une ligne de liste vide', () => {
+    const d = doc([{ title: 'Centres d\'intérêt', column: 'side', layout: 'list', entries: [{ title: 'Photographie' }, { title: '' }] }]);
+    const page = CV.layout(d).pages[0];
+    const squares = page.prims.filter((p: any) => p.t === 'rect' && p.w < 5 && p.w === p.h);
+    expect(squares.length, 'une seule puce, pour la seule ligne remplie').toBe(1);
+  });
+
+  it('conserve un contact vide (les index des chemins d\'édition ne bougent pas) sans le dessiner', () => {
+    const d = doc([], {}, {
+      contacts: [
+        { icon: 'email', value: 'a@b.fr' },
+        { icon: 'phone', value: '' },
+        { icon: 'globe', value: 'exemple.fr' },
+      ],
+    });
+    // Le document garde les trois : « header.contacts.2.value » vise toujours le site.
+    expect(d.header.contacts.length).toBe(3);
+    expect(d.header.contacts[2].value).toBe('exemple.fr');
+    const texts = CV.layout(d).pages[0].prims.filter((p: any) => p.t === 'text' && p.s).map((p: any) => p.s);
+    expect(texts).toContain('a@b.fr');
+    expect(texts).toContain('exemple.fr');
+    const paths = CV.layout(d).pages[0].prims.filter((p: any) => p.path === 'header.contacts.2.value');
+    expect(paths.length, 'le chemin d\'édition pointe bien sur le 3e contact').toBeGreaterThan(0);
+  });
+
+  it('n\'ouvre pas le bandeau pour des contacts tous vides', () => {
+    const d = doc([], {}, { contacts: [{ icon: 'email', value: '' }] });
+    expect(CV.layout(d).geo.sidebarOn).toBe(false);
+  });
+});
+
 describe('cv-engine — choix de polices', () => {
   it('livre sept familles, dont deux standard du PDF (sans fichier à embarquer)', () => {
     expect(CV.FONT_FAMILIES.length).toBe(7);

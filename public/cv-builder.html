@@ -756,9 +756,10 @@
       ruleGap: clampNum(t.ruleGap, LIMITS.ruleGap, d.ruleGap),
       sectionGap: clampNum(t.sectionGap, LIMITS.sectionGap, d.sectionGap),
       sectionTitleSize: clampNum(t.sectionTitleSize, LIMITS.sectionTitleSize, d.sectionTitleSize),
-      sectionTitleUppercase: t.sectionTitleUppercase === true,
-      sectionTitleBold: t.sectionTitleBold === true,
-      organisationItalic: t.organisationItalic === true,
+      // Absent du document → valeur du préréglage (et non « false » implicite).
+      sectionTitleUppercase: t.sectionTitleUppercase === undefined ? d.sectionTitleUppercase : t.sectionTitleUppercase === true,
+      sectionTitleBold: t.sectionTitleBold === undefined ? d.sectionTitleBold : t.sectionTitleBold === true,
+      organisationItalic: t.organisationItalic === undefined ? d.organisationItalic : t.organisationItalic === true,
       nameSize: clampNum(t.nameSize, LIMITS.nameSize, d.nameSize),
       headlineSize: clampNum(t.headlineSize, LIMITS.headlineSize, d.headlineSize),
       bulletIndent: clampNum(t.bulletIndent, LIMITS.bulletIndent, d.bulletIndent),
@@ -1003,9 +1004,12 @@
         fullName: str(header.fullName, 200).replace(/\n/g, ' ').trim(),
         headline: str(header.headline, 400).replace(/\n/g, ' ').trim(),
         photo: normalizePhoto(header.photo),
+        // Les contacts vides sont CONSERVÉS : l'utilisateur vient peut-être d'en
+        // ajouter un, et retirer une ligne décalerait les index sur lesquels
+        // portent les chemins d'édition (`header.contacts.2.value`).
+        // Le rendu, lui, saute les lignes sans valeur.
         contacts: (Array.isArray(header.contacts) ? header.contacts : [])
-          .slice(0, 20).map(normalizeContact)
-          .filter(function (c) { return c.value.length > 0; }),
+          .slice(0, 20).map(normalizeContact),
       },
       sections: (Array.isArray(base.sections) ? base.sections : []).slice(0, 60).map(normalizeSection),
       theme: normalizeTheme(base.theme),
@@ -1362,11 +1366,14 @@
    * sobre que les étiquettes arrondies.
    */
   function listBlock(entry, path, width, theme) {
+    // Une ligne vide ne dessine RIEN : sans ça, une entrée qu'on vient d'ajouter
+    // laisserait une puce orpheline dans l'aperçu et dans le PDF exporté.
+    if (!entry.title) return { kind: 'entry', h: 0, prims: [], path: path };
     var f = fonts(theme);
     var indent = theme.baseSize * 1.75;
     var glyph = Math.max(1.1, theme.baseSize * 0.19);
     var color = theme.bulletColor || theme.accent;
-    var par = paragraphBlock(entry.title || '', f.base, theme.textColor, width - indent, theme.lineHeight, { path: path + '.title' });
+    var par = paragraphBlock(entry.title, f.base, theme.textColor, width - indent, theme.lineHeight, { path: path + '.title' });
     var lb = lineBox(f.base.size, theme.lineHeight);
     var prims = [{ t: 'rect', x: 0, y: lb.baseline - theme.baseSize * 0.28 - glyph, w: glyph * 2, h: glyph * 2, fill: color }];
     return { kind: 'entry', h: par.h, prims: prims.concat(translate(par.prims, indent, 0)), path: path };
@@ -1449,6 +1456,7 @@
       var gapX = theme.baseSize * 1.4;
       for (var k = 0; k < contacts.length; k++) {
         var c = contacts[k];
+        if (!c.value) continue;
         var label = theme.contactStyle === 'label' ? CONTACT_LABELS[c.icon] + ' ' + c.value : c.value;
         var w = measureText(label, f.small) + (theme.contactStyle === 'icon' ? iconSize * 0.8 + theme.baseSize * 0.4 : 0);
         if (x > 0 && x + w > width) { x = 0; y += Math.max(lb.h, iconSize * 0.9); }
@@ -1464,8 +1472,11 @@
       return { h: y + Math.max(lb.h, iconSize * 0.9), prims: prims };
     }
 
+    var rendered = 0;
     for (var i = 0; i < contacts.length; i++) {
       var ct = contacts[i];
+      if (!ct.value) continue;
+      rendered++;
       var text = theme.contactStyle === 'label' ? CONTACT_LABELS[ct.icon] + ' : ' + ct.value : ct.value;
       var par = paragraphBlock(text, f.base, color, width - indent, lh, {
         path: 'header.contacts.' + i + '.value', link: ct.href || '',
@@ -1477,8 +1488,10 @@
       }
       prims = prims.concat(translate(par.prims, indent, y));
       var rowH = theme.contactGap + Math.max(0, par.h - lbc.h);
-      y += i === contacts.length - 1 ? Math.max(par.h, iconSize) : rowH;
+      var isLast = contacts.slice(i + 1).every(function (c) { return !c.value; });
+      y += isLast ? Math.max(par.h, iconSize) : rowH;
     }
+    if (!rendered) return { h: 0, prims: [] };
     return { h: y, prims: prims };
   }
 
@@ -1506,7 +1519,8 @@
         sPrims = sPrims.concat(photoPrims(h.photo, (geo.sideContentW - size) / 2, sy, size));
         sy += size + theme.photoGap;
       }
-      if (h.contacts.length) {
+      var hasContact = h.contacts.some(function (c) { return !!c.value; });
+      if (hasContact) {
         if (theme.contactsTitle) {
           var tb = titleBlock(theme.contactsTitle, geo.sideContentW, theme, 'theme.contactsTitle');
           sPrims = sPrims.concat(translate(tb.prims, 0, sy));
@@ -1556,7 +1570,7 @@
       prims = prims.concat(translate(h2.prims, 0, y));
       y += h2.h;
     }
-    if (h.contacts.length) {
+    if (h.contacts.some(function (c) { return !!c.value; })) {
       y += theme.baseSize * 0.7;
       var cb2 = contactsBlock(h.contacts, textW, theme, { inline: true });
       prims = prims.concat(translate(cb2.prims, 0, y));
@@ -1582,7 +1596,8 @@
     var m = theme.margins;
     var sb = theme.sidebar;
     var hasSide = doc.sections.some(function (s) { return s.column === 'side'; });
-    var sidebarOn = sb.enabled && (hasSide || (theme.headerStyle === 'split' && (doc.header.photo || doc.header.contacts.length)));
+    var hasContact = doc.header.contacts.some(function (c) { return !!c.value; });
+    var sidebarOn = sb.enabled && (hasSide || (theme.headerStyle === 'split' && (doc.header.photo || hasContact)));
     var geo = {
       sidebarOn: sidebarOn,
       contentTop: m.top,
