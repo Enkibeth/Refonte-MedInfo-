@@ -88,9 +88,23 @@ celui de `partiel.html`), autour d'un **moteur de mise en page explicite** :
   chemin (`sections.2.entries.0.bullets.1`) appliqué directement au document côté client :
   filtrer une section ou une entrée vide décalerait tout et appliquerait une correction au
   mauvais champ. Un test verrouille ce point.
-- **Le PDF est limité aux polices standard** (Helvetica, Times). Embarquer une police
-  d'interface coûterait ~300 ko par graisse et interdirait la mesure exacte hors navigateur.
-  Les caractères hors WinAnsi (grec, cyrillique, CJK) ne peuvent pas être écrits : ils sont
+- **Sept familles de polices** (arbitrage Hugo, 2026-08-19) : les deux standard du PDF
+  (Helvetica, Times), qui n'ajoutent rien au fichier, et cinq familles SIL OFL embarquées
+  (Inter, Source Sans 3, Public Sans, EB Garamond, Lora). Elles sont **sous-ensemblées au jeu
+  WinAnsi** avant livraison (~300 ko → 18-34 ko par graisse) et jsPDF les compresse encore :
+  **7 à 9 ko réellement ajoutés au PDF par graisse écrite**, chiffre mesuré et annoncé dans
+  l'interface. Seules les graisses effectivement utilisées voyagent, et le même `.ttf` sert
+  à l'aperçu (`@font-face`) et au PDF — l'écran ne peut pas montrer une police que le fichier
+  n'aurait pas. Une seconde police peut être choisie pour les titres (association serif/sans).
+- **Le texte reste extractible avec une police embarquée.** jsPDF passe alors en Identity-H :
+  le flux contient des NUMÉROS DE GLYPHE, illisibles sans la table `/ToUnicode` qu'il écrit
+  en regard. C'est le point où la promesse « lisible par un ATS » pouvait se perdre en
+  silence : `tests/unit/helpers/pdfText.ts` décode cette table comme le ferait `pdftotext`,
+  et les tests échouent si un seul glyphe ne se retraduit pas — dans les cinq familles.
+- **Repli explicite** : si les fichiers de police ne peuvent pas être téléchargés au moment
+  de l'export (réseau coupé), le PDF est produit quand même avec une police standard. Un CV
+  en Helvetica vaut mieux qu'un export en échec.
+- Les caractères hors WinAnsi (grec, cyrillique, CJK) restent impossibles à écrire : ils sont
   remplacés par « ? » **et l'outil le signale** avant l'export.
 - **La photo reste le seul élément non vectoriel** du fichier (recadrée et masquée côté client),
   sans effet sur l'extraction de texte.
@@ -99,15 +113,18 @@ celui de `partiel.html`), autour d'un **moteur de mise en page explicite** :
 
 ## Vérification
 
-- `tests/unit/cv-engine.test.ts` (31 tests) : mesure et interlettrage, coupure de lignes,
+- `tests/unit/cv-engine.test.ts` (39 tests) : choix et repli de police, association
+  corps/titres, mesure et interlettrage, coupure de lignes,
   migration v1→v2 et idempotence, bornage du thème, pagination (entrée insécable, titre non
   orphelin, saut forcé, débordement signalé, colonnes indépendantes, ordre de lecture),
   ajustement (dont l'échec honnête), contraste des cinq palettes, nettoyage d'un collage Word,
   modèles sans donnée inventée.
-- `tests/unit/cv-pdf.test.ts` (10 tests) : égalité des métriques moteur ↔ jsPDF, puis
-  **relecture du PDF réellement produit** — vrai texte, nombre de pages identique à l'aperçu,
-  accents et ligatures, ordre de lecture, aucun texte superposé, aucune page rastérisée,
-  métadonnées, poids et temps de génération.
+- `tests/unit/cv-pdf.test.ts` (17 tests) : égalité des métriques moteur ↔ jsPDF pour les sept
+  familles et leurs quatre styles, présence des fichiers et des licences OFL, puis
+  **relecture du PDF réellement produit** — vrai texte (y compris avec police embarquée,
+  via `/ToUnicode`), nombre de pages identique à l'aperçu, accents et ligatures, ordre de
+  lecture, aucun texte superposé, aucune page rastérisée, graisses inutilisées non
+  embarquées, repli sans police, métadonnées, poids et temps de génération.
 - `tests/unit/cv-document.test.ts` : bornage du payload et minimisation RGPD côté serveur.
 - `scripts/dev/cv-smoke.mjs` (opt-in, hors CI) : parcours navigateur complet et vérification du
   fichier téléchargé.

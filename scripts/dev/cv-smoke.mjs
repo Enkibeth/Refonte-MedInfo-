@@ -63,33 +63,79 @@ const ok = (cond, label, extra = '') => {
   else { console.log('  ✗', label, extra); fails.push(label); }
 };
 
-/** Extraction du texte d'un PDF non compressé (celui que produit jsPDF). */
+/**
+ * Extraction du texte du PDF téléchargé — version allégée de
+ * `tests/unit/helpers/pdfText.ts`, qui fait FOI (ce script ne peut pas importer de TS).
+ * Gère les deux encodages produits : chaînes WinAnsi des polices standard, et glyphes
+ * Identity-H des polices embarquées, décodés via la table `/ToUnicode`.
+ */
 function pdfText(buffer) {
   const raw = buffer.toString('latin1');
-  const objects = {};
+  const objs = {};
   const re = /(\d+) 0 obj([\s\S]*?)endobj/g;
   let m;
-  while ((m = re.exec(raw))) objects[m[1]] = m[2];
-  const contentIds = [...raw.matchAll(/\/Type \/Page\b[\s\S]*?\/Contents (\d+) 0 R/g)].map((x) => x[1]);
+  while ((m = re.exec(raw))) objs[m[1]] = m[2];
+  const streamOf = (body) => {
+    const s = (body || '').match(/stream\r?\n([\s\S]*?)endstream/);
+    return s ? s[1] : null;
+  };
   const HIGH = {
     128: '€', 130: '‚', 131: 'ƒ', 132: '„', 133: '…', 134: '†', 135: '‡', 136: 'ˆ', 137: '‰',
     138: 'Š', 139: '‹', 140: 'Œ', 142: 'Ž', 145: '‘', 146: '’', 147: '“', 148: '”', 149: '•',
     150: '–', 151: '—', 152: '˜', 153: '™', 154: 'š', 155: '›', 156: 'œ', 158: 'ž', 159: 'Ÿ',
   };
-  const decode = (s) => {
-    let out = '';
-    for (let i = 0; i < s.length; i++) {
-      const code = s.charCodeAt(i);
-      out += HIGH[code] || String.fromCharCode(code);
+  const toUnicode = (cmap) => {
+    const map = {};
+    const hex = (s) => String.fromCharCode(...(s.match(/.{4}/g) || []).map((h) => parseInt(h, 16)));
+    for (const b of cmap.match(/beginbfchar([\s\S]*?)endbfchar/g) || []) {
+      for (const x of b.matchAll(/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g)) map[parseInt(x[1], 16)] = hex(x[2]);
     }
-    return out;
+    for (const b of cmap.match(/beginbfrange([\s\S]*?)endbfrange/g) || []) {
+      for (const x of b.matchAll(/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g)) {
+        const lo = parseInt(x[1], 16), hi = parseInt(x[2], 16), dst = parseInt(x[3].slice(0, 4), 16);
+        for (let g = lo; g <= hi; g++) map[g] = String.fromCharCode(dst + (g - lo));
+      }
+    }
+    return map;
   };
-  return contentIds.map((id) => {
-    const stream = (objects[id] || '').match(/stream\r?\n([\s\S]*?)endstream/);
-    if (!stream) return [];
-    // Position + contenu : deux runs au MÊME point = calque de texte dupliqué.
-    return [...stream[1].matchAll(/([-\d.]+) ([-\d.]+) Td\s*\(((?:\\.|[^\\()])*)\)\s*Tj/g)]
-      .map((x) => ({ x: Number(x[1]), y: Number(x[2]), text: decode(x[3].replace(/\\([()\\])/g, '$1')) }));
+  const pageIds = [...raw.matchAll(/\/Type \/Page\b[\s\S]*?\/Contents (\d+) 0 R/g)].map((x) => x[1]);
+  const pageBodies = [...raw.matchAll(/\/Type \/Page\b([\s\S]*?)>>\s*endobj/g)].map((x) => x[1]);
+
+  return pageIds.map((id, index) => {
+    const content = streamOf(objs[id]);
+    if (!content) return [];
+    const resRef = (pageBodies[index] || '').match(/\/Resources (\d+) 0 R/);
+    const dict = ((resRef ? objs[resRef[1]] : '') || '').match(/\/Font\s*<<([\s\S]*?)>>/);
+    const fonts = {};
+    for (const f of (dict ? dict[1].matchAll(/\/(F\d+)\s+(\d+) 0 R/g) : [])) {
+      const body = objs[f[2]] || '';
+      const ref = body.match(/\/ToUnicode (\d+) 0 R/);
+      fonts[f[1]] = { map: ref ? toUnicode(streamOf(objs[ref[1]]) || '') : {} };
+    }
+    const runs = [];
+    let current = '', x = 0, y = 0;
+    const token = /\/(F\d+)\s+[\d.]+\s+Tf|([-\d.]+)\s+([-\d.]+)\s+Td|\(((?:\\.|[^\\()])*)\)\s*Tj|<([0-9A-Fa-f\s]+)>\s*Tj/g;
+    let t;
+    while ((t = token.exec(content))) {
+      if (t[1]) { current = t[1]; continue; }
+      if (t[2] !== undefined) { x = Number(t[2]); y = Number(t[3]); continue; }
+      if (t[4] !== undefined) {
+        const plain = t[4].replace(/\\([()\\])/g, '$1');
+        let out = '';
+        for (let i = 0; i < plain.length; i++) out += HIGH[plain.charCodeAt(i)] || plain.charAt(i);
+        runs.push({ x, y, text: out });
+        continue;
+      }
+      const hex = (t[5] || '').replace(/\s/g, '');
+      const map = (fonts[current] || { map: {} }).map;
+      let out = '';
+      for (let i = 0; i + 4 <= hex.length; i += 4) {
+        const g = parseInt(hex.slice(i, i + 4), 16);
+        out += map[g] !== undefined ? map[g] : '\uFFFD';
+      }
+      runs.push({ x, y, text: out });
+    }
+    return runs;
   });
 }
 
@@ -97,8 +143,12 @@ const browser = await chromium.launch({ executablePath: CHROMIUM });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });
 const page = await context.newPage();
 const errors = [];
+const fontRequests = [];
 page.on('console', (msg) => { if (msg.type() === 'error') errors.push(msg.text()); });
 page.on('pageerror', (err) => errors.push(String(err)));
+page.on('request', (req) => {
+  if (req.url().includes('/vendor/fonts/cv/')) fontRequests.push(req.url().split('/').pop());
+});
 
 console.log('\n▶ Chargement de la page');
 await page.goto(`http://127.0.0.1:${port}/cv-builder.html`);
@@ -176,6 +226,24 @@ await page.click('.swatch >> nth=2');
 await page.waitForTimeout(300);
 ok(await page.evaluate(() => document.querySelectorAll('.page svg rect').length > 0), 'fond du bandeau rendu');
 
+console.log('\n▶ Polices');
+ok(fontRequests.length > 0, 'la police du document est chargée pour l\'aperçu : ' + fontRequests.join(', '));
+ok(fontRequests.every((f) => f.startsWith('inter-')),
+  'aucune police non utilisée n\'est téléchargée', fontRequests.join(', '));
+ok(!fontRequests.includes('inter-bolditalic.ttf'),
+  'même la graisse inutilisée de la famille reste au repos');
+await page.click('#itab-theme');
+await page.waitForTimeout(200);
+const fontSelect = page.locator('.pane-right select').first();
+await fontSelect.selectOption('ebgaramond');
+await page.waitForTimeout(1000);
+ok(fontRequests.some((f) => f.startsWith('ebgaramond-')), 'changer de police charge la nouvelle famille');
+const weightNote = await page.locator('.pane-right .hint').last().textContent();
+ok(/ko dans le PDF/.test(weightNote || ''), 'le poids ajouté au PDF est annoncé : ' + (weightNote || '').slice(0, 70));
+await fontSelect.selectOption('inter');
+await page.waitForTimeout(600);
+await page.click('#itab-content');
+
 console.log('\n▶ Photo (import, redimensionnement, masque)');
 await page.click('#btn-header');
 await page.waitForTimeout(200);
@@ -239,6 +307,8 @@ ok(pages.length >= 1, 'PDF non vide : ' + pages.length + ' page(s)');
 ok(flat.includes('Camille Rousseau'), 'le nom est du VRAI TEXTE dans le PDF (lisible par un ATS)');
 ok(flat.some((t) => t.includes('MOBILITÉS INTERNATIONALES')), 'la rubrique libre est dans le texte extrait');
 ok(flat.some((t) => t.includes('médecine interne')), 'accents et tirets cadratins corrects après extraction');
+ok(/\/FontFile2/.test(buf.toString('latin1')), 'la police choisie est embarquée dans le PDF');
+ok(!flat.join('').includes('\uFFFD'), 'aucun glyphe non décodable (table ToUnicode complète)');
 // La photo est une image (c'est normal) ; ce qui est interdit, c'est une image
 // AUSSI GRANDE QUE LA PAGE, signe d'une capture d'écran déguisée en PDF.
 const images = [...buf.toString('latin1').matchAll(/\/Subtype\s*\/Image[\s\S]{0,300}?\/Width (\d+)[\s\S]{0,120}?\/Height (\d+)/g)]

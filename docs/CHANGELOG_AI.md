@@ -18,6 +18,36 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-08-19] – Claude (CV : sept polices au choix, embarquées dans le PDF)
+### Files modified
+- public/vendor/fonts/cv/ (nouveau : 5 familles SIL OFL × 4 styles, sous-ensemblées WinAnsi, + licences + README)
+- public/cv-builder.html (table de largeurs des 7 familles, `FONT_FAMILIES`, `fontFile`/`usedFonts`, police des titres dissociable, `@font-face` à la demande, embarquement dans le PDF, repli si le fichier manque)
+- scripts/dev/build-cv-fonts.mjs (nouveau : téléchargement + `pyftsubset`), scripts/dev/extract-pdf-font-metrics.cjs (7 familles, unités de police + `upm`, option `--write`)
+- tests/unit/helpers/pdfText.ts (nouveau : extracteur WinAnsi ET Identity-H via `/ToUnicode`)
+- tests/unit/cv-engine.test.ts (+8), tests/unit/cv-pdf.test.ts (+7), scripts/dev/cv-smoke.mjs
+- docs/CV_BUILDER.md, docs/DECISIONS/0036-refonte-cv-builder.md, CLAUDE.md
+### Purpose
+Arbitrage Hugo : « mets des choix de police ». La refonte de la veille se limitait aux deux
+polices standard du format PDF (Helvetica, Times) pour garder un fichier minuscule et une
+mesure exacte. Cinq familles SIL OFL sont ajoutées (Inter, Source Sans 3, Public Sans,
+EB Garamond, Lora), sous-ensemblées au jeu WinAnsi avant livraison (~300 ko → 18-34 ko par
+graisse) ; seules les graisses réellement écrites sont téléchargées puis embarquées, pour
+7 à 9 ko ajoutés au PDF chacune — chiffre mesuré et affiché dans l'onglet Thème. Le même
+.ttf sert à l'aperçu et au PDF, donc l'écran ne peut pas montrer une police absente du
+fichier. La police des titres peut différer de celle du corps.
+Point de vigilance traité : avec une police embarquée, jsPDF passe en Identity-H et écrit
+des NUMÉROS DE GLYPHE — le PDF serait illisible pour un ATS sans la table `/ToUnicode` qui
+les retraduit. L'extracteur de test la décode comme `pdftotext` et les tests échouent si un
+seul glyphe ne revient pas, dans les cinq familles. Si les fichiers de police ne peuvent pas
+être récupérés à l'export, le PDF sort quand même en police standard.
+### Regulatory impact
+None — aucune donnée, aucune route, aucune feature IA touchée. Licences SIL OFL livrées avec
+les polices (redistribution et embarquement dans un PDF autorisés).
+### Rollback plan
+`git revert` du commit : le moteur retombe sur Helvetica/Times (les documents enregistrés
+avec une autre famille se rouvrent, `normalizeTheme` repliant toute famille inconnue).
+
+
 ## [2026-08-18] – Claude (Refonte du créateur de CV : sections libres + PDF vectoriel)
 ### Files modified
 - public/cv-builder.html (réécriture complète : moteur pur `@cv-engine` + interface 3 volets + export PDF vectoriel)

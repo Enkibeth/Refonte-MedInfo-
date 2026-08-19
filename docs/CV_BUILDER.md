@@ -37,7 +37,10 @@ adr: ADR-0028 (module initial), ADR-0036 (refonte v2)
 | `tests/unit/cv-engine.test.ts` | Mesure, coupure, migration, pagination, ajustement, contraste, collage, modèles. |
 | `tests/unit/cv-pdf.test.ts` | Génère un vrai PDF avec le jsPDF servi par la page, puis **relit le fichier** : pages, ordre de lecture, doublons, accents, métadonnées, poids, vitesse. |
 | `scripts/dev/cv-smoke.mjs` | Fumigation navigateur (opt-in, hors CI) : parcours complet + vérification du PDF téléchargé. |
-| `scripts/dev/extract-pdf-font-metrics.cjs` | Régénère la table de largeurs de glyphes embarquée dans le moteur. |
+| `scripts/dev/extract-pdf-font-metrics.cjs` | Régénère la table de largeurs de glyphes embarquée dans le moteur (7 familles × 4 styles). |
+| `scripts/dev/build-cv-fonts.mjs` | Retélécharge et sous-ensemble les polices livrées (réseau + `pyftsubset`). |
+| `tests/unit/helpers/pdfText.ts` | Extracteur de texte de PDF (WinAnsi **et** Identity-H + `/ToUnicode`) : la mesure de ce qu'un ATS lira. |
+| `public/vendor/fonts/cv/` | Les cinq familles embarquables, sous-ensemblées, avec leurs licences OFL. |
 | `src/cv/cvDocument.ts` | Côté serveur : validation/bornage du payload, minimisation RGPD avant l'IA, normalisation de l'import. |
 | `app/api/cv-docs+api.ts` | CRUD cloud (client Supabase scopé au token → RLS own-row). |
 | `app/api/cv+api.ts` | Relecture IA (`cv_review`). |
@@ -81,10 +84,11 @@ document → blocs (unités insécables) → pagination par colonne → primitiv
                                                                    └→ PDF (jsPDF)
 ```
 
-- **Mesure.** Les largeurs de glyphes des polices PDF standard (Helvetica et Times, quatre
-  styles chacune) sont embarquées sous forme de table compacte, extraite de jsPDF lui-même.
-  Un test verrouille l'égalité `measureText` ≡ `jsPDF.getTextWidth` à 0,001 pt près : c'est
-  ce qui rend l'aperçu fidèle.
+- **Mesure.** Les largeurs de glyphes des **sept familles** (quatre styles chacune) sont
+  embarquées sous forme de table compacte, extraite de jsPDF lui-même — en unités de police,
+  avec l'`upm` de la famille, pour reproduire son calcul au bit près. Un test verrouille
+  l'égalité `measureText` ≡ `jsPDF.getTextWidth` à 0,001 pt près, famille par famille et
+  style par style : c'est ce qui rend l'aperçu fidèle.
 - **Bloc** = plus petite unité qui ne se coupe jamais (un titre de rubrique, une entrée,
   une ligne d'étiquettes). Ses primitives sont calculées en coordonnées relatives puis
   translatées : le même bloc sert à l'écran et au PDF.
@@ -100,6 +104,24 @@ document → blocs (unités insécables) → pagination par colonne → primitiv
   blanc, texte sur bandeau, accent sur bandeau…). Sous 4,5:1, un avertissement s'affiche
   au-dessus de l'aperçu et dans l'onglet Thème. Les cinq palettes livrées sont couvertes
   par un test.
+
+## Ajouter ou régénérer une police
+
+Les fichiers vivent dans `public/vendor/fonts/cv/` (un `.ttf` par style + la licence OFL de
+chaque famille ; voir le README du dossier). Pour ajouter une famille :
+
+1. L'ajouter à `FAMILIES` dans `scripts/dev/build-cv-fonts.mjs` (licence **SIL OFL
+   obligatoire** — une police non libre ne peut pas être embarquée dans les PDF des
+   utilisateurs), puis `node scripts/dev/build-cv-fonts.mjs` (réseau + `pip install
+   fonttools brotli`).
+2. `node scripts/dev/extract-pdf-font-metrics.cjs --write` pour régénérer la table de
+   largeurs du moteur. **Sauter cette étape rend l'aperçu menteur** : il mesurerait avec les
+   largeurs d'une autre police. Le script refuse d'écrire si le moteur et jsPDF divergent.
+3. L'ajouter à `FONT_FAMILIES` dans le bloc `@cv-engine` (`key`, `label`, `kind`, `note`,
+   `css`, `weightKo`). `weightKo` est le poids RÉEL ajouté au PDF par graisse — mesurable en
+   exportant le même CV avec et sans la police.
+4. Les tests couvrent automatiquement la nouvelle famille (mesure, extraction du texte,
+   présence des fichiers et de la licence).
 
 ## Ajouter un thème
 
@@ -125,16 +147,25 @@ document → blocs (unités insécables) → pagination par colonne → primitiv
   déjà ce patron, avec le même contrat (iframe + `postMessage` du token + `RoleGate`).
   Conséquence assumée : pas de TypeScript ni de zustand/dnd-kit/zod dans la page — le
   moteur est en JS pur, mais entièrement testé hors navigateur.
-- **Polices PDF standard (Helvetica, Times) plutôt qu'Inter / EB Garamond.** Embarquer une
-  police d'interface dans un PDF coûterait ~300 ko par graisse (jsPDF ne sous-ensemble pas)
-  et interdirait la mesure exacte hors navigateur. Les polices standard donnent un PDF de
-  ~25 ko, une extraction de texte parfaite partout, et sont le standard des CV hospitaliers
-  français. L'aperçu utilise leurs équivalents écran (Arial/Liberation Sans, Times New
-  Roman/Liberation Serif) et corrige la largeur de chaque ligne par un `scaleX` calculé
-  pour coller exactement aux métriques du PDF.
-- **Caractères hors WinAnsi.** Un alphabet non latin (grec, cyrillique, CJK) n'existe pas
-  dans ces polices : il serait écrit « ? ». L'outil le **dit** (avertissement listant les
-  caractères concernés) au lieu de laisser découvrir le problème dans le fichier envoyé.
+- **Sept familles, dont cinq embarquées.** Les polices standard du PDF (Helvetica, Times)
+  ne coûtent rien mais datent. Les cinq autres (Inter, Source Sans 3, Public Sans,
+  EB Garamond, Lora — toutes SIL OFL) sont **sous-ensemblées au jeu WinAnsi** avant d'être
+  livrées, ce qui les fait tomber de ~300 ko à 18-34 ko par graisse ; jsPDF les compresse
+  encore à l'embarquement, soit **7 à 9 ko réellement ajoutés au PDF par graisse écrite**.
+  Le prix est annoncé dans l'onglet Thème, mesuré et non deviné. Pour l'aperçu, c'est le
+  MÊME fichier `.ttf` qui est servi en `@font-face` : l'écran ne peut pas montrer une police
+  que le PDF n'aurait pas. Avec une police standard, l'aperçu utilise l'équivalent système
+  (Arial/Liberation Sans, Times New Roman/Liberation Serif) et corrige la largeur de chaque
+  ligne par un `scaleX` calculé sur les métriques du PDF.
+- **Caractères hors WinAnsi.** Un alphabet non latin (grec, cyrillique, CJK) n'existe ni
+  dans les polices standard, ni dans les sous-ensembles livrés : il serait écrit « ? ».
+  L'outil le **dit** (avertissement listant les caractères concernés) au lieu de laisser
+  découvrir le problème dans le fichier envoyé.
+- **Le texte reste extractible avec une police embarquée.** jsPDF écrit alors les glyphes en
+  Identity-H (des NUMÉROS de glyphe, pas des lettres) accompagnés d'une table `/ToUnicode`.
+  C'est elle qui permet à un ATS de relire le CV : `tests/unit/helpers/pdfText.ts` la décode
+  exactement comme le ferait `pdftotext`, et les tests échouent si un seul glyphe ne se
+  retraduit pas.
 - **Icônes de contact vectorielles**, dessinées en primitives (jamais une police d'icônes,
   jamais une image) : elles restent nettes et ne perturbent pas l'extraction de texte. Deux
   variantes sans icône (libellés « Tél. / Email… », ou valeur seule) sont proposées.

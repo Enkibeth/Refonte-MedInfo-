@@ -13,51 +13,38 @@
  * coupures de ligne et du nombre de pages affichés dans l'aperçu) et celles que
  * jsPDF inscrit dans le PDF : si elles divergeaient, l'aperçu mentirait.
  */
+import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { CV, doc, entry } from './helpers/cvEngine';
+import { readPdfRuns } from './helpers/pdfText';
 
 const require = createRequire(import.meta.url);
 const { jsPDF } = require('../../public/vendor/js/jspdf.umd.min.js');
 
 const LOREM = 'Prise en charge des patients hospitalisés en autonomie supervisée, participation aux visites et aux transmissions du service.';
 
-/** cp1252 : les seuls codes qui diffèrent d'Unicode dans un PDF WinAnsi. */
-const HIGH: Record<number, string> = {
-  128: '€', 130: '‚', 131: 'ƒ', 132: '„', 133: '…', 134: '†', 135: '‡', 136: 'ˆ', 137: '‰',
-  138: 'Š', 139: '‹', 140: 'Œ', 142: 'Ž', 145: '‘', 146: '’', 147: '“', 148: '”', 149: '•',
-  150: '–', 151: '—', 152: '˜', 153: '™', 154: 'š', 155: '›', 156: 'œ', 158: 'ž', 159: 'Ÿ',
-};
-
 type Run = { x: number; y: number; text: string };
 
-/** Extracteur minimal : jsPDF écrit des flux non compressés, lisibles tels quels. */
+/** Les .ttf sous-ensemblés servis par la page, encodés comme le fait le navigateur. */
+function fontData(entries: { key: string; file: string }[]): Record<string, string> {
+  const dir = fileURLToPath(new URL('../../public/vendor/fonts/cv/', import.meta.url));
+  const out: Record<string, string> = {};
+  for (const entry of entries) out[entry.key] = readFileSync(dir + entry.file).toString('base64');
+  return out;
+}
+
 function readPdf(buffer: Buffer): { pages: Run[][]; raw: string } {
-  const raw = buffer.toString('latin1');
-  const objects: Record<string, string> = {};
-  const re = /(\d+) 0 obj([\s\S]*?)endobj/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(raw))) objects[m[1]] = m[2];
-  const contents = [...raw.matchAll(/\/Type \/Page\b[\s\S]*?\/Contents (\d+) 0 R/g)].map((x) => x[1]);
-  const decode = (s: string) => {
-    let out = '';
-    for (let i = 0; i < s.length; i++) out += HIGH[s.charCodeAt(i)] || s.charAt(i);
-    return out;
-  };
-  const pages = contents.map((id) => {
-    const stream = (objects[id] || '').match(/stream\r?\n([\s\S]*?)endstream/);
-    if (!stream) return [];
-    return [...stream[1].matchAll(/([-\d.]+) ([-\d.]+) Td\s*\(((?:\\.|[^\\()])*)\)\s*Tj/g)].map((x) => ({
-      x: Number(x[1]), y: Number(x[2]), text: decode(x[3].replace(/\\([()\\])/g, '$1')),
-    }));
-  });
+  const { pages, raw } = readPdfRuns(buffer);
   return { pages, raw };
 }
 
-function build(document: Record<string, unknown>) {
+function build(document: Record<string, unknown>, options: Record<string, unknown> = {}) {
   const result = CV.layout(document);
-  const pdf = CV.renderPdf(result, jsPDF, {});
+  const fonts = options.fonts === false ? {} : fontData(CV.usedFonts(result));
+  const pdf = CV.renderPdf(result, jsPDF, { fonts, ...options });
   return { result, buffer: Buffer.from(pdf.output('arraybuffer') as ArrayBuffer) };
 }
 
@@ -73,25 +60,112 @@ const sample = () => doc(
 );
 
 describe('cv-pdf — métriques identiques à celles inscrites dans le PDF', () => {
-  it('mesure exactement comme jsPDF (sinon l\'aperçu mentirait sur la pagination)', () => {
+  const CORPUS = [
+    'Diplôme de formation approfondie en sciences médicales',
+    'CHU de Lyon — Service de cardiologie',
+    'œuvre « citée » — 20 % (n = 143)',
+    'AaBbCc 0123456789 ,.;:!?()[]/',
+    'Élodie Müller-Nguyên',
+  ];
+
+  it('mesure exactement comme jsPDF, pour les SEPT familles (sinon l\'aperçu mentirait)', () => {
+    const dir = fileURLToPath(new URL('../../public/vendor/fonts/cv/', import.meta.url));
     const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
-    const corpus = [
-      'Diplôme de formation approfondie en sciences médicales',
-      'CHU de Lyon — Service de cardiologie',
-      'œuvre « citée » — 20 % (n = 143)',
-      'AaBbCc 0123456789 ,.;:!?()[]/',
-      'Élodie Müller-Nguyên',
-    ];
-    (['helvetica', 'times'] as const).forEach((family) => {
-      ([['normal', false, false], ['bold', true, false], ['italic', false, true], ['bolditalic', true, true]] as const).forEach(([style, bold, italic]) => {
-        pdf.setFont(family, style);
+    CV.FONT_FAMILIES.forEach((family: { key: string; builtin: boolean }) => {
+      CV.FONT_STYLES.forEach((style: string) => {
+        if (!family.builtin) {
+          const entry = CV.fontFile(family.key, style);
+          pdf.addFileToVFS(entry.file, readFileSync(dir + entry.file).toString('base64'));
+          pdf.addFont(entry.file, family.key, style);
+        }
+        pdf.setFont(family.key, style);
         pdf.setFontSize(11);
-        corpus.forEach((text) => {
-          const engine = CV.measureText(text, { family, size: 11, bold, italic });
-          expect(Math.abs(engine - pdf.getTextWidth(text)), family + '/' + style + ' — ' + text).toBeLessThan(0.001);
+        const bold = style === 'bold' || style === 'bolditalic';
+        const italic = style === 'italic' || style === 'bolditalic';
+        CORPUS.forEach((text) => {
+          const engine = CV.measureText(text, { family: family.key, size: 11, bold, italic });
+          expect(Math.abs(engine - pdf.getTextWidth(text)), family.key + '/' + style + ' — ' + text)
+            .toBeLessThan(0.001);
         });
       });
     });
+  });
+
+  it('livre bien les fichiers de chaque famille embarquée', () => {
+    const dir = fileURLToPath(new URL('../../public/vendor/fonts/cv/', import.meta.url));
+    CV.FONT_FAMILIES.filter((f: { builtin: boolean }) => !f.builtin).forEach((family: { key: string; label: string }) => {
+      CV.FONT_STYLES.forEach((style: string) => {
+        const entry = CV.fontFile(family.key, style);
+        expect(existsSync(dir + entry.file), family.label + ' — ' + entry.file).toBe(true);
+      });
+      // La licence OFL accompagne obligatoirement la police redistribuée.
+      expect(existsSync(dir + family.key + '-OFL.txt'), 'licence de ' + family.label).toBe(true);
+    });
+  });
+});
+
+describe('cv-pdf — polices embarquées', () => {
+  const withFamily = (key: string) => doc(
+    [{ title: 'Stages hospitaliers', column: 'main', layout: 'entries', entries: [entry('Externe en cardiologie', ['Suivi des patients hospitalisés.'])] }],
+    { fontFamily: key },
+    { headline: 'Interne — œuvre « citée »' },
+  );
+
+  it('embarque la police ET garde le texte extractible (table ToUnicode)', () => {
+    const { buffer } = build(withFamily('inter'));
+    expect(/\/FontFile2/.test(buffer.toString('latin1')), 'police embarquée').toBe(true);
+    expect(/Identity-H/.test(buffer.toString('latin1')), 'encodage Identity-H').toBe(true);
+    // Sans ToUnicode, ce PDF serait un mur de numéros de glyphes pour un ATS.
+    const flat = readPdfRuns(buffer).pages.flat().map((r) => r.text);
+    expect(flat).toContain('Camille Rousseau');
+    expect(flat.join(' ')).toContain('œuvre « citée »');
+    expect(flat.join(' ')).toContain('Externe en cardiologie');
+    expect(flat.join(' ')).not.toContain('\uFFFD');
+  });
+
+  it('reste extractible dans les cinq familles livrées', () => {
+    CV.FONT_FAMILIES.filter((f: { builtin: boolean }) => !f.builtin).forEach((family: { key: string; label: string }) => {
+      const { buffer } = build(withFamily(family.key));
+      const flat = readPdfRuns(buffer).pages.flat().map((r) => r.text).join(' ');
+      expect(flat, family.label).toContain('Camille Rousseau');
+      expect(flat, family.label).toContain('œuvre « citée »');
+    });
+  });
+
+  it('n\'embarque QUE les graisses réellement écrites', () => {
+    const result = CV.layout(withFamily('inter'));
+    const used = CV.usedFonts(result).map((f: { key: string }) => f.key).sort();
+    // Ce CV n'a ni titre en italique de famille de titres distincte : romain, gras, italique.
+    expect(used.every((k: string) => k.indexOf('inter:') === 0)).toBe(true);
+    expect(used.length).toBeLessThanOrEqual(4);
+    expect(used).toContain('inter:normal');
+  });
+
+  it('associe une police de titres différente sans perdre l\'extraction', () => {
+    const d = doc(
+      [{ title: 'Formation', column: 'main', layout: 'entries', entries: [entry('DFASM')] }],
+      { fontFamily: 'inter', headingFamily: 'ebgaramond' },
+    );
+    const result = CV.layout(d);
+    const families = CV.usedFonts(result).map((f: { family: string }) => f.family);
+    expect(new Set(families).size).toBe(2);
+    const { buffer } = build(d);
+    expect(readPdfRuns(buffer).pages.flat().map((r) => r.text)).toContain('FORMATION');
+  });
+
+  it('sans les fichiers de police, l\'export ne casse pas : repli lisible', () => {
+    // Réseau coupé au moment de l'export : mieux vaut un PDF en Helvetica qu'aucun PDF.
+    const { buffer } = build(withFamily('inter'), { fonts: false });
+    const raw = buffer.toString('latin1');
+    expect(/\/FontFile2/.test(raw)).toBe(false);
+    const flat = readPdfRuns(buffer).pages.flat().map((r) => r.text).join(' ');
+    expect(flat).toContain('Camille Rousseau');
+    expect(flat).toContain('œuvre « citée »');
+  });
+
+  it('reste raisonnable en poids avec la police embarquée', () => {
+    const { buffer } = build(withFamily('inter'));
+    expect(buffer.length).toBeLessThan(150_000);
   });
 });
 

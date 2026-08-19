@@ -48,6 +48,72 @@ describe('cv-engine — mesure du texte', () => {
   });
 });
 
+describe('cv-engine — choix de polices', () => {
+  it('livre sept familles, dont deux standard du PDF (sans fichier à embarquer)', () => {
+    expect(CV.FONT_FAMILIES.length).toBe(7);
+    const keys = CV.FONT_FAMILIES.map((f: { key: string }) => f.key);
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(CV.FONT_FAMILIES.filter((f: { builtin: boolean }) => f.builtin).map((f: { key: string }) => f.key))
+      .toEqual(['helvetica', 'times']);
+    CV.FONT_FAMILIES.forEach((f: { key: string; builtin: boolean; kind: string }) => {
+      expect(['sans', 'serif']).toContain(f.kind);
+      CV.FONT_STYLES.forEach((style: string) => {
+        const entry = CV.fontFile(f.key, style);
+        if (f.builtin) expect(entry).toBeNull();
+        else expect(entry.file).toBe(f.key + '-' + (style === 'normal' ? 'regular' : style) + '.ttf');
+      });
+    });
+  });
+
+  it('mesure chaque famille avec SES propres largeurs', () => {
+    const widths = CV.FONT_FAMILIES.map((f: { key: string }) =>
+      CV.measureText('Diplôme de docteur en médecine', { family: f.key, size: 10 }));
+    expect(new Set(widths.map((w: number) => w.toFixed(3))).size).toBeGreaterThan(4);
+  });
+
+  it('retombe sur Helvetica pour une famille inconnue (jamais de mesure fantaisiste)', () => {
+    const unknown = CV.measureText('Cardiologie', { family: 'comic-sans-du-web', size: 10 });
+    expect(unknown).toBe(CV.measureText('Cardiologie', { family: 'helvetica', size: 10 }));
+    expect(CV.normalizeTheme({ fontFamily: 'comic-sans-du-web' }).fontFamily).toBe('inter');
+    expect(CV.normalizeTheme({ headingFamily: 'comic-sans-du-web' }).headingFamily).toBe('');
+  });
+
+  it('applique la police des titres au nom et aux rubriques, pas au corps', () => {
+    const d = doc(
+      [{ title: 'Formation', column: 'main', layout: 'entries', entries: [entry('DFASM', ['Une puce.'])] }],
+      { fontFamily: 'inter', headingFamily: 'ebgaramond' },
+    );
+    const prims = CV.layout(d).pages[0].prims.filter((p: any) => p.t === 'text');
+    const byText = (s: string) => prims.filter((p: any) => p.s === s)[0];
+    expect(byText('Camille Rousseau').fam).toBe('ebgaramond');
+    expect(byText('FORMATION').fam).toBe('ebgaramond');
+    expect(byText('DFASM').fam).toBe('inter');
+    expect(byText('Une puce.').fam).toBe('inter');
+  });
+
+  it('change de police change la mise en page (la mesure suit vraiment la police)', () => {
+    const sections = [{ title: 'Stages', column: 'main', layout: 'entries', entries: Array.from({ length: 6 }, (_, i) => entry('Stage ' + i, [LOREM, LOREM])) }];
+    const inter = CV.layout(doc(sections, { fontFamily: 'inter' }));
+    const garamond = CV.layout(doc(sections, { fontFamily: 'ebgaramond' }));
+    const lines = (r: any) => r.pages.reduce((n: number, pg: any) => n + pg.prims.filter((p: any) => p.t === 'text').length, 0);
+    expect(lines(inter)).not.toBe(lines(garamond));
+  });
+
+  it('ne liste comme à embarquer que les couples (famille, graisse) écrits', () => {
+    const d = doc([{ title: 'Formation', column: 'main', layout: 'entries', entries: [entry('DFASM')] }], { fontFamily: 'lora' });
+    const used = CV.usedFonts(CV.layout(d)).map((f: { key: string }) => f.key).sort();
+    expect(used.every((k: string) => k.startsWith('lora:'))).toBe(true);
+    expect(used).toContain('lora:bold');
+    // Aucune graisse inutilisée : ce CV n'a pas de texte en gras italique.
+    expect(used).not.toContain('lora:bolditalic');
+  });
+
+  it('n\'a rien à embarquer avec une police standard du PDF', () => {
+    const d = doc([{ title: 'Formation', column: 'main', layout: 'entries', entries: [entry('DFASM')] }], { fontFamily: 'helvetica' });
+    expect(CV.usedFonts(CV.layout(d))).toEqual([]);
+  });
+});
+
 describe('cv-engine — coupure des lignes', () => {
   const font = { family: 'helvetica', size: 10 };
 
