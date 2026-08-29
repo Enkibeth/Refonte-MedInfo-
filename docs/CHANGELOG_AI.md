@@ -18,6 +18,48 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-08-29] – Claude (chat : phases non rédactionnelles sur GPT-5.6 Luna)
+### Files modified
+- src/ai/providers/featureModel.ts (3 modèles GPT-5.6 dans AVAILABLE_MODELS ; défauts `chat_researcher` et `chat_fast` → `gpt-5.6-luna`)
+- src/ai/providers/featureRuntime.ts (`openaiReasoningEffort` : `minimal` → `none` pour la famille 5.6)
+- src/admin/cost.ts (prix exacts sol/terra/luna + replis par famille avant la règle générique gpt-5)
+- supabase/migrations/0044_chat_gpt56_luna.sql
+- tests/unit/feature-runtime.test.ts, tests/unit/admin-cost.test.ts, CLAUDE.md
+### Purpose
+Retour Hugo : « c'est trop long la génération d'une réponse », demande explicite de passer sur
+GPT-5.6 Luna, « plus rapide et moins cher ». L'audit latence 2026-07 avait déjà localisé le
+temps dans la BOUCLE D'OUTILS (~15-18 s par étape), portée par l'agent chercheur, et le premier
+poste de tokens d'entrée dans le contenu web injecté à chaque étape. Luna est le tier le plus
+rapide et le moins cher de la famille 5.6 (0,20 $ / 1 M entrée, 1,20 $ / 1 M sortie, contre
+0,25 $ / 2,00 $ pour gpt-5-mini) avec 1,1 M de contexte : profil exact de cette phase.
+
+Bascule limitée aux deux features SANS enjeu rédactionnel clinique — `chat_researcher`
+(recherche/lecture/vérification) et `chat_fast` (mode Rapide, appel direct sans outil). La
+RÉDACTION de la réponse médicale reste sur `chat` (gpt-5.2) : la descendre d'un tier est un
+arbitrage de qualité clinique qui appartient à Hugo, et se fait en un clic dans le panel admin
+(les 3 tiers 5.6 y sont désormais listés et tarifés).
+
+Pièges traités — capacités VÉRIFIÉES contre l'API OpenAI (Responses, celle qu'utilise
+`openai()` du SDK), pas déduites de la doc :
+1. La famille 5.6 a REMPLACÉ l'effort `minimal` par `none` (valeurs : none/low/medium/high/
+   xhigh/max) — l'API répond `Unsupported value: 'minimal' is not supported with the
+   'gpt-5.6-luna' model`. Or le chat grand public est justement plafonné à `minimal` par
+   `capReasoningEffort` : envoyer la valeur telle quelle ferait échouer TOUS ses appels. Le
+   vocabulaire interne (minimal/low/medium/high) est conservé partout — panel admin,
+   responseMode — et la traduction est faite au bord dans `openaiReasoningEffort` (pur, testé).
+2. `temperature` est REFUSÉE par les 3 modèles 5.6 (`Unsupported parameter`) → capability
+   `temperature: false`, sinon un simple réglage admin casserait la feature. `text.verbosity`
+   est acceptée → capability à true.
+### Regulatory impact
+None — aucune nouvelle feature IA, aucune table, aucune donnée de santé, aucun changement
+d'autorisation ni de disclosure. Le contenu clinique rédigé reste produit par le même modèle.
+### Rollback plan
+Panel admin → onglet Modèles → remettre `gpt-5-mini` sur « Chat — Agent chercheur » et
+« Chat — Mode rapide » (effet immédiat, sans redéploiement). Ou `update public.ai_model_config
+set model_id = 'gpt-5-mini' where key in ('chat_researcher','chat_fast');`. Côté code, revert
+du commit (les défauts ne servent que si Supabase est injoignable).
+
+
 ## [2026-08-19] – Claude (CV : l'apparence par défaut reproduit le modèle fourni)
 ### Files modified
 - public/cv-builder.html (géométrie du liseré et du bandeau, valeurs de thème par défaut, polices par rôle, rythme vertical, présentation `list`, pictogrammes de contact pleins, titre du bloc contacts, panneau Thème réorganisé)

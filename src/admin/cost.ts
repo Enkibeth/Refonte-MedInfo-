@@ -33,6 +33,11 @@ export const MODEL_PRICING: Record<string, ModelPrice> = {
   'gpt-5.2': { inputPerM: 1.25, outputPerM: 10 },
   'gpt-5.4': { inputPerM: 1.25, outputPerM: 10 },
   'gpt-5.5': { inputPerM: 1.25, outputPerM: 10 },
+  // OpenAI — GPT-5.6 (3 tiers, prix constatés août 2026 : sol flagship, terra équilibré,
+  // luna = le plus rapide et le moins cher, après la baisse de 80 % du 30 juillet 2026).
+  'gpt-5.6-sol': { inputPerM: 4, outputPerM: 20 },
+  'gpt-5.6-terra': { inputPerM: 2, outputPerM: 12 },
+  'gpt-5.6-luna': { inputPerM: 0.2, outputPerM: 1.2 },
   // OpenAI — GPT-4.x
   'gpt-4o': { inputPerM: 2.5, outputPerM: 10 },
   'gpt-4o-mini': { inputPerM: 0.15, outputPerM: 0.6 },
@@ -72,6 +77,11 @@ const FAMILY_RULES: Array<{ test: RegExp; price: ModelPrice }> = [
   { test: /^o[34]/i, price: { inputPerM: 2, outputPerM: 8 } },
   { test: /gpt-4o/i, price: { inputPerM: 2.5, outputPerM: 10 } },
   { test: /gpt-4\.1/i, price: { inputPerM: 2, outputPerM: 8 } },
+  // GPT-5.6 : 3 tiers aux prix TRÈS différents — placés avant la règle générique gpt-5
+  // pour couvrir les variantes datées (ex. `gpt-5.6-luna-2026-xx-xx`).
+  { test: /gpt-5\.6.*luna/i, price: { inputPerM: 0.2, outputPerM: 1.2 } },
+  { test: /gpt-5\.6.*terra/i, price: { inputPerM: 2, outputPerM: 12 } },
+  { test: /gpt-5\.6.*sol/i, price: { inputPerM: 4, outputPerM: 20 } },
   { test: /gpt-5|codex/i, price: { inputPerM: 1.25, outputPerM: 10 } },
 ];
 

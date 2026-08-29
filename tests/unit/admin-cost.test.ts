@@ -75,6 +75,23 @@ describe('cost — pricing', () => {
     expect(resolveModelPrice('whisper-1').source).toBe('unknown');
     expect(hasPricing('whisper-1')).toBe(false);
   });
+
+  it('GPT-5.6 : les 3 tiers sont tarifés séparément (luna ≪ terra ≪ sol)', () => {
+    const luna = resolveModelPrice('gpt-5.6-luna');
+    const terra = resolveModelPrice('gpt-5.6-terra');
+    const sol = resolveModelPrice('gpt-5.6-sol');
+    expect(luna.source).toBe('exact');
+    expect(luna.inputPerM).toBeLessThan(terra.inputPerM);
+    expect(terra.inputPerM).toBeLessThan(sol.inputPerM);
+    // Luna est bien moins cher que le rédacteur actuel (gpt-5.2) — c'est tout l'intérêt.
+    expect(luna.inputPerM).toBeLessThan(resolveModelPrice('gpt-5.2').inputPerM);
+    expect(luna.outputPerM).toBeLessThan(resolveModelPrice('gpt-5.2').outputPerM);
+    // Une variante datée ne doit PAS retomber sur le prix générique gpt-5 (1,25 $).
+    const dated = resolveModelPrice('gpt-5.6-luna-2026-07-30');
+    expect(dated.source).toBe('family');
+    expect(dated.inputPerM).toBe(luna.inputPerM);
+    expect(resolveModelPrice('gpt-5.6-sol-2026-08-22').inputPerM).toBe(sol.inputPerM);
+  });
 });
 
 describe('cost — groupUsage', () => {

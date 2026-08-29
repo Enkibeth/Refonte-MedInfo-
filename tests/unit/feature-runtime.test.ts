@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { capReasoningEffort, getRuntimeForFeature } from '@/ai/providers/featureRuntime';
+import {
+  capReasoningEffort,
+  getRuntimeForFeature,
+  openaiReasoningEffort,
+} from '@/ai/providers/featureRuntime';
 import { invalidateConfigCache } from '@/ai/providers/featureModel';
 
 // ── Plafond d'effort de raisonnement (balance rapidité/qualité par chatbot) ─────
@@ -57,11 +61,50 @@ describe('getRuntimeForFeature — plafond par requête (chat public → minimal
     expect(rt.settings.reasoningEffort).toBe('high');
   });
 
-  it('split (audit 2026-07) : chercheur = gpt-5-mini, rédacteur (chat) = gpt-5.2', async () => {
+  it('split : chercheur = gpt-5.6-luna (2026-08), rédacteur (chat) = gpt-5.2', async () => {
     const researcher = await getRuntimeForFeature('chat_researcher', { webSearch: true });
-    expect(researcher.modelId).toBe('gpt-5-mini');
+    expect(researcher.modelId).toBe('gpt-5.6-luna');
     expect(researcher.provider).toBe('openai');
+    // La RÉDACTION clinique reste sur le modèle fort : la bascule vers un tier économique
+    // est un arbitrage qualité qui appartient à Hugo (panel admin), pas un défaut de code.
     const writer = await getRuntimeForFeature('chat');
     expect(writer.modelId).toBe('gpt-5.2');
+  });
+
+  it('mode Rapide : chat_fast = gpt-5.6-luna, sans recherche web', async () => {
+    const fast = await getRuntimeForFeature('chat_fast');
+    expect(fast.modelId).toBe('gpt-5.6-luna');
+    expect(fast.settings.webSearch).toBe(false);
+  });
+
+  it("GPT-5.6 : l'effort `minimal` part en `none` dans les providerOptions", async () => {
+    const rt = await getRuntimeForFeature('chat_fast', { reasoningEffort: 'minimal' });
+    // Vocabulaire interne conservé…
+    expect(rt.settings.reasoningEffort).toBe('minimal');
+    // …mais c'est bien `none` qui est envoyé à l'API (`minimal` n'existe plus en 5.6).
+    expect(rt.options.providerOptions?.openai?.reasoningEffort).toBe('none');
+  });
+});
+
+// ── Traduction de l'effort de raisonnement selon le modèle OpenAI ───────────────
+
+describe('openaiReasoningEffort — `minimal` n\'existe plus dans la famille GPT-5.6', () => {
+  it('traduit minimal → none pour les modèles 5.6', () => {
+    expect(openaiReasoningEffort('gpt-5.6-luna', 'minimal')).toBe('none');
+    expect(openaiReasoningEffort('gpt-5.6-terra', 'minimal')).toBe('none');
+    expect(openaiReasoningEffort('gpt-5.6-sol', 'minimal')).toBe('none');
+  });
+
+  it('laisse les autres efforts inchangés (low/medium/high existent en 5.6)', () => {
+    expect(openaiReasoningEffort('gpt-5.6-luna', 'low')).toBe('low');
+    expect(openaiReasoningEffort('gpt-5.6-luna', 'medium')).toBe('medium');
+    expect(openaiReasoningEffort('gpt-5.6-luna', 'high')).toBe('high');
+  });
+
+  it("ne touche pas aux modèles des autres familles (gpt-5.2 accepte `minimal`)", () => {
+    expect(openaiReasoningEffort('gpt-5.2', 'minimal')).toBe('minimal');
+    expect(openaiReasoningEffort('gpt-5-mini', 'minimal')).toBe('minimal');
+    // Pas de faux positif sur un futur `gpt-5.60` ou `gpt-5.61` hypothétique.
+    expect(openaiReasoningEffort('gpt-5.61', 'minimal')).toBe('minimal');
   });
 });

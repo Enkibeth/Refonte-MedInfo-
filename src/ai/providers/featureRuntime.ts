@@ -58,6 +58,21 @@ const REASONING_EFFORT_ORDER: Record<ReasoningEffort, number> = {
   high: 3,
 };
 
+/**
+ * Traduit l'effort de raisonnement pour l'API OpenAI selon le modèle (pur, testé).
+ *
+ * La famille GPT-5.6 (sol/terra/luna) a REMPLACÉ la valeur `minimal` par `none` (doc
+ * OpenAI : none/low/medium/high/xhigh/max). Envoyer `minimal` à ces modèles ferait
+ * échouer l'appel (valeur de paramètre invalide) — c'est exactement le cas du chat
+ * grand public, plafonné à `minimal` par `capReasoningEffort`. On garde le vocabulaire
+ * interne (minimal/low/medium/high) partout — panel admin, responseMode — et on traduit
+ * ICI, au bord, au moment de construire les providerOptions.
+ */
+export function openaiReasoningEffort(modelId: string, effort: ReasoningEffort): string {
+  if (effort === 'minimal' && /^gpt-5\.6\b/.test(modelId)) return 'none';
+  return effort;
+}
+
 /** Applique le plafond d'effort : abaisse si au-dessus, ne relève jamais (pur, testé). */
 export function capReasoningEffort(
   effort: ReasoningEffort | null,
@@ -120,7 +135,9 @@ export async function getRuntimeForFeature(
 
   if (settings.provider === 'openai') {
     const oai: Record<string, unknown> = {};
-    if (caps.reasoning && settings.reasoningEffort) oai.reasoningEffort = settings.reasoningEffort;
+    if (caps.reasoning && settings.reasoningEffort) {
+      oai.reasoningEffort = openaiReasoningEffort(settings.modelId, settings.reasoningEffort);
+    }
     if (caps.verbosity && settings.verbosity) oai.textVerbosity = settings.verbosity;
     if (Object.keys(oai).length > 0) providerOptions.openai = oai;
 

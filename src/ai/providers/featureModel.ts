@@ -21,10 +21,13 @@ const FEATURE_DEFAULTS: Record<FeatureKey, { modelId: string; provider: string }
   // Agent chercheur (split orchestrateur/rédacteur, flag CHAT_ORCHESTRATOR_SPLIT) : modèle
   // bon marché qui porte la boucle d'outils et rassemble un dossier de preuves vérifié ;
   // la rédaction clinique reste sur le modèle `chat` (gpt-5.2). Audit 2026-07.
-  chat_researcher: { modelId: 'gpt-5-mini',      provider: 'openai' },
+  // 2026-08 : gpt-5-mini → gpt-5.6-luna (tier le plus rapide et le moins cher d'OpenAI,
+  // 0,20 $/1 M entrée contre 1,25 $ — c'est CETTE phase qui porte la latence, ~15-18 s
+  // par étape d'outil, et l'essentiel des tokens d'entrée du chat).
+  chat_researcher: { modelId: 'gpt-5.6-luna',    provider: 'openai' },
   // Mode « Rapide » du chat : une réponse directe, sans outil ni recherche web — le
   // modèle bon marché suffit et c'est ce qui rend le mode réellement rapide.
-  chat_fast:     { modelId: 'gpt-5-mini',        provider: 'openai' },
+  chat_fast:     { modelId: 'gpt-5.6-luna',      provider: 'openai' },
   // Titre + catégorie d'historique : modèle flash économique.
   chat_meta:     { modelId: 'gemini-2.5-flash',  provider: 'google' },
   // Sous-agent PubMed du chat pro : Claude uniquement (seul provider avec le connecteur MCP).
@@ -87,6 +90,28 @@ export const AVAILABLE_MODELS = [
   {
     id: 'claude-haiku-4-5-20251001', provider: 'anthropic', label: 'Claude Haiku 4.5',
     capabilities: { temperature: true, reasoning: true, verbosity: false, webSearch: true },
+  },
+  // ── GPT-5.6 (2026) ───────────────────────────────────────────────────────
+  // Famille à 3 tiers : sol (flagship), terra (équilibré), luna (le plus rapide et le
+  // moins cher). Capacités VÉRIFIÉES contre l'API (2026-08), pas déduites :
+  //   * `temperature` REFUSÉE par les 3 modèles (« Unsupported parameter: 'temperature'
+  //     is not supported with this model ») → capability à false, sinon un réglage admin
+  //     ferait échouer tous les appels de la feature ;
+  //   * `text.verbosity` acceptée ;
+  //   * ⚠️ l'effort de raisonnement `minimal` est REFUSÉ (remplacé par `none` : valeurs
+  //     none/low/medium/high/xhigh/max) → traduction au bord dans featureRuntime
+  //     (`openaiReasoningEffort`), le chat grand public étant plafonné à `minimal`.
+  {
+    id: 'gpt-5.6-sol', provider: 'openai', label: 'GPT-5.6 Sol',
+    capabilities: { temperature: false, reasoning: true, verbosity: true, webSearch: true },
+  },
+  {
+    id: 'gpt-5.6-terra', provider: 'openai', label: 'GPT-5.6 Terra',
+    capabilities: { temperature: false, reasoning: true, verbosity: true, webSearch: true },
+  },
+  {
+    id: 'gpt-5.6-luna', provider: 'openai', label: 'GPT-5.6 Luna',
+    capabilities: { temperature: false, reasoning: true, verbosity: true, webSearch: true },
   },
   // ── GPT-5.5 ──────────────────────────────────────────────────────────────
   {
