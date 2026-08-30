@@ -19,8 +19,6 @@ import {
   TouchableOpacity,
   Pressable,
   StyleSheet,
-  Animated,
-  Easing,
   KeyboardAvoidingView,
   Platform,
   useWindowDimensions,
