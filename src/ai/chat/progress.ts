@@ -1,25 +1,22 @@
 /**
- * Progression du workflow agentique du chat — latence PERÇUE (audit 2026-07, item H).
+ * Progression du chat — latence PERÇUE.
  *
- * La boucle evidence-first (recherche → lecture des résumés → vérification des liens →
- * rédaction) peut prendre plusieurs dizaines de secondes AVANT que le premier mot de la
- * réponse n'arrive. Le client n'affichait qu'UNE ligne (le dernier outil en cours), ce qui
- * ressemble à un spinner figé. Ce module dérive, à partir des `parts` du message assistant
- * en cours, une TRACE ORDONNÉE des étapes déjà franchies (avec compteur) — l'utilisateur
- * voit la recherche avancer (« Littérature ✓ · Lecture des études (2) ✓ · Vérification… »).
+ * Entre l'envoi de la question et le premier mot de la réponse, le client n'affichait
+ * qu'un spinner. Ce module dérive, à partir des `parts` du message assistant en cours,
+ * une TRACE ORDONNÉE des étapes déjà franchies (avec compteur) — l'utilisateur voit la
+ * recherche web avancer plutôt qu'un curseur figé.
+ *
+ * Retour à la base (2026-08, ADR-0037) : le chat ne fait plus qu'UN appel LLM et n'a plus
+ * d'outils serveur — seule subsiste la recherche web du provider.
  *
  * Module PUR (aucune dépendance UI/réseau), défensif sur la forme des parts (elle varie
  * selon la version de l'AI SDK, comme stepMetrics) : testé dans tests/unit/chat-progress.test.ts.
  */
 
-/** Libellés courts (sans « … ») par nom d'outil du workflow. Partagé avec la bulle client. */
+/** Libellés courts (sans « … ») par nom d'outil. Partagé avec la bulle client. */
 export const CHAT_PROGRESS_LABELS: Record<string, string> = {
-  europe_pmc_search: 'Recherche dans la littérature',
-  europe_pmc_article: 'Lecture des études',
-  clinical_trials_search: 'Recherche d’essais cliniques',
-  verify_source_links: 'Vérification des liens',
-  pubmed_search: 'Recherche PubMed',
   web_search: 'Recherche web',
+  web_search_preview: 'Recherche web',
   google_search: 'Recherche web',
 };
 

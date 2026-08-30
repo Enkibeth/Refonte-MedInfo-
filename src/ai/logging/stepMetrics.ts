@@ -12,7 +12,7 @@
 export interface StepMetrics {
   /** Nombre d'étapes LLM de la boucle (1 = réponse directe sans outil). */
   steps: number;
-  /** Décompte d'appels par nom d'outil (ex. { europe_pmc_search: 2, verify_source_links: 1 }). */
+  /** Décompte d'appels par nom d'outil (ex. { web_search: 2 }). */
   toolCalls: Record<string, number>;
 }
 

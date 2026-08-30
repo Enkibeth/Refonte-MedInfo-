@@ -16,22 +16,12 @@ import type { FeatureKey } from '@/admin/index';
 
 /** Modèles par défaut si Supabase est inaccessible. */
 const FEATURE_DEFAULTS: Record<FeatureKey, { modelId: string; provider: string }> = {
-  // Choix Hugo (refonte 2026-06) : GPT-5.2 par défaut pour le chat (rapport coût/qualité).
-  chat:          { modelId: 'gpt-5.2',           provider: 'openai' },
-  // Agent chercheur (split orchestrateur/rédacteur, flag CHAT_ORCHESTRATOR_SPLIT) : modèle
-  // bon marché qui porte la boucle d'outils et rassemble un dossier de preuves vérifié ;
-  // la rédaction clinique reste sur le modèle `chat` (gpt-5.2). Audit 2026-07.
-  // 2026-08 : gpt-5-mini → gpt-5.6-luna (tier le plus rapide et le moins cher d'OpenAI,
-  // 0,20 $/1 M entrée contre 1,25 $ — c'est CETTE phase qui porte la latence, ~15-18 s
-  // par étape d'outil, et l'essentiel des tokens d'entrée du chat).
-  chat_researcher: { modelId: 'gpt-5.6-luna',    provider: 'openai' },
-  // Mode « Rapide » du chat : une réponse directe, sans outil ni recherche web — le
-  // modèle bon marché suffit et c'est ce qui rend le mode réellement rapide.
-  chat_fast:     { modelId: 'gpt-5.6-luna',      provider: 'openai' },
+  // Retour à la base (2026-08, ADR-0037, décision Hugo) : UN prompt par catégorie, UN
+  // appel LLM, la réponse. Le chat tourne sur gpt-5.6-luna — le tier le plus rapide et le
+  // moins cher d'OpenAI — avec la recherche web du provider pour les sources.
+  chat:          { modelId: 'gpt-5.6-luna',      provider: 'openai' },
   // Titre + catégorie d'historique : modèle flash économique.
   chat_meta:     { modelId: 'gemini-2.5-flash',  provider: 'google' },
-  // Sous-agent PubMed du chat pro : Claude uniquement (seul provider avec le connecteur MCP).
-  pubmed_agent:  { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   analyze:       { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
   // Génération de QCM type EDN à la demande (chat étudiant) : sortie JSON structurée fiable.
   qcm_generate:  { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },

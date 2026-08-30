@@ -4,16 +4,12 @@
  * de preuve, la justification et un bouton « Accéder à la source » — plutôt que
  * d'ouvrir directement le lien.
  *
- * Enrichissement 2026-07 (timeline de recherche) : quand la source correspond à un
- * article réellement retrouvé pendant la recherche (Europe PMC), la fiche affiche ses
- * métadonnées RÉELLES — journal, année, type de publication, citations, PMID/DOI — et
- * une pastille « Lien vérifié » si l'URL a répondu OK (verify_source_links). Jamais de
- * métadonnée générée par le modèle.
+ * Les métadonnées affichées (année, organisme, domaine) proviennent EXCLUSIVEMENT de ce
+ * que le parseur a extrait de la réponse — jamais d'un enrichissement fabriqué côté client.
  */
 import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { evidenceLevelFor, type ParsedSource } from '@/ai/chat/parseAssistantMessage';
-import { domainOfUrl, type ResearchArticle } from '@/ai/chat/researchTimeline';
+import { domainOfUrl, evidenceLevelFor, type ParsedSource } from '@/ai/chat/parseAssistantMessage';
 import { SourceBadgePill } from '@/ui/chat/AssistantBlocks';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
@@ -30,15 +26,9 @@ function MetaRow({ label, value }: { label: string; value: string }) {
 export function SourceDetailModal({
   source,
   onClose,
-  article = null,
-  verified = false,
 }: {
   source: ParsedSource | null;
   onClose: () => void;
-  /** Métadonnées réelles Europe PMC rapprochées de la source (jamais générées). */
-  article?: ResearchArticle | null;
-  /** URL vérifiée OK pendant la recherche (verify_source_links). */
-  verified?: boolean;
 }) {
   const evidence = source ? evidenceLevelFor(source.badge) : null;
   const open = () => {
@@ -46,15 +36,7 @@ export function SourceDetailModal({
   };
   const domain = domainOfUrl(source?.url);
   const metaRows: { label: string; value: string }[] = [];
-  if (article?.journal) metaRows.push({ label: 'Journal', value: article.journal });
-  const year = article?.year ?? source?.year;
-  if (year) metaRows.push({ label: 'Année', value: year });
-  if (article?.pubType) metaRows.push({ label: 'Type de publication', value: article.pubType });
-  if (article?.citedByCount != null && article.citedByCount > 0) {
-    metaRows.push({ label: 'Citations', value: String(article.citedByCount) });
-  }
-  if (article?.pmid) metaRows.push({ label: 'PMID', value: article.pmid });
-  else if (article?.doi) metaRows.push({ label: 'DOI', value: article.doi });
+  if (source?.year) metaRows.push({ label: 'Année', value: source.year });
 
   return (
     <Modal visible={!!source} transparent animationType="fade" onRequestClose={onClose}>
@@ -65,12 +47,6 @@ export function SourceDetailModal({
               <View style={styles.header}>
                 <Text style={styles.srcId}>{source.id}</Text>
                 {source.badge ? <SourceBadgePill badge={source.badge} /> : null}
-                {verified ? (
-                  <View style={styles.verifiedPill}>
-                    <Icon name="check" size={10} color={tokens.colors.success} />
-                    <Text style={styles.verifiedPillText}>Lien vérifié</Text>
-                  </View>
-                ) : null}
                 <Pressable onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Fermer">
                   <Icon name="x" size={18} color={tokens.colors.textMuted} />
                 </Pressable>

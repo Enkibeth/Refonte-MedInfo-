@@ -1,16 +1,20 @@
 /**
- * Mode de réponse du chat (2026-07) — choix utilisateur, par requête.
+ * Mode de réponse du chat — choix utilisateur, par requête.
  *
- * L'utilisateur choisit la « profondeur » de la réponse, indépendamment du mode de
- * raisonnement technique :
- *   - `fast`     : réponse instantanée, brève et directe (peu d'étapes d'outils).
+ * L'utilisateur choisit la « profondeur » de la réponse :
+ *   - `fast`     : réponse instantanée, brève, SANS recherche web (de mémoire).
  *   - `standard` : comportement par défaut (config admin de la feature `chat`).
- *   - `deep`     : réponse complète et approfondie (plus d'étapes, plus de détail).
+ *   - `deep`     : réponse complète et approfondie (plus d'effort, plus de détail).
  *
- * Module PUR (server-safe, aucune dépendance réseau, aucune donnée de santé) : il ne
- * fait que MAPPER le mode vers des surcharges runtime (effort de raisonnement, verbosité,
- * budget de sortie) et un plafond d'étapes de la boucle agentique. Les surcharges
- * priment sur la config admin pour CETTE requête uniquement (cf. FeatureRuntimeOverrides).
+ * Retour à la base (2026-08, ADR-0037) : les 3 modes empruntent désormais le MÊME chemin
+ * — un seul appel LLM sur la feature `chat`. Il n'y a plus de boucle agentique à borner
+ * (`maxSteps`), plus de modèle séparé pour le mode rapide, plus de garde anti-réponse-vide :
+ * le mode ne règle que l'effort de raisonnement, la verbosité, le budget de sortie et
+ * l'activation de la recherche web.
+ *
+ * Module PUR (server-safe, aucune dépendance réseau, aucune donnée de santé). Les
+ * surcharges priment sur la config admin pour CETTE requête uniquement
+ * (cf. FeatureRuntimeOverrides).
  *
  * Cloisonnement coût : le grand public reste plafonné (le mode `deep` y ouvre au plus un
  * effort `medium`, jamais `high`) ; étudiant/pro peuvent monter plus haut.
@@ -32,9 +36,8 @@ export function coerceResponseMode(value: unknown): ResponseMode {
 }
 
 /**
- * Surcharges runtime dérivées du mode. `maxSteps` borne la boucle agentique
- * (`stopWhen: stepCountIs`) — le plus gros levier de latence. Les champs absents
- * laissent la config admin s'appliquer (mode `standard`).
+ * Surcharges runtime dérivées du mode. Les champs absents laissent la config admin
+ * s'appliquer (mode `standard`).
  */
 export interface ResponseModeRuntime {
   /** Fixe explicitement l'effort (fast/deep) ; absent = config admin. */
@@ -43,16 +46,12 @@ export interface ResponseModeRuntime {
   capReasoningEffort?: ReasoningEffort;
   verbosity?: Verbosity | null;
   maxOutputTokens?: number;
-  /** Plafond d'étapes de la boucle agentique (stepCountIs). */
-  maxSteps: number;
   /**
-   * Réponse DIRECTE (mode rapide) : UN SEUL appel LLM sur un modèle bon marché, sans
-   * aucun outil, sans split orchestrateur/rédacteur et sans recherche web. Corrige le
-   * paradoxe du mode « rapide » d'origine, qui enchaînait DEUX modèles (chercheur puis
-   * rédacteur) et était donc le chemin le PLUS LENT, avec un budget de sortie si serré
-   * (1400 tokens, raisonnement inclus) que la réponse pouvait revenir vide.
+   * Recherche web du provider. `false` en mode rapide seulement : la réponse est alors
+   * donnée de mémoire, et la consigne du mode interdit explicitement toute source (le
+   * modèle n'a rien pour la vérifier). Absent = laissée à la config admin de `chat`.
    */
-  directAnswer?: boolean;
+  webSearch?: boolean;
 }
 
 /**
@@ -69,7 +68,7 @@ export function responseModeRuntime(
   const isPublic = chatbot === 'public';
 
   if (mode === 'fast') {
-    // Un seul appel, aucun outil : la latence est celle d'un unique aller-retour.
+    // Aucune recherche : la latence est celle d'un unique aller-retour sans outil.
     // Le budget de sortie doit rester confortable — sur les modèles à raisonnement,
     // les tokens de réflexion sont décomptés du même budget : trop bas, la réponse
     // revient vide et l'utilisateur voit « la réponse a peut-être été interrompue ».
@@ -77,49 +76,19 @@ export function responseModeRuntime(
       reasoningEffort: 'minimal',
       verbosity: 'low',
       maxOutputTokens: 3000,
-      maxSteps: 1,
-      directAnswer: true,
+      webSearch: false,
     };
   }
 
   if (mode === 'deep') {
     return isPublic
-      ? { capReasoningEffort: 'medium', verbosity: 'high', maxOutputTokens: 4096, maxSteps: 8 }
-      : { reasoningEffort: 'high', verbosity: 'high', maxOutputTokens: 4096, maxSteps: 8 };
+      ? { capReasoningEffort: 'medium', verbosity: 'high', maxOutputTokens: 4096 }
+      : { reasoningEffort: 'high', verbosity: 'high', maxOutputTokens: 4096 };
   }
 
-  // standard : plafond abaissé à 5 étapes (audit latence 2026-07). Les données de prod
-  // montraient une latence linéaire dans le nombre d'étapes (~15-18 s/étape) SANS gain de
-  // qualité au-delà de ~5 : le workflow evidence-first tient en 5 étapes (recherche →
-  // lecture des résumés → vérification des liens → rédaction). Public toujours plafonné
-  // à un effort de raisonnement `minimal` (ancrage factuel par les outils, pas le thinking).
-  return isPublic
-    ? { capReasoningEffort: 'minimal', maxSteps: 5 }
-    : { maxSteps: 5 };
-}
-
-/**
- * Garde anti-réponse-vide (incident prod 2026-07-28) : avec le plafond d'étapes abaissé
- * (audit latence, 12 → 5), le modèle pouvait dépenser TOUTES ses étapes en appels d'outils
- * (jusqu'à 8 web_search + Europe PMC + vérifications observés dans ai_interactions) et se
- * faire couper par `stopWhen: stepCountIs(maxSteps)` AVANT d'écrire le moindre mot : flux
- * HTTP 200 « propre », zéro texte, rien d'archivé — l'utilisateur voyait « rien n'est
- * généré » puis « la réponse a été interrompue » au retour dans l'app.
- *
- * Ce `prepareStep` force la DERNIÈRE étape autorisée à être une étape de RÉDACTION pure
- * (`toolChoice: 'none'`) : le modèle ne peut plus finir sur un appel d'outil, il répond
- * avec ce qu'il a rassemblé. Appliqué au rédacteur ET à l'agent chercheur (un chercheur
- * coupé en plein outil rendait un dossier vide → repli mono-modèle silencieux qui refaisait
- * toute la recherche… et se faisait couper à son tour).
- */
-export interface ForcedAnswerStep {
-  toolChoice?: 'none';
-}
-
-export function forceFinalAnswerStep(maxSteps: number) {
-  const lastStep = Math.max(0, Math.floor(maxSteps) - 1);
-  return ({ stepNumber }: { stepNumber: number }): ForcedAnswerStep =>
-    stepNumber >= lastStep ? { toolChoice: 'none' } : {};
+  // standard : config admin telle quelle, à un détail près — le grand public reste
+  // plafonné à un effort de raisonnement `minimal` (cloisonnement coût historique).
+  return isPublic ? { capReasoningEffort: 'minimal' } : {};
 }
 
 /**
@@ -129,13 +98,12 @@ export function forceFinalAnswerStep(maxSteps: number) {
  */
 export function buildResponseModeSection(mode: ResponseMode): string {
   if (mode === 'fast') {
-    // ⚠️ En mode rapide, le modèle n'a NI recherche web NI outil de vérification de
-    // liens : il répond de mémoire. La consigne doit donc lui interdire explicitement
-    // de produire des sources qu'il ne peut pas vérifier, et porter le cadrage de
-    // sécurité que le volet pharmacologie (couplé au workflow d'outils) n'apporte pas ici.
+    // ⚠️ En mode rapide, le modèle n'a PAS de recherche web : il répond de mémoire. La
+    // consigne doit donc lui interdire explicitement de produire des sources qu'il ne peut
+    // pas vérifier, et porter le cadrage de sécurité correspondant.
     return (
       `\n\nMODE DE RÉPONSE : RAPIDE\n` +
-      `Tu réponds SANS recherche : ni web, ni littérature, ni vérification de liens. ` +
+      `Tu réponds SANS recherche web. ` +
       `Va droit au but — l'essentiel en quelques phrases, sans développement superflu ` +
       `ni longues sections.\n` +
       `RÈGLES ABSOLUES DE CE MODE :\n` +
@@ -143,7 +111,7 @@ export function buildResponseModeSection(mode: ResponseMode): string {
       `Ne produis PAS de section SOURCES : tu n'as rien vérifié.\n` +
       `- N'invente JAMAIS un chiffre (posologie, seuil, incidence). Si un chiffre précis ` +
       `ou une source à jour est nécessaire, dis-le en une phrase et invite à relancer la ` +
-      `question en mode Classique ou Approfondi, qui recherche et vérifie ses sources.\n` +
+      `question en mode Classique ou Approfondi, qui effectue une recherche web.\n` +
       `- Toute équivalence de doses reste INDICATIVE et doit être validée par le ` +
       `prescripteur selon le RCP et le contexte ; signale les points de sécurité majeurs ` +
       `(marge thérapeutique étroite, insuffisance rénale/hépatique, grossesse, interactions).\n` +

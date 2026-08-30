@@ -18,6 +18,52 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-08-30] – Claude (chat : retour à la base — un prompt, un appel, la réponse)
+### Files modified
+- app/api/chat+api.ts (réécrit : UN `streamText`, plus de `createUIMessageStream`, plus de split, plus de boucle)
+- Supprimés : src/ai/chat/tools/ (7 fichiers), src/ai/chat/split.ts, src/ai/chat/researchTimeline.ts, src/ui/chat/ResearchTimeline.tsx, tests/unit/{chat-tools,chat-split,chat-research-timeline}.test.ts
+- src/ai/chat/responseMode.ts (plus de `maxSteps`/`directAnswer`/`forceFinalAnswerStep` ; `fast` → `webSearch: false`)
+- src/ai/chat/pharmacology.ts, src/ai/chat/progress.ts (consignes et libellés sans outils)
+- app/(chat)/chat.tsx, src/ui/chat/AssistantBlocks.tsx, src/ui/chat/SourceDetailModal.tsx (découplage timeline ; `domainOfUrl` déplacée dans parseAssistantMessage.ts)
+- src/ai/providers/featureModel.ts, src/admin/index.ts, src/ai/prompts/promptStore.ts, app/(admin)/index.tsx (features `chat_researcher`/`chat_fast`/`pubmed_agent` retirées ; `chat` → gpt-5.6-luna)
+- supabase/migrations/0045_chat_back_to_basics.sql, tests/rls/isolation.test.ts (23 → 20 lignes)
+- tests/unit/{chat-response-mode,feature-runtime,chat-progress}.test.ts, docs/DECISIONS/0037-chat-retour-a-la-base.md, CLAUDE.md
+### Purpose
+Décision Hugo : « on a trop complexifié le chatbot, revenons à la base — GPT-5.6 Luna, 1 prompt
+par catégorie puis génération de la réponse avec les questions, liens, etc., mais plus toutes
+ces étapes rendant la réponse longue +++ ».
+
+Le chat empilait un split orchestrateur/rédacteur (2 appels LLM en série), une boucle agentique
+de 5 à 8 étapes, six outils serveur (Europe PMC, ClinicalTrials.gov, plan_research,
+verify_source_links, PubMed MCP + sous-agent Claude) et une timeline « Étapes » pour rendre
+l'attente visible. L'instrumentation de prod (migration 0034) montrait une latence LINÉAIRE
+dans le nombre d'étapes, ~15-18 s par étape. On était allé jusqu'à construire une interface
+pour rendre l'attente supportable au lieu de supprimer l'attente.
+
+Désormais : prompt du chatbot + contexte utilisateur/pays/pharmaco/mode/outils de sortie → UN
+`streamText` sur gpt-5.6-luna avec la recherche web du provider (exécutée DANS l'appel, donc
+sans étape LLM supplémentaire) → la réponse, avec ses SOURCES, APPROFONDISSEMENTS et
+QUESTIONS_PATIENT. Les 3 modes empruntent le même chemin (`fast` coupe la recherche web).
+
+Conservé : les 3 prompts produit, l'autorisation persona serveur, l'essai invité, la pièce
+jointe, le renfort pharmacologie, le contexte pays, les outils de sortie, l'archivage serveur
++ keepAlive et l'instrumentation des coûts.
+### Regulatory impact
+None — aucune couche de RÉGULATION retirée : le workflow evidence-first était une couche de
+QUALITÉ (ADR-0030 le posait explicitement). Disclosure AI Act, autorisation persona serveur,
+cloisonnement des chatbots, non-stockage des pièces jointes et RLS inchangés. PERTES DE QUALITÉ
+assumées et documentées (ADR-0037 « Conséquences ») : plus de métadonnées d'études réelles
+Europe PMC dans les fiches sources, plus de vérification HEAD/GET des liens avant rédaction
+(un lien mort redevient possible), plus d'accès direct PubMed/ClinicalTrials.gov pour le
+chatbot pro. La fiabilité des sources repose sur la recherche web et sur les exigences des
+prompts produit.
+### Rollback plan
+`git revert` du commit (le code retiré reste dans l'historique git). Côté base : remettre
+`chat` sur gpt-5.2 depuis le panel admin (1 clic) ; les lignes `chat_researcher`/`chat_fast`/
+`pubmed_agent` sont recréables en rejouant les migrations 0041/0042/0031. `ai_interactions`
+n'ayant pas été touchée, l'historique des coûts reste intact dans les deux sens.
+
+
 ## [2026-08-29] – Claude (chat : phases non rédactionnelles sur GPT-5.6 Luna)
 ### Files modified
 - src/ai/providers/featureModel.ts (3 modèles GPT-5.6 dans AVAILABLE_MODELS ; défauts `chat_researcher` et `chat_fast` → `gpt-5.6-luna`)

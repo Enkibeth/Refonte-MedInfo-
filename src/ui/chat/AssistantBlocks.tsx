@@ -28,15 +28,9 @@ import {
   type InteractionGroup,
   type ParsedSource,
   type PatientQuestion,
+  domainOfUrl,
   type SourceBadge,
 } from '@/ai/chat/parseAssistantMessage';
-import {
-  domainOfUrl,
-  isVerifiedUrl,
-  matchArticleForSource,
-  type ResearchArticle,
-  type ResearchTimelineData,
-} from '@/ai/chat/researchTimeline';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
@@ -67,19 +61,12 @@ function sourceNumberOf(id: string): string {
 export function SourceCard({
   source,
   onPress,
-  verified = false,
-  article = null,
 }: {
   source: ParsedSource;
   onPress: (s: ParsedSource) => void;
-  /** URL vérifiée OK pendant la recherche (verify_source_links) → pastille « Lien vérifié ». */
-  verified?: boolean;
-  /** Métadonnées réelles Europe PMC rapprochées de la source (journal, citations). */
-  article?: ResearchArticle | null;
 }) {
   const title = source.title || source.shortLabel || source.org || source.id;
   const domain = domainOfUrl(source.url);
-  const journal = article?.journal && article.journal !== source.org ? article.journal : null;
   return (
     <TouchableOpacity
       style={styles.sourceCard}
@@ -101,26 +88,14 @@ export function SourceCard({
       {source.org && source.org !== source.shortLabel ? (
         <Text style={styles.sourceOrg}>{source.org}</Text>
       ) : null}
-      {journal ? <Text style={styles.sourceOrg}>{journal}</Text> : null}
       {source.justification ? (
         <Text style={styles.sourceJustification} numberOfLines={2}>
           {source.justification}
         </Text>
       ) : null}
-      {domain || verified || article?.citedByCount != null ? (
+      {domain ? (
         <View style={styles.sourceFooter}>
-          {domain ? <Text style={styles.sourceDomain}>{domain}</Text> : null}
-          {article?.citedByCount != null && article.citedByCount > 0 ? (
-            <Text style={styles.sourceDomain}>
-              {article.citedByCount} citation{article.citedByCount > 1 ? 's' : ''}
-            </Text>
-          ) : null}
-          {verified ? (
-            <View style={styles.verifiedPill}>
-              <Icon name="check" size={10} color={tokens.colors.success} />
-              <Text style={styles.verifiedPillText}>Lien vérifié</Text>
-            </View>
-          ) : null}
+          <Text style={styles.sourceDomain}>{domain}</Text>
         </View>
       ) : null}
     </TouchableOpacity>
@@ -131,13 +106,10 @@ export function SourcesBlock({
   sources,
   startOpen = false,
   onOpenSource,
-  research = null,
 }: {
   sources: ParsedSource[];
   startOpen?: boolean;
   onOpenSource: (s: ParsedSource) => void;
-  /** Timeline de recherche de la réponse : liens vérifiés + métadonnées réelles. */
-  research?: ResearchTimelineData | null;
 }) {
   const [open, setOpen] = useState(startOpen);
   return (
@@ -157,13 +129,7 @@ export function SourcesBlock({
       {open ? (
         <View style={styles.sourcesList}>
           {sources.map((s) => (
-            <SourceCard
-              key={s.id + (s.url ?? '')}
-              source={s}
-              onPress={onOpenSource}
-              verified={isVerifiedUrl(s.url, research?.verifiedUrls)}
-              article={matchArticleForSource(s, research?.articles)}
-            />
+            <SourceCard key={s.id + (s.url ?? '')} source={s} onPress={onOpenSource} />
           ))}
         </View>
       ) : null}
@@ -641,14 +607,11 @@ export function AssistantBlocks({
   onSend,
   disabled,
   onOpenSource,
-  research = null,
 }: {
   text: string;
   onSend: (text: string) => void;
   disabled: boolean;
   onOpenSource: (s: ParsedSource) => void;
-  /** Timeline de recherche de la réponse (liens vérifiés, métadonnées réelles des sources). */
-  research?: ResearchTimelineData | null;
 }) {
   const parsed = useMemo(() => parseAssistantMessage(text), [text]);
 
@@ -661,9 +624,7 @@ export function AssistantBlocks({
               <BodyBlock key={i} markdown={block.markdown} sources={parsed.sources} onOpenSource={onOpenSource} />
             );
           case 'sources':
-            return (
-              <SourcesBlock key={i} sources={block.sources} onOpenSource={onOpenSource} research={research} />
-            );
+            return <SourcesBlock key={i} sources={block.sources} onOpenSource={onOpenSource} />;
           case 'deepening':
             return <DeepeningBlock key={i} items={block.items} onSend={onSend} disabled={disabled} />;
           case 'questionsPatient':

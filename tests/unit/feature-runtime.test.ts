@@ -46,8 +46,10 @@ describe('getRuntimeForFeature — plafond par requête (chat public → minimal
       reasoningEffort: 'medium',
       capReasoningEffort: 'minimal',
     });
+    // Vocabulaire interne conservé…
     expect(rt.settings.reasoningEffort).toBe('minimal');
-    expect(rt.options.providerOptions?.openai?.reasoningEffort).toBe('minimal');
+    // …et traduit au bord : la famille GPT-5.6 (modèle du chat) n'accepte plus `minimal`.
+    expect(rt.options.providerOptions?.openai?.reasoningEffort).toBe('none');
   });
 
   it("un plafond seul n'active aucun raisonnement quand rien n'est configuré", async () => {
@@ -61,28 +63,23 @@ describe('getRuntimeForFeature — plafond par requête (chat public → minimal
     expect(rt.settings.reasoningEffort).toBe('high');
   });
 
-  it('split : chercheur = gpt-5.6-luna (2026-08), rédacteur (chat) = gpt-5.2', async () => {
-    const researcher = await getRuntimeForFeature('chat_researcher', { webSearch: true });
-    expect(researcher.modelId).toBe('gpt-5.6-luna');
-    expect(researcher.provider).toBe('openai');
-    // La RÉDACTION clinique reste sur le modèle fort : la bascule vers un tier économique
-    // est un arbitrage qualité qui appartient à Hugo (panel admin), pas un défaut de code.
-    const writer = await getRuntimeForFeature('chat');
-    expect(writer.modelId).toBe('gpt-5.2');
+  it('retour à la base (ADR-0037) : le chat tourne sur gpt-5.6-luna, un seul modèle', async () => {
+    const rt = await getRuntimeForFeature('chat');
+    expect(rt.modelId).toBe('gpt-5.6-luna');
+    expect(rt.provider).toBe('openai');
   });
 
-  it('mode Rapide : chat_fast = gpt-5.6-luna, sans recherche web', async () => {
-    const fast = await getRuntimeForFeature('chat_fast');
-    expect(fast.modelId).toBe('gpt-5.6-luna');
-    expect(fast.settings.webSearch).toBe(false);
+  it("la température n'est jamais envoyée à un modèle 5.6 (l'API la refuse)", async () => {
+    const rt = await getRuntimeForFeature('chat');
+    expect(rt.options.temperature).toBeUndefined();
   });
 
-  it("GPT-5.6 : l'effort `minimal` part en `none` dans les providerOptions", async () => {
-    const rt = await getRuntimeForFeature('chat_fast', { reasoningEffort: 'minimal' });
-    // Vocabulaire interne conservé…
-    expect(rt.settings.reasoningEffort).toBe('minimal');
-    // …mais c'est bien `none` qui est envoyé à l'API (`minimal` n'existe plus en 5.6).
-    expect(rt.options.providerOptions?.openai?.reasoningEffort).toBe('none');
+  it('la recherche web du provider est activable par requête (surcharge du mode)', async () => {
+    const on = await getRuntimeForFeature('chat', { webSearch: true });
+    expect(on.settings.webSearch).toBe(true);
+    const off = await getRuntimeForFeature('chat', { webSearch: false });
+    expect(off.settings.webSearch).toBe(false);
+    expect(off.options.tools).toBeUndefined();
   });
 });
 

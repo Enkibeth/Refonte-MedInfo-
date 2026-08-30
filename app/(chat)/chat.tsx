@@ -84,14 +84,6 @@ import {
   summarizeChatProgress,
   type ChatProgressStep,
 } from '@/ai/chat/progress';
-import {
-  finalizeResearchTimeline,
-  isVerifiedUrl,
-  matchArticleForSource,
-  researchTimelineOfParts,
-  type ResearchTimelineData,
-} from '@/ai/chat/researchTimeline';
-import { ResearchStepsToggle, ResearchTimeline } from '@/ui/chat/ResearchTimeline';
 import { coerceChatOutputTools, type ChatOutputTool } from '@/ai/chat/outputTools';
 import {
   ATTACHMENT_ACCEPT,
@@ -351,7 +343,7 @@ function MessageRow({
   message: UIMessage;
   onSend: (text: string) => void;
   disabled: boolean;
-  onOpenSource: (s: ParsedSource, research: ResearchTimelineData | null) => void;
+  onOpenSource: (s: ParsedSource) => void;
   isLastAssistant: boolean;
   onRegenerate: () => void;
 }) {
@@ -369,21 +361,13 @@ function MessageRow({
     );
   }
   const streamingThisMessage = disabled && isLastAssistant;
-  // Timeline de recherche de CETTE réponse (data part `data-research`) : panneau
-  // « Étapes » repliable + liens vérifiés/métadonnées réelles pour les fiches sources.
-  const rawResearch = researchTimelineOfParts(message.parts);
-  const research = rawResearch && !streamingThisMessage ? finalizeResearchTimeline(rawResearch) : rawResearch;
   return (
     <View style={styles.assistantRow}>
-      {research && !streamingThisMessage && research.steps.length > 2 ? (
-        <ResearchStepsToggle data={research} />
-      ) : null}
       <AssistantBlocks
         text={text}
         onSend={onSend}
         disabled={disabled}
-        onOpenSource={(s) => onOpenSource(s, research)}
-        research={research}
+        onOpenSource={onOpenSource}
       />
       {!streamingThisMessage ? (
         <MessageActions
@@ -407,15 +391,12 @@ function hasToolActivity(message: UIMessage | undefined): boolean {
   });
 }
 
-// Libellés de statut par outil du workflow agents (ADR-0030) : l'utilisateur voit ce que
-// l'assistant est en train de déléguer (littérature, essais cliniques, vérif des liens).
+// Libellé de statut par outil. Depuis le retour à la base (ADR-0037), le chat n'a plus
+// qu'un outil : la recherche web du provider. La table reste indexée par nom pour rester
+// robuste aux variantes de nommage entre providers.
 const TOOL_STATUS_LABELS: Record<string, string> = {
-  europe_pmc_search: 'Recherche dans la littérature scientifique…',
-  europe_pmc_article: 'Lecture des études retenues…',
-  clinical_trials_search: "Recherche d'essais cliniques…",
-  verify_source_links: 'Vérification des liens sources…',
-  pubmed_search: 'Recherche PubMed (sous-agent)…',
   web_search: 'Recherche de sources fiables…',
+  web_search_preview: 'Recherche de sources fiables…',
   google_search: 'Recherche de sources fiables…',
 };
 
@@ -426,29 +407,14 @@ function truncateStatusDetail(text: string, max = 64): string {
 }
 
 /**
- * Libellé dynamique depuis les arguments de l'appel d'outil (latence perçue, 2026-07) :
- * montrer le travail documentaire réel — titre de l'article lu, requête cherchée, nombre
- * de liens vérifiés — rend l'attente légitime. Arguments potentiellement partiels pendant
- * le streaming → repli systématique sur le libellé générique de l'outil.
+ * Libellé dynamique depuis les arguments de l'appel d'outil (latence perçue) : montrer la
+ * requête réellement cherchée rend l'attente légitime. Arguments potentiellement partiels
+ * pendant le streaming → repli systématique sur le libellé générique de l'outil.
  */
 function toolLabelWithDetail(name: string, input: unknown): string {
-  const args = (input ?? null) as
-    | { query?: unknown; title?: unknown; urls?: unknown }
-    | null;
-  if (name === 'europe_pmc_article' && typeof args?.title === 'string' && args.title.trim()) {
-    return `Lecture : « ${truncateStatusDetail(args.title)} »`;
-  }
-  if (
-    (name === 'europe_pmc_search' || name === 'clinical_trials_search') &&
-    typeof args?.query === 'string' &&
-    args.query.trim()
-  ) {
-    const prefix = name === 'clinical_trials_search' ? 'Essais cliniques' : 'Littérature';
-    return `${prefix} : « ${truncateStatusDetail(args.query)} »`;
-  }
-  if (name === 'verify_source_links' && Array.isArray(args?.urls) && args.urls.length > 0) {
-    const n = args.urls.length;
-    return `Vérification de ${n} lien${n > 1 ? 's' : ''} sources…`;
+  const args = (input ?? null) as { query?: unknown } | null;
+  if (typeof args?.query === 'string' && args.query.trim()) {
+    return `Recherche : « ${truncateStatusDetail(args.query)} »`;
   }
   return TOOL_STATUS_LABELS[name] ?? 'Recherche de sources fiables…';
 }
@@ -647,13 +613,7 @@ export default function ChatScreen() {
   const [conversationsLoading, setConversationsLoading] = useState(true);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [detailSource, setDetailSource] = useState<ParsedSource | null>(null);
-  // Timeline de recherche de la réponse dont provient la source ouverte : métadonnées
-  // réelles (journal, type, citations) + pastille « Lien vérifié » dans la modale.
-  const [detailResearch, setDetailResearch] = useState<ResearchTimelineData | null>(null);
-  const openSourceDetail = useCallback((s: ParsedSource, research: ResearchTimelineData | null) => {
-    setDetailSource(s);
-    setDetailResearch(research);
-  }, []);
+  const openSourceDetail = useCallback((s: ParsedSource) => setDetailSource(s), []);
 
   // Notice transitoire de bascule de chatbot (B4/B5) : dit ce qui vient de se
   // passer (fil précédent archivé, chatbot d'origine indisponible…), auto-effacée.
@@ -975,19 +935,6 @@ export default function ChatScreen() {
     () => (lastAssistant ? parseAssistantMessage(messageText(lastAssistant)).sources : []),
     [lastAssistant],
   );
-  // Timeline de recherche de la dernière réponse (pour l'onglet sources global).
-  const latestResearch = useMemo(() => {
-    const data = researchTimelineOfParts(lastAssistant?.parts);
-    return data ? finalizeResearchTimeline(data) : null;
-  }, [lastAssistant]);
-
-  // Timeline VIVANTE du message en cours (data part `data-research` streamée par la
-  // route — couvre aussi la phase de recherche du split, invisible autrement).
-  const liveResearch = useMemo(
-    () => researchTimelineOfParts(activeAssistant?.parts),
-    [activeAssistant],
-  );
-
   // Phase de chargement : pendant l'attente (submitted) ou tant qu'aucun texte n'est encore
   // arrivé, on montre une bulle de statut (réflexion → recherche de sources → rédaction).
   const lastAssistantText = activeAssistant ? messageText(activeAssistant) : '';
@@ -1003,21 +950,14 @@ export default function ChatScreen() {
   useEffect(() => {
     if (recovering) setWaitStartedAt((prev) => prev ?? Date.now());
   }, [recovering]);
-  // La timeline streamée (data part) fait foi quand elle existe : en mode split, la
-  // recherche tourne côté serveur SANS parts d'outil — sans elle, la bulle afficherait
-  // « Rédaction » pendant toute la recherche.
+  // Un seul appel LLM (ADR-0037) : la réponse est en réflexion, puis en recherche web si
+  // le provider en déclenche une, puis en rédaction dès le premier fragment de texte.
   const phase: ChatPhase =
     status === 'submitted'
       ? 'thinking'
-      : liveResearch
-        ? liveResearch.phase === 'writing'
-          ? 'writing'
-          : liveResearch.phase === 'analyzing'
-            ? 'thinking'
-            : 'searching'
-        : hasToolActivity(activeAssistant)
-          ? 'searching'
-          : 'writing';
+      : hasToolActivity(activeAssistant)
+        ? 'searching'
+        : 'writing';
 
   const sendText = useCallback(
     async (text: string) => {
@@ -1433,8 +1373,7 @@ export default function ChatScreen() {
           <SourcesBlock
             sources={latestSources}
             startOpen
-            onOpenSource={(s) => openSourceDetail(s, latestResearch)}
-            research={latestResearch}
+            onOpenSource={openSourceDetail}
           />
         </ScrollView>
       ) : null}
@@ -1524,15 +1463,10 @@ export default function ChatScreen() {
         ))}
         {(showStatus || recovering) && (
           <View style={styles.statusStack}>
-            {/* Timeline structurée (data part `data-research`) quand la route l'émet —
-                elle couvre AUSSI la phase de recherche du split, invisible autrement ;
-                repli sur l'ancienne trace dérivée des parts d'outil sinon. */}
+            {/* Trace des étapes déjà franchies, dérivée des parts d'outil du message
+                en cours (recherche web du provider). */}
             {!recovering ? (
-              liveResearch ? (
-                <ResearchTimeline data={liveResearch} />
-              ) : (
-                <ProgressTrace steps={summarizeChatProgress(activeAssistant?.parts)} />
-              )
+              <ProgressTrace steps={summarizeChatProgress(activeAssistant?.parts)} />
             ) : null}
             <StatusBubble
               phase={recovering ? 'recovering' : phase}
@@ -1826,8 +1760,6 @@ export default function ChatScreen() {
       <SourceDetailModal
         source={detailSource}
         onClose={() => setDetailSource(null)}
-        article={matchArticleForSource(detailSource, detailResearch?.articles)}
-        verified={isVerifiedUrl(detailSource?.url, detailResearch?.verifiedUrls)}
       />
     </KeyboardAvoidingView>
   );

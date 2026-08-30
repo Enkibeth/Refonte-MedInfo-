@@ -33,29 +33,26 @@ describe('summarizeChatProgress', () => {
   });
 
   it('ordonne par première apparition et compte les appels par outil', () => {
+    // Le chat n'a plus qu'un outil (la recherche web du provider, ADR-0037) ; le module
+    // reste générique et doit continuer à ordonner/compter n'importe quel nom d'outil.
     const parts = [
-      { type: 'tool-europe_pmc_search' },
+      { type: 'tool-web_search' },
       { type: 'text', text: '...' },
-      { type: 'tool-europe_pmc_article' },
-      { type: 'tool-europe_pmc_article' },
-      { type: 'tool-verify_source_links' },
+      { type: 'tool-autre_outil' },
+      { type: 'tool-autre_outil' },
     ];
     const steps = summarizeChatProgress(parts);
-    expect(steps.map((s) => s.tool)).toEqual([
-      'europe_pmc_search',
-      'europe_pmc_article',
-      'verify_source_links',
-    ]);
-    expect(steps.find((s) => s.tool === 'europe_pmc_article')?.count).toBe(2);
-    expect(steps.find((s) => s.tool === 'europe_pmc_search')?.count).toBe(1);
+    expect(steps.map((s) => s.tool)).toEqual(['web_search', 'autre_outil']);
+    expect(steps.find((s) => s.tool === 'autre_outil')?.count).toBe(2);
+    expect(steps.find((s) => s.tool === 'web_search')?.count).toBe(1);
   });
 
   it('mappe vers des libellés lisibles, repli sur le nom brut si outil inconnu', () => {
     const steps = summarizeChatProgress([
-      { type: 'tool-europe_pmc_search' },
+      { type: 'tool-web_search' },
       { type: 'tool-outil_inconnu' },
     ]);
-    expect(steps[0].label).toBe(CHAT_PROGRESS_LABELS.europe_pmc_search);
+    expect(steps[0].label).toBe(CHAT_PROGRESS_LABELS.web_search);
     expect(steps[1].label).toBe('outil_inconnu');
   });
 
