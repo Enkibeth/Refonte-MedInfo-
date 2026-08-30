@@ -1065,7 +1065,11 @@ const COST_PERSONA_LABELS: Record<string, string> = {
   professional: 'Chat professionnel',
   // Autres features IA (clé loguée dans ai_interactions.persona)
   chat_meta: 'Titres & catégories (chat_meta)',
-  pubmed_agent: 'Sous-agent PubMed',
+  // Features retirées (ADR-0037) : libellés conservés pour que l'HISTORIQUE des coûts
+  // reste lisible (ai_interactions garde les lignes de ces anciens appels).
+  pubmed_agent: 'Sous-agent PubMed (retiré)',
+  chat_researcher: 'Chat — agent chercheur (retiré)',
+  chat_fast: 'Chat — mode rapide (retiré)',
   analyze: 'Analyse de document',
   ecos_simulate: 'ECOS — simulation',
   ecos_evaluate: 'ECOS — évaluation',

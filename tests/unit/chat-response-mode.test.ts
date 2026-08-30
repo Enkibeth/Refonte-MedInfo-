@@ -4,8 +4,8 @@ import {
   RESPONSE_MODES,
   buildResponseModeSection,
   coerceResponseMode,
-  forceFinalAnswerStep,
   responseModeRuntime,
+  shouldDisableWebSearch,
 } from '@/ai/chat/responseMode';
 
 describe('responseMode — coercion', () => {
@@ -25,47 +25,44 @@ describe('responseMode — coercion', () => {
 });
 
 describe('responseModeRuntime — mapping vers les surcharges', () => {
-  it('rapide : effort minimal, boucle courte, budget réduit — quel que soit le chatbot', () => {
+  it('rapide : effort minimal, budget réduit, AUCUNE recherche — quel que soit le chatbot', () => {
     for (const bot of ['public', 'student', 'professional'] as const) {
       const r = responseModeRuntime('fast', bot);
       expect(r.reasoningEffort).toBe('minimal');
       expect(r.verbosity).toBe('low');
-      expect(r.maxSteps).toBeLessThan(5);
+      expect(r.webSearch).toBe(false);
     }
   });
 
-  it('standard public : conserve le plafond minimal, boucle bornée à 5 étapes (audit latence)', () => {
+  it('standard public : conserve le plafond minimal (cloisonnement coût historique)', () => {
     const r = responseModeRuntime('standard', 'public');
     expect(r.capReasoningEffort).toBe('minimal');
     expect(r.reasoningEffort).toBeUndefined();
-    expect(r.maxSteps).toBe(5);
   });
 
-  it('standard étudiant/pro : aucune surcharge d’effort (config admin telle quelle), 5 étapes', () => {
+  it('standard étudiant/pro : aucune surcharge (config admin telle quelle)', () => {
     const r = responseModeRuntime('standard', 'student');
     expect(r.capReasoningEffort).toBeUndefined();
     expect(r.reasoningEffort).toBeUndefined();
-    expect(r.maxSteps).toBe(5);
   });
 
-  it('approfondi public : plafonné à medium, jamais high (cloisonnement coût), plus d’étapes que standard', () => {
+  it('approfondi public : plafonné à medium, jamais high (cloisonnement coût)', () => {
     const r = responseModeRuntime('deep', 'public');
     expect(r.capReasoningEffort).toBe('medium');
     expect(r.reasoningEffort).toBeUndefined();
-    expect(r.maxSteps).toBe(8);
-    expect(r.maxSteps).toBeGreaterThan(responseModeRuntime('standard', 'public').maxSteps);
+    expect(r.verbosity).toBe('high');
   });
 
-  it('approfondi étudiant/pro : effort high explicite, plus d’étapes que standard', () => {
+  it('approfondi étudiant/pro : effort high explicite', () => {
     const r = responseModeRuntime('deep', 'professional');
     expect(r.reasoningEffort).toBe('high');
-    expect(r.maxSteps).toBe(8);
-    expect(r.maxSteps).toBeGreaterThan(responseModeRuntime('standard', 'professional').maxSteps);
+    expect(r.verbosity).toBe('high');
   });
 
-  it('chaque mode déclare un plafond d’étapes strictement positif', () => {
+  it('seul le mode rapide coupe la recherche web (ADR-0037 : un seul appel partout)', () => {
     for (const mode of RESPONSE_MODES) {
-      expect(responseModeRuntime(mode, 'public').maxSteps).toBeGreaterThan(0);
+      const r = responseModeRuntime(mode, 'public');
+      expect(r.webSearch).toBe(mode === 'fast' ? false : undefined);
     }
   });
 });
@@ -81,12 +78,11 @@ describe('buildResponseModeSection — consigne système', () => {
   });
 });
 
-describe('mode rapide — une réponse DIRECTE (retour Hugo 2026-07)', () => {
-  it('demande un appel unique, sans outil ni split', () => {
+describe('mode rapide — une réponse directe, sans recherche', () => {
+  it('coupe la recherche web quel que soit le chatbot', () => {
     for (const bot of ['public', 'student', 'professional'] as const) {
       const r = responseModeRuntime('fast', bot);
-      expect(r.directAnswer).toBe(true);
-      expect(r.maxSteps).toBe(1);
+      expect(r.webSearch).toBe(false);
       expect(r.reasoningEffort).toBe('minimal');
     }
   });
@@ -97,10 +93,9 @@ describe('mode rapide — une réponse DIRECTE (retour Hugo 2026-07)', () => {
     expect(responseModeRuntime('fast', 'student').maxOutputTokens).toBeGreaterThanOrEqual(2048);
   });
 
-  it('les autres modes gardent la boucle d’outils', () => {
-    expect(responseModeRuntime('standard', 'student').directAnswer).toBeUndefined();
-    expect(responseModeRuntime('deep', 'student').directAnswer).toBeUndefined();
-    expect(responseModeRuntime('standard', 'student').maxSteps).toBeGreaterThan(1);
+  it('les autres modes gardent la recherche web (config admin de `chat`)', () => {
+    expect(responseModeRuntime('standard', 'student').webSearch).toBeUndefined();
+    expect(responseModeRuntime('deep', 'student').webSearch).toBeUndefined();
   });
 
   it('interdit explicitement de citer des sources qu’il ne peut pas vérifier', () => {
@@ -108,7 +103,7 @@ describe('mode rapide — une réponse DIRECTE (retour Hugo 2026-07)', () => {
     expect(section).toMatch(/SANS recherche/i);
     expect(section).toMatch(/n.invente jamais d.url/i);
     expect(section).toMatch(/pas de section SOURCES/i);
-    // Et il doit orienter vers un mode qui, lui, vérifie.
+    // Et il doit orienter vers un mode qui, lui, recherche.
     expect(section).toMatch(/Classique|Approfondi/);
   });
 
@@ -120,21 +115,28 @@ describe('mode rapide — une réponse DIRECTE (retour Hugo 2026-07)', () => {
   });
 });
 
-describe('forceFinalAnswerStep — garde anti-réponse-vide (incident prod 2026-07-28)', () => {
-  it('laisse les outils libres avant la dernière étape, puis force la rédaction', () => {
-    const prepare = forceFinalAnswerStep(5);
-    expect(prepare({ stepNumber: 0 })).toEqual({});
-    expect(prepare({ stepNumber: 3 })).toEqual({});
-    // Dernière étape autorisée (stepCountIs(5) → étapes 0..4) : plus AUCUN appel d'outil
-    // possible — le modèle doit écrire sa réponse avec ce qu'il a rassemblé.
-    expect(prepare({ stepNumber: 4 })).toEqual({ toolChoice: 'none' });
-    // Défensif : au-delà du plafond (ne devrait pas arriver), toujours forcé.
-    expect(prepare({ stepNumber: 9 })).toEqual({ toolChoice: 'none' });
+describe('shouldDisableWebSearch — on coupe, on n’active jamais', () => {
+  it('coupe la recherche sur un tour purement conversationnel, quel que soit le mode', () => {
+    for (const mode of RESPONSE_MODES) {
+      const r = responseModeRuntime(mode, 'public');
+      expect(shouldDisableWebSearch(r, { conversational: true })).toBe(true);
+    }
   });
 
-  it('plafond d’une seule étape → réponse directe dès la première', () => {
-    expect(forceFinalAnswerStep(1)({ stepNumber: 0 })).toEqual({ toolChoice: 'none' });
-    // Valeur dégénérée : jamais d'indice négatif.
-    expect(forceFinalAnswerStep(0)({ stepNumber: 0 })).toEqual({ toolChoice: 'none' });
+  it('coupe la recherche en mode Rapide', () => {
+    expect(
+      shouldDisableWebSearch(responseModeRuntime('fast', 'student'), { conversational: false }),
+    ).toBe(true);
+  });
+
+  it('NE coupe PAS en Classique/Approfondi : l’activation reste la décision du panel admin', () => {
+    // Régression protégée : forcer `webSearch: true` dans la route rendrait le toggle
+    // « Recherche internet » de la feature `chat` totalement inopérant.
+    for (const mode of ['standard', 'deep'] as const) {
+      for (const bot of ['public', 'student', 'professional'] as const) {
+        const r = responseModeRuntime(mode, bot);
+        expect(shouldDisableWebSearch(r, { conversational: false })).toBe(false);
+      }
+    }
   });
 });

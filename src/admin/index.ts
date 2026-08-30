@@ -82,26 +82,6 @@ export const AI_FEATURES = [
     providers: ['anthropic', 'openai', 'google'],
   },
   {
-    key: 'chat_researcher',
-    emoji: '🔎',
-    label: 'Chat — Agent chercheur (orchestrateur)',
-    description:
-      'Split orchestrateur/rédacteur (flag CHAT_ORCHESTRATOR_SPLIT) : modèle bon marché qui rassemble un dossier de preuves vérifié, la rédaction restant sur le modèle du chat',
-    apiRoute: '/api/chat',
-    promptKeys: ['chat_researcher'],
-    providers: ['openai', 'anthropic', 'google'],
-  },
-  {
-    key: 'chat_fast',
-    emoji: '⚡',
-    label: 'Chat — Mode rapide',
-    description:
-      'Mode « Rapide » du chat : UNE réponse directe, sans outil ni recherche web (modèle bon marché). Le mode Classique/Approfondi reste sur le modèle « Chat santé ».',
-    apiRoute: '/api/chat',
-    promptKeys: ['public', 'student', 'professional'],
-    providers: ['openai', 'anthropic', 'google'],
-  },
-  {
     key: 'chat_meta',
     emoji: '🏷️',
     label: 'Chat — Titre & catégorie',
@@ -109,16 +89,6 @@ export const AI_FEATURES = [
     apiRoute: '/api/chat-meta',
     promptKeys: ['chat_meta'],
     providers: ['google', 'openai', 'anthropic'],
-  },
-  {
-    key: 'pubmed_agent',
-    emoji: '🔬',
-    label: 'Chat — Sous-agent PubMed',
-    description:
-      'Recherche PubMed déléguée par le chatbot professionnel à un modèle Claude (connecteur MCP hébergé Anthropic)',
-    apiRoute: '/api/chat',
-    promptKeys: ['pubmed_agent'],
-    providers: ['anthropic'],
   },
   {
     key: 'analyze',

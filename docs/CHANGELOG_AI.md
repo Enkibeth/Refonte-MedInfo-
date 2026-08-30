@@ -18,6 +18,147 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-08-30] – Claude (chat : anneau de progression, reprise après veille, prompts GPT-5.6)
+### Files modified
+- src/ai/chat/statusPhases.ts (NOUVEAU, pur, testé), src/ui/chat/ChatStatusRing.tsx + .web.tsx (NOUVEAUX)
+- src/chat/resume.ts (NOUVEAU, pur, testé), app/(chat)/chat.tsx (resynchronisation silencieuse, anneau, styles morts retirés)
+- src/ai/prompts/public.v3.ts, student.v4.ts, professional.v2.ts (contradictions levées, conditions d'arrêt, structure)
+- tests/unit/chat-status-phases.test.ts + chat-resume.test.ts (NOUVEAUX), docs/DECISIONS/0037, CLAUDE.md
+### Purpose
+Trois demandes Hugo dans la foulée du retour à la base.
+
+1. « Laisse un rond évolutif assez joli en mode raisonnement, recherche sur internet,
+rédaction » : la timeline « Étapes » retirée laissait l'attente nue. Un anneau de progression
+la remplace, adossé à un modèle de phases PUR et testé (libellé, icône, fraction, progression
+MONOTONE — un anneau qui recule se lit comme un bug). SVG inline sur le web (arc exact qui se
+remplit), anneau tournant en natif faute de react-native-svg. Mouvement coupé sous
+prefers-reduced-motion.
+
+2. « Si je pars de Safari sur mon tél, la réponse continue d'être générée » : le chemin serveur
+a été VÉRIFIÉ plutôt que supposé — `onFinish` est appelé dans un `flush` attendu avant la
+fermeture du stream (donc `keepAlive(consumeStream())` couvre l'archivage), `teeStream()` fait
+un vrai `.tee()` (la déconnexion client n'interrompt pas le drainage serveur), et maxDuration
+vaut déjà 300 s. Le trou était côté client : iOS peut couper le flux SANS erreur, `useChat`
+repasse en « prêt » avec une réponse tronquée et plus rien ne va chercher la version complète.
+Ajout d'une resynchronisation silencieuse au retour de veille, avec une règle pure testée qui
+compare un préfixe (comparer les seules longueurs ferait écraser une régénération par
+l'archive plus longue de la réponse précédente).
+
+3. Prompts relus avec le guide de prompting GPT-5.6 (9 juillet 2026), dont la règle la plus
+actionnable est : « conflicting rules can create more instability than missing detail ».
+Contradictions levées (professional.v2 imposait « 5 lignes maximum » puis listait neuf items ;
+public.v3 opposait « minimum 2 tours » et « maximum 1 bloc »), conditions d'arrêt explicites
+ajoutées aux trois prompts, structure renumérotée dans professional.v2 (quinze listes
+commençaient toutes par « 1. », gabarits de sortie compris). Le fond clinique et les formats
+de sortie ne sont pas touchés.
+### Regulatory impact
+None — aucune couche de régulation modifiée. Les prompts gagnent des garde-fous (abstention
+explicite quand la preuve manque, interdiction de relancer une recherche pour du confort
+rédactionnel) et perdent des contradictions ; le fond clinique est inchangé. L'anneau et la
+reprise sont de l'ergonomie : aucune donnée nouvelle, aucun appel LLM ajouté.
+### Rollback plan
+`git revert` du commit. L'anneau et la resynchronisation sont additifs (aucune migration,
+aucun changement de contrat serveur) ; les prompts reviennent à leur version précédente par le
+même revert, ou sont éditables à chaud depuis le panel admin (table ai_prompts).
+
+
+## [2026-08-30] – Claude (chat : retour à la base — un prompt, un appel, la réponse)
+### Files modified
+- app/api/chat+api.ts (réécrit : UN `streamText`, plus de `createUIMessageStream`, plus de split, plus de boucle)
+- Supprimés : src/ai/chat/tools/ (7 fichiers), src/ai/chat/split.ts, src/ai/chat/researchTimeline.ts, src/ui/chat/ResearchTimeline.tsx, tests/unit/{chat-tools,chat-split,chat-research-timeline}.test.ts
+- src/ai/chat/responseMode.ts (plus de `maxSteps`/`directAnswer`/`forceFinalAnswerStep` ; `fast` → `webSearch: false`)
+- src/ai/chat/pharmacology.ts, src/ai/chat/progress.ts (consignes et libellés sans outils)
+- app/(chat)/chat.tsx, src/ui/chat/AssistantBlocks.tsx, src/ui/chat/SourceDetailModal.tsx (découplage timeline ; `domainOfUrl` déplacée dans parseAssistantMessage.ts)
+- src/ai/providers/featureModel.ts, src/admin/index.ts, src/ai/prompts/promptStore.ts, app/(admin)/index.tsx (features `chat_researcher`/`chat_fast`/`pubmed_agent` retirées ; `chat` → gpt-5.6-luna)
+- supabase/migrations/0045_chat_back_to_basics.sql, tests/rls/isolation.test.ts (23 → 20 lignes)
+- tests/unit/{chat-response-mode,feature-runtime,chat-progress}.test.ts, docs/DECISIONS/0037-chat-retour-a-la-base.md, CLAUDE.md
+### Purpose
+Décision Hugo : « on a trop complexifié le chatbot, revenons à la base — GPT-5.6 Luna, 1 prompt
+par catégorie puis génération de la réponse avec les questions, liens, etc., mais plus toutes
+ces étapes rendant la réponse longue +++ ».
+
+Le chat empilait un split orchestrateur/rédacteur (2 appels LLM en série), une boucle agentique
+de 5 à 8 étapes, six outils serveur (Europe PMC, ClinicalTrials.gov, plan_research,
+verify_source_links, PubMed MCP + sous-agent Claude) et une timeline « Étapes » pour rendre
+l'attente visible. L'instrumentation de prod (migration 0034) montrait une latence LINÉAIRE
+dans le nombre d'étapes, ~15-18 s par étape. On était allé jusqu'à construire une interface
+pour rendre l'attente supportable au lieu de supprimer l'attente.
+
+Désormais : prompt du chatbot + contexte utilisateur/pays/pharmaco/mode/outils de sortie → UN
+`streamText` sur gpt-5.6-luna avec la recherche web du provider (exécutée DANS l'appel, donc
+sans étape LLM supplémentaire) → la réponse, avec ses SOURCES, APPROFONDISSEMENTS et
+QUESTIONS_PATIENT. Les 3 modes empruntent le même chemin (`fast` coupe la recherche web).
+
+Conservé : les 3 prompts produit, l'autorisation persona serveur, l'essai invité, la pièce
+jointe, le renfort pharmacologie, le contexte pays, les outils de sortie, l'archivage serveur
++ keepAlive et l'instrumentation des coûts.
+
+Revue des prompts dans la même livraison : `student.v4` demandait d'utiliser des outils qui
+n'existent plus (« vérifie les liens avec ton outil ») — remplacés par la recherche web, et
+la garde anti-lien-mort du prompt public y est reprise (formats stables + repli Scholar).
+`public.v3` : deux incohérences internes levées — « minimum 2 tours de QUESTIONS_PATIENT »
+contredisait « maximum 1 bloc » (tranché à 1 tour par défaut, 2 au maximum), et l'exigence
+de 4 sources est explicitement requalifiée en objectif et non en quota à remplir.
+`professional.v2` : rien à corriger. Enfin `searchContextSize` passe de 'low' à 'medium' —
+il n'y a plus qu'une recherche par réponse, et c'est devenue la seule source du chat.
+### Regulatory impact
+None — aucune couche de RÉGULATION retirée : le workflow evidence-first était une couche de
+QUALITÉ (ADR-0030 le posait explicitement). Disclosure AI Act, autorisation persona serveur,
+cloisonnement des chatbots, non-stockage des pièces jointes et RLS inchangés. PERTES DE QUALITÉ
+assumées et documentées (ADR-0037 « Conséquences ») : plus de métadonnées d'études réelles
+Europe PMC dans les fiches sources, plus de vérification HEAD/GET des liens avant rédaction
+(un lien mort redevient possible), plus d'accès direct PubMed/ClinicalTrials.gov pour le
+chatbot pro. La fiabilité des sources repose sur la recherche web et sur les exigences des
+prompts produit.
+### Rollback plan
+`git revert` du commit (le code retiré reste dans l'historique git). Côté base : remettre
+`chat` sur gpt-5.2 depuis le panel admin (1 clic) ; les lignes `chat_researcher`/`chat_fast`/
+`pubmed_agent` sont recréables en rejouant les migrations 0041/0042/0031. `ai_interactions`
+n'ayant pas été touchée, l'historique des coûts reste intact dans les deux sens.
+
+
+## [2026-08-29] – Claude (chat : phases non rédactionnelles sur GPT-5.6 Luna)
+### Files modified
+- src/ai/providers/featureModel.ts (3 modèles GPT-5.6 dans AVAILABLE_MODELS ; défauts `chat_researcher` et `chat_fast` → `gpt-5.6-luna`)
+- src/ai/providers/featureRuntime.ts (`openaiReasoningEffort` : `minimal` → `none` pour la famille 5.6)
+- src/admin/cost.ts (prix exacts sol/terra/luna + replis par famille avant la règle générique gpt-5)
+- supabase/migrations/0044_chat_gpt56_luna.sql
+- tests/unit/feature-runtime.test.ts, tests/unit/admin-cost.test.ts, CLAUDE.md
+### Purpose
+Retour Hugo : « c'est trop long la génération d'une réponse », demande explicite de passer sur
+GPT-5.6 Luna, « plus rapide et moins cher ». L'audit latence 2026-07 avait déjà localisé le
+temps dans la BOUCLE D'OUTILS (~15-18 s par étape), portée par l'agent chercheur, et le premier
+poste de tokens d'entrée dans le contenu web injecté à chaque étape. Luna est le tier le plus
+rapide et le moins cher de la famille 5.6 (0,20 $ / 1 M entrée, 1,20 $ / 1 M sortie, contre
+0,25 $ / 2,00 $ pour gpt-5-mini) avec 1,1 M de contexte : profil exact de cette phase.
+
+Bascule limitée aux deux features SANS enjeu rédactionnel clinique — `chat_researcher`
+(recherche/lecture/vérification) et `chat_fast` (mode Rapide, appel direct sans outil). La
+RÉDACTION de la réponse médicale reste sur `chat` (gpt-5.2) : la descendre d'un tier est un
+arbitrage de qualité clinique qui appartient à Hugo, et se fait en un clic dans le panel admin
+(les 3 tiers 5.6 y sont désormais listés et tarifés).
+
+Pièges traités — capacités VÉRIFIÉES contre l'API OpenAI (Responses, celle qu'utilise
+`openai()` du SDK), pas déduites de la doc :
+1. La famille 5.6 a REMPLACÉ l'effort `minimal` par `none` (valeurs : none/low/medium/high/
+   xhigh/max) — l'API répond `Unsupported value: 'minimal' is not supported with the
+   'gpt-5.6-luna' model`. Or le chat grand public est justement plafonné à `minimal` par
+   `capReasoningEffort` : envoyer la valeur telle quelle ferait échouer TOUS ses appels. Le
+   vocabulaire interne (minimal/low/medium/high) est conservé partout — panel admin,
+   responseMode — et la traduction est faite au bord dans `openaiReasoningEffort` (pur, testé).
+2. `temperature` est REFUSÉE par les 3 modèles 5.6 (`Unsupported parameter`) → capability
+   `temperature: false`, sinon un simple réglage admin casserait la feature. `text.verbosity`
+   est acceptée → capability à true.
+### Regulatory impact
+None — aucune nouvelle feature IA, aucune table, aucune donnée de santé, aucun changement
+d'autorisation ni de disclosure. Le contenu clinique rédigé reste produit par le même modèle.
+### Rollback plan
+Panel admin → onglet Modèles → remettre `gpt-5-mini` sur « Chat — Agent chercheur » et
+« Chat — Mode rapide » (effet immédiat, sans redéploiement). Ou `update public.ai_model_config
+set model_id = 'gpt-5-mini' where key in ('chat_researcher','chat_fast');`. Côté code, revert
+du commit (les défauts ne servent que si Supabase est injoignable).
+
+
 ## [2026-08-19] – Claude (CV : l'apparence par défaut reproduit le modèle fourni)
 ### Files modified
 - public/cv-builder.html (géométrie du liseré et du bandeau, valeurs de thème par défaut, polices par rôle, rythme vertical, présentation `list`, pictogrammes de contact pleins, titre du bloc contacts, panneau Thème réorganisé)

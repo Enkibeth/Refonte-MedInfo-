@@ -24,7 +24,7 @@ import { Icon, type IconName } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
 
 const MODES: { id: ResponseMode; label: string; icon: IconName; hint: string }[] = [
-  { id: 'fast', label: 'Rapide', icon: 'wind', hint: 'Réponse brève et directe' },
+  { id: 'fast', label: 'Rapide', icon: 'wind', hint: 'Réponse brève, sans recherche web' },
   { id: 'standard', label: 'Classique', icon: 'messageCircle', hint: 'Réponse équilibrée' },
   { id: 'deep', label: 'Complexe', icon: 'brain', hint: 'Réponse complète et approfondie' },
 ];

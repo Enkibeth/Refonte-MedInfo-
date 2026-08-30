@@ -543,3 +543,18 @@ export function splitBodySections(markdown: string): BodySection[] {
   flush();
   return sections;
 }
+
+/**
+ * Domaine lisible d'une URL de source (« has-sante.fr »), sans le `www.`.
+ * Renvoie null si l'URL est absente ou invalide — on n'affiche jamais une URL brute
+ * mal formée dans une fiche source.
+ */
+export function domainOfUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    return host || null;
+  } catch {
+    return null;
+  }
+}
