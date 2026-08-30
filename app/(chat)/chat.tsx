@@ -85,6 +85,9 @@ import {
   type ChatProgressStep,
 } from '@/ai/chat/progress';
 import { coerceChatOutputTools, type ChatOutputTool } from '@/ai/chat/outputTools';
+import { shouldReplaceWithArchived } from '@/chat/resume';
+import { chatPhaseLabel, type ChatPhase } from '@/ai/chat/statusPhases';
+import { ChatStatusRing } from '@/ui/chat/ChatStatusRing';
 import {
   ATTACHMENT_ACCEPT,
   ATTACHMENT_MAX_BYTES,
@@ -129,47 +132,14 @@ const CAN_COPY =
 
 // ── Indicateur de statut (réflexion / recherche de sources / rédaction) ──────────
 
-function PulsingDots() {
-  const reduced = useReducedMotion();
-  const d0 = useRef(new Animated.Value(0.45)).current;
-  const d1 = useRef(new Animated.Value(0.45)).current;
-  const d2 = useRef(new Animated.Value(0.45)).current;
-
-  useEffect(() => {
-    if (reduced) return;
-    const pulse = (v: Animated.Value, delay: number) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(v, { toValue: 1, duration: 420, delay, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-          Animated.timing(v, { toValue: 0.45, duration: 420, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        ]),
-      );
-    const anims = [pulse(d0, 0), pulse(d1, 140), pulse(d2, 280)];
-    anims.forEach((a) => a.start());
-    return () => anims.forEach((a) => a.stop());
-  }, [reduced, d0, d1, d2]);
-
-  return (
-    <View style={styles.typingRow}>
-      {[d0, d1, d2].map((v, i) => (
-        <Animated.View
-          key={i}
-          style={[styles.typingDot, { opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0.45, 1], outputRange: [1, -2] }) }] }]}
-        />
-      ))}
-    </View>
-  );
-}
-
 /** Reprise après coupure : intervalle et nombre d'essais (~4 min au total). */
 const RECOVERY_INTERVAL_MS = 4000;
 const RECOVERY_MAX_ATTEMPTS = 60;
 
-type ChatPhase = 'thinking' | 'searching' | 'writing' | 'recovering';
-
 /**
- * Bulle de statut affichée tant que la réponse n'a pas commencé à s'écrire : rassure
- * l'utilisateur que ça charge (réflexion, puis recherche de sources le cas échéant).
+ * Bloc de statut affiché tant que la réponse n'a pas commencé à s'écrire : l'anneau
+ * (ChatStatusRing) porte la phase en cours — raisonnement → recherche sur Internet →
+ * rédaction — et le compteur d'attente.
  */
 function StatusBubble({
   phase,
@@ -181,16 +151,7 @@ function StatusBubble({
   /** Horodatage du début d'attente : alimente le compteur de secondes. */
   startedAt?: number | null;
 }) {
-  const label =
-    phase === 'searching'
-      ? (toolLabel ?? 'Recherche de sources fiables…')
-      : phase === 'writing'
-        ? 'Rédaction de la réponse…'
-        : phase === 'recovering'
-          ? 'Récupération de la réponse…'
-          : 'MedInfo réfléchit…';
-  const icon =
-    phase === 'searching' ? 'search' : phase === 'writing' ? 'sparkles' : phase === 'recovering' ? 'clock' : 'brain';
+  const label = chatPhaseLabel(phase, toolLabel);
 
   // Compteur de secondes : une attente CHIFFRÉE se supporte bien mieux qu'un spinner
   // muet — l'utilisateur voit que ça avance et sait à quoi s'en tenir.
@@ -205,16 +166,9 @@ function StatusBubble({
 
   return (
     <View>
-      {/* Live region : les lecteurs d'écran sont informés des changements de phase
-          (réflexion → recherche de sources → rédaction) sans focus manuel. */}
-      <View style={styles.statusPill} accessibilityLabel={label} accessibilityLiveRegion="polite">
-        <View style={styles.statusIconWrap}>
-          <Icon name={icon} size={16} color={tokens.colors.accent} />
-        </View>
-        <Text style={styles.statusText}>{label}</Text>
-        {elapsed ? <Text style={styles.statusElapsed}>{elapsed}</Text> : null}
-        <PulsingDots />
-      </View>
+      {/* L'anneau porte lui-même la live region : les lecteurs d'écran sont informés des
+          changements de phase (raisonnement → recherche → rédaction) sans focus manuel. */}
+      <ChatStatusRing phase={phase} label={label} elapsed={elapsed} />
       {/* Attente longue : la génération va au bout côté serveur, l'utilisateur n'a pas
           besoin de rester sur la page (et surtout pas de relancer). */}
       {waited >= LONG_WAIT_MS && phase !== 'recovering' ? (
@@ -718,6 +672,8 @@ export default function ChatScreen() {
   // Une réponse est-elle attendue (envoyée mais pas encore archivée/affichée en entier) ?
   // Sert à la reprise après suspension de la page (iOS coupe le flux quand on quitte Safari).
   const awaitingRef = useRef(false);
+  /** Une génération était-elle en cours au moment où l'app est passée en arrière-plan ? */
+  const generatedWhileHiddenRef = useRef(false);
 
   const { messages, sendMessage, status, error, setMessages, regenerate, clearError, stop } = useChat({
     transport,
@@ -836,6 +792,40 @@ export default function ChatScreen() {
     void poll(0);
   }, [recoverFromHistory]);
 
+  /**
+   * Resynchronisation SILENCIEUSE au retour de veille.
+   *
+   * `startRecovery` ne se déclenche que si une réponse est encore attendue. Or iOS peut
+   * couper le flux SANS erreur : `useChat` repasse en « prêt » avec une réponse tronquée à
+   * l'écran, et plus rien ne va chercher la version complète — l'utilisateur reste devant
+   * un texte coupé au milieu d'une phrase, sans le moindre signal. On compare donc la
+   * dernière réponse affichée à celle archivée par le serveur, et on la remplace si
+   * l'archive est manifestement la même réponse en plus complet (module pur testé).
+   */
+  const resyncLastAnswer = useCallback(async () => {
+    const convId = conversationIdRef.current;
+    if (!convId) return;
+    // Une génération est en cours : on la laisse finir, elle fait autorité.
+    if (statusRef.current === 'streaming' || statusRef.current === 'submitted') return;
+
+    const stored = await loadMessages(convId);
+    const archived = stored[stored.length - 1];
+    if (!archived || archived.role !== 'assistant') return;
+
+    let replaced = false;
+    setMessages((current) => {
+      const last = current[current.length - 1];
+      if (!last || last.role !== 'assistant') return current;
+      if (!shouldReplaceWithArchived(messageText(last), archived.content)) return current;
+      replaced = true;
+      return [
+        ...current.slice(0, -1),
+        { ...last, parts: [{ type: 'text' as const, text: archived.content }] },
+      ];
+    });
+    if (replaced) clearError();
+  }, [setMessages, clearError]);
+
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof document === 'undefined') return;
     recoveryCancelledRef.current = false;
@@ -843,7 +833,22 @@ export default function ChatScreen() {
     const onVisible = () => {
       if (document.visibilityState !== 'visible') return;
       startRecovery();
+      // Le flux a pu mourir sans erreur pendant l'absence : on complète en silence.
+      if (generatedWhileHiddenRef.current) {
+        generatedWhileHiddenRef.current = false;
+        void resyncLastAnswer();
+      }
     };
+
+    // Mémorise qu'une génération était en cours au moment où l'on quitte l'app : c'est la
+    // seule situation où une réponse tronquée peut apparaître sans erreur.
+    const onHidden = () => {
+      if (document.visibilityState !== 'hidden') return;
+      if (statusRef.current === 'streaming' || statusRef.current === 'submitted') {
+        generatedWhileHiddenRef.current = true;
+      }
+    };
+    document.addEventListener('visibilitychange', onHidden);
 
     document.addEventListener('visibilitychange', onVisible);
     // Retour depuis le cache arrière/avant (iOS) : `visibilitychange` ne se déclenche pas
@@ -856,9 +861,10 @@ export default function ChatScreen() {
       recoveryCancelledRef.current = true;
       if (recoveryTimerRef.current) clearTimeout(recoveryTimerRef.current);
       document.removeEventListener('visibilitychange', onVisible);
+      document.removeEventListener('visibilitychange', onHidden);
       window.removeEventListener('pageshow', onVisible);
     };
-  }, [startRecovery]);
+  }, [startRecovery, resyncLastAnswer]);
 
   // Le flux a cassé alors qu'une réponse était attendue : la génération continue côté
   // serveur (keepAlive) — on va la chercher SANS attendre que l'utilisateur clique
@@ -2188,36 +2194,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.medium,
   },
-  statusPill: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: tokens.space.sm,
-    paddingVertical: tokens.space.sm,
-    paddingHorizontal: tokens.space.md,
-    borderRadius: tokens.radius.pill,
-    backgroundColor: tokens.colors.surfaceAlt,
-  },
-  statusIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: tokens.radius.pill,
-    backgroundColor: tokens.colors.accentSurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statusText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textSubtle,
-    fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.medium,
-  },
-  statusElapsed: {
-    fontFamily: tokens.font.mono ?? tokens.font.sans,
-    color: tokens.colors.textMuted,
-    fontSize: tokens.type.caption?.fontSize ?? 11,
-    fontVariant: ['tabular-nums'],
-  },
   statusHint: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
@@ -2226,13 +2202,6 @@ const styles = StyleSheet.create({
     marginTop: tokens.space.xs,
     marginLeft: tokens.space.sm,
     maxWidth: 420,
-  },
-  typingRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.xs + 2 },
-  typingDot: {
-    width: 7,
-    height: 7,
-    borderRadius: tokens.radius.pill,
-    backgroundColor: tokens.colors.textMuted,
   },
 
   // Passerelles étudiant (chat → ECOS / Révisions) : rangée discrète après la réponse.

@@ -18,6 +18,50 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-08-30] – Claude (chat : anneau de progression, reprise après veille, prompts GPT-5.6)
+### Files modified
+- src/ai/chat/statusPhases.ts (NOUVEAU, pur, testé), src/ui/chat/ChatStatusRing.tsx + .web.tsx (NOUVEAUX)
+- src/chat/resume.ts (NOUVEAU, pur, testé), app/(chat)/chat.tsx (resynchronisation silencieuse, anneau, styles morts retirés)
+- src/ai/prompts/public.v3.ts, student.v4.ts, professional.v2.ts (contradictions levées, conditions d'arrêt, structure)
+- tests/unit/chat-status-phases.test.ts + chat-resume.test.ts (NOUVEAUX), docs/DECISIONS/0037, CLAUDE.md
+### Purpose
+Trois demandes Hugo dans la foulée du retour à la base.
+
+1. « Laisse un rond évolutif assez joli en mode raisonnement, recherche sur internet,
+rédaction » : la timeline « Étapes » retirée laissait l'attente nue. Un anneau de progression
+la remplace, adossé à un modèle de phases PUR et testé (libellé, icône, fraction, progression
+MONOTONE — un anneau qui recule se lit comme un bug). SVG inline sur le web (arc exact qui se
+remplit), anneau tournant en natif faute de react-native-svg. Mouvement coupé sous
+prefers-reduced-motion.
+
+2. « Si je pars de Safari sur mon tél, la réponse continue d'être générée » : le chemin serveur
+a été VÉRIFIÉ plutôt que supposé — `onFinish` est appelé dans un `flush` attendu avant la
+fermeture du stream (donc `keepAlive(consumeStream())` couvre l'archivage), `teeStream()` fait
+un vrai `.tee()` (la déconnexion client n'interrompt pas le drainage serveur), et maxDuration
+vaut déjà 300 s. Le trou était côté client : iOS peut couper le flux SANS erreur, `useChat`
+repasse en « prêt » avec une réponse tronquée et plus rien ne va chercher la version complète.
+Ajout d'une resynchronisation silencieuse au retour de veille, avec une règle pure testée qui
+compare un préfixe (comparer les seules longueurs ferait écraser une régénération par
+l'archive plus longue de la réponse précédente).
+
+3. Prompts relus avec le guide de prompting GPT-5.6 (9 juillet 2026), dont la règle la plus
+actionnable est : « conflicting rules can create more instability than missing detail ».
+Contradictions levées (professional.v2 imposait « 5 lignes maximum » puis listait neuf items ;
+public.v3 opposait « minimum 2 tours » et « maximum 1 bloc »), conditions d'arrêt explicites
+ajoutées aux trois prompts, structure renumérotée dans professional.v2 (quinze listes
+commençaient toutes par « 1. », gabarits de sortie compris). Le fond clinique et les formats
+de sortie ne sont pas touchés.
+### Regulatory impact
+None — aucune couche de régulation modifiée. Les prompts gagnent des garde-fous (abstention
+explicite quand la preuve manque, interdiction de relancer une recherche pour du confort
+rédactionnel) et perdent des contradictions ; le fond clinique est inchangé. L'anneau et la
+reprise sont de l'ergonomie : aucune donnée nouvelle, aucun appel LLM ajouté.
+### Rollback plan
+`git revert` du commit. L'anneau et la resynchronisation sont additifs (aucune migration,
+aucun changement de contrat serveur) ; les prompts reviennent à leur version précédente par le
+même revert, ou sont éditables à chaud depuis le panel admin (table ai_prompts).
+
+
 ## [2026-08-30] – Claude (chat : retour à la base — un prompt, un appel, la réponse)
 ### Files modified
 - app/api/chat+api.ts (réécrit : UN `streamText`, plus de `createUIMessageStream`, plus de split, plus de boucle)

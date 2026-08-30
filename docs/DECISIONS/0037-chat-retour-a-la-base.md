@@ -110,6 +110,33 @@ prescrit un outil absent ne se contente pas de l'ignorer, il s'invente une confo
   portait déjà sa propre politique de liens (« ne jamais inventer un lien », URL stable de
   l'organisme ou PubMed certain).
 
+### Seconde passe sur les prompts : les règles GPT-5.6
+
+Le [guide de prompting GPT-5.6](https://developers.openai.com/api/docs/guides/prompt-guidance-gpt-5p6)
+(9 juillet 2026) est explicite sur un point qui nous concerne directement : « GPT-5-class
+models follow prompt contracts closely, so conflicting rules can create more instability than
+missing detail. » La chasse aux contradictions est donc la modification la plus rentable, avant
+toute réécriture stylistique. Il demande aussi de **garder** les critères de succès et les
+conditions d'arrêt, les contraintes de preuve et la forme de sortie — ce que nos prompts
+avaient en partie, sans jamais dire quand s'arrêter.
+
+- **Contradictions levées** : `public.v3` — « minimum 2 tours de QUESTIONS_PATIENT » contre
+  « maximum 1 bloc » du mode Symptôme, et le quota de 4 sources requalifié en objectif ;
+  `professional.v2` — `AUTO-REFLEXION` imposait « 5 lignes maximum » puis listait **neuf**
+  items, contrat impossible à tenir : les items sont priorisés et conditionnés, et le « score
+  de complétude en pourcentage » (un chiffre que rien n'ancre) cède la place à ce qui manque,
+  nommé explicitement.
+- **Conditions d'arrêt** ajoutées aux trois prompts, dans la formulation du guide : résoudre
+  avec le minimum de recherches utiles, *sans* laisser cette économie primer sur l'exactitude
+  ou les citations ; ne pas relancer une recherche pour reformuler ; et un critère de fin
+  explicite (« tu as terminé quand… n'ajoute rien après »).
+- **Structure lisible** : `professional.v2` numérotait « 1. » quinze listes et titres
+  différents (artefact de markdown) — le modèle reçoit ce texte littéralement. Renuméroté, y
+  compris les gabarits de sortie qui poussaient à produire « 1. / 1. / 1. ».
+
+Ce qui n'a **pas** été touché : le fond clinique des trois prompts, leur intention pédagogique
+et leurs formats de sortie, qui sont le contrat avec le parseur client.
+
 ### `searchContextSize` : 'low' → 'medium'
 
 L'audit latence de juillet avait bridé le contenu web injecté à `low` parce que la boucle
@@ -117,6 +144,43 @@ enchaînait 3 à 5 recherches par réponse. Il n'y en a plus qu'une, et la reche
 devenue la SEULE source du chat : `medium` redonne au modèle de quoi citer des sources
 réelles plutôt que de combler avec des liens devinés. Le surcoût est marginal sur
 gpt-5.6-luna (0,20 $ / 1 M tokens d'entrée).
+
+### Indicateur de progression : l'anneau remplace la timeline
+
+La timeline « Étapes » retirée laissait l'attente nue. Elle est remplacée par un anneau de
+progression (`src/ui/chat/ChatStatusRing`) qui matérialise les trois moments réellement
+perçus : **raisonnement → recherche sur Internet → rédaction**. Le modèle des phases est un
+module PUR testé (`src/ai/chat/statusPhases.ts`) : libellé, icône, fraction de l'anneau, et
+surtout une progression **monotone** — le flux peut réordonner ses signaux, mais un anneau
+qui recule se lit comme un bug.
+
+Deux implémentations, selon le pattern maison (`icons.web.tsx`, `CountryFlag.web.tsx`) : sur
+le **web**, un SVG inline `stroke-dasharray` donne un arc exact qui se remplit ; en **natif**,
+faute de `react-native-svg`, un arc de longueur arbitraire demanderait deux demi-disques
+masqués et pivotés — géométrie fragile et invérifiable sans appareil — on s'en tient à un
+anneau dont un quart tourne, l'évolution restant portée par l'icône, le libellé et les trois
+pastilles. L'anneau ne se referme jamais pendant l'attente : un cercle complet dirait
+« terminé » alors que la réponse s'écrit encore. Mouvement coupé sous `prefers-reduced-motion`.
+
+### Quitter Safari sans perdre la réponse
+
+Le chemin serveur était déjà bon et a été vérifié plutôt que supposé : `onFinish` est appelé
+dans un `flush` que le SDK **attend** avant de fermer le stream, donc
+`keepAlive(result.consumeStream())` couvre bien l'archivage ; `teeStream()` fait un vrai
+`.tee()`, donc la déconnexion du client n'interrompt pas la branche drainée côté serveur ; et
+`vercel.json` accorde déjà `maxDuration: 300`.
+
+Le trou était côté client. La reprise existante ne se déclenche que si une réponse est encore
+attendue — or iOS peut couper le flux **sans erreur** : `useChat` repasse en « prêt » avec une
+réponse tronquée à l'écran, et plus rien ne va chercher la version complète. L'utilisateur
+reste devant un texte coupé au milieu d'une phrase, sans le moindre signal.
+
+Ajout d'une **resynchronisation silencieuse** : quand l'app passe en arrière-plan pendant une
+génération, on le note ; au retour, on compare la dernière réponse affichée à celle archivée
+par le serveur et on la remplace si l'archive est manifestement la même réponse en plus
+complet. La règle vit dans un module pur testé (`src/chat/resume.ts`) et se garde d'un piège :
+comparer les seules longueurs ferait écraser une régénération courte par l'archive, plus
+longue, de la réponse précédente — d'où la comparaison de préfixe.
 
 ## Conséquences
 
