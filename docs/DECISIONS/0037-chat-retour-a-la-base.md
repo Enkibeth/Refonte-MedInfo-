@@ -63,8 +63,10 @@ de configuration devenues orphelines.
 
 ### Conservé
 
-- Les **3 prompts produit** (`public.v3`, `student.v4`, `professional.v2`) — inchangés, et
-  toujours éditables depuis le panel admin.
+- Les **3 prompts produit** (`public.v3`, `student.v4`, `professional.v2`) — conservés dans
+  leur intention et leur structure, toujours éditables depuis le panel admin ; deux d'entre
+  eux sont retouchés là où ils décrivaient l'ancienne architecture (voir « Révision des
+  prompts » ci-dessous).
 - La **recherche web du provider** (voir « Conséquences » : c'est ce qui tient les liens).
 - L'**autorisation persona serveur** (`allowedChatbotsFor`), l'**essai invité** (1 message),
   la **pièce jointe** (ADR-0034), le **renfort pharmacologie** (ADR-0033), le **contexte pays**,
@@ -84,6 +86,37 @@ REMPLACÉ par `none` (traduction au bord dans `openaiReasoningEffort`).
 
 Les 3 modes de réponse empruntent désormais le même chemin : `fast` coupe la recherche web,
 `standard` applique la config admin, `deep` monte l'effort (public plafonné à `medium`).
+
+### Révision des prompts (même livraison)
+
+Retirer les outils imposait de relire les trois prompts produit : un modèle à qui l'on
+prescrit un outil absent ne se contente pas de l'ignorer, il s'invente une conformité.
+
+- **`student.v4`** — quatre mentions d'outils disparus (« tes outils de recherche
+  documentaire », « vérifie les liens avec ton outil ») remplacées par la recherche web.
+  La **garde anti-lien-mort** du prompt public y est reprise (formats stables DOI/PubMed,
+  repli `scholar.google.com/scholar?q=…` quand le lien exact n'est pas connu) : c'est ce
+  qui remplace `verify_source_links` — le modèle ne peut pas tester un lien, donc il ne
+  doit écrire que des liens dont il est certain, ou un repli toujours fonctionnel.
+- **`public.v3`** — deux incohérences internes corrigées, sans toucher au fond clinique :
+  (1) « minimum 2 tours de QUESTIONS_PATIENT » contredisait « maximum 1 bloc » du mode
+  Symptôme ; tranché à **un tour par défaut, un second seulement si une donnée
+  déterminante manque** — cohérent avec l'objectif de rapidité, et deux allers-retours de
+  formulaire avant la moindre réponse étaient de toute façon coûteux pour l'utilisateur ;
+  (2) l'exigence « minimum 4 sources » pouvait pousser à combler la liste : il est
+  désormais écrit que **le minimum est un objectif, jamais un quota** — citer trois
+  sources vaut mieux qu'en inventer une quatrième.
+- **`professional.v2`** — aucune correction nécessaire : il ne référençait aucun outil et
+  portait déjà sa propre politique de liens (« ne jamais inventer un lien », URL stable de
+  l'organisme ou PubMed certain).
+
+### `searchContextSize` : 'low' → 'medium'
+
+L'audit latence de juillet avait bridé le contenu web injecté à `low` parce que la boucle
+enchaînait 3 à 5 recherches par réponse. Il n'y en a plus qu'une, et la recherche web est
+devenue la SEULE source du chat : `medium` redonne au modèle de quoi citer des sources
+réelles plutôt que de combler avec des liens devinés. Le surcoût est marginal sur
+gpt-5.6-luna (0,20 $ / 1 M tokens d'entrée).
 
 ## Conséquences
 

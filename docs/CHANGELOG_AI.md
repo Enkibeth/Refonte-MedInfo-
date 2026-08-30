@@ -48,6 +48,15 @@ QUESTIONS_PATIENT. Les 3 modes empruntent le même chemin (`fast` coupe la reche
 Conservé : les 3 prompts produit, l'autorisation persona serveur, l'essai invité, la pièce
 jointe, le renfort pharmacologie, le contexte pays, les outils de sortie, l'archivage serveur
 + keepAlive et l'instrumentation des coûts.
+
+Revue des prompts dans la même livraison : `student.v4` demandait d'utiliser des outils qui
+n'existent plus (« vérifie les liens avec ton outil ») — remplacés par la recherche web, et
+la garde anti-lien-mort du prompt public y est reprise (formats stables + repli Scholar).
+`public.v3` : deux incohérences internes levées — « minimum 2 tours de QUESTIONS_PATIENT »
+contredisait « maximum 1 bloc » (tranché à 1 tour par défaut, 2 au maximum), et l'exigence
+de 4 sources est explicitement requalifiée en objectif et non en quota à remplir.
+`professional.v2` : rien à corriger. Enfin `searchContextSize` passe de 'low' à 'medium' —
+il n'y a plus qu'une recherche par réponse, et c'est devenue la seule source du chat.
 ### Regulatory impact
 None — aucune couche de RÉGULATION retirée : le workflow evidence-first était une couche de
 QUALITÉ (ADR-0030 le posait explicitement). Disclosure AI Act, autorisation persona serveur,

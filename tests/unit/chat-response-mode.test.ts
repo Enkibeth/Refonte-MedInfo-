@@ -5,6 +5,7 @@ import {
   buildResponseModeSection,
   coerceResponseMode,
   responseModeRuntime,
+  shouldDisableWebSearch,
 } from '@/ai/chat/responseMode';
 
 describe('responseMode — coercion', () => {
@@ -111,5 +112,31 @@ describe('mode rapide — une réponse directe, sans recherche', () => {
     expect(section).toMatch(/INDICATIVE/i);
     expect(section).toMatch(/n.invente jamais un chiffre/i);
     expect(section).toMatch(/sécurité/i);
+  });
+});
+
+describe('shouldDisableWebSearch — on coupe, on n’active jamais', () => {
+  it('coupe la recherche sur un tour purement conversationnel, quel que soit le mode', () => {
+    for (const mode of RESPONSE_MODES) {
+      const r = responseModeRuntime(mode, 'public');
+      expect(shouldDisableWebSearch(r, { conversational: true })).toBe(true);
+    }
+  });
+
+  it('coupe la recherche en mode Rapide', () => {
+    expect(
+      shouldDisableWebSearch(responseModeRuntime('fast', 'student'), { conversational: false }),
+    ).toBe(true);
+  });
+
+  it('NE coupe PAS en Classique/Approfondi : l’activation reste la décision du panel admin', () => {
+    // Régression protégée : forcer `webSearch: true` dans la route rendrait le toggle
+    // « Recherche internet » de la feature `chat` totalement inopérant.
+    for (const mode of ['standard', 'deep'] as const) {
+      for (const bot of ['public', 'student', 'professional'] as const) {
+        const r = responseModeRuntime(mode, bot);
+        expect(shouldDisableWebSearch(r, { conversational: false })).toBe(false);
+      }
+    }
   });
 });

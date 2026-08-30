@@ -92,6 +92,25 @@ export function responseModeRuntime(
 }
 
 /**
+ * Faut-il COUPER la recherche web pour ce tour ? (pur, testé)
+ *
+ * Règle volontairement asymétrique : on ne surcharge que pour couper, JAMAIS pour activer.
+ * Renvoyer `webSearch: true` en dur écraserait le toggle « Recherche internet » du panel
+ * admin, qui ne servirait alors plus à rien pour le chat — l'activation reste la décision
+ * de la config admin de la feature `chat`.
+ *
+ * On coupe dans deux cas : un tour purement conversationnel (« bonjour », « merci » — rien
+ * à chercher) et le mode Rapide (dont la consigne interdit alors explicitement de citer la
+ * moindre source, faute de pouvoir en vérifier une).
+ */
+export function shouldDisableWebSearch(
+  mode: ResponseModeRuntime,
+  opts: { conversational: boolean },
+): boolean {
+  return opts.conversational || mode.webSearch === false;
+}
+
+/**
  * Courte consigne concaténée au system prompt pour aligner la LONGUEUR/PROFONDEUR sur
  * le mode choisi. Subordonnée au format imposé par les prompts produit (elle ajuste la
  * densité, ne remplace jamais la structure exigée). Vide en mode `standard`.

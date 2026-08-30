@@ -144,10 +144,16 @@ export async function getRuntimeForFeature(
     if (caps.webSearch && settings.webSearch) {
       // L'API exacte de l'outil varie selon la version du provider ; on tente les
       // deux formes connues et on ignore silencieusement si indisponible.
-      // Audit latence 2026-07 : `searchContextSize: 'low'` = « least context, lowest cost,
-      // fastest response » (doc SDK) — bride le contenu web injecté dans le contexte, qui
-      // était le premier poste de tokens d'entrée (jusqu'à ~30 k/réponse) et de latence.
-      const webSearchArgs = { searchContextSize: 'low' as const };
+      //
+      // `searchContextSize` = quantité de contenu web injectée dans le contexte. L'audit
+      // latence 2026-07 l'avait bridée à 'low' parce que la boucle agentique enchaînait
+      // 3 à 5 recherches par réponse : le contenu web était alors le premier poste de
+      // tokens d'entrée ET de latence. Depuis le retour à la base (ADR-0037) il n'y a plus
+      // qu'UNE recherche dans UN appel, et la recherche web est devenue la SEULE source du
+      // chat : 'medium' redonne au modèle de quoi citer 3-4 sources réelles plutôt que de
+      // combler avec des liens devinés. Le surcoût est marginal sur gpt-5.6-luna
+      // (0,20 $ / 1 M tokens d'entrée).
+      const webSearchArgs = { searchContextSize: 'medium' as const };
       const t = openai as unknown as { tools?: Record<string, (...args: unknown[]) => unknown> };
       try {
         if (t.tools?.webSearch) tools.web_search = t.tools.webSearch(webSearchArgs);

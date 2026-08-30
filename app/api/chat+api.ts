@@ -45,6 +45,7 @@ import {
   buildResponseModeSection,
   coerceResponseMode,
   responseModeRuntime,
+  shouldDisableWebSearch,
 } from '@/ai/chat/responseMode';
 import { buildOutputToolsSection, coerceChatOutputTools } from '@/ai/chat/outputTools';
 import { appendAttachmentToModelMessages, coerceChatAttachment } from '@/ai/chat/attachment';
@@ -144,14 +145,17 @@ export async function POST(request: Request): Promise<Response> {
   const conversational = !hasAttachment && isConversationalTurn(latestUserText(uiMessages));
 
   // Recherche web du provider : c'est la SEULE source externe du chat depuis le retour à
-  // la base. Elle s'exécute DANS l'appel (aucune étape LLM supplémentaire). Coupée sur un
-  // tour conversationnel et en mode Rapide (dont le prompt interdit alors toute source).
-  const webSearch = !conversational && modeRuntime.webSearch !== false;
+  // la base. Elle s'exécute DANS l'appel (aucune étape LLM supplémentaire).
+  //
+  // On ne la surcharge que pour la COUPER (tour conversationnel, mode Rapide) — jamais pour
+  // l'activer, sous peine de rendre inopérant le toggle « Recherche internet » du panel
+  // admin. Règle portée par un module pur testé (`shouldDisableWebSearch`).
+  const noSearch = shouldDisableWebSearch(modeRuntime, { conversational });
 
   const [template, runtime] = await Promise.all([
     getPromptTemplate(chatbot),
     getRuntimeForFeature('chat', {
-      webSearch,
+      ...(noSearch ? { webSearch: false } : {}),
       reasoningEffort: modeRuntime.reasoningEffort,
       ...(modeRuntime.capReasoningEffort ? { capReasoningEffort: modeRuntime.capReasoningEffort } : {}),
       verbosity: modeRuntime.verbosity,
@@ -190,13 +194,19 @@ export async function POST(request: Request): Promise<Response> {
     ...(tools && Object.keys(tools).length > 0 ? { tools } : {}),
     ...callOptions,
     onFinish: async ({ text, usage, steps }) => {
+      // Sans `stopWhen`, l'appel tient en une étape et `text` est la réponse entière. Garde
+      // défensive : si le SDK venait à en produire plusieurs, `text` ne contiendrait que la
+      // DERNIÈRE — on archiverait une réponse tronquée, invisible jusqu'à ce qu'un
+      // utilisateur rouvre sa conversation. Concaténer coûte trois lignes.
+      const fullText =
+        Array.isArray(steps) && steps.length > 1 ? steps.map((s) => s.text ?? '').join('') : text;
       if (conversationId && resolution.userId) {
         const supabase = createServerSupabaseClient();
         if (supabase) {
           await saveAssistantMessageServer(supabase, {
             conversationId,
             userId: resolution.userId,
-            content: text,
+            content: fullText,
             replaceLast: regenerate,
           });
         }

@@ -773,21 +773,6 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.micro.fontSize,
   },
-  verifiedPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    borderRadius: tokens.radius.pill,
-    backgroundColor: tokens.colors.successBackground,
-    paddingHorizontal: tokens.space.sm,
-    paddingVertical: 2,
-  },
-  verifiedPillText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.success,
-    fontSize: tokens.type.micro.fontSize,
-    fontWeight: tokens.weight.semibold,
-  },
 
   checkbox: {
     width: 20,
