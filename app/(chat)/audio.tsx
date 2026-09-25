@@ -136,7 +136,7 @@ function AudioFeature() {
           <Text style={styles.infoTitle}>Disponible sur le web</Text>
           <Text style={styles.infoText}>
             L'enregistrement audio est actuellement disponible sur la version web de MedInfo.
-            Connectez-vous sur n-med-info.vercel.app pour utiliser cette fonctionnalité.
+            Connectez-vous depuis un navigateur pour utiliser cette fonctionnalité.
           </Text>
         </View>
       </View>

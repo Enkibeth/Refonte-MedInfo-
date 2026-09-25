@@ -1,5 +1,5 @@
 /**
- * Client Supabase serveur — dédié aux routes API / Vercel Functions.
+ * Client Supabase serveur — dédié aux routes API (`+api.ts`).
  *
  * La clé `service_role` contourne la RLS : elle ne doit jamais être importée par
  * du code client React Native/Web. Les routes serveur l'utilisent uniquement pour

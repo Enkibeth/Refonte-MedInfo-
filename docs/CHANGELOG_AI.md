@@ -18,6 +18,36 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-09-25] – Claude (hébergement Hostinger + domaine medinfo-ai.com — ADR-0038)
+### Files modified
+- Reprise de la migration d'août (revert du revert #144) : server.js, server/index.mjs, server/lib/{env,proxy,serve-static,static}.mjs, scripts/hostinger/{precompress,smoke}.mjs + weekly-blog-cron.sh, ecosystem.config.cjs, src/deploy/hosting.ts, src/server/keepAlive.ts ; suppression de vercel.json, api/index.js, scripts/vercel/, @vercel/analytics, @vercel/speed-insights
+- Corrections : server/index.mjs + server/lib/proxy.mjs (écoute IPv4+IPv6, PORT socket, IP client lue à droite et réécrite dans `rawHeaders`, schéma https par requête, HSTS, `www` → apex en 308, en-têtes par défaut `/api/*`, diagnostic `TRUST_PROXY_HOPS`) ; src/server/streamingHeaders.ts (NOUVEAU) appliqué à app/api/{chat,ecos,analyze}+api.ts ; src/billing/createCheckoutSession.ts (`resolveCheckoutBaseUrl`) + app/api/billing/checkout+api.ts ; src/seo/meta.ts (`DEFAULT_SITE_URL` = https://medinfo-ai.com) + public/robots.txt
+- Tests : tests/unit/hostinger-server.test.ts (+18), tests/unit/streaming-headers.test.ts (NOUVEAU), tests/unit/seo-meta.test.ts, tests/unit/billing-checkout.test.ts ; fumigation 14 → 19 vérifications
+- Docs : docs/DECISIONS/0038 (NOUVEAU), docs/09_DEPLOYMENT.md (v2.1), docs/02_ARCHITECTURE.md §7/§9/§10, docs/03_SECURITY.md, docs/06_BILLING.md, ADR-0004 (note), CLAUDE.md, README.md, docs/README.md, .env.example
+### Purpose
+Faire tourner le site chez Hostinger puis sur medinfo-ai.com. La migration d'août avait été
+annulée le lendemain sans ADR ; son domaine temporaire répond 503. Constat du 2026-09-25 :
+medinfo-ai.com sert encore l'ancien WordPress (Hostinger, CDN), e-mail du domaine chez Hostinger.
+La reprise corrige, sur la base de la documentation officielle Hostinger (port attribué au
+démarrage, processus arrêté après inactivité, variables au build et à l'exécution) : écoute
+forcée en IPv4 et `PORT` supposé numérique (deux causes plausibles de 503), IP client
+falsifiable (quota anonyme de /api/analyze contournable — l'adaptateur Expo lit `rawHeaders`,
+démontré par la fumigation), schéma https « collant » sur connexion réutilisée, flux non
+protégés contre la mise en tampon, HSTS perdu, cron inadapté à l'hébergement géré, URL
+canonique et robots.txt divergents. Vérifié : typecheck, 815 tests unitaires, 106 tests RLS,
+compliance-grep, validate:rag, build (~1 min, ~0,5 Go), fumigation 19/19, rendu Chromium des
+pages clés, chat de bout en bout avec un faux fournisseur (flux progressif, génération menée à
+terme après coupure du client).
+### Regulatory impact
+Potential — l'hébergeur change (mentions légales LCEN art. 6-III et sous-traitants RGPD art. 28
+nomment Hostinger ; région du serveur et téléphone de l'hébergeur à compléter). Aucune donnée
+stockée chez l'hébergeur (état dans Supabase), aucune couche de sécurité retirée, aucune table ni
+policy touchée.
+### Rollback plan
+Avant la bascule : ne pas fusionner (Vercel sert `main`). Après : couper les builds Vercel
+avant la fusion garde le dernier déploiement en ligne sur refonte-med-info.vercel.app ; revert
+de la fusion + restauration de la sauvegarde WordPress sur le domaine (docs/09_DEPLOYMENT.md §10).
+
 ## [2026-08-30] – Claude (chat : anneau de progression, reprise après veille, prompts GPT-5.6)
 ### Files modified
 - src/ai/chat/statusPhases.ts (NOUVEAU, pur, testé), src/ui/chat/ChatStatusRing.tsx + .web.tsx (NOUVEAUX)

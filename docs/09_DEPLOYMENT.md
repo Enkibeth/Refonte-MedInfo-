@@ -1,97 +1,310 @@
-# Déploiement Vercel + Supabase dédié
+# Déploiement Hostinger (Node.js) + Supabase — medinfo-ai.com
 
 ```yaml
 title: Deployment Runbook
-version: 1.0.0
+version: 2.1.0
 owner: Hugo Bettembourg
 status: Active
-date: 2026-06-03
+date: 2026-09-25
+note: ADR-0038 — remplace le runbook Vercel (v1) ; v2.1 corrige la v2 (2026-08) sur la base de la documentation officielle Hostinger et de l'état réel du domaine
 ```
 
-## Objectif
+## 0. État de départ (constaté le 2026-09-25)
 
-Permettre au projet Expo Router MedInfo AI de tourner sur Vercel avec :
+| Élément | État |
+|---|---|
+| `medinfo-ai.com` | **ancien site WordPress** chez Hostinger, derrière le CDN Hostinger |
+| `www.medinfo-ai.com` | CNAME vers le CDN Hostinger, 301 vers l'apex |
+| DNS / registrar | Hostinger (`ns1/ns2.dns-parking.com`) |
+| E-mail du domaine | Hostinger (MX `mx1/mx2.hostinger.com` + SPF) — **ne jamais toucher** |
+| App en production | `refonte-med-info.vercel.app` (Vercel) |
+| App Node Hostinger d'août | domaine temporaire `lightgoldenrodyellow-heron-372000.hostingersite.com` → **503** |
 
-- le bundle web client servi depuis `dist/client` ;
-- les routes API Expo Router, notamment `POST /api/chat`, servies par une Vercel Function ;
-- le projet Supabase dédié MedInfo connecté par variables d'environnement ;
-- aucune clé secrète committée dans le repo.
+## 1. Architecture de déploiement
 
-## Fichiers de déploiement
+Un **processus Node unique** (`server/index.mjs`, adaptateur `expo-server/adapter/http`)
+sert les fichiers statiques **et** exécute les routes API.
 
 | Fichier | Rôle |
 |---|---|
-| `app.json` | `expo.web.output=server` génère `dist/client` + `dist/server`, requis pour les API routes. |
-| `api/index.js` | Entrypoint Vercel qui délègue les requêtes à `expo-server/adapter/vercel`. |
-| `vercel.json` | Build `expo export -p web`, publication `dist/client`, inclusion `dist/server/**`, rewrite vers la Function. |
-| `.env.example` | Liste des variables à créer dans Vercel et en local. |
-| `app/api/health+api.ts` | Smoke-test non secret : `GET /api/health`. |
+| `app.json` | `expo.web.output=server` → l'export produit `dist/client` + `dist/server`. Requis pour les routes API. |
+| `server.js` | Fichier d'entrée déclaré dans hPanel — délègue à `server/index.mjs`. |
+| `server/index.mjs` | Le serveur : statiques, routes Expo, en-têtes de proxy, IP client, HSTS, redirection `www`, arrêt gracieux, journal d'accès. |
+| `server/lib/*.mjs` | Modules purs (cache, `.env`, proxy, écoute) testés dans `tests/unit/hostinger-server.test.ts`. |
+| `scripts/hostinger/precompress.mjs` | Compression Brotli/gzip au build (7,1 Mo → 1,5 Mo servis). |
+| `scripts/hostinger/smoke.mjs` | Fumigation du serveur réel sur le build (`npm run smoke:node`, 19 vérifications). |
+| `scripts/hostinger/weekly-blog-cron.sh` | Déclencheur du cron hebdo du blog. |
+| `ecosystem.config.cjs` | Config PM2 — **uniquement** sur un VPS. |
+| `app/api/health+api.ts` | Smoke-test non secret : `GET /api/health` (`deployTarget: "hostinger"`). |
 
-## Variables Vercel obligatoires
+> ⚠️ **Ce n'est pas un site React statique.** Un déploiement « statique » servirait les
+> pages mais **aucune route API** : plus de chat, de connexion, de paiement. Il faut le mode
+> **application serveur**, avec un fichier d'entrée.
 
-Dans **Vercel → Project → Settings → Environment Variables**, créer au minimum :
+## 2. Ce que Hostinger impose (documentation officielle)
 
-| Variable | Environnements | Valeur attendue | Secret ? | Notes |
-|---|---:|---|---:|---|
-| `AI_PROVIDER` | Production / Preview / Development | `anthropic` ou `openai` | Non | `anthropic` par défaut. |
-| `ANTHROPIC_API_KEY` | selon provider | clé Anthropic | Oui | Obligatoire si `AI_PROVIDER=anthropic`. |
-| `OPENAI_API_KEY` | selon provider | clé OpenAI | Oui | Obligatoire si `AI_PROVIDER=openai`. Peut coexister avec Anthropic. |
-| `AI_MODEL_ID` | optionnel | ex. `gpt-4o` | Non | Vide = modèle par défaut du provider. |
-| `EXPO_PUBLIC_SUPABASE_URL` | tous | URL projet Supabase dédié | Non | Injectée dans le bundle client à la build. |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | tous | clé `anon` Supabase | Non sensible publiquement | Protégée par RLS, nécessaire à l'auth client. |
-| `SUPABASE_URL` | tous | URL projet Supabase dédié | Non | Utilisée côté serveur ; garder identique à `EXPO_PUBLIC_SUPABASE_URL`. |
-| `SUPABASE_SERVICE_ROLE_KEY` | tous | clé `service_role` Supabase | Oui | Serveur uniquement : audit `ai_interactions`. |
+Source : [docs.hostinger.com/node.js](https://docs.hostinger.com/node.js/overview). Offre
+**Business** ou **Cloud** requise.
 
-> Ne jamais mettre `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY` ou `OPENAI_API_KEY` dans un fichier committé.
+- Déploiement depuis GitHub (application GitHub Hostinger) : **on choisit la branche** ; chaque
+  push sur cette branche rebâtit et redéploie ; un seul déploiement à la fois.
+- Build : `npm install` (ou yarn/pnpm selon le lockfile) puis le script npm choisi —
+  **15 min max** chacun. Une application « Other » avec fichier d'entrée déploie **tout le
+  dossier racine**, `node_modules` et `dist/` compris.
+- **Le port est attribué au démarrage** : l'application écoute `process.env.PORT`. Ne pas
+  définir `PORT` soi-même.
+- Variables d'environnement injectées **au build ET à l'exécution** ; les enregistrer
+  **redéploie** l'application.
+- Le `.htaccess` qui route vers Node est **généré** ; `hbuilds/` et `public_html` sont
+  réécrits à chaque déploiement (aucune modification manuelle durable).
+- **Le processus est arrêté après une période sans trafic** et relancé à la requête
+  suivante ; il est relancé automatiquement en cas de crash.
+- Journaux d'exécution = stdout/stderr, 5 000 lignes, dernier déploiement seulement.
+- Pour rattacher un domaine déjà utilisé par un site du même plan, **retirer d'abord ce site**.
 
-### Variables Stripe (facturation web-first, ADR-0012)
+## 3. Réglages de l'application dans hPanel
 
-| Variable | Environnements | Valeur attendue | Secret ? | Notes |
-|---|---:|---|---:|---|
-| `STRIPE_SECRET_KEY` | tous | clé secrète Stripe (`sk_live_…`/`sk_test_…`) | Oui | Serveur uniquement : création de session Checkout. |
-| `STRIPE_WEBHOOK_SECRET` | tous | signing secret du webhook (`whsec_…`) | Oui | Serveur uniquement : vérification de signature (seule source de vérité). |
-| `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` | tous | clé publique (`pk_…`) | Non | Réservée à un usage client éventuel. |
-| `STRIPE_PRICE_PUBLIC_MID` | tous | `price_…` du plan public 4,99 € | Non | Créé dans le dashboard Stripe (mode subscription). |
-| `STRIPE_PRICE_STUDENT_MID` | tous | `price_…` du plan étudiant 7,99 € | Non | — |
-| `STRIPE_PRICE_STUDENT_PREMIUM` | tous | `price_…` du plan étudiant 14,99 € | Non | — |
-| `EXPO_PUBLIC_APP_URL` | tous | URL publique (ex. `https://medinfo-ai.vercel.app`) | Non | `success_url`/`cancel_url` Checkout. Vide = origin de la requête. |
+hPanel → **Sites web** → application Node.js (réutiliser celle d'août, ou *Ajouter un site →
+Node.js Apps → Importer un dépôt Git*). Les libellés de menus cités dans ce runbook sont
+indicatifs : l'interface hPanel évolue.
 
-> Aucun plan **professionnel** : gelé par ADR-0006. `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET` ne
-> doivent jamais être committés. Tant que ces variables sont absentes, les routes de facturation
-> renvoient `503` (« non configuré ») — désactivation propre.
+| Champ | Valeur |
+|---|---|
+| **Framework** | **Other** (surtout pas « React » : site statique sans processus Node) |
+| **Branche** | recette : `claude/vercel-hostinger-migration-rt9gsu` ; après fusion : `main` |
+| **Version de Node** | **22** |
+| **Répertoire racine** | `/` (vide) |
+| **Script de build** | `build` (`npm run build` ; `build:web` en est un alias) |
+| **Répertoire de sortie** | vide (ignoré quand un fichier d'entrée est défini) |
+| **Fichier d'entrée** | `server.js` |
+| **Gestionnaire de paquets** | npm (détecté via `package-lock.json`) |
 
-### Endpoint webhook Stripe (à configurer dans le dashboard Stripe)
+Signes que c'est bon : badge **Running** + bouton **Restart** sur la carte de l'application,
+et dans les *Runtime Logs* : `[medinfo] serveur prêt — port … (toutes interfaces)`.
 
-1. Stripe → Developers → Webhooks → **Add endpoint**.
-2. URL : `https://<ton-domaine>/api/stripe/webhook`.
-3. Événements à écouter : `checkout.session.completed`, `customer.subscription.updated`,
-   `customer.subscription.deleted`.
-4. Copier le **Signing secret** (`whsec_…`) → variable `STRIPE_WEBHOOK_SECRET` dans Vercel.
-5. Créer les **Products/Prices** (mode *recurring*) et reporter les `price_…` dans les variables
-   `STRIPE_PRICE_*`.
+## 4. Variables d'environnement
 
-## Étapes Vercel
+> Ne pas importer `.env.example` tel quel : ses valeurs vides pourraient masquer celles de
+> l'hébergeur (`PORT` en tête). Déclarer uniquement les variables ci-dessous.
 
-1. Importer le repo GitHub dans Vercel.
-2. Framework preset : **Other** si Vercel ne détecte pas Expo correctement.
-3. Build command : laisser le `vercel.json` imposer `expo export -p web`.
-4. Output directory : laisser le `vercel.json` imposer `dist/client`.
-5. Ajouter les variables ci-dessus dans Vercel.
-6. Déployer ou redéployer.
-7. Vérifier `https://<ton-domaine>/api/health` :
-   - `ok` doit être `true` ;
-   - `supabase.configured` doit être `true` ;
-   - `supabase.hostname` doit correspondre au projet Supabase dédié ;
-   - le provider IA actif doit être celui attendu.
-8. Tester le chat via l'UI web, puis contrôler dans Supabase que `ai_interactions` reçoit les logs sans contenu de message.
+### Règle à retenir
 
-## Notes Supabase
+`EXPO_PUBLIC_*` est **inliné dans le bundle client au build** et lu **à l'exécution** par les
+routes API. hPanel injecte aux deux moments : il suffit de les déclarer une fois. Toute
+modification se fait dans hPanel, qui redéploie.
 
-- Les migrations sous `supabase/migrations/` restent la source versionnée du schéma.
+### Indispensables
+
+| Variable | Valeur | Secret |
+|---|---|---:|
+| `EXPO_PUBLIC_SUPABASE_URL` | `https://sbpnjswffrqxgnglnjml.supabase.co` | non |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | clé publishable (protégée par RLS) | non |
+| `SUPABASE_URL` | même URL | non |
+| `SUPABASE_SERVICE_ROLE_KEY` | clé `service_role` | **oui** |
+| `AI_PROVIDER` | `anthropic` ou `openai` | non |
+| `ANTHROPIC_API_KEY` | clé Anthropic (analyse, ECOS, CV, articles, blog…) | **oui** |
+| `OPENAI_API_KEY` | clé OpenAI (chat : `gpt-5.6-luna`) | **oui** |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | titres/catégories d'historique (`chat_meta`) | **oui** |
+| `EXPO_PUBLIC_APP_URL` | recette : `https://<domaine-temporaire>` ; production : `https://medinfo-ai.com` | non |
+| `EXPO_PUBLIC_AUTH_REDIRECT_URL` | **laisser vide** (= origine de la page) | non |
+| `NODE_ENV` | `production` | non |
+
+Récupérer les valeurs actuelles dans Vercel → projet `refonte-med-info` → *Settings →
+Environment Variables* (les secrets sont les mêmes).
+
+### Facturation, vérification pro, cron
+
+| Variable | Rôle | Secret |
+|---|---|---:|
+| `STRIPE_SECRET_KEY` | création des sessions Checkout | **oui** |
+| `STRIPE_WEBHOOK_SECRET` | signature du webhook (nouvel endpoint = nouveau `whsec_…`) | **oui** |
+| `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` | clé publique | non |
+| `STRIPE_PRICE_PUBLIC_MID` / `STRIPE_PRICE_STUDENT_MID` / `STRIPE_PRICE_STUDENT_PREMIUM` | `price_…` des plans | non |
+| `ANNUAIRE_SANTE_API_KEY` | vérification RPPS (sans clé : statut pro `pending`) | **oui** |
+| `CRON_SECRET` | agent éditorial hebdo (`openssl rand -hex 32`) | **oui** |
+
+> Sans variables Stripe, la facturation répond `503` (« non configuré ») : rien ne casse.
+
+### Réglages serveur (optionnels)
+
+| Variable | Défaut | Quand y toucher |
+|---|---|---|
+| `PORT` / `HOST` | attribué par Hostinger / toutes interfaces | **jamais chez Hostinger** (VPS : `3000` / `127.0.0.1`) |
+| `TRUST_PROXY` | activé | `false` seulement si Node est exposé sans proxy |
+| `TRUST_PROXY_HOPS` | `1` | `2` si le journal `[medinfo] proxy : …` indique deux derniers maillons « différents » (voir §6) |
+| `CANONICAL_HOST` | dérivé de `EXPO_PUBLIC_APP_URL` | rarement |
+| `ACCESS_LOG` | activé | `off` pour taire le journal d'accès |
+| `EXPO_DIST_DIR` | `dist` | si le build est déposé ailleurs |
+
+Le serveur lit aussi un `.env` à la racine (`.env.production.local`, `.env.local`,
+`.env.production`, `.env`), mais **les variables du processus gagnent toujours**.
+
+## 5. Ce que fait `npm run build`
+
+```bash
+npm run build   # expo export -p web  +  pré-compression Brotli/gzip
+```
+
+- `dist/client/` — bundle web, assets, pages autonomes (`partiel.html`, `cv-builder.html`,
+  `presentation.html`, `article.html`) et leurs variantes `.br`/`.gz` ;
+- `dist/server/` — coquilles HTML pré-rendues + 24 routes API bundlées (seul `expo-server`
+  est requis à l'exécution).
+
+Mesuré sur ce dépôt (2026-09-25) : **~1 min**, pic mémoire **~0,5 Go** — loin de la limite
+de 15 min. En cas d'échec quand même : §11.
+
+## 6. Streaming, proxy et CDN
+
+Chemin d'une requête : navigateur → **CDN Hostinger** (`hcdn`, TLS) → serveur web
+(LiteSpeed) → Node. Ce que fait le code :
+
+- chat, ECOS, analyse : `Cache-Control: no-cache, no-transform` + `X-Accel-Buffering: no`
+  (interdit tampon et recompression) ; toute route `/api/*` : `no-store` par défaut ;
+- aucun délai d'inactivité de socket côté Node, `keepAliveTimeout` 75 s ;
+- `X-Forwarded-Proto/Host` lus pour reconstruire l'URL publique (Stripe, HSTS) ;
+- IP client lue à **droite** de `X-Forwarded-For` (`TRUST_PROXY_HOPS`) et réécrite pour les
+  routes : un client ne peut plus contourner le quota anonyme en inventant l'en-tête ;
+- `Strict-Transport-Security: max-age=63072000` derrière TLS ; `www.` → 308 vers l'apex.
+
+Vérifié en local : fragments du chat reçus au fil de l'eau à travers le serveur ; génération
+menée à terme et `onFinish` exécuté après coupure du client.
+
+Hors de notre contrôle : délais et mise en tampon du CDN/LiteSpeed (non documentés). Si le
+texte du chat n'arrive qu'à la fin, ou coupe au-delà d'une minute : 1) désactiver le CDN du
+site (hPanel → *Performance → CDN*) et retester ; 2) ticket support Hostinger (« désactiver
+la mise en tampon et allonger le délai de lecture pour l'application Node ») ; 3) en dernier
+recours, VPS (§12).
+
+**Réglage de `TRUST_PROXY_HOPS`** : au premier trafic, le journal affiche une ligne du type
+`[medinfo] proxy : X-Forwarded-For à 2 maillon(s), deux derniers maillons identiques …`
+(jamais d'adresse). « identiques » ou 1 maillon → laisser `1`. « différents » sur une
+visite ordinaire → passer à `2` (le dernier maillon est le CDN).
+
+## 7. Recette sur le domaine temporaire (avant de toucher au domaine)
+
+Application hPanel sur la **branche de migration**, `EXPO_PUBLIC_APP_URL` = URL du domaine
+temporaire, et ce domaine ajouté aux *Redirect URLs* de Supabase (§8, étape 5).
+
+1. `GET https://<temporaire>/api/health` → `ok: true`, `deployTarget: "hostinger"`,
+   `supabase.configured: true`, `supabase.hostname` = `sbpnjswffrqxgnglnjml.supabase.co`.
+2. Accueil, `/chat`, `/pricing`, `/blog`, `/mentions-legales` (hébergeur affiché : Hostinger).
+3. **Chat** : le texte arrive **au fil de l'eau** (sinon §6).
+4. Chat connecté : quitter l'onglet en pleine réponse, revenir → réponse dans l'historique.
+5. Connexion, inscription (e-mail de confirmation → retour sur le bon domaine), mot de passe
+   oublié.
+6. Outils : `/partiel`, `/cv-builder`, `/presentation`, `/article`, `/scores`, ECOS.
+7. Analyse de document en invité (quota anonyme) et connecté.
+8. *Runtime Logs* : lignes `[medinfo] GET /… 200 12ms`, ligne `[medinfo] proxy : …` (§6).
+
+## 8. Bascule de `medinfo-ai.com` (le jour J)
+
+**Prérequis** : recette §7 verte ; mentions légales complétées (éditeur, directeur de la
+publication, région du serveur — cf. `src/compliance/legal.ts`, `src/deploy/hosting.ts`) ;
+PR de migration relue.
+
+1. **Sauvegarder WordPress** : hPanel → *Sauvegardes* → télécharger fichiers + base.
+2. **Libérer le domaine** : retirer le site WordPress de `medinfo-ai.com` (exigence Hostinger
+   pour rattacher le domaine à une autre application du plan). Si hPanel propose de
+   déplacer WordPress vers un sous-domaine (ex. `ancien.medinfo-ai.com`), c'est préférable à
+   une suppression.
+3. **Rattacher `medinfo-ai.com`** à l'application Node (tableau de bord de l'application →
+   domaine). DNS chez Hostinger : les enregistrements web sont mis à jour par hPanel.
+   **Vérifier que MX et SPF sont intacts** (DNS / Nameservers → zone DNS).
+4. **SSL** : certificat actif pour `medinfo-ai.com` **et** `www.medinfo-ai.com`.
+5. **Supabase** → *Authentication → URL Configuration* : **Site URL** =
+   `https://medinfo-ai.com` ; **Redirect URLs** : `https://medinfo-ai.com/**` (garder le
+   domaine temporaire pendant la transition, `http://localhost:8081/**` pour le dev).
+6. **Stripe** → *Webhooks* : nouvel endpoint `https://medinfo-ai.com/api/stripe/webhook`
+   (`checkout.session.completed`, `customer.subscription.updated`,
+   `customer.subscription.deleted`) → reporter le `whsec_…` dans `STRIPE_WEBHOOK_SECRET`.
+7. **Couper les builds Vercel** avant la fusion : Vercel → projet `refonte-med-info` →
+   *Settings → Git* → déconnecter le dépôt (ou *Ignored Build Step* = `exit 0`). Sans
+   `vercel.json`, un build de `main` casserait `refonte-med-info.vercel.app` ; le dernier
+   déploiement reste servi tel quel.
+8. **Fusionner** la PR dans `main`, puis passer la branche de l'application hPanel sur
+   `main` et `EXPO_PUBLIC_APP_URL` sur `https://medinfo-ai.com` (l'enregistrement redéploie).
+9. **Vérifier** :
+   ```bash
+   curl -sI http://medinfo-ai.com/            # 301 → https://medinfo-ai.com/
+   curl -sI https://www.medinfo-ai.com/chat   # 308 → https://medinfo-ai.com/chat
+   curl -s  https://medinfo-ai.com/api/health # deployTarget: "hostinger"
+   curl -sI https://medinfo-ai.com/ | grep -i strict-transport-security
+   ```
+   puis la recette §7 sur le vrai domaine, et un paiement Stripe en mode test (retour en
+   `https://medinfo-ai.com/account?billing=success`).
+10. **Cron** : §9.
+
+## 9. Cron hebdo du blog
+
+hPanel → *Avancé → Tâches Cron* → commande personnalisée, lundi 06:00 (`0 6 * * 1`, heure
+du serveur) :
+
+```bash
+curl -fsS -m 900 -H "Authorization: Bearer <CRON_SECRET>" https://medinfo-ai.com/api/cron/weekly-blog >> $HOME/weekly-blog.log 2>&1
+```
+
+Variante sans le secret dans la ligne de cron : créer `~/.medinfo-cron.env`
+(`CRON_SECRET=…`, gestionnaire de fichiers) puis
+`bash ~/domains/medinfo-ai.com/hbuilds/current/nodejs/scripts/hostinger/weekly-blog-cron.sh >> $HOME/weekly-blog.log 2>&1`.
+
+Le pipeline dure plusieurs minutes. Si le proxy coupe la connexion avant la fin, `curl`
+signale une erreur mais le pipeline continue côté serveur : vérifier l'onglet **Blog** du
+panel admin (brouillon ou article publié). Test manuel : bouton admin (`?force=1`).
+
+## 10. Retour arrière
+
+- **Avant la fusion** : rien à défaire — Vercel sert toujours `main`.
+- **Après la bascule** : le dernier déploiement Vercel reste en ligne sur
+  `refonte-med-info.vercel.app` tant que le projet existe (builds coupés, §8.7). Pour revenir
+  à WordPress : restaurer la sauvegarde de l'étape 8.1 sur le domaine.
+
+## 11. Repli : build hors de l'hébergeur
+
+Si le build échoue sur Hostinger : bâtir en local avec **les mêmes variables**, puis
+déployer par **archive ZIP** (hPanel → *Importer des fichiers*) contenant `dist/`,
+`server/`, `server.js`, `package.json`, `package-lock.json`, `.npmrc`, `scripts/hostinger/`,
+avec un **script de build vide**. `find dist/server -name '*.map' -delete` allège l'archive.
+
+## 12. VPS (si l'hébergement géré ne suffit pas)
+
+`PORT=3000`, `HOST=127.0.0.1`, PM2 (`ecosystem.config.cjs`), nginx devant :
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host              $host;
+    proxy_set_header X-Forwarded-Proto $scheme;   # sinon Stripe reçoit des URL http://
+    proxy_set_header X-Forwarded-Host  $host;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_buffering off;          # sinon la réponse n'arrive qu'à la toute fin
+    proxy_request_buffering off;
+    proxy_read_timeout 600s;
+    proxy_send_timeout 600s;
+    client_max_body_size 16m;     # pièce jointe 6 Mo ⇒ ~8 Mo en base64
+}
+```
+
+## 13. Notes Supabase (inchangées)
+
+- `supabase/migrations/` reste la source versionnée du schéma.
 - `profiles` est lu côté client avec la clé `anon` et la RLS.
-- `ai_interactions` est écrit côté serveur avec `service_role`; il ne doit pas être accessible au client.
-- Si `SUPABASE_URL` est absent côté serveur, le helper serveur accepte `EXPO_PUBLIC_SUPABASE_URL` en fallback, mais Vercel doit idéalement définir les deux pour éviter l'ambiguïté.
+- `ai_interactions` est écrit côté serveur avec `service_role`, jamais accessible au client.
 
-## Native mobile
+## 14. Limites connues
 
-Le chat mobile utilise aussi `/api/chat`. Pour une build native de production, Expo Router doit connaître l'origine serveur déployée. Tant que les builds iOS/Android prod ne sont pas lancés, la configuration Vercel suffit pour le web. Avant build native store, définir l'origine de production selon la stratégie Expo Router retenue (origine manuelle ou déploiement serveur automatisé EAS) et documenter l'URL dans une ADR.
+- **Arrêt à l'inactivité** : premier accès après une pause = démarrage à froid. Une
+  génération de chat poursuivie après le départ du client peut être interrompue si
+  l'hébergeur arrête le processus pendant ce temps (délai non documenté). Rien d'autre ne vit
+  en mémoire : état dans Supabase.
+- **Un seul processus** : caches de configuration IA (60 s) par processus ; rate-limit dans
+  Supabase (`usage_counters`), correct même à plusieurs processus.
+- **Sauvegardes** : le serveur ne contient aucune donnée utilisateur ; la sauvegarde à
+  surveiller reste celle de Supabase.
+
+## 15. Mobile natif
+
+Le chat mobile utilise aussi `/api/chat`. Avant une build native de production, définir
+l'origine serveur (`https://medinfo-ai.com`) selon la stratégie Expo Router retenue et la
+documenter dans une ADR.

@@ -32,7 +32,7 @@ export async function writeArticle(topic: string): Promise<GeneratedArticle | nu
 
   const { text } = await generateText({
     // La rédaction est l'étape la plus longue ; borne large mais dure pour ne
-    // jamais consommer à elle seule le maxDuration de la fonction Vercel.
+    // jamais consommer à elle seule le budget de l'exécution du pipeline.
     abortSignal: AbortSignal.timeout(150_000),
     model: runtime.model,
     system: template,

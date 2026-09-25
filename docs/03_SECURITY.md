@@ -73,14 +73,14 @@ Un chatbot LLM sans rate limit = facture OpenAI explosée par un seul abuseur. L
 | Pro free | Post-MVP uniquement — non activé |
 | Pro payant | Post-MVP uniquement — non activé |
 
-Implémenté au niveau Edge/middleware (Vercel) + compteur Supabase (table `usage_counters`, reset quotidien). Cap dur global par IP pour les non-authentifiés (anti-scraping).
+Implémenté côté routes API + compteur Supabase (table `usage_counters`, reset quotidien). Cap dur global par IP pour les non-authentifiés (anti-scraping) ; l'IP est celle ajoutée par le proxy de l'hébergeur (entrée de DROITE de `X-Forwarded-For`, `server/index.mjs`), jamais une valeur fournie par le client (ADR-0038).
 
 ---
 
 ## 4. Secrets & clés
 
 - **Jamais dans le repo.** `.env` gitignored, `.env.example` committé sans valeurs.
-- Clés OpenAI/Stripe : variables d'environnement Vercel + **EAS Secrets** (mobile).
+- Clés OpenAI/Stripe : variables d'environnement de l'hébergeur (hPanel Hostinger, ADR-0038) + **EAS Secrets** (mobile).
 - Clés Supabase : `anon` key côté client (protégée par RLS), `service_role` **uniquement** serveur/Edge.
 - Rotation : documenter dans `docs/DECISIONS/` toute rotation de clé.
 

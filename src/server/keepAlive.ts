@@ -1,54 +1,35 @@
 /**
- * Maintien en vie d'un traitement serveur après la déconnexion du client.
+ * Poursuite d'un traitement serveur après la déconnexion du client.
  *
  * Problème (retour Hugo 2026-07) : sur mobile, quitter le navigateur suspend la page et
- * coupe le flux HTTP. `/api/chat` appelait bien `result.consumeStream()` pour que la
- * génération aille au bout et soit archivée par `onFinish` — mais sur une plateforme
- * serverless, l'invocation est GELÉE dès que la réponse HTTP est terminée ou avortée :
- * le travail restant ne s'exécute jamais et l'utilisateur ne retrouve rien dans son
- * historique. La primitive prévue pour ça est `waitUntil`, qui prolonge l'invocation
- * jusqu'à la résolution de la promesse.
+ * coupe le flux HTTP. `/api/chat` doit malgré tout aller au bout de la génération pour que
+ * `onFinish` archive la réponse — sinon l'utilisateur ne retrouve rien dans son historique
+ * au retour dans l'app.
  *
- * Implémentation : Vercel expose le contexte de requête sur un symbole global. C'est
- * exactement ce que fait `@vercel/functions` (`wait-until.js` → `get-context.js`,
- * vérifié sur la version 3.7.6 publiée) — on le lit directement plutôt que d'ajouter une
- * dépendance pour trois lignes, ce qui évite aussi tout couplage de version.
+ * Depuis la migration vers un serveur Node autonome (2026-08), c'est acquis : le processus
+ * vit entre les requêtes, donc une promesse détachée continue de s'exécuter même quand la
+ * réponse HTTP est avortée. Il n'y a plus rien à demander à la plateforme — l'ancienne
+ * implémentation `waitUntil` (contexte de requête serverless) a été retirée avec Vercel.
  *
- * Hors plateforme (dev local, tests, autre hébergeur) : no-op, le processus reste vivant
- * de lui-même. La fonction ne LANCE jamais et n'attend jamais — elle ne doit en aucun cas
- * retarder la réponse envoyée à l'utilisateur.
+ * Il reste UNE chose à faire, et c'est la raison d'être de cette fonction : neutraliser un
+ * éventuel rejet de la promesse détachée. Un `unhandledRejection` sur une promesse que plus
+ * personne n'attend peut faire tomber le processus — et donc couper le service pour TOUS les
+ * utilisateurs, pas seulement celui qui s'est déconnecté. L'appelant conserve son propre
+ * traitement d'erreur sur la promesse d'origine.
+ *
+ * La fonction ne LANCE jamais et n'attend jamais : elle ne doit en aucun cas retarder la
+ * réponse envoyée à l'utilisateur.
  */
 
-/** Symbole du contexte de requête Vercel (cf. `@vercel/functions/get-context`). */
-export const VERCEL_REQUEST_CONTEXT = Symbol.for('@vercel/request-context');
-
-type RequestContext = { waitUntil?: (promise: Promise<unknown>) => void };
-type ContextHolder = { get?: () => RequestContext | undefined };
-
 /**
- * Prolonge l'invocation jusqu'à la fin de `promise`.
- * @returns `true` si la plateforme a pris la relève, `false` si no-op (dev/local).
- * Accepte tout thenable : `consumeStream()` renvoie un `PromiseLike`.
+ * Laisse `promise` se terminer en arrière-plan sans risque pour le processus.
+ * @returns `true` si un thenable a bien été pris en charge, `false` sinon.
  */
 export function keepAlive(promise: PromiseLike<unknown>): boolean {
   if (!promise || typeof (promise as PromiseLike<unknown>).then !== 'function') return false;
-  // Un rejet non capté sur une promesse détachée peut faire tomber le processus :
-  // on neutralise l'erreur ici (l'appelant a déjà son propre traitement d'erreur).
-  const settled = Promise.resolve(promise).then(
+  Promise.resolve(promise).then(
     () => undefined,
     () => undefined,
   );
-  try {
-    const holder = (globalThis as unknown as Record<symbol, ContextHolder | undefined>)[
-      VERCEL_REQUEST_CONTEXT
-    ];
-    const waitUntil = holder?.get?.()?.waitUntil;
-    if (typeof waitUntil === 'function') {
-      waitUntil(settled);
-      return true;
-    }
-  } catch {
-    // Contexte absent ou illisible → repli silencieux.
-  }
-  return false;
+  return true;
 }

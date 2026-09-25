@@ -150,7 +150,7 @@ Ingestion 30 manuels ≈ 7,5 M tokens ≈ **0,15 $** (`text-embedding-3-small` S
 | Apple Developer | ~92 €/an | avant soumission iOS |
 | Google Play | ~23 € one-time | avant soumission Android |
 | Supabase | 0 € (free) → 23 €/mois (Pro) | Pro au lancement payant |
-| Vercel | 0 € (Hobby) → ~19 €/mois (Pro) | Pro au lancement payant |
+| Hébergement web + API (Hostinger, ADR-0038) | offre Business/Cloud déjà souscrite (domaine + e-mail) | inchangé au lancement |
 | OpenAI (dev/beta) | ~150-200 € | continu |
 | Stripe | 0 € fixe (~1,5%+0,25 €/tx) | au lancement |
 | **Réserve** | ~150 € | bascule Pro synchronisée 1ᵉʳ revenu |
@@ -169,7 +169,7 @@ EAS Build (30 builds gratuits/mois) + EAS Submit. Enrôlement Organization (D-U-
 
 ## 9. Environnements
 
-- **dev** : local + Supabase free + Vercel preview
+- **dev** : local + Supabase free (recette hébergée : domaine temporaire Hostinger, cf. `09_DEPLOYMENT.md` §7)
 - **staging** : branche `staging` + Supabase projet staging
 - **main** : production
 
@@ -177,32 +177,38 @@ Git : `ai/<agent>/<feature>/<desc>` → PR → 5 gates CI → merge. Cf `03_SECU
 
 ---
 
-## 10. Domaine & mise en production (procédure DNS)
+## 10. Domaine & mise en production
 
-> Procédure ponctuelle, à exécuter **le jour de la mise en prod du vrai domaine**, pas avant. Pendant le dev, l'app vit sur une URL Vercel temporaire (`medinfo-ai.vercel.app`).
+> **Mise à jour 2026-09-25 (ADR-0038)** : l'application est hébergée **chez Hostinger** (serveur
+> Node autonome), plus chez Vercel. La procédure opérationnelle complète (recette sur le domaine
+> temporaire, bascule du jour J, vérifications, retour arrière) vit dans
+> **`09_DEPLOYMENT.md` §7-§10** ; ce paragraphe n'en garde que les principes.
 
-### 10.1 Décision : repointer les DNS, ne PAS transférer (ADR-0004)
+### 10.1 Décision : garder le domaine chez Hostinger, ne PAS le transférer (ADR-0004)
 
-Le domaine `medinfo-ai.com` **reste enregistré chez Hostinger** (registrar, ~12 €/an). On ne transfère pas la propriété. On change uniquement où le domaine pointe : de l'hébergement WordPress → vers Vercel.
+Le domaine `medinfo-ai.com` **reste enregistré chez Hostinger** (registrar, ~12 €/an). Aucun
+transfert de propriété. Depuis ADR-0038, le domaine n'a même plus à « sortir » de Hostinger :
+il est rattaché à l'application Node.js du même plan d'hébergement.
 
-- **Coût : 0 €.** Réversible en 2 min (remettre les anciens enregistrements).
-- Transfert sortant complet (vers Cloudflare/OVH/Namecheap) = plus de friction (code EPP, déverrouillage, 5-7 j, verrou ICANN 60 j possible) pour zéro bénéfice au lancement. **Reporté à plus tard** si regroupement registrar souhaité (optimisation de confort, non bloquante).
+### 10.2 Principe de la bascule
 
-### 10.2 Étapes (le jour J)
-
-1. **Prérequis :** safe-box réglementaire validée + app web prête à ouvrir au public (cf `01_REGULATION.md`). Ne pas repointer avant.
-2. Dans le projet **Vercel** → Settings → Domains → ajouter `medinfo-ai.com` et `www.medinfo-ai.com`. Vercel affiche les valeurs DNS exactes à configurer.
-3. Dans le panneau **DNS Hostinger** → remplacer les enregistrements pointant vers WordPress :
-   - `A` (ou `CNAME`) pour `medinfo-ai.com` → valeur fournie par Vercel
-   - `CNAME` pour `www` → valeur fournie par Vercel
-4. Attendre la propagation (quelques min à quelques heures). Vercel confirme automatiquement + provisionne le certificat HTTPS.
-5. Vérifier : `https://medinfo-ai.com` et `https://www.medinfo-ai.com` servent bien l'app Expo web.
+1. **Prérequis :** recette validée sur le domaine temporaire Hostinger + mentions légales
+   complètes (`01_REGULATION.md`, `src/compliance/legal.ts`). Ne pas basculer avant.
+2. Sauvegarder puis retirer le site WordPress du domaine (exigence Hostinger pour rattacher le
+   domaine à une autre application du plan).
+3. Rattacher `medinfo-ai.com` à l'application Node dans hPanel ; certificat SSL pour l'apex et
+   `www` (redirigé en 308 vers l'apex par le serveur).
+4. Supabase Auth (Site URL / Redirect URLs), webhook Stripe et `EXPO_PUBLIC_APP_URL` passent sur
+   `https://medinfo-ai.com`.
 
 ### 10.3 ⚠️ Préserver les emails (MX)
 
-Si des emails sont configurés sur le domaine (ex. `contact@medinfo-ai.com` via Hostinger), **NE PAS supprimer les enregistrements `MX`** en repointant — sinon la réception d'emails casse. Ne toucher qu'aux `A`/`CNAME` du web.
-Si seul Gmail est utilisé (`medaifr1@gmail.com`), aucun MX à préserver côté domaine → rien à faire.
+Le domaine reçoit ses e-mails via Hostinger (MX `mx1/mx2.hostinger.com` + SPF). **Ne jamais
+supprimer ni modifier les enregistrements `MX`/`TXT`** en rattachant le domaine — sinon la
+réception d'e-mails casse. Ne toucher qu'au web (`A`/`AAAA`/`CNAME www`), et vérifier la zone
+après la bascule.
 
-### 10.4 Pendant le dev
+### 10.4 Pendant la recette
 
-Le site WordPress actuel peut rester en ligne sans gêne jusqu'au jour J. La bascule DNS est l'unique action qui fait passer le public de l'ancien site à la nouvelle app.
+Le site WordPress reste en ligne sur `medinfo-ai.com` jusqu'au jour J ; l'application est testée
+sur le domaine temporaire Hostinger, branche de migration, sans aucun effet sur le public.

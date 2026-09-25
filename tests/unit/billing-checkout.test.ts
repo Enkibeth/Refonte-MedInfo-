@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { createCheckoutSession } from '@/billing/createCheckoutSession';
+import { createCheckoutSession, resolveCheckoutBaseUrl } from '@/billing/createCheckoutSession';
 import { BILLING_PLANS, isBillingPlanId, plansForPersona } from '@/billing/plans';
 
 /**
@@ -77,5 +77,21 @@ describe('createCheckoutSession', () => {
         { secretKey: 'sk_test', priceId: 'price_123', fetchImpl },
       ),
     ).rejects.toThrow(/Stripe checkout a échoué \(400\)/);
+  });
+});
+
+describe('resolveCheckoutBaseUrl', () => {
+  it('utilise EXPO_PUBLIC_APP_URL sans slash final', () => {
+    expect(resolveCheckoutBaseUrl('https://medinfo-ai.com/', 'http://interne:3000/api/billing/checkout')).toBe(
+      'https://medinfo-ai.com',
+    );
+  });
+
+  it('retombe sur l’origine de la requête si la variable est absente, vide ou invalide', () => {
+    const req = 'https://medinfo-ai.com/api/billing/checkout';
+    expect(resolveCheckoutBaseUrl(undefined, req)).toBe('https://medinfo-ai.com');
+    expect(resolveCheckoutBaseUrl('', req)).toBe('https://medinfo-ai.com');
+    expect(resolveCheckoutBaseUrl('   ', req)).toBe('https://medinfo-ai.com');
+    expect(resolveCheckoutBaseUrl('medinfo-ai.com', req)).toBe('https://medinfo-ai.com');
   });
 });
