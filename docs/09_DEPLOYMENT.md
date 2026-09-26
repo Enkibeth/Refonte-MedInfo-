@@ -38,7 +38,7 @@ sert les fichiers statiques **et** exécute les routes API.
 | `app.json` | `expo.web.output=server` → l'export produit `dist/client` + `dist/server`. Requis pour les routes API. |
 | `server.js` | Fichier d'entrée déclaré dans hPanel — délègue à `server/index.mjs`. |
 | `server/index.mjs` | Le serveur : statiques, routes Expo, en-têtes de proxy, IP client, HSTS, redirection `www`, arrêt gracieux, journal d'accès. |
-| `server/lib/*.mjs` | Modules purs (cache, `.env`, proxy, écoute) testés dans `tests/unit/hostinger-server.test.ts`. |
+| `server/lib/*.mjs` | Modules purs (cache, `.env`, proxy, écoute, diagnostic des clés Supabase `keycheck.mjs`) testés dans `tests/unit/hostinger-server.test.ts`. |
 | `scripts/hostinger/precompress.mjs` | Compression Brotli/gzip au build (7,1 Mo → 1,5 Mo servis). |
 | `scripts/hostinger/smoke.mjs` | Fumigation du serveur réel sur le build (`npm run smoke:node`, 19 vérifications). |
 | `scripts/hostinger/weekly-blog-cron.sh` | Déclencheur du cron hebdo du blog. |
@@ -91,6 +91,21 @@ Signes que c'est bon : badge **Running** + bouton **Restart** sur la carte de l'
 et dans les *Runtime Logs* : `[medinfo] serveur prêt — port … (toutes interfaces)`.
 Constaté le 2026-09-25 : `[medinfo] serveur prêt — port 3000 (toutes interfaces), node
 v22.18.0, dist=…/hbuilds/versions/<build>/nodejs/dist, env: variables du processus`.
+
+Juste après, le serveur **vérifie ses clés Supabase auprès de Supabase** (une fois par
+démarrage, en tâche de fond, sans jamais écrire une clé — `server/lib/keycheck.mjs`) :
+
+- `[medinfo] supabase : clé service_role acceptée, droits confirmés — format …` → OK ;
+- `… REFUSÉE (HTTP 401 « Invalid API key ») — format sb_secret, 33 car.` → valeur erronée
+  (copie tronquée, autre projet, clé révoquée) : la recopier ;
+- `… INUTILISABLE (caractères interdits …) — … texte masqué « •••• » copié ?` → c'est le
+  texte masqué du tableau de bord qui a été copié : utiliser le bouton *Copier* ;
+- `… acceptée mais SANS droits service_role` → une clé publique a été posée à sa place ;
+- mentions `espace … au bord de la valeur`, `entourée de guillemets`, `entièrement en
+  MAJUSCULES`, `AUTRE projet (…)` : le défaut de copie est nommé.
+
+C'est le seul contrôle qui prouve qu'une clé **fonctionne** : `/api/health` n'en vérifie que
+la présence.
 
 > ⚠️ **Ne jamais redéployer par l'écran « Vérifiez les paramètres de compilation »**
 > (assistant d'import/redéploiement). Il repart des valeurs **détectées automatiquement**, pas

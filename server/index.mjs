@@ -28,6 +28,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { loadEnvFiles } from './lib/env.mjs';
+import { checkSupabaseKeys } from './lib/keycheck.mjs';
 import {
   CLIENT_IP_HEADERS,
   canonicalHostFrom,
@@ -341,6 +342,14 @@ export function start() {
       `[medinfo] serveur prêt — ${where}, node ${process.version}, dist=${DIST_DIR}` +
         (files.length ? `, env: ${files.join(', ')}` : ', env: variables du processus'),
     );
+    // `/api/health` ne vérifie que la PRÉSENCE des clés : une clé présente mais refusée
+    // (constat de recette 2026-09) cassait l'archivage du chat sans rien signaler. Une fois
+    // par démarrage, en tâche de fond, sans jamais écrire une clé (server/lib/keycheck.mjs).
+    checkSupabaseKeys(process.env)
+      .then((lines) => {
+        for (const { level, text } of lines) console[level](text);
+      })
+      .catch(() => {});
   });
 
   let shuttingDown = false;

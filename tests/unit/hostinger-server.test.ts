@@ -16,6 +16,12 @@ import path from 'node:path';
 
 import { applyEnv, parseDotEnv } from '../../server/lib/env.mjs';
 import {
+  checkSupabaseKeys,
+  describeKey,
+  describeKeyShape,
+  expectedProjectRef,
+} from '../../server/lib/keycheck.mjs';
+import {
   CLIENT_IP_HEADERS,
   canonicalHostFrom,
   canonicalRedirect,
@@ -458,5 +464,133 @@ describe('script de build Hostinger', () => {
   it('pré-compresse après l’export, et `build:web` reste un alias de `build`', () => {
     expect(scripts.build).toMatch(/&& node scripts\/hostinger\/precompress\.mjs$/);
     expect(scripts['build:web']).toBe('npm run build');
+  });
+});
+
+describe('diagnostic des clés Supabase (keycheck)', () => {
+  const b64url = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
+  const SIGNATURE = 'c2lnbmF0dXJlLXNlY3JldGUtZGUtdGVzdA';
+  const jwt = (payload: object) => `${b64url({ alg: 'HS256', typ: 'JWT' })}.${b64url(payload)}.${SIGNATURE}`;
+  const REF = 'sbpnjswffrqxgnglnjml';
+  const SERVICE_JWT = jwt({ iss: 'supabase', ref: REF, role: 'service_role' });
+
+  it('décrit un JWT service_role du bon projet sans jamais le recopier', () => {
+    const desc = describeKey(SERVICE_JWT);
+    expect(desc).toMatchObject({ present: true, format: 'jwt', role: 'service_role', ref: REF });
+    const shape = describeKeyShape(desc, REF);
+    expect(shape).toContain('rôle service_role');
+    expect(shape).toContain(`projet ${REF}`);
+    expect(shape).not.toContain(SIGNATURE);
+    expect(shape).not.toContain(SERVICE_JWT);
+  });
+
+  it('repère les défauts de copie constatés en recette', () => {
+    // Valeur passée entièrement en majuscules (août 2026) : le JWT n'est plus décodable.
+    expect(describeKeyShape(describeKey(SERVICE_JWT.toUpperCase()), REF)).toMatch(/jwt illisible.*MAJUSCULES/);
+    // Texte masqué copié depuis le tableau de bord.
+    const masked = describeKey('sb_secret_AbCd••••••••');
+    expect(masked).toMatchObject({ format: 'sb_secret', nonAscii: true });
+    expect(describeKeyShape(masked, REF)).toContain('texte masqué');
+    expect(describeKey(`${SERVICE_JWT} `).edgeWhitespace).toBe(true);
+    expect(describeKey(`${SERVICE_JWT}\n`).edgeWhitespace).toBe(true);
+    expect(describeKey(`"${SERVICE_JWT}"`).quoted).toBe(true);
+    expect(describeKeyShape(describeKey(jwt({ ref: 'autreprojet', role: 'service_role' })), REF)).toContain(
+      'AUTRE projet (autreprojet)',
+    );
+    expect(describeKey(undefined)).toEqual({ present: false });
+    expect(describeKey('')).toEqual({ present: false });
+  });
+
+  it('tire le projet attendu de l’URL Supabase', () => {
+    expect(expectedProjectRef(`https://${REF}.supabase.co`)).toBe(REF);
+    expect(expectedProjectRef('https://exemple.com')).toBeUndefined();
+    expect(expectedProjectRef('pas une url')).toBeUndefined();
+  });
+
+  const fakeFetch =
+    (service: { status: number; body: unknown }, anon = { status: 200, body: {} as unknown }) =>
+    async (url: string) => {
+      const r = url.includes('/rest/v1/') ? service : anon;
+      return { status: r.status, json: async () => r.body } as Response;
+    };
+  const env = {
+    SUPABASE_URL: `https://${REF}.supabase.co`,
+    SUPABASE_SERVICE_ROLE_KEY: SERVICE_JWT,
+    EXPO_PUBLIC_SUPABASE_ANON_KEY: 'sb_publishable_cle_publique_de_test',
+  };
+
+  it('ne fait rien sans URL Supabase', async () => {
+    expect(await checkSupabaseKeys({})).toEqual([]);
+  });
+
+  it('confirme une clé service_role qui voit des lignes', async () => {
+    const lines = await checkSupabaseKeys(env, { fetchImpl: fakeFetch({ status: 200, body: [{ key: 'chat' }] }) as never });
+    expect(lines.map((l) => l.level)).toEqual(['log', 'log']);
+    expect(lines[0].text).toContain('clé service_role acceptée, droits confirmés');
+    expect(lines[1].text).toContain('clé publique acceptée');
+  });
+
+  it('interroge Supabase avec les mêmes en-têtes que supabase-js (apikey + Bearer)', async () => {
+    // Constaté : une clé service_role JWT envoyée en `apikey` seul est traitée en rôle anon
+    // (200, aucune ligne) — sans l'en-tête Authorization, le diagnostic se tromperait.
+    const seen: Array<{ url: string; headers: Record<string, string> }> = [];
+    await checkSupabaseKeys(env, {
+      fetchImpl: (async (url: string, init: { headers: Record<string, string> }) => {
+        seen.push({ url, headers: init.headers });
+        return { status: 200, json: async () => [{ key: 'chat' }] } as Response;
+      }) as never,
+    });
+    const rest = seen.find((s) => s.url.includes('/rest/v1/'));
+    expect(rest?.url.startsWith(`https://${REF}.supabase.co/`)).toBe(true);
+    expect(rest?.headers).toEqual({ apikey: SERVICE_JWT, Authorization: `Bearer ${SERVICE_JWT}` });
+  });
+
+  it('signale une clé acceptée mais sans droits service_role, et une clé refusée', async () => {
+    const sansDroits = await checkSupabaseKeys(env, { fetchImpl: fakeFetch({ status: 200, body: [] }) as never });
+    expect(sansDroits[0]).toMatchObject({ level: 'error' });
+    expect(sansDroits[0].text).toContain('SANS droits service_role');
+
+    const refusee = await checkSupabaseKeys(env, {
+      fetchImpl: fakeFetch({ status: 401, body: { message: 'Invalid API key' } }) as never,
+    });
+    expect(refusee[0]).toMatchObject({ level: 'error' });
+    expect(refusee[0].text).toContain('REFUSÉE (HTTP 401 « Invalid API key »)');
+  });
+
+  it('ne lance jamais, même si le réseau échoue', async () => {
+    const lines = await checkSupabaseKeys(env, {
+      fetchImpl: (async () => {
+        throw new TypeError('fetch failed');
+      }) as never,
+    });
+    expect(lines.map((l) => l.level)).toEqual(['warn', 'warn']);
+    expect(lines[0].text).toContain('vérification de la clé service_role impossible');
+  });
+
+  it('classe INUTILISABLE une clé au texte masqué (la requête ne peut même pas partir)', async () => {
+    const lines = await checkSupabaseKeys(
+      { ...env, SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_AbCd••••••••' },
+      {
+        fetchImpl: (async (url: string) => {
+          if (url.includes('/rest/v1/')) throw new TypeError('Invalid header value');
+          return { status: 200, json: async () => ({}) } as Response;
+        }) as never,
+      },
+    );
+    expect(lines[0]).toMatchObject({ level: 'error' });
+    expect(lines[0].text).toContain('clé service_role INUTILISABLE');
+    expect(lines[0].text).toContain('texte masqué');
+  });
+
+  it("n'écrit jamais une clé dans le journal", async () => {
+    const all = [
+      ...(await checkSupabaseKeys(env, { fetchImpl: fakeFetch({ status: 200, body: [{ key: 'x' }] }) as never })),
+      ...(await checkSupabaseKeys(env, { fetchImpl: fakeFetch({ status: 401, body: { message: 'Invalid API key' } }) as never })),
+    ];
+    for (const { text } of all) {
+      expect(text).not.toContain(SERVICE_JWT);
+      expect(text).not.toContain(SIGNATURE);
+      expect(text).not.toContain(env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
+    }
   });
 });
