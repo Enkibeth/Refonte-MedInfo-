@@ -2,7 +2,7 @@
  * Hébergeur affiché par l'application (`src/deploy/hosting.ts`).
  *
  * Enjeu : l'identité de l'hébergeur dans les mentions légales est une obligation LCEN
- * (art. 6-III) et la liste des sous-traitants une obligation RGPD (art. 28). Ces chaînes
+ * (art. 1-1, I, 4°, ex-art. 6-III avant la loi SREN de 2024) et la liste des sous-traitants une obligation RGPD (art. 28). Ces chaînes
  * sont donc verrouillées par test — et la région, qu'on ne peut pas deviner, doit rester un
  * champ à compléter plutôt qu'une affirmation inventée.
  */

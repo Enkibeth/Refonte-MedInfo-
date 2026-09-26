@@ -43,7 +43,7 @@ const PUBLISHER_PLACEHOLDER = '[À COMPLÉTER : nom du directeur de la publicati
 const CONTACT_PLACEHOLDER = '[À COMPLÉTER : e-mail de contact]';
 const DPO_PLACEHOLDER = '[À COMPLÉTER : e-mail du responsable des données / DPO]';
 
-/** Mentions légales (obligation LCEN art. 6-III). */
+/** Mentions légales (LCEN art. 1-1, I — ex-art. 6-III avant la loi SREN du 21 mai 2024). */
 export const mentionsLegales: LegalDocument = {
   slug: 'mentions-legales',
   title: 'Mentions légales',

@@ -6,7 +6,8 @@
  * retiré du dépôt (plus de `vercel.json`, plus de fonction, plus d'analytics Vercel).
  *
  * Ce module existe parce que deux surfaces doivent nommer l'hébergeur exactement :
- *   1. les **mentions légales** (LCEN art. 6-III) et la liste des sous-traitants RGPD —
+ *   1. les **mentions légales** (LCEN art. 1-1, I, 4° : nom, adresse et téléphone de
+ *      l'hébergeur — ex-art. 6-III avant la loi SREN de 2024) et la liste des sous-traitants RGPD —
  *      afficher le mauvais hébergeur serait une mention légale fausse ;
  *   2. `/api/health`, qui expose `deployTarget` : pendant la propagation DNS, c'est le
  *      moyen le plus simple de savoir si c'est bien le nouveau serveur qui a répondu
