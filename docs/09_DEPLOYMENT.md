@@ -139,7 +139,12 @@ modifier la ligne ou *Ajouter une variable d'environnement* → *Appliquer les m
   (vérifié en septembre) : en cas de doute, afficher la valeur avec l'œil ;
 - `/api/health` ne vérifie que la **présence** des variables, jamais leur validité ;
 - `NODE_ENV=production` fait sauter les `devDependencies` à l'installation (588 paquets au
-  lieu de 638) ; le build n'en dépend pas (vérifié).
+  lieu de 638) ; le build n'en dépend pas (vérifié) ;
+- enregistrer une variable **ne rebâtit pas toujours** : constaté le 2026-09-26, un simple
+  redémarrage du processus (aucun build) après correction de `SUPABASE_SERVICE_ROLE_KEY`.
+  Suffisant pour une variable lue par le serveur ; une variable `EXPO_PUBLIC_*` (figée dans
+  le bundle au build) exige un **build** derrière (push sur la branche ou build relancé),
+  puis une vérification de la valeur dans le bundle servi.
 
 ### Indispensables
 
@@ -246,6 +251,12 @@ les deux derniers restent identiques. `X-Accel-Buffering` **n'arrive pas au clie
 par LiteSpeed ou le CDN) : son absence côté navigateur ne dit pas s'il a été respecté — seul
 le chronométrage des fragments du chat fait foi.
 
+**Streaming mesuré à travers le CDN (2026-09-26)** : premier fragment ≈ 2 s en mode rapide,
+≈ 12 s en mode standard (réflexion + recherche web) ; fragments reçus au fil de l'eau (ex. 62
+fragments en 6 paquets étalés sur 1,1 s ; 166 en 1,7 s), jamais en un bloc final ; réponses
+connectées de 34 à 44 s menées à terme. Aucune mise en tampon constatée → **CDN conservé**.
+Reste non mesuré : une génération de plus de 60 s (délai de lecture du CDN non documenté).
+
 ## 7. Recette sur le domaine temporaire (avant de toucher au domaine)
 
 Application hPanel sur la **branche de migration**, `EXPO_PUBLIC_APP_URL` = URL du domaine
@@ -269,11 +280,28 @@ Constaté pendant la recette (2026-09-25/26) :
 - le `robots.txt` du **domaine temporaire** est remplacé par le CDN (`User-agent: Googlebot`
   / `Disallow: /`, aucun de nos en-têtes) : comportement Hostinger pour `*.hostingersite.com`,
   à revérifier sur `medinfo-ai.com` le jour J (notre fichier doit y être servi) ;
-- un premier `POST /api/chat` a reçu un **403 du CDN** (jamais parvenu à Node) juste après
-  une rafale d'une vingtaine de requêtes ; le même envoi, une minute plus tard, est passé.
-  Probable protection anti-robots : à surveiller dans les journaux et les retours ;
-- `SIGTERM` reçu par le processus au basculement de chaque déploiement, puis redémarrage à
-  la requête suivante : normal.
+- **403 du CDN** (jamais parvenus à Node) sur le premier `POST /api/chat` après une pause, à
+  quatre reprises, **depuis l'IP de datacenter du conteneur de test** ; la même requête passe
+  juste après ; jamais observé depuis un navigateur (Safari iPad). Probable protection
+  anti-robots : à surveiller dans les journaux et les retours après la bascule ;
+- `SIGTERM` reçu par le processus au basculement de chaque déploiement, à l'enregistrement
+  d'une variable, et à d'autres moments sans requête en cours (parfois quelques secondes
+  seulement après la dernière ; délai d'arrêt non documenté), puis redémarrage à la requête
+  suivante. Une génération poursuivie ~10 s après le départ du client est allée au bout ;
+  une poursuite beaucoup plus longue reste à observer (§14) ;
+- **recette fonctionnelle validée (2026-09-26)** : inscription ; connexion e-mail et Google
+  (après ajout du domaine temporaire aux *Redirect URLs* Supabase — sans lui, le retour de
+  Google renvoyait vers le *Site URL* Vercel) ; chat invité et connecté ; génération menée à
+  terme après coupure du client (`POST /api/chat 200 23070ms (client déconnecté)` puis
+  écriture de fin) ; réponse archivée, conversation titrée (`chat-meta 200`), coûts
+  journalisés ;
+- **déploiement automatique sur push confirmé** : build lancé ~8 s après le push sur la
+  branche configurée ;
+- le diagnostic des clés (§3) a trouvé une `SUPABASE_SERVICE_ROLE_KEY` contenant un
+  **espace** (`sb_secret`, 42 car.) → corrigée → « acceptée, droits confirmés » ;
+- non posées sur le domaine temporaire (volontairement) : variables Stripe et
+  `ANNUAIRE_SANTE_API_KEY` → facturation « non configurée », vérification RPPS en attente.
+  À poser avant le jour J.
 
 ## 8. Bascule de `medinfo-ai.com` (le jour J)
 
@@ -306,7 +334,12 @@ PR de migration relue.
    `vercel.json`, un build de `main` casserait `refonte-med-info.vercel.app` ; le dernier
    déploiement reste servi tel quel.
 8. **Fusionner** la PR dans `main`, puis passer la branche de l'application hPanel sur
-   `main` et `EXPO_PUBLIC_APP_URL` sur `https://medinfo-ai.com` (l'enregistrement redéploie).
+   `main` et `EXPO_PUBLIC_APP_URL` sur `https://medinfo-ai.com`. Jamais dans cet ordre
+   inverse : avant la fusion, `main` n'a ni `server.js` ni script `build` (cause du 503
+   d'août). L'enregistrement de la variable pouvant ne provoquer qu'un redémarrage (§4),
+   **lancer ensuite un build de `main`** (API, ou push) et vérifier que le bundle servi
+   contient `https://medinfo-ai.com` ; jamais par l'assistant « Vérifiez les paramètres de
+   compilation » (§3).
 9. **Vérifier** :
    ```bash
    curl -sI http://medinfo-ai.com/            # 301 → https://medinfo-ai.com/
