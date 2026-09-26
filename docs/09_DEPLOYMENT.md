@@ -2,11 +2,11 @@
 
 ```yaml
 title: Deployment Runbook
-version: 2.2.0
+version: 2.3.0
 owner: Hugo Bettembourg
 status: Active
 date: 2026-09-26
-note: ADR-0038 — remplace le runbook Vercel (v1) ; v2.1 corrige la v2 (2026-08) sur la base de la documentation officielle Hostinger et de l'état réel du domaine ; v2.2 intègre les constats de la recette sur l'infrastructure Hostinger (2026-09-25/26)
+note: ADR-0038 — remplace le runbook Vercel (v1) ; v2.1 corrige la v2 (2026-08) sur la base de la documentation officielle Hostinger et de l'état réel du domaine ; v2.2 intègre les constats de la recette sur l'infrastructure Hostinger (2026-09-25/26) ; v2.3 dresse la liste du code Vercel retiré et du ménage côté plateformes (§10)
 ```
 
 ## 0. État de départ (constaté le 2026-09-25)
@@ -374,6 +374,18 @@ panel admin (brouillon ou article publié). Test manuel : bouton admin (`?force=
 - **Après la bascule** : le dernier déploiement Vercel reste en ligne sur
   `refonte-med-info.vercel.app` tant que le projet existe (builds coupés, §8.7). Pour revenir
   à WordPress : restaurer la sauvegarde de l'étape 8.1 sur le domaine.
+- **Code Vercel** : la PR de migration l'a retiré du dépôt (`vercel.json`, fonction
+  `api/index.js`, `scripts/vercel/`, script `vercel-build`, `@vercel/analytics`,
+  `@vercel/speed-insights`, `keepAlive` serverless, `.vercel/` du `.gitignore`). Il ne quitte
+  `main` qu'à la fusion (§8.8), APRÈS la coupure des builds (§8.7) : avant, `main` doit rester
+  déployable sur Vercel, qui sert encore la production. Un retour à Vercel après la fusion
+  ne passe donc pas par un nouveau build de `main`, mais par le dernier déploiement Vercel
+  (ou un revert de la fusion).
+- **Ménage Vercel, une fois la bascule stabilisée** (chaque point sur OK de Hugo) : supprimer
+  le projet Vercel (ce qui retire aussi le dernier déploiement de secours), désinstaller
+  l'application Vercel du dépôt GitHub (le check « Vercel Preview Comments »), retirer les
+  URL `*.vercel.app` des *Redirect URLs* Supabase et, s'il existe, l'ancien endpoint de
+  webhook Stripe qui pointe sur `vercel.app`.
 
 ## 11. Repli : build hors de l'hébergeur
 

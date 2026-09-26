@@ -20,7 +20,6 @@ supabase/.branches/
 supabase/.temp/
 # Build / cache
 .next/
-.vercel/
 *.tsbuildinfo
 .DS_Store
 # Logs

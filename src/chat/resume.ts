@@ -2,8 +2,9 @@
  * Reprise d'une réponse coupée par la mise en veille du téléphone (2026-08).
  *
  * Le cas réel (retour Hugo) : on pose une question, on quitte Safari. iOS gèle la page et
- * peut couper le flux HTTP en cours. Côté serveur la génération va au bout — `keepAlive`
- * prolonge l'invocation (maxDuration 300 s) et `onFinish` archive la réponse complète.
+ * peut couper le flux HTTP en cours. Côté serveur la génération va au bout — le serveur Node
+ * vit entre les requêtes (`keepAlive` ne fait que neutraliser un rejet de la promesse
+ * détachée) et `onFinish` archive la réponse complète.
  *
  * Côté client, deux issues distinctes au retour :
  *   1. le flux casse avec une ERREUR → la reprise existante se déclenche et va chercher la
