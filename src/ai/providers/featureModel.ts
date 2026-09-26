@@ -17,9 +17,10 @@ import type { FeatureKey } from '@/admin/index';
 /** Modèles par défaut si Supabase est inaccessible. */
 const FEATURE_DEFAULTS: Record<FeatureKey, { modelId: string; provider: string }> = {
   // Retour à la base (2026-08, ADR-0037, décision Hugo) : UN prompt par catégorie, UN
-  // appel LLM, la réponse. Le chat tourne sur gpt-5.6-luna — le tier le plus rapide et le
-  // moins cher d'OpenAI — avec la recherche web du provider pour les sources.
-  chat:          { modelId: 'gpt-5.6-luna',      provider: 'openai' },
+  // appel LLM, la réponse, avec la recherche web du provider pour les sources. Depuis
+  // 2026-09 (migration 0046, décision Hugo) : gpt-6-luna — le tier le plus rapide et le
+  // moins cher d'OpenAI, deux fois moins cher que gpt-5.6-luna.
+  chat:          { modelId: 'gpt-6-luna',        provider: 'openai' },
   // Titre + catégorie d'historique : modèle flash économique.
   chat_meta:     { modelId: 'gemini-2.5-flash',  provider: 'google' },
   analyze:       { modelId: 'claude-sonnet-4-6', provider: 'anthropic' },
@@ -69,17 +70,52 @@ export interface ModelCapabilities {
 
 /** Models disponibles dans l'UI admin (avec leurs capacités de réglage). */
 export const AVAILABLE_MODELS = [
+  // ── Claude 5 (2026) ──────────────────────────────────────────────────────
+  // Capacités tirées de la documentation Anthropic (models overview + thinking, 2026-09) :
+  //   * `temperature` / `top_p` / `top_k` non par défaut → 400 sur CHAQUE requête (Sonnet 5,
+  //     Opus 5.5, et aussi Opus 4.8/4.7) → capability à false ;
+  //   * réflexion ADAPTATIVE, pilotée par `effort` (le budget fixe `budget_tokens` n'est
+  //     plus accepté) → traduction au bord dans featureRuntime (`anthropicThinkingStyle`) ;
+  //   * réflexion ACTIVE PAR DÉFAUT : un effort non réglé dans le panel = défaut du modèle
+  //     (Sonnet 5 : `high` ; Opus 5.5 : `medium`, et sa réflexion ne peut pas être coupée).
+  //     Régler « minimal »/« low » pour une fonction sensible à la latence.
+  {
+    id: 'claude-sonnet-5', provider: 'anthropic', label: 'Claude Sonnet 5',
+    capabilities: { temperature: false, reasoning: true, verbosity: false, webSearch: true },
+  },
+  {
+    id: 'claude-opus-5-5', provider: 'anthropic', label: 'Claude Opus 5.5',
+    capabilities: { temperature: false, reasoning: true, verbosity: false, webSearch: true },
+  },
   {
     id: 'claude-sonnet-4-6', provider: 'anthropic', label: 'Claude Sonnet 4.6',
     capabilities: { temperature: true, reasoning: true, verbosity: false, webSearch: true },
   },
   {
+    // `temperature` refusée par Opus 4.8 (400, doc Anthropic « Sampling parameters »).
     id: 'claude-opus-4-8', provider: 'anthropic', label: 'Claude Opus 4.8',
-    capabilities: { temperature: true, reasoning: true, verbosity: false, webSearch: true },
+    capabilities: { temperature: false, reasoning: true, verbosity: false, webSearch: true },
   },
   {
     id: 'claude-haiku-4-5-20251001', provider: 'anthropic', label: 'Claude Haiku 4.5',
     capabilities: { temperature: true, reasoning: true, verbosity: false, webSearch: true },
+  },
+  // ── GPT-6 (2026) ─────────────────────────────────────────────────────────
+  // sol (équilibré) et luna (le plus rapide et le moins cher). D'après la doc OpenAI
+  // (fiches modèles + guide de migration, 2026-09) : effort `none`/low/medium/high/xhigh/max
+  // (pas de `minimal`), `web_search` pris en charge, température à retirer dès que l'effort
+  // n'est pas `none` → capability à false. `text.verbosity` n'est pas documentée pour GPT-6 ;
+  // le SDK AI (3.0.118), qui retire explicitement les paramètres refusés par GPT-6, la
+  // transmet telle quelle → exposée. Deux réglages au bord dans featureRuntime :
+  // `openaiReasoningEffort` (minimal → none) et `forceReasoning` (le SDK installé ne
+  // reconnaît pas GPT-6 comme modèle à raisonnement).
+  {
+    id: 'gpt-6-sol', provider: 'openai', label: 'GPT-6 Sol',
+    capabilities: { temperature: false, reasoning: true, verbosity: true, webSearch: true },
+  },
+  {
+    id: 'gpt-6-luna', provider: 'openai', label: 'GPT-6 Luna',
+    capabilities: { temperature: false, reasoning: true, verbosity: true, webSearch: true },
   },
   // ── GPT-5.6 (2026) ───────────────────────────────────────────────────────
   // Famille à 3 tiers : sol (flagship), terra (équilibré), luna (le plus rapide et le
