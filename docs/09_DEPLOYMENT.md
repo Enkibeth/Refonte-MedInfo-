@@ -2,11 +2,11 @@
 
 ```yaml
 title: Deployment Runbook
-version: 2.1.0
+version: 2.2.0
 owner: Hugo Bettembourg
 status: Active
-date: 2026-09-25
-note: ADR-0038 — remplace le runbook Vercel (v1) ; v2.1 corrige la v2 (2026-08) sur la base de la documentation officielle Hostinger et de l'état réel du domaine
+date: 2026-09-26
+note: ADR-0038 — remplace le runbook Vercel (v1) ; v2.1 corrige la v2 (2026-08) sur la base de la documentation officielle Hostinger et de l'état réel du domaine ; v2.2 intègre les constats de la recette sur l'infrastructure Hostinger (2026-09-25/26)
 ```
 
 ## 0. État de départ (constaté le 2026-09-25)
@@ -18,7 +18,15 @@ note: ADR-0038 — remplace le runbook Vercel (v1) ; v2.1 corrige la v2 (2026-08
 | DNS / registrar | Hostinger (`ns1/ns2.dns-parking.com`) |
 | E-mail du domaine | Hostinger (MX `mx1/mx2.hostinger.com` + SPF) — **ne jamais toucher** |
 | App en production | `refonte-med-info.vercel.app` (Vercel) |
+| Offre Hostinger | `hostinger_business_v2` ; `medinfo-ai.com` est le domaine **principal** du compte (vhost `main`), les autres sites du plan sont des domaines additionnels |
 | App Node Hostinger d'août | domaine temporaire `lightgoldenrodyellow-heron-372000.hostingersite.com` → **503** |
+
+**Cause réelle du 503 (établie le 2026-09-26 dans les journaux hPanel)** : l'application
+suivait `main` avec un **script de build vide**. Les builds `build:web` avaient échoué
+(`Missing script: "build:web"`), le script avait ensuite été vidé : les deux seuls builds
+« réussis » (17 août) n'ont exécuté que `npm install` — aucun `dist/`. À chaque réveil, le
+serveur journalisait « Build web introuvable » et s'arrêtait ; le CDN répondait 503. Tous les
+builds suivants (revert #144, #145, #146) ont échoué sans remplacer ce déploiement.
 
 ## 1. Architecture de déploiement
 
@@ -81,6 +89,17 @@ indicatifs : l'interface hPanel évolue.
 
 Signes que c'est bon : badge **Running** + bouton **Restart** sur la carte de l'application,
 et dans les *Runtime Logs* : `[medinfo] serveur prêt — port … (toutes interfaces)`.
+Constaté le 2026-09-25 : `[medinfo] serveur prêt — port 3000 (toutes interfaces), node
+v22.18.0, dist=…/hbuilds/versions/<build>/nodejs/dist, env: variables du processus`.
+
+> ⚠️ **Ne jamais redéployer par l'écran « Vérifiez les paramètres de compilation »**
+> (assistant d'import/redéploiement). Il repart des valeurs **détectées automatiquement**, pas
+> des réglages enregistrés. Constaté le 2026-09-26 : l'écran affichait préréglage **React**,
+> branche **`main`** et **aucune** variable alors que l'app était correctement réglée ; le
+> redéploiement lancé depuis lui (préréglage et branche corrigés à la main) a néanmoins
+> enregistré un **script de build vide** — retour immédiat du 503 (« Build web introuvable »). Pour
+> redéployer : enregistrer les variables (§4), pousser sur la branche, ou relancer un build
+> avec les réglages du tableau ci-dessus.
 
 ## 4. Variables d'environnement
 
@@ -93,12 +112,26 @@ et dans les *Runtime Logs* : `[medinfo] serveur prêt — port … (toutes inter
 routes API. hPanel injecte aux deux moments : il suffit de les déclarer une fois. Toute
 modification se fait dans hPanel, qui redéploie.
 
+**Où et comment** : tableau de bord du site → *Variables d'environnement* (barre latérale) →
+modifier la ligne ou *Ajouter une variable d'environnement* → *Appliquer les modifications*
+(redéploie). Saisir les valeurs une par une, sans guillemets. Constats du 2026-09-25/26 :
+
+- les valeurs sont **masquées** à la lecture (hPanel et API) et l'API **remplace toute la
+  liste** : impossible de fusionner par l'API sans retaper chaque secret — les secrets se
+  saisissent dans hPanel ;
+- les valeurs posées en août étaient **entièrement en MAJUSCULES** (clés refusées : OpenAI
+  `Incorrect API key`, Supabase 401 ; cause non établie). hPanel conserve bien la casse
+  (vérifié en septembre) : en cas de doute, afficher la valeur avec l'œil ;
+- `/api/health` ne vérifie que la **présence** des variables, jamais leur validité ;
+- `NODE_ENV=production` fait sauter les `devDependencies` à l'installation (588 paquets au
+  lieu de 638) ; le build n'en dépend pas (vérifié).
+
 ### Indispensables
 
 | Variable | Valeur | Secret |
 |---|---|---:|
 | `EXPO_PUBLIC_SUPABASE_URL` | `https://sbpnjswffrqxgnglnjml.supabase.co` | non |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | clé publishable (protégée par RLS) | non |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | clé publishable `sb_publishable_…` (celle de la production ; protégée par RLS) | non |
 | `SUPABASE_URL` | même URL | non |
 | `SUPABASE_SERVICE_ROLE_KEY` | clé `service_role` | **oui** |
 | `AI_PROVIDER` | `anthropic` ou `openai` | non |
@@ -118,7 +151,7 @@ Environment Variables* (les secrets sont les mêmes).
 |---|---|---:|
 | `STRIPE_SECRET_KEY` | création des sessions Checkout | **oui** |
 | `STRIPE_WEBHOOK_SECRET` | signature du webhook (nouvel endpoint = nouveau `whsec_…`) | **oui** |
-| `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` | clé publique | non |
+| `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` | clé publique — **lue nulle part dans le code** (Checkout est une redirection serveur) : facultative | non |
 | `STRIPE_PRICE_PUBLIC_MID` / `STRIPE_PRICE_STUDENT_MID` / `STRIPE_PRICE_STUDENT_PREMIUM` | `price_…` des plans | non |
 | `ANNUAIRE_SANTE_API_KEY` | vérification RPPS (sans clé : statut pro `pending`) | **oui** |
 | `CRON_SECRET` | agent éditorial hebdo (`openssl rand -hex 32`) | **oui** |
@@ -142,8 +175,16 @@ Le serveur lit aussi un `.env` à la racine (`.env.production.local`, `.env.loca
 ## 5. Ce que fait `npm run build`
 
 ```bash
-npm run build   # expo export -p web  +  pré-compression Brotli/gzip
+npm run build   # expo export -p web --clear  +  pré-compression Brotli/gzip
 ```
+
+> **Pourquoi `--clear`** (constaté chez Hostinger le 2026-09-26) : le cache Metro vit hors du
+> dossier de build (`/tmp`) et **survit d'un build à l'autre**. Il ressert alors les modules
+> déjà transformés, avec les **anciennes** valeurs `EXPO_PUBLIC_*` : variables corrigées dans
+> hPanel, bundle client identique à l'octet près (le serveur, lui, lisait les nouvelles).
+> Reproduit en local : sans `--clear`, une nouvelle valeur n'apparaît pas dans le bundle ;
+> avec, elle y est. Coût : ~40 s de plus par build. Verrouillé par
+> `tests/unit/hostinger-server.test.ts`.
 
 - `dist/client/` — bundle web, assets, pages autonomes (`partiel.html`, `cv-builder.html`,
   `presentation.html`, `article.html`) et leurs variantes `.br`/`.gz` ;
@@ -151,7 +192,9 @@ npm run build   # expo export -p web  +  pré-compression Brotli/gzip
   est requis à l'exécution).
 
 Mesuré sur ce dépôt (2026-09-25) : **~1 min**, pic mémoire **~0,5 Go** — loin de la limite
-de 15 min. En cas d'échec quand même : §11.
+de 15 min. Chez Hostinger (2026-09-25/26) : `npm install` 7-12 s, build complet (cache froid)
+**~2 min** de bout en bout ; en local avec `--clear` et l'installation de production :
+61 s. En cas d'échec quand même : §11.
 
 ## 6. Streaming, proxy et CDN
 
@@ -180,6 +223,14 @@ recours, VPS (§12).
 (jamais d'adresse). « identiques » ou 1 maillon → laisser `1`. « différents » sur une
 visite ordinaire → passer à `2` (le dernier maillon est le CDN).
 
+Constaté sur le domaine temporaire (2026-09-25) : `X-Forwarded-For à 3 maillon(s), deux
+derniers maillons identiques` à chaque démarrage → **`TRUST_PROXY_HOPS` laissé à 1** (ne
+pas définir la variable). Les requêtes de test passaient par un proxy sortant, qui ajoute
+probablement le premier maillon ; une visite ordinaire donne la même conclusion tant que
+les deux derniers restent identiques. `X-Accel-Buffering` **n'arrive pas au client** (retiré
+par LiteSpeed ou le CDN) : son absence côté navigateur ne dit pas s'il a été respecté — seul
+le chronométrage des fragments du chat fait foi.
+
 ## 7. Recette sur le domaine temporaire (avant de toucher au domaine)
 
 Application hPanel sur la **branche de migration**, `EXPO_PUBLIC_APP_URL` = URL du domaine
@@ -196,6 +247,19 @@ temporaire, et ce domaine ajouté aux *Redirect URLs* de Supabase (§8, étape 5
 7. Analyse de document en invité (quota anonyme) et connecté.
 8. *Runtime Logs* : lignes `[medinfo] GET /… 200 12ms`, ligne `[medinfo] proxy : …` (§6).
 
+Constaté pendant la recette (2026-09-25/26) :
+
+- `/api/health`, HSTS + `nosniff` sur les pages, `no-store` sur `/api/*`, pages clés en 200,
+  404 sur une route inconnue, bundle servi en Brotli avec `immutable` + `ETag` : conformes ;
+- le `robots.txt` du **domaine temporaire** est remplacé par le CDN (`User-agent: Googlebot`
+  / `Disallow: /`, aucun de nos en-têtes) : comportement Hostinger pour `*.hostingersite.com`,
+  à revérifier sur `medinfo-ai.com` le jour J (notre fichier doit y être servi) ;
+- un premier `POST /api/chat` a reçu un **403 du CDN** (jamais parvenu à Node) juste après
+  une rafale d'une vingtaine de requêtes ; le même envoi, une minute plus tard, est passé.
+  Probable protection anti-robots : à surveiller dans les journaux et les retours ;
+- `SIGTERM` reçu par le processus au basculement de chaque déploiement, puis redémarrage à
+  la requête suivante : normal.
+
 ## 8. Bascule de `medinfo-ai.com` (le jour J)
 
 **Prérequis** : recette §7 verte ; mentions légales complétées (éditeur, directeur de la
@@ -206,10 +270,15 @@ PR de migration relue.
 2. **Libérer le domaine** : retirer le site WordPress de `medinfo-ai.com` (exigence Hostinger
    pour rattacher le domaine à une autre application du plan). Si hPanel propose de
    déplacer WordPress vers un sous-domaine (ex. `ancien.medinfo-ai.com`), c'est préférable à
-   une suppression.
+   une suppression. ⚠️ `medinfo-ai.com` est le domaine **principal** du compte (vhost
+   `main`) : lire ce que hPanel propose pour ce cas avant toute suppression.
 3. **Rattacher `medinfo-ai.com`** à l'application Node (tableau de bord de l'application →
    domaine). DNS chez Hostinger : les enregistrements web sont mis à jour par hPanel.
-   **Vérifier que MX et SPF sont intacts** (DNS / Nameservers → zone DNS).
+   **Vérifier que la messagerie est intacte** (DNS / Nameservers → zone DNS) : zone relevée
+   le 2026-09-25 — apex `ALIAS` vers le CDN, `MX` 5 `mx1` / 10 `mx2.hostinger.com`, `TXT`
+   SPF (`_spf.mail` + `_spf.reach.hostinger.com`), `_dmarc`, DKIM `hostingermail-a/b/c`
+   (CNAME) + `hostingermail1` (TXT) + `reach-a/b` (CNAME), `autodiscover`/`autoconfig`
+   (CNAME), `ftp` (A). Seuls l'apex et `www` doivent changer.
 4. **SSL** : certificat actif pour `medinfo-ai.com` **et** `www.medinfo-ai.com`.
 5. **Supabase** → *Authentication → URL Configuration* : **Site URL** =
    `https://medinfo-ai.com` ; **Redirect URLs** : `https://medinfo-ai.com/**` (garder le

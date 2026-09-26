@@ -48,6 +48,13 @@ Avant la bascule : ne pas fusionner (Vercel sert `main`). Après : couper les bu
 avant la fusion garde le dernier déploiement en ligne sur refonte-med-info.vercel.app ; revert
 de la fusion + restauration de la sauvegarde WordPress sur le domaine (docs/09_DEPLOYMENT.md §10).
 
+### Addendum 2026-09-26 — recette sur l'infrastructure Hostinger (même PR)
+- Files modified : package.json (`build` : `expo export -p web --clear`), tests/unit/hostinger-server.test.ts (+2 : `--clear` verrouillé, alias `build:web`), docs/09_DEPLOYMENT.md (v2.2)
+- Constaté via le connecteur hPanel : cause réelle du 503 d'août = application reliée à `main` avec un **script de build vide** (après des échecs `Missing script: "build:web"`) → `npm install` seul, aucun `dist/`, serveur arrêté au démarrage (« Build web introuvable »). Réglages corrigés (script `build`, branche de migration) : build réussi (~2 min), `/api/health` OK, HSTS, `no-store`, pages clés en 200, ligne proxy « 3 maillons, deux derniers identiques » → `TRUST_PROXY_HOPS` laissé à 1.
+- Constaté ensuite : valeurs d'env d'août **en MAJUSCULES** (clés refusées ; cause non établie ; hPanel conserve la casse) ; valeurs masquées à la lecture et API en remplacement total → secrets ressaisis dans hPanel ; l'assistant de redéploiement « Vérifiez les paramètres de compilation » repart de valeurs auto-détectées et a vidé le script de build (503 revenu, corrigé par l'API).
+- Cause du correctif de code : le **cache Metro survit d'un build à l'autre** chez Hostinger et ressert les anciennes valeurs `EXPO_PUBLIC_*` (bundle client identique à l'octet près après correction des variables ; reproduit en local, résolu par `--clear`, ~40 s de plus par build).
+- Vérifié : typecheck ; 817 tests unitaires ; build avec l'installation de production (`NODE_ENV=production`, 588 paquets) en 61 s, nouvelles valeurs présentes dans le bundle ; fumigation 19/19. Regulatory impact : None. Rollback : revert du commit (retour au build sans `--clear`).
+
 ## [2026-08-30] – Claude (chat : anneau de progression, reprise après veille, prompts GPT-5.6)
 ### Files modified
 - src/ai/chat/statusPhases.ts (NOUVEAU, pur, testé), src/ui/chat/ChatStatusRing.tsx + .web.tsx (NOUVEAUX)

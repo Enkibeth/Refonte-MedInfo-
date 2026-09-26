@@ -11,6 +11,7 @@
  * Le chemin d'I/O complet est couvert par `npm run smoke:node` (nécessite un build).
  */
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { applyEnv, parseDotEnv } from '../../server/lib/env.mjs';
@@ -439,5 +440,23 @@ describe('parseDotEnv / applyEnv', () => {
     // Une variable présente mais vide est traitée comme absente (cas fréquent des panneaux).
     expect(env.VIDE).toBe('du-fichier');
     expect(applied.sort()).toEqual(['NOUVEAU', 'VIDE']);
+  });
+});
+
+describe('script de build Hostinger', () => {
+  const scripts = JSON.parse(readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8'))
+    .scripts as Record<string, string>;
+
+  it('vide le cache Metro à chaque export (`--clear`)', () => {
+    // Constaté chez Hostinger le 2026-09-26 : le cache Metro survit d'un build à l'autre
+    // et ressert les modules transformés avec les ANCIENNES valeurs `EXPO_PUBLIC_*` —
+    // variables corrigées dans hPanel, bundle client inchangé à l'octet près. Reproduit en
+    // local : sans `--clear`, une nouvelle valeur n'apparaît pas dans le bundle.
+    expect(scripts.build).toMatch(/\bexpo export\b[^&]*\s--clear\b/);
+  });
+
+  it('pré-compresse après l’export, et `build:web` reste un alias de `build`', () => {
+    expect(scripts.build).toMatch(/&& node scripts\/hostinger\/precompress\.mjs$/);
+    expect(scripts['build:web']).toBe('npm run build');
   });
 });

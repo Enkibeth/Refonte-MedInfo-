@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "expo start --web",
     "start:expo": "expo start",
-    "build": "expo export -p web && node scripts/hostinger/precompress.mjs",
+    "build": "expo export -p web --clear && node scripts/hostinger/precompress.mjs",
     "build:web": "npm run build",
     "start": "node server/index.mjs",
     "android": "expo start --android",
