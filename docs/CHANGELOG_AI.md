@@ -18,6 +18,63 @@ None | Potential | Confirmed
 ---
 
 
+## [2026-09-26] – Claude (modèles : GPT-6 Sol/Luna, Claude Sonnet 5 / Opus 5.5, grille de prix ; chat → GPT-6 Luna)
+### Files modified
+- src/ai/providers/featureModel.ts : AVAILABLE_MODELS + GPT-6 Sol/Luna, Claude Sonnet 5, Claude Opus 5.5 ; Opus 4.8 sans température ; FEATURE_DEFAULTS.chat → gpt-6-luna
+- src/ai/providers/featureRuntime.ts : cœur pur `resolveFeatureRuntime()` ; `openaiReasoningEffort` étendu à GPT-6, `openaiNeedsForcedReasoning`, `anthropicThinkingStyle`, `isClaudeGeneration5`, `anthropicEffort`, `CLAUDE_GEN5_MAX_OUTPUT_TOKENS`
+- src/admin/cost.ts : prix GPT-6 et Claude 5, corrections Opus 4.8 (5/25) et Haiku 4.5 (1/5), tarif de cache propre à Opus 5.5 (`cachedInputPerM`)
+- supabase/migrations/0046_chat_gpt6_luna.sql (NOUVEAU) : bascule du chat, à appliquer APRÈS déploiement partout
+- tests/unit/llm-request-shape.test.ts (NOUVEAU), tests/unit/feature-runtime.test.ts, tests/unit/admin-cost.test.ts
+- app/api/chat+api.ts (commentaire), docs/DECISIONS/0037 (addendum), CLAUDE.md
+### Purpose
+Revue des modèles demandée par Hugo (« on utilise les derniers ? meilleur rapport qualité-prix
+pour le chatbot ? ») puis décisions : GPT-6 Luna, Sonnet 5 et Opus 5.5 au panel admin, grille de
+prix corrigée, chat sur GPT-6 Luna sans évaluation préalable.
+
+Pièges trouvés en lisant le code des SDK installés, puis vérifiés sur la requête HTTP réellement
+émise, grâce à un `fetch` factice qui capture le corps sans rien envoyer :
+- **GPT-6** est inconnu d'@ai-sdk/openai 3.0.67. Sans `forceReasoning`, le SDK jette l'effort de
+  raisonnement sans erreur et envoie le prompt système en rôle `system`. Le chat grand public
+  aurait tourné à l'effort par défaut du modèle (`medium`) au lieu de `none`. GPT-6 n'a pas
+  `minimal` : on traduit en `none` pour Sol et Luna, en `low` pour les autres modèles (guide de
+  migration OpenAI).
+- **Claude Sonnet 5 et Opus 5.5** sont inconnus d'@ai-sdk/anthropic 3.0.81. Le SDK aurait :
+  - plafonné la sortie à 4 096 tokens, alors que leur réflexion est active par défaut ;
+  - remplacé les sorties structurées par un outil `json` à usage forcé, qu'Opus 5.5 refuse sur
+    chaque requête (400) : sur Opus 5.5, la génération de QCM, la relecture et l'import de CV
+    et les aides à la rédaction d'article (toutes en `generateObject`) auraient échoué.
+  On pose donc un plafond de sortie de 64 000 tokens et `structuredOutputMode: 'outputFormat'`.
+- **La réflexion à budget fixe** (`budget_tokens`) n'est plus acceptée après Claude 4.6 (doc
+  Anthropic). Elle aurait fait échouer Opus 4.8 dès qu'un effort était réglé. Claude 4.6+ et la
+  génération 5 passent en réflexion adaptative réglée par `effort` ; Haiku 4.5 garde le budget.
+- **Prix** relus sur les grilles officielles le 2026-09-26. Opus 4.8 était compté 15/75 au lieu
+  de 5/25, et Haiku 4.5 0,8/4 au lieu de 1/5 : c'étaient les tarifs d'Opus 4.1 et de Haiku 3.5.
+  La lecture du cache d'Opus 5.5 est facturée 5 % de l'entrée, contre 10 % ailleurs.
+
+Choix délibéré : pas de mise à jour du SDK. La famille AI SDK v6 à jour (ai 6.0.292,
+@ai-sdk/anthropic 3.0.122, @ai-sdk/openai 3.0.118) connaît ces modèles, mais la mise à jour touche
+~100 versions du cœur de streaming utilisé par le chat. Ces contournements ciblés ne modifient
+rien pour les modèles déjà en production. Deux gardes anti-régression le vérifient :
+- la requête du chat actuel (gpt-5.6-luna) reste identique ;
+- les 15 fonctions Claude (Sonnet 4.6, rien de réglé) gardent la même requête.
+
+Un test témoin échouera le jour où le SDK reconnaîtra GPT-6 : le contournement pourra alors
+partir.
+
+Hors code, déjà appliqué en base le 2026-09-26 avec l'accord de Hugo : recherche web coupée sur
+`audio_report` et `ecos_evaluate`. Le modèle pouvait transformer le contenu d'une consultation
+en requêtes vers un moteur de recherche.
+### Regulatory impact
+None. Aucune couche de régulation n'est touchée : disclosure, autorisation persona serveur,
+cloisonnement des chatbots et RLS restent inchangés. La coupure de la recherche web sur le compte
+rendu audio réduit la sortie de données de santé hors périmètre.
+### Rollback plan
+- **Chat :** remettre `gpt-5.6-luna` sur la ligne `chat` depuis le panel admin, effet sous 60 s
+  (cache). Le code prend en charge les deux modèles.
+- **Code :** revert de la PR. Il faut d'abord remettre la ligne `chat` sur gpt-5.6-luna,
+  puisqu'un runtime sans ce code traiterait gpt-6-luna comme un modèle inconnu.
+
+
 ## [2026-09-25] – Claude (hébergement Hostinger + domaine medinfo-ai.com — ADR-0038)
 ### Files modified
 - Reprise de la migration d'août (revert du revert #144) : server.js, server/index.mjs, server/lib/{env,proxy,serve-static,static}.mjs, scripts/hostinger/{precompress,smoke}.mjs + weekly-blog-cron.sh, ecosystem.config.cjs, src/deploy/hosting.ts, src/server/keepAlive.ts ; suppression de vercel.json, api/index.js, scripts/vercel/, @vercel/analytics, @vercel/speed-insights
