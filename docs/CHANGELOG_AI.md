@@ -17,6 +17,24 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-09-26] – Codex (audit UI initial et propositions premium)
+### Files modified
+- docs/audits/2026-09-premium/ : inventaire, contrats UX, mesures, captures et six études visuelles statiques.
+- docs/DECISIONS/0038-direction-premium-ui.md : décision Proposed, non acceptée.
+- docs/CHANGELOG_AI.md.
+### Purpose
+Étapes 0 et 1 demandées par Hugo : état initial vérifié, priorités de chargement du chat,
+deux directions visuelles sur accueil/chat/document, puis arrêt pour choix.
+Aucun code produit, token, prompt, API, serveur, droit, donnée ou fichier de déploiement modifié.
+Le design system reste en v1.4 jusqu’à validation. Les maquettes ne sont pas des fonctions livrées.
+### Regulatory impact
+Potential (constats seulement) : signalement des promesses de vérification de liens et de
+la terminologie d’aide à la décision ; aucun texte réglementaire produit n’est changé.
+Les prototypes conservent les mentions IA, information générale et urgences ; aucun contenu
+médical, patient, résultat ou témoignage inventé.
+### Rollback plan
+Revert du lot documentaire. Aucun rollback applicatif, base ou hébergement nécessaire.
+
 
 ## [2026-08-30] – Claude (chat : anneau de progression, reprise après veille, prompts GPT-5.6)
 ### Files modified

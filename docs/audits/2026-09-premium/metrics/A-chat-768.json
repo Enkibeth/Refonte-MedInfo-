@@ -1,0 +1,20 @@
+{
+  "route": "/__directions/direction-a-chat.html",
+  "width": 768,
+  "height": 900,
+  "title": "MedInfo AI · Proposition A · chat",
+  "headings": [
+    "Chat médical"
+  ],
+  "text": "Chat\nChat / Nouvelle conversation\nNouvelle conversation\nChat médical\n\nUn sujet, ses références, le temps d’approfondir.\n\nHistorique\nGrand public\nÉtudiant\nProfessionnel\nVous\n\nComment lire le niveau de preuve d’une recommandation ?\n\nRéflexion en cours\nVotre question a été reçue.\n\nLes références seront accessibles sous la réponse lorsqu’elles seront disponibles.\n\nVotre question\nClassique\nArrêter\n\nVérifiez les informations et leurs sources.\n\nVous interagissez avec un système d'intelligence artificielle (Claude (Anthropic) ou GPT (OpenAI) selon le modèle servi). Les réponses sont générées automatiquement et peuvent contenir des erreurs.\n\nMedInfo AI fournit de l’information médicale générale, jamais un avis médical individuel. En cas d’urgence, composez le 15 (SAMU) ou le 112.\n\nProposition A · étude de direction, non appliquée · aucun appel IA",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [
+    {
+      "id": "aria-prohibited-attr",
+      "count": 1
+    }
+  ],
+  "passes": 21
+}
