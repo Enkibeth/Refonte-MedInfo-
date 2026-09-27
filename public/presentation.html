@@ -13,26 +13,7 @@
    Chrome aux couleurs MedInfo (bleu clinique, Source Serif 4 / Public Sans).
    Aperçu de slide (.pv-*) en Georgia : fidèle au rendu PPTX (Keynote).
    ============================================================ */
-:root {
-  --bg: #f7f9fc;
-  --surface: #ffffff;
-  --ink: #0e1626;
-  --ink-2: #36435a;
-  --ink-3: #5d6b80;
-  --rule: #eaeef5;
-  --rule-2: #dde3ed;
-  --accent: #2563eb;
-  --accent-deep: #1e40af;
-  --accent-soft: #eef4ff;
-  --danger: #c42233;
-  --warn-bg: #fbf1dd;
-  --warn-line: rgba(154, 101, 22, .3);
-  --warn-ink: #9a6516;
-  --radius: 12px;
-  --serif: Georgia, "Times New Roman", serif;      /* aperçu = rendu PPTX */
-  --brand-serif: "Source Serif 4", Georgia, serif;        /* titres chrome MedInfo */
-  --sans: "Public Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-}
+:root { --serif: Georgia, "Times New Roman", serif; --topbar-h: 52px; }
 * , *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body {
@@ -189,6 +170,9 @@ button { font-family: inherit; }
 .mip-slide .pv-ph { flex: 1; border: 1.5px dashed; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 2.2cqw; letter-spacing: .2em; text-transform: uppercase; }
 .mip-slide .pv-numwm { position: absolute; right: 4cqw; bottom: -2cqw; font-family: var(--serif); font-style: italic; font-size: 48cqw; opacity: .18; line-height: 1; }
 </style>
+<link rel="stylesheet" href="/medinfo-tokens.css" />
+<link rel="stylesheet" href="/medinfo-ui.css" />
+<script src="/medinfo-controls.js"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -574,7 +558,7 @@ const h = (tag, attrs = {}, ...kids) => {
     else if (v !== null && v !== undefined && v !== false) el.setAttribute(k, v === true ? "" : v);
   }
   for (const kid of kids.flat()) { if (kid == null || kid === false) continue; el.append(kid.nodeType ? kid : document.createTextNode(String(kid))); }
-  return el;
+  return window.medinfoDecorateControl(el);
 };
 const linesToList = (s) => s.split("\n").map((l) => l.trim()).filter(Boolean);
 const listToLines = (a) => (Array.isArray(a) ? a.join("\n") : "");
@@ -594,37 +578,37 @@ function fieldEl(field, slide, onChange) {
   const v = slide[field.key];
   const lab = (txt) => h("label", {}, txt);
   const wrap = (...kids) => h("div", { class: "mip-field" }, lab(field.label), ...kids);
-  if (field.kind === "text" || field.kind === "number") return wrap(h("input", { class: "mip-input", type: field.kind === "number" ? "number" : "text", value: v ?? "", placeholder: field.placeholder || "", oninput: (e) => onChange(e.target.value, true) }));
-  if (field.kind === "textarea") { const ta = h("textarea", { class: "mip-textarea", placeholder: field.placeholder || "" }); ta.value = v || ""; ta.addEventListener("input", (e) => onChange(e.target.value, true)); return wrap(ta); }
-  if (field.kind === "list") { const ta = h("textarea", { class: "mip-textarea", placeholder: "Un élément par ligne" }); ta.value = listToLines(v); ta.addEventListener("input", (e) => onChange(linesToList(e.target.value), true)); return wrap(ta, h("span", { class: "mip-hint" }, "Un élément par ligne.")); }
+  if (field.kind === "text" || field.kind === "number") return wrap(h("input", { "aria-label": field.label, class: "mip-input", type: field.kind === "number" ? "number" : "text", value: v ?? "", placeholder: field.placeholder || "", oninput: (e) => onChange(e.target.value, true) }));
+  if (field.kind === "textarea") { const ta = h("textarea", { "aria-label": field.label, class: "mip-textarea", placeholder: field.placeholder || "" }); ta.value = v || ""; ta.addEventListener("input", (e) => onChange(e.target.value, true)); return wrap(ta); }
+  if (field.kind === "list") { const ta = h("textarea", { "aria-label": field.label, class: "mip-textarea", placeholder: "Un élément par ligne" }); ta.value = listToLines(v); ta.addEventListener("input", (e) => onChange(linesToList(e.target.value), true)); return wrap(ta, h("span", { class: "mip-hint" }, "Un élément par ligne.")); }
   if (field.kind === "column") {
     const col = v && typeof v === "object" ? v : { label: "", items: [] };
-    const inp = h("input", { class: "mip-input", value: col.label || "", placeholder: "Intitulé de la colonne", oninput: (e) => onChange({ ...col, label: e.target.value }, true) });
-    const ta = h("textarea", { class: "mip-textarea", style: "margin-top:6px", placeholder: "Un point par ligne" }); ta.value = listToLines(col.items); ta.addEventListener("input", (e) => onChange({ ...col, items: linesToList(e.target.value) }, true));
+    const inp = h("input", { "aria-label": field.label, class: "mip-input", value: col.label || "", placeholder: "Intitulé de la colonne", oninput: (e) => onChange({ ...col, label: e.target.value }, true) });
+    const ta = h("textarea", { "aria-label": field.label, class: "mip-textarea", style: "margin-top:6px", placeholder: "Un point par ligne" }); ta.value = listToLines(col.items); ta.addEventListener("input", (e) => onChange({ ...col, items: linesToList(e.target.value) }, true));
     return wrap(inp, ta);
   }
   if (field.kind === "stats") {
     const stats = Array.isArray(v) ? v : [];
     const rows = stats.map((s, i) => h("div", { class: "mip-stat-item" },
-      h("input", { class: "mip-input", style: "flex:0 0 38%", value: s.value || "", placeholder: "Valeur", oninput: (e) => { stats[i] = { ...s, value: e.target.value }; onChange([...stats], true); } }),
-      h("input", { class: "mip-input", value: s.label || "", placeholder: "Libellé", oninput: (e) => { stats[i] = { ...s, label: e.target.value }; onChange([...stats], true); } }),
+      h("input", { "aria-label": field.label, class: "mip-input", style: "flex:0 0 38%", value: s.value || "", placeholder: "Valeur", oninput: (e) => { stats[i] = { ...s, value: e.target.value }; onChange([...stats], true); } }),
+      h("input", { "aria-label": field.label, class: "mip-input", value: s.label || "", placeholder: "Libellé", oninput: (e) => { stats[i] = { ...s, label: e.target.value }; onChange([...stats], true); } }),
       h("button", { class: "mip-iconbtn", onclick: () => onChange(stats.filter((_, j) => j !== i)) }, "✕")));
     return wrap(...rows, h("div", { class: "mip-addrow" }, h("button", { class: "mip-btn mip-btn-sm", onclick: () => onChange([...stats, { value: "", label: "" }]) }, "+ Ajouter un chiffre")));
   }
   if (field.kind === "matrix") {
     const base = [0, 1, 2, 3].map((i) => (Array.isArray(v) && v[i]) || { label: "", text: "" });
-    const cells = base.map((c, i) => { const ta = h("textarea", { class: "mip-textarea", style: "margin-top:6px;min-height:48px", placeholder: "Description" }); ta.value = c.text || ""; ta.addEventListener("input", (e) => { base[i] = { ...base[i], text: e.target.value }; onChange([...base], true); }); return h("div", { style: "border:1px solid var(--rule-2);border-radius:6px;padding:8px" }, h("input", { class: "mip-input", value: c.label || "", placeholder: "Titre quadrant " + (i + 1), oninput: (e) => { base[i] = { ...base[i], label: e.target.value }; onChange([...base], true); } }), ta); });
+    const cells = base.map((c, i) => { const ta = h("textarea", { "aria-label": field.label, class: "mip-textarea", style: "margin-top:6px;min-height:48px", placeholder: "Description" }); ta.value = c.text || ""; ta.addEventListener("input", (e) => { base[i] = { ...base[i], text: e.target.value }; onChange([...base], true); }); return h("div", { style: "border:1px solid var(--rule-2);border-radius:6px;padding:8px" }, h("input", { "aria-label": field.label, class: "mip-input", value: c.label || "", placeholder: "Titre quadrant " + (i + 1), oninput: (e) => { base[i] = { ...base[i], label: e.target.value }; onChange([...base], true); } }), ta); });
     return wrap(h("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:8px" }, ...cells));
   }
   if (field.kind === "table") {
     const tbl = v && typeof v === "object" ? v : { header: [], rows: [] };
     const header = Array.isArray(tbl.header) ? tbl.header : [], rows = Array.isArray(tbl.rows) ? tbl.rows : [];
-    const headerInput = h("input", { class: "mip-input", style: "margin-top:6px;font-weight:700", value: rowText(header), placeholder: "Critère | Option A | Option B", oninput: (e) => onChange({ ...tbl, header: textRow(e.target.value) }, true) });
-    const rowEls = rows.map((r, i) => h("div", { class: "mip-list-item", style: "margin-top:6px" }, h("input", { class: "mip-input", value: rowText(r), placeholder: "Cellule | Cellule | Cellule", oninput: (e) => { const rr = [...rows]; rr[i] = textRow(e.target.value); onChange({ ...tbl, rows: rr }, true); } }), h("button", { class: "mip-iconbtn", onclick: () => onChange({ ...tbl, rows: rows.filter((_, j) => j !== i) }) }, "✕")));
+    const headerInput = h("input", { "aria-label": field.label, class: "mip-input", style: "margin-top:6px;font-weight:700", value: rowText(header), placeholder: "Critère | Option A | Option B", oninput: (e) => onChange({ ...tbl, header: textRow(e.target.value) }, true) });
+    const rowEls = rows.map((r, i) => h("div", { class: "mip-list-item", style: "margin-top:6px" }, h("input", { "aria-label": field.label, class: "mip-input", value: rowText(r), placeholder: "Cellule | Cellule | Cellule", oninput: (e) => { const rr = [...rows]; rr[i] = textRow(e.target.value); onChange({ ...tbl, rows: rr }, true); } }), h("button", { class: "mip-iconbtn", onclick: () => onChange({ ...tbl, rows: rows.filter((_, j) => j !== i) }) }, "✕")));
     const addBtn = h("div", { class: "mip-addrow" }, h("button", { class: "mip-btn mip-btn-sm", onclick: () => onChange({ ...tbl, rows: [...rows, header.map(() => "…")] }) }, "+ Ajouter une ligne"));
     return wrap(h("span", { class: "mip-hint" }, "Cellules séparées par « | ». 1re ligne = en-tête."), headerInput, ...rowEls, addBtn);
   }
-  return wrap(h("input", { class: "mip-input", value: typeof v === "string" ? v : "", oninput: (e) => onChange(e.target.value, true) }));
+  return wrap(h("input", { "aria-label": field.label, class: "mip-input", value: typeof v === "string" ? v : "", oninput: (e) => onChange(e.target.value, true) }));
 }
 function editorEl() {
   const slide = state.deck.slides[state.sel];
@@ -723,7 +707,7 @@ function slidePreview(slide, theme, meta, idx, total) {
 function previewEl() {
   const slides = state.deck.slides;
   const thumbs = slides.map((s, i) => h("div", { style: "cursor:pointer;outline:" + (i === state.sel ? "2px solid var(--accent)" : "none") + ";outline-offset:2px;border-radius:6px", onclick: () => { state.sel = i; render(); } }, slidePreview(s, state.deck.theme, state.deck.meta, i + 1, slides.length)));
-  return h("div", {}, h("div", { class: "mip-preview-head" }, h("h3", {}, "Aperçu"), h("span", { class: "mip-hint" }, slides.length + " slides · approximation")), h("div", { class: "mip-thumbs" }, ...thumbs));
+  return h("div", {}, h("div", { class: "mip-preview-head" }, h("h3", {}, "Aperçu"), h("span", { class: "mip-hint" }, slides.length + " slides · approximation")), h("div", { class: "mip-thumbs", tabindex: "0", "aria-label": "Aperçus des diapositives" }, ...thumbs));
 }
 
 /* ----- Liste de slides ----- */
@@ -739,7 +723,7 @@ function slideListEl() {
       h("button", { class: "mip-iconbtn mip-btn-danger", title: "Supprimer", onclick: () => del(i) }, "✕"));
     return h("div", { class: "mip-slide-row" + (i === state.sel ? " is-active" : ""), onclick: () => { state.sel = i; render(); } }, h("span", { class: "mip-slide-num" }, i + 1), h("span", { class: "mip-slide-type" }, def.label), h("span", { class: "mip-slide-label" }, title), actions);
   });
-  const sel = h("select", { class: "mip-select", style: "max-width:220px", onchange: (e) => { addType = e.target.value; } }, ...SLIDE_TYPE_LIST.map((t) => h("option", { value: t.id, selected: t.id === addType }, t.label)));
+  const sel = h("select", { class: "mip-select", "aria-label": "Type de slide à ajouter", style: "max-width:220px", onchange: (e) => { addType = e.target.value; } }, ...SLIDE_TYPE_LIST.map((t) => h("option", { value: t.id, selected: t.id === addType }, t.label)));
   return h("div", {}, h("h2", { class: "mip-section-title" }, "Slides"), h("div", { class: "mip-slidelist" }, ...rows), h("div", { class: "mip-addrow" }, sel, h("button", { class: "mip-btn mip-btn-sm", onclick: () => add(addType) }, "+ Ajouter la slide")));
 }
 function add(type) { const at = Math.min(state.sel + 1, state.deck.slides.length); state.deck.slides.splice(at, 0, createSlide(type)); state.sel = at; render(); }
@@ -808,7 +792,7 @@ async function exportPptx(btn) {
 function configEl() {
   const meta = state.deck.meta, opt = state.deck.options;
   const setMeta = (k) => (e) => { meta[k] = e.target.value; renderPreviewLight(); };
-  const field = (label, key, ph) => h("div", { class: "mip-field" }, h("label", {}, label), h("input", { class: "mip-input", value: meta[key] || "", placeholder: ph || "", oninput: setMeta(key) }));
+  const field = (label, key, ph) => h("div", { class: "mip-field" }, h("label", {}, label), h("input", { "aria-label": label, class: "mip-input", value: meta[key] || "", placeholder: ph || "", oninput: setMeta(key) }));
   const themeChips = THEME_LIST.map((t) => {
     const a = THEMES[t.id].c;
     const sw = h("span", { class: "mip-swatch" }, h("i", { style: "background:#" + a.pageBg + ";width:33.34%" }), h("i", { style: "background:#" + a.ink + ";width:33.34%" }), h("i", { style: "background:#" + a.accent + ";width:33.34%" }));
@@ -823,7 +807,7 @@ function configEl() {
     field("Contact", "contact", "prenom.nom@…"),
     h("div", { class: "mip-field" }, h("label", {}, "Thème"), h("div", { class: "mip-themes" }, ...themeChips)),
     h("div", { class: "mip-field" }, h("label", {}, "Densité du texte"), h("div", { class: "mip-seg" }, ...densBtns)),
-    h("div", { class: "mip-field" }, h("label", {}, "Nombre de slides visé (IA)"), h("input", { class: "mip-input", type: "number", min: 4, max: 40, value: state.slideCount, oninput: (e) => { state.slideCount = parseInt(e.target.value || "10", 10) || 10; } })),
+    h("div", { class: "mip-field" }, h("label", {}, "Nombre de slides visé (IA)"), h("input", { class: "mip-input", "aria-label": "Nombre de slides visé", type: "number", min: 4, max: 40, value: state.slideCount, oninput: (e) => { state.slideCount = parseInt(e.target.value || "10", 10) || 10; } })),
     h("div", { class: "mip-field" }, h("label", {}, "Public visé (IA)"), h("input", { class: "mip-input", value: opt.audience || "", placeholder: "Co-internes, staff…", oninput: (e) => { opt.audience = e.target.value; scheduleAutosave(); } }))));
 }
 
