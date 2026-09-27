@@ -39,7 +39,7 @@ const TOOLS: { id: ChatOutputTool; label: string; icon: IconName; description: s
   {
     id: 'keypoints',
     label: 'Points clés',
-    icon: 'sparkles',
+    icon: 'bookOpen',
     description: 'Un encadré « À retenir » synthétique en tête de réponse.',
   },
   {
@@ -76,7 +76,7 @@ export function ResponseControls({
 
   // ── Popovers partagés (profondeur + outils) ──
   const modeModal = (
-    <Modal visible={panel === 'mode'} transparent animationType="fade" onRequestClose={() => setPanel(null)}>
+    <Modal visible={panel === 'mode'} transparent animationType="none" onRequestClose={() => setPanel(null)}>
       <Pressable style={styles.backdrop} onPress={() => setPanel(null)}>
         <Pressable style={styles.modePanel} onPress={(e) => e.stopPropagation()}>
           <Text style={styles.panelTitle}>Profondeur de la réponse</Text>
@@ -111,7 +111,7 @@ export function ResponseControls({
   );
 
   const toolsModal = (
-    <Modal visible={panel === 'tools'} transparent animationType="fade" onRequestClose={() => setPanel(null)}>
+    <Modal visible={panel === 'tools'} transparent animationType="none" onRequestClose={() => setPanel(null)}>
       <Pressable style={styles.backdrop} onPress={() => setPanel(null)}>
         <Pressable style={styles.modePanel} onPress={(e) => e.stopPropagation()}>
           <Text style={styles.panelTitle}>Ajouter à la réponse</Text>
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
   segmentLabelActive: { color: tokens.colors.onAccent },
-  addButton: {
+  addButton: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
@@ -290,9 +290,9 @@ const styles = StyleSheet.create({
   addLabelActive: { color: tokens.colors.onAccent },
 
   // ── Boutons-icônes compacts (variante inline) ──
-  iconButton: {
-    width: 40,
-    height: 40,
+  iconButton: { minHeight: tokens.size.controlMd,
+    width: tokens.size.controlMd,
+    height: tokens.size.controlMd,
     borderRadius: tokens.radius.md,
     alignItems: 'center',
     justifyContent: 'center',
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkActive: { backgroundColor: tokens.colors.accent, borderColor: tokens.colors.accent },
-  doneButton: {
+  doneButton: { minHeight: tokens.size.controlMd,
     marginTop: tokens.space.sm,
     alignSelf: 'flex-end',
     paddingHorizontal: tokens.space.lg,

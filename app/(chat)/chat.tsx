@@ -10,7 +10,7 @@
  *    par IA (/api/chat-meta, défaut Gemini 2.5 Flash).
  *  - Export PDF de la conversation.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Linking,
   useWindowDimensions,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -83,8 +84,9 @@ import {
   type ChatProgressStep,
 } from '@/ai/chat/progress';
 import { coerceChatOutputTools, type ChatOutputTool } from '@/ai/chat/outputTools';
-import { shouldReplaceWithArchived } from '@/chat/resume';
-import { chatPhaseLabel, type ChatPhase } from '@/ai/chat/statusPhases';
+import { shouldReplaceWithArchived, archiveMatchesTurn } from '@/chat/resume';
+import { createSubmissionGate } from '@/chat/submission';
+import { chatPhaseLabel, phaseFromParts, streamingSources, type ChatPhase } from '@/ai/chat/statusPhases';
 import { ChatStatusRing } from '@/ui/chat/ChatStatusRing';
 import {
   ATTACHMENT_ACCEPT,
@@ -92,7 +94,6 @@ import {
   type ChatAttachment,
 } from '@/ai/chat/attachment';
 import { SourceDetailModal } from '@/ui/chat/SourceDetailModal';
-import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 
 // Suggestions d'amorce (état vide) : 50 questions par chatbot, rotation 3 par 3
 // toutes les 30 s — voir src/ai/chat/starterSuggestions.ts.
@@ -143,8 +144,10 @@ function StatusBubble({
   phase,
   toolLabel,
   startedAt,
+  guest,
 }: {
   phase: ChatPhase;
+  guest: boolean;
   toolLabel?: string | null;
   /** Horodatage du début d'attente : alimente le compteur de secondes. */
   startedAt?: number | null;
@@ -171,8 +174,7 @@ function StatusBubble({
           besoin de rester sur la page (et surtout pas de relancer). */}
       {waited >= LONG_WAIT_MS && phase !== 'recovering' ? (
         <Text style={styles.statusHint}>
-          Tu peux quitter l’app : la réponse continue de se générer et t’attendra dans cette
-          conversation.
+          {guest ? 'La réponse prend plus de temps. Gardez cet onglet ouvert : l’essai invité ne dispose pas d’historique.' : 'La réponse prend plus de temps. En cas de coupure, nous vérifierons si une réponse a été enregistrée dans cette conversation.'}
         </Text>
       ) : null}
     </View>
@@ -189,7 +191,7 @@ function StatusBubble({
 function ProgressTrace({ steps }: { steps: ChatProgressStep[] }) {
   if (steps.length === 0) return null;
   return (
-    <View style={styles.progressTrace} accessibilityLabel="Étapes de recherche effectuées">
+    <View style={styles.progressTrace} accessibilityLabel="Étapes de recherche effectuées" {...(Platform.OS === 'web' ? { title: 'Étapes de recherche effectuées' } : {})}>
       {steps.map((s, i) => (
         <View key={`${s.tool}-${i}`} style={styles.progressRow}>
           <Icon name="check" size={12} color={tokens.colors.success} />
@@ -217,10 +219,12 @@ function MessageActions({
   text,
   showRegenerate,
   onRegenerate,
+  onExport,
 }: {
   text: string;
   showRegenerate: boolean;
   onRegenerate?: () => void;
+  onExport: () => void;
 }) {
   const [copied, setCopied] = useState(false);
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -231,7 +235,6 @@ function MessageActions({
     },
     [],
   );
-  if (!CAN_COPY && !showRegenerate) return null;
 
   const copy = async () => {
     try {
@@ -245,13 +248,13 @@ function MessageActions({
   };
 
   return (
-    <View style={styles.messageActions}>
+    <View testID="response-actions" style={styles.messageActions}>
       {CAN_COPY ? (
         <TouchableOpacity
           style={styles.messageActionButton}
           onPress={() => void copy()}
           accessibilityRole="button"
-          accessibilityLabel="Copier la réponse"
+          accessibilityLabel="Copier la réponse" {...(Platform.OS === 'web' ? { title: 'Copier la réponse' } : {})}
         >
           <Icon
             name={copied ? 'check' : 'copy'}
@@ -268,12 +271,16 @@ function MessageActions({
           style={styles.messageActionButton}
           onPress={onRegenerate}
           accessibilityRole="button"
-          accessibilityLabel="Régénérer la réponse"
+          accessibilityLabel="Régénérer la réponse" {...(Platform.OS === 'web' ? { title: 'Régénérer la réponse' } : {})}
         >
           <Icon name="refresh" size={14} color={tokens.colors.textMuted} />
           <Text style={styles.messageActionText}>Régénérer</Text>
         </TouchableOpacity>
       ) : null}
+      <TouchableOpacity style={styles.messageActionButton} onPress={onExport} accessibilityRole="button" accessibilityLabel="Exporter la réponse en PDF" {...(Platform.OS === 'web' ? { title: 'Exporter la réponse en PDF' } : {})}>
+        <Icon name="download" size={tokens.size.iconSm} color={tokens.colors.textMuted} />
+        <Text style={styles.messageActionText}>Exporter</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -284,20 +291,24 @@ function MessageActions({
  * ChatGPT / OpenEvidence) — les blocs internes (sources, propositions) gardent
  * leurs propres cartes.
  */
-function MessageRow({
+const MessageRow = memo(function MessageRow({
   message,
   onSend,
   disabled,
   onOpenSource,
   isLastAssistant,
+  streaming,
   onRegenerate,
+  onExport,
 }: {
   message: UIMessage;
   onSend: (text: string) => void;
   disabled: boolean;
   onOpenSource: (s: ParsedSource) => void;
   isLastAssistant: boolean;
+  streaming: boolean;
   onRegenerate: () => void;
+  onExport: (message: UIMessage) => void;
 }) {
   const isUser = message.role === 'user';
   const text = messageText(message);
@@ -312,13 +323,14 @@ function MessageRow({
       </View>
     );
   }
-  const streamingThisMessage = disabled && isLastAssistant;
+  const streamingThisMessage = streaming;
   return (
-    <View style={styles.assistantRow}>
+    <View testID="assistant-message" style={styles.assistantRow}>
       <AssistantBlocks
         text={text}
         onSend={onSend}
         disabled={disabled}
+        streaming={streaming}
         onOpenSource={onOpenSource}
       />
       {!streamingThisMessage ? (
@@ -328,20 +340,12 @@ function MessageRow({
           text={assistantTextForExport(text)}
           showRegenerate={isLastAssistant && !disabled}
           onRegenerate={onRegenerate}
+          onExport={() => onExport(message)}
         />
       ) : null}
     </View>
   );
-}
-
-/** A-t-on un appel d'outil (recherche web) en cours dans le dernier message assistant ? */
-function hasToolActivity(message: UIMessage | undefined): boolean {
-  if (!message) return false;
-  return (message.parts ?? []).some((p) => {
-    const t = (p as { type?: string }).type ?? '';
-    return t.startsWith('tool-') || t === 'dynamic-tool';
-  });
-}
+});
 
 // Libellé de statut par outil. Depuis le retour à la base (ADR-0037), le chat n'a plus
 // qu'un outil : la recherche web du provider. La table reste indexée par nom pour rester
@@ -418,17 +422,17 @@ export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const reducedMotion = useReducedMotion();
+  const compactHeader = width < tokens.layout.compact;
   const isAdmin = user ? isAdminUserId(user.id) : false;
 
   // Desktop shell (≥ 1024 px, session) : l'historique devient une colonne
   // persistante à gauche du fil (motif ChatGPT/Claude) au lieu d'une modale.
-  const desktopShell = Platform.OS === 'web' && width >= SHELL_BREAKPOINT && !!session;
+  const desktopShell = Platform.OS === 'web' && width >= tokens.layout.wide && !!session;
 
   // Contrôles de réponse (profondeur + outils) : sur petit écran (mobile), on n'affiche
   // PAS la rangée segmentée au-dessus du composer — on la remplace par deux boutons-icônes
   // (🧠 profondeur + 🧰 outils) DANS la barre du composer, pour gagner de la hauteur de
   // chat (demande Hugo). Au-delà, la rangée complète a la place de s'afficher.
-  const compactControls = width < 700;
 
   // Essai sans inscription (2026-06) : un visiteur non connecté découvre les 3 onglets
   // de chatbot et dispose d'UN message gratuit (indicateur 1/1 → 0/1), puis l'UI
@@ -669,13 +673,21 @@ export default function ChatScreen() {
 
   // Une réponse est-elle attendue (envoyée mais pas encore archivée/affichée en entier) ?
   // Sert à la reprise après suspension de la page (iOS coupe le flux quand on quitte Safari).
+  const submissionGate = useRef(createSubmissionGate());
+  const turnEpoch = useRef(0);
+  const [preparing, setPreparing] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState<UIMessage | null>(null);
+  const [preparationError, setPreparationError] = useState<string | null>(null);
+  const draftRef = useRef('');
+  useEffect(() => () => { submissionGate.current.cancel(); turnEpoch.current++; }, []);
   const awaitingRef = useRef(false);
   /** Une génération était-elle en cours au moment où l'app est passée en arrière-plan ? */
   const generatedWhileHiddenRef = useRef(false);
 
   const { messages, sendMessage, status, error, setMessages, regenerate, clearError, stop } = useChat({
     transport,
-    onFinish: async ({ message }) => {
+    onFinish: async ({ message, isAbort, isDisconnect, isError }) => {
+      if (isAbort || isDisconnect || isError || !awaitingRef.current) return;
       awaitingRef.current = false;
       regenerateRef.current = false;
       const text = messageText(message);
@@ -691,10 +703,12 @@ export default function ChatScreen() {
     },
   });
 
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
   const statusRef = useRef(status);
   statusRef.current = status;
 
-  const isLoading = status === 'streaming' || status === 'submitted';
+  const isLoading = preparing || status === 'streaming' || status === 'submitted';
   const canSend = !isLoading && (input.trim().length > 0 || !!attachment) && !guestLocked;
 
   // C4 : un long texte collé dans le chat public ressemble à un document (compte
@@ -717,7 +731,7 @@ export default function ChatScreen() {
   const handleThreadScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
     const distance = contentSize.height - layoutMeasurement.height - contentOffset.y;
-    const near = distance < 120;
+    const near = distance < tokens.space.lg;
     followRef.current = near;
     setAtBottom(near);
   }, []);
@@ -725,8 +739,8 @@ export default function ChatScreen() {
   const scrollToBottom = useCallback((animated = true) => {
     followRef.current = true;
     setAtBottom(true);
-    scrollRef.current?.scrollToEnd({ animated });
-  }, []);
+    scrollRef.current?.scrollToEnd({ animated: animated && !reducedMotion });
+  }, [reducedMotion]);
 
   const handleThreadGrow = useCallback(() => {
     if (followRef.current) scrollRef.current?.scrollToEnd({ animated: false });
@@ -749,9 +763,11 @@ export default function ChatScreen() {
   const recoverFromHistory = useCallback(async (): Promise<boolean> => {
     const convId = conversationIdRef.current;
     if (!convId) return false;
+    const epoch = turnEpoch.current;
     const stored = await loadMessages(convId);
-    const last = stored[stored.length - 1];
-    if (!last || last.role !== 'assistant') return false;
+    if (epoch !== turnEpoch.current || convId !== conversationIdRef.current || recoveryCancelledRef.current) return false;
+    const local = messagesRef.current.map(m => ({ role: m.role, content: messageText(m) }));
+    if (!archiveMatchesTurn(local, stored)) return false;
     setMessages(
       stored.map((m) => ({
         id: m.id,
@@ -772,6 +788,7 @@ export default function ChatScreen() {
     if (!awaitingRef.current || !conversationIdRef.current) return;
     if (recoveryRunningRef.current) return;
     recoveryRunningRef.current = true;
+    const epoch = turnEpoch.current;
     setRecovering(true);
 
     const stop = () => {
@@ -780,7 +797,7 @@ export default function ChatScreen() {
     };
 
     const poll = async (attempt: number) => {
-      if (recoveryCancelledRef.current || !awaitingRef.current) return stop();
+      if (recoveryCancelledRef.current || !awaitingRef.current || epoch !== turnEpoch.current) return stop();
       // Le flux tourne encore (retour rapide dans l'onglet) : on le laisse finir.
       const busy = statusRef.current === 'streaming' || statusRef.current === 'submitted';
       if (!busy && (await recoverFromHistory())) return stop();
@@ -804,16 +821,22 @@ export default function ChatScreen() {
     const convId = conversationIdRef.current;
     if (!convId) return;
     // Une génération est en cours : on la laisse finir, elle fait autorité.
-    if (statusRef.current === 'streaming' || statusRef.current === 'submitted') return;
+    if (['streaming', 'submitted'].includes(statusRef.current)) return;
 
+    const epoch = turnEpoch.current;
     const stored = await loadMessages(convId);
+    if (epoch !== turnEpoch.current || convId !== conversationIdRef.current || recoveryCancelledRef.current) return;
+    if (['streaming', 'submitted'].includes(statusRef.current)) return;
     const archived = stored[stored.length - 1];
     if (!archived || archived.role !== 'assistant') return;
 
     let replaced = false;
     setMessages((current) => {
+      if (epoch !== turnEpoch.current || convId !== conversationIdRef.current) return current;
+      if (!archiveMatchesTurn(current.map(m => ({ role: m.role, content: messageText(m) })), stored)) return current;
       const last = current[current.length - 1];
       if (!last || last.role !== 'assistant') return current;
+      if (messageText(last).trim() === archived.content.trim()) { generatedWhileHiddenRef.current = false; return current; }
       if (!shouldReplaceWithArchived(messageText(last), archived.content)) return current;
       replaced = true;
       return [
@@ -821,20 +844,28 @@ export default function ChatScreen() {
         { ...last, parts: [{ type: 'text' as const, text: archived.content }] },
       ];
     });
-    if (replaced) clearError();
+    if (replaced) { clearError(); generatedWhileHiddenRef.current = false; }
   }, [setMessages, clearError]);
 
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof document === 'undefined') return;
     recoveryCancelledRef.current = false;
 
+    let resyncTimer: ReturnType<typeof setTimeout> | undefined;
+    const checkArchive = async (epoch: number, attempt = 0) => {
+      if (recoveryCancelledRef.current || epoch !== turnEpoch.current) return;
+      await resyncLastAnswer();
+      if (attempt < RECOVERY_MAX_ATTEMPTS && generatedWhileHiddenRef.current && epoch === turnEpoch.current) {
+        resyncTimer = setTimeout(() => void checkArchive(epoch, attempt + 1), RECOVERY_INTERVAL_MS);
+      }
+    };
     const onVisible = () => {
       if (document.visibilityState !== 'visible') return;
       startRecovery();
       // Le flux a pu mourir sans erreur pendant l'absence : on complète en silence.
       if (generatedWhileHiddenRef.current) {
-        generatedWhileHiddenRef.current = false;
-        void resyncLastAnswer();
+        clearTimeout(resyncTimer);
+        void checkArchive(turnEpoch.current);
       }
     };
 
@@ -857,6 +888,7 @@ export default function ChatScreen() {
 
     return () => {
       recoveryCancelledRef.current = true;
+      clearTimeout(resyncTimer);
       if (recoveryTimerRef.current) clearTimeout(recoveryTimerRef.current);
       document.removeEventListener('visibilitychange', onVisible);
       document.removeEventListener('visibilitychange', onHidden);
@@ -875,9 +907,12 @@ export default function ChatScreen() {
   // Réessayer après erreur : la réponse a pu aboutir côté serveur malgré la coupure —
   // on vérifie d'abord l'historique, sinon on renvoie la même requête (sans re-saisie).
   const handleRetry = useCallback(async () => {
+    if (recoveryRunningRef.current || statusRef.current === 'streaming' || statusRef.current === 'submitted') return;
+    const epoch = turnEpoch.current;
     setRecovering(true);
     const recovered = await recoverFromHistory();
     setRecovering(false);
+    if (epoch !== turnEpoch.current) return;
     if (recovered) return;
     clearError();
     awaitingRef.current = true;
@@ -936,76 +971,78 @@ export default function ChatScreen() {
 
   // Sources de la dernière réponse (onglet global dans l'en-tête).
   const latestSources = useMemo(
-    () => (lastAssistant ? parseAssistantMessage(messageText(lastAssistant)).sources : []),
-    [lastAssistant],
+    () => (!isLoading && lastAssistant ? parseAssistantMessage(messageText(lastAssistant)).sources : []),
+    [lastAssistant, isLoading],
   );
   // Phase de chargement : pendant l'attente (submitted) ou tant qu'aucun texte n'est encore
   // arrivé, on montre une bulle de statut (réflexion → recherche de sources → rédaction).
   const lastAssistantText = activeAssistant ? messageText(activeAssistant) : '';
   const showStatus =
-    status === 'submitted' || (status === 'streaming' && lastAssistantText.trim().length === 0);
+    preparing || status === 'submitted' || (status === 'streaming' && lastAssistantText.trim().length === 0);
 
   // Début de l'attente : posé au passage en « submitted », remis à zéro à la fin.
   const [waitStartedAt, setWaitStartedAt] = useState<number | null>(null);
   useEffect(() => {
-    if (status === 'submitted') setWaitStartedAt((prev) => prev ?? Date.now());
+    if (preparing || status === 'submitted') setWaitStartedAt((prev) => prev ?? Date.now());
     else if (status !== 'streaming') setWaitStartedAt(null);
-  }, [status]);
+  }, [status, preparing]);
   useEffect(() => {
     if (recovering) setWaitStartedAt((prev) => prev ?? Date.now());
   }, [recovering]);
   // Un seul appel LLM (ADR-0037) : la réponse est en réflexion, puis en recherche web si
   // le provider en déclenche une, puis en rédaction dès le premier fragment de texte.
-  const phase: ChatPhase =
-    status === 'submitted'
-      ? 'thinking'
-      : hasToolActivity(activeAssistant)
-        ? 'searching'
-        : 'writing';
+  const phase: ChatPhase = preparing ? 'thinking' : phaseFromParts(activeAssistant?.parts);
+  const foundSources = useMemo(() => streamingSources(activeAssistant?.parts), [activeAssistant]);
 
-  const sendText = useCallback(
-    async (text: string) => {
-      const trimmed = text.trim();
-      const att = attachmentRef.current;
-      if (!trimmed && !att) return;
-      // Marqueur visible/archivé de la pièce jointe ; le fichier lui-même part dans
-      // le body (transitoire, jamais stocké).
-      const displayText = att ? `${trimmed}${trimmed ? '\n\n' : ''}📎 ${att.name}` : trimmed;
-
-      // Essai sans inscription : un seul message gratuit, l'indicateur passe à 0/1.
-      if (isGuest) {
-        if (guestUsed) return;
-        markGuestMessageUsed();
-        setGuestUsed(true);
-      }
-
-      // Historique : crée la conversation au premier message (comptes connectés).
+  const sendText = useCallback(async (text: string) => {
+    const trimmed = text.trim();
+    const att = attachmentRef.current;
+    if ((!trimmed && !att) || (isGuest && guestUsed) || recovering) return;
+    if (['streaming', 'submitted'].includes(statusRef.current)) return;
+    const ticket = submissionGate.current.begin();
+    if (ticket === null) return;
+    turnEpoch.current++;
+    generatedWhileHiddenRef.current = false;
+    draftRef.current = text;
+    const displayText = att ? `${trimmed}${trimmed ? '\n\n' : ''}Pièce jointe : ${att.name}` : trimmed;
+    setPreparationError(null);
+    setPreparing(true);
+    setPendingMessage({ id: `pending-${ticket}`, role: 'user', parts: [{ type: 'text', text: displayText }] });
+    setWaitStartedAt(Date.now());
+    setStoppedNotice(false);
+    scrollToBottom(false);
+    try {
       if (user && !conversationIdRef.current) {
         const id = await createConversation(user.id, chatbotRef.current);
-        if (id) {
-          conversationIdRef.current = id;
-          setConversationId(id);
-          titleGeneratedRef.current = false;
-          firstUserTextRef.current = displayText;
-        }
+        if (!submissionGate.current.current(ticket)) return;
+        if (!id) throw new Error('La conversation n’a pas pu être ouverte. Votre question est conservée.');
+        conversationIdRef.current = id;
+        setConversationId(id);
+        titleGeneratedRef.current = false;
+        firstUserTextRef.current = displayText;
       }
       if (user && conversationIdRef.current) {
-        void saveMessage(conversationIdRef.current, user.id, 'user', displayText);
+        await saveMessage(conversationIdRef.current, user.id, 'user', displayText);
+        if (!submissionGate.current.current(ticket)) return;
       }
+      if (isGuest) { markGuestMessageUsed(); setGuestUsed(true); }
       awaitingRef.current = true;
       regenerateRef.current = false;
-      setStoppedNotice(false);
-      sendMessage({ text: displayText });
-      // La pièce jointe (lue par le transport ci-dessus) ne vaut que pour ce message.
-      if (att) {
-        setAttachment(null);
-        setAttachError(null);
+      const request = sendMessage({ text: displayText });
+      setPendingMessage(null);
+      setPreparing(false);
+      if (att) { setAttachment(null); setAttachError(null); }
+      await request;
+    } catch (cause) {
+      if (submissionGate.current.current(ticket)) {
+        setPreparationError(cause instanceof Error ? cause.message : 'Envoi impossible. Votre question est conservée.');
+        setInput(text);
       }
-      // Envoyer ramène toujours le fil en bas, même si on relisait plus haut.
-      scrollToBottom();
-    },
-    [sendMessage, user, isGuest, guestUsed, scrollToBottom],
-  );
+    } finally {
+      if (submissionGate.current.current(ticket)) { setPreparing(false); setPendingMessage(null); }
+      submissionGate.current.finish(ticket);
+    }
+  }, [sendMessage, user, isGuest, guestUsed, recovering, scrollToBottom]);
 
   const handleSend = () => {
     if (!canSend) return;
@@ -1066,12 +1103,21 @@ export default function ChatScreen() {
   // depuis l'historique) — le texte déjà écrit reste affiché. Le serveur, lui, mène
   // la génération au bout et l'archive : on le dit honnêtement (note sous le fil).
   const handleStop = () => {
+    submissionGate.current.cancel();
+    turnEpoch.current++;
+    generatedWhileHiddenRef.current = false;
+    if (preparing) setInput(draftRef.current);
+    setPreparing(false);
+    setPendingMessage(null);
     awaitingRef.current = false;
-    if (user && conversationIdRef.current) setStoppedNotice(true);
+    setStoppedNotice(true);
     void stop();
   };
 
   const handleRegenerate = useCallback(() => {
+    if (['streaming', 'submitted'].includes(statusRef.current)) return;
+    turnEpoch.current++;
+    generatedWhileHiddenRef.current = false;
     awaitingRef.current = true;
     regenerateRef.current = true;
     setStoppedNotice(false);
@@ -1080,6 +1126,12 @@ export default function ChatScreen() {
 
   const startNewConversation = useCallback(
     (nextChatbot?: ChatbotId) => {
+      submissionGate.current.cancel();
+      turnEpoch.current++;
+      generatedWhileHiddenRef.current = false;
+      setPreparing(false);
+      setPendingMessage(null);
+      setPreparationError(null);
       // Une génération encore en cours ne doit pas continuer d'écrire dans le
       // nouveau fil, ni laisser la reprise hors-ligne armée sur l'ancien.
       if (statusRef.current === 'streaming' || statusRef.current === 'submitted') void stop();
@@ -1128,6 +1180,12 @@ export default function ChatScreen() {
 
   const openConversation = useCallback(
     async (c: ChatConversation) => {
+      submissionGate.current.cancel();
+      const epoch = ++turnEpoch.current;
+      generatedWhileHiddenRef.current = false;
+      setPreparing(false);
+      setPendingMessage(null);
+      setPreparationError(null);
       // Même garde que startNewConversation : le flux en cours ne doit pas venir
       // s'écrire dans la conversation qu'on ouvre.
       if (statusRef.current === 'streaming' || statusRef.current === 'submitted') void stop();
@@ -1135,6 +1193,7 @@ export default function ChatScreen() {
       regenerateRef.current = false;
       setStoppedNotice(false);
       const stored = await loadMessages(c.id);
+      if (epoch !== turnEpoch.current) return;
       setMessages(
         stored.map((m) => ({
           id: m.id,
@@ -1192,6 +1251,10 @@ export default function ChatScreen() {
     [refreshConversations],
   );
 
+  const exportResponse = useCallback((message: UIMessage) => {
+    exportChatToPdf({ title: 'Réponse MedInfo AI', chatbotLabel: CHATBOT_META[chatbotRef.current].label, messages: [{ role: 'assistant', content: messageText(message) }] });
+  }, []);
+
   const handleExportPdf = () => {
     const conv = conversations.find((c) => c.id === conversationId);
     exportChatToPdf({
@@ -1243,7 +1306,7 @@ export default function ChatScreen() {
             <TouchableOpacity
               onPress={() => setHistoryCollapsed(true)}
               accessibilityRole="button"
-              accessibilityLabel="Masquer l’historique"
+              accessibilityLabel="Masquer l’historique" {...(Platform.OS === 'web' ? { title: 'Masquer l’historique' } : {})}
               style={styles.historyCollapseBtn}
             >
               <Icon name="panelLeft" size={16} color={tokens.colors.textMuted} />
@@ -1263,26 +1326,26 @@ export default function ChatScreen() {
 
       <View style={styles.screenMain}>
       {/* ── En-tête ── */}
-      <View style={[styles.chatHeader, { paddingTop: tokens.space.md + insets.top }]}>
+      <View style={[styles.chatHeader, compactHeader && styles.chatHeaderCompact, { paddingTop: tokens.space.md + insets.top }]}>
         {desktopShell && user && historyCollapsed ? (
           <TouchableOpacity
             onPress={() => setHistoryCollapsed(false)}
             accessibilityRole="button"
-            accessibilityLabel="Afficher l’historique"
+            accessibilityLabel="Afficher l’historique" {...(Platform.OS === 'web' ? { title: 'Afficher l’historique' } : {})}
             style={[styles.headerIconButton, { marginRight: tokens.space.sm }]}
           >
             <Icon name="panelLeft" size={17} color={tokens.colors.accentDeep} />
           </TouchableOpacity>
         ) : null}
         <View style={styles.headerTitleBlock}>
-          <Text style={styles.chatTitle} numberOfLines={1}>
+          <Text style={styles.chatTitle} accessibilityRole="header" aria-level={1}>
             Chat {meta.label.toLowerCase()}
           </Text>
           <Text style={styles.chatSubtitle} numberOfLines={1}>
             {meta.description}
           </Text>
         </View>
-        <View style={styles.headerActions}>
+        <View style={[styles.headerActions, compactHeader && { justifyContent: 'flex-end' }]}>
           <CountrySelector value={country} onChange={handleCountryChange} />
           {latestSources.length > 0 ? (
             <TouchableOpacity
@@ -1302,7 +1365,7 @@ export default function ChatScreen() {
               style={styles.headerIconButton}
               onPress={handleExportPdf}
               accessibilityRole="button"
-              accessibilityLabel="Exporter la conversation en PDF"
+              accessibilityLabel="Exporter la conversation en PDF" {...(Platform.OS === 'web' ? { title: 'Exporter la conversation en PDF' } : {})}
             >
               <Icon name="download" size={17} color={tokens.colors.accentDeep} />
             </TouchableOpacity>
@@ -1312,7 +1375,7 @@ export default function ChatScreen() {
               style={styles.headerIconButton}
               onPress={() => setHistoryOpen(true)}
               accessibilityRole="button"
-              accessibilityLabel="Historique des conversations"
+              accessibilityLabel="Historique des conversations" {...(Platform.OS === 'web' ? { title: 'Historique des conversations' } : {})}
             >
               <Icon name="clock" size={17} color={tokens.colors.accentDeep} />
             </TouchableOpacity>
@@ -1322,7 +1385,7 @@ export default function ChatScreen() {
               style={styles.headerIconButton}
               onPress={() => startNewConversation()}
               accessibilityRole="button"
-              accessibilityLabel="Nouvelle conversation"
+              accessibilityLabel="Nouvelle conversation" {...(Platform.OS === 'web' ? { title: 'Nouvelle conversation' } : {})}
             >
               <Icon name="plus" size={18} color={tokens.colors.accentDeep} />
             </TouchableOpacity>
@@ -1357,10 +1420,10 @@ export default function ChatScreen() {
           vide, qui porte sa propre pastille d'essai (C3, hauteur mobile) ── */}
       {isGuest && !showEmptyState ? (
         <View style={styles.guestBanner}>
-          <Icon name="sparkles" size={15} color={tokens.colors.accentDeep} />
+          <Icon name="bookOpen" size={15} color={tokens.colors.accentDeep} />
           <Text style={styles.guestBannerText} numberOfLines={2}>
             {guestUsed
-              ? 'Message d’essai utilisé — créez un compte gratuit pour continuer.'
+              ? 'Essai gratuit · Sources accessibles'
               : 'Testez MedInfo AI : envoyez votre premier message sans inscription.'}
           </Text>
           <View style={[styles.guestBadge, guestUsed && styles.guestBadgeUsed]}>
@@ -1400,6 +1463,7 @@ export default function ChatScreen() {
       <View style={styles.threadWrap}>
       <ScrollView
         ref={scrollRef}
+        testID="chat-thread"
         style={styles.messages}
         contentContainerStyle={[styles.messagesContent, showEmptyState && styles.messagesContentEmpty]}
         onScroll={handleThreadScroll}
@@ -1409,10 +1473,8 @@ export default function ChatScreen() {
       >
         {messages.length === 0 && !isLoading ? (
           <Reveal style={styles.emptyState}>
-            <View style={styles.emptyIconWrap}>
-              <Icon name={meta.icon} size={30} color={tokens.colors.accent} />
-            </View>
-            <Text style={styles.emptyTitle}>
+
+            <Text style={styles.emptyTitle} accessibilityRole="header" aria-level={2}>
               {personalInfo?.firstName
                 ? `Bonjour ${personalInfo.firstName}, ${EMPTY_TITLE_NAMED[chatbot]}`
                 : EMPTY_TITLE[chatbot]}
@@ -1421,7 +1483,7 @@ export default function ChatScreen() {
             {/* Pastille d'essai invité : remplace le bandeau du haut sur l'état vide. */}
             {isGuest ? (
               <View style={styles.trialPill}>
-                <Icon name="sparkles" size={13} color={tokens.colors.accentDeep} />
+                <Icon name="bookOpen" size={13} color={tokens.colors.accentDeep} />
                 <Text style={styles.trialPillText}>
                   {guestUsed
                     ? 'Essai utilisé (0/1) : créez un compte gratuit pour continuer'
@@ -1453,17 +1515,19 @@ export default function ChatScreen() {
           </Reveal>
         ) : null}
 
-        {messages.map((m) => (
-          <Reveal key={m.id}>
+        {(pendingMessage ? [...messages, pendingMessage] : messages).map((m) => (
+          <View key={m.id}>
             <MessageRow
               message={m}
-              onSend={(t) => void sendText(t)}
-              disabled={isLoading}
+              onSend={sendText}
+              disabled={isLoading || recovering}
+              streaming={status === 'streaming' && m.id === activeAssistant?.id}
               onOpenSource={openSourceDetail}
               isLastAssistant={m.role === 'assistant' && m.id === lastAssistant?.id}
               onRegenerate={handleRegenerate}
+              onExport={exportResponse}
             />
-          </Reveal>
+          </View>
         ))}
         {(showStatus || recovering) && (
           <View style={styles.statusStack}>
@@ -1476,7 +1540,9 @@ export default function ChatScreen() {
               phase={recovering ? 'recovering' : phase}
               toolLabel={activeToolLabel(activeAssistant)}
               startedAt={waitStartedAt}
+              guest={isGuest}
             />
+            {foundSources.map(source => <TouchableOpacity key={source.url} accessibilityRole="link" accessibilityLabel={`Source trouvée : ${source.title}`} style={styles.messageActionButton} onPress={() => void Linking.openURL(source.url)}><Icon name="externalLink" size={tokens.size.iconSm} color={tokens.colors.accent} /><Text style={styles.messageActionText}>{source.title}</Text></TouchableOpacity>)}
           </View>
         )}
 
@@ -1489,7 +1555,7 @@ export default function ChatScreen() {
                 style={styles.bridgeChip}
                 onPress={() => router.push('/(chat)/ecos' as never)}
                 accessibilityRole="link"
-                accessibilityLabel="S'entraîner sur un cas ECOS"
+                accessibilityLabel="S'entraîner sur un cas ECOS" {...(Platform.OS === 'web' ? { title: "S'entraîner sur un cas ECOS" } : {})}
               >
                 <Icon name="stethoscope" size={14} color={tokens.colors.accentDeep} />
                 <Text style={styles.bridgeChipText}>S’entraîner (ECOS)</Text>
@@ -1500,7 +1566,7 @@ export default function ChatScreen() {
                 style={styles.bridgeChip}
                 onPress={() => router.push('/(chat)/revision' as never)}
                 accessibilityRole="link"
-                accessibilityLabel="Planifier mes révisions"
+                accessibilityLabel="Planifier mes révisions" {...(Platform.OS === 'web' ? { title: 'Planifier mes révisions' } : {})}
               >
                 <Icon name="calendarCheck" size={14} color={tokens.colors.accentDeep} />
                 <Text style={styles.bridgeChipText}>Planifier (Révisions)</Text>
@@ -1533,15 +1599,14 @@ export default function ChatScreen() {
               <Text style={styles.guestCtaTitle}>Continuez la conversation</Text>
               <Text style={styles.guestCtaText}>
                 Votre message d’essai gratuit a été utilisé (0/1). Créez un compte gratuit ou
-                connectez-vous pour poser toutes vos questions, conserver cette réponse et
-                retrouver tout votre historique.
+                connectez-vous pour continuer et enregistrer vos prochaines conversations.
               </Text>
-              <View style={styles.guestCtaActions}>
+              <View style={[styles.guestCtaActions, compactHeader && styles.guestCtaActionsCompact]}>
                 <TouchableOpacity
                   style={styles.guestCtaPrimary}
                   onPress={() => router.push('/(auth)/sign-in?mode=signup' as never)}
                   accessibilityRole="button"
-                  accessibilityLabel="Créer un compte gratuit"
+                  accessibilityLabel="Créer un compte gratuit" {...(Platform.OS === 'web' ? { title: 'Créer un compte gratuit' } : {})}
                 >
                   <Text style={styles.guestCtaPrimaryText}>Créer un compte gratuit</Text>
                 </TouchableOpacity>
@@ -1549,7 +1614,7 @@ export default function ChatScreen() {
                   style={styles.guestCtaSecondary}
                   onPress={() => router.push('/(auth)/sign-in' as never)}
                   accessibilityRole="button"
-                  accessibilityLabel="Se connecter"
+                  accessibilityLabel="Se connecter" {...(Platform.OS === 'web' ? { title: 'Se connecter' } : {})}
                 >
                   <Text style={styles.guestCtaSecondaryText}>Se connecter</Text>
                 </TouchableOpacity>
@@ -1564,7 +1629,7 @@ export default function ChatScreen() {
           <View style={styles.stoppedNotice} accessibilityLiveRegion="polite">
             <Icon name="clock" size={14} color={tokens.colors.textMuted} />
             <Text style={styles.stoppedNoticeText}>
-              Génération arrêtée. La réponse complète restera disponible dans l’historique.
+              {isGuest ? 'Lecture interrompue. Le texte déjà reçu reste affiché dans cet onglet.' : 'Lecture interrompue. Le texte déjà reçu reste affiché. Une réponse complète peut être disponible ensuite dans l’historique.'}
             </Text>
           </View>
         ) : null}
@@ -1578,13 +1643,14 @@ export default function ChatScreen() {
               style={styles.retryButton}
               onPress={() => router.push('/(auth)/sign-in' as never)}
               accessibilityRole="button"
-              accessibilityLabel="Se reconnecter"
+              accessibilityLabel="Se reconnecter" {...(Platform.OS === 'web' ? { title: 'Se reconnecter' } : {})}
             >
               <Icon name="userRound" size={14} color={tokens.colors.onAccent} />
               <Text style={styles.retryButtonText}>Se reconnecter</Text>
             </TouchableOpacity>
           </View>
         )}
+        {preparationError ? <View style={styles.errorBanner} accessibilityLiveRegion="polite"><Text style={styles.errorText}>{preparationError}</Text><TouchableOpacity style={styles.retryButton} accessibilityRole="button" accessibilityLabel="Réessayer l’envoi" {...(Platform.OS === 'web' ? { title: 'Réessayer l’envoi' } : {})} onPress={() => void sendText(draftRef.current)}><Text style={styles.retryButtonText}>Réessayer</Text></TouchableOpacity></View> : null}
         {error && !recovering && errorKind === 'generic' && (
           <View style={styles.errorBanner} accessibilityLiveRegion="polite">
             <Text style={styles.errorText}>
@@ -1594,7 +1660,7 @@ export default function ChatScreen() {
               style={styles.retryButton}
               onPress={() => void handleRetry()}
               accessibilityRole="button"
-              accessibilityLabel="Réessayer la dernière question"
+              accessibilityLabel="Réessayer la dernière question" {...(Platform.OS === 'web' ? { title: 'Réessayer la dernière question' } : {})}
             >
               <Icon name="refresh" size={14} color={tokens.colors.onAccent} />
               <Text style={styles.retryButtonText}>Réessayer</Text>
@@ -1609,9 +1675,9 @@ export default function ChatScreen() {
           style={styles.scrollDownButton}
           onPress={() => scrollToBottom()}
           accessibilityRole="button"
-          accessibilityLabel="Revenir en bas de la conversation"
+          accessibilityLabel="Revenir en bas de la conversation" {...(Platform.OS === 'web' ? { title: 'Revenir en bas de la conversation' } : {})}
         >
-          <Icon name="chevronDown" size={18} color={tokens.colors.accentDeep} />
+          <Icon name="chevronDown" size={tokens.size.iconSm} color={tokens.colors.accentDeep} /><Text style={styles.messageActionText}>Revenir en bas</Text>
         </TouchableOpacity>
       ) : null}
       </View>
@@ -1627,7 +1693,7 @@ export default function ChatScreen() {
             <TouchableOpacity
               onPress={() => router.push('/(chat)/document' as never)}
               accessibilityRole="link"
-              accessibilityLabel="Ouvrir l'outil Analyse de document"
+              accessibilityLabel="Ouvrir l'outil Analyse de document" {...(Platform.OS === 'web' ? { title: "Ouvrir l'outil Analyse de document" } : {})}
               style={styles.docHintAction}
             >
               <Text style={styles.docHintActionText}>Ouvrir</Text>
@@ -1635,7 +1701,7 @@ export default function ChatScreen() {
             <TouchableOpacity
               onPress={() => setDocHintDismissed(true)}
               accessibilityRole="button"
-              accessibilityLabel="Masquer la suggestion"
+              accessibilityLabel="Masquer la suggestion" {...(Platform.OS === 'web' ? { title: 'Masquer la suggestion' } : {})}
               style={styles.docHintClose}
             >
               <Icon name="x" size={13} color={tokens.colors.textMuted} />
@@ -1651,7 +1717,7 @@ export default function ChatScreen() {
             <Pressable
               onPress={() => setAttachment(null)}
               accessibilityRole="button"
-              accessibilityLabel="Retirer le document"
+              accessibilityLabel="Retirer le document" {...(Platform.OS === 'web' ? { title: 'Retirer le document' } : {})}
               hitSlop={8}
             >
               <Icon name="x" size={14} color={tokens.colors.textMuted} />
@@ -1659,21 +1725,10 @@ export default function ChatScreen() {
           </View>
         ) : null}
         {attachError ? <Text style={styles.attachError}>{attachError}</Text> : null}
-        {/* Écran large : rangée complète au-dessus du composer. Sur mobile, les mêmes
-            réglages passent dans la barre du composer (variante inline ci-dessous). */}
-        {!guestLocked && !compactControls ? (
-          <ResponseControls
-            mode={responseMode}
-            onModeChange={setResponseMode}
-            tools={outputTools}
-            onToolsChange={setOutputTools}
-            disabled={isLoading}
-            variant="bar"
-          />
-        ) : null}
         <View style={[styles.composer, inputFocused && styles.composerFocused]}>
           <TextInput
             style={styles.input}
+            accessibilityLabel="Votre question" {...(Platform.OS === 'web' ? { title: 'Votre question' } : {})}
             value={input}
             onChangeText={setInput}
             onFocus={() => setInputFocused(true)}
@@ -1699,7 +1754,7 @@ export default function ChatScreen() {
               <Pressable
                 onPress={pickAttachment}
                 accessibilityRole="button"
-                accessibilityLabel="Joindre un document"
+                accessibilityLabel="Joindre un document" {...(Platform.OS === 'web' ? { title: 'Joindre un document' } : {})}
                 disabled={isLoading}
                 style={styles.attachButton}
               >
@@ -1713,7 +1768,7 @@ export default function ChatScreen() {
               />
             ) : null}
             {/* Mobile : profondeur (🧠) + outils (🧰) compacts, intégrés à la barre. */}
-            {!guestLocked && compactControls ? (
+            {!guestLocked ? (
               <ResponseControls
                 mode={responseMode}
                 onModeChange={setResponseMode}
@@ -1728,21 +1783,21 @@ export default function ChatScreen() {
               <Pressable
                 onPress={handleStop}
                 accessibilityRole="button"
-                accessibilityLabel="Arrêter la génération"
+                accessibilityLabel="Arrêter la génération" {...(Platform.OS === 'web' ? { title: 'Arrêter la génération' } : {})}
                 style={({ pressed }: { pressed: boolean }) => [
                   styles.sendButton,
                   styles.stopButton,
                   pressed && styles.sendButtonPressed,
                 ]}
               >
-                <Icon name="stop" size={17} color={tokens.colors.onAccent} />
+                <Icon name="stop" size={tokens.size.iconSm} color={tokens.colors.text} /><Text style={styles.messageActionText}>Arrêter</Text>
               </Pressable>
             ) : (
               <Pressable
                 onPress={handleSend}
                 disabled={!canSend}
                 accessibilityRole="button"
-                accessibilityLabel="Envoyer le message"
+                accessibilityLabel="Envoyer le message" {...(Platform.OS === 'web' ? { title: 'Envoyer le message' } : {})}
                 style={({ pressed, hovered, focused }: { pressed: boolean; hovered?: boolean; focused?: boolean }) => [
                   styles.sendButton,
                   !canSend && styles.sendButtonDisabled,
@@ -1751,12 +1806,13 @@ export default function ChatScreen() {
                   canSend && pressed && styles.sendButtonPressed,
                 ]}
               >
-                <Icon name="arrowUp" size={20} color={canSend ? tokens.colors.onAccent : tokens.colors.textMuted} />
+                <Icon name="arrowUp" size={tokens.size.iconSm} color={canSend ? tokens.colors.onAccent : tokens.colors.textMuted} />
+                <Text style={[styles.messageActionText, canSend && { color: tokens.colors.onAccent }]}>Envoyer</Text>
               </Pressable>
             )}
           </View>
         </View>
-        <Text style={styles.disclaimer}>{DISCLAIMER[chatbot]}</Text>
+        <Text style={styles.disclaimer}>Système d’intelligence artificielle. {DISCLAIMER[chatbot]} En cas d’urgence : 15 ou 112.</Text>
       </View>
       </View>
       </View>
@@ -1777,7 +1833,7 @@ const styles = StyleSheet.create({
   screenRow: { flex: 1, flexDirection: 'row', minHeight: 0 },
   screenMain: { flex: 1, minWidth: 0 },
   historyRail: {
-    width: 300,
+    width: tokens.layout.history,
     backgroundColor: tokens.colors.surface,
     borderRightWidth: 1,
     borderColor: tokens.colors.border,
@@ -1797,7 +1853,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.bold,
   },
-  historyCollapseBtn: {
+  historyCollapseBtn: { minHeight: tokens.size.controlMd,
     width: 28,
     height: 28,
     borderRadius: tokens.radius.sm,
@@ -1862,7 +1918,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.accentDeep,
     fontSize: tokens.type.caption.fontSize,
   },
-  docHintAction: {
+  docHintAction: { minHeight: tokens.size.controlMd,
     borderRadius: tokens.radius.pill,
     backgroundColor: tokens.colors.accent,
     paddingHorizontal: tokens.space.md,
@@ -1882,6 +1938,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  chatHeaderCompact: { flexDirection: 'column', alignItems: 'stretch' },
   chatHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1894,15 +1951,15 @@ const styles = StyleSheet.create({
   },
   headerTitleBlock: { flex: 1, flexShrink: 1, minWidth: 0, marginRight: tokens.space.sm },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm, flexShrink: 0 },
-  headerIconButton: {
+  headerIconButton: { minHeight: tokens.size.controlMd,
     width: tokens.size.iconButton,
     height: tokens.size.iconButton,
-    borderRadius: tokens.radius.pill,
+    borderRadius: tokens.radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: tokens.colors.accentSurface,
+    backgroundColor: tokens.colors.surface,
     borderWidth: 1,
-    borderColor: tokens.colors.accentSurfaceStrong,
+    borderColor: tokens.colors.borderStrong,
     ...tokens.motion.transitionWeb,
   },
   headerIconButtonActive: {
@@ -1916,10 +1973,10 @@ const styles = StyleSheet.create({
     gap: 5,
     height: tokens.size.iconButton,
     paddingHorizontal: tokens.space.md,
-    borderRadius: tokens.radius.pill,
-    backgroundColor: tokens.colors.accentSurface,
+    borderRadius: tokens.radius.sm,
+    backgroundColor: tokens.colors.surface,
     borderWidth: 1,
-    borderColor: tokens.colors.accentSurfaceStrong,
+    borderColor: tokens.colors.borderStrong,
     ...tokens.motion.transitionWeb,
   },
   sourcesPillActive: { backgroundColor: tokens.colors.accent, borderColor: tokens.colors.accent },
@@ -1931,10 +1988,10 @@ const styles = StyleSheet.create({
   },
   sourcesPillTextActive: { color: tokens.colors.onAccent },
   chatTitle: {
-    fontFamily: tokens.font.display,
+    fontFamily: tokens.font.serif,
     color: tokens.colors.text,
-    fontSize: tokens.type.h3.fontSize,
-    letterSpacing: tokens.type.h3.letterSpacing,
+    fontSize: tokens.type.h2.fontSize,
+    letterSpacing: tokens.type.h2.letterSpacing,
     fontWeight: tokens.weight.semibold,
   },
   chatSubtitle: {
@@ -1957,9 +2014,9 @@ const styles = StyleSheet.create({
     gap: tokens.space.sm,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.sm,
-    backgroundColor: tokens.colors.accentSurface,
+    backgroundColor: tokens.colors.surfaceAlt,
     borderBottomWidth: 1,
-    borderColor: tokens.colors.accentSurfaceStrong,
+    borderColor: tokens.colors.border,
   },
   guestBannerText: {
     flex: 1,
@@ -1974,7 +2031,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     backgroundColor: tokens.colors.accent,
   },
-  guestBadgeUsed: { backgroundColor: tokens.colors.borderStrong },
+  guestBadgeUsed: { backgroundColor: tokens.colors.surfaceSunken },
   guestBadgeText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.onAccent,
@@ -1989,7 +2046,7 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radius.lg,
     borderWidth: 1,
     borderColor: tokens.colors.accentSurfaceStrong,
-    backgroundColor: tokens.colors.accentSurface,
+    backgroundColor: tokens.colors.surfaceAlt,
     padding: tokens.space.lg,
     gap: tokens.space.sm,
     marginTop: tokens.space.sm,
@@ -2013,8 +2070,12 @@ const styles = StyleSheet.create({
     gap: tokens.space.sm,
     marginTop: tokens.space.xs,
   },
+  guestCtaActionsCompact: { flexDirection: 'column', alignItems: 'stretch' },
   guestCtaPrimary: {
-    borderRadius: tokens.radius.pill,
+    minHeight: tokens.size.controlMd,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: tokens.radius.sm,
     backgroundColor: tokens.colors.accent,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.sm + 2,
@@ -2028,7 +2089,10 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
   guestCtaSecondary: {
-    borderRadius: tokens.radius.pill,
+    minHeight: tokens.size.controlMd,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: tokens.radius.sm,
     borderWidth: 1,
     borderColor: tokens.colors.accent,
     backgroundColor: tokens.colors.surface,
@@ -2058,7 +2122,7 @@ const styles = StyleSheet.create({
     padding: tokens.space.lg,
     gap: tokens.space.lg,
     width: '100%',
-    maxWidth: 800,
+    maxWidth: tokens.layout.reading,
     alignSelf: 'center',
   },
   // État vide : accroche + suggestions centrées verticalement (comme les chats de référence).
@@ -2068,8 +2132,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: tokens.space.md,
     alignSelf: 'center',
-    width: 38,
-    height: 38,
+    minHeight: tokens.size.controlMd,
+    paddingHorizontal: tokens.space.md,
+    flexDirection: 'row',
+    gap: tokens.space.sm,
     borderRadius: tokens.radius.pill,
     backgroundColor: tokens.colors.surface,
     borderWidth: 1,
@@ -2084,47 +2150,47 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.xl,
     gap: tokens.space.sm,
-    maxWidth: 560,
+    maxWidth: tokens.layout.form,
     alignSelf: 'center',
     width: '100%',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   emptyIconWrap: {
     width: 56,
     height: 56,
     borderRadius: tokens.radius.lg,
     backgroundColor: tokens.colors.accentSurface,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
     marginBottom: tokens.space.xs,
   },
   emptyTitle: {
     fontFamily: tokens.font.serif,
     color: tokens.colors.text,
-    fontSize: tokens.type.h2.fontSize,
-    lineHeight: tokens.type.h2.lineHeight,
+    fontSize: tokens.type.h1.fontSize,
+    lineHeight: tokens.type.h1.lineHeight,
     letterSpacing: tokens.type.h2.letterSpacing,
     fontWeight: tokens.weight.bold,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   emptyText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
     fontSize: tokens.type.body.fontSize,
     lineHeight: tokens.type.body.lineHeight,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   starterColumn: { gap: tokens.space.sm, marginTop: tokens.space.md, alignSelf: 'stretch' },
-  starterChip: {
+  starterChip: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: tokens.space.sm,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
+    borderRadius: 0,
+    borderBottomWidth: tokens.border.thin,
     borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.surface,
-    paddingHorizontal: tokens.space.lg,
-    paddingVertical: tokens.space.md,
+    paddingHorizontal: 0,
+    paddingVertical: tokens.space.lg,
     ...tokens.elevation.sm,
     ...tokens.motion.transitionWeb,
   },
@@ -2146,12 +2212,12 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: tokens.radius.xs,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.md,
-    backgroundColor: tokens.colors.accent,
+    backgroundColor: tokens.colors.surfaceAlt,
     ...tokens.elevation.sm,
   },
   textUser: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
+    color: tokens.colors.text,
     fontSize: tokens.type.body.fontSize,
     lineHeight: tokens.type.body.lineHeight,
   },
@@ -2165,6 +2231,7 @@ const styles = StyleSheet.create({
     gap: tokens.space.lg,
   },
   messageActionButton: {
+    minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.xs + 2,
@@ -2215,7 +2282,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.medium,
   },
-  bridgeChip: {
+  bridgeChip: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.xs + 2,
@@ -2262,7 +2329,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.danger,
     fontSize: tokens.type.label.fontSize,
   },
-  retryButton: {
+  retryButton: { minHeight: tokens.size.controlMd,
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
@@ -2284,7 +2351,7 @@ const styles = StyleSheet.create({
   // ── Composer unifié (motif ChatGPT/Claude : une carte, texte + actions) ──
   composerZone: {
     width: '100%',
-    maxWidth: 800,
+    maxWidth: tokens.layout.reading,
     alignSelf: 'center',
     paddingHorizontal: tokens.space.lg,
     paddingTop: tokens.space.xs,
@@ -2292,15 +2359,15 @@ const styles = StyleSheet.create({
     gap: tokens.space.xs + 2,
   },
   composer: {
-    borderRadius: tokens.radius.xl,
+    borderRadius: tokens.radius.md,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
+    borderColor: tokens.colors.borderStrong,
     backgroundColor: tokens.colors.surface,
     paddingHorizontal: tokens.space.sm,
     paddingTop: tokens.space.xs,
     paddingBottom: tokens.space.sm,
     gap: tokens.space.xs,
-    ...tokens.elevation.md,
+
     ...tokens.motion.transitionWeb,
   },
   composerFocused: {
@@ -2314,7 +2381,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.space.xs,
   },
   composerSpacer: { flex: 1 },
-  attachButton: {
+  attachButton: { minHeight: tokens.size.controlMd,
     width: tokens.size.iconButton,
     height: tokens.size.iconButton,
     borderRadius: tokens.radius.pill,
@@ -2324,7 +2391,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: tokens.colors.accentSurfaceStrong,
   },
-  attachmentChip: {
+  attachmentChip: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.sm,
@@ -2370,24 +2437,27 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     paddingHorizontal: tokens.space.lg,
   },
-  sendButton: {
-    width: tokens.size.controlMd,
-    height: tokens.size.controlMd,
-    borderRadius: tokens.radius.pill,
+  sendButton: { minHeight: tokens.size.controlMd,
+    width: tokens.size.composerAction,
+    paddingHorizontal: tokens.space.md,
+    flexDirection: 'row',
+    gap: tokens.space.sm,
+    borderRadius: tokens.radius.sm,
     // CTA principal du chat : même bleu électrique que les boutons primaires (2026-07).
     backgroundColor: tokens.colors.accentVivid,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    ...tokens.elevation.sm,
+    borderWidth: tokens.border.thin,
+    borderColor: tokens.colors.transparent,
     ...tokens.motion.transitionWeb,
   },
-  sendButtonHover: { backgroundColor: tokens.colors.accentVividStrong, transform: [{ translateY: -1 }], ...tokens.elevation.md },
+  sendButtonHover: { backgroundColor: tokens.colors.accentVividStrong },
   sendButtonFocus: tokens.focus.ring,
-  sendButtonPressed: { transform: [{ scale: 0.94 }], opacity: 0.95 },
+  sendButtonPressed: { opacity: 0.85 },
   sendButtonDisabled: {
-    backgroundColor: tokens.colors.borderStrong,
+    backgroundColor: tokens.colors.surfaceSunken,
     ...Platform.select({ web: { boxShadow: 'none' } as object, default: {} }),
   },
   // Pendant la génération, le bouton d'envoi devient un bouton d'arrêt (encre sombre).
-  stopButton: { backgroundColor: tokens.colors.text },
+  stopButton: { borderColor: tokens.colors.borderStrong, backgroundColor: tokens.colors.surface },
 });
