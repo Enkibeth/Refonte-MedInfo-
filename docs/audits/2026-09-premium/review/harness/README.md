@@ -29,6 +29,9 @@ node keyboard.mjs http://127.0.0.1:4173 ./out/kb         # tabulation, menus et 
 node hydration-check.mjs http://127.0.0.1:4173            # erreurs React #418 par route, largeur, préférences
 node metrics.mjs http://127.0.0.1:4173 ./out/metrics.json 3   # FCP/LCP/CLS labo, médiane de 3
 node shift-sources.mjs http://127.0.0.1:4173 /chat 390    # éléments responsables d’un décalage
+# Chat réel sur un aperçu Vercel (invité, 1 message par contexte) : URL de partage en argument,
+# jamais écrite dans le dépôt.
+node real-chat.mjs "<URL de partage de l’aperçu>" ./out/real
 ```
 
 `server.mjs` sert aussi les pages pré-rendues de `dist/server` comme le serveur Expo

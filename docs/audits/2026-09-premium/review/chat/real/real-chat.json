@@ -1,0 +1,89 @@
+{
+  "real-student-390": {
+    "firstStatusMs": 25,
+    "firstTextMs": 8093,
+    "doneMs": 17134,
+    "textLen": 5503,
+    "closedBlocks": 24,
+    "closedMoves": 0,
+    "leaks": [],
+    "footnoteIssues": [],
+    "footnotes": [
+      1,
+      2,
+      1,
+      1,
+      1,
+      1,
+      2,
+      1,
+      1,
+      1,
+      1
+    ],
+    "checkboxes": 3,
+    "rawMarkers": {
+      "followupMarker": false,
+      "srcToken": false,
+      "headingHashes": false,
+      "htmlComment": false
+    },
+    "sourcesButton": 2,
+    "distFinal": 0,
+    "layoutShiftAfterStart": 0.004,
+    "chatResponses": [
+      {
+        "status": 200,
+        "type": "text/event-stream"
+      }
+    ],
+    "errors": []
+  },
+  "real-public-1440": {
+    "firstStatusMs": 27,
+    "firstTextMs": 7003,
+    "doneMs": 10549,
+    "textLen": 1339,
+    "closedBlocks": 7,
+    "closedMoves": 0,
+    "leaks": [],
+    "footnoteIssues": [],
+    "footnotes": [
+      1,
+      2,
+      3
+    ],
+    "checkboxes": 6,
+    "rawMarkers": {
+      "followupMarker": false,
+      "srcToken": false,
+      "headingHashes": false,
+      "htmlComment": false
+    },
+    "sourcesButton": 2,
+    "distFinal": 0,
+    "layoutShiftAfterStart": 0.0009,
+    "chatResponses": [
+      {
+        "status": 200,
+        "type": "text/event-stream"
+      }
+    ],
+    "errors": []
+  },
+  "real-stop-390": {
+    "textAtStop": 1333,
+    "textAfter4s": 1333,
+    "notice": [
+      "Lecture interrompue. Le texte déjà reçu reste affiché dans cet onglet."
+    ],
+    "leaks": [],
+    "chatResponses": [
+      {
+        "status": 200,
+        "type": "text/event-stream"
+      }
+    ],
+    "errors": []
+  }
+}

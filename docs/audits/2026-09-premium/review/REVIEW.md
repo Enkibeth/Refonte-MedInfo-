@@ -21,9 +21,9 @@ production, qui masquait un saut de mise en page au premier affichage sur ordina
 les deux sont supprimés.
 
 Ce qui n’est **pas** démontré : les parcours connectés par rôle et la reprise avec archive
-réelle, faute de comptes de test autorisés (aucune session n’a été simulée), et le chat
-avec le vrai modèle via l’interface (le rendu a été vérifié sur des réponses synthétiques
-reproduisant la forme réelle relevée en recette).
+réelle, faute de comptes de test autorisés (aucune session n’a été simulée). Le chat réel
+a été vérifié en invité sur l’aperçu Vercel de la branche (GPT-6 Luna) : rendu, relances,
+suivi du fil et arrêt conformes.
 
 ## Défauts constatés et corrections
 
@@ -72,6 +72,22 @@ du minutage : elle se fonde désormais sur la distance au bas avant la croissanc
 complet rejoué sur le build final (15/15, résultats des 13 scénarios antérieurs
 identiques). Captures, axe, clavier, hydratation et mesures proviennent du build
 précédent, au rendu identique (seule la condition d’arrêt du suivi a changé).
+
+### Chat réel (aperçu Vercel de la branche, invité) — [rapport](chat/real/real-chat.json)
+
+Build Vercel du commit de revue, `/api/chat` réel (GPT-6 Luna, recherche web), un message
+par contexte de navigateur (essai invité, parcours public normal). Questions d’information
+générale ; les réponses du modèle ne sont pas relues médicalement et ne sont montrées que
+pour le rendu. Captures : [`chat/real/`](chat/real/).
+
+| Essai | Résultat mesuré |
+|---|---|
+| Étudiant, 390 px | Attente affichée en 25 ms ; premier texte à 8,1 s, fin à 17,1 s ; 5 503 caractères, 24 blocs clos, 0 déplacement ; aucune syntaxe brute (marqueur de relances, `(SRCn)`, `###`, commentaire) ; 3 relances en propositions ; fil suivi jusqu’en bas ; décalage cumulé après l’envoi 0,004 ; 0 erreur console |
+| Grand public, 1440 px | Attente en 27 ms ; premier texte à 7,0 s, fin à 10,5 s ; notes 1, 2, 3 ; 6 propositions ; aucune syntaxe brute ; décalage 0,0009 ; 0 erreur |
+| Arrêt pendant le flux, 390 px | 1 333 caractères à l’arrêt, identiques 4 s plus tard ; note « Lecture interrompue. Le texte déjà reçu reste affiché dans cet onglet. » (aucune promesse d’archive) |
+
+Le délai du premier texte (7–8 s) vient du modèle (raisonnement et recherche web), hors
+périmètre UI ; l’attente est affichée immédiatement.
 
 ### Écrans, axe, clavier
 
@@ -131,9 +147,9 @@ navigateur au pré-rendu.
    n’est disponible dans cette session. Aucune session n’a été fabriquée et aucun contrôle
    (RoleGate, rôles, RLS) n’a été contourné. Il faut un compte par rôle, sans donnée
    patient, fourni par les secrets de l’environnement (jamais dans la conversation).
-2. Chat réel dans l’interface : le rendu a été vérifié sur des réponses synthétiques qui
-   reproduisent la forme relevée en recette le 27/09 (étudiant et grand public). Un essai
-   invité réel sur l’aperçu de la branche reste à faire après déploiement de l’aperçu.
+2. Chat réel **connecté** (archive, historique, reprise après veille avec archive, trois
+   chatbots pour un compte vérifié) : dépend des comptes de test (blocage 1). Le chemin
+   invité est vérifié sur l’aperçu (ci-dessus).
 3. Lighthouse, p75 terrain, appareils natifs iOS/Android, clavier virtuel et lecteur
    d’écran réel : non mesurés.
 

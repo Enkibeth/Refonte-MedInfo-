@@ -114,8 +114,10 @@ titre d’article, barre du CV, accord). 833 tests unitaires, typecheck et build
 verts sur le banc local ; 0 erreur d’hydratation sur 28 routes. L’état final des écrans
 est inchangé (écart ≤ 0,19 % des pixels) : direction A affinée, non transformée.
 
-Non démontré : parcours connectés par rôle et reprise avec archive réelle (aucun compte
-de test autorisé ; aucune session simulée), chat réel dans l’interface, mesures terrain.
+Chat réel vérifié en invité sur l’aperçu Vercel de la branche (GPT-6 Luna : rendu,
+relances, suivi, arrêt). Non démontré : parcours connectés par rôle, chat connecté et
+reprise avec archive réelle (aucun compte de test autorisé ; aucune session simulée),
+mesures terrain.
 Le workflow GitHub existant ne s’exécute que pour `dev`, `staging` et `main`, **pas pour
 la branche d’intégration** : seule la PR vers `main` porte les contrôles obligatoires.
 Pas de changement API, serveur, DB/RLS, autorisations ou déploiement dans ce lot.

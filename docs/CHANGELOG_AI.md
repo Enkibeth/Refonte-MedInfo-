@@ -33,7 +33,8 @@ pendant un flux rapide (sans confondre une zone de lecture agrandie avec une rem
 en mise en page mobile ; états ARIA absents sur le web ; titre d’article vide ; barre du CV
 débordante à 1024 px. 833 tests (+32), typecheck et build réussis ; 128 états sans violation
 axe ; 15 scénarios de chat verts sur banc local ; CLS labo chat desktop 0,031 → 0,004, chat
-mobile 0,236 → 0,158. Parcours connectés par rôle non démontrés (pas de compte de test).
+mobile 0,236 → 0,158. Chat réel vérifié en invité sur l’aperçu Vercel (GPT-6 Luna). Parcours
+connectés par rôle non démontrés (pas de compte de test).
 ### Regulatory impact
 None : aucun texte réglementaire, disclosure, avertissement ou mention 15/112 modifié ;
 aucune modification de prompt, API, serveur, base/RLS, autorisation ni hébergement. Aucune
