@@ -225,3 +225,35 @@ direct sans safe-box, sécurité à réintroduire après validation) reste en vi
   candidat au retour, avant tout le reste.
 - Le corpus RAG HAS/ANSM (ADR-0014, conservé non branché) reste la piste de fond pour ancrer
   les sources sans multiplier les appels LLM.
+
+## Addendum 2026-09 — le chat passe sur GPT-6 Luna (migration 0046)
+
+**Décision Hugo** (« je valide gpt 6 Luna ») : `chat` passe de gpt-5.6-luna à **gpt-6-luna**,
+sans évaluation préalable. L'architecture de cet ADR est inchangée : un prompt par catégorie,
+un appel LLM, la recherche web du provider.
+
+- **Prix officiels** relus le 2026-09-26, en $ par million de tokens (entrée / entrée en cache /
+  sortie) :
+  - gpt-6-luna : 0,10 / 0,01 / 0,50 ;
+  - gpt-5.6-luna : 0,20 / 0,02 / 1,20.
+  - Recherche web : inchangée (10 $ les 1 000 appels). Au volume mesuré sur 30 jours, elle
+    représente jusqu'aux trois quarts du coût d'une réponse.
+- **Ce que le code doit faire pour GPT-6**, vérifié sur la requête HTTP réellement émise par le
+  SDK (`tests/unit/llm-request-shape.test.ts`) :
+  - pas de `minimal` dans GPT-6 : on traduit `minimal` → `none` pour Sol et Luna, ce qui garde
+    le comportement du chat grand public, plafonné à `minimal` ;
+  - le SDK installé (@ai-sdk/openai 3.0.67) ignore que GPT-6 est un modèle à raisonnement : sans
+    `forceReasoning`, il jetait l'effort sans erreur et envoyait le prompt système en rôle
+    `system` ;
+  - température jamais envoyée (capability `false`).
+- **Non documenté par OpenAI :** la prise en charge de `text.verbosity` par GPT-6. La version la
+  plus récente du SDK (3.0.118), qui retire explicitement les paramètres refusés par GPT-6,
+  transmet la verbosité telle quelle. Elle est donc gardée, et vérifiée en réel sur les 3 modes
+  juste après la bascule.
+- **Ordre de déploiement :** la config vit en base, partagée par tous les environnements. La
+  migration 0046 ne s'applique qu'une fois ce code en ligne partout : production Vercel ET
+  Hostinger. Un runtime plus ancien traiterait gpt-6-luna comme un modèle inconnu, donc chat
+  sans recherche web ni effort.
+- **Qualité non évaluée** avant la bascule : OpenAI ne publie aucune donnée médicale sur GPT-6.
+  À surveiller en usage réel, comme pour la 5.6 : exactitude, sources réelles, prudence.
+  Retour arrière = une ligne dans le panel admin (modèle `gpt-5.6-luna`).

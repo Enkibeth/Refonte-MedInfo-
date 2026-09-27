@@ -94,6 +94,39 @@ describe('cost — pricing', () => {
   });
 });
 
+describe('cost — grille 2026-09 (GPT-6, Claude 5, corrections Opus 4.8 / Haiku 4.5)', () => {
+  it('GPT-6 : Luna 0,10/0,50 et Sol 2/10 $ par million, variantes datées comprises', () => {
+    expect(resolveModelPrice('gpt-6-luna')).toMatchObject({ inputPerM: 0.1, outputPerM: 0.5, source: 'exact' });
+    expect(resolveModelPrice('gpt-6-sol')).toMatchObject({ inputPerM: 2, outputPerM: 10, source: 'exact' });
+    expect(resolveModelPrice('gpt-6-luna-2026-09-01')).toMatchObject({ inputPerM: 0.1, source: 'family' });
+    // Une variante GPT-6 ne doit pas retomber sur le prix générique gpt-5 (1,25 $).
+    expect(resolveModelPrice('gpt-6-sol-2026-09-01').inputPerM).toBe(2);
+  });
+
+  it('Claude 5 : Sonnet 5 à 2/10 et Opus 5.5 à 4/20, variantes datées comprises', () => {
+    expect(resolveModelPrice('claude-sonnet-5')).toMatchObject({ inputPerM: 2, outputPerM: 10, source: 'exact' });
+    expect(resolveModelPrice('claude-opus-5-5')).toMatchObject({ inputPerM: 4, outputPerM: 20, source: 'exact' });
+    expect(resolveModelPrice('claude-sonnet-5-20261001')).toMatchObject({ inputPerM: 2, source: 'family' });
+    expect(resolveModelPrice('claude-opus-5-5-20261001')).toMatchObject({ inputPerM: 4, source: 'family' });
+  });
+
+  it('corrections : Opus 4.8 = 5/25 (et non 15/75), Haiku 4.5 = 1/5 (et non 0,8/4)', () => {
+    expect(resolveModelPrice('claude-opus-4-8')).toMatchObject({ inputPerM: 5, outputPerM: 25 });
+    expect(resolveModelPrice('claude-haiku-4-5-20251001')).toMatchObject({ inputPerM: 1, outputPerM: 5 });
+    // Replis par famille alignés sur la génération courante.
+    expect(resolveModelPrice('claude-opus-9')).toMatchObject({ inputPerM: 5, outputPerM: 25, source: 'family' });
+    expect(resolveModelPrice('claude-haiku-9')).toMatchObject({ inputPerM: 1, outputPerM: 5, source: 'family' });
+  });
+
+  it('cache : Opus 5.5 facture la lecture du cache 5 % de l\'entrée, les autres 10 %', () => {
+    // 1M tokens d'entrée, tous lus depuis le cache.
+    expect(costUsd('claude-opus-5-5', 1_000_000, 0, 1_000_000)).toBeCloseTo(0.2, 9);
+    expect(costUsd('claude-opus-5-5-20261001', 1_000_000, 0, 1_000_000)).toBeCloseTo(0.2, 9);
+    expect(costUsd('claude-sonnet-5', 1_000_000, 0, 1_000_000)).toBeCloseTo(0.2, 9);
+    expect(costUsd('gpt-6-luna', 1_000_000, 0, 1_000_000)).toBeCloseTo(0.01, 9);
+  });
+});
+
 describe('cost — groupUsage', () => {
   it('groupe par persona × modèle et somme les tokens, robuste aux nulls', () => {
     const rows = groupUsage([

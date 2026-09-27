@@ -6,7 +6,7 @@
  *
  *   requête ──▶ prompt du chatbot (public / student / professional)
  *                + contexte utilisateur + pays + pharmaco + mode + outils de sortie
- *           ──▶ UN streamText (gpt-5.6-luna, recherche web du provider activée)
+ *           ──▶ UN streamText (gpt-6-luna depuis 0046, recherche web du provider activée)
  *           ──▶ la réponse, avec ses SOURCES, APPROFONDISSEMENTS, QUESTIONS_PATIENT…
  *
  * Ce qui a été RETIRÉ (ADR-0037), et pourquoi : chaque élément ajoutait des appels LLM
