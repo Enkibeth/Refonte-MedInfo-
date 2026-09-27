@@ -1,3 +1,5 @@
+import { Button } from '@/ui/Button';
+import { PageTitle } from '@/ui/PageTitle';
 /**
  * Blog santé — liste publique des articles publiés (audit landing 2026-06).
  * Articles générés par IA depuis le panel admin (/api/admin/blog) puis publiés ;
@@ -29,13 +31,19 @@ export default function BlogScreen() {
   const router = useRouter();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setLoadError(false);
     void listPublishedPosts()
-      .then((p) => setPosts(p))
-      .catch(() => setPosts([]))
-      .finally(() => setLoading(false));
-  }, []);
+      .then(p => { if (active) setPosts(p); })
+      .catch(() => { if (active) setLoadError(true); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [attempt]);
 
   return (
     <View style={styles.screen}>
@@ -55,7 +63,7 @@ export default function BlogScreen() {
         <View style={styles.inner}>
           <Reveal>
             <Text style={styles.eyebrow}>Blog</Text>
-            <Text style={styles.title}>Comprendre la santé, un article à la fois.</Text>
+            <PageTitle style={styles.title}>Comprendre la santé, un article à la fois.</PageTitle>
             <Text style={styles.lead}>
               Prévention, recherche, idées reçues : des articles d'information générale, sourcés
               et relus. Jamais un avis médical individuel.
@@ -66,11 +74,11 @@ export default function BlogScreen() {
             <View style={styles.grid}>
               {[0, 1, 2].map((i) => (
                 <View key={i} style={styles.cell}>
-                  <Skeleton height={300} radius={tokens.radius.lg} />
+                  <View style={styles.loadingRow}><Skeleton height={tokens.type.caption.lineHeight} width="30%" /><Skeleton height={tokens.type.h3.lineHeight} width="80%" /><Skeleton height={tokens.type.body.lineHeight} width="95%" /><Skeleton height={tokens.type.body.lineHeight} width="70%" /></View>
                 </View>
               ))}
             </View>
-          ) : posts.length === 0 ? (
+          ) : loadError ? <View style={styles.emptyCard} accessibilityLiveRegion="polite"><Text style={styles.emptyTitle}>Les articles n’ont pas pu être chargés</Text><Text style={styles.emptyText}>Vérifiez votre connexion, puis réessayez.</Text><Button label="Réessayer" variant="secondary" fullWidth={false} onPress={() => setAttempt(n => n + 1)} /></View> : posts.length === 0 ? (
             <Reveal>
               <View style={styles.emptyCard}>
                 <Text style={styles.emptyTitle}>Les premiers articles arrivent bientôt</Text>
@@ -93,9 +101,7 @@ export default function BlogScreen() {
                     {p.cover_image_url ? (
                       <Image source={{ uri: p.cover_image_url }} style={styles.cover} resizeMode="cover" />
                     ) : (
-                      <View style={styles.coverFallback}>
-                        <Text style={styles.coverFallbackText}>{p.category ?? 'Santé'}</Text>
-                      </View>
+                      null
                     )}
                     <View style={styles.cardBody}>
                       <View style={styles.metaRow}>
@@ -147,7 +153,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
     letterSpacing: tokens.tracking.capsWide,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     marginBottom: tokens.space.sm,
   },
   title: {
@@ -166,8 +172,9 @@ const styles = StyleSheet.create({
     marginTop: tokens.space.sm,
     maxWidth: 620,
   },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.lg },
-  cell: { flexGrow: 1, flexBasis: 280, maxWidth: 460 },
+  grid: { gap: tokens.space.lg },
+  loadingRow: { gap: tokens.space.sm, paddingVertical: tokens.space.lg },
+  cell: { width: '100%' },
   card: {
     flex: 1,
     borderRadius: tokens.radius.lg,

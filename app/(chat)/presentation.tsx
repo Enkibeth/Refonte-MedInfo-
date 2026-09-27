@@ -1,3 +1,4 @@
+import { PageTitle } from '@/ui/PageTitle';
 /**
  * Générateur de présentations — outil étudiant + professionnel (personas student/professional).
  *
@@ -52,7 +53,7 @@ function PresentationInner() {
         <View style={styles.headerTop}>
           <ToolsMenu />
         </View>
-        <Text style={styles.title}>Générateur de présentations</Text>
+        <PageTitle style={styles.title}>Générateur de présentations</PageTitle>
         <Text style={styles.subtitle}>
           Construis tes slides médicales à la main ou avec un « médecin senior » IA, puis
           exporte en PPTX prêt pour Keynote.
@@ -130,7 +131,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.label.fontSize,
     lineHeight: 20,
-    marginTop: 4,
+    marginTop: tokens.space.xs,
   },
   fallback: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: tokens.space.lg },
   fallbackText: {

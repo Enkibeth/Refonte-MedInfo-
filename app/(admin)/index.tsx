@@ -1,3 +1,4 @@
+import { FieldInput } from '@/ui/FieldInput';
 /**
  * Panel d'administration IA — visible uniquement pour les comptes admin.
  *
@@ -225,7 +226,7 @@ function ModelsTab({
         return (
           <View key={feature.key} style={cardStyles.card}>
             <View style={cardStyles.cardHeader}>
-              <Text style={cardStyles.emoji}>{feature.emoji}</Text>
+              <Icon name="settings" size={tokens.size.iconLg} color={tokens.colors.textMuted} />
               <View style={{ flex: 1 }}>
                 <Text style={cardStyles.cardTitle}>{feature.label}</Text>
                 <Text style={cardStyles.cardDesc}>{feature.description}</Text>
@@ -478,7 +479,7 @@ function PromptsTab({
 
                 {isOpen ? (
                   <View style={promptStyles.editor}>
-                    <TextInput
+                    <FieldInput
                       style={promptStyles.textarea}
                       value={drafts[p.key] ?? p.template}
                       onChangeText={(v) => setDrafts((prev) => ({ ...prev, [p.key]: v }))}
@@ -838,7 +839,7 @@ function EcosInput({
   return (
     <View style={ecosStyles.inputWrap}>
       <Text style={ecosStyles.inputLabel}>{label}</Text>
-      <TextInput
+      <FieldInput
         style={[
           ecosStyles.input,
           multiline && ecosStyles.inputMultiline,
@@ -956,7 +957,7 @@ function BlogTab({ session }: { session: { access_token: string } | null }) {
 
       <View style={blogStyles.generateCard}>
         <Text style={blogStyles.generateLabel}>Sujet (optionnel, sinon l'IA choisit)</Text>
-        <TextInput
+        <FieldInput
           style={blogStyles.topicInput}
           value={topic}
           onChangeText={setTopic}
@@ -1283,7 +1284,7 @@ const costStyles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { padding: tokens.space.lg, gap: tokens.space.md, paddingBottom: tokens.space['3xl'] },
   windowRow: { flexDirection: 'row', gap: tokens.space.sm },
-  windowBtn: {
+  windowBtn: { minHeight: tokens.size.controlMd,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.sm,
     borderRadius: tokens.radius.pill,
@@ -1324,7 +1325,7 @@ const costStyles = StyleSheet.create({
   },
   errorBox: { gap: tokens.space.sm, padding: tokens.space.lg },
   errorText: { fontFamily: tokens.font.sans, color: tokens.colors.danger, fontSize: tokens.type.label.fontSize },
-  retryBtn: {
+  retryBtn: { minHeight: tokens.size.controlMd,
     alignSelf: 'flex-start',
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.sm,
@@ -1343,7 +1344,7 @@ const costStyles = StyleSheet.create({
     color: 'rgba(255,255,255,0.72)',
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
   },
   totalValue: {
@@ -1366,7 +1367,7 @@ const costStyles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     borderRadius: tokens.radius.sm,
     paddingHorizontal: tokens.space.sm,
-    paddingVertical: 4,
+    paddingVertical: tokens.space.xs,
     marginTop: tokens.space.sm,
   },
   card: {
@@ -1461,7 +1462,7 @@ const blogStyles = StyleSheet.create({
     color: tokens.colors.text,
     fontSize: tokens.type.label.fontSize,
   },
-  generateBtn: {
+  generateBtn: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1496,7 +1497,7 @@ const blogStyles = StyleSheet.create({
     padding: tokens.space.md,
     marginTop: tokens.space.sm,
   },
-  postInfo: { flex: 1, gap: 4 },
+  postInfo: { flex: 1, gap: tokens.space.xs },
   postMetaRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm, flexWrap: 'wrap' },
   statusPill: { borderRadius: tokens.radius.pill, paddingHorizontal: tokens.space.sm, paddingVertical: 2 },
   statusPublished: { backgroundColor: tokens.colors.successBackground },
@@ -1512,8 +1513,8 @@ const blogStyles = StyleSheet.create({
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.semibold,
   },
-  postActions: { gap: 4, alignItems: 'flex-end' },
-  actionBtn: { paddingVertical: 2, paddingHorizontal: tokens.space.sm },
+  postActions: { gap: tokens.space.xs, alignItems: 'flex-end' },
+  actionBtn: { minHeight: tokens.size.controlMd, paddingVertical: 2, paddingHorizontal: tokens.space.sm },
   actionText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.accent,
@@ -1538,7 +1539,7 @@ const blogStyles = StyleSheet.create({
 
 /** Onglets du panel — icônes ligne du design system (plus d'emojis dans l'UI, 05_DESIGN §7). */
 const ADMIN_TABS: Array<{ key: Tab; label: string; icon: IconName }> = [
-  { key: 'models', label: 'Modèles IA', icon: 'sparkles' },
+  { key: 'models', label: 'Modèles IA', icon: 'bookOpen' },
   { key: 'prompts', label: 'Prompts', icon: 'penLine' },
   { key: 'ecos', label: 'Cas ECOS', icon: 'stethoscope' },
   { key: 'blog', label: 'Blog', icon: 'bookOpen' },
@@ -1606,12 +1607,12 @@ export default function AdminScreen() {
             accessibilityRole="button"
             accessibilityLabel="Retour"
           >
-            <Icon name="arrowLeft" size={22} color={tokens.colors.onAccent} />
+            <Icon name="arrowLeft" size={tokens.size.iconLg} color={tokens.colors.text} />
           </TouchableOpacity>
         ) : null}
         <View>
-          <Text style={[styles.headerTitle, inShell && styles.headerTitleInShell]}>
-            Panel Admin IA
+          <Text accessibilityRole="header" aria-level={1} style={[styles.headerTitle, inShell && styles.headerTitleInShell]}>
+            Administration
           </Text>
           <Text style={[styles.headerSub, inShell && styles.headerSubInShell]}>
             Configuration des modèles et prompts
@@ -1619,7 +1620,7 @@ export default function AdminScreen() {
         </View>
         <View style={[styles.adminBadge, inShell && styles.adminBadgeInShell]}>
           <Text style={[styles.adminBadgeText, inShell && styles.adminBadgeTextInShell]}>
-            ADMIN
+            Admin
           </Text>
         </View>
       </View>
@@ -1689,17 +1690,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.space.lg,
     paddingTop: tokens.space.xl,
     paddingBottom: tokens.space.md,
-    backgroundColor: tokens.colors.accentDarker,
+    backgroundColor: tokens.colors.surface,
   },
   headerInShell: {
-    backgroundColor: 'transparent',
+    backgroundColor: tokens.colors.transparent,
     paddingTop: tokens.space.xl,
     paddingHorizontal: tokens.space.xl,
   },
-  backBtn: { padding: tokens.space.xs },
+  backBtn: { minHeight: tokens.size.controlMd, padding: tokens.space.xs },
   headerTitle: {
-    fontFamily: tokens.font.display,
-    color: tokens.colors.onAccent,
+    fontFamily: tokens.font.serif,
+    color: tokens.colors.text,
     fontSize: tokens.type.h3.fontSize,
     fontWeight: tokens.weight.semibold,
     letterSpacing: tokens.type.h3.letterSpacing,
@@ -1714,7 +1715,7 @@ const styles = StyleSheet.create({
   },
   headerSub: {
     fontFamily: tokens.font.sans,
-    color: 'rgba(255,255,255,0.6)',
+    color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
     marginTop: 2,
   },
@@ -1722,9 +1723,9 @@ const styles = StyleSheet.create({
   adminBadge: {
     marginLeft: 'auto',
     borderRadius: tokens.radius.pill,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: tokens.colors.accentSurface,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderColor: tokens.colors.border,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.xs,
   },
@@ -1734,7 +1735,7 @@ const styles = StyleSheet.create({
   },
   adminBadgeText: {
     fontFamily: tokens.font.mono,
-    color: tokens.colors.onAccent,
+    color: tokens.colors.text,
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
     letterSpacing: tokens.tracking.caps,
@@ -1746,7 +1747,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: tokens.colors.border,
   },
-  tabBtn: {
+  tabBtn: { minHeight: tokens.size.controlMd,
     flex: 1,
     paddingVertical: tokens.space.md,
     alignItems: 'center',
@@ -1774,7 +1775,7 @@ const styles = StyleSheet.create({
     gap: tokens.space.md,
   },
   errorText: { fontFamily: tokens.font.sans, color: tokens.colors.danger, fontSize: tokens.type.label.fontSize },
-  retryBtn: {
+  retryBtn: { minHeight: tokens.size.controlMd,
     alignSelf: 'flex-start',
     borderRadius: tokens.radius.sm,
     backgroundColor: tokens.colors.danger,
@@ -1784,7 +1785,7 @@ const styles = StyleSheet.create({
   retryText: { fontFamily: tokens.font.sans, color: tokens.colors.onAccent, fontWeight: tokens.weight.semibold, fontSize: tokens.type.label.fontSize },
   notAdmin: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: tokens.space.lg },
   notAdminText: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.body.fontSize },
-  back: { fontFamily: tokens.font.sans, color: tokens.colors.accent, fontSize: tokens.type.label.fontSize, fontWeight: tokens.weight.semibold },
+  back: { minHeight: tokens.size.controlMd, fontFamily: tokens.font.sans, color: tokens.colors.accent, fontSize: tokens.type.label.fontSize, fontWeight: tokens.weight.semibold },
 });
 
 const tabStyles = StyleSheet.create({
@@ -1813,7 +1814,7 @@ const sectionStyles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
   },
 });
@@ -1850,7 +1851,7 @@ const cardStyles = StyleSheet.create({
     marginTop: 2,
   },
   models: { padding: tokens.space.md, gap: tokens.space.sm },
-  saveBtn: {
+  saveBtn: { minHeight: tokens.size.controlMd,
     margin: tokens.space.md,
     marginTop: 0,
     height: 40,
@@ -1924,7 +1925,7 @@ const paramStyles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
     marginBottom: 2,
   },
@@ -2061,7 +2062,7 @@ const promptStyles = StyleSheet.create({
     gap: tokens.space.sm,
     padding: tokens.space.md,
   },
-  resetBtn: {
+  resetBtn: { minHeight: tokens.size.controlMd,
     height: 36,
     borderRadius: tokens.radius.sm,
     borderWidth: 1,
@@ -2076,7 +2077,7 @@ const promptStyles = StyleSheet.create({
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.medium,
   },
-  saveBtn: {
+  saveBtn: { minHeight: tokens.size.controlMd,
     height: 36,
     borderRadius: tokens.radius.sm,
     backgroundColor: tokens.colors.accent,
@@ -2109,7 +2110,7 @@ const badgeStyles = StyleSheet.create({
 });
 
 const ecosStyles = StyleSheet.create({
-  newBtn: {
+  newBtn: { minHeight: tokens.size.controlMd,
     height: 44,
     borderRadius: tokens.radius.md,
     backgroundColor: tokens.colors.accent,
@@ -2171,7 +2172,7 @@ const ecosStyles = StyleSheet.create({
   },
   statusTextOn: { color: tokens.colors.accentDeep },
   cardActions: { flexDirection: 'row', gap: tokens.space.sm },
-  actionBtn: {
+  actionBtn: { minHeight: tokens.size.controlMd,
     flex: 1,
     height: 36,
     borderRadius: tokens.radius.sm,
@@ -2195,7 +2196,7 @@ const ecosStyles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.medium,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
   },
   input: {
@@ -2212,7 +2213,7 @@ const ecosStyles = StyleSheet.create({
   },
   inputMultiline: { minHeight: 90, paddingTop: tokens.space.sm },
   inputTall: { minHeight: 160 },
-  publishToggle: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
+  publishToggle: { minHeight: tokens.size.controlMd, flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
   checkbox: {
     width: 22,
     height: 22,
@@ -2230,7 +2231,7 @@ const ecosStyles = StyleSheet.create({
     fontSize: tokens.type.label.fontSize,
   },
   formActions: { flexDirection: 'row', gap: tokens.space.md, marginTop: tokens.space.sm },
-  cancelBtn: {
+  cancelBtn: { minHeight: tokens.size.controlMd,
     flex: 1,
     height: 44,
     borderRadius: tokens.radius.md,
@@ -2245,7 +2246,7 @@ const ecosStyles = StyleSheet.create({
     fontWeight: tokens.weight.medium,
     fontSize: tokens.type.label.fontSize,
   },
-  saveBtn: {
+  saveBtn: { minHeight: tokens.size.controlMd,
     flex: 1,
     height: 44,
     borderRadius: tokens.radius.md,

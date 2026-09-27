@@ -1,6 +1,8 @@
+import { FieldInput } from '@/ui/FieldInput';
+import { PageTitle } from '@/ui/PageTitle';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useSession, toFriendlyAuthError, type OAuthProvider } from '@/auth/AuthProvider';
 import { getAiDisclosure } from '@/compliance/disclosures';
@@ -134,13 +136,13 @@ export default function SignInScreen() {
     mode === 'signin' ? 'Se connecter' : mode === 'signup' ? 'Créer mon compte' : 'Envoyer le lien';
 
   return (
-    <Screen maxWidth={460} center>
+    <Screen maxWidth={tokens.layout.form}>
       <View style={styles.logoWrap}>
         <Logo size="md" />
       </View>
 
-      <Card>
-        <Text style={styles.title}>{title}</Text>
+      <Card style={styles.formCard}>
+        <PageTitle style={styles.title}>{title}</PageTitle>
         <Text style={styles.body}>
           {mode === 'signin'
             ? 'Connecte-toi avec ton email, ou via Google / Apple.'
@@ -190,7 +192,7 @@ export default function SignInScreen() {
         {/* Email (+ mot de passe hors mode oublié) */}
         <View style={styles.form}>
           <Text style={styles.label}>Email</Text>
-          <TextInput
+          <FieldInput
             accessibilityLabel="Adresse email"
             autoCapitalize="none"
             autoComplete="email"
@@ -213,16 +215,16 @@ export default function SignInScreen() {
               <View style={styles.passwordLabelRow}>
                 <Text style={styles.label}>Mot de passe</Text>
                 {mode === 'signin' ? (
-                  <Text
+                  <Pressable
                     accessibilityRole="button"
                     onPress={() => switchMode('forgot')}
-                    style={styles.forgotLink}
+                    style={styles.linkTarget}
                   >
-                    Mot de passe oublié ?
-                  </Text>
+                    <Text style={styles.forgotLink}>Mot de passe oublié ?</Text>
+                  </Pressable>
                 ) : null}
               </View>
-              <TextInput
+              <FieldInput
                 accessibilityLabel="Mot de passe"
                 autoCapitalize="none"
                 autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
@@ -252,19 +254,19 @@ export default function SignInScreen() {
 
         <View style={styles.toggle}>
           {mode === 'forgot' ? (
-            <Text accessibilityRole="button" onPress={() => switchMode('signin')} style={styles.toggleText}>
-              ← Retour à la connexion
-            </Text>
+            <Pressable accessibilityRole="button" onPress={() => switchMode('signin')} style={styles.linkTarget}>
+              <Text style={styles.toggleText}>Retour à la connexion</Text>
+            </Pressable>
           ) : (
-            <Text
+            <Pressable
               accessibilityRole="button"
               onPress={() => switchMode(mode === 'signin' ? 'signup' : 'signin')}
-              style={styles.toggleText}
+              style={styles.linkTarget}
             >
-              {mode === 'signin'
+              <Text style={styles.toggleText}>{mode === 'signin'
                 ? 'Pas encore de compte ? Créer un compte'
-                : 'Déjà un compte ? Se connecter'}
-            </Text>
+                : 'Déjà un compte ? Se connecter'}</Text>
+            </Pressable>
           )}
         </View>
 
@@ -307,7 +309,8 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  logoWrap: { alignItems: 'center', marginBottom: tokens.space.xl },
+  formCard: { borderWidth: 0, padding: 0 },
+  logoWrap: { alignItems: 'flex-start', marginBottom: tokens.space.xl },
   title: {
     fontFamily: tokens.font.serif,
     color: tokens.colors.text,
@@ -359,7 +362,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.space.lg,
     marginBottom: tokens.space.xs,
   },
-  submit: { marginTop: tokens.space.sm },
+  submit: { minHeight: tokens.size.controlMd, marginTop: tokens.space.sm },
   toggle: { marginTop: tokens.space.lg, alignItems: 'center' },
   toggleText: {
     fontFamily: tokens.font.sans,
@@ -416,6 +419,9 @@ const styles = StyleSheet.create({
   errorText: { fontFamily: tokens.font.sans, color: tokens.colors.danger, fontSize: tokens.type.label.fontSize, lineHeight: 21 },
   footer: { marginTop: tokens.space.xl },
   inlineLink: {
+    minHeight: tokens.size.controlMd,
+    lineHeight: tokens.type.label.lineHeight,
+    paddingVertical: tokens.space.md,
     fontFamily: tokens.font.sans,
     color: tokens.colors.accent,
     fontSize: tokens.type.label.fontSize,
@@ -429,6 +435,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: tokens.colors.warningBackground,
   },
+  linkTarget: { minHeight: tokens.size.controlMd, justifyContent: 'center' },
   noticeAccent: { width: 4, backgroundColor: tokens.colors.warningText },
   noticeText: {
     flex: 1,

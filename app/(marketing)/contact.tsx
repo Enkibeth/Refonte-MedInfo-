@@ -1,3 +1,4 @@
+import { PageTitle } from '@/ui/PageTitle';
 /**
  * Page Contact (audit landing 2026-06) — contenu statique public.
  * Pas de formulaire serveur pour l'instant : contact par e-mail (mailto) +
@@ -68,7 +69,7 @@ export default function ContactScreen() {
         <View style={styles.inner}>
           <Reveal>
             <Text style={styles.eyebrow}>Contact</Text>
-            <Text style={styles.title}>Parlons-en.</Text>
+            <PageTitle style={styles.title}>Parlons-en.</PageTitle>
             <Text style={styles.lead}>
               Une question, une suggestion, un problème ? Choisissez le bon canal ci-dessous.
               En cas d'urgence médicale, composez le 15 (SAMU) ou le 112 : MedInfo AI n'est
@@ -124,7 +125,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
     letterSpacing: tokens.tracking.capsWide,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     marginBottom: tokens.space.sm,
   },
   title: {
@@ -175,6 +176,7 @@ const styles = StyleSheet.create({
     lineHeight: tokens.type.label.lineHeight,
   },
   cardCta: {
+    minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.sm,

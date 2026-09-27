@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textSubtle,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
   },
   card: {
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   body: { borderTopWidth: 1, borderTopColor: tokens.colors.border, paddingTop: tokens.space.sm },
   transcriptionText: { fontFamily: tokens.font.sans, color: tokens.colors.text, fontSize: tokens.type.body.fontSize, lineHeight: tokens.type.body.lineHeight },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm, borderTopWidth: 1, borderTopColor: tokens.colors.border, paddingTop: tokens.space.sm },
-  actionBtn: { paddingHorizontal: tokens.space.md, paddingVertical: tokens.space.xs + 2, borderRadius: tokens.radius.sm, backgroundColor: tokens.colors.surfaceAlt, borderWidth: 1, borderColor: tokens.colors.border },
+  actionBtn: { minHeight: tokens.size.controlMd, paddingHorizontal: tokens.space.md, paddingVertical: tokens.space.xs + 2, borderRadius: tokens.radius.sm, backgroundColor: tokens.colors.surfaceAlt, borderWidth: 1, borderColor: tokens.colors.border },
   actionText: { fontFamily: tokens.font.sans, color: tokens.colors.accentDeep, fontSize: tokens.type.caption.fontSize, fontWeight: tokens.weight.medium },
   deleteText: { color: tokens.colors.danger },
   editBox: { gap: tokens.space.xs },
@@ -306,8 +306,8 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.body.fontSize,
   },
   row: { flexDirection: 'row', gap: tokens.space.sm, marginTop: tokens.space.xs },
-  ghostBtn: { flex: 1, height: 40, borderRadius: tokens.radius.md, borderWidth: 1, borderColor: tokens.colors.borderStrong, justifyContent: 'center', alignItems: 'center' },
+  ghostBtn: { minHeight: tokens.size.controlMd, flex: 1, height: 40, borderRadius: tokens.radius.md, borderWidth: 1, borderColor: tokens.colors.borderStrong, justifyContent: 'center', alignItems: 'center' },
   ghostBtnText: { fontFamily: tokens.font.sans, color: tokens.colors.textSubtle, fontWeight: tokens.weight.medium, fontSize: tokens.type.label.fontSize },
-  primaryBtn: { flex: 2, height: 40, borderRadius: tokens.radius.md, backgroundColor: tokens.colors.accent, justifyContent: 'center', alignItems: 'center' },
+  primaryBtn: { minHeight: tokens.size.controlMd, flex: 2, height: 40, borderRadius: tokens.radius.md, backgroundColor: tokens.colors.accent, justifyContent: 'center', alignItems: 'center' },
   primaryBtnText: { fontFamily: tokens.font.sans, color: tokens.colors.onAccent, fontWeight: tokens.weight.semibold, fontSize: tokens.type.label.fontSize },
 });

@@ -1,3 +1,5 @@
+import { FieldInput } from '@/ui/FieldInput';
+import { PageTitle } from '@/ui/PageTitle';
 /**
  * Dashboard de révision étudiant (ADR-0027).
  *
@@ -360,7 +362,7 @@ function RevisionScreenInner() {
         <View style={styles.headerTop}>
           <ToolsMenu />
         </View>
-        <Text style={styles.title}>Révisions</Text>
+        <PageTitle style={styles.title}>Révisions</PageTitle>
         <Text style={styles.subtitle}>
           Transforme ton programme en charge quotidienne réaliste. Le calcul est déterministe :
           rien n'est inventé, tu vois tout de suite si tu es dans les temps.
@@ -424,7 +426,7 @@ function RevisionScreenInner() {
         <View key={`form-${formKey}`} style={styles.card}>
           <Text style={styles.cardTitle}>Le plan</Text>
           <Field label="Titre">
-            <TextInput
+            <FieldInput
               style={styles.input}
               defaultValue={title}
               onChangeText={(t) => {
@@ -526,7 +528,7 @@ function RevisionScreenInner() {
           {stored.resources.map((r, index) => (
             <View key={r.id} style={styles.resource}>
               <View style={styles.resourceHead}>
-                <TextInput
+                <FieldInput
                   style={[styles.input, styles.resourceTitleInput]}
                   defaultValue={r.title}
                   onChangeText={(t) => patchResource(r.id, { title: t })}
@@ -712,7 +714,7 @@ function NumberField({
   return (
     <View style={[styles.field, small ? styles.numberSmall : styles.numberHalf]}>
       <Text style={styles.fieldLabel}>{label}</Text>
-      <TextInput
+      <FieldInput
         style={styles.input}
         value={text}
         onChangeText={(t) => {
@@ -752,7 +754,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.label.fontSize,
     lineHeight: 20,
-    marginTop: 4,
+    marginTop: tokens.space.xs,
   },
   scroll: { flex: 1 },
   // Colonne de lecture centrée : cohérente avec le chat et l'analyse de document.
@@ -760,11 +762,11 @@ const styles = StyleSheet.create({
     padding: tokens.space.lg,
     gap: tokens.space.md,
     width: '100%',
-    maxWidth: 800,
+    maxWidth: tokens.layout.reading,
     alignSelf: 'center',
   },
 
-  plansToggle: {
+  plansToggle: { minHeight: tokens.size.controlMd,
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
@@ -812,7 +814,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   planDelete: { padding: tokens.space.sm },
-  newPlanButton: {
+  newPlanButton: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -870,7 +872,7 @@ const styles = StyleSheet.create({
   numberHalf: { flex: 1 },
   numberSmall: { flexGrow: 1, flexBasis: '22%' },
   examRow: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm },
-  examChip: {
+  examChip: { minHeight: tokens.size.controlMd,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.sm,
     borderRadius: tokens.radius.pill,
@@ -918,7 +920,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
 
-  saveButton: {
+  saveButton: { minHeight: tokens.size.controlMd,
     height: 48,
     borderRadius: tokens.radius.lg,
     backgroundColor: tokens.colors.accent,
@@ -981,7 +983,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.bold,
   },
   boostRow: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm },
-  boostChip: {
+  boostChip: { minHeight: tokens.size.controlMd,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.sm,
     borderRadius: tokens.radius.pill,

@@ -1,3 +1,4 @@
+import { PageTitle } from '@/ui/PageTitle';
 /**
  * Module Rédaction d'article médical — outil étudiant + professionnel (ADR-0031).
  *
@@ -53,7 +54,7 @@ function ArticleWriterInner() {
         <View style={styles.headerTop}>
           <ToolsMenu />
         </View>
-        <Text style={styles.title}>Rédaction d'article</Text>
+        <PageTitle style={styles.title}>Rédaction d'article</PageTitle>
         <Text style={styles.subtitle}>
           Structure ton article, ta thèse ou ton abstract : compteurs de caractères,
           bibliographie Vancouver, aides IA à la rédaction et contrôle d'originalité —
@@ -132,7 +133,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.label.fontSize,
     lineHeight: 20,
-    marginTop: 4,
+    marginTop: tokens.space.xs,
   },
   fallback: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: tokens.space.lg },
   fallbackText: {

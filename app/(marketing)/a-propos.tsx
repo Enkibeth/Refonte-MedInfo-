@@ -1,3 +1,4 @@
+import { PageTitle } from '@/ui/PageTitle';
 /**
  * Page « Qui sommes-nous » (audit landing 2026-06) — contenu statique public.
  */
@@ -20,7 +21,7 @@ const VALUES: { icon: IconName; title: string; text: string }[] = [
     text: "Une information médicale claire, en français, compréhensible sans bagage scientifique, et des sources toujours consultables gratuitement.",
   },
   {
-    icon: 'sparkles',
+    icon: 'bookOpen',
     title: 'Innovation',
     text: "Une IA de dernière génération au service de l'information en santé : réponses sourcées, outils pour étudiants et professionnels.",
   },
@@ -57,7 +58,7 @@ export default function AboutScreen() {
         <View style={styles.inner}>
           <Reveal>
             <Text style={styles.eyebrow}>Qui sommes-nous</Text>
-            <Text style={styles.title}>L'information santé, sans détour.</Text>
+            <PageTitle style={styles.title}>L'information santé, sans détour.</PageTitle>
           </Reveal>
           <Reveal delay={tokens.motion.revealStagger}>
             <Text style={styles.lead}>
@@ -142,7 +143,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
     letterSpacing: tokens.tracking.capsWide,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     marginBottom: tokens.space.sm,
   },
   title: {
