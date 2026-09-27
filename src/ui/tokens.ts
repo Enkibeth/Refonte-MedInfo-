@@ -1,11 +1,8 @@
 /**
  * Design system MedInfo AI — source unique (05_DESIGN §2, §3, §4, §9).
  *
- * Refonte 2026-07 (demande Hugo) : exit le « bleu pétrole » jugé fade — identité
- * BLEU VIF : rampe bleue électrique complète (hero/footer en bleu nuit profond,
- * CTA saturés), neutres rafraîchis (slate froid légèrement teinté bleu),
- * sémantiques sobres, échelle typographique modulaire, espacements 4-pt,
- * rayons mesurés et élévations discrètes.
+ * Direction A, septembre 2026 : blanc, encre et un accent bleu vif.
+ * Hiérarchie éditoriale, contrôles contrastés et bordures fines.
  *
  * Règle : aucune valeur hex/typo en dur dans les composants — tout passe par ce fichier.
  */
@@ -19,7 +16,7 @@ const palette = {
   blue800: '#1E40AF', // profondeur, texte accent
   blue600: '#2563EB', // primaire (CTA, header)
   blue700: '#1D4ED8', // hover / actif du primaire
-  blue500: '#3B82F6', // lueurs, décor
+  blue500: '#3B82F6', // nuance secondaire
   blue100: '#D9E6FF', // fond teinté discret
   blue50: '#EEF4FF',
 
@@ -30,37 +27,29 @@ const palette = {
 
   // Neutres — slate froid légèrement teinté bleu (rafraîchi 2026-07), jamais boueux.
   white: '#FFFFFF',
-  neutral25: '#F7F9FC', // fond d'app (off-white teinté bleu, moins « plat » que blanc pur)
-  neutral50: '#F3F6FA', // surfaces alt, cartes
+  neutral25: '#FFFFFF', // Direction A : le contenu repose sur le blanc.
+  neutral50: '#F6F7F9', // navigation et surfaces secondaires
   neutral100: '#EAEEF5',
-  neutral200: '#DDE3ED', // bordures
-  neutral300: '#C3CDDB',
-  neutral500: '#5D6B80', // texte secondaire
+  neutral200: '#D8DFE7', // séparateurs non interactifs
+  neutral300: '#7D8998', // limites de contrôles : contraste > 3:1 sur blanc
+  neutral500: '#526174', // texte secondaire
   neutral700: '#36435A',
-  neutral900: '#0E1626', // encre principale
+  neutral900: '#142034', // encre principale
 
   // Sémantiques — désaturées pour rester sobres en contexte médical.
   green600: '#157F50',
   green50: '#E6F4EC',
   red600: '#C42233',
   red50: '#FBEAEC',
-  amber600: '#9A6516',
+  amber600: '#80500C',
   amber50: '#FBF1DD',
 
-  // Accents par audience (design system §4 — usage strict : eyebrow pills,
-  // bordure d'accent, pastille d'icône. ≤ 5 % de la surface).
-  proAccent: '#B45309', // ambre brûlé — professionnels de santé
-  proSoft: '#FBF1E3',
-  studentAccent: '#4D7C0F', // olive — étudiants en médecine
-  studentSoft: '#EEF6DE',
-  publicAccent: '#BE185D', // framboise sobre — grand public
-  publicSoft: '#FBE7F0',
 } as const;
 
 export const tokens = {
   colors: {
     // Surfaces
-    background: palette.neutral25, // surface principale (off-white)
+    background: palette.neutral25, // surface principale
     surface: palette.white, // cartes, panneaux surélevés
     surfaceAlt: palette.neutral50, // bulles IA, zones secondaires
     surfaceSunken: palette.neutral100, // champs, fonds enfoncés
@@ -74,10 +63,10 @@ export const tokens = {
     onAccent: palette.white, // texte sur fond bleu
 
     // Accent bleu vif (refonte 2026-07)
-    accent: palette.blue600, // primaire
-    accentStrong: palette.blue500, // lueur / décor (hero) — plus clair que le primaire
-    accentDeep: palette.blue800, // texte accent sur fond clair
-    accentDarker: palette.blue950, // fond hero/footer, profondeur maximale
+    accent: palette.electric700, // texte/liens et contrôles : même famille que la primaire
+    accentStrong: palette.blue500, // nuance secondaire, jamais pour le texte courant
+    accentDeep: palette.electric700, // texte accent sur fond clair
+    accentDarker: palette.blue950, // encre de marque historique
     accentSurface: palette.blue50, // fond teinté très léger
     accentSurfaceStrong: palette.blue100,
     accentVivid: palette.electric600, // CTA primaires et liens d'action (« bleu pétant »)
@@ -90,6 +79,11 @@ export const tokens = {
     dangerBackground: palette.red50,
     warningText: palette.amber600,
     warningBackground: palette.amber50,
+    transparent: 'transparent',
+    overlay: 'rgba(20,32,52,0.4)',
+    onDarkMuted: 'rgba(255,255,255,0.8)',
+    onDarkBorder: 'rgba(255,255,255,0.6)',
+    onDarkHover: 'rgba(255,255,255,0.12)',
 
     // États d'interaction (web : hover/focus). Sobres, dérivés de la rampe existante.
     surfaceHover: palette.neutral50, // survol d'une surface blanche (boutons, cartes)
@@ -98,9 +92,9 @@ export const tokens = {
     // ── Accents par audience (persona) ───────────────────────────────────────
     // Trois publics distincts du design system : pro / étudiant / grand public.
     personas: {
-      pro: { accent: palette.proAccent, soft: palette.proSoft },
-      student: { accent: palette.studentAccent, soft: palette.studentSoft },
-      public: { accent: palette.publicAccent, soft: palette.publicSoft },
+      pro: { accent: palette.electric700, soft: palette.blue50 },
+      student: { accent: palette.electric700, soft: palette.blue50 },
+      public: { accent: palette.electric700, soft: palette.blue50 },
     },
 
     // ── Teintes de pastilles par outil (shell 2026-07) ───────────────────────
@@ -108,13 +102,13 @@ export const tokens = {
     // activité récente) : fond doux + encre foncée AA. Usage strict : pastille
     // d'icône et monogramme — jamais des aplats de section entiers.
     tints: {
-      blue: { fg: palette.blue700, bg: '#E4EDFF' },
-      green: { fg: '#0E6B4A', bg: '#DFF3E9' },
-      amber: { fg: '#8A5410', bg: '#FBEEDA' },
-      rose: { fg: '#B01E45', bg: '#FCE5EC' },
-      violet: { fg: '#5B34C7', bg: '#ECE6FC' },
-      teal: { fg: '#0C6E67', bg: '#DCF2F0' },
-      indigo: { fg: '#4338CA', bg: '#E7E9FE' },
+      blue: { fg: palette.electric700, bg: palette.blue50 },
+      green: { fg: palette.electric700, bg: palette.blue50 },
+      amber: { fg: palette.electric700, bg: palette.blue50 },
+      rose: { fg: palette.electric700, bg: palette.blue50 },
+      violet: { fg: palette.electric700, bg: palette.blue50 },
+      teal: { fg: palette.electric700, bg: palette.blue50 },
+      indigo: { fg: palette.electric700, bg: palette.blue50 },
       slate: { fg: palette.neutral700, bg: palette.neutral100 },
     },
   },
@@ -161,15 +155,16 @@ export const tokens = {
   },
   // Échelle modulaire (~1.2). Letter-spacing négatif sur les grands titres = rendu « dessiné ».
   type: {
+    landing: { fontSize: 60, lineHeight: 68, letterSpacing: -1.2 },
     hero: { fontSize: 44, lineHeight: 52, letterSpacing: -0.6 }, // headline du hero landing uniquement
     display: { fontSize: 40, lineHeight: 46, letterSpacing: -0.8 },
-    h1: { fontSize: 30, lineHeight: 38, letterSpacing: -0.5 },
+    h1: { fontSize: 32, lineHeight: 40, letterSpacing: -0.5 },
     h2: { fontSize: 22, lineHeight: 30, letterSpacing: -0.3 },
     h3: { fontSize: 18, lineHeight: 26, letterSpacing: -0.2 },
     bodyLg: { fontSize: 17, lineHeight: 27, letterSpacing: 0 },
     body: { fontSize: 15, lineHeight: 24, letterSpacing: 0 },
     label: { fontSize: 14, lineHeight: 20, letterSpacing: 0 },
-    caption: { fontSize: 12.5, lineHeight: 18, letterSpacing: 0.1 },
+    caption: { fontSize: 13, lineHeight: 20, letterSpacing: 0 },
     micro: { fontSize: 11, lineHeight: 15, letterSpacing: 0.2 }, // badges, méta, onglets — plus petit cran autorisé
   },
 
@@ -182,35 +177,44 @@ export const tokens = {
     xl: 24,
     '2xl': 32,
     '3xl': 48,
+    '4xl': 64,
   },
 
   // ── Rayons (mesurés, pas de « tout arrondi ») ───────────────────────────────
   radius: {
-    xs: 6, // coin « pincé » des bulles de chat (queue côté émetteur)
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 20,
+    xs: 4,
+    sm: 6,
+    md: 8,
+    lg: 8,
+    xl: 12,
     pill: 999,
   },
 
   // ── Tailles de contrôle (hauteurs unifiées boutons / champs / icônes) ────────
   size: {
     controlMd: 44,
+    composerAction: 104,
     controlLg: 52,
-    iconButton: 38,
+    iconButton: 44,
+    iconSm: 16,
+    iconMd: 20,
+    iconLg: 24,
+    ring: 32,
+    stroke: 2,
   },
+  layout: { compact: 640, tablet: 768, shell: 1024, wide: 1280, sidebar: 224, rail: 72, reading: 760, page: 1200, form: 560, audience: 384, history: 256 },
+  border: { thin: 1, accent: 3 },
 
   // ── Élévation (ombres discrètes ; web only, ignorées proprement en natif) ───
   // Ombres en deux couches (contact + diffusion) : profondeur crédible sans halo
   // « template ». Une seule grande ombre floue est un tell de design générique.
   elevation: {
     sm: Platform.select({
-      web: { boxShadow: '0 1px 2px rgba(14, 22, 38, 0.05), 0 1px 1px rgba(14, 22, 38, 0.04)' },
+      web: {},
       default: {},
     }) as object,
     md: Platform.select({
-      web: { boxShadow: '0 2px 4px rgba(30, 64, 175, 0.05), 0 8px 20px -6px rgba(30, 64, 175, 0.10)' },
+      web: { boxShadow: '0 4px 12px rgba(20,32,52,0.08)' },
       default: {},
     }) as object,
     lg: Platform.select({
@@ -224,7 +228,7 @@ export const tokens = {
   // le focus clavier ne s'applique pas de la même façon → objet vide ignoré.
   focus: {
     ring: Platform.select({
-      web: { boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.40)' },
+      web: { outlineStyle: 'solid', outlineWidth: 2, outlineColor: palette.electric700, outlineOffset: 3 },
       default: {},
     }) as object,
   },

@@ -82,14 +82,14 @@ export function ToolsMenu() {
       <Pressable
         onPress={() => setOpen(true)}
         accessibilityRole="button"
-        accessibilityLabel="Ouvrir le menu des outils"
+        accessibilityLabel="Ouvrir le menu des outils" {...(Platform.OS === 'web' ? { title: 'Ouvrir le menu des outils' } : {})}
         style={styles.trigger}
       >
         <Icon name="layoutGrid" size={14} color={tokens.colors.accentDeep} />
         <Text style={styles.triggerLabel}>Outils</Text>
       </Pressable>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+      <Modal visible={open} transparent animationType="none" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
           <Pressable style={styles.panel} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.panelTitle}>Mes outils</Text>
@@ -139,16 +139,16 @@ export function ToolsMenu() {
 }
 
 const styles = StyleSheet.create({
-  trigger: {
+  trigger: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    borderRadius: tokens.radius.pill,
+    borderRadius: tokens.radius.sm,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.sm,
-    backgroundColor: tokens.colors.accentSurface,
+    backgroundColor: tokens.colors.surface,
     borderWidth: 1,
-    borderColor: tokens.colors.accentSurfaceStrong,
+    borderColor: tokens.colors.borderStrong,
   },
   triggerLabel: {
     fontFamily: tokens.font.sans,
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.32)',
     alignItems: 'flex-end',
-    paddingTop: 64,
+    paddingTop: tokens.space['4xl'],
     paddingHorizontal: tokens.space.md,
   },
   panel: {
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
     paddingHorizontal: tokens.space.sm,
     paddingVertical: tokens.space.xs,

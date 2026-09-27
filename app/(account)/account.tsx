@@ -1,3 +1,4 @@
+import { PageTitle } from '@/ui/PageTitle';
 import { Link, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -116,7 +117,7 @@ export default function AccountScreen() {
           <Logo size="sm" />
         </View>
       ) : null}
-      <Text style={styles.title}>Mon compte</Text>
+      <PageTitle style={styles.title}>Mon compte</PageTitle>
       <Text style={styles.body}>
         Informations de connexion et préférences associées à ta session MedInfo AI.
       </Text>

@@ -42,7 +42,7 @@ export function CountrySelector({
         <Text style={styles.triggerLabel}>{current ? current.code : 'Pays'}</Text>
       </Pressable>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+      <Modal visible={open} transparent animationType="none" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
           <Pressable style={styles.panel} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.panelTitle}>Pays d’exercice</Text>
@@ -81,16 +81,16 @@ export function CountrySelector({
 }
 
 const styles = StyleSheet.create({
-  trigger: {
+  trigger: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    borderRadius: tokens.radius.pill,
+    borderRadius: tokens.radius.sm,
     paddingHorizontal: tokens.space.sm + 2,
     paddingVertical: tokens.space.xs + 2,
-    backgroundColor: tokens.colors.accentSurface,
+    backgroundColor: tokens.colors.surface,
     borderWidth: 1,
-    borderColor: tokens.colors.accentSurfaceStrong,
+    borderColor: tokens.colors.borderStrong,
   },
   triggerLabel: {
     fontFamily: tokens.font.sans,

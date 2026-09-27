@@ -16,7 +16,7 @@
  * ne déclenchent jamais d'envoi au premier clic : cocher bascule la sélection, un bouton
  * « Envoyer (N) » explicite déclenche l'envoi groupé — cohérent avec QUESTIONS_PATIENT.
  */
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import {
@@ -34,6 +34,7 @@ import {
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
+import { advanceStreamingBody, EMPTY_STREAMING_BODY, visibleStreamingTail } from '@/chat/streamingBody';
 
 // ── Sources ───────────────────────────────────────────────────────────────────
 
@@ -554,7 +555,7 @@ function ReflectionBlock({
         onPress={() => setOpen((o) => !o)}
         accessibilityRole="button"
       >
-        <Icon name="sparkles" size={15} color={tokens.colors.textMuted} />
+        <Icon name="bookOpen" size={15} color={tokens.colors.textMuted} />
         <Text style={styles.reflectionToggleText}>Auto-réflexion de l'IA</Text>
         <View style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }}>
           <Icon name="chevronDown" size={15} color={tokens.colors.textMuted} />
@@ -571,7 +572,7 @@ function ReflectionBlock({
 
 // ── Corps avec titres MAJUSCULES ──────────────────────────────────────────────
 
-function BodyBlock({
+const BodyBlock = memo(function BodyBlock({
   markdown,
   sources,
   onOpenSource,
@@ -598,7 +599,7 @@ function BodyBlock({
       ))}
     </View>
   );
-}
+});
 
 // ── Composant principal ───────────────────────────────────────────────────────
 
@@ -607,19 +608,36 @@ export function AssistantBlocks({
   onSend,
   disabled,
   onOpenSource,
+  streaming = false,
 }: {
   text: string;
   onSend: (text: string) => void;
   disabled: boolean;
   onOpenSource: (s: ParsedSource) => void;
+  streaming?: boolean;
 }) {
-  const parsed = useMemo(() => parseAssistantMessage(text), [text]);
+  const incrementalRef = useRef(streaming);
+  if (streaming) incrementalRef.current = true;
+  const incremental = incrementalRef.current;
+  const bodyRef = useRef(EMPTY_STREAMING_BODY);
+  const body = incremental ? advanceStreamingBody(bodyRef.current, text, !streaming) : EMPTY_STREAMING_BODY;
+  bodyRef.current = body;
+  const structuredText = streaming ? '' : incremental ? body.deferred ?? text : text;
+  const parsed = useMemo(() => parseAssistantMessage(structuredText), [structuredText]);
+  const tail = streaming ? visibleStreamingTail(body.pending) : '';
 
   return (
     <View style={styles.root}>
+      {body.chunks.map((markdown, i) => (
+        <View key={`body-${i}`} testID="completed-answer-block">
+          <BodyBlock markdown={markdown} sources={parsed.sources} onOpenSource={onOpenSource} />
+        </View>
+      ))}
+      {tail ? <View key={`body-${body.chunks.length}`}><BodyBlock markdown={tail} sources={parsed.sources} onOpenSource={onOpenSource} /></View> : null}
       {parsed.blocks.map((block, i) => {
         switch (block.type) {
           case 'body':
+            if (incremental && body.deferred === null) return null;
             return (
               <BodyBlock key={i} markdown={block.markdown} sources={parsed.sources} onOpenSource={onOpenSource} />
             );
@@ -667,7 +685,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.bold,
     letterSpacing: 0.6,
     marginTop: tokens.space.sm,
-    paddingBottom: 4,
+    paddingBottom: tokens.space.xs,
     borderBottomWidth: 1,
     borderBottomColor: tokens.colors.accentSurfaceStrong,
   },
@@ -678,7 +696,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
     letterSpacing: tokens.tracking.caps,
-    textTransform: 'uppercase',
+    textTransform: 'none',
   },
 
   badge: {
@@ -700,7 +718,7 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.surface,
     overflow: 'hidden',
   },
-  sourcesToggle: {
+  sourcesToggle: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.sm,
@@ -720,7 +738,7 @@ const styles = StyleSheet.create({
     borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.surfaceAlt,
     padding: tokens.space.md,
-    gap: 4,
+    gap: tokens.space.xs,
     ...tokens.motion.transitionWeb,
   },
   sourceHeader: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
@@ -791,7 +809,7 @@ const styles = StyleSheet.create({
   },
 
   deepeningWrapper: { gap: tokens.space.sm, marginTop: tokens.space.xs },
-  deepeningButton: {
+  deepeningButton: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.md,
@@ -862,7 +880,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm },
-  optionChip: {
+  optionChip: { minHeight: tokens.size.controlMd,
     borderRadius: tokens.radius.pill,
     borderWidth: 1,
     borderColor: tokens.colors.borderStrong,
@@ -882,7 +900,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.medium,
   },
   optionChipTextSelected: { color: tokens.colors.onAccent },
-  submitButton: {
+  submitButton: { minHeight: tokens.size.controlMd,
     alignSelf: 'flex-start',
     borderRadius: tokens.radius.pill,
     backgroundColor: tokens.colors.accent,
@@ -906,7 +924,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.semibold,
   },
-  actionButton: {
+  actionButton: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.sm,
@@ -932,7 +950,7 @@ const styles = StyleSheet.create({
   },
 
   calcWrapper: { gap: tokens.space.sm, marginTop: tokens.space.xs },
-  calcChip: {
+  calcChip: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,

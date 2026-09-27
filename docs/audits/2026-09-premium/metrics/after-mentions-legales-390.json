@@ -1,0 +1,21 @@
+{
+  "route": "/mentions-legales",
+  "width": 390,
+  "height": 844,
+  "title": "Mentions légales — MedInfo AI",
+  "headings": [
+    "Informations légales",
+    "Mentions légales",
+    "Éditeur",
+    "Hébergement",
+    "Nature du service",
+    "Propriété intellectuelle",
+    "Signalement"
+  ],
+  "text": "Informations légales\nInformations légales\nMentions légales\nDernière mise à jour : 2026-06-05\nInformations relatives à l'éditeur et à l'hébergeur de la plateforme MedInfo AI, conformément à la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique (LCEN).\nÉditeur\nMedInfo AI est édité par [À COMPLÉTER : raison sociale / statut juridique], immatriculé sous le numéro [À COMPLÉTER : SIREN/SIRET], dont le siège est situé [À COMPLÉTER : adresse du siège].\nDirecteur de la publication : [À COMPLÉTER : nom du directeur de la publication].\nContact : [À COMPLÉTER : e-mail de contact].\nHébergement\nL'application web est hébergée par Vercel Inc. (340 S Lemon Ave #4133, Walnut, CA 91789, USA).\nLa base de données et l'authentification sont fournies par Supabase (hébergement applicatif au sein de l'Union européenne, région eu-west-3).\nNature du service\nMedInfo AI est une plateforme conversationnelle d'information et de référence éducative fournissant des informations médicales et pharmacologiques générales tirées de la littérature médicale française et européenne publiquement disp",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [],
+  "passes": 19
+}

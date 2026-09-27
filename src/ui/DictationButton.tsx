@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     lineHeight: 16,
   },
-  button: {
+  button: { minHeight: tokens.size.controlMd,
     width: 44,
     height: 44,
     borderRadius: tokens.radius.lg,

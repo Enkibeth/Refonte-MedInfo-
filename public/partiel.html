@@ -9,26 +9,10 @@
      servent qu'à l'import du format choisi ou à l'export : elles sont chargées
      À LA DEMANDE par `loadScript()` (cf. bas de page), jamais au premier rendu. -->
 <style>
-:root{
-  --bg:#f7f9fc;--ink:#0e1626;--ink2:#36435a;
-  --muted:#5d6b80;--muted2:#36435a;
-  --line:#dde3ed;--linef:#eaeef5;
-  --card:#ffffff;--cardalt:#f3f6fa;--sunken:#eaeef5;
-  --a1:#2563eb;--a1s:rgba(37,99,235,.10);--a1m:rgba(37,99,235,.22);
-  /* Accent clinique (comparaison / second étudiant) — medinfo-ai */
-  --a2:#157f50;--a2s:rgba(21,127,80,.10);--a2m:rgba(21,127,80,.22);
-  --ok:#157f50;--oks:rgba(21,127,80,.14);
-  --warn:#9a6516;--warns:#fbf1dd;
-  --err:#c42233;--errbg:#fbeaec;
-  --r-xs:6px;--r-sm:8px;--r-md:12px;--r-lg:16px;
-  --shadow-rest:0 1px 2px rgba(14,22,38,.05),0 1px 1px rgba(14,22,38,.04);
-  --shadow-card:0 2px 4px rgba(30,64,175,.05),0 8px 20px -6px rgba(30,64,175,.10);
-  --shadow-pop:0 12px 32px -10px rgba(14,22,38,.28);
-  --ease:cubic-bezier(.25,1,.5,1);
-}
+:root { --serif: Georgia, "Times New Roman", serif; --topbar-h: 52px; }
 *,*::before,*::after{box-sizing:border-box;-webkit-font-smoothing:antialiased;}
 html,body{margin:0;padding:0;}
-body{background:var(--bg);color:var(--ink);font-family:'Public Sans',system-ui,sans-serif;font-size:14px;line-height:1.55;min-height:100vh;}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.55;min-height:100vh;}
 .ff{font-family:'Source Serif 4',Georgia,serif;font-optical-sizing:auto;letter-spacing:-.02em;}
 .mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-feature-settings:'tnum' 1;}
 .w{max-width:1180px;margin:0 auto;padding:0 20px;}
@@ -323,6 +307,9 @@ tr.me:hover{background:var(--a1m);}
   .radar-wrap{width:120px;height:120px;}
 }
 </style>
+<link rel="stylesheet" href="/medinfo-tokens.css" />
+<link rel="stylesheet" href="/medinfo-ui.css" />
+<script src="/medinfo-controls.js"></script>
 </head>
 <body>
 <main class="w" id="main">
@@ -334,7 +321,7 @@ tr.me:hover{background:var(--a1m);}
       <span class="big ff" id="dztitle">D&eacute;pose le relev&eacute; de notes de ta promo</span>
       <span class="hint mono" id="dzhint">.xlsx &middot; .xls &middot; .csv &middot; .pdf &mdash; une colonne d'identifiants, une colonne par &eacute;preuve</span>
       <span class="dz-cta mono" id="dzcta">Parcourir&hellip;</span>
-      <input type="file" id="fi" accept=".xlsx,.xls,.csv,.tsv,.pdf">
+      <input type="file" id="fi" aria-label="Importer un fichier de résultats" accept=".xlsx,.xls,.csv,.tsv,.pdf">
     </label>
     <p class="notice">&#128274; <b>Traitement 100 % local.</b> Aucune note n'est envoy&eacute;e sur internet et rien n'est stock&eacute; en ligne &mdash; le fichier ne quitte jamais cet appareil.</p>
     <div id="errbox"></div>
@@ -388,11 +375,11 @@ tr.me:hover{background:var(--a1m);}
       <div class="pgrid">
         <div class="field" id="fld-sheet" hidden>
           <span class="clabel">Feuille</span>
-          <select class="f" id="sheetsel"></select>
+          <select class="f" id="sheetsel" aria-label="Feuille de calcul"></select>
         </div>
         <div class="field">
           <span class="clabel">Colonne identifiant</span>
-          <select class="f" id="idcolsel"></select>
+          <select class="f" id="idcolsel" aria-label="Colonne des identifiants"></select>
         </div>
         <div class="field">
           <span class="clabel">&Eacute;chelle des notes</span>
@@ -400,7 +387,7 @@ tr.me:hover{background:var(--a1m);}
         </div>
         <div class="field">
           <span class="clabel">Seuil de validation</span>
-          <input class="f" id="passinput" type="number" step="0.5" min="0" style="width:96px">
+          <input class="f" id="passinput" aria-label="Seuil de validation" type="number" step="0.5" min="0" style="width:96px">
         </div>
         <div class="field">
           <span class="clabel">Base du classement g&eacute;n&eacute;ral</span>
@@ -1775,7 +1762,7 @@ function renderSimOut(){
         <div class="simdelta">Centile ${fp(sim.pct)}</div>`
       :`<div class="simdelta flat" style="margin-top:10px">Pas de rang : il te manque ${fi(Math.max(0,(S.overall.counted||0)-simNoted))} épreuve(s) sur ${fi(S.overall.counted)}. Renseigne-les avec les curseurs pour voir ton rang.</div>`}
     <div class="goalrow">
-      <div class="field"><span class="clabel">Objectif de moyenne</span><input class="f" id="goalinput" type="number" step="0.5" min="0" max="${S.scaleMax}" style="width:92px" value="${typeof S.goal==='number'?S.goal:''}" placeholder="${fm(S.scaleMax/2,0)}"></div>
+      <div class="field"><span class="clabel">Objectif de moyenne</span><input class="f" id="goalinput" aria-label="Objectif de moyenne" type="number" step="0.5" min="0" max="${S.scaleMax}" style="width:92px" value="${typeof S.goal==='number'?S.goal:''}" placeholder="${fm(S.scaleMax/2,0)}"></div>
       <div class="field" style="flex:1 1 130px"><span class="clabel">dans l’épreuve</span><select class="f" id="goalsel">${goalOpts}</select></div>
     </div>
     <div class="goalout">${goalHtml||'<span class="iempty">Saisis un objectif pour connaître la note nécessaire.</span>'}</div>

@@ -4,6 +4,7 @@ import {
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
@@ -70,9 +71,9 @@ export function Button({
         <ActivityIndicator
           size="small"
           color={
-            variant === 'inverse'
+            variant === 'inverse' || variant === 'danger'
               ? tokens.colors.accent
-              : variant === 'primary' || variant === 'danger' || variant === 'outlineLight'
+              : variant === 'primary' || variant === 'outlineLight'
                 ? tokens.colors.onAccent
                 : tokens.colors.accent
           }
@@ -80,7 +81,7 @@ export function Button({
       ) : leftIcon ? (
         <View style={styles.icon}>{leftIcon}</View>
       ) : null}
-      <Text style={[styles.label, size === 'lg' ? styles.labelLg : styles.labelMd, v.label]} numberOfLines={1}>
+      <Text style={[styles.label, size === 'lg' ? styles.labelLg : styles.labelMd, v.label]}>
         {label}
       </Text>
     </Pressable>
@@ -98,15 +99,15 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     ...tokens.motion.transitionWeb,
   },
-  fullWidth: { alignSelf: 'stretch' },
+  fullWidth: { alignSelf: 'stretch', width: '100%' },
   md: { minHeight: tokens.size.controlMd, paddingHorizontal: tokens.space.lg },
   lg: { minHeight: tokens.size.controlLg, paddingHorizontal: tokens.space.xl },
   // Appui : léger enfoncement (scale 0.98) — retour tactile net, sans rebond.
-  pressed: { opacity: 0.95, transform: [{ scale: 0.98 }] },
+  pressed: { opacity: 0.85 },
   focusRing: tokens.focus.ring,
   disabled: { opacity: 0.5 },
   icon: { alignItems: 'center', justifyContent: 'center' },
-  label: { fontFamily: tokens.font.sans, fontWeight: tokens.weight.semibold },
+  label: { fontFamily: tokens.font.display, fontWeight: tokens.weight.medium, flexShrink: 1, textAlign: 'center', paddingVertical: tokens.space.sm },
   labelMd: { fontSize: tokens.type.label.fontSize },
   labelLg: { fontSize: tokens.type.bodyLg.fontSize },
 });
@@ -116,7 +117,7 @@ const variantStyles: Record<Variant, { container: ViewStyle; hover: ViewStyle; l
     // CTA en bleu électrique (tokens.colors.accentVivid) — identité 2026-07.
     container: { backgroundColor: tokens.colors.accentVivid, ...tokens.elevation.sm },
     // Survol : teinte plus dense + légère élévation/remontée → CTA « vivant » mais sobre.
-    hover: { backgroundColor: tokens.colors.accentVividStrong, transform: [{ translateY: -1 }], ...tokens.elevation.md },
+    hover: { backgroundColor: tokens.colors.accentVividStrong },
     label: { color: tokens.colors.onAccent },
   },
   secondary: {
@@ -125,34 +126,36 @@ const variantStyles: Record<Variant, { container: ViewStyle; hover: ViewStyle; l
     label: { color: tokens.colors.accentDeep },
   },
   ghost: {
-    container: { backgroundColor: 'transparent' },
+    container: { backgroundColor: tokens.colors.transparent },
     hover: { backgroundColor: tokens.colors.accentSurface },
     label: { color: tokens.colors.accent },
   },
   danger: {
-    container: { backgroundColor: tokens.colors.danger },
-    hover: { transform: [{ translateY: -1 }], ...tokens.elevation.md },
-    label: { color: tokens.colors.onAccent },
+    container: { backgroundColor: tokens.colors.surface, borderColor: tokens.colors.danger },
+    hover: { backgroundColor: tokens.colors.dangerBackground },
+    label: { color: tokens.colors.danger },
   },
   // Pour fonds bleus/sombres (hero) : bouton blanc, texte bleu profond.
   inverse: {
     container: { backgroundColor: tokens.colors.onAccent, ...tokens.elevation.md },
-    hover: { transform: [{ translateY: -1 }], ...tokens.elevation.lg },
+    hover: { backgroundColor: tokens.colors.surfaceAlt },
     label: { color: tokens.colors.accentDeep },
   },
   // Contour clair sur fond sombre.
   outlineLight: {
-    container: { backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.55)' },
-    hover: { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.85)' },
+    container: { backgroundColor: tokens.colors.transparent, borderColor: tokens.colors.onDarkBorder },
+    hover: { backgroundColor: tokens.colors.onDarkHover, borderColor: tokens.colors.onAccent },
     label: { color: tokens.colors.onAccent },
   },
 };
 
-/** Espace réservé exporté pour composer des rangées de boutons cohérentes. */
+/** Secondaires d’abord, primaire en dernier : à droite ou en bas sur mobile. */
 export function ButtonRow({ children }: { children: React.ReactNode }) {
-  return <View style={rowStyles.row}>{children}</View>;
+  const { width } = useWindowDimensions();
+  return <View style={[rowStyles.row, width < tokens.layout.compact && rowStyles.mobile]}>{children}</View>;
 }
 
 const rowStyles = StyleSheet.create({
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.md },
+  row: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: tokens.space.md },
+  mobile: { flexDirection: 'column', alignItems: 'stretch' },
 });

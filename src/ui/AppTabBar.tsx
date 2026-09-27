@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
     marginBottom: tokens.space.md,
   },
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.surface,
     padding: tokens.space.md,
-    gap: 4,
+    gap: tokens.space.xs,
     ...tokens.motion.transitionWeb,
   },
   cardActive: {

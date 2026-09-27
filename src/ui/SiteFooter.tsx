@@ -12,7 +12,6 @@
 import { Link } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { GrainOverlay } from '@/ui/GrainOverlay';
 import { Logo } from '@/ui/Logo';
 import { tokens } from '@/ui/tokens';
 
@@ -63,12 +62,11 @@ export function SiteFooter() {
   return (
     <View style={styles.footer}>
       {/* Grain filmique (Grainient) : matière sur le bleu nuit, no-op en natif. */}
-      <GrainOverlay opacity={0.28} blend="overlay" />
       <View style={styles.inner}>
         <View style={styles.brandBlock}>
-          <Logo size="sm" tone="light" />
+          <Logo size="sm" />
           <Text style={styles.tagline}>
-            L’information médicale sourcée et vérifiée, pour le grand public, les étudiants et
+            L’information médicale générale, pour le grand public, les étudiants et
             les professionnels de santé.
           </Text>
         </View>
@@ -104,7 +102,7 @@ const styles = StyleSheet.create({
     // Colle le footer en bas quand la page est plus courte que l'écran
     // (consomme l'espace libre du contentContainer flexGrow:1).
     marginTop: 'auto',
-    backgroundColor: tokens.colors.accentDarker,
+    backgroundColor: tokens.colors.surfaceAlt,
     paddingHorizontal: tokens.space.xl,
     paddingTop: tokens.space['2xl'],
     paddingBottom: tokens.space.xl,
@@ -113,14 +111,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
   },
-  inner: { width: '100%', maxWidth: 960, gap: tokens.space.xl },
+  inner: { width: '100%', maxWidth: tokens.layout.page, gap: tokens.space.xl },
   brandBlock: { gap: tokens.space.sm },
   tagline: {
     fontFamily: tokens.font.sans,
-    color: 'rgba(255,255,255,0.75)',
+    color: tokens.colors.textMuted,
     fontSize: tokens.type.label.fontSize,
     lineHeight: tokens.type.label.lineHeight,
-    maxWidth: 460,
+    maxWidth: tokens.layout.form,
   },
   columns: {
     flexDirection: 'row',
@@ -130,34 +128,36 @@ const styles = StyleSheet.create({
   column: { flexGrow: 1, flexBasis: 180, gap: tokens.space.sm },
   columnTitle: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
+    color: tokens.colors.text,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
     marginBottom: tokens.space.xs,
   },
   link: {
+    minHeight: tokens.size.controlMd,
+    paddingVertical: tokens.space.md,
     fontFamily: tokens.font.sans,
-    color: 'rgba(255,255,255,0.78)',
+    color: tokens.colors.textMuted,
     fontSize: tokens.type.label.fontSize,
     lineHeight: tokens.type.label.lineHeight,
   },
   bottom: {
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.14)',
+    borderTopColor: tokens.colors.border,
     paddingTop: tokens.space.lg,
     gap: tokens.space.sm,
   },
   disclaimer: {
     fontFamily: tokens.font.sans,
-    color: 'rgba(255,255,255,0.62)',
+    color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
-    lineHeight: 19,
+    lineHeight: tokens.type.caption.lineHeight,
   },
   copyright: {
     fontFamily: tokens.font.sans,
-    color: 'rgba(255,255,255,0.55)',
+    color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
   },
 });

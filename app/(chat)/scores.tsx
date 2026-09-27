@@ -1,3 +1,5 @@
+import { FieldInput } from '@/ui/FieldInput';
+import { PageTitle } from '@/ui/PageTitle';
 /**
  * Scores médicaux — calculateurs cliniques interactifs (persona étudiant + pro).
  *
@@ -81,7 +83,7 @@ function ScoresInner() {
         <View style={styles.headerTop}>
           <ToolsMenu />
         </View>
-        <Text style={styles.title}>Scores médicaux</Text>
+        <PageTitle style={styles.title}>Scores médicaux</PageTitle>
         <Text style={styles.subtitle}>
           {ALL_SCORES.length} scores et calculateurs cliniques : boutons interactifs et
           interprétation immédiate. Calcul privé, sur ton appareil.
@@ -113,7 +115,7 @@ function ScoreBrowser({ onSelect }: { onSelect: (id: string) => void }) {
       {/* Barre de recherche double (nom OU fonction) */}
       <View style={styles.searchBox}>
         <Icon name="search" size={18} color={tokens.colors.textMuted} />
-        <TextInput
+        <FieldInput
           value={query}
           onChangeText={setQuery}
           placeholder="Nom (CHA₂DS₂-VASc) ou fonction (risque hémorragie…)"
@@ -288,7 +290,7 @@ function ScoreDetail({ def, onBack }: { def: ScoreDefinition; onBack: () => void
                 {f.unit ? <Text style={styles.fieldUnit}> ({f.unit})</Text> : null}
               </Text>
               {f.help ? <Text style={styles.fieldHelp}>{f.help}</Text> : null}
-              <TextInput
+              <FieldInput
                 value={numInputs[f.id] ?? ''}
                 onChangeText={(t) => setNumInputs((prev) => ({ ...prev, [f.id]: t }))}
                 placeholder={f.placeholder ?? '—'}
@@ -357,7 +359,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.label.fontSize,
     lineHeight: 20,
-    marginTop: 4,
+    marginTop: tokens.space.xs,
   },
   scroll: { flex: 1 },
   scrollContent: { padding: tokens.space.lg, paddingBottom: tokens.space['3xl'], maxWidth: 760, width: '100%', alignSelf: 'center' },
@@ -413,7 +415,7 @@ const styles = StyleSheet.create({
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
     fontWeight: tokens.weight.bold,
     marginBottom: tokens.space.sm,
@@ -450,16 +452,16 @@ const styles = StyleSheet.create({
   emptySub: { fontFamily: tokens.font.sans, fontSize: tokens.type.caption.fontSize, color: tokens.colors.textMuted, textAlign: 'center' },
 
   // Détail
-  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: tokens.space.md, alignSelf: 'flex-start' },
+  backBtn: { minHeight: tokens.size.controlMd, flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: tokens.space.md, alignSelf: 'flex-start' },
   backLabel: { fontFamily: tokens.font.sans, fontSize: tokens.type.label.fontSize, fontWeight: tokens.weight.semibold, color: tokens.colors.accentDeep },
   detailHead: { marginBottom: tokens.space.md },
-  detailChip: {
+  detailChip: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     alignSelf: 'flex-start',
     paddingHorizontal: tokens.space.sm,
-    paddingVertical: 4,
+    paddingVertical: tokens.space.xs,
     borderRadius: tokens.radius.pill,
     backgroundColor: tokens.colors.accentSurface,
     marginBottom: tokens.space.sm,
@@ -483,7 +485,7 @@ const styles = StyleSheet.create({
   resultLabelSmall: {
     fontFamily: tokens.font.sans,
     fontSize: tokens.type.micro.fontSize,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
     fontWeight: tokens.weight.bold,
     color: tokens.colors.textMuted,
@@ -524,7 +526,7 @@ const styles = StyleSheet.create({
     ...(Platform.select({ web: { outlineStyle: 'none' } as object, default: {} }) as object),
   },
 
-  resetBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: tokens.space.lg, paddingVertical: tokens.space.sm },
+  resetBtn: { minHeight: tokens.size.controlMd, flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: tokens.space.lg, paddingVertical: tokens.space.sm },
   resetLabel: { fontFamily: tokens.font.sans, fontSize: tokens.type.label.fontSize, fontWeight: tokens.weight.semibold, color: tokens.colors.accentDeep },
 
   meta: { fontFamily: tokens.font.sans, fontSize: tokens.type.caption.fontSize, color: tokens.colors.textMuted, lineHeight: 18, marginTop: tokens.space.md },

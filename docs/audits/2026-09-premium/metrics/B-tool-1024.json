@@ -1,0 +1,17 @@
+{
+  "route": "/__directions/direction-b-document.html",
+  "width": 1024,
+  "height": 900,
+  "title": "MedInfo AI · Proposition B · document",
+  "headings": [
+    "Analyse de document",
+    "Avant de commencer",
+    "Votre document"
+  ],
+  "text": "Chat\nDocuments\nRessources\nMon compte\nOutils / Analyse de document\nHistorique\nRetour au chat\nAnalyse de document\n\nRetrouver les informations essentielles.\nComprendre le vocabulaire, consulter les passages cités.\n\nAvant de commencer\n\nRetirez les informations qui permettent d’identifier une personne.\n\nL’analyse apporte une explication générale. Elle ne remplace pas l’avis d’un professionnel de santé.\n\nFormats acceptés\nPDF, JPEG, PNG, WebP ou texte\nTaille maximale\n15 Mo par document\nVotre document\nImporter un fichier\nColler un texte\nAjouter un document\n\nSélectionnez un fichier sur votre appareil.\n\nChoisir un fichier\nCe que vous souhaitez obtenir\nUne analyse expliquée\nUne traduction\n\nLe résultat, et non le document source, est conservé dans votre historique.\n\nAnnuler\nAnalyser le document\n\nAjoutez un document pour lancer l’analyse.\n\nVous interagissez avec un système d'intelligence artificielle (Claude (Anthropic) ou GPT (OpenAI) selon le modèle servi). Les réponses sont générées automatiquement et peuvent contenir des erreurs.\n\nMedInfo AI fournit de l’information médicale générale, jamais ",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [],
+  "passes": 23
+}

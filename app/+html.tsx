@@ -1,5 +1,6 @@
 import { ScrollViewStyleReset } from 'expo-router/html';
 import type { PropsWithChildren } from 'react';
+import { tokens } from '@/ui/tokens';
 
 /**
  * Document HTML racine (web uniquement, expo-router).
@@ -17,7 +18,7 @@ export default function Root({ children }: PropsWithChildren) {
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no" />
-        <meta name="theme-color" content="#2563EB" />
+        <meta name="theme-color" content={tokens.colors.accentVivid} />
 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -35,7 +36,15 @@ export default function Root({ children }: PropsWithChildren) {
 }
 
 const baseStyle = `
-html, body { background-color: #F7F9FC; }
+:focus-visible { outline: ${tokens.border.thin * 2}px solid ${tokens.colors.accent}; outline-offset: ${tokens.border.accent}px; }
+input, textarea, select { accent-color: ${tokens.colors.accent}; }
+@media (pointer: fine) {
+  [data-testid="assistant-message"] [data-testid="response-actions"] { opacity: 0; }
+  [data-testid="assistant-message"]:hover [data-testid="response-actions"],
+  [data-testid="assistant-message"]:focus-within [data-testid="response-actions"] { opacity: 1; }
+}
+
+html, body { background-color: ${tokens.colors.background}; }
 /* Hauteur dynamique (dvh) : sur Safari mobile, la barre d'outils du navigateur ne
    recouvre plus le contenu → la barre d'onglets du bas reste entièrement visible.
    overflow-x masqué : un token très long (URL) ne crée plus de défilement horizontal
@@ -48,14 +57,14 @@ body { overflow-x: hidden; }
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
-::selection { background-color: rgba(37, 99, 235, 0.16); }
+::selection { background-color: ${tokens.colors.accentSurfaceStrong}; }
 
 /* Barre de défilement fine et neutre : signe d'attention au détail, jamais criarde. */
-* { scrollbar-width: thin; scrollbar-color: #C3CDDB transparent; }
+* { scrollbar-width: thin; scrollbar-color: ${tokens.colors.borderStrong} transparent; }
 *::-webkit-scrollbar { width: 8px; height: 8px; }
 *::-webkit-scrollbar-track { background: transparent; }
-*::-webkit-scrollbar-thumb { background-color: #C3CDDB; border-radius: 999px; }
-*::-webkit-scrollbar-thumb:hover { background-color: #5D6B80; }
+*::-webkit-scrollbar-thumb { background-color: ${tokens.colors.borderStrong}; border-radius: 999px; }
+*::-webkit-scrollbar-thumb:hover { background-color: ${tokens.colors.textMuted}; }
 
 /* Mouvement (design system §4). Courbes partagées avec tokens.motion.easing.
    L'entrée par défaut : fade + remontée 8 px, easing « standard ». */
@@ -64,49 +73,9 @@ body { overflow-x: hidden; }
   to   { opacity: 1; transform: translateY(0); }
 }
 .medinfo-reveal {
-  animation: medinfo-reveal 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: medinfo-reveal ${tokens.motion.duration.base}ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Tracé ECG du hero : la ligne se dessine, tient, puis s'efface et recommence —
-   battement lent (cycle 9 s), assez discret pour ne jamais voler le premier rôle.
-   La réinitialisation du tracé se fait pendant que la ligne est invisible. */
-@keyframes medinfo-ecg-draw {
-  0%   { stroke-dashoffset: 1700; opacity: 1; }
-  30%  { stroke-dashoffset: 0; opacity: 1; }
-  80%  { stroke-dashoffset: 0; opacity: 1; }
-  90%  { stroke-dashoffset: 0; opacity: 0; }
-  100% { stroke-dashoffset: 0; opacity: 0; }
-}
-.medinfo-ecg-path {
-  stroke-dasharray: 1700;
-  animation: medinfo-ecg-draw 9000ms cubic-bezier(0.4, 0, 0.2, 1) 300ms infinite;
-}
-
-/* Source de lumière du hero qui « respire » lentement (esprit Supahero) : profondeur
-   ambiante moderne, une SEULE source (jamais d'orbes multiples). Amplitude volontairement
-   contenue — on ne vole jamais la vedette au contenu. Origine calée sur le foyer lumineux. */
-@keyframes medinfo-hero-breathe {
-  0%, 100% { opacity: 0.82; transform: scale(1); }
-  50%      { opacity: 1;    transform: scale(1.06); }
-}
-.medinfo-hero-glow {
-  transform-origin: 16% -6%;
-  animation: medinfo-hero-breathe 14000ms cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  will-change: opacity, transform;
-}
-
-/* Shimmer de chargement (squelettes) : balayage discret gauche → droite. */
-@keyframes medinfo-shimmer {
-  from { background-position: -200% 0; }
-  to   { background-position: 200% 0; }
-}
-.medinfo-shimmer {
-  background-image: linear-gradient(90deg, rgba(222,227,232,0) 0%, rgba(222,227,232,0.7) 50%, rgba(222,227,232,0) 100%);
-  background-size: 200% 100%;
-  animation: medinfo-shimmer 1600ms linear infinite;
-}
-
-/* Respect strict de prefers-reduced-motion : on neutralise toute animation/transition. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;

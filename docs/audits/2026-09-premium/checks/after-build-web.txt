@@ -1,0 +1,141 @@
+(node:510) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> medinfo-ai@0.1.0 build:web
+> expo export -p web && node scripts/vercel/copy-server-html-to-client.mjs
+
+(node:523) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+env: load .env.local
+env: export EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_SUPABASE_URL
+Starting Metro Bundler
+
+| (node:523) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:523) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:523) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+| (node:523) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:523) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:523) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+| (node:523) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+| (node:523) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+| (node:523) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:523) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:523) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+| (node:523) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+Static rendering is enabled. Learn more: https://docs.expo.dev/router/web/static-rendering/
+λ Bundled 1200ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (891 modules)
+Web Bundled 1488ms node_modules/expo-router/entry.js (1097 modules)
+λ Bundled 116ms app/api/cv+api.ts (295 modules)
+λ Bundled 100ms app/api/qcm+api.ts (186 modules)
+λ Bundled 88ms app/api/chat+api.ts (37 modules)
+λ Bundled 74ms app/api/ecos+api.ts (1 module)
+λ Bundled 15ms app/api/role+api.ts (1 module)
+λ Bundled 43ms app/api/health+api.ts (1 module)
+λ Bundled 73ms app/api/analyze+api.ts (57 modules)
+λ Bundled 78ms app/api/article+api.ts (46 modules)
+λ Bundled 14ms app/api/cv-docs+api.ts (17 modules)
+λ Bundled 17ms app/sitemap.xml+api.ts (1 module)
+λ Bundled 79ms app/api/revision+api.ts (301 modules)
+λ Bundled 68ms app/api/chat-meta+api.ts (233 modules)
+λ Bundled 77ms app/api/cv-import+api.ts (221 modules)
+λ Bundled 78ms app/api/admin/blog+api.ts (218 modules)
+λ Bundled 83ms app/api/transcribe+api.ts (21 modules)
+λ Bundled 18ms app/api/admin/costs+api.ts (44 modules)
+λ Bundled 45ms app/api/admin/config+api.ts (1 module)
+λ Bundled 14ms app/api/article-docs+api.ts (1 module)
+λ Bundled 74ms app/api/presentation+api.ts (22 modules)
+λ Bundled 16ms app/api/presentations+api.ts (11 modules)
+λ Bundled 14ms app/api/stripe/webhook+api.ts (1 module)
+λ Bundled 18ms app/api/admin/ecos-cases+api.ts (1 module)
+λ Bundled 14ms app/api/billing/checkout+api.ts (1 module)
+λ Bundled 74ms app/api/cron/weekly-blog+api.ts (58 modules)
+
+› web bundles (1):
+_expo/static/js/web/entry-0737b0ababf23dcc99b1b89b61e5855e.js (3MB)
+
+› Static routes (28):
+/ (index) (61KB)
+/_sitemap (27KB)
+/+not-found (27KB)
+/(chat)/chat (46KB)
+/(chat)/ecos (39KB)
+/(legal)/cgu (43KB)
+/(chat)/audio (37KB)
+/(admin) (32KB)
+/(chat)/scores (39KB)
+/(legal)/legal (44KB)
+/(auth)/sign-in (41KB)
+/(chat)/article (36KB)
+/(chat)/partiel (39KB)
+/(chat)/document (39KB)
+/(chat)/revision (39KB)
+/(chat)/dashboard (35KB)
+/(account)/account (35KB)
+/(billing)/pricing (38KB)
+/(chat)/cv-builder (39KB)
+/(chat)/presentation (39KB)
+/(marketing)/contact (48KB)
+/(marketing)/a-propos (50KB)
+/(account)/choose-role (36KB)
+/(auth)/reset-password (36KB)
+/(marketing)/blog (45KB)
+/(legal)/confidentialite (44KB)
+/(marketing)/blog/[slug] (42KB)
+/(legal)/mentions-legales (42KB)
+
+› API routes (24):
+/api/cv (1.9MB) (source map (2MB))
+/api/qcm (1.9MB) (source map (2MB))
+/api/chat (1.9MB) (source map (2MB))
+/api/ecos (1.9MB) (source map (1.9MB))
+/api/role (261KB) (source map (312KB))
+/api/health (1.1MB) (source map (1.3MB))
+/api/analyze (1.9MB) (source map (2MB))
+/api/article (1.9MB) (source map (2MB))
+/api/cv-docs (263KB) (source map (316KB))
+/sitemap.xml (266KB) (source map (313KB))
+/api/revision (1.9MB) (source map (2MB))
+/api/chat-meta (1.9MB) (source map (1.9MB))
+/api/cv-import (1.9MB) (source map (2MB))
+/api/admin/blog (1.9MB) (source map (2MB))
+/api/transcribe (1.9MB) (source map (1.9MB))
+/api/admin/costs (269KB) (source map (318KB))
+/api/admin/config (1.2MB) (source map (1.3MB))
+/api/article-docs (263KB) (source map (317KB))
+/api/presentation (1.9MB) (source map (2MB))
+/api/presentations (260KB) (source map (311KB))
+/api/stripe/webhook (260KB) (source map (311KB))
+/api/admin/ecos-cases (265KB) (source map (313KB))
+/api/billing/checkout (259KB) (source map (310KB))
+/api/cron/weekly-blog (1.9MB) (source map (2MB))
+
+Exported: dist
+(node:570) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[vercel:fallback] copied index.html -> dist/client/index.html
+[vercel:fallback] copied (chat)/chat.html -> dist/client/chat/index.html
+[vercel:fallback] copied (auth)/sign-in.html -> dist/client/sign-in/index.html
+[vercel:fallback] copied (account)/account.html -> dist/client/account/index.html
+[vercel:fallback] copied +not-found.html -> dist/client/404.html
+[vercel:fallback] copied (marketing)/a-propos.html -> dist/client/a-propos/index.html
+[vercel:fallback] copied (marketing)/contact.html -> dist/client/contact/index.html
+[vercel:fallback] copied (billing)/pricing.html -> dist/client/pricing/index.html
+[vercel:fallback] copied (chat)/document.html -> dist/client/document/index.html
+[vercel:fallback] copied (chat)/ecos.html -> dist/client/ecos/index.html
+[vercel:fallback] copied (chat)/revision.html -> dist/client/revision/index.html
+[vercel:fallback] copied (chat)/partiel.html -> dist/client/partiel/index.html
+[vercel:fallback] copied (chat)/audio.html -> dist/client/audio/index.html
+[vercel:fallback] copied (chat)/presentation.html -> dist/client/presentation/index.html
+[vercel:fallback] copied (chat)/cv-builder.html -> dist/client/cv-builder/index.html
+[vercel:fallback] copied (chat)/article.html -> dist/client/article/index.html
+[vercel:fallback] copied (legal)/mentions-legales.html -> dist/client/mentions-legales/index.html
+[vercel:fallback] copied (legal)/cgu.html -> dist/client/cgu/index.html
+[vercel:fallback] copied (legal)/confidentialite.html -> dist/client/confidentialite/index.html
+[vercel:fallback] copied (legal)/legal.html -> dist/client/legal/index.html

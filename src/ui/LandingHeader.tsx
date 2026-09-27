@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
@@ -83,13 +83,7 @@ export function LandingHeader() {
         >
           {/* Illustration de l'équipe (demande Hugo 2026-06) — dans le coin haut gauche,
               le logo MedInfo à sa droite. Asset relatif (cf. piège alias @/). */}
-          <Image
-            source={require('../../assets/brand/team-illustration.png')}
-            style={styles.teamBadge}
-            resizeMode="cover"
-            accessibilityRole="image"
-            accessibilityLabel="L'équipe MedInfo AI"
-          />
+
           <Logo size="sm" />
         </Pressable>
 
@@ -137,12 +131,13 @@ export function LandingHeader() {
             </View>
           ) : null}
 
-          <Button
+          {!compact ? <Button
+            variant="secondary"
             label={isAuthed ? 'Ouvrir le chat' : 'Commencer'}
             size="md"
             fullWidth={false}
             onPress={() => go('/(chat)/chat')}
-          />
+          /> : null}
         </View>
       </View>
     </View>
@@ -220,6 +215,7 @@ const styles = StyleSheet.create({
   },
   inner: {
     width: '100%',
+    maxWidth: tokens.layout.wide,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -227,6 +223,8 @@ const styles = StyleSheet.create({
     gap: tokens.space.md,
   },
   brandRow: {
+    minHeight: tokens.size.controlMd,
+    flexShrink: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.sm,
@@ -245,9 +243,10 @@ const styles = StyleSheet.create({
     gap: tokens.space.xs,
   },
   link: {
+    minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: tokens.space.xs,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.sm,
     borderRadius: tokens.radius.sm,
@@ -257,7 +256,7 @@ const styles = StyleSheet.create({
   linkFocused: tokens.focus.ring,
   linkLabel: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.accentVivid,
+    color: tokens.colors.textSubtle,
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.semibold,
   },
@@ -276,6 +275,8 @@ const styles = StyleSheet.create({
     ...tokens.elevation.md,
   },
   dropdownRow: {
+    minHeight: tokens.size.controlMd,
+    justifyContent: 'center',
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.sm + 2,
     ...tokens.motion.transitionWeb,

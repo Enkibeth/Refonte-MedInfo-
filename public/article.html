@@ -2,40 +2,18 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Rédaction d'article — MedInfo</title>
 <link rel="stylesheet" href="/vendor/fonts/fonts.css" />
 <!-- Page 100 % autonome : aucune librairie externe. Rédaction, compteurs, bibliographie
      (import DOI/PMID via CrossRef / Europe PMC), exports Word/Markdown : tout est client.
      Seules les aides IA passent par /api/article (compte vérifié étudiant/pro/admin). -->
 <style>
-  :root {
-    --accent: #2563eb;        /* petrol700 */
-    --accent-deep: #1e40af;   /* petrol800 */
-    --accent-soft: #eef4ff;   /* petrol50 */
-    --accent-tint: #d9e6ff;   /* petrol100 */
-    --vivid: #0067ff;         /* blue600 (CTA) */
-    --vivid-deep: #0052d6;
-    --ink: #0e1626;
-    --ink2: #36435a;
-    --muted: #5d6b80;
-    --surface: #ffffff;
-    --bg: #f7f9fc;
-    --line: #dde3ed;
-    --line-fine: #eaeef5;
-    --danger: #c42233;
-    --danger-soft: #fbeaec;
-    --warn: #9a6a00;
-    --warn-soft: #fdf3d8;
-    --success: #157f50;
-    --success-soft: #e9f6ef;
-    --radius: 12px;
-    --radius-sm: 8px;
-  }
+  :root { --serif: Georgia, "Times New Roman", serif; --topbar-h: 52px; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body {
-    font-family: 'Public Sans', system-ui, -apple-system, sans-serif;
+    font-family:var(--sans);
     color: var(--ink);
     background: var(--bg);
     font-size: 14px;
@@ -217,6 +195,9 @@
   .checkline input { margin-top: 2px; }
   .checkline.done { color: var(--muted); text-decoration: line-through; }
 </style>
+<link rel="stylesheet" href="/medinfo-tokens.css" />
+<link rel="stylesheet" href="/medinfo-ui.css" />
+<script src="/medinfo-controls.js"></script>
 </head>
 <body>
   <div class="toolbar">
@@ -449,7 +430,7 @@
       else if (attrs[k] != null) n.setAttribute(k, attrs[k]);
     });
     (children || []).forEach(function (c) { if (c != null) n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
-    return n;
+    return window.medinfoDecorateControl(n);
   }
 
   // ── Comptage (miroir de src/article/articleDocument.ts countText) ─────────
@@ -750,7 +731,7 @@
     if (sum) sum.textContent = 'Check-list qualité (' + done + '/' + items.length + ')';
   }
 
-  function fieldWrap(label, node) { return el('div', { class: 'field' }, [el('label', null, [label]), node]); }
+  function fieldWrap(label, node) { node.setAttribute('aria-label', label); return el('div', { class: 'field' }, [el('label', null, [label]), node]); }
   function inputField(label, value, oninput, attrs) {
     var i = el('input', Object.assign({ type: 'text', value: value || '' }, attrs || {}));
     i.addEventListener('input', function () { oninput(i.value); });
@@ -759,14 +740,14 @@
 
   function limitKindSelect(current) {
     var kinds = [['', 'Aucune limite'], ['chars', 'Caractères (esp. comprises)'], ['chars_no_spaces', 'Caractères hors espaces'], ['words', 'Mots']];
-    return el('select', null, kinds.map(function (kv) {
+    return el('select', { 'aria-label': 'Unité de la limite' }, kinds.map(function (kv) {
       var o = el('option', { value: kv[0] }, [kv[1]]); if ((current || '') === kv[0]) o.selected = true; return o;
     }));
   }
   function globalLimitEditor() {
     var gl = art.meta.globalLimit;
     var kindSel = limitKindSelect(gl ? gl.kind : '');
-    var maxIn = el('input', { type: 'number', min: '1', value: gl && gl.max ? gl.max : '', placeholder: 'max' });
+    var maxIn = el('input', { 'aria-label': 'Limite maximale', type: 'number', min: '1', value: gl && gl.max ? gl.max : '', placeholder: 'max' });
     function apply() {
       var k = kindSel.value;
       var mx = parseInt(maxIn.value, 10);
@@ -838,7 +819,7 @@
     root.appendChild(el('div', { class: 'gauge', style: 'max-width:420px' }, [el('i', { id: 'gauge-active' })]));
 
     // Actions IA + citation
-    var aiMenuBtn = el('button', { class: 'btn btn-accent' }, ['✦ Aide IA ▾']);
+    var aiMenuBtn = el('button', { class: 'btn btn-accent' }, ['Aide IA ▾']);
     var aiMenu = el('div', { class: 'menu' });
     [
       ['improve', 'Améliorer le style scientifique'],
@@ -878,7 +859,7 @@
 
   function sectionLimitEditor(sec) {
     var kindSel = limitKindSelect(sec.limit ? sec.limit.kind : '');
-    var maxIn = el('input', { type: 'number', min: '1', value: sec.limit && sec.limit.max ? sec.limit.max : '', placeholder: 'max' });
+    var maxIn = el('input', { 'aria-label': 'Limite maximale', type: 'number', min: '1', value: sec.limit && sec.limit.max ? sec.limit.max : '', placeholder: 'max' });
     function apply() {
       var k = kindSel.value; var mx = parseInt(maxIn.value, 10);
       sec.limit = (k && mx > 0) ? { kind: k, max: mx } : undefined;

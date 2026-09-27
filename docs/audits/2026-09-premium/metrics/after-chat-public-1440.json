@@ -1,0 +1,16 @@
+{
+  "route": "/chat?bot=public",
+  "width": 1440,
+  "height": 900,
+  "title": "Chat santé IA — posez votre question, réponse sourcée — MedInfo AI",
+  "headings": [
+    "Chat grand public",
+    "Posez votre question santé"
+  ],
+  "text": "Chat grand public\nInformation santé claire, sourcée et rassurante\nPays\nOutils\nPublic\nÉtudiant\nPro\nPosez votre question santé\nInformation santé claire, sourcée et rassurante.\nEssai gratuit : 1 message sans inscription (1/1)\nQue signifie une TSH élevée sur une prise de sang ?\nJ'ai mal à la gorge depuis 3 jours, que faire ?\nComment préparer ma consultation chez le cardiologue ?\nEnvoyer\nSystème d’intelligence artificielle. Information générale — ne remplace pas un avis médical individuel. En cas d’urgence : 15 ou 112.",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [],
+  "passes": 25
+}

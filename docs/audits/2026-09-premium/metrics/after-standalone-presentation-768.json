@@ -1,0 +1,20 @@
+{
+  "route": "/presentation.html",
+  "width": 768,
+  "height": 900,
+  "title": "Générateur de présentations — MedInfo",
+  "headings": [
+    "Slides"
+  ],
+  "text": "Générateur de présentations\nSlides médicales prêtes pour Keynote · export PPTX\nMode manuel\nMode IA\nHors connexion\nMes présentations\nNouveau\nExporter en PPTX\nTitre\nSous-titre\nAuteur\nAffiliation\nContact\nThème\nV1 — Ivoire / Bordeaux\nV2 — Ivoire / Sarcelle (hero)\nV3 — Sombre / Mandarine\nDensité du texte\nPuces\nPhrases\nMixte\nNombre de slides visé (IA)\nPublic visé (IA)\nSlides\n1\nCOUVERTURE\nTitre de la présentation\n2\nPLAN / SOMMAIRE\nPlan de la présentation\n3\nPUCES (ACTION TITLE)\nTitre qui énonce la conclusion de la slide\n4\nÀ RETENIR / CONCLUSION\nUne phrase synthétique unique, percutante, qui résume tout le propos.\n5\nRÉFÉRENCES + CONTACT\nSources · contact · remerciements\nCouverture\nIntercalaire\nPlan / sommaire\nPuces (action title)\nTexte rédigé\nDeux colonnes\nManifeste / citation hero\nTrio de chiffres (hero)\nUn grand chiffre (hero)\nÉtapes numérotées\nTableau (Keynote-safe)\nMatrice 2×2\nImage / placeholder\nÀ retenir / conclusion\nRéférences + contact\n+ Ajouter la slide\nSlide 1 · Couverture\nTitre principal, sous-titre, bloc auteur. Toujours en première position.\nSur-titre (kicker)\nTitre principal\nSou",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [
+    {
+      "id": "aria-prohibited-attr",
+      "count": 1
+    }
+  ],
+  "passes": 22
+}

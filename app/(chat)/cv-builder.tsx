@@ -1,3 +1,4 @@
+import { PageTitle } from '@/ui/PageTitle';
 /**
  * Module CV Builder — outil étudiant + professionnel (personas student/professional).
  *
@@ -52,7 +53,7 @@ function CvBuilderInner() {
         <View style={styles.headerTop}>
           <ToolsMenu />
         </View>
-        <Text style={styles.title}>Créateur de CV</Text>
+        <PageTitle style={styles.title}>Créateur de CV</PageTitle>
         <Text style={styles.subtitle}>
           Construis ton CV avec tes propres rubriques, fais-le relire par l'IA (suggestions à
           valider) et exporte un PDF dont le texte reste sélectionnable — donc lisible par les
@@ -131,7 +132,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.label.fontSize,
     lineHeight: 20,
-    marginTop: 4,
+    marginTop: tokens.space.xs,
   },
   fallback: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: tokens.space.lg },
   fallbackText: {

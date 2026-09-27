@@ -10,7 +10,8 @@ import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-nativ
 
 import { useSession } from '@/auth/AuthProvider';
 import { SEX_OPTIONS, type PersonalInfo, type Sex } from '@/profile/personalInfo';
-import { Button } from '@/ui/Button';
+import { FieldInput } from '@/ui/FieldInput';
+import { Button, ButtonRow } from '@/ui/Button';
 import { tokens } from '@/ui/tokens';
 
 export function PersonalInfoForm() {
@@ -68,10 +69,11 @@ export function PersonalInfoForm() {
       <View style={styles.fieldRow}>
         <View style={styles.fieldHalf}>
           <Text style={styles.fieldLabel}>Prénom</Text>
-          <TextInput
+          <FieldInput
             style={styles.input}
             value={firstName}
             onChangeText={setFirstName}
+            accessibilityLabel="Prénom"
             placeholder="Prénom"
             placeholderTextColor={tokens.colors.textMuted}
             maxLength={60}
@@ -79,10 +81,11 @@ export function PersonalInfoForm() {
         </View>
         <View style={styles.fieldHalf}>
           <Text style={styles.fieldLabel}>Nom</Text>
-          <TextInput
+          <FieldInput
             style={styles.input}
             value={lastName}
             onChangeText={setLastName}
+            accessibilityLabel="Nom"
             placeholder="Nom"
             placeholderTextColor={tokens.colors.textMuted}
             maxLength={60}
@@ -91,10 +94,11 @@ export function PersonalInfoForm() {
       </View>
 
       <Text style={styles.fieldLabel}>Âge</Text>
-      <TextInput
+      <FieldInput
         style={styles.input}
         value={age}
         onChangeText={(t) => setAge(t.replace(/[^0-9]/g, ''))}
+        accessibilityLabel="Âge"
         placeholder="Ex. 34"
         placeholderTextColor={tokens.colors.textMuted}
         keyboardType="number-pad"
@@ -122,13 +126,13 @@ export function PersonalInfoForm() {
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {savedMessage ? <Text style={styles.saved}>{savedMessage}</Text> : null}
 
-      <Button
+      <ButtonRow><Button
         label={saving ? 'Enregistrement…' : 'Enregistrer'}
         onPress={handleSave}
         loading={saving}
         disabled={saving}
         style={styles.saveButton}
-      />
+      /></ButtonRow>
     </View>
   );
 }
@@ -161,7 +165,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.body.fontSize,
   },
   sexRow: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm },
-  sexChip: {
+  sexChip: { minHeight: tokens.size.controlMd,
     borderRadius: tokens.radius.pill,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.sm,
@@ -188,5 +192,5 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
   },
-  saveButton: { marginTop: tokens.space.sm },
+  saveButton: { minHeight: tokens.size.controlMd, marginTop: tokens.space.sm },
 });

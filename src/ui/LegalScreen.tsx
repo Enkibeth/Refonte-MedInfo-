@@ -21,13 +21,13 @@ export function LegalScreen({ document }: { document: LegalDocument }) {
       />
       <View style={styles.card}>
         <Text style={styles.eyebrow}>Informations légales</Text>
-        <Text style={styles.title}>{document.title}</Text>
+        <Text role="heading" aria-level={1} style={styles.title}>{document.title}</Text>
         <Text style={styles.updated}>Dernière mise à jour : {document.updatedAt}</Text>
         <Text style={styles.intro}>{document.intro}</Text>
 
         {document.sections.map((section) => (
           <View key={section.heading} style={styles.section}>
-            <Text style={styles.heading}>{section.heading}</Text>
+            <Text role="heading" aria-level={2} style={styles.heading}>{section.heading}</Text>
             {section.body.map((paragraph, index) => (
               <Text key={index} style={styles.paragraph}>
                 {paragraph}
@@ -62,20 +62,18 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%',
-    maxWidth: 760,
-    borderRadius: tokens.radius.xl,
+    maxWidth: tokens.layout.reading,
+    borderRadius: 0,
     padding: tokens.space.xl,
     backgroundColor: tokens.colors.surface,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    ...tokens.elevation.sm,
+
   },
   eyebrow: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.accentDeep,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.capsWide,
     marginBottom: tokens.space.md,
   },
@@ -126,6 +124,9 @@ const styles = StyleSheet.create({
     paddingTop: tokens.space.lg,
   },
   link: {
+    minHeight: tokens.size.controlMd,
+    lineHeight: tokens.type.label.lineHeight,
+    paddingVertical: tokens.space.md,
     fontFamily: tokens.font.sans,
     color: tokens.colors.accentVivid,
     fontSize: tokens.type.body.fontSize,

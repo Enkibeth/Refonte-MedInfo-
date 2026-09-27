@@ -463,7 +463,7 @@ const mdStyles = StyleSheet.create({
     lineHeight: tokens.type.h3.lineHeight,
     letterSpacing: tokens.type.h3.letterSpacing,
     fontWeight: tokens.weight.semibold,
-    marginTop: 4,
+    marginTop: tokens.space.xs,
     marginBottom: 2,
   },
   h3: {
@@ -509,7 +509,7 @@ const mdStyles = StyleSheet.create({
     lineHeight: tokens.type.caption.lineHeight + 2,
     color: tokens.colors.text,
   },
-  figure: { marginVertical: tokens.space.sm, gap: 4 },
+  figure: { marginVertical: tokens.space.sm, gap: tokens.space.xs },
   figureImage: {
     width: '100%',
     height: 240,

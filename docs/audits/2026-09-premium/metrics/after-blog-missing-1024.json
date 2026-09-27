@@ -1,0 +1,18 @@
+{
+  "route": "/blog/audit-slug-inexistant",
+  "width": 1024,
+  "height": 900,
+  "title": "Article introuvable — MedInfo AI",
+  "headings": [],
+  "text": "Services\nBlog\nÀ propos\nContact\nTarifs\nSe connecter\nCommencer\nTous les articles\nArticle introuvable\nCet article n'existe pas ou n'est plus publié.\nL’information médicale générale, pour le grand public, les étudiants et les professionnels de santé.\nChatbots IA\nChat grand public\nChat étudiant en santé\nChat professionnel de santé\nOutils\nAnalyse de document médical\nSimulation ECOS\nPlanning de révisions\nAnalyse des partiels\nGénérateur de présentations\nCréateur de CV médical\nCompte rendu de consultation\nRessources\nBlog santé\nÀ propos\nContact\nTarifs\nLégal\nMentions légales\nConditions d’utilisation\nConfidentialité (RGPD)\nInformations légales\nMedInfo AI fournit de l’information médicale générale, jamais un avis médical individuel. En cas d’urgence, composez le 15 (SAMU) ou le 112.\n© 2026 MedInfo AI",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [
+    {
+      "id": "bypass",
+      "count": 1
+    }
+  ],
+  "passes": 23
+}

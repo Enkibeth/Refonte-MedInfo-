@@ -1,0 +1,16 @@
+{
+  "route": "/chat?bot=student",
+  "width": 1024,
+  "height": 900,
+  "title": "Chat santé IA — posez votre question, réponse sourcée — MedInfo AI",
+  "headings": [
+    "Chat étudiant en santé",
+    "Que veux-tu réviser aujourd’hui ?"
+  ],
+  "text": "Chat étudiant en santé\nCours et raisonnement clinique fondés sur les Collèges (EDN/R2C)\nPays\nOutils\nPublic\nÉtudiant\nPro\nQue veux-tu réviser aujourd’hui ?\nCours et raisonnement clinique fondés sur les Collèges (EDN/R2C).\nEssai gratuit : 1 message sans inscription (1/1)\nExplique-moi la physiopathologie de l'insuffisance cardiaque\nFais-moi un cours sur la pyélonéphrite aiguë (item 161)\nQuels sont les critères diagnostiques de la maladie de Horton ?\nEnvoyer\nSystème d’intelligence artificielle. Support de révision — ne remplace pas les référentiels ni la pratique encadrée. En cas d’urgence : 15 ou 112.",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [],
+  "passes": 25
+}

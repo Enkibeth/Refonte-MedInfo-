@@ -1,0 +1,14 @@
+{
+  "fixture": true,
+  "reducedMotionSimulated": false,
+  "firstStatusMs": 17.099999999976717,
+  "stopMs": 17.099999999976717,
+  "firstTextMs": 2422.899999999907,
+  "stopMissing": 0,
+  "completedMoves": 0,
+  "movements": [],
+  "closedBlocks": 12,
+  "samples": 102,
+  "rawLayoutShift": 0.07263721952878474,
+  "streamLayoutShift": 0.0002490811740238977
+}

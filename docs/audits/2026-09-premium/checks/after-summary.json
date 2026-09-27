@@ -1,0 +1,31 @@
+{
+  "date": "2026-09-27",
+  "unit": {
+    "success": true,
+    "files": 57,
+    "tests": 766,
+    "passed": 766,
+    "failed": 0
+  },
+  "responsive": {
+    "reports": 132,
+    "violations": 0,
+    "overflow": 0
+  },
+  "bundle": {
+    "baseline": {
+      "raw": 6944075,
+      "gzip": 1865193
+    },
+    "after": {
+      "raw": 6949427,
+      "gzip": 1865364
+    }
+  },
+  "limits": [
+    "No real authenticated flow validation",
+    "No native devices",
+    "No Lighthouse or field p75",
+    "Streaming uses local non-medical fixture"
+  ]
+}

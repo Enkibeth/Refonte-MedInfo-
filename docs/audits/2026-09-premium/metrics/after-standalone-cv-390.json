@@ -1,0 +1,20 @@
+{
+  "route": "/cv-builder.html",
+  "width": 390,
+  "height": 844,
+  "title": "Créateur de CV — MedInfo",
+  "headings": [
+    "Rubriques"
+  ],
+  "text": "Modèle « CV étudiant en médecine » chargé — menu ⋯ pour en changer.\n↶\n↷\nIA\nPDF\n⋯\nÉdition\nAperçu\nRUBRIQUES\n+ Rubrique\nEn-tête & contacts\nNom, accroche, photo\nCOLONNE PRINCIPALE\n⠿\nExpériences professionnelles\n+\nentrées\n2 éléments\n⠿\nMédecin stagiaire — externat de médecine\n⠿\nMédecin stagiaire\n⠿\nFormation\n+\nentrées\n3 éléments\n⠿\nDiplôme de formation approfondie en sciences médicales (DFASM)\n⠿\nDiplôme de formation générale en sciences médicales (DFGSM)\n⠿\nBaccalauréat général\n⠿\nExpériences associatives et encadrement\n+\nentrées\n1 élément\n⠿\nFonction associative\nBANDEAU LATÉRAL\n⠿\nCertificats\n+\nentrées\n2 éléments\n⠿\nAFGSU 2\n⠿\nLecture critique d'article en anglais\n⠿\nCentres d'intérêt\n+\nliste\n2 éléments\n⠿\nÀ compléter\n⠿\nÀ compléter\n⠿\nLangues\n+\nniveaux\n2 éléments\n⠿\nFrançais\n⠿\nAnglais\nContenu\nThème\nSélectionne une rubrique ou une entrée à gauche, ou clique un texte dans l'aperçu.\nAJOUTER UNE RUBRIQUE COURANTE\nFormationStages hospitaliersExpérience professionnelleRecherchePublicationsCommunicationsEnseignementProfilCompétencesLanguesCertificatsFormations complémentairesCentres d'intérêtRéférences\n1 pa",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [
+    {
+      "id": "color-contrast",
+      "count": 11
+    }
+  ],
+  "passes": 24
+}

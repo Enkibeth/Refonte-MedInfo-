@@ -1,0 +1,15 @@
+{
+  "route": "/audio",
+  "width": 768,
+  "height": 900,
+  "title": "Compte rendu de consultation par dictée vocale — IA — MedInfo AI",
+  "headings": [
+    "Audio"
+  ],
+  "text": "Audio\nCet outil est réservé aux comptes MedInfo AI. Créez un compte gratuit pour y accéder. Compte rendu structuré d’une consultation dictée.\nCréer un compte\nRetour au chat",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [],
+  "passes": 18
+}

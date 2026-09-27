@@ -1,0 +1,21 @@
+{
+  "route": "/sign-in?mode=signup",
+  "width": 1024,
+  "height": 900,
+  "title": "Connexion — MedInfo AI",
+  "headings": [
+    "Authentification",
+    "Créer un compte"
+  ],
+  "text": "Authentification\nCréer un compte\nChoisis un email et un mot de passe (6 caractères min.), ou utilise Google / Apple.\nContinuer avec Google\nContinuer avec Apple\nou par email\nEmail\nMot de passe\nCréer mon compte\nDéjà un compte ? Se connecter\nRetour à l'accueil\nVous interagissez avec un système d'intelligence artificielle (Claude (Anthropic) ou GPT (OpenAI) selon le modèle servi). Les réponses sont générées automatiquement et peuvent contenir des erreurs.",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [
+    {
+      "id": "color-contrast",
+      "count": 1
+    }
+  ],
+  "passes": 27
+}

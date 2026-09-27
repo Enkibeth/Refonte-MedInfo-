@@ -1,3 +1,4 @@
+import { PageTitle } from '@/ui/PageTitle';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Linking, Platform, StyleSheet, Text, View } from 'react-native';
@@ -81,7 +82,7 @@ export default function PricingScreen() {
           elle partage la navigation des pages publiques. */}
       <LandingHeader />
       <Screen maxWidth={640}>
-      <Text style={styles.title}>Offres</Text>
+      <PageTitle style={styles.title}>Offres</PageTitle>
 
       <View style={styles.sourcesBox}>
         <View style={styles.sourcesAccent} />
@@ -211,7 +212,7 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: tokens.colors.accent,
-    marginTop: 8,
+    marginTop: tokens.space.sm,
   },
   perk: {
     flex: 1,
@@ -220,7 +221,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.body.fontSize,
     lineHeight: tokens.type.body.lineHeight,
   },
-  planAction: { marginTop: tokens.space.sm },
+  planAction: { minHeight: tokens.size.controlMd, marginTop: tokens.space.sm },
   vatNote: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
@@ -241,9 +242,12 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.label.fontSize,
     lineHeight: 21,
   },
-  errorAction: { marginTop: tokens.space.md, alignSelf: 'flex-start' },
+  errorAction: { minHeight: tokens.size.controlMd, marginTop: tokens.space.md, alignSelf: 'flex-start' },
   footer: { marginTop: tokens.space.xl },
   inlineLink: {
+    minHeight: tokens.size.controlMd,
+    lineHeight: tokens.type.label.lineHeight,
+    paddingVertical: tokens.space.md,
     fontFamily: tokens.font.sans,
     color: tokens.colors.accent,
     fontSize: tokens.type.label.fontSize,

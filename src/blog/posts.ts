@@ -26,7 +26,8 @@ export async function listPublishedPosts(): Promise<BlogPost[]> {
     .select(COLUMNS)
     .order('published_at', { ascending: false })
     .limit(100);
-  if (error || !data) return [];
+  if (error) throw new Error('Chargement des articles indisponible.');
+  if (!data) return [];
   return data as BlogPost[];
 }
 
@@ -37,6 +38,7 @@ export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
     .select(COLUMNS)
     .eq('slug', slug)
     .maybeSingle();
-  if (error || !data) return null;
+  if (error) throw new Error('Chargement de l’article indisponible.');
+  if (!data) return null;
   return data as BlogPost;
 }

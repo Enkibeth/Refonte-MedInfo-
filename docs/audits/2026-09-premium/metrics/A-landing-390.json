@@ -1,0 +1,17 @@
+{
+  "route": "/__directions/direction-a-landing.html",
+  "width": 390,
+  "height": 844,
+  "title": "MedInfo AI · Proposition A · landing",
+  "headings": [
+    "Une question médicale.Revenir aux sources.",
+    "Trois façons d’explorer.",
+    "Un travail.Le bon outil."
+  ],
+  "text": "Se connecter\n\nMedInfo AI\n\nUne question médicale.\nRevenir aux sources.\n\nUn espace pour explorer la littérature médicale, approfondir vos connaissances et consulter les références d’une réponse.\n\nInformation générale. Jamais de diagnostic individuel.\n\nEssayer le chat\nUn premier message sans inscription.\n\nChoisir son espace\n\nTrois façons d’explorer.\nProfessionnel\nConsulter les références et approfondir un sujet.\nÉtudiant\nComprendre un cours, préparer ses examens.\nGrand public\nMieux comprendre l’information de santé.\n\nLes sources restent accessibles, avec ou sans abonnement.\n\nUn travail.Le bon outil.\nAnalyse de document\nImporter ou coller un texte.\nEntraînement et révision\nECOS, partiels et planning.\nRédaction et présentation\nCV, article et diaporama.\n\nVous interagissez avec un système d'intelligence artificielle (Claude (Anthropic) ou GPT (OpenAI) selon le modèle servi). Les réponses sont générées automatiquement et peuvent contenir des erreurs.\n\nMedInfo AI fournit de l’information médicale générale, jamais un avis médical individuel. En cas d’urgence, composez le 15 (SAMU) ou le 112.\n\n",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [],
+  "passes": 12
+}
