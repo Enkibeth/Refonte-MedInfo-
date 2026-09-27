@@ -19,7 +19,6 @@ import {
   StyleSheet,
   Text,
   View,
-  useWindowDimensions,
 } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -61,6 +60,7 @@ import { SeoHead } from '@/ui/SeoHead';
 import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 import { Skeleton } from '@/ui/Skeleton';
 import { tokens } from '@/ui/tokens';
+import { useWindowWidth } from '@/ui/useWindowWidth';
 
 const EXAM_LABELS: Record<ExamType, string> = {
   pass_las: 'le PASS/LAS',
@@ -185,7 +185,7 @@ function freshDashboardCache(userId: string): DashboardCache | null {
 export default function DashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const width = useWindowWidth();
   const { session, user, persona, personalInfo, loading } = useSession();
 
   const isAdmin = user ? isAdminUserId(user.id) : false;

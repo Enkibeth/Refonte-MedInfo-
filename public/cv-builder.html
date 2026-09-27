@@ -222,6 +222,12 @@
   /* ── Mobile / tablette ────────────────────────────────────────────────── */
   .lbl-short { display: none; }
   .mobile-tabs { display: none; }
+  /* 1024–1199 px : la barre complète dépassait de 20 px à 1024 px et poussait « ⋯ »
+     hors d'atteinte (la barre ne défile pas) — libellés courts, trois volets conservés. */
+  @media (max-width: 1199px) {
+    .lbl-full { display: none; }
+    .lbl-short { display: inline; }
+  }
   @media (max-width: 1023px) {
     /* La barre ne défile pas (body en overflow:hidden) : tout ce qui ne tient pas
        serait INATTEIGNABLE. Les réglages secondaires passent dans le menu « ⋯ ». */
@@ -266,7 +272,7 @@
   <span id="pages-badge" class="badge" aria-live="polite">1 page</span>
   <button id="btn-fit" class="btn btn-sm" title="Resserrer la mise en page pour tenir en moins de pages">Ajuster…</button>
 
-  <button id="btn-review" class="btn"><span class="lbl-full">Relecture IA</span><span class="lbl-short">IA</span></button>
+  <button id="btn-review" class="btn" aria-label="Relecture IA"><span class="lbl-full">Relecture IA</span><span class="lbl-short">IA</span></button>
   <button id="btn-pdf" class="btn btn-primary"><span class="lbl-full">Télécharger le PDF</span><span class="lbl-short">PDF</span></button>
   <button id="btn-menu" class="btn btn-icon" aria-haspopup="true" aria-expanded="false" aria-label="Autres actions">⋯</button>
 </header>

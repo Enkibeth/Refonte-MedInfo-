@@ -22,10 +22,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Linking,
-  useWindowDimensions,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   type TextInputKeyPressEventData,
+  type ViewStyle,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -94,6 +94,9 @@ import {
   type ChatAttachment,
 } from '@/ai/chat/attachment';
 import { SourceDetailModal } from '@/ui/chat/SourceDetailModal';
+import { useClientState } from '@/ui/hydration';
+import { mi } from '@/ui/responsive';
+import { useWindowWidth } from '@/ui/useWindowWidth';
 
 // Suggestions d'amorce (état vide) : 50 questions par chatbot, rotation 3 par 3
 // toutes les 30 s — voir src/ai/chat/starterSuggestions.ts.
@@ -131,9 +134,47 @@ const CAN_COPY =
 
 // ── Indicateur de statut (réflexion / recherche de sources / rédaction) ──────────
 
+// ── Préférences locales du chat (web) : lues après l'hydratation, cf. useClientState ──
+
+function readStoredItem(key: string): string | null {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+const readHistoryCollapsed = () => readStoredItem('medinfo:chatHistoryCollapsed') === '1';
+const readStoredCountry = () => coerceCountry(readStoredItem('medinfo:chatCountry'));
+const readStoredResponseMode = () => coerceResponseMode(readStoredItem('medinfo:chatResponseMode'));
+function readStoredOutputTools(): ChatOutputTool[] {
+  try {
+    return coerceChatOutputTools(JSON.parse(readStoredItem('medinfo:chatTools') ?? '[]'));
+  } catch {
+    return [];
+  }
+}
+
 /** Reprise après coupure : intervalle et nombre d'essais (~4 min au total). */
 const RECOVERY_INTERVAL_MS = 4000;
 const RECOVERY_MAX_ATTEMPTS = 60;
+
+const ALL_CHATBOTS: ChatbotId[] = ['public', 'student', 'professional'];
+
+/** Élément réservé mais pas encore affiché : hors lecture d'écran et hors interaction. */
+const PENDING_A11Y = {
+  pointerEvents: 'none' as const,
+  accessibilityElementsHidden: true,
+  importantForAccessibility: 'no-hide-descendants' as const,
+};
+
+/**
+ * « Arrêter » prend la place d'« Envoyer » : le second clic d'un double clic (ou d'un
+ * double tap) tombait sur Arrêter et coupait la réponse aussitôt — l'essai invité était
+ * alors consommé sans réponse. Un arrêt dans ce court délai après l'envoi est ignoré.
+ */
+const STOP_GUARD_MS = 500;
 
 /**
  * Bloc de statut affiché tant que la réponse n'a pas commencé à s'écrire : l'anneau
@@ -420,7 +461,7 @@ export default function ChatScreen() {
   } = useSession();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const width = useWindowWidth();
   const reducedMotion = useReducedMotion();
   const compactHeader = width < tokens.layout.compact;
   const isAdmin = user ? isAdminUserId(user.id) : false;
@@ -452,8 +493,8 @@ export default function ChatScreen() {
   // Pièce jointe : réservée aux comptes vérifiés étudiant/pro (+ admin), web only
   // (extraction/lecture du fichier côté navigateur). Le serveur regarde la persona.
   const canAttach = Platform.OS === 'web' && !!session && canSwitch;
-  const availableChatbots: ChatbotId[] =
-    canSwitch || isGuest ? ['public', 'student', 'professional'] : ['public'];
+  const availableChatbots: ChatbotId[] = canSwitch || isGuest ? ALL_CHATBOTS : ['public'];
+  const switcherPending = authLoading && availableChatbots.length <= 1;
   const defaultChatbot: ChatbotId =
     persona === 'student' || persona === 'professional' ? persona : 'public';
 
@@ -464,34 +505,21 @@ export default function ChatScreen() {
   const [sourcesOpen, setSourcesOpen] = useState(false);
   // Desktop/grand écran : masquer la colonne d'historique pour gagner de la place
   // pendant la conversation (préférence persistée, web only).
-  const [historyCollapsed, setHistoryCollapsed] = useState<boolean>(() => {
-    if (Platform.OS !== 'web' || typeof window === 'undefined') return false;
-    try {
-      return window.localStorage.getItem('medinfo:chatHistoryCollapsed') === '1';
-    } catch {
-      return false;
-    }
-  });
+  // Préférences lues après l'hydratation (cf. useClientState) et jamais réécrites avant.
+  const [historyCollapsed, setHistoryCollapsed, historyPrefReady] = useClientState(readHistoryCollapsed, false);
   useEffect(() => {
-    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    if (!historyPrefReady || Platform.OS !== 'web' || typeof window === 'undefined') return;
     try {
       window.localStorage.setItem('medinfo:chatHistoryCollapsed', historyCollapsed ? '1' : '0');
     } catch {
       // best-effort : la préférence n'est pas critique
     }
-  }, [historyCollapsed]);
+  }, [historyCollapsed, historyPrefReady]);
   // Pays d'exercice : oriente les sources privilégiées par l'assistant (envoyé dans
   // le body de /api/chat). Persisté au PROFIL depuis 2026-07 (migration 0043) — le
   // localStorage seul était perdu à chaque changement d'appareil/navigateur ; il reste
   // le repli des visiteurs non connectés et l'amorce avant l'hydratation du profil.
-  const [country, setCountry] = useState<CountryCode | null>(() => {
-    if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
-    try {
-      return coerceCountry(window.localStorage.getItem('medinfo:chatCountry'));
-    } catch {
-      return null;
-    }
-  });
+  const [country, setCountry] = useClientState<CountryCode | null>(readStoredCountry, null);
   // Le profil fait foi dès qu'il est chargé (synchronisation entre appareils) ; s'il
   // n'a encore AUCUN pays mais qu'un choix local existe (utilisateur d'avant la
   // migration), on remonte ce choix au profil une fois pour toutes.
@@ -528,39 +556,25 @@ export default function ChatScreen() {
   // Réglages de réponse (2026-07) : profondeur (rapide/classique/complexe) + outils de
   // sortie optionnels (diagramme, points clés, tableau comparatif). Envoyés dans le body
   // de /api/chat, persistés en localStorage (web only). Aucun droit : cf. serveur.
-  const [responseMode, setResponseMode] = useState<ResponseMode>(() => {
-    if (Platform.OS !== 'web' || typeof window === 'undefined') return 'standard';
-    try {
-      return coerceResponseMode(window.localStorage.getItem('medinfo:chatResponseMode'));
-    } catch {
-      return 'standard';
-    }
-  });
+  const [responseMode, setResponseMode, responseModeReady] = useClientState<ResponseMode>(readStoredResponseMode, 'standard');
   useEffect(() => {
-    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    if (!responseModeReady || Platform.OS !== 'web' || typeof window === 'undefined') return;
     try {
       window.localStorage.setItem('medinfo:chatResponseMode', responseMode);
     } catch {
       // best-effort
     }
-  }, [responseMode]);
+  }, [responseMode, responseModeReady]);
 
-  const [outputTools, setOutputTools] = useState<ChatOutputTool[]>(() => {
-    if (Platform.OS !== 'web' || typeof window === 'undefined') return [];
-    try {
-      return coerceChatOutputTools(JSON.parse(window.localStorage.getItem('medinfo:chatTools') ?? '[]'));
-    } catch {
-      return [];
-    }
-  });
+  const [outputTools, setOutputTools, outputToolsReady] = useClientState<ChatOutputTool[]>(readStoredOutputTools, []);
   useEffect(() => {
-    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    if (!outputToolsReady || Platform.OS !== 'web' || typeof window === 'undefined') return;
     try {
       window.localStorage.setItem('medinfo:chatTools', JSON.stringify(outputTools));
     } catch {
       // best-effort
     }
-  }, [outputTools]);
+  }, [outputTools, outputToolsReady]);
 
   // Pièce jointe (document) — réservé aux comptes vérifiés étudiant/pro (+ admin), web only.
   const [attachment, setAttachment] = useState<ChatAttachment | null>(null);
@@ -679,6 +693,8 @@ export default function ChatScreen() {
   const [pendingMessage, setPendingMessage] = useState<UIMessage | null>(null);
   const [preparationError, setPreparationError] = useState<string | null>(null);
   const draftRef = useRef('');
+  /** Instant avant lequel « Arrêter » ignore un clic (voir STOP_GUARD_MS). */
+  const stopGuardUntilRef = useRef(0);
   useEffect(() => () => { submissionGate.current.cancel(); turnEpoch.current++; }, []);
   const awaitingRef = useRef(false);
   /** Une génération était-elle en cours au moment où l'app est passée en arrière-plan ? */
@@ -726,25 +742,68 @@ export default function ChatScreen() {
   // apparaît au-dessus du composer.
   const scrollRef = useRef<ScrollView>(null);
   const followRef = useRef(true);
+  const lastScrollOffsetRef = useRef(0);
   const [atBottom, setAtBottom] = useState(true);
 
+  // Seul un geste VERS LE HAUT arrête le suivi. Un défilement programmé animé (« Revenir en
+  // bas ») émet des positions intermédiaires loin du bas : les compter comme une lecture
+  // arrêtait le suivi dès que la réponse grandissait pendant l'animation.
   const handleThreadScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
     const distance = contentSize.height - layoutMeasurement.height - contentOffset.y;
-    const near = distance < tokens.space.lg;
-    followRef.current = near;
-    setAtBottom(near);
+    const movedUp = contentOffset.y < lastScrollOffsetRef.current - 1;
+    lastScrollOffsetRef.current = contentOffset.y;
+    if (distance < tokens.space.lg) {
+      followRef.current = true;
+      setAtBottom(true);
+    } else if (movedUp || !followRef.current) {
+      followRef.current = false;
+      setAtBottom(false);
+    }
   }, []);
+
+  /** Position réelle du fil et distance au bas (web) : sert à voir une remontée pas encore signalée. */
+  const threadMetrics = useCallback((): { top: number; distance: number } | null => {
+    if (Platform.OS !== 'web') return null;
+    const node = scrollRef.current?.getScrollableNode?.() as
+      | { scrollTop?: unknown; scrollHeight?: unknown; clientHeight?: unknown }
+      | null
+      | undefined;
+    const { scrollTop, scrollHeight, clientHeight } = node ?? {};
+    if (typeof scrollTop !== 'number' || typeof scrollHeight !== 'number' || typeof clientHeight !== 'number') return null;
+    return { top: scrollTop, distance: scrollHeight - clientHeight - scrollTop };
+  }, []);
+  const threadScrollTop = useCallback(() => threadMetrics()?.top ?? null, [threadMetrics]);
 
   const scrollToBottom = useCallback((animated = true) => {
     followRef.current = true;
     setAtBottom(true);
     scrollRef.current?.scrollToEnd({ animated: animated && !reducedMotion });
-  }, [reducedMotion]);
+    lastScrollOffsetRef.current = threadScrollTop() ?? lastScrollOffsetRef.current;
+  }, [reducedMotion, threadScrollTop]);
 
-  const handleThreadGrow = useCallback(() => {
-    if (followRef.current) scrollRef.current?.scrollToEnd({ animated: false });
-  }, []);
+  // `onScroll` est limité à 80 ms alors qu'un flux rapide fait grandir le fil toutes les
+  // ~30 ms : une remontée de l'utilisateur pas encore signalée était aussitôt annulée par
+  // le suivi (fil ramené en bas, surtout sur mobile). On compare donc la position réelle
+  // à la dernière connue avant de suivre. Deux déplacements ne sont pas des gestes de
+  // l'utilisateur : un contenu qui rétrécit (régénération, nouveau fil) et une zone de
+  // lecture qui s'agrandit alors que le fil est en bas (fenêtre agrandie, bandeau qui
+  // disparaît : le navigateur abaisse la position pour rester en bas). D'où la distance au
+  // bas mesurée AVANT cette croissance : seule une vraie remontée l'éloigne du bas.
+  const lastContentHeightRef = useRef(0);
+  const handleThreadGrow = useCallback((_width: number, height: number) => {
+    const growth = height - lastContentHeightRef.current;
+    lastContentHeightRef.current = height;
+    if (!followRef.current) return;
+    const m = threadMetrics();
+    if (m && growth >= 0 && m.top < lastScrollOffsetRef.current - 1 && m.distance - growth >= tokens.space.lg) {
+      followRef.current = false;
+      setAtBottom(false);
+      return;
+    }
+    scrollRef.current?.scrollToEnd({ animated: false });
+    lastScrollOffsetRef.current = threadScrollTop() ?? lastScrollOffsetRef.current;
+  }, [threadMetrics, threadScrollTop]);
 
   // ── Reprise après coupure (page suspendue / réseau) ────────────────────────────
   // Cadence et durée de la reprise : ~4 min, largement au-delà du pire cas de génération
@@ -1001,6 +1060,7 @@ export default function ChatScreen() {
     if (['streaming', 'submitted'].includes(statusRef.current)) return;
     const ticket = submissionGate.current.begin();
     if (ticket === null) return;
+    stopGuardUntilRef.current = Date.now() + STOP_GUARD_MS;
     turnEpoch.current++;
     generatedWhileHiddenRef.current = false;
     draftRef.current = text;
@@ -1103,6 +1163,7 @@ export default function ChatScreen() {
   // depuis l'historique) — le texte déjà écrit reste affiché. Le serveur, lui, mène
   // la génération au bout et l'archive : on le dit honnêtement (note sous le fil).
   const handleStop = () => {
+    if (Date.now() < stopGuardUntilRef.current) return;
     submissionGate.current.cancel();
     turnEpoch.current++;
     generatedWhileHiddenRef.current = false;
@@ -1116,6 +1177,7 @@ export default function ChatScreen() {
 
   const handleRegenerate = useCallback(() => {
     if (['streaming', 'submitted'].includes(statusRef.current)) return;
+    stopGuardUntilRef.current = Date.now() + STOP_GUARD_MS;
     turnEpoch.current++;
     generatedWhileHiddenRef.current = false;
     awaitingRef.current = true;
@@ -1326,7 +1388,7 @@ export default function ChatScreen() {
 
       <View style={styles.screenMain}>
       {/* ── En-tête ── */}
-      <View style={[styles.chatHeader, compactHeader && styles.chatHeaderCompact, { paddingTop: tokens.space.md + insets.top }]}>
+      <View {...mi('chat-header')} style={[styles.chatHeader, compactHeader && styles.chatHeaderCompact, { paddingTop: tokens.space.md + insets.top }]}>
         {desktopShell && user && historyCollapsed ? (
           <TouchableOpacity
             onPress={() => setHistoryCollapsed(false)}
@@ -1345,7 +1407,7 @@ export default function ChatScreen() {
             {meta.description}
           </Text>
         </View>
-        <View style={[styles.headerActions, compactHeader && { justifyContent: 'flex-end' }]}>
+        <View {...mi('chat-header-actions')} style={[styles.headerActions, compactHeader && { justifyContent: 'flex-end' }]}>
           <CountrySelector value={country} onChange={handleCountryChange} />
           {latestSources.length > 0 ? (
             <TouchableOpacity
@@ -1394,14 +1456,19 @@ export default function ChatScreen() {
         </View>
       </View>
 
-      {/* ── Switch de chatbot (étudiant / pro / admin) ── */}
-      {availableChatbots.length > 1 ? (
-        <View style={styles.switcherRow}>
+      {/* ── Switch de chatbot (étudiant / pro / admin, essai invité) ──
+          Pendant l'amorçage de la session, on ignore encore s'il s'affichera : sa place
+          est réservée (invisible et inerte) pour que son arrivée ne décale pas le fil. */}
+      {availableChatbots.length > 1 || switcherPending ? (
+        <View
+          style={[styles.switcherRow, switcherPending && styles.switcherPending]}
+          {...(switcherPending ? PENDING_A11Y : null)}
+        >
           <ChatbotSwitcher
-            chatbots={availableChatbots}
+            chatbots={switcherPending ? ALL_CHATBOTS : availableChatbots}
             value={chatbot}
             onChange={handleSwitchChatbot}
-            disabled={isLoading}
+            disabled={isLoading || switcherPending}
           />
         </View>
       ) : null}
@@ -1497,6 +1564,9 @@ export default function ChatScreen() {
               style={styles.starterColumn}
               onHoverIn={() => setSuggestionsPaused(true)}
               onHoverOut={() => setSuggestionsPaused(false)}
+              // Simple zone de survol : pas un arrêt de tabulation (chaque suggestion l'est).
+              // react-native-web lit `tabIndex` sur Pressable (pas `focusable`).
+              tabIndex={-1}
             >
               {starters.map((s) => (
                 <TouchableOpacity
@@ -1505,7 +1575,7 @@ export default function ChatScreen() {
                   onPress={() => void sendText(s)}
                   disabled={guestLocked}
                   accessibilityRole="button"
-                  accessibilityState={{ disabled: guestLocked }}
+                  aria-disabled={guestLocked}
                 >
                   <Text style={styles.starterChipText}>{s}</Text>
                   <Icon name="arrowRight" size={14} color={tokens.colors.accent} />
@@ -1761,7 +1831,9 @@ export default function ChatScreen() {
                 <Icon name="paperclip" size={18} color={tokens.colors.accentDeep} />
               </Pressable>
             ) : null}
-            {!isGuest ? (
+            {/* Session connue seulement : pendant l'amorçage, le micro apparaissait puis
+                disparaissait chez l'invité (icônes voisines décalées deux fois). */}
+            {session ? (
               <DictationButton
                 onTranscript={(text) => setInput((prev) => (prev.trim() ? `${prev.trim()} ${text}` : text))}
                 disabled={isLoading}
@@ -1987,10 +2059,13 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.bold,
   },
   sourcesPillTextActive: { color: tokens.colors.onAccent },
+  // Hauteurs de ligne explicites (= rendu avec les polices web) : sans elles, l'arrivée
+  // des polices faisait grandir l'en-tête de 5 px et décalait tout le fil (CLS mobile).
   chatTitle: {
     fontFamily: tokens.font.serif,
     color: tokens.colors.text,
     fontSize: tokens.type.h2.fontSize,
+    lineHeight: tokens.type.h2.lineHeight,
     letterSpacing: tokens.type.h2.letterSpacing,
     fontWeight: tokens.weight.semibold,
   },
@@ -1998,6 +2073,7 @@ const styles = StyleSheet.create({
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
+    lineHeight: 16,
     marginTop: 2,
   },
   switcherRow: {
@@ -2007,6 +2083,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: tokens.colors.border,
   },
+  // Web : `visibility: hidden` garde la place, retire de l'arbre d'accessibilité et de la
+  // tabulation ; natif : transparence (les props PENDING_A11Y masquent au lecteur d'écran).
+  switcherPending: (Platform.OS === 'web' ? { visibility: 'hidden' } : { opacity: 0 }) as ViewStyle,
   // ── Essai sans inscription (bandeau + indicateur 1/1 → 0/1) ──
   guestBanner: {
     flexDirection: 'row',
@@ -2434,6 +2513,7 @@ const styles = StyleSheet.create({
     fontFamily: tokens.font.sans,
     textAlign: 'center',
     fontSize: tokens.type.caption.fontSize,
+    lineHeight: 16, // = rendu avec la police web ; stable à l'arrivée des polices
     color: tokens.colors.textMuted,
     paddingHorizontal: tokens.space.lg,
   },

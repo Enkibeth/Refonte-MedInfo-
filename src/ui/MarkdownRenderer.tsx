@@ -33,7 +33,12 @@ type Block =
 // provoquaient. Numérotation par ordre d'apparition, URL identiques regroupées, via
 // un registre partagé entre tous les blocs d'un même message.
 
-type FootnoteRegistry = { urls: string[] };
+export type FootnoteRegistry = { urls: string[] };
+
+/** Registre vide, à conserver pour tout un message (append-only : numéros stables). */
+export function createFootnoteRegistry(): FootnoteRegistry {
+  return { urls: [] };
+}
 
 function footnoteNumber(url: string, reg: FootnoteRegistry): number {
   let idx = reg.urls.indexOf(url);
@@ -332,19 +337,26 @@ export function MarkdownRenderer({
   text,
   onDark = false,
   onCitationPress,
+  footnotes: sharedFootnotes,
 }: {
   text: string;
   onDark?: boolean;
   /** Reçoit l'exposant affiché (ex. "¹") d'une référence inline cliquée — ouvre la source associée. */
   onCitationPress?: (superscript: string) => void;
+  /**
+   * Registre partagé par tous les blocs d'un même message (réponse découpée en blocs
+   * pendant le streaming, en sections à la relecture) : sans lui, chaque bloc recommençait
+   * sa numérotation à 1.
+   */
+  footnotes?: FootnoteRegistry;
 }) {
   const blocks = useMemo(() => parseBlocks(text), [text]);
   const textColor = onDark ? tokens.colors.onAccent : tokens.colors.text;
   const mutedColor = onDark ? 'rgba(255,255,255,0.75)' : tokens.colors.textMuted;
 
-  // Registre de notes reconstruit à chaque rendu : la numérotation suit l'ordre
-  // d'apparition des liens, cohérente entre tous les blocs du message.
-  const footnotes: FootnoteRegistry = { urls: [] };
+  // Sans registre partagé, registre local reconstruit à chaque rendu : la numérotation suit
+  // l'ordre d'apparition des liens dans ce texte.
+  const footnotes: FootnoteRegistry = sharedFootnotes ?? createFootnoteRegistry();
 
   return (
     <View style={mdStyles.container}>

@@ -112,8 +112,8 @@ export function PersonalInfoForm() {
           return (
             <TouchableOpacity
               key={o.value}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
+              accessibilityRole="radio"
+              aria-checked={active}
               style={[styles.sexChip, active && styles.sexChipActive]}
               onPress={() => setSex(active ? null : o.value)}
             >

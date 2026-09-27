@@ -19,7 +19,6 @@ import {
   StyleSheet,
   Text,
   View,
-  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,6 +35,8 @@ import { Icon, type IconName } from '@/ui/icons';
 import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 import { tokens } from '@/ui/tokens';
 import { useReducedMotion } from '@/ui/useReducedMotion';
+import { mi } from '@/ui/responsive';
+import { useWindowWidth } from '@/ui/useWindowWidth';
 
 /**
  * Sous-ensemble stable des props du tab bar de React Navigation (le type exact,
@@ -67,7 +68,7 @@ export function AppTabBar({ state, navigation }: AppTabBarProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
-  const { width } = useWindowDimensions();
+  const width = useWindowWidth();
   const { persona, user, session, loading } = useSession();
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -125,12 +126,12 @@ export function AppTabBar({ state, navigation }: AppTabBarProps) {
   const homeActive = activeName === 'dashboard';
 
   return (
-    <View style={[styles.bar, { paddingBottom: bottomInset }]}>
+    <View {...mi(`lt${SHELL_BREAKPOINT}`)} style={[styles.bar, { paddingBottom: bottomInset }]}>
       {showHome ? (
         <Pressable
           onPress={() => goToRoute('dashboard')}
           accessibilityRole="tab"
-          accessibilityState={{ selected: homeActive }}
+          aria-selected={homeActive}
           accessibilityLabel="Vue d’ensemble"
           style={styles.tab}
         >
@@ -153,7 +154,7 @@ export function AppTabBar({ state, navigation }: AppTabBarProps) {
             key={feature.id}
             onPress={() => goToFeature(feature)}
             accessibilityRole="tab"
-            accessibilityState={{ selected: focused }}
+            aria-selected={focused}
             accessibilityLabel={feature.label}
             style={styles.tab}
           >

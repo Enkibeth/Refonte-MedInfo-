@@ -324,6 +324,16 @@ toute conversation anonyme contenant plus d'un message utilisateur.
 > SVG dans `<Image>` sont INVISIBLES sur l'export web de production — toujours passer par
 > `icons.web.tsx` pour le web, et ajouter les nouveaux chemins dans `iconPaths.ts`.
 
+> **⚠️ Hydratation web (piège connu, revue 2026-09)** : les pages web sont pré-rendues sans
+> fenêtre (largeur 0), sans `localStorage`, sans paramètres d'URL ni détection navigateur. Un
+> premier rendu client différent déclenche l'erreur React #418 (tout l'arbre reconstruit) et
+> masque un saut de mise en page. Largeur : `useWindowWidth()` (`src/ui/useWindowWidth.ts`),
+> jamais `useWindowDimensions` ; préférence locale, paramètre d'URL ou capacité navigateur
+> qui change l'affichage : `useClientState()` (`src/ui/hydration.ts`) ; bascule de mise en
+> page visible au premier affichage : règle CSS de pré-rendu via `mi()` (`src/ui/responsive.ts`).
+> Sur le web, `accessibilityState` est ignoré par react-native-web : utiliser les props ARIA
+> (`aria-checked`, `aria-selected`, `aria-disabled`, `aria-expanded`, `aria-busy`).
+
 > **⚠️ Design / animations (pièges connus, audit 2026-06)** : design system documenté dans
 > `docs/05_DESIGN.md` (+ rapport `docs/audits/DESIGN_AUDIT_2026-06.md`). Sur react-native-web,
 > la ref d'`Animated.View` n'expose PAS le nœud DOM : un `IntersectionObserver` posé dessus ne

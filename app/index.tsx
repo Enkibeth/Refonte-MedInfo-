@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
 import type { Persona } from '@/ai/prompts/_schema';
@@ -12,6 +12,8 @@ import { LandingHeader } from '@/ui/LandingHeader';
 import { SeoHead } from '@/ui/SeoHead';
 import { SiteFooter } from '@/ui/SiteFooter';
 import { tokens } from '@/ui/tokens';
+import { mi } from '@/ui/responsive';
+import { useWindowWidth } from '@/ui/useWindowWidth';
 
 const FAQ_ITEMS: FaqItem[] = [
   {
@@ -65,7 +67,7 @@ const AUDIENCES: { id: Persona; label: string; title: string; description: strin
 export default function HomeScreen() {
   const router = useRouter();
   const { user, persona } = useSession();
-  const { width } = useWindowDimensions();
+  const width = useWindowWidth();
   const wide = width >= tokens.layout.shell;
   const compact = width < tokens.layout.compact;
   const isAdmin = user ? isAdminUserId(user.id) : false;
@@ -76,20 +78,20 @@ export default function HomeScreen() {
     <SeoHead title={PAGE_SEO.home.title} description={PAGE_SEO.home.description} path={PAGE_SEO.home.path} jsonLd={[organizationJsonLd(), webSiteJsonLd(), faqPageJsonLd(FAQ_ITEMS)]} />
     <LandingHeader />
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <View style={[styles.page, compact && styles.pageCompact]}>
-        <View style={[styles.hero, wide && styles.heroWide]}>
+      <View {...mi('landing-page')} style={[styles.page, compact && styles.pageCompact]}>
+        <View {...mi('landing-hero')} style={[styles.hero, wide && styles.heroWide]}>
           <View style={styles.intro}>
             <Text style={styles.kicker}>MedInfo AI · Information médicale générale</Text>
-            <Text accessibilityRole="header" aria-level={1} style={[styles.headline, !wide && styles.headlineCompact]}>Une question médicale.{'\n'}<Text style={styles.headlineAccent}>Revenir aux sources.</Text></Text>
+            <Text {...mi('landing-headline')} accessibilityRole="header" aria-level={1} style={[styles.headline, !wide && styles.headlineCompact]}>Une question médicale.{'\n'}<Text style={styles.headlineAccent}>Revenir aux sources.</Text></Text>
             <Text style={styles.subhead}>Comprendre, apprendre, approfondir. Un espace de travail pour explorer l’information médicale et consulter les références citées.</Text>
-            <View style={[styles.heroActions, compact && styles.actionsCompact]}>
+            <View {...mi('landing-actions')} style={[styles.heroActions, compact && styles.actionsCompact]}>
               <Button label={user ? 'Ouvrir le chat' : 'Essayer sans inscription'} onPress={() => router.push('/(chat)/chat')} fullWidth={compact} />
               <Button label={user ? 'Mon espace' : 'Se connecter'} variant="ghost" onPress={() => router.push(user ? '/(chat)/dashboard' : '/(auth)/sign-in')} fullWidth={compact} />
             </View>
             {!user ? <Text style={styles.meta}>Un premier message gratuit, sans créer de compte.</Text> : null}
             <Text style={styles.disclosure}>{getAiDisclosure()}</Text>
           </View>
-          <View style={[styles.audiences, wide && styles.audiencesWide]}>
+          <View {...mi('landing-audiences')} style={[styles.audiences, wide && styles.audiencesWide]}>
             <Text style={styles.label}>Trois espaces de conversation</Text>
             {audiences.map((a) => <Pressable key={a.id} onPress={() => router.push(`/(chat)/chat?bot=${a.id}` as never)} accessibilityRole="link" accessibilityLabel={`Ouvrir le chat ${a.label.toLowerCase()}`} style={({ hovered, focused }: { hovered?: boolean; focused?: boolean }) => [styles.audience, hovered && styles.rowHover, focused && tokens.focus.ring]}>
               <View style={styles.rowTop}><Text style={styles.audienceLabel}>{a.label}</Text><Icon name="arrowRight" size={tokens.size.iconMd} color={tokens.colors.accent} /></View>
@@ -100,11 +102,11 @@ export default function HomeScreen() {
         </View>
         <View style={styles.section}>
           <View style={styles.sectionHead}><Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>{user ? 'Vos outils de travail' : 'Un outil pour chaque travail'}</Text><Text style={styles.body}>{user ? 'Retrouvez les outils accessibles avec votre rôle.' : 'L’accès aux outils dépend de votre rôle vérifié.'}</Text></View>
-          <View style={[styles.toolList, wide && styles.toolColumns]}>{features.map((f, i) => <Pressable key={f.id} accessibilityRole="link" accessibilityLabel={f.label} onPress={() => router.push(f.route as never)} style={({ hovered, focused }: { hovered?: boolean; focused?: boolean }) => [styles.tool, wide && styles.toolWide, hovered && styles.rowHover, focused && tokens.focus.ring]}>
+          <View {...mi('landing-tools')} style={[styles.toolList, wide && styles.toolColumns]}>{features.map((f, i) => <Pressable {...mi('landing-tool')} key={f.id} accessibilityRole="link" accessibilityLabel={f.label} onPress={() => router.push(f.route as never)} style={({ hovered, focused }: { hovered?: boolean; focused?: boolean }) => [styles.tool, wide && styles.toolWide, hovered && styles.rowHover, focused && tokens.focus.ring]}>
             <Text style={styles.index}>{String(i + 1).padStart(2, '0')}</Text><Icon name={f.icon} size={tokens.size.iconMd} color={tokens.colors.textMuted} /><View style={styles.toolContent}><Text style={styles.toolTitle}>{f.label}</Text><Text style={styles.body}>{f.description}</Text></View><Icon name="arrowRight" size={tokens.size.iconSm} color={tokens.colors.accent} />
           </Pressable>)}</View>
         </View>
-        <View style={[styles.section, styles.trust, wide && styles.trustWide]}>
+        <View {...mi('landing-trust')} style={[styles.section, styles.trust, wide && styles.trustWide]}>
           <View style={styles.trustIntro}><Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>Une réponse se lit.{'\n'}Une source se consulte.</Text><Text style={styles.body}>Gardez un regard critique sur les informations produites par un système d’intelligence artificielle.</Text></View>
           <View style={styles.trustList}>
             {[['Retrouver les références', 'Les citations permettent de revenir aux documents d’origine. Consultez leur date et leur contexte.'], ['Des sources accessibles', 'L’abonnement ne bloque jamais l’accès aux sources citées.'], ['Un cadre explicite', INTENDED_PURPOSE]].map(([title, text]) => <View key={title} style={styles.trustRow}><Text style={styles.toolTitle}>{title}</Text><Text style={styles.body}>{text}</Text></View>)}

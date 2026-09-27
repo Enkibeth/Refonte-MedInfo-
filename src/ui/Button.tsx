@@ -4,12 +4,12 @@ import {
   StyleSheet,
   Text,
   View,
-  useWindowDimensions,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
 
 import { tokens } from './tokens';
+import { useWindowWidth } from './useWindowWidth';
 
 /**
  * Bouton MedInfo — primitive unique pour tous les écrans (05_DESIGN §5).
@@ -51,7 +51,8 @@ export function Button({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={{ disabled: isInactive, busy: loading }}
+      aria-disabled={isInactive}
+      aria-busy={loading}
       disabled={isInactive}
       onPress={onPress}
       // react-native-web fournit `hovered` / `focused` au render-prop ; ignorés en natif.
@@ -151,7 +152,7 @@ const variantStyles: Record<Variant, { container: ViewStyle; hover: ViewStyle; l
 
 /** Secondaires d’abord, primaire en dernier : à droite ou en bas sur mobile. */
 export function ButtonRow({ children }: { children: React.ReactNode }) {
-  const { width } = useWindowDimensions();
+  const width = useWindowWidth();
   return <View style={[rowStyles.row, width < tokens.layout.compact && rowStyles.mobile]}>{children}</View>;
 }
 

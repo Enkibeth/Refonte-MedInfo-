@@ -52,7 +52,8 @@ export function SegmentedSlider<T extends string>({
             <TouchableOpacity
               key={o.value}
               accessibilityRole="radio"
-              accessibilityState={{ checked: active, disabled }}
+              aria-checked={active}
+              aria-disabled={disabled}
               accessibilityLabel={`${label} : ${o.label}`}
               disabled={disabled}
               style={styles.notchHit}

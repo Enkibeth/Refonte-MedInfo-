@@ -12,7 +12,6 @@ import {
   StyleSheet,
   Text,
   View,
-  useWindowDimensions,
 } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 
@@ -23,6 +22,7 @@ import { featureTint } from '@/ui/featureChips';
 import { Icon, type IconName } from '@/ui/icons';
 import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 import { tokens } from '@/ui/tokens';
+import { useWindowWidth } from '@/ui/useWindowWidth';
 
 interface MenuItem {
   key: string;
@@ -36,7 +36,7 @@ interface MenuItem {
 export function ToolsMenu() {
   const router = useRouter();
   const segments = useSegments();
-  const { width } = useWindowDimensions();
+  const width = useWindowWidth();
   const { persona, user, session } = useSession();
   const [open, setOpen] = useState(false);
 
@@ -83,6 +83,7 @@ export function ToolsMenu() {
         onPress={() => setOpen(true)}
         accessibilityRole="button"
         accessibilityLabel="Ouvrir le menu des outils" {...(Platform.OS === 'web' ? { title: 'Ouvrir le menu des outils' } : {})}
+        aria-expanded={open}
         style={styles.trigger}
       >
         <Icon name="layoutGrid" size={14} color={tokens.colors.accentDeep} />

@@ -90,7 +90,7 @@ export function ResponseControls({
                   setPanel(null);
                 }}
                 accessibilityRole="radio"
-                accessibilityState={{ selected: active }}
+                aria-checked={active}
                 accessibilityLabel={`${m.label} — ${m.hint}`}
                 style={[styles.optionRow, active && styles.optionRowActive]}
               >
@@ -125,7 +125,7 @@ export function ResponseControls({
                 key={t.id}
                 onPress={() => toggleTool(t.id)}
                 accessibilityRole="checkbox"
-                accessibilityState={{ checked: active }}
+                aria-checked={active}
                 accessibilityLabel={t.label}
                 style={styles.optionRow}
               >
@@ -172,7 +172,7 @@ export function ResponseControls({
           disabled={disabled}
           accessibilityRole="button"
           accessibilityLabel={
-            tools.length > 0 ? `Outils de réponse (${tools.length} actifs)` : 'Ajouter des outils à la réponse'
+            tools.length > 0 ? `Outils de réponse (${tools.length} ${tools.length > 1 ? 'actifs' : 'actif'})` : 'Ajouter des outils à la réponse'
           }
           style={[styles.iconButton, tools.length > 0 && styles.iconButtonActive]}
         >
@@ -205,7 +205,7 @@ export function ResponseControls({
               onPress={() => onModeChange(m.id)}
               disabled={disabled}
               accessibilityRole="tab"
-              accessibilityState={{ selected: active }}
+              aria-selected={active}
               accessibilityLabel={`${m.label} — ${m.hint}`}
               style={[styles.segmentItem, active && styles.segmentItemActive]}
             >
@@ -221,7 +221,7 @@ export function ResponseControls({
         disabled={disabled}
         accessibilityRole="button"
         accessibilityLabel={
-          tools.length > 0 ? `Outils de réponse (${tools.length} actifs)` : 'Ajouter des outils à la réponse'
+          tools.length > 0 ? `Outils de réponse (${tools.length} ${tools.length > 1 ? 'actifs' : 'actif'})` : 'Ajouter des outils à la réponse'
         }
         style={[styles.addButton, tools.length > 0 && styles.addButtonActive]}
       >

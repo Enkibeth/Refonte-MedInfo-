@@ -54,7 +54,7 @@ export function ChatbotSwitcher({
             onPress={() => onChange(id)}
             disabled={disabled}
             accessibilityRole="tab"
-            accessibilityState={{ selected: active }}
+            aria-selected={active}
             accessibilityLabel={`Chat ${meta.label}`}
           >
             <Icon

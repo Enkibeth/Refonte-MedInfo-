@@ -245,7 +245,7 @@ export function QcmRunner({
                   onPress={() => toggle(qi, pi)}
                   disabled={submitted}
                   accessibilityRole={question.kind === 'QCS' ? 'radio' : 'checkbox'}
-                  accessibilityState={{ checked }}
+                  aria-checked={checked}
                 >
                   <View
                     style={[

@@ -63,10 +63,10 @@ que tous les états métier connectés ont été refondus ou validés.
 
 | Écran / variante | Problèmes corrigés | Décision | Reste à vérifier / optimiser |
 |---|---|---|---|
-| Landing | Composition générique, surcharge de cartes et décorations | Accueil éditorial asymétrique, index d’outils, une primaire | Revue mobile avec clavier et mesure LCP |
-| Chat public | Attente tardive, phases artificielles, actions et cibles | Accusé immédiat, phases observées, blocs clos stables, Envoyer/Arrêter à droite | Chat réel, longues réponses, sources et archive |
-| Chat étudiant | Incohérences du même shell | Même contrat de chat, persona conservée | Parcours étudiant connecté |
-| Chat professionnel | Incohérences du même shell | Même contrat, avertissements conservés | Parcours professionnel ; terminologie clinique à Hugo |
+| Landing | Composition générique, surcharge de cartes et décorations | Accueil éditorial asymétrique, index d’outils, une primaire ; revue : premier affichage juste à toutes les largeurs (CSS de pré-rendu), plus d’erreur d’hydratation | LCP/CLS labo mesurés (review/REVIEW.md) ; terrain p75 à suivre |
+| Chat public | Attente tardive, phases artificielles, actions et cibles | Accusé immédiat, phases observées, blocs clos stables, Envoyer/Arrêter à droite ; revue : notes numérotées sur toute la réponse, double clic, défilement, ARIA | Banc local vert (flux, arrêts, coupure, régénération, défilement, veille) ; reste : chat réel et archive connectée |
+| Chat étudiant | Incohérences du même shell | Même contrat de chat, persona conservée ; revue : `### SOURCES` et relances après SOURCES rendues en cartes et propositions | Parcours étudiant connecté |
+| Chat professionnel | Incohérences du même shell | Même contrat, avertissements conservés ; revue : tableau, CALC et grade rendus sans syntaxe brute | Parcours professionnel ; terminologie clinique à Hugo |
 | Connexion | Champs, hiérarchie et liens trop petits | Formulaire sobre, FieldInput, cibles 44 px | Erreur réseau / succès avec compte test |
 | Inscription | Même surface d’authentification | Même placement et vocabulaire | Validation et confirmation réelles |
 | Réinitialisation | Hiérarchie et boutons | PageTitle et formulaire harmonisé | Lien expiré et retour effectif |
@@ -106,9 +106,16 @@ que tous les états métier connectés ont été refondus ou validés.
 
 ## Dernière revue et intégration
 
-Claude doit relire le diff, compléter les tests connectés et les cas Markdown (citations,
-numérotation entre blocs, listes, diagrammes, questions finales), puis refaire les gates.
+Revue finale Claude du 27 septembre 2026 : [rapport complet](review/REVIEW.md), preuves
+dans [`review/`](review/). Huit défauts corrigés (rendu incrémental du chat, double clic
+sur Envoyer, défilement pendant le flux, hydratation web et premier affichage, états ARIA,
+titre d’article, barre du CV, accord). 833 tests unitaires, typecheck et build réussis ;
+128 états responsive et 6 états de chat répondu sans violation axe ; 15 scénarios de chat
+verts sur le banc local ; 0 erreur d’hydratation sur 28 routes. L’état final des écrans
+est inchangé (écart ≤ 0,19 % des pixels) : direction A affinée, non transformée.
+
+Non démontré : parcours connectés par rôle et reprise avec archive réelle (aucun compte
+de test autorisé ; aucune session simulée), chat réel dans l’interface, mesures terrain.
 Le workflow GitHub existant ne s’exécute que pour `dev`, `staging` et `main`, **pas pour
-la branche d’intégration**. Une intégration sans checks distants ne vaut pas CI verte.
-La PR finale vers `main` doit attendre ses contrôles obligatoires sans contournement.
+la branche d’intégration** : seule la PR vers `main` porte les contrôles obligatoires.
 Pas de changement API, serveur, DB/RLS, autorisations ou déploiement dans ce lot.

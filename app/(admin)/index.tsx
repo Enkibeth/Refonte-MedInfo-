@@ -21,7 +21,6 @@ import {
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
-  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -38,6 +37,7 @@ import { BlogEditorModal } from '@/ui/admin/BlogEditorModal';
 import { Icon, type IconName } from '@/ui/icons';
 import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 import { tokens } from '@/ui/tokens';
+import { useWindowWidth } from '@/ui/useWindowWidth';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -1161,7 +1161,7 @@ function CostsTab({ session }: { session: { access_token: string } | null }) {
               key={w}
               onPress={() => setDays(w)}
               accessibilityRole="tab"
-              accessibilityState={{ selected: active }}
+              aria-selected={active}
               style={[costStyles.windowBtn, active && costStyles.windowBtnActive]}
             >
               <Text style={[costStyles.windowLabel, active && costStyles.windowLabelActive]}>
@@ -1549,7 +1549,7 @@ const ADMIN_TABS: Array<{ key: Tab; label: string; icon: IconName }> = [
 export default function AdminScreen() {
   const { user, session } = useSession();
   const router = useRouter();
-  const { width } = useWindowDimensions();
+  const width = useWindowWidth();
   const [tab, setTab] = useState<Tab>('models');
   const [config, setConfig] = useState<Config | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1635,7 +1635,7 @@ export default function AdminScreen() {
               style={[styles.tabBtn, active && styles.tabBtnActive]}
               onPress={() => setTab(t.key)}
               accessibilityRole="tab"
-              accessibilityState={{ selected: active }}
+              aria-selected={active}
             >
               <View style={styles.tabInner}>
                 <Icon
