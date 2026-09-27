@@ -74,6 +74,33 @@ rendu audio réduit la sortie de données de santé hors périmètre.
 - **Code :** revert de la PR. Il faut d'abord remettre la ligne `chat` sur gpt-5.6-luna,
   puisqu'un runtime sans ce code traiterait gpt-6-luna comme un modèle inconnu.
 
+### Addendum 2026-09-27 — bascule appliquée et tests réels (fusion validée par Hugo)
+- Ordre suivi : PR #148 fusionnée (`780d7a4`), puis production Vercel READY et vérifiée
+  (`/api/health` et chat invité sur gpt-5.6-luna) ; `main` intégré dans la PR #147 (`a5f220e`),
+  puis build Hostinger terminé et recette vérifiée. Migration `0046` appliquée via MCP ensuite
+  (≈ 14:43 UTC) : la ligne `chat` est passée sur `gpt-6-luna`, réglages inchangés (effort `low`,
+  verbosité `medium`, recherche web).
+- **Tests réels sur la recette Hostinger, 3 chatbots × 3 modes (invité) : 9/9 réussis** (HTTP 200,
+  aucune erreur). `model_used = gpt-6-luna` vérifié dans `ai_interactions`, une étape par réponse.
+  - `text.verbosity` est acceptée par GPT-6 (low, medium et high utilisés), tout comme l'effort
+    `none`, `low` et `high` : le point non documenté est levé.
+  - Mode rapide : jamais de recherche web ; premier mot en 0,9 à 2,3 s.
+  - Classique : 1 à 2 recherches, premier mot en 3,7 à 7,9 s.
+  - Approfondi : 1 à 4 recherches, premier mot en 6 à 18,6 s (pro).
+  - Réflexion visible seulement quand l'effort dépasse `none`.
+- **Production Vercel :** grand public rapide et classique, professionnel approfondi : 3/3.
+- **Format produit respecté** sur une réponse relue : titre, « RÉPONSE SIMPLE », « À RETENIR »,
+  section `SOURCES` en `SRCn :: [TYPE] …` reconnue par le parseur. Les liens cités dans le
+  texte gardent un `?utm_source=openai` ajouté par la recherche d'OpenAI ; ceux de la section
+  SOURCES n'en ont pas.
+- **Coût mesuré** : de 0,04 à 4,4 ¢ par réponse selon le mode.
+  - Sans recherche : moins de 0,1 ¢.
+  - Avec recherche : la recherche web (10 $ les 1 000 appels) représente 85 à 92 % du coût ;
+    les tokens GPT-6 sont presque négligeables.
+  - À surveiller dans l'onglet Coûts : 1,69 recherche par réponse dans ces tests (questions qui
+    demandaient des sources), contre 0,35 en usage réel sur gpt-5.6-luna (26 réponses sur
+    30 jours). Ce n'est pas comparable en l'état.
+
 
 ## [2026-09-25] – Claude (hébergement Hostinger + domaine medinfo-ai.com — ADR-0038)
 ### Files modified
