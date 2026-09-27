@@ -17,6 +17,11 @@ export interface ModelPrice {
   inputPerM: number;
   /** USD par million de tokens de sortie. */
   outputPerM: number;
+  /**
+   * USD par million de tokens d'entrée LUS DEPUIS LE CACHE, quand le tarif du modèle
+   * s'écarte du taux commun (CACHED_INPUT_DISCOUNT = 10 %) — ex. Opus 5.5 : 5 %.
+   */
+  cachedInputPerM?: number;
 }
 
 export type PriceSource = 'exact' | 'family' | 'unknown';
@@ -33,6 +38,9 @@ export const MODEL_PRICING: Record<string, ModelPrice> = {
   'gpt-5.2': { inputPerM: 1.25, outputPerM: 10 },
   'gpt-5.4': { inputPerM: 1.25, outputPerM: 10 },
   'gpt-5.5': { inputPerM: 1.25, outputPerM: 10 },
+  // OpenAI — GPT-6 (grille officielle relue le 2026-09-26 ; cache = 10 % de l'entrée).
+  'gpt-6-sol': { inputPerM: 2, outputPerM: 10 },
+  'gpt-6-luna': { inputPerM: 0.1, outputPerM: 0.5 },
   // OpenAI — GPT-5.6 (3 tiers, prix constatés août 2026 : sol flagship, terra équilibré,
   // luna = le plus rapide et le moins cher, après la baisse de 80 % du 30 juillet 2026).
   'gpt-5.6-sol': { inputPerM: 4, outputPerM: 20 },
@@ -43,10 +51,14 @@ export const MODEL_PRICING: Record<string, ModelPrice> = {
   'gpt-4o-mini': { inputPerM: 0.15, outputPerM: 0.6 },
   'gpt-4.1': { inputPerM: 2, outputPerM: 8 },
   'gpt-4.1-mini': { inputPerM: 0.4, outputPerM: 1.6 },
-  // Anthropic
-  'claude-opus-4-8': { inputPerM: 15, outputPerM: 75 },
+  // Anthropic (grille officielle relue le 2026-09-26 : la lecture du cache coûte 10 % de
+  // l'entrée, sauf Opus 5.5 : 5 %). Opus 4.8 et Haiku 4.5 étaient faux (15/75 et 0,8/4,
+  // anciens tarifs Opus 4.1 et Haiku 3.5) : l'onglet Coûts les surestimait.
+  'claude-sonnet-5': { inputPerM: 2, outputPerM: 10 },
+  'claude-opus-5-5': { inputPerM: 4, outputPerM: 20, cachedInputPerM: 0.2 },
+  'claude-opus-4-8': { inputPerM: 5, outputPerM: 25 },
   'claude-sonnet-4-6': { inputPerM: 3, outputPerM: 15 },
-  'claude-haiku-4-5-20251001': { inputPerM: 0.8, outputPerM: 4 },
+  'claude-haiku-4-5-20251001': { inputPerM: 1, outputPerM: 5 },
   // Google
   'gemini-2.5-pro': { inputPerM: 1.25, outputPerM: 10 },
   'gemini-2.5-flash': { inputPerM: 0.3, outputPerM: 2.5 },
@@ -61,10 +73,13 @@ export const MODEL_PRICING: Record<string, ModelPrice> = {
  */
 const FAMILY_RULES: Array<{ test: RegExp; price: ModelPrice }> = [
   { test: /^text-embedding/i, price: { inputPerM: 0.02, outputPerM: 0 } },
-  // Anthropic
-  { test: /claude.*opus/i, price: { inputPerM: 15, outputPerM: 75 } },
+  // Anthropic — générations aux prix distincts d'abord (variantes datées), puis les
+  // familles génériques au tarif de la génération courante (Opus 4.5+ : 5/25).
+  { test: /claude.*opus-5-5/i, price: { inputPerM: 4, outputPerM: 20, cachedInputPerM: 0.2 } },
+  { test: /claude.*sonnet-5/i, price: { inputPerM: 2, outputPerM: 10 } },
+  { test: /claude.*opus/i, price: { inputPerM: 5, outputPerM: 25 } },
   { test: /claude.*sonnet/i, price: { inputPerM: 3, outputPerM: 15 } },
-  { test: /claude.*haiku/i, price: { inputPerM: 0.8, outputPerM: 4 } },
+  { test: /claude.*haiku/i, price: { inputPerM: 1, outputPerM: 5 } },
   // Google
   { test: /gemini.*flash-?lite/i, price: { inputPerM: 0.1, outputPerM: 0.4 } },
   { test: /gemini.*flash/i, price: { inputPerM: 0.3, outputPerM: 2.5 } },
@@ -77,6 +92,9 @@ const FAMILY_RULES: Array<{ test: RegExp; price: ModelPrice }> = [
   { test: /^o[34]/i, price: { inputPerM: 2, outputPerM: 8 } },
   { test: /gpt-4o/i, price: { inputPerM: 2.5, outputPerM: 10 } },
   { test: /gpt-4\.1/i, price: { inputPerM: 2, outputPerM: 8 } },
+  // GPT-6 : tiers aux prix très différents, variantes datées comprises.
+  { test: /gpt-6.*luna/i, price: { inputPerM: 0.1, outputPerM: 0.5 } },
+  { test: /gpt-6.*sol/i, price: { inputPerM: 2, outputPerM: 10 } },
   // GPT-5.6 : 3 tiers aux prix TRÈS différents — placés avant la règle générique gpt-5
   // pour couvrir les variantes datées (ex. `gpt-5.6-luna-2026-xx-xx`).
   { test: /gpt-5\.6.*luna/i, price: { inputPerM: 0.2, outputPerM: 1.2 } },
@@ -150,8 +168,8 @@ export function costUsd(
   const p = resolveModelPrice(model);
   const cached = Math.min(Math.max(cachedTokensIn, 0), Math.max(tokensIn, 0));
   const uncached = Math.max(tokensIn, 0) - cached;
-  const inputCost =
-    (uncached * p.inputPerM + cached * p.inputPerM * CACHED_INPUT_DISCOUNT) / 1_000_000;
+  const cachedRate = p.cachedInputPerM ?? p.inputPerM * CACHED_INPUT_DISCOUNT;
+  const inputCost = (uncached * p.inputPerM + cached * cachedRate) / 1_000_000;
   const outputCost = (tokensOut / 1_000_000) * p.outputPerM;
   return inputCost + outputCost + webSearchCostUsd(model, webSearchCalls);
 }
