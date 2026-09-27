@@ -1,0 +1,23 @@
+{
+  "route": "/cgu",
+  "width": 1024,
+  "height": 900,
+  "title": "Conditions générales d'utilisation et de vente — MedInfo AI",
+  "headings": [
+    "Informations légales",
+    "Conditions générales d'utilisation et de vente",
+    "Objet du service",
+    "Avertissement médical et urgences",
+    "Comptes et rôles",
+    "Abonnements et paiement",
+    "Droit de rétractation",
+    "Responsabilité",
+    "Droit applicable"
+  ],
+  "text": "Informations légales\nInformations légales\nConditions générales d'utilisation et de vente\nDernière mise à jour : 2026-06-05\nLes présentes conditions régissent l'accès et l'usage de MedInfo AI, ainsi que les abonnements payants proposés via la plateforme.\nObjet du service\nMedInfo AI fournit de l'information médicale et pharmacologique générale et éducative, sourcée à partir de la littérature publiquement disponible.\nLe service ne constitue pas un avis médical, ne pose aucun diagnostic et ne propose aucune conduite à tenir individualisée. Il ne se substitue jamais à une consultation auprès d'un professionnel de santé.\nAvertissement médical et urgences\nLes réponses sont générées automatiquement et peuvent contenir des erreurs. Elles ne doivent pas servir de base à une décision de santé personnelle.\nMedInfo AI fournit de l'information médicale générale et ne peut pas analyser une situation personnelle ni orienter un diagnostic individuel. Si vous ressentez des symptômes ou une inquiétude qui vous concerne, vous ou un proche, consultez un professionnel de santé. En cas d'urgence, composez ",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [],
+  "passes": 19
+}

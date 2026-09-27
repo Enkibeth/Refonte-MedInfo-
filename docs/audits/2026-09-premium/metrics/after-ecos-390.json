@@ -1,0 +1,15 @@
+{
+  "route": "/ecos",
+  "width": 390,
+  "height": 844,
+  "title": "Simulation ECOS en ligne — patient virtuel et note sur 20 — MedInfo AI",
+  "headings": [
+    "ECOS"
+  ],
+  "text": "ECOS\nCet outil est réservé aux comptes MedInfo AI. Créez un compte gratuit pour y accéder. Simulation patient ECOS + évaluation pédagogique.\nCréer un compte\nRetour au chat",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [],
+  "passes": 18
+}

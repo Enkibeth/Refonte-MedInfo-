@@ -1,0 +1,15 @@
+{
+  "route": "/contact",
+  "width": 390,
+  "height": 844,
+  "title": "Contact — support, partenariats et données personnelles — MedInfo AI",
+  "headings": [
+    "Parlons-en."
+  ],
+  "text": "Menu\nContact\nParlons-en.\nUne question, une suggestion, un problème ? Choisissez le bon canal ci-dessous. En cas d'urgence médicale, composez le 15 (SAMU) ou le 112 : MedInfo AI n'est pas une plateforme d'urgence.\nUne question santé ?\nLe chat MedInfo AI répond à vos questions d'information générale, avec sources. Le premier message ne demande pas d'inscription.\nOuvrir le chat\nSupport & partenariats\nUn problème avec votre compte, une suggestion, une demande presse ou partenariat : écrivez-nous, nous répondons sous 48 h ouvrées.\nmedaifr1@gmail.com\nDonnées personnelles\nPour exercer vos droits RGPD (accès, rectification, suppression), consultez notre politique de confidentialité ou contactez-nous par e-mail.\nPolitique de confidentialité\nL’information médicale générale, pour le grand public, les étudiants et les professionnels de santé.\nChatbots IA\nChat grand public\nChat étudiant en santé\nChat professionnel de santé\nOutils\nAnalyse de document médical\nSimulation ECOS\nPlanning de révisions\nAnalyse des partiels\nGénérateur de présentations\nCréateur de CV médical\nCompte rendu de consultation\nRe",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [],
+  "passes": 25
+}

@@ -1,0 +1,15 @@
+{
+  "route": "/scores",
+  "width": 1024,
+  "height": 900,
+  "title": "Scores médicaux — calculateurs cliniques et interprétation — MedInfo AI",
+  "headings": [
+    "Scores"
+  ],
+  "text": "Scores\nCet outil est réservé aux comptes MedInfo AI. Créez un compte gratuit pour y accéder. Scores et calculateurs cliniques interactifs (CHA₂DS₂-VASc, Glasgow, CKD-EPI…) avec interprétation, recherche par nom ou par fonction.\nCréer un compte\nRetour au chat",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [],
+  "passes": 18
+}

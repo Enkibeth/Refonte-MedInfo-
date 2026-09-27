@@ -1,0 +1,68 @@
+{
+  "route": "/article.html",
+  "width": 1024,
+  "height": 900,
+  "title": "Rédaction d'article — MedInfo",
+  "headings": [
+    "Aide IA",
+    "Mes articles enregistrés",
+    "Insérer un appel de citation"
+  ],
+  "text": "Nouveau\nCharger un exemple\nMes articles\nSauvegarder\nRédaction\nBibliographie\nAperçu\nExporter ▾\nDocument\nType de document\nArticle original (IMRaD)\nAbstract / résumé de congrès\nCas clinique\nRevue de littérature\nThèse / mémoire\nTitre du manuscrit\nAuteurs (ex. Doré C, Martin A)\nMots-clés (séparés par des virgules)\nRevue / congrès cible (optionnel)\nLimite globale (abstract, congrès…)\nAucune limite\nCaractères (esp. comprises)\nCaractères hors espaces\nMots\nLa limite globale s’applique au texte assemblé (appels de citation rendus « [1] »).\nPlan (8 sections)\nRésumé\n0/250 mots\nIntroduction\n0 car.\nMatériels et méthodes\n0 car.\nRésultats\n0 car.\nDiscussion\n0 car.\nConclusion\n0 car.\nRemerciements\n0 car.\nConflits d’intérêts\n0 car.\nAjouter une section\n7 car. · 0 hors esp. · 0 mots\nCheck-list qualité (0/9)\nLes aides IA n’envoient que la section travaillée et le plan (jamais les auteurs). L’IA n’invente ni fait, ni chiffre, ni référence. N’inclus jamais de données identifiantes de patients.\nStructure : contexte, objectif, méthodes, résultats principaux (chiffrés), conclusion. Souvent limité à 250 mots par",
+  "overflow": false,
+  "smallControls": [
+    {
+      "label": "",
+      "width": 13,
+      "height": 13
+    },
+    {
+      "label": "",
+      "width": 13,
+      "height": 13
+    },
+    {
+      "label": "",
+      "width": 13,
+      "height": 13
+    },
+    {
+      "label": "",
+      "width": 13,
+      "height": 13
+    },
+    {
+      "label": "",
+      "width": 13,
+      "height": 13
+    },
+    {
+      "label": "",
+      "width": 13,
+      "height": 13
+    },
+    {
+      "label": "",
+      "width": 13,
+      "height": 13
+    },
+    {
+      "label": "",
+      "width": 13,
+      "height": 13
+    },
+    {
+      "label": "",
+      "width": 13,
+      "height": 13
+    }
+  ],
+  "violations": [],
+  "incomplete": [
+    {
+      "id": "aria-prohibited-attr",
+      "count": 1
+    }
+  ],
+  "passes": 21
+}

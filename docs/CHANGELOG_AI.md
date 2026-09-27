@@ -17,6 +17,26 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-09-27] – Codex (direction A, implémentation et relais Claude)
+### Files modified
+- UI app/, src/ui/, helpers client du chat et lecture blog ; quatre éditeurs public/.
+- Tokens v2, générateur CSS/sprite autonome, tests unitaires additionnels.
+- docs/05_DESIGN.md v2, ADR-0038 acceptée, audit DELIVERY et preuves avant/après.
+- docs/CLAUDE_PREMIUM_HANDOFF.md : dernière revue, limites, arbitrages et PR finale.
+### Purpose
+Direction A choisie par Hugo : identité éditoriale, composants cohérents, attente chat
+immédiate et honnête, rendu incrémental, arrêt et reprise protégés côté client.
+766 tests réussis, typecheck/build réussis ; 132 états responsive sans violation axe
+détectée. Vérifications connectées, natives et performances terrain encore requises.
+Intégration dédiée pour Claude ; aucune fusion de ce lot directement vers main.
+### Regulatory impact
+Potential (UI) : disclosures et textes réglementaires conservés ; aucune modification
+des prompts, API, serveur, base/RLS ou autorisations. Sources non paywallées.
+Aucune donnée médicale, statistique ou référence inventée. Pas de déploiement.
+### Rollback plan
+Revert des commits UI et documentation via PR ; aucune migration ni retour de données requis.
+
+
 ## [2026-09-26] – Codex (audit UI initial et propositions premium)
 ### Files modified
 - docs/audits/2026-09-premium/ : inventaire, contrats UX, mesures, captures et six études visuelles statiques.

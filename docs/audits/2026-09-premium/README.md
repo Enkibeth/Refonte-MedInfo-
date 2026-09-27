@@ -1,5 +1,9 @@
 # MedInfo AI — audit initial et choix de direction
 
+> **Mise à jour du 27 septembre :** Hugo a choisi A. L’implémentation et ses limites
+> sont décrites dans [DELIVERY.md](DELIVERY.md), avec la [galerie avant/après](before-after.html).
+> Le texte ci-dessous conserve l’état historique de l’audit initial.
+
 Date : 26 septembre 2026. Auteur : Codex. Statut : **audit initial, validation visuelle attendue**.
 
 Base : `main`, commit `2d51d336058d33f36e3247b3fc97eb96c123b4e0`.

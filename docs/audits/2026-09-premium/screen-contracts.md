@@ -1,5 +1,8 @@
 # Contrats UX proposés, écran par écran
 
+> Document historique de cadrage du 26 septembre. Direction A désormais choisie.
+> Pour les corrections effectivement livrées et les réserves, voir [DELIVERY.md](DELIVERY.md).
+
 Ces contrats cadrent les lots après validation. **Aucun problème produit n’est corrigé dans cette livraison.** Les 132 captures initiales couvrent 33 routes ou variantes, aux quatre largeurs. Les outils connectés restent à observer avec leurs rôles réels. L’inventaire CSV indique la couverture exacte.
 
 ## Règles communes

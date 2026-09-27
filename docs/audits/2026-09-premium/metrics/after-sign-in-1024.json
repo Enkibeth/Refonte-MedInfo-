@@ -1,0 +1,21 @@
+{
+  "route": "/sign-in",
+  "width": 1024,
+  "height": 900,
+  "title": "Connexion — MedInfo AI",
+  "headings": [
+    "Authentification",
+    "Connexion"
+  ],
+  "text": "Authentification\nConnexion\nConnecte-toi avec ton email, ou via Google / Apple.\nContinuer avec Google\nContinuer avec Apple\nou par email\nEmail\nMot de passe\nMot de passe oublié ?\nSe connecter\nPas encore de compte ? Créer un compte\nRetour à l'accueil\nVous interagissez avec un système d'intelligence artificielle (Claude (Anthropic) ou GPT (OpenAI) selon le modèle servi). Les réponses sont générées automatiquement et peuvent contenir des erreurs.",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [
+    {
+      "id": "color-contrast",
+      "count": 1
+    }
+  ],
+  "passes": 26
+}

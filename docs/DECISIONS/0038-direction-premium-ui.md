@@ -1,7 +1,7 @@
 # ADR-0038 — Direction premium et contrat d’attente du chat
 
 ```yaml
-status: Proposed
+status: Accepted
 date: 2026-09-26
 owner: Hugo Bettembourg
 scope: UI/UX uniquement
@@ -15,9 +15,9 @@ cohérente et une attente de chat honnête. Deux directions sont présentées da
 une base à étendre. Le périmètre exclut API, prompts, serveur, base, RLS, autorisations
 et migration d’hébergement.
 
-## Décision proposée
+## Décision
 
-Choisir A « Bureau de référence » ou B « Cahier médical », puis centraliser les tokens
+Hugo a choisi A « Bureau de référence » dans la conversation, puis demandé de continuer. Centraliser les tokens
 sémantiques v2 et les primitives avant toute harmonisation des écrans. Conserver les trois
 polices, le logo, la famille d’icônes et les gardes d’accès actuels. Donner à l’envoi un
 état UI immédiat, dériver les phases d’événements reçus, stabiliser les blocs clos du rendu
@@ -25,8 +25,7 @@ et préserver le contrôle de l’utilisateur sur le défilement.
 
 ## Conséquences et réserves
 
-- Aucune décision n’est acceptée avant validation de Hugo ; aucun token produit ne change
-  dans ce lot documentaire.
+- Direction visuelle A acceptée par Hugo. Les modifications UI et tokens v2 sont autorisées.
 - `sendSources` est désactivé par défaut dans le chemin SDK actuel. Son activation
   constituerait une exception au périmètre API, à autoriser séparément et à vérifier
   avec le provider réel. La direction ne présume pas qu’elle sera autorisée.
@@ -39,4 +38,4 @@ et préserver le contrôle de l’utilisateur sur le défilement.
 
 ## Statut
 
-Proposed — attente du choix de Hugo et des arbitrages explicités dans le rapport.
+Accepted — direction A. Les exceptions API et garanties d’archive invitée restent hors périmètre.
