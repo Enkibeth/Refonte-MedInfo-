@@ -1,0 +1,216 @@
+{
+  "route": "/cv-builder.html",
+  "width": 1024,
+  "height": 900,
+  "title": "Créateur de CV — MedInfo",
+  "headings": [
+    "Rubriques"
+  ],
+  "text": "↶\n↷\n−\n66 %\n+\n1 page\nAjuster…\nRelecture IA\nTélécharger le PDF\n⋯\nRUBRIQUES\n+ Rubrique\nEn-tête & contacts\nNom, accroche, photo\nCOLONNE PRINCIPALE\n⠿\nExpériences professionnelles\n+\nentrées\n2 éléments\n⠿\nMédecin stagiaire — externat de médecine\n⠿\nMédecin stagiaire\n⠿\nFormation\n+\nentrées\n3 éléments\n⠿\nDiplôme de formation approfondie en sciences médicales (DFASM)\n⠿\nDiplôme de formation générale en sciences médicales (DFGSM)\n⠿\nBaccalauréat général\n⠿\nExpériences associatives et encadrement\n+\nentrées\n1 élément\n⠿\nFonction associative\nBANDEAU LATÉRAL\n⠿\nCertificats\n+\nentrées\n2 éléments\n⠿\nAFGSU 2\n⠿\nLecture critique d'article en anglais\n⠿\nCentres d'intérêt\n+\nliste\n2 éléments\n⠿\nÀ compléter\n⠿\nÀ compléter\n⠿\nLangues\n+\nniveaux\n2 éléments\n⠿\nFrançais\n⠿\nAnglais\nPage 1 / 1\n56 % rempli\nÉtudiant(e) en Xe année de médecine à l'Université de Ville.\nExpériences professionnelles\nMédecin stagiaire — externat de médecine\nde sept. 20XX à juil. 20XX\nCHU de Ville, France\nService de Cardiologie du Pr. Nom, 3 mois\nService des Urgences du Pr. Nom, 3 mois\nMédecin stagiaire\naoût 20XX\nHôpital, Ville, Pays\nStage réalisé dans l'",
+  "overflow": false,
+  "smallControls": [
+    {
+      "label": "Titre du CV",
+      "width": 189,
+      "height": 28
+    },
+    {
+      "label": "Annuler",
+      "width": 29.734375,
+      "height": 28
+    },
+    {
+      "label": "Rétablir",
+      "width": 29.734375,
+      "height": 28
+    },
+    {
+      "label": "Réduire le zoom",
+      "width": 24.890625,
+      "height": 26
+    },
+    {
+      "label": "Zoom",
+      "width": 48.265625,
+      "height": 26
+    },
+    {
+      "label": "Augmenter le zoom",
+      "width": 25.890625,
+      "height": 26
+    },
+    {
+      "label": "Ajuster…",
+      "width": 68.796875,
+      "height": 24
+    },
+    {
+      "label": "Relecture IAIA",
+      "width": 96.953125,
+      "height": 29
+    },
+    {
+      "label": "Télécharger le PDFPDF",
+      "width": 135.34375,
+      "height": 29
+    },
+    {
+      "label": "Autres actions",
+      "width": 32,
+      "height": 28
+    },
+    {
+      "label": "+ Rubrique",
+      "width": 79.265625,
+      "height": 24
+    },
+    {
+      "label": "Expériences professionnelles",
+      "width": 167.578125,
+      "height": 21
+    },
+    {
+      "label": "+",
+      "width": 24.890625,
+      "height": 24
+    },
+    {
+      "label": "Formation",
+      "width": 167.578125,
+      "height": 21
+    },
+    {
+      "label": "+",
+      "width": 24.890625,
+      "height": 24
+    },
+    {
+      "label": "Expériences associatives et encadrement",
+      "width": 167.578125,
+      "height": 21
+    },
+    {
+      "label": "+",
+      "width": 24.890625,
+      "height": 24
+    },
+    {
+      "label": "Certificats",
+      "width": 167.578125,
+      "height": 21
+    },
+    {
+      "label": "+",
+      "width": 24.890625,
+      "height": 24
+    },
+    {
+      "label": "Centres d'intérêt",
+      "width": 167.578125,
+      "height": 21
+    },
+    {
+      "label": "+",
+      "width": 24.890625,
+      "height": 24
+    },
+    {
+      "label": "Langues",
+      "width": 167.578125,
+      "height": 21
+    },
+    {
+      "label": "+",
+      "width": 24.890625,
+      "height": 24
+    },
+    {
+      "label": "Contenu",
+      "width": 66.421875,
+      "height": 24
+    },
+    {
+      "label": "Thème",
+      "width": 57.09375,
+      "height": 24
+    },
+    {
+      "label": "Formation",
+      "width": 75.578125,
+      "height": 24
+    },
+    {
+      "label": "Stages hospitaliers",
+      "width": 127.28125,
+      "height": 24
+    },
+    {
+      "label": "Expérience professionnelle",
+      "width": 171.8125,
+      "height": 24
+    },
+    {
+      "label": "Recherche",
+      "width": 78.421875,
+      "height": 24
+    },
+    {
+      "label": "Publications",
+      "width": 87.859375,
+      "height": 24
+    },
+    {
+      "label": "Communications",
+      "width": 112.65625,
+      "height": 24
+    },
+    {
+      "label": "Enseignement",
+      "width": 99.03125,
+      "height": 24
+    },
+    {
+      "label": "Profil",
+      "width": 48.859375,
+      "height": 24
+    },
+    {
+      "label": "Compétences",
+      "width": 95.875,
+      "height": 24
+    },
+    {
+      "label": "Langues",
+      "width": 66.015625,
+      "height": 24
+    },
+    {
+      "label": "Certificats",
+      "width": 77.84375,
+      "height": 24
+    },
+    {
+      "label": "Formations complémentaires",
+      "width": 182.609375,
+      "height": 24
+    },
+    {
+      "label": "Centres d'intérêt",
+      "width": 112.90625,
+      "height": 24
+    },
+    {
+      "label": "Références",
+      "width": 82.5,
+      "height": 24
+    }
+  ],
+  "violations": [],
+  "incomplete": [
+    {
+      "id": "color-contrast",
+      "count": 64
+    }
+  ],
+  "passes": 24
+}

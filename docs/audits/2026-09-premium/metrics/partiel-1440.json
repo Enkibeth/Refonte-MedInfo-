@@ -1,0 +1,29 @@
+{
+  "route": "/partiel",
+  "width": 1440,
+  "height": 900,
+  "title": "Analyse des partiels — classement de promo et statistiques — MedInfo AI",
+  "headings": [],
+  "text": "Partiels\nCet outil est réservé aux comptes MedInfo AI. Créez un compte gratuit pour y accéder. Analyse tes partiels : rang dans la promo, coefficients, points forts et simulateur.\nCréer un compte\nRetour au chat",
+  "overflow": false,
+  "smallControls": [
+    {
+      "label": "Créer un compte",
+      "width": 160.984375,
+      "height": 41
+    },
+    {
+      "label": "Retour au chat",
+      "width": 98.078125,
+      "height": 17
+    }
+  ],
+  "violations": [],
+  "incomplete": [
+    {
+      "id": "bypass",
+      "count": 1
+    }
+  ],
+  "passes": 13
+}

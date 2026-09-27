@@ -1,0 +1,366 @@
+{
+  "route": "/presentation.html",
+  "width": 1024,
+  "height": 900,
+  "title": "Générateur de présentations — MedInfo",
+  "headings": [
+    "Slides"
+  ],
+  "text": "Générateur de présentations\nSlides médicales prêtes pour Keynote · export PPTX\nMode manuel\nMode IA\nHors connexion\nMes présentations\nNouveau\n⤓ Exporter en PPTX\nTITRE\nSOUS-TITRE\nAUTEUR\nAFFILIATION\nCONTACT\nTHÈME\nV1 — Ivoire / Bordeaux\nV2 — Ivoire / Sarcelle (hero)\nV3 — Sombre / Mandarine\nDENSITÉ DU TEXTE\nPuces\nPhrases\nMixte\nNOMBRE DE SLIDES VISÉ (IA)\nPUBLIC VISÉ (IA)\nSlides\n1\nCOUVERTURE\nTitre de la présentation\n↑\n↓\n✕\n2\nPLAN / SOMMAIRE\nPlan de la présentation\n↑\n↓\n✕\n3\nPUCES (ACTION TITLE)\nTitre qui énonce la conclusion de la slide\n↑\n↓\n✕\n4\nÀ RETENIR / CONCLUSION\nUne phrase synthétique unique, percutante, qui résume tout le propos.\n↑\n↓\n✕\n5\nRÉFÉRENCES + CONTACT\nSources · contact · remerciements\n↑\n↓\n✕\nCouverture\nIntercalaire\nPlan / sommaire\nPuces (action title)\nTexte rédigé\nDeux colonnes\nManifeste / citation hero\nTrio de chiffres (hero)\nUn grand chiffre (hero)\nÉtapes numérotées\nTableau (Keynote-safe)\nMatrice 2×2\nImage / placeholder\nÀ retenir / conclusion\nRéférences + contact\n+ Ajouter la slide\nSlide 1 · Couverture\nTitre principal, sous-titre, bloc auteur. Toujours en première position.\nSUR-TI",
+  "overflow": false,
+  "smallControls": [
+    {
+      "label": "Mode manuel",
+      "width": 114.8125,
+      "height": 31
+    },
+    {
+      "label": "Mode IA",
+      "width": 82.484375,
+      "height": 31
+    },
+    {
+      "label": "Mes présentations",
+      "width": 132.484375,
+      "height": 26
+    },
+    {
+      "label": "Nouveau",
+      "width": 69.59375,
+      "height": 26
+    },
+    {
+      "label": "⤓ Exporter en PPTX",
+      "width": 152.53125,
+      "height": 35
+    },
+    {
+      "label": "Titre de la présentation",
+      "width": 227.25,
+      "height": 33
+    },
+    {
+      "label": "Précision sur le sujet",
+      "width": 227.25,
+      "height": 33
+    },
+    {
+      "label": "Prénom Nom",
+      "width": 227.25,
+      "height": 33
+    },
+    {
+      "label": "Service · Faculté",
+      "width": 227.25,
+      "height": 33
+    },
+    {
+      "label": "prenom.nom@…",
+      "width": 227.25,
+      "height": 33
+    },
+    {
+      "label": "V1 — Ivoire / Bordeaux",
+      "width": 179.875,
+      "height": 36
+    },
+    {
+      "label": "V2 — Ivoire / Sarcelle (hero)",
+      "width": 210.5,
+      "height": 36
+    },
+    {
+      "label": "V3 — Sombre / Mandarine",
+      "width": 201.703125,
+      "height": 36
+    },
+    {
+      "label": "Puces",
+      "width": 58.34375,
+      "height": 30
+    },
+    {
+      "label": "Phrases",
+      "width": 70.34375,
+      "height": 30
+    },
+    {
+      "label": "Mixte",
+      "width": 57.203125,
+      "height": 30
+    },
+    {
+      "label": "",
+      "width": 227.25,
+      "height": 33
+    },
+    {
+      "label": "Co-internes, staff…",
+      "width": 227.25,
+      "height": 33
+    },
+    {
+      "label": "↑",
+      "width": 18.5,
+      "height": 21
+    },
+    {
+      "label": "↓",
+      "width": 18.5,
+      "height": 21
+    },
+    {
+      "label": "✕",
+      "width": 22.90625,
+      "height": 21
+    },
+    {
+      "label": "↑",
+      "width": 18.5,
+      "height": 21
+    },
+    {
+      "label": "↓",
+      "width": 18.5,
+      "height": 21
+    },
+    {
+      "label": "✕",
+      "width": 22.90625,
+      "height": 21
+    },
+    {
+      "label": "↑",
+      "width": 18.5,
+      "height": 21
+    },
+    {
+      "label": "↓",
+      "width": 18.5,
+      "height": 21
+    },
+    {
+      "label": "✕",
+      "width": 22.90625,
+      "height": 21
+    },
+    {
+      "label": "↑",
+      "width": 18.5,
+      "height": 21
+    },
+    {
+      "label": "↓",
+      "width": 18.5,
+      "height": 21
+    },
+    {
+      "label": "✕",
+      "width": 22.90625,
+      "height": 21
+    },
+    {
+      "label": "↑",
+      "width": 18.5,
+      "height": 21
+    },
+    {
+      "label": "↓",
+      "width": 18.5,
+      "height": 21
+    },
+    {
+      "label": "✕",
+      "width": 22.90625,
+      "height": 21
+    },
+    {
+      "label": "CouvertureIntercalairePlan / sommairePuces (action title)Texte rédigéDeux colonnesManifest",
+      "width": 220,
+      "height": 35
+    },
+    {
+      "label": "+ Ajouter la slide",
+      "width": 115.09375,
+      "height": 26
+    },
+    {
+      "label": "PRÉSENTATION MÉDICALE",
+      "width": 435,
+      "height": 33
+    },
+    {
+      "label": "Cas clinique · Recherche · Topo",
+      "width": 435,
+      "height": 33
+    }
+  ],
+  "violations": [
+    {
+      "id": "color-contrast",
+      "impact": "serious",
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+      "nodes": [
+        {
+          "html": "<span>2 / 5</span>",
+          "target": [
+            "div:nth-child(2) > .mip-slide > .pv-footer > span:nth-child(2)"
+          ],
+          "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.3 (foreground color: #9ca5af, background color: #f8f6f0, font size: 6.3pt (8.341px), font weight: normal). Expected contrast ratio of 4.5:1"
+        },
+        {
+          "html": "<span>3 / 5</span>",
+          "target": [
+            "div:nth-child(3) > .mip-slide > .pv-footer > span:nth-child(2)"
+          ],
+          "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.3 (foreground color: #9ca5af, background color: #f8f6f0, font size: 6.3pt (8.341px), font weight: normal). Expected contrast ratio of 4.5:1"
+        },
+        {
+          "html": "<span>4 / 5</span>",
+          "target": [
+            "div:nth-child(4) > .mip-slide > .pv-footer > span:nth-child(2)"
+          ],
+          "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.3 (foreground color: #9ca5af, background color: #f8f6f0, font size: 6.3pt (8.341px), font weight: normal). Expected contrast ratio of 4.5:1"
+        }
+      ]
+    },
+    {
+      "id": "label",
+      "impact": "critical",
+      "help": "Form elements must have labels",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/label?application=axeAPI",
+      "nodes": [
+        {
+          "html": "<input class=\"mip-input\" type=\"number\" min=\"4\" max=\"40\" value=\"10\">",
+          "target": [
+            "input[type=\"number\"]"
+          ],
+          "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+        }
+      ]
+    },
+    {
+      "id": "scrollable-region-focusable",
+      "impact": "serious",
+      "help": "Scrollable region must have keyboard access",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/scrollable-region-focusable?application=axeAPI",
+      "nodes": [
+        {
+          "html": "<div class=\"mip-thumbs\">",
+          "target": [
+            ".mip-thumbs"
+          ],
+          "summary": "Fix any of the following:\n  Element should have focusable content\n  Element should be focusable"
+        }
+      ]
+    },
+    {
+      "id": "select-name",
+      "impact": "critical",
+      "help": "Select element must have an accessible name",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/select-name?application=axeAPI",
+      "nodes": [
+        {
+          "html": "<select class=\"mip-select\" style=\"max-width:220px\">",
+          "target": [
+            "select"
+          ],
+          "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+        }
+      ]
+    },
+    {
+      "id": "target-size",
+      "impact": "serious",
+      "help": "All touch targets must be 24px large, or leave sufficient space",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/target-size?application=axeAPI",
+      "nodes": [
+        {
+          "html": "<button class=\"mip-iconbtn\" title=\"Descendre\">↓</button>",
+          "target": [
+            ".is-active.mip-slide-row > .mip-slide-actions > .mip-iconbtn[title=\"Descendre\"]"
+          ],
+          "summary": "Fix any of the following:\n  Target has insufficient size (18.5px by 21px, should be at least 24px by 24px)\n  Target has insufficient space to its closest neighbors. Safe clickable space has a diameter of 21.4px instead of at least 24px."
+        },
+        {
+          "html": "<button class=\"mip-iconbtn mip-btn-danger\" title=\"Supprimer\">✕</button>",
+          "target": [
+            ".is-active.mip-slide-row > .mip-slide-actions > .mip-btn-danger.mip-iconbtn[title=\"Supprimer\"]"
+          ],
+          "summary": "Fix any of the following:\n  Target has insufficient size (22.9px by 21px, should be at least 24px by 24px)\n  Target has insufficient space to its closest neighbors. Safe clickable space has a diameter of 21.4px instead of at least 24px."
+        },
+        {
+          "html": "<button class=\"mip-iconbtn\" title=\"Monter\">↑</button>",
+          "target": [
+            ".mip-slide-row:nth-child(2) > .mip-slide-actions > .mip-iconbtn[title=\"Monter\"]"
+          ],
+          "summary": "Fix any of the following:\n  Target has insufficient size (18.5px by 21px, should be at least 24px by 24px)\n  Target has insufficient space to its closest neighbors. Safe clickable space has a diameter of 17px instead of at least 24px."
+        },
+        {
+          "html": "<button class=\"mip-iconbtn\" title=\"Descendre\">↓</button>",
+          "target": [
+            ".mip-slide-row:nth-child(2) > .mip-slide-actions > .mip-iconbtn[title=\"Descendre\"]"
+          ],
+          "summary": "Fix any of the following:\n  Target has insufficient size (18.5px by 21px, should be at least 24px by 24px)\n  Target has insufficient space to its closest neighbors. Safe clickable space has a diameter of 17px instead of at least 24px."
+        },
+        {
+          "html": "<button class=\"mip-iconbtn mip-btn-danger\" title=\"Supprimer\">✕</button>",
+          "target": [
+            ".mip-slide-row:nth-child(2) > .mip-slide-actions > .mip-btn-danger.mip-iconbtn[title=\"Supprimer\"]"
+          ],
+          "summary": "Fix any of the following:\n  Target has insufficient size (22.9px by 21px, should be at least 24px by 24px)\n  Target has insufficient space to its closest neighbors. Safe clickable space has a diameter of 21.4px instead of at least 24px."
+        },
+        {
+          "html": "<button class=\"mip-iconbtn\" title=\"Monter\">↑</button>",
+          "target": [
+            ".mip-slide-row:nth-child(3) > .mip-slide-actions > .mip-iconbtn[title=\"Monter\"]"
+          ],
+          "summary": "Fix any of the following:\n  Target has insufficient size (18.5px by 21px, should be at least 24px by 24px)\n  Target has insufficient space to its closest neighbors. Safe clickable space has a diameter of 17px instead of at least 24px."
+        },
+        {
+          "html": "<button class=\"mip-iconbtn\" title=\"Descendre\">↓</button>",
+          "target": [
+            ".mip-slide-row:nth-child(3) > .mip-slide-actions > .mip-iconbtn[title=\"Descendre\"]"
+          ],
+          "summary": "Fix any of the following:\n  Target has insufficient size (18.5px by 21px, should be at least 24px by 24px)\n  Target has insufficient space to its closest neighbors. Safe clickable space has a diameter of 17px instead of at least 24px."
+        },
+        {
+          "html": "<button class=\"mip-iconbtn mip-btn-danger\" title=\"Supprimer\">✕</button>",
+          "target": [
+            ".mip-slide-row:nth-child(3) > .mip-slide-actions > .mip-btn-danger.mip-iconbtn[title=\"Supprimer\"]"
+          ],
+          "summary": "Fix any of the following:\n  Target has insufficient size (22.9px by 21px, should be at least 24px by 24px)\n  Target has insufficient space to its closest neighbors. Safe clickable space has a diameter of 21.4px instead of at least 24px."
+        },
+        {
+          "html": "<button class=\"mip-iconbtn\" title=\"Monter\">↑</button>",
+          "target": [
+            ".mip-slide-row:nth-child(4) > .mip-slide-actions > .mip-iconbtn[title=\"Monter\"]"
+          ],
+          "summary": "Fix any of the following:\n  Target has insufficient size (18.5px by 21px, should be at least 24px by 24px)\n  Target has insufficient space to its closest neighbors. Safe clickable space has a diameter of 17px instead of at least 24px."
+        },
+        {
+          "html": "<button class=\"mip-iconbtn\" title=\"Descendre\">↓</button>",
+          "target": [
+            ".mip-slide-row:nth-child(4) > .mip-slide-actions > .mip-iconbtn[title=\"Descendre\"]"
+          ],
+          "summary": "Fix any of the following:\n  Target has insufficient size (18.5px by 21px, should be at least 24px by 24px)\n  Target has insufficient space to its closest neighbors. Safe clickable space has a diameter of 17px instead of at least 24px."
+        },
+        {
+          "html": "<button class=\"mip-iconbtn mip-btn-danger\" title=\"Supprimer\">✕</button>",
+          "target": [
+            ".mip-slide-row:nth-child(4) > .mip-slide-actions > .mip-btn-danger.mip-iconbtn[title=\"Supprimer\"]"
+          ],
+          "summary": "Fix any of the following:\n  Target has insufficient size (22.9px by 21px, should be at least 24px by 24px)\n  Target has insufficient space to its closest neighbors. Safe clickable space has a diameter of 21.4px instead of at least 24px."
+        }
+      ]
+    }
+  ],
+  "incomplete": [
+    {
+      "id": "color-contrast",
+      "count": 13
+    }
+  ],
+  "passes": 14
+}

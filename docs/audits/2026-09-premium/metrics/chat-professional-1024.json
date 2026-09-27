@@ -1,0 +1,59 @@
+{
+  "route": "/chat?bot=professional",
+  "width": 1024,
+  "height": 900,
+  "title": "Chat santé IA — posez votre question, réponse sourcée — MedInfo AI",
+  "headings": [],
+  "text": "Chat professionnel de santé\nAide à la décision sourcée sur les recommandations en vigueur\nPays\nOutils\nPublic\nÉtudiant\nPro\nQuelle est votre question clinique ?\nAide à la décision sourcée sur les recommandations en vigueur.\nEssai gratuit : 1 message sans inscription (1/1)\nAnticoagulation en FA chez le sujet âgé insuffisant rénal ?\nStratégie diagnostique devant une suspicion d'EP chez la femme enceinte\nRelais AVK → DOAC : modalités pratiques ?\nRapide\nClassique\nComplexe\nAjouter\nOutil d'aide à la décision — la décision finale appartient au clinicien.",
+  "overflow": false,
+  "smallControls": [
+    {
+      "label": "Choisir le pays",
+      "width": 70.15625,
+      "height": 29
+    },
+    {
+      "label": "Ouvrir le menu des outils",
+      "width": 81.09375,
+      "height": 33
+    },
+    {
+      "label": "Chat Grand public",
+      "width": 83.84375,
+      "height": 28
+    },
+    {
+      "label": "Chat Étudiant en santé",
+      "width": 96.953125,
+      "height": 28
+    },
+    {
+      "label": "Chat Professionnel de santé",
+      "width": 66.1875,
+      "height": 28
+    },
+    {
+      "label": "Rapide — Réponse brève, sans recherche web",
+      "width": 83.546875,
+      "height": 25
+    },
+    {
+      "label": "Classique — Réponse équilibrée",
+      "width": 101.515625,
+      "height": 25
+    },
+    {
+      "label": "Complexe — Réponse complète et approfondie",
+      "width": 102.53125,
+      "height": 25
+    },
+    {
+      "label": "Ajouter des outils à la réponse",
+      "width": 89.28125,
+      "height": 29
+    }
+  ],
+  "violations": [],
+  "incomplete": [],
+  "passes": 25
+}

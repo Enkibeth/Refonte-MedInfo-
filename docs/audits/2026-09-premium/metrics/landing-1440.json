@@ -1,0 +1,119 @@
+{
+  "route": "/",
+  "width": 1440,
+  "height": 900,
+  "title": "MedInfo AI — Assistant IA médical : réponses sourcées et vérifiées",
+  "headings": [
+    "Comment MedInfo AI répond",
+    "Les outils, au-delà du chat",
+    "Questions fréquentes",
+    "MedInfo AI est-il gratuit ?",
+    "MedInfo AI remplace-t-il un médecin ou un pharmacien ?",
+    "D'où viennent les réponses ?",
+    "Quelle différence entre les trois chatbots ?",
+    "Quels outils au-delà du chat ?",
+    "Mes conversations sont-elles privées ?"
+  ],
+  "text": "Services\nBlog\nÀ propos\nContact\nTarifs\nSe connecter\nCommencer\nINFORMATION MÉDICALE DE RÉFÉRENCE\nDes réponses santé sourcées,\nvérifiées lien par lien.\nPosez vos questions médicales et pharmacologiques. MedInfo AI recherche les recommandations et études en direct (HAS, ANSM, Europe PMC, ClinicalTrials.gov), vérifie chaque lien cité et répond avec ses sources. Information générale, jamais un avis individuel.\nEssayer sans inscription\nSe connecter\nLe premier message est gratuit, sans créer de compte.\nUne IA médicale, trois usages\nProfessionnel\nSupport à la décision clinique\nRecommandations HAS/ESC, recherche PubMed et essais cliniques, interactions, synthèses fondées sur les preuves.\nLancer une recherche\nÉtudiant\nComprendre et réviser\nCours fondés sur les Collèges (EDN/R2C), cas cliniques, ECOS, révisions, avec un raisonnement guidé pas à pas.\nPoser ma question\nGrand public\nVos questions de santé, en clair\nComprenez votre traitement ou vos résultats d'analyses, sans jargon. Information générale, jamais un avis individuel.\nCommencer à parler ici\nComment MedInfo AI répond\nL’assistant recherc",
+  "overflow": false,
+  "smallControls": [
+    {
+      "label": "Chat grand public",
+      "width": 222,
+      "height": 20
+    },
+    {
+      "label": "Chat étudiant en santé",
+      "width": 222,
+      "height": 20
+    },
+    {
+      "label": "Chat professionnel de santé",
+      "width": 222,
+      "height": 20
+    },
+    {
+      "label": "Analyse de document médical",
+      "width": 222,
+      "height": 20
+    },
+    {
+      "label": "Simulation ECOS",
+      "width": 222,
+      "height": 20
+    },
+    {
+      "label": "Planning de révisions",
+      "width": 222,
+      "height": 20
+    },
+    {
+      "label": "Analyse des partiels",
+      "width": 222,
+      "height": 20
+    },
+    {
+      "label": "Générateur de présentations",
+      "width": 222,
+      "height": 20
+    },
+    {
+      "label": "Créateur de CV médical",
+      "width": 222,
+      "height": 20
+    },
+    {
+      "label": "Compte rendu de consultation",
+      "width": 222,
+      "height": 20
+    },
+    {
+      "label": "Blog santé",
+      "width": 222,
+      "height": 20
+    },
+    {
+      "label": "À propos",
+      "width": 222,
+      "height": 20
+    },
+    {
+      "label": "Contact",
+      "width": 222,
+      "height": 20
+    },
+    {
+      "label": "Tarifs",
+      "width": 222,
+      "height": 20
+    },
+    {
+      "label": "Mentions légales",
+      "width": 222,
+      "height": 20
+    },
+    {
+      "label": "Conditions d’utilisation",
+      "width": 222,
+      "height": 20
+    },
+    {
+      "label": "Confidentialité (RGPD)",
+      "width": 222,
+      "height": 20
+    },
+    {
+      "label": "Informations légales",
+      "width": 222,
+      "height": 20
+    }
+  ],
+  "violations": [],
+  "incomplete": [
+    {
+      "id": "color-contrast",
+      "count": 5
+    }
+  ],
+  "passes": 25
+}

@@ -1,0 +1,29 @@
+{
+  "route": "/document",
+  "width": 1440,
+  "height": 900,
+  "title": "Analyse de document médical par IA — explication claire — MedInfo AI",
+  "headings": [],
+  "text": "Document\nCet outil est réservé aux comptes MedInfo AI. Créez un compte gratuit pour y accéder. Résumé patient d’un compte rendu ou d’une ordonnance.\nCréer un compte\nRetour au chat",
+  "overflow": false,
+  "smallControls": [
+    {
+      "label": "Créer un compte",
+      "width": 160.984375,
+      "height": 41
+    },
+    {
+      "label": "Retour au chat",
+      "width": 98.078125,
+      "height": 17
+    }
+  ],
+  "violations": [],
+  "incomplete": [
+    {
+      "id": "bypass",
+      "count": 1
+    }
+  ],
+  "passes": 13
+}

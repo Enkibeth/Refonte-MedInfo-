@@ -1,0 +1,113 @@
+{
+  "route": "/blog/audit-slug-inexistant",
+  "width": 390,
+  "height": 844,
+  "title": "Article introuvable — MedInfo AI",
+  "headings": [],
+  "text": "Menu\nCommencer\nTous les articles\nArticle introuvable\nCet article n'existe pas ou n'est plus publié.\nL’information médicale sourcée et vérifiée, pour le grand public, les étudiants et les professionnels de santé.\nCHATBOTS IA\nChat grand public\nChat étudiant en santé\nChat professionnel de santé\nOUTILS\nAnalyse de document médical\nSimulation ECOS\nPlanning de révisions\nAnalyse des partiels\nGénérateur de présentations\nCréateur de CV médical\nCompte rendu de consultation\nRESSOURCES\nBlog santé\nÀ propos\nContact\nTarifs\nLÉGAL\nMentions légales\nConditions d’utilisation\nConfidentialité (RGPD)\nInformations légales\nMedInfo AI fournit de l’information médicale générale, jamais un avis médical individuel. En cas d’urgence, composez le 15 (SAMU) ou le 112.\n© 2026 MedInfo AI",
+  "overflow": true,
+  "smallControls": [
+    {
+      "label": "Chat grand public",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Chat étudiant en santé",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Chat professionnel de santé",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Analyse de document médical",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Simulation ECOS",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Planning de révisions",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Analyse des partiels",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Générateur de présentations",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Créateur de CV médical",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Compte rendu de consultation",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Blog santé",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "À propos",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Contact",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Tarifs",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Mentions légales",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Conditions d’utilisation",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Confidentialité (RGPD)",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Informations légales",
+      "width": 332,
+      "height": 20
+    }
+  ],
+  "violations": [],
+  "incomplete": [
+    {
+      "id": "bypass",
+      "count": 1
+    },
+    {
+      "id": "color-contrast",
+      "count": 13
+    }
+  ],
+  "passes": 24
+}
