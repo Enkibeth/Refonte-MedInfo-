@@ -1,0 +1,102 @@
+[
+  {
+    "profile": "mobile-390-cpu4x",
+    "route": "/",
+    "runs": 3,
+    "fcpMs": 460,
+    "lcpMs": 460,
+    "cls": 0.003,
+    "hydrationErrors": 0,
+    "maxInteractionMs": null
+  },
+  {
+    "profile": "mobile-390-cpu4x",
+    "route": "/chat?bot=public",
+    "runs": 3,
+    "fcpMs": 372,
+    "lcpMs": 372,
+    "cls": 0.158,
+    "hydrationErrors": 0,
+    "maxInteractionMs": 136
+  },
+  {
+    "profile": "mobile-390-cpu4x",
+    "route": "/sign-in",
+    "runs": 3,
+    "fcpMs": 1144,
+    "lcpMs": 1888,
+    "cls": 0.021,
+    "hydrationErrors": 0,
+    "maxInteractionMs": null
+  },
+  {
+    "profile": "mobile-390-cpu4x",
+    "route": "/pricing",
+    "runs": 3,
+    "fcpMs": 380,
+    "lcpMs": 380,
+    "cls": 0.0014,
+    "hydrationErrors": 0,
+    "maxInteractionMs": null
+  },
+  {
+    "profile": "mobile-390-cpu4x",
+    "route": "/blog",
+    "runs": 3,
+    "fcpMs": 320,
+    "lcpMs": 320,
+    "cls": 0.0003,
+    "hydrationErrors": 0,
+    "maxInteractionMs": null
+  },
+  {
+    "profile": "desktop-1440",
+    "route": "/",
+    "runs": 3,
+    "fcpMs": 424,
+    "lcpMs": 424,
+    "cls": 0.0011,
+    "hydrationErrors": 0,
+    "maxInteractionMs": null
+  },
+  {
+    "profile": "desktop-1440",
+    "route": "/chat?bot=public",
+    "runs": 3,
+    "fcpMs": 328,
+    "lcpMs": 328,
+    "cls": 0.0036,
+    "hydrationErrors": 0,
+    "maxInteractionMs": 24
+  },
+  {
+    "profile": "desktop-1440",
+    "route": "/sign-in",
+    "runs": 3,
+    "fcpMs": 352,
+    "lcpMs": 352,
+    "cls": 0.0064,
+    "hydrationErrors": 0,
+    "maxInteractionMs": null
+  },
+  {
+    "profile": "desktop-1440",
+    "route": "/pricing",
+    "runs": 3,
+    "fcpMs": 344,
+    "lcpMs": 344,
+    "cls": 0.0451,
+    "hydrationErrors": 0,
+    "maxInteractionMs": null
+  },
+  {
+    "profile": "desktop-1440",
+    "route": "/blog",
+    "runs": 3,
+    "fcpMs": 332,
+    "lcpMs": 332,
+    "cls": 0.0003,
+    "hydrationErrors": 0,
+    "maxInteractionMs": null
+  }
+]

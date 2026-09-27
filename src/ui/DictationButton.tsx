@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
+import { useClientState } from '@/ui/hydration';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
 
@@ -22,6 +23,9 @@ const SUPPORTED =
   typeof navigator !== 'undefined' &&
   !!navigator.mediaDevices &&
   typeof (globalThis as any).MediaRecorder !== 'undefined';
+// Détection navigateur : le pré-rendu ne la connaît pas, le bouton apparaît après
+// l'hydratation (sinon HTML différent du pré-rendu, cf. src/ui/hydration.ts).
+const detectSupport = () => SUPPORTED;
 
 export function DictationButton({
   onTranscript,
@@ -31,6 +35,7 @@ export function DictationButton({
   disabled?: boolean;
 }) {
   const { session } = useSession();
+  const [supported] = useClientState(detectSupport, false);
   const [state, setState] = useState<State>('idle');
   const [error, setError] = useState<string | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -64,7 +69,7 @@ export function DictationButton({
     };
   }, []);
 
-  if (!SUPPORTED) return null;
+  if (!supported) return null;
 
   // Message transitoire au-dessus du bouton (le repli reste la saisie clavier).
   function flashError(msg: string) {

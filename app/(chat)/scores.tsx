@@ -274,8 +274,8 @@ function ScoreDetail({ def, onBack }: { def: ScoreDefinition; onBack: () => void
                       key={idx}
                       onPress={() => setChoiceIdx((prev) => ({ ...prev, [f.id]: idx }))}
                       style={[styles.option, active && styles.optionActive]}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: active }}
+                      accessibilityRole="radio"
+                      aria-checked={active}
                     >
                       <Text style={[styles.optionLabel, active && styles.optionLabelActive]}>{opt.label}</Text>
                     </Pressable>

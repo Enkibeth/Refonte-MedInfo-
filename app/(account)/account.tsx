@@ -8,7 +8,6 @@ import {
   Text,
   TouchableOpacity,
   View,
-  useWindowDimensions,
 } from 'react-native';
 
 import type { Persona } from '@/ai/prompts/_schema';
@@ -26,6 +25,7 @@ import { Logo } from '@/ui/Logo';
 import { Screen } from '@/ui/Screen';
 import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 import { tokens } from '@/ui/tokens';
+import { useWindowWidth } from '@/ui/useWindowWidth';
 
 /**
  * Compte — email + persona (lue depuis profiles via RLS). UI polie (scaffold Codex
@@ -43,7 +43,7 @@ const VERIFIABLE_PERSONAS: Persona[] = ['public', 'student', 'professional'];
 export default function AccountScreen() {
   const { loading, persona, status, verifiedPersonas, requestRole, signOut, user } = useSession();
   const router = useRouter();
-  const { width } = useWindowDimensions();
+  const width = useWindowWidth();
   // Sous le shell desktop (sidebar avec logo + fil d'Ariane), l'en-tête de marque
   // local ferait doublon.
   const inShell = Platform.OS === 'web' && width >= SHELL_BREAKPOINT && !!user;

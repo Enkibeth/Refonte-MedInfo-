@@ -104,7 +104,15 @@ export default function BlogArticleScreen() {
         // Article absent (slug inconnu ou dépublié) : métadonnées noindex pour que
         // les moteurs n'indexent pas une page d'erreur sans contenu.
         <SeoHead title="Article introuvable" path={PAGE_SEO.blog.path} noindex />
-      ) : null}
+      ) : (
+        // Chargement (et pré-rendu, qui ne connaît pas l'article) : jamais de page sans
+        // titre — un <title> vide est une erreur d'accessibilité (WCAG 2.4.2).
+        <SeoHead
+          title={PAGE_SEO.blog.title}
+          description={PAGE_SEO.blog.description}
+          path={slug ? `/blog/${String(slug)}` : PAGE_SEO.blog.path}
+        />
+      )}
       <LandingHeader />
       <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.inner}>

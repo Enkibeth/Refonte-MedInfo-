@@ -1,6 +1,7 @@
-import { ScrollView, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
+import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { tokens } from './tokens';
+import { useWindowWidth } from './useWindowWidth';
 
 /**
  * Conteneur d'écran (05_DESIGN §5). Fond d'app + colonne centrée à largeur
@@ -18,7 +19,7 @@ export function Screen({
   center?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
 }) {
-  const { width } = useWindowDimensions();
+  const width = useWindowWidth();
   const compact = width < tokens.layout.compact;
   return (
     <ScrollView

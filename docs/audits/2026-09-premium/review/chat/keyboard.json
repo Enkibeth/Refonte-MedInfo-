@@ -1,0 +1,117 @@
+{
+  "tabOrder": [
+    {
+      "label": "Choisir le pays",
+      "role": "button",
+      "outline": true
+    },
+    {
+      "label": "Ouvrir le menu des outils",
+      "role": "button",
+      "outline": true
+    },
+    {
+      "label": "Chat Grand public",
+      "role": "tab",
+      "outline": true
+    },
+    {
+      "label": "Chat Étudiant en santé",
+      "role": "tab",
+      "outline": true
+    },
+    {
+      "label": "Chat Professionnel de santé",
+      "role": "tab",
+      "outline": true
+    },
+    {
+      "label": "Que signifie une TSH élevée sur une pris",
+      "role": "button",
+      "outline": true
+    },
+    {
+      "label": "J'ai mal à la gorge depuis 3 jours, que ",
+      "role": "button",
+      "outline": true
+    },
+    {
+      "label": "Comment préparer ma consultation chez le",
+      "role": "button",
+      "outline": true
+    },
+    {
+      "label": "Votre question",
+      "role": "textarea",
+      "outline": false
+    },
+    {
+      "label": "Profondeur de la réponse : Classique",
+      "role": "button",
+      "outline": true
+    },
+    {
+      "label": "Ajouter des outils à la réponse",
+      "role": "button",
+      "outline": true
+    },
+    null,
+    {
+      "label": "Choisir le pays",
+      "role": "button",
+      "outline": true
+    },
+    {
+      "label": "Ouvrir le menu des outils",
+      "role": "button",
+      "outline": true
+    },
+    {
+      "label": "Chat Grand public",
+      "role": "tab",
+      "outline": true
+    },
+    {
+      "label": "Chat Étudiant en santé",
+      "role": "tab",
+      "outline": true
+    }
+  ],
+  "toolsMenu": {
+    "popupsBefore": 0,
+    "popupsOpen": 1,
+    "ariaExpanded": "true",
+    "focusWhileOpen": {
+      "label": "Mes outilsChat•AccueilSe connecter / Cré",
+      "role": "div",
+      "outline": true
+    },
+    "popupsAfterEscape": 0,
+    "focusRestored": true
+  },
+  "country": {
+    "popupsBefore": 0,
+    "popupsOpen": 1,
+    "ariaExpanded": "true",
+    "focusWhileOpen": {
+      "label": "Pays d’exerciceOriente les sources que l",
+      "role": "div",
+      "outline": true
+    },
+    "popupsAfterEscape": 0,
+    "focusRestored": true
+  },
+  "sourceCardVisible": 1,
+  "sourceModal": {
+    "popupsBefore": 0,
+    "popupsOpen": 1,
+    "ariaExpanded": null,
+    "focusWhileOpen": {
+      "label": "SRC1OFFICIELTitre de testOrganisme · 202",
+      "role": "div",
+      "outline": true
+    },
+    "popupsAfterEscape": 0,
+    "focusRestored": true
+  }
+}

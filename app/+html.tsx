@@ -1,5 +1,6 @@
 import { ScrollViewStyleReset } from 'expo-router/html';
 import type { PropsWithChildren } from 'react';
+import { RESPONSIVE_CSS } from '@/ui/responsive';
 import { tokens } from '@/ui/tokens';
 
 /**
@@ -75,7 +76,7 @@ body { overflow-x: hidden; }
 .medinfo-reveal {
   animation: medinfo-reveal ${tokens.motion.duration.base}ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-
+${RESPONSIVE_CSS}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;

@@ -47,6 +47,8 @@ Un h1 par page, puis h2/h3 selon la structure. Pas de capitales systématiques. 
 
 Largeur page 1200, lecture 760, formulaire 560. Marges 16 sur petit écran, 24 et plus au-delà. Breakpoints : 640 (formulaires/actions), 768 (tablette), 1024 (shell), 1280 (historique du chat en colonne). La navigation latérale mesure 224, l’historique 256 ; entre 1024 et 1279, l’historique reste un panneau.
 
+Pré-rendu web : les pages sont pré-rendues sans fenêtre (largeur 0, mise en page compacte), sans stockage local, sans paramètres d’URL ni détection navigateur. Le premier rendu client doit produire le même HTML, sinon React jette le pré-rendu (erreur #418). Largeur : `useWindowWidth()` (`src/ui/useWindowWidth.ts`), jamais `useWindowDimensions`. Préférence locale, paramètre d’URL ou capacité navigateur qui change l’affichage : `useClientState()` (`src/ui/hydration.ts`), appliqué après l’hydratation et jamais réécrit avant d’avoir été lu. Un élément réservé au mobile peut être masqué dès le pré-rendu par une règle CSS de `app/+html.tsx` (barre d’onglets ≥ 1024).
+
 Le titre et le contexte sont en haut à gauche, les actions de page en haut à droite. Fil d’Ariane dans le shell desktop. Les listes privilégient séparateurs et alignement des métadonnées. Une carte regroupe un objet ou un formulaire ; elle n’est pas l’unité par défaut de toute mise en page.
 
 ## 5. Composants et actions
@@ -74,7 +76,9 @@ L’anneau existant conserve son modèle de phases, mais n’affiche pas de pour
 
 Seul le bloc Markdown ouvert est reparsé à chaque fragment. Les blocs clos sont mémorisés ; tableaux/fences incomplets sont retenus. Les sections structurées sont ajoutées à la fin. Les anciennes réponses chargées depuis l’historique gardent le parseur existant. Copier, Régénérer et Exporter suivent une réponse terminée, visibles au survol/focus desktop et en permanence tactile.
 
-Les outils du composer sont à gauche ; Envoyer/Arrêter à droite. Le suivi automatique reste actif tant que l’utilisateur est en bas. Une remontée suspend le suivi ; le retour explicite respecte reduced-motion.
+Règles vérifiées (revue finale 2026-09) : un titre de section est reconnu même décoré (`### SOURCES`, `**SOURCES**`, `SOURCES :`) ; les relances étudiantes et leur ligne `[1] + [2] + [3]` sont extraites du texte entier (le format v4 les place après SOURCES) et n’apparaissent qu’une fois, en propositions ; une liste numérotée reste ouverte tant que la ligne suivante peut être ce marqueur, elle n’est donc jamais close puis retirée ; le marqueur n’est jamais affiché. Le bloc ouvert ne montre jamais de syntaxe partielle (lien, parenthèse d’appel de note, gras, code, titre de section, commentaire). Les liens sont numérotés par un registre unique par réponse, identique en direct et à la relecture ; il repart à zéro à la régénération.
+
+Les outils du composer sont à gauche ; Envoyer/Arrêter à droite. Arrêter ignore un clic dans les 500 ms qui suivent l’envoi : le second clic d’un double clic tombait sur Arrêter et coupait la réponse. Le suivi automatique reste actif tant que l’utilisateur est en bas. Une remontée suspend le suivi, y compris avant que l’événement de défilement (limité à 80 ms) soit traité : la position réelle du fil est relue avant chaque suivi. Une zone de lecture qui s’agrandit (fenêtre agrandie, bandeau qui disparaît) abaisse la position sans geste de l’utilisateur : seule compte donc la distance au bas mesurée avant la croissance du contenu. Le retour explicite respecte reduced-motion.
 
 La reprise compare le tour, la question et le contenu, puis vérifie que conversation et génération sont encore courantes après l’attente réseau. Les nouvelles vérifications d’archive sont bornées. L’archivage serveur et le protocole API restent inchangés.
 

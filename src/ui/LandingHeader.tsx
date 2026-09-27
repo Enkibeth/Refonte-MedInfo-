@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Platform, Pressable, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
@@ -10,6 +10,8 @@ import { Icon } from '@/ui/icons';
 import { Logo } from '@/ui/Logo';
 import { CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
 import { tokens } from '@/ui/tokens';
+import { mi, NAV_COMPACT_BREAKPOINT, NAV_WIDE_BREAKPOINT } from '@/ui/responsive';
+import { useWindowWidth } from '@/ui/useWindowWidth';
 
 /**
  * Header de navigation des pages publiques (audit landing 2026-06) : logo MedInfo à
@@ -20,21 +22,23 @@ import { tokens } from '@/ui/tokens';
  * les 3 ; public → chat public ; visiteur → les 3, essai 1 message gratuit). Le masquage
  * UI n'est jamais l'unique barrière (autorisation serveur conservée dans /api/chat).
  */
-const COMPACT_BREAKPOINT = 640; // < : logo + menu déroulant + CTA
-const WIDE_BREAKPOINT = 920; //   ≥ : tous les liens à plat
 
 type MenuEntry = { label: string; route: string };
 
 export function LandingHeader() {
   const router = useRouter();
   const { user, persona } = useSession();
-  const { width } = useWindowDimensions();
+  const width = useWindowWidth();
   const [openMenu, setOpenMenu] = useState<'chatbots' | 'compact' | null>(null);
 
   const isAuthed = !!user;
   const isAdmin = user ? isAdminUserId(user.id) : false;
-  const compact = width < COMPACT_BREAKPOINT;
-  const wide = width >= WIDE_BREAKPOINT;
+  const compact = width < NAV_COMPACT_BREAKPOINT;
+  const wide = width >= NAV_WIDE_BREAKPOINT;
+  // Web : toutes les variantes sont dans le DOM et le CSS choisit selon la largeur
+  // (src/ui/responsive.ts) — le pré-rendu, fait sans fenêtre, est ainsi juste à toutes
+  // les largeurs. Natif : le JS choisit.
+  const web = Platform.OS === 'web';
 
   // Mêmes règles que l'accueil / l'écran chat : invité et rôles vérifiés étudiant/pro/admin
   // voient les 3 chatbots ; un compte public vérifié n'a que le chat public.
@@ -88,8 +92,8 @@ export function LandingHeader() {
         </Pressable>
 
         <View style={styles.nav}>
-          {!compact ? (
-            <View>
+          {web || !compact ? (
+            <View {...mi(`ge${NAV_COMPACT_BREAKPOINT}`)}>
               <NavLink
                 label="Services"
                 chevron
@@ -102,16 +106,21 @@ export function LandingHeader() {
             </View>
           ) : null}
 
-          {wide ? (
-            pageEntries.map((e) => <NavLink key={e.route} label={e.label} onPress={() => go(e.route)} />)
-          ) : !compact ? (
-            <NavLink label="Blog" onPress={() => go('/(marketing)/blog')} />
+          {web || wide
+            ? pageEntries.map((e) => (
+                <NavLink key={e.route} layout={mi(`ge${NAV_WIDE_BREAKPOINT}`)} label={e.label} onPress={() => go(e.route)} />
+              ))
+            : null}
+          {web || (!compact && !wide) ? (
+            <NavLink layout={mi('nav-mid')} label="Blog" onPress={() => go('/(marketing)/blog')} />
           ) : null}
 
-          {!compact ? <NavLink label={accountEntry.label} onPress={() => go(accountEntry.route)} /> : null}
+          {web || !compact ? (
+            <NavLink layout={mi(`ge${NAV_COMPACT_BREAKPOINT}`)} label={accountEntry.label} onPress={() => go(accountEntry.route)} />
+          ) : null}
 
-          {compact || !wide ? (
-            <View>
+          {web || compact || !wide ? (
+            <View {...mi(`lt${NAV_WIDE_BREAKPOINT}`)}>
               <NavLink
                 label="Menu"
                 chevron
@@ -131,13 +140,17 @@ export function LandingHeader() {
             </View>
           ) : null}
 
-          {!compact ? <Button
-            variant="secondary"
-            label={isAuthed ? 'Ouvrir le chat' : 'Commencer'}
-            size="md"
-            fullWidth={false}
-            onPress={() => go('/(chat)/chat')}
-          /> : null}
+          {web || !compact ? (
+            <View {...mi(`ge${NAV_COMPACT_BREAKPOINT}`)}>
+              <Button
+                variant="secondary"
+                label={isAuthed ? 'Ouvrir le chat' : 'Commencer'}
+                size="md"
+                fullWidth={false}
+                onPress={() => go('/(chat)/chat')}
+              />
+            </View>
+          ) : null}
         </View>
       </View>
     </View>
@@ -149,14 +162,18 @@ function NavLink({
   onPress,
   chevron = false,
   active = false,
+  layout,
 }: {
   label: string;
   onPress: () => void;
   chevron?: boolean;
   active?: boolean;
+  /** Attribut de mise en page web (`mi(…)`), cf. src/ui/responsive.ts. */
+  layout?: {};
 }) {
   return (
     <Pressable
+      {...layout}
       accessibilityRole="link"
       onPress={onPress}
       style={({ hovered, focused }: { hovered?: boolean; focused?: boolean }) => [

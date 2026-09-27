@@ -8,6 +8,7 @@
  * on a appliqué les migrations + policies versionnées. Ils sont écrits AVANT les policies
  * (TDD) : ils échouent tant que `profiles`/`ai_interactions` et leurs policies n'existent pas.
  */
+import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startRlsHarness, type RlsHarness } from './helpers/pgHarness';
 
@@ -193,6 +194,23 @@ describe('ai_model_config — service_role only (config admin, jamais exposée a
     await expect(
       db.asUser(USER_A, (q) => q("UPDATE ai_model_config SET model_id = 'hack' WHERE key = 'chat'")),
     ).rejects.toThrow();
+  });
+
+  it('0046 : après toutes les migrations, le chat est sur gpt-6-luna (réglages de la ligne conservés)', async () => {
+    const { rows } = await db.asService((q) =>
+      q("SELECT model_id, provider, web_search, temperature FROM ai_model_config WHERE key = 'chat'"),
+    );
+    expect(rows).toEqual([{ model_id: 'gpt-6-luna', provider: 'openai', web_search: true, temperature: null }]);
+  });
+
+  it("0046 respecte un choix admin plus récent : rejouée, elle ne touche pas un chat déjà sur un autre modèle", async () => {
+    const sql = readFileSync(new URL('../../supabase/migrations/0046_chat_gpt6_luna.sql', import.meta.url), 'utf8');
+    await db.asService((q) =>
+      q("UPDATE ai_model_config SET model_id = 'claude-sonnet-5', provider = 'anthropic' WHERE key = 'chat'"),
+    );
+    await db.asService((q) => q(sql));
+    const { rows } = await db.asService((q) => q("SELECT model_id, provider FROM ai_model_config WHERE key = 'chat'"));
+    expect(rows).toEqual([{ model_id: 'claude-sonnet-5', provider: 'anthropic' }]);
   });
 
   it('le service_role PEUT mettre à jour la config (modèle + réglages)', async () => {

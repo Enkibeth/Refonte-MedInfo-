@@ -302,7 +302,7 @@ function AudioFeature() {
             style={[styles.modeTab, tab === 'transcription' && styles.modeTabActive]}
             onPress={() => switchTab('transcription')}
             accessibilityRole="tab"
-            accessibilityState={{ selected: tab === 'transcription' }}
+            aria-selected={tab === 'transcription'}
           >
             <Text style={[styles.modeLabel, tab === 'transcription' && styles.modeLabelActive]}>
               Transcription
@@ -312,7 +312,7 @@ function AudioFeature() {
             style={[styles.modeTab, tab === 'report' && styles.modeTabActive]}
             onPress={() => switchTab('report')}
             accessibilityRole="tab"
-            accessibilityState={{ selected: tab === 'report' }}
+            aria-selected={tab === 'report'}
           >
             <Text style={[styles.modeLabel, tab === 'report' && styles.modeLabelActive]}>
               Compte rendu
@@ -322,7 +322,7 @@ function AudioFeature() {
             style={[styles.modeTab, tab === 'library' && styles.modeTabActive]}
             onPress={() => switchTab('library')}
             accessibilityRole="tab"
-            accessibilityState={{ selected: tab === 'library' }}
+            aria-selected={tab === 'library'}
           >
             <Text style={[styles.modeLabel, tab === 'library' && styles.modeLabelActive]}>
               Mes documents

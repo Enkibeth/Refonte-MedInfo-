@@ -31,7 +31,7 @@ import {
   domainOfUrl,
   type SourceBadge,
 } from '@/ai/chat/parseAssistantMessage';
-import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
+import { createFootnoteRegistry, MarkdownRenderer, type FootnoteRegistry } from '@/ui/MarkdownRenderer';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
 import { advanceStreamingBody, EMPTY_STREAMING_BODY, visibleStreamingTail } from '@/chat/streamingBody';
@@ -222,7 +222,7 @@ function DeepeningBlock({
             onPress={() => toggle(i)}
             disabled={disabled || sent}
             accessibilityRole="checkbox"
-            accessibilityState={{ checked }}
+            aria-checked={checked}
           >
             <CheckToggle checked={checked} />
             <View style={styles.deepeningTextBlock}>
@@ -282,8 +282,8 @@ function PatientQuestionsBlock({
                     setAnswers((prev) => ({ ...prev, [qi]: selected ? '' : opt }))
                   }
                   disabled={disabled || sent}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
+                  accessibilityRole="radio"
+                  aria-checked={selected}
                 >
                   <Text style={[styles.optionChipText, selected && styles.optionChipTextSelected]}>
                     {opt}
@@ -360,7 +360,7 @@ function InteractionBlock({
                   onPress={() => toggle(gi, opt)}
                   disabled={disabled || sent}
                   accessibilityRole="checkbox"
-                  accessibilityState={{ checked }}
+                  aria-checked={checked}
                 >
                   <CheckToggle checked={checked} />
                   <Text style={[styles.actionButtonText, checked && styles.actionButtonTextSelected]}>
@@ -419,7 +419,7 @@ function FollowupsBlock({
             onPress={() => toggle(i)}
             disabled={disabled || sent}
             accessibilityRole="checkbox"
-            accessibilityState={{ checked }}
+            aria-checked={checked}
           >
             <CheckToggle checked={checked} />
             <View style={styles.followupIndex}>
@@ -512,7 +512,7 @@ function CalcBlock({
               onPress={() => toggle(id)}
               disabled={disabled || sent}
               accessibilityRole="checkbox"
-              accessibilityState={{ checked }}
+              aria-checked={checked}
             >
               <CheckToggle checked={checked} />
               <Icon name="calculator" size={14} color={tokens.colors.accentDeep} />
@@ -541,10 +541,12 @@ function ReflectionBlock({
   markdown,
   sources,
   onOpenSource,
+  footnotes,
 }: {
   markdown: string;
   sources: ParsedSource[];
   onOpenSource: (s: ParsedSource) => void;
+  footnotes: FootnoteRegistry;
 }) {
   const [open, setOpen] = useState(false);
   const onCitationPress = useCitationResolver(sources, onOpenSource);
@@ -563,7 +565,11 @@ function ReflectionBlock({
       </TouchableOpacity>
       {open ? (
         <View style={styles.reflectionBody}>
-          <MarkdownRenderer text={formatInlineCitations(markdown)} onCitationPress={onCitationPress} />
+          <MarkdownRenderer
+            text={formatInlineCitations(markdown)}
+            onCitationPress={onCitationPress}
+            footnotes={footnotes}
+          />
         </View>
       ) : null}
     </View>
@@ -576,10 +582,12 @@ const BodyBlock = memo(function BodyBlock({
   markdown,
   sources,
   onOpenSource,
+  footnotes,
 }: {
   markdown: string;
   sources: ParsedSource[];
   onOpenSource: (s: ParsedSource) => void;
+  footnotes: FootnoteRegistry;
 }) {
   // (SRCx) → appels de note en exposant, APRÈS le découpage en sections : un titre
   // MAJUSCULES contenant une référence resterait sinon non détecté (¹ hors classe).
@@ -593,7 +601,11 @@ const BodyBlock = memo(function BodyBlock({
             <Text style={styles.sectionHeading}>{formatInlineCitations(section.heading)}</Text>
           ) : null}
           {section.markdown ? (
-            <MarkdownRenderer text={formatInlineCitations(section.markdown)} onCitationPress={onCitationPress} />
+            <MarkdownRenderer
+              text={formatInlineCitations(section.markdown)}
+              onCitationPress={onCitationPress}
+              footnotes={footnotes}
+            />
           ) : null}
         </View>
       ))}
@@ -619,6 +631,16 @@ export function AssistantBlocks({
   const incrementalRef = useRef(streaming);
   if (streaming) incrementalRef.current = true;
   const incremental = incrementalRef.current;
+  // Un registre de notes par réponse, conservé d'un fragment à l'autre (les blocs clos,
+  // mémoïsés, ne se re-rendent pas) et remis à zéro quand le texte repart d'ailleurs
+  // (régénération) : les liens sont numérotés 1, 2, 3… dans l'ordre du message entier.
+  const footnotesRef = useRef<{ text: string; registry: FootnoteRegistry }>({ text: '', registry: createFootnoteRegistry() });
+  if (!text.startsWith(footnotesRef.current.text)) {
+    footnotesRef.current = { text, registry: createFootnoteRegistry() };
+  } else {
+    footnotesRef.current.text = text;
+  }
+  const footnotes = footnotesRef.current.registry;
   const bodyRef = useRef(EMPTY_STREAMING_BODY);
   const body = incremental ? advanceStreamingBody(bodyRef.current, text, !streaming) : EMPTY_STREAMING_BODY;
   bodyRef.current = body;
@@ -630,16 +652,26 @@ export function AssistantBlocks({
     <View style={styles.root}>
       {body.chunks.map((markdown, i) => (
         <View key={`body-${i}`} testID="completed-answer-block">
-          <BodyBlock markdown={markdown} sources={parsed.sources} onOpenSource={onOpenSource} />
+          <BodyBlock markdown={markdown} sources={parsed.sources} onOpenSource={onOpenSource} footnotes={footnotes} />
         </View>
       ))}
-      {tail ? <View key={`body-${body.chunks.length}`}><BodyBlock markdown={tail} sources={parsed.sources} onOpenSource={onOpenSource} /></View> : null}
+      {tail ? (
+        <View key={`body-${body.chunks.length}`}>
+          <BodyBlock markdown={tail} sources={parsed.sources} onOpenSource={onOpenSource} footnotes={footnotes} />
+        </View>
+      ) : null}
       {parsed.blocks.map((block, i) => {
         switch (block.type) {
           case 'body':
             if (incremental && body.deferred === null) return null;
             return (
-              <BodyBlock key={i} markdown={block.markdown} sources={parsed.sources} onOpenSource={onOpenSource} />
+              <BodyBlock
+                key={i}
+                markdown={block.markdown}
+                sources={parsed.sources}
+                onOpenSource={onOpenSource}
+                footnotes={footnotes}
+              />
             );
           case 'sources':
             return <SourcesBlock key={i} sources={block.sources} onOpenSource={onOpenSource} />;
@@ -658,6 +690,7 @@ export function AssistantBlocks({
                 markdown={block.markdown}
                 sources={parsed.sources}
                 onOpenSource={onOpenSource}
+                footnotes={footnotes}
               />
             );
           case 'calc':

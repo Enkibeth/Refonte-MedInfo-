@@ -19,7 +19,6 @@ import {
   StyleSheet,
   Text,
   View,
-  useWindowDimensions,
 } from 'react-native';
 import { useRouter, usePathname, useSegments } from 'expo-router';
 
@@ -31,6 +30,7 @@ import { APP_FEATURES, visibleFeatures } from '@/ai/routing/featureVisibility';
 import { Icon, type IconName } from '@/ui/icons';
 import { Logo } from '@/ui/Logo';
 import { tokens } from '@/ui/tokens';
+import { useWindowWidth } from '@/ui/useWindowWidth';
 
 /** Largeur minimale (px) à partir de laquelle la sidebar remplace la tab bar. */
 export const SHELL_BREAKPOINT = tokens.layout.shell;
@@ -120,7 +120,7 @@ interface NavEntry {
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { width } = useWindowDimensions();
+  const width = useWindowWidth();
   const { session, user, persona, personalInfo, loading, bootDegraded } = useSession();
   const segments = useSegments() as string[];
   const pathname = usePathname();
@@ -274,7 +274,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         onHoverOut={() => setRailTip(null)}
         accessibilityRole="link"
         accessibilityLabel={entry.label}
-        accessibilityState={{ selected: active }}
+        {...(Platform.OS === 'web' && active ? ({ 'aria-current': 'page' } as {}) : null)}
         style={({ hovered }: { hovered?: boolean }) => [
           styles.navItem,
           collapsed && styles.navItemCollapsed,

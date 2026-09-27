@@ -8,6 +8,7 @@ import { useSession, toFriendlyAuthError, type OAuthProvider } from '@/auth/Auth
 import { getAiDisclosure } from '@/compliance/disclosures';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
+import { useClientState } from '@/ui/hydration';
 import { GoogleIcon, AppleIcon } from '@/ui/icons';
 import { Logo } from '@/ui/Logo';
 import { Screen } from '@/ui/Screen';
@@ -46,8 +47,10 @@ export default function SignInScreen() {
     signInWithOAuth,
   } = useSession();
   // `?mode=signup` (CTA fin d'essai sans inscription) ouvre directement la création de compte.
+  // Le pré-rendu ignore la requête : sur un chargement direct, le mode est appliqué après
+  // l'hydratation (sinon HTML différent du pré-rendu, cf. src/ui/hydration.ts).
   const { mode: modeParam } = useLocalSearchParams<{ mode?: string }>();
-  const [mode, setMode] = useState<Mode>(modeParam === 'signup' ? 'signup' : 'signin');
+  const [mode, setMode] = useClientState<Mode>(() => (modeParam === 'signup' ? 'signup' : 'signin'), 'signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);

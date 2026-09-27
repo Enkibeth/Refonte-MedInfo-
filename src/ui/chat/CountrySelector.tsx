@@ -30,6 +30,7 @@ export function CountrySelector({
         onPress={() => setOpen(true)}
         accessibilityRole="button"
         accessibilityLabel={current ? `Pays : ${current.name}` : 'Choisir le pays'}
+        aria-expanded={open}
         style={styles.trigger}
       >
         {current ? (
@@ -60,8 +61,8 @@ export function CountrySelector({
                       onChange(c.code);
                       setOpen(false);
                     }}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: active }}
+                    accessibilityRole="radio"
+                    aria-checked={active}
                     style={[styles.item, active && styles.itemActive]}
                   >
                     <View style={styles.itemFlag}>

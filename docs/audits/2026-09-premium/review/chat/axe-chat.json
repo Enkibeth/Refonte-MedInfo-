@@ -1,0 +1,94 @@
+{
+  "student-390": {
+    "axe": [],
+    "aria": {
+      "checkboxes": [
+        "true",
+        "false",
+        "false"
+      ],
+      "tabs": [
+        "false",
+        "true",
+        "false"
+      ]
+    }
+  },
+  "student-1440": {
+    "axe": [],
+    "aria": {
+      "checkboxes": [
+        "true",
+        "false",
+        "false"
+      ],
+      "tabs": [
+        "false",
+        "true",
+        "false"
+      ]
+    }
+  },
+  "public-390": {
+    "axe": [],
+    "aria": {
+      "checkboxes": [
+        "true",
+        "false",
+        "false",
+        "false",
+        "false"
+      ],
+      "tabs": [
+        "true",
+        "false",
+        "false"
+      ]
+    }
+  },
+  "public-1440": {
+    "axe": [],
+    "aria": {
+      "checkboxes": [
+        "true",
+        "false",
+        "false",
+        "false",
+        "false"
+      ],
+      "tabs": [
+        "true",
+        "false",
+        "false"
+      ]
+    }
+  },
+  "professional-390": {
+    "axe": [],
+    "aria": {
+      "checkboxes": [
+        "true",
+        "false"
+      ],
+      "tabs": [
+        "false",
+        "false",
+        "true"
+      ]
+    }
+  },
+  "professional-1440": {
+    "axe": [],
+    "aria": {
+      "checkboxes": [
+        "true",
+        "false"
+      ],
+      "tabs": [
+        "false",
+        "false",
+        "true"
+      ]
+    }
+  }
+}
