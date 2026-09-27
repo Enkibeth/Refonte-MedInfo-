@@ -32,18 +32,21 @@ export function Reveal({
   delay = 0,
   offset = tokens.motion.revealOffset,
   style,
+  animate = false,
 }: {
   children: React.ReactNode;
   delay?: number;
   offset?: number;
   style?: StyleProp<ViewStyle>;
+  /** Opt-in : le contenu est visible immédiatement par défaut. */
+  animate?: boolean;
 }) {
   const reduced = useReducedMotion();
-  const progress = useRef(new Animated.Value(reduced ? 1 : 0)).current;
+  const progress = useRef(new Animated.Value(reduced || !animate ? 1 : 0)).current;
   const sentinelRef = useRef<View | null>(null);
 
   useEffect(() => {
-    if (reduced) {
+    if (reduced || !animate) {
       progress.setValue(1);
       return;
     }
@@ -55,7 +58,7 @@ export function Reveal({
       started = true;
       anim = Animated.timing(progress, {
         toValue: 1,
-        duration: tokens.motion.duration.slow + 140,
+        duration: tokens.motion.duration.base,
         delay,
         easing: Easing.bezier(...tokens.motion.easing.out),
         useNativeDriver: true,
@@ -97,7 +100,7 @@ export function Reveal({
     // Natif (ou observer indisponible) : entrée au montage, comme avant.
     start();
     return () => anim?.stop();
-  }, [reduced, delay, progress]);
+  }, [reduced, animate, delay, progress]);
 
   return (
     <Animated.View

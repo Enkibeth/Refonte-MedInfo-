@@ -43,7 +43,7 @@ export function SegmentedSlider<T extends string>({
         <Text style={styles.value}>{activeLabel}</Text>
       </View>
 
-      <View style={styles.track} accessibilityRole="adjustable">
+      <View style={styles.track} accessibilityRole="radiogroup" accessibilityLabel={label}>
         <View style={[styles.fill, { width: `${fill * 100}%` }]} />
         {options.map((o, i) => {
           const active = i === index;
@@ -51,8 +51,8 @@ export function SegmentedSlider<T extends string>({
           return (
             <TouchableOpacity
               key={o.value}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: active, disabled }}
               accessibilityLabel={`${label} : ${o.label}`}
               disabled={disabled}
               style={styles.notchHit}
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderRadius: tokens.radius.pill,
     backgroundColor: tokens.colors.surfaceSunken,
-    paddingHorizontal: 4,
+    paddingHorizontal: tokens.space.xs,
     position: 'relative',
   },
   fill: {
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radius.pill,
     backgroundColor: tokens.colors.accentSurfaceStrong,
   },
-  notchHit: { padding: 6 },
+  notchHit: { minWidth: tokens.size.controlMd, minHeight: tokens.size.controlMd, alignItems: 'center', justifyContent: 'center' },
   notch: {
     width: 10,
     height: 10,
