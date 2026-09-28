@@ -9,7 +9,7 @@
  * Depuis la migration vers un serveur Node autonome (2026-08), c'est acquis : le processus
  * vit entre les requêtes, donc une promesse détachée continue de s'exécuter même quand la
  * réponse HTTP est avortée. Il n'y a plus rien à demander à la plateforme — l'ancienne
- * implémentation `waitUntil` (contexte de requête serverless) a été retirée avec Vercel.
+ * implémentation `waitUntil` (contexte de requête serverless) a été retirée avec l'ancienne plateforme.
  *
  * Il reste UNE chose à faire, et c'est la raison d'être de cette fonction : neutraliser un
  * éventuel rejet de la promesse détachée. Un `unhandledRejection` sur une promesse que plus

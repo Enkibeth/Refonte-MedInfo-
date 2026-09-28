@@ -2,11 +2,11 @@
 
 ```yaml
 title: Deployment Runbook
-version: 2.3.0
+version: 2.4.0
 owner: Hugo Bettembourg
 status: Active
-date: 2026-09-26
-note: ADR-0038 — remplace le runbook Vercel (v1) ; v2.1 corrige la v2 (2026-08) sur la base de la documentation officielle Hostinger et de l'état réel du domaine ; v2.2 intègre les constats de la recette sur l'infrastructure Hostinger (2026-09-25/26) ; v2.3 dresse la liste du code Vercel retiré et du ménage côté plateformes (§10)
+date: 2026-09-28
+note: ADR-0038 — remplace le runbook serverless (v1) ; v2.1 corrige la v2 (2026-08) sur la base de la documentation officielle Hostinger et de l'état réel du domaine ; v2.2 intègre les constats de la recette sur l'infrastructure Hostinger (2026-09-25/26) ; v2.3 dresse la liste du code serverless retiré ; v2.4 : bascule réalisée le 2026-09-28, ancienne plateforme abandonnée
 ```
 
 ## 0. État de départ (constaté le 2026-09-25)
@@ -17,7 +17,7 @@ note: ADR-0038 — remplace le runbook Vercel (v1) ; v2.1 corrige la v2 (2026-08
 | `www.medinfo-ai.com` | CNAME vers le CDN Hostinger, 301 vers l'apex |
 | DNS / registrar | Hostinger (`ns1/ns2.dns-parking.com`) |
 | E-mail du domaine | Hostinger (MX `mx1/mx2.hostinger.com` + SPF) — **ne jamais toucher** |
-| App en production | `refonte-med-info.vercel.app` (Vercel) |
+| App en production | ancienne plateforme serverless (abandonnée à la bascule du 2026-09-28) |
 | Offre Hostinger | `hostinger_business_v2` ; `medinfo-ai.com` est le domaine **principal** du compte (vhost `main`), les autres sites du plan sont des domaines additionnels |
 | App Node Hostinger d'août | domaine temporaire `lightgoldenrodyellow-heron-372000.hostingersite.com` → **503** |
 
@@ -79,7 +79,7 @@ indicatifs : l'interface hPanel évolue.
 | Champ | Valeur |
 |---|---|
 | **Framework** | **Other** (surtout pas « React » : site statique sans processus Node) |
-| **Branche** | recette : `claude/vercel-hostinger-migration-rt9gsu` ; après fusion : `main` |
+| **Branche** | `main` |
 | **Version de Node** | **22** |
 | **Répertoire racine** | `/` (vide) |
 | **Script de build** | `build` (`npm run build` ; `build:web` en est un alias) |
@@ -162,8 +162,7 @@ modifier la ligne ou *Ajouter une variable d'environnement* → *Appliquer les m
 | `EXPO_PUBLIC_AUTH_REDIRECT_URL` | **laisser vide** (= origine de la page) | non |
 | `NODE_ENV` | `production` | non |
 
-Récupérer les valeurs actuelles dans Vercel → projet `refonte-med-info` → *Settings →
-Environment Variables* (les secrets sont les mêmes).
+Les secrets vivent uniquement dans hPanel (jamais dans le dépôt).
 
 ### Facturation, vérification pro, cron
 
@@ -291,7 +290,7 @@ Constaté pendant la recette (2026-09-25/26) :
   une poursuite beaucoup plus longue reste à observer (§14) ;
 - **recette fonctionnelle validée (2026-09-26)** : inscription ; connexion e-mail et Google
   (après ajout du domaine temporaire aux *Redirect URLs* Supabase — sans lui, le retour de
-  Google renvoyait vers le *Site URL* Vercel) ; chat invité et connecté ; génération menée à
+  Google renvoyait vers l'ancien *Site URL*) ; chat invité et connecté ; génération menée à
   terme après coupure du client (`POST /api/chat 200 23070ms (client déconnecté)` puis
   écriture de fin) ; réponse archivée, conversation titrée (`chat-meta 200`), coûts
   journalisés ;
@@ -304,6 +303,9 @@ Constaté pendant la recette (2026-09-25/26) :
   À poser avant le jour J.
 
 ## 8. Bascule de `medinfo-ai.com` (le jour J)
+
+> **Réalisée le 2026-09-28** (domaine rattaché, e-mail vérifié intact, fusion #152). Stripe
+> (étape 6) reporté par décision Hugo. Procédure conservée pour référence et retour arrière.
 
 **Prérequis** : recette §7 verte ; mentions légales complétées (éditeur, directeur de la
 publication, région du serveur — cf. `src/compliance/legal.ts`, `src/deploy/hosting.ts`) ;
@@ -329,10 +331,8 @@ PR de migration relue.
 6. **Stripe** → *Webhooks* : nouvel endpoint `https://medinfo-ai.com/api/stripe/webhook`
    (`checkout.session.completed`, `customer.subscription.updated`,
    `customer.subscription.deleted`) → reporter le `whsec_…` dans `STRIPE_WEBHOOK_SECRET`.
-7. **Couper les builds Vercel** avant la fusion : Vercel → projet `refonte-med-info` →
-   *Settings → Git* → déconnecter le dépôt (ou *Ignored Build Step* = `exit 0`). Sans
-   `vercel.json`, un build de `main` casserait `refonte-med-info.vercel.app` ; le dernier
-   déploiement reste servi tel quel.
+7. **Ancienne plateforme** : déconnecter le dépôt de l'ancienne plateforme de déploiement
+   (sans objet depuis son abandon le 2026-09-28).
 8. **Fusionner** la PR dans `main`, puis passer la branche de l'application hPanel sur
    `main` et `EXPO_PUBLIC_APP_URL` sur `https://medinfo-ai.com`. Jamais dans cet ordre
    inverse : avant la fusion, `main` n'a ni `server.js` ni script `build` (cause du 503
@@ -370,22 +370,13 @@ panel admin (brouillon ou article publié). Test manuel : bouton admin (`?force=
 
 ## 10. Retour arrière
 
-- **Avant la fusion** : rien à défaire — Vercel sert toujours `main`.
-- **Après la bascule** : le dernier déploiement Vercel reste en ligne sur
-  `refonte-med-info.vercel.app` tant que le projet existe (builds coupés, §8.7). Pour revenir
-  à WordPress : restaurer la sauvegarde de l'étape 8.1 sur le domaine.
-- **Code Vercel** : la PR de migration l'a retiré du dépôt (`vercel.json`, fonction
-  `api/index.js`, `scripts/vercel/`, script `vercel-build`, `@vercel/analytics`,
-  `@vercel/speed-insights`, `keepAlive` serverless, `.vercel/` du `.gitignore`). Il ne quitte
-  `main` qu'à la fusion (§8.8), APRÈS la coupure des builds (§8.7) : avant, `main` doit rester
-  déployable sur Vercel, qui sert encore la production. Un retour à Vercel après la fusion
-  ne passe donc pas par un nouveau build de `main`, mais par le dernier déploiement Vercel
-  (ou un revert de la fusion).
-- **Ménage Vercel, une fois la bascule stabilisée** (chaque point sur OK de Hugo) : supprimer
-  le projet Vercel (ce qui retire aussi le dernier déploiement de secours), désinstaller
-  l'application Vercel du dépôt GitHub (le check « Vercel Preview Comments »), retirer les
-  URL `*.vercel.app` des *Redirect URLs* Supabase et, s'il existe, l'ancien endpoint de
-  webhook Stripe qui pointe sur `vercel.app`.
+- **Code** : revert du commit fautif dans `main`, puis nouveau build hPanel (push = build).
+- **Domaine** : pour revenir à WordPress, restaurer la sauvegarde de l'étape 8.1 et
+  rattacher de nouveau le site au domaine dans hPanel.
+- L'ancienne plateforme serverless est abandonnée (2026-09-28) : elle n'est plus une voie de
+  retour arrière. Ménage restant hors dépôt : supprimer l'ancien projet, désinstaller son
+  application GitHub (check de prévisualisation sur les PR), retirer ses URL des *Redirect
+  URLs* Supabase.
 
 ## 11. Repli : build hors de l'hébergeur
 

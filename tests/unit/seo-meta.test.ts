@@ -39,7 +39,7 @@ describe('siteUrl / canonicalUrl', () => {
 
   it('vise le domaine du site (ADR-0038), aligné sur le Sitemap de robots.txt', () => {
     expect(DEFAULT_SITE_URL).toBe('https://medinfo-ai.com');
-    // Les deux avaient divergé (robots → vercel.app, canonicals → domaine temporaire) :
+    // Les deux avaient divergé (robots → ancien sous-domaine, canonicals → domaine temporaire) :
     // un crawler recevait deux domaines différents pour le même site.
     const robots = readFileSync(resolve(process.cwd(), 'public/robots.txt'), 'utf8');
     expect(robots).toMatch(new RegExp(`^Sitemap: ${DEFAULT_SITE_URL}/sitemap\\.xml$`, 'm'));

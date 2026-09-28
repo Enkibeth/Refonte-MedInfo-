@@ -5,7 +5,7 @@ status: Accepted
 date: 2026-09-25
 owner: Hugo Bettembourg
 linked_to: [ADR-0002, ADR-0004, ADR-0012, ADR-0024, ADR-0025, ADR-0037, 03_SECURITY §6, 09_DEPLOYMENT]
-supersedes_note: "Remplace la cible de déploiement Vercel d'ADR-0002 et le §10 de 02_ARCHITECTURE (DNS repointé vers Vercel). ADR-0004 (garder le domaine chez Hostinger, ne pas le transférer) reste valable : seule la destination change — le domaine pointe désormais vers l'hébergement Hostinger lui-même."
+supersedes_note: "Remplace la cible de déploiement serverless d'ADR-0002 et le §10 de 02_ARCHITECTURE (DNS repointé vers cette plateforme). ADR-0004 (garder le domaine chez Hostinger, ne pas le transférer) reste valable : seule la destination change — le domaine pointe désormais vers l'hébergement Hostinger lui-même."
 ```
 
 ## Contexte
@@ -26,7 +26,7 @@ script `build` depuis le revert.
 | `medinfo-ai.com` | **ancien site WordPress** (thème Astra, PHP 8.3) chez Hostinger, derrière le CDN Hostinger (`server: hcdn`) |
 | `www.medinfo-ai.com` | CNAME `www.medinfo-ai.com.cdn.hstgr.net` → 301 vers l'apex (redirection WordPress) |
 | E-mail | MX `mx1/mx2.hostinger.com` + SPF Hostinger — **à préserver** |
-| Production actuelle de l'app | `refonte-med-info.vercel.app` (seul domaine du projet Vercel), saine |
+| Production actuelle de l'app | plateforme serverless (URL de sous-domaine de la plateforme), saine |
 
 Faits Hostinger vérifiés dans la documentation officielle (docs.hostinger.com/node.js) :
 offre Business ou Cloud ; déploiement depuis GitHub avec **choix de la branche** ; build
@@ -41,8 +41,8 @@ déjà utilisé par un site du même plan, il faut d'abord retirer ce site.
 ## Décision
 
 1. **Un seul processus Node** (`server/index.mjs`, entrée hPanel `server.js`) sert
-   `dist/client` et toutes les routes `+api.ts` via `expo-server/adapter/http`. Vercel est
-   retiré du dépôt (`vercel.json`, `api/index.js`, `scripts/vercel/`, analytics Vercel).
+   `dist/client` et toutes les routes `+api.ts` via `expo-server/adapter/http`. L'ancien
+   déploiement serverless est retiré du dépôt (configuration, fonction, script, analytics).
    Reprise du travail des PR #142/#143 (revert du revert #144), corrigée :
 
    | Défaut de la version d'août | Correction |
@@ -51,9 +51,9 @@ déjà utilisé par un site du même plan, il faut d'abord retirer ce site.
    | IP client = PREMIÈRE entrée de `X-Forwarded-For` → falsifiable : quota anonyme de `/api/analyze` contournable (appels LLM illimités) | IP lue à droite (`TRUST_PROXY_HOPS`, défaut 1), réécrite dans `req.rawHeaders` — l'adaptateur Expo reconstruit les en-têtes depuis `rawHeaders` : modifier `req.headers` n'avait AUCUN effet. Démontré par la fumigation (échoue sans le correctif). |
    | `socket.encrypted` posé une fois et jamais remis à `false` sur une connexion keep-alive réutilisée | Posé à chaque requête. |
    | Streaming : rien n'empêchait LiteSpeed/CDN de tamponner ou recompresser | `Cache-Control: no-cache, no-transform` + `X-Accel-Buffering: no` sur chat/ECOS/analyse ; défauts `no-store` + `X-Accel-Buffering: no` sur `/api/*`. |
-   | HSTS perdu (Vercel le posait) | `Strict-Transport-Security: max-age=63072000` derrière TLS, jamais en local. |
+   | HSTS perdu (l'ancienne plateforme le posait) | `Strict-Transport-Security: max-age=63072000` derrière TLS, jamais en local. |
    | Cron : script lisant un `.env` à la racine et un port local fixe — inexistants en hébergement géré | URL publique par défaut, secret dans `~/.medinfo-cron.env` ou commande `curl` directe dans hPanel. |
-   | URL canonique = domaine temporaire ; `robots.txt` = vercel.app | `https://medinfo-ai.com` partout, cohérence verrouillée par test. |
+   | URL canonique = domaine temporaire ; `robots.txt` = sous-domaine de l'ancienne plateforme | `https://medinfo-ai.com` partout, cohérence verrouillée par test. |
 
 2. **Domaine canonique `medinfo-ai.com` (apex)**. `www.` est redirigé en 308 vers l'apex par
    le serveur (une seule origine = une seule session `localStorage`, des URL Supabase/Stripe
@@ -62,11 +62,11 @@ déjà utilisé par un site du même plan, il faut d'abord retirer ce site.
 
 3. **Bascule en deux temps, sans casser la production** :
    - recette sur le domaine temporaire, l'application hPanel pointant sur la **branche de
-     migration** (Vercel continue de servir `main`, intacte) ;
+     migration** (l'ancienne plateforme continue de servir `main`, intacte) ;
    - le jour J : sauvegarde WordPress → retrait du site WordPress du domaine → rattachement de
      `medinfo-ai.com` à l'application Node → variables de production → fusion dans `main`.
-   Avant la fusion, **couper les builds Vercel** : sans `vercel.json`, un build de `main`
-   produirait un déploiement cassé sur `refonte-med-info.vercel.app`.
+   Avant la fusion, **couper les builds de l'ancienne plateforme** : sans sa configuration,
+   un build de `main` y produirait un déploiement cassé.
 
 ## Conséquences
 
@@ -93,5 +93,6 @@ déjà utilisé par un site du même plan, il faut d'abord retirer ce site.
 
 - Après bascule : lire la ligne `[medinfo] proxy : …` des journaux et régler
   `TRUST_PROXY_HOPS` (docs/09_DEPLOYMENT.md §3).
-- Après deux semaines stables : supprimer le projet Vercel (ou le rediriger vers le domaine).
+- **Bascule réalisée le 2026-09-28** (fusion #152) ; ancienne plateforme abandonnée par
+  décision Hugo — supprimer l'ancien projet et son application GitHub (hors dépôt).
 - Compléter les champs « [À COMPLÉTER] » des mentions légales AVANT l'ouverture publique.

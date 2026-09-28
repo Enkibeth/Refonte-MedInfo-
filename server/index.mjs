@@ -67,7 +67,7 @@ const DIST_DIR = process.env.EXPO_DIST_DIR
 const CLIENT_DIR = path.join(DIST_DIR, 'client');
 const BUILD_DIR = path.join(DIST_DIR, 'server');
 
-/** HSTS : 2 ans, comme Vercel le posait. Sans `includeSubDomains` : on ne présume rien des sous-domaines. */
+/** HSTS : 2 ans, comme l'ancienne plateforme le posait. Sans `includeSubDomains` : on ne présume rien des sous-domaines. */
 const HSTS_VALUE = 'max-age=63072000';
 
 /** Erreurs de flux normales quand un client ferme l'onglet en pleine réponse. */
