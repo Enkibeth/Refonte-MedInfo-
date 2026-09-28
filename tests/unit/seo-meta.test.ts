@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -33,6 +35,14 @@ afterAll(() => {
 describe('siteUrl / canonicalUrl', () => {
   it('retombe sur l’URL de prod par défaut sans variable d’env', () => {
     expect(siteUrl()).toBe(DEFAULT_SITE_URL);
+  });
+
+  it('vise le domaine du site (ADR-0038), aligné sur le Sitemap de robots.txt', () => {
+    expect(DEFAULT_SITE_URL).toBe('https://medinfo-ai.com');
+    // Les deux avaient divergé (robots → vercel.app, canonicals → domaine temporaire) :
+    // un crawler recevait deux domaines différents pour le même site.
+    const robots = readFileSync(resolve(process.cwd(), 'public/robots.txt'), 'utf8');
+    expect(robots).toMatch(new RegExp(`^Sitemap: ${DEFAULT_SITE_URL}/sitemap\\.xml$`, 'm'));
   });
 
   it('utilise EXPO_PUBLIC_APP_URL en retirant le slash final', () => {

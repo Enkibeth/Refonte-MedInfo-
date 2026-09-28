@@ -10,7 +10,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 import { BILLING_PLANS, isBillingPlanId } from '@/billing/plans';
-import { createCheckoutSession } from '@/billing/createCheckoutSession';
+import { createCheckoutSession, resolveCheckoutBaseUrl } from '@/billing/createCheckoutSession';
 
 function json(payload: unknown, status: number): Response {
   return new Response(JSON.stringify(payload), {
@@ -62,7 +62,7 @@ export async function POST(request: Request): Promise<Response> {
     return json({ error: "Cette offre n'est pas disponible pour votre profil." }, 403);
   }
 
-  const appUrl = process.env.EXPO_PUBLIC_APP_URL ?? new URL(request.url).origin;
+  const appUrl = resolveCheckoutBaseUrl(process.env.EXPO_PUBLIC_APP_URL, request.url);
 
   try {
     const session = await createCheckoutSession(

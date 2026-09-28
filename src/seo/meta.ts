@@ -15,8 +15,13 @@
 
 export const SITE_NAME = 'MedInfo AI';
 
-/** URL de prod par défaut (docs/TODO.md) — surchargée par EXPO_PUBLIC_APP_URL. */
-export const DEFAULT_SITE_URL = 'https://refonte-med-info.vercel.app';
+/**
+ * URL de prod par défaut : le domaine du site, servi par Hostinger (ADR-0038). Surchargée
+ * par `EXPO_PUBLIC_APP_URL` (à poser AU BUILD) — utile pendant la recette sur le domaine
+ * temporaire de Hostinger. Doit rester alignée sur la ligne `Sitemap:` de
+ * `public/robots.txt` (verrouillé par test).
+ */
+export const DEFAULT_SITE_URL = 'https://medinfo-ai.com';
 
 export const DEFAULT_DESCRIPTION =
   "Assistant IA d'information médicale en français : réponses sourcées (HAS, ANSM, PubMed), " +

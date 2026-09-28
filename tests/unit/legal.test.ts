@@ -39,7 +39,9 @@ describe('mentions légales — LCEN', () => {
   it("nomme éditeur, hébergeur et nature non-MDSW du service", () => {
     const text = fullText(mentionsLegales);
     expect(text).toMatch(/éditeur|édité par/i);
-    expect(text).toMatch(/Vercel|Supabase/);
+    // LCEN art. 1-1, I, 4° (ex-art. 6-III) : l'hébergeur doit être nommé — Hostinger depuis ADR-0038.
+    expect(text).toMatch(/Hostinger/);
+    expect(text).not.toMatch(/Vercel/);
     expect(text).toContain(INTENDED_PURPOSE);
   });
 });

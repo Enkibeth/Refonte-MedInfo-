@@ -138,6 +138,79 @@ rendu audio réduit la sortie de données de santé hors périmètre.
 - **Code :** revert de la PR. Il faut d'abord remettre la ligne `chat` sur gpt-5.6-luna,
   puisqu'un runtime sans ce code traiterait gpt-6-luna comme un modèle inconnu.
 
+### Addendum 2026-09-27 — bascule appliquée et tests réels (fusion validée par Hugo)
+- Ordre suivi : PR #148 fusionnée (`780d7a4`), puis production Vercel READY et vérifiée
+  (`/api/health` et chat invité sur gpt-5.6-luna) ; `main` intégré dans la PR #147 (`a5f220e`),
+  puis build Hostinger terminé et recette vérifiée. Migration `0046` appliquée via MCP ensuite
+  (≈ 14:43 UTC) : la ligne `chat` est passée sur `gpt-6-luna`, réglages inchangés (effort `low`,
+  verbosité `medium`, recherche web).
+- **Tests réels sur la recette Hostinger, 3 chatbots × 3 modes (invité) : 9/9 réussis** (HTTP 200,
+  aucune erreur). `model_used = gpt-6-luna` vérifié dans `ai_interactions`, une étape par réponse.
+  - `text.verbosity` est acceptée par GPT-6 (low, medium et high utilisés), tout comme l'effort
+    `none`, `low` et `high` : le point non documenté est levé.
+  - Mode rapide : jamais de recherche web ; premier mot en 0,9 à 2,3 s.
+  - Classique : 1 à 2 recherches, premier mot en 3,7 à 7,9 s.
+  - Approfondi : 1 à 4 recherches, premier mot en 6 à 18,6 s (pro).
+  - Réflexion visible seulement quand l'effort dépasse `none`.
+- **Production Vercel :** grand public rapide et classique, professionnel approfondi : 3/3.
+- **Format produit respecté** sur une réponse relue : titre, « RÉPONSE SIMPLE », « À RETENIR »,
+  section `SOURCES` en `SRCn :: [TYPE] …` reconnue par le parseur. Les liens cités dans le
+  texte gardent un `?utm_source=openai` ajouté par la recherche d'OpenAI ; ceux de la section
+  SOURCES n'en ont pas.
+- **Coût mesuré** : de 0,04 à 4,4 ¢ par réponse selon le mode.
+  - Sans recherche : moins de 0,1 ¢.
+  - Avec recherche : la recherche web (10 $ les 1 000 appels) représente 85 à 92 % du coût ;
+    les tokens GPT-6 sont presque négligeables.
+  - À surveiller dans l'onglet Coûts : 1,69 recherche par réponse dans ces tests (questions qui
+    demandaient des sources), contre 0,35 en usage réel sur gpt-5.6-luna (26 réponses sur
+    30 jours). Ce n'est pas comparable en l'état.
+
+
+## [2026-09-25] – Claude (hébergement Hostinger + domaine medinfo-ai.com — ADR-0038)
+### Files modified
+- Reprise de la migration d'août (revert du revert #144) : server.js, server/index.mjs, server/lib/{env,proxy,serve-static,static}.mjs, scripts/hostinger/{precompress,smoke}.mjs + weekly-blog-cron.sh, ecosystem.config.cjs, src/deploy/hosting.ts, src/server/keepAlive.ts ; suppression de vercel.json, api/index.js, scripts/vercel/, @vercel/analytics, @vercel/speed-insights
+- Corrections : server/index.mjs + server/lib/proxy.mjs (écoute IPv4+IPv6, PORT socket, IP client lue à droite et réécrite dans `rawHeaders`, schéma https par requête, HSTS, `www` → apex en 308, en-têtes par défaut `/api/*`, diagnostic `TRUST_PROXY_HOPS`) ; src/server/streamingHeaders.ts (NOUVEAU) appliqué à app/api/{chat,ecos,analyze}+api.ts ; src/billing/createCheckoutSession.ts (`resolveCheckoutBaseUrl`) + app/api/billing/checkout+api.ts ; src/seo/meta.ts (`DEFAULT_SITE_URL` = https://medinfo-ai.com) + public/robots.txt
+- Tests : tests/unit/hostinger-server.test.ts (+18), tests/unit/streaming-headers.test.ts (NOUVEAU), tests/unit/seo-meta.test.ts, tests/unit/billing-checkout.test.ts ; fumigation 14 → 19 vérifications
+- Docs : docs/DECISIONS/0038 (NOUVEAU), docs/09_DEPLOYMENT.md (v2.1), docs/02_ARCHITECTURE.md §7/§9/§10, docs/03_SECURITY.md, docs/06_BILLING.md, ADR-0004 (note), CLAUDE.md, README.md, docs/README.md, .env.example
+### Purpose
+Faire tourner le site chez Hostinger puis sur medinfo-ai.com. La migration d'août avait été
+annulée le lendemain sans ADR ; son domaine temporaire répond 503. Constat du 2026-09-25 :
+medinfo-ai.com sert encore l'ancien WordPress (Hostinger, CDN), e-mail du domaine chez Hostinger.
+La reprise corrige, sur la base de la documentation officielle Hostinger (port attribué au
+démarrage, processus arrêté après inactivité, variables au build et à l'exécution) : écoute
+forcée en IPv4 et `PORT` supposé numérique (deux causes plausibles de 503), IP client
+falsifiable (quota anonyme de /api/analyze contournable — l'adaptateur Expo lit `rawHeaders`,
+démontré par la fumigation), schéma https « collant » sur connexion réutilisée, flux non
+protégés contre la mise en tampon, HSTS perdu, cron inadapté à l'hébergement géré, URL
+canonique et robots.txt divergents. Vérifié : typecheck, 815 tests unitaires, 106 tests RLS,
+compliance-grep, validate:rag, build (~1 min, ~0,5 Go), fumigation 19/19, rendu Chromium des
+pages clés, chat de bout en bout avec un faux fournisseur (flux progressif, génération menée à
+terme après coupure du client).
+### Regulatory impact
+Potential — l'hébergeur change (mentions légales LCEN art. 6-III et sous-traitants RGPD art. 28
+nomment Hostinger ; région du serveur et téléphone de l'hébergeur à compléter). Aucune donnée
+stockée chez l'hébergeur (état dans Supabase), aucune couche de sécurité retirée, aucune table ni
+policy touchée.
+### Rollback plan
+Avant la bascule : ne pas fusionner (Vercel sert `main`). Après : couper les builds Vercel
+avant la fusion garde le dernier déploiement en ligne sur refonte-med-info.vercel.app ; revert
+de la fusion + restauration de la sauvegarde WordPress sur le domaine (docs/09_DEPLOYMENT.md §10).
+
+### Addendum 2026-09-26 — recette sur l'infrastructure Hostinger (même PR)
+- Files modified : package.json (`build` : `expo export -p web --clear`), tests/unit/hostinger-server.test.ts (+2 : `--clear` verrouillé, alias `build:web`), docs/09_DEPLOYMENT.md (v2.2)
+- Constaté via le connecteur hPanel : cause réelle du 503 d'août = application reliée à `main` avec un **script de build vide** (après des échecs `Missing script: "build:web"`) → `npm install` seul, aucun `dist/`, serveur arrêté au démarrage (« Build web introuvable »). Réglages corrigés (script `build`, branche de migration) : build réussi (~2 min), `/api/health` OK, HSTS, `no-store`, pages clés en 200, ligne proxy « 3 maillons, deux derniers identiques » → `TRUST_PROXY_HOPS` laissé à 1.
+- Constaté ensuite : valeurs d'env d'août **en MAJUSCULES** (clés refusées ; cause non établie ; hPanel conserve la casse) ; valeurs masquées à la lecture et API en remplacement total → secrets ressaisis dans hPanel ; l'assistant de redéploiement « Vérifiez les paramètres de compilation » repart de valeurs auto-détectées et a vidé le script de build (503 revenu, corrigé par l'API).
+- Cause du correctif de code : le **cache Metro survit d'un build à l'autre** chez Hostinger et ressert les anciennes valeurs `EXPO_PUBLIC_*` (bundle client identique à l'octet près après correction des variables ; reproduit en local, résolu par `--clear`, ~40 s de plus par build).
+- Vérifié : typecheck ; 817 tests unitaires ; build avec l'installation de production (`NODE_ENV=production`, 588 paquets) en 61 s, nouvelles valeurs présentes dans le bundle ; fumigation 19/19. Regulatory impact : None. Rollback : revert du commit (retour au build sans `--clear`).
+- Diagnostic des clés au démarrage : server/lib/keycheck.mjs (NOUVEAU, pur, testé +10) branché dans server/index.mjs. Motif : une `SUPABASE_SERVICE_ROLE_KEY` recollée dans hPanel était refusée (« Invalid API key ») → réponses du chat plus archivées, titres (chat-meta 401) et journal des coûts cassés, alors que `/api/health` affichait « configuré ». Le serveur interroge désormais Supabase une fois par démarrage (lecture minimale de `ai_model_config` avec les mêmes en-têtes que supabase-js — `apikey` + `Authorization: Bearer`, faute de quoi une clé JWT service_role est traitée en rôle anon, constaté — : seule une vraie clé service_role y voit des lignes ; `/auth/v1/settings` pour la clé publique) et nomme le défaut (refusée, sans droits, texte masqué « •••• », blancs, guillemets, majuscules, autre projet) — **sans jamais écrire une clé** (vérifié par test). Essayé contre le vrai Supabase avec des clés non secrètes (publique à la place de la service_role, clé bidon, texte masqué) : diagnostic exact dans les trois cas. Désactivé sans URL Supabase (fumigation inchangée, 19/19).
+- Recette validée le 2026-09-26 sur le domaine temporaire : inscription, connexion e-mail et Google (après ajout du domaine aux Redirect URLs Supabase), chat invité et connecté en streaming réel à travers le CDN (premier fragment ≈ 2 s en mode rapide, ≈ 12 s en standard ; fragments étalés, jamais tamponnés → CDN conservé), génération menée à terme après coupure du client, réponse archivée et titrée, coûts journalisés ; le diagnostic a trouvé une `SUPABASE_SERVICE_ROLE_KEY` contenant un espace (corrigée). Déploiement automatique sur push confirmé (~8 s). Constaté : enregistrer une variable peut ne provoquer qu'un redémarrage — une variable `EXPO_PUBLIC_*` exige un build derrière (ordre du jour J précisé : fusion, puis branche `main` + URL, puis build ; 09_DEPLOYMENT §4 et §8). 403 intermittents du CDN depuis l'IP de datacenter du conteneur de test uniquement, à surveiller.
+
+### Addendum 2026-09-26 — derniers restes de Vercel (même PR, demande Hugo « supprime tout le code qui était utile à vercel »)
+- Constat : l'essentiel était déjà retiré par cette PR (`vercel.json` et sa fonction `api/index.js`, `scripts/vercel/`, script `vercel-build`, `@vercel/analytics`, `@vercel/speed-insights`, `keepAlive` serverless). Retirés en plus : `.vercel/` du `.gitignore` ; commentaires périmés (`.npmrc` — le réglage `legacy-peer-deps` reste nécessaire à toute installation —, `src/chat/resume.ts` qui citait `maxDuration`) ; `docs/TODO.md` (variables et URL Supabase décrites côté Vercel → hPanel / domaine final).
+- Test renforcé : `tests/unit/legal.test.ts` exigeait « Vercel ou Supabase » dans les mentions légales — satisfait par Supabase seul ; il exige désormais l'hébergeur réel (Hostinger, LCEN art. 1-1, I, 4° — numérotation vérifiée sur Légifrance : l'ex-art. 6-III cité dans le dépôt a été déplacé par la loi SREN du 21 mai 2024, références corrigées ; le même alinéa impose aussi le **téléphone** de l'hébergeur, encore absent de `src/deploy/hosting.ts` → bloquant du jour J) et l'absence de Vercel.
+- Les « Vercel AI SDK » cités dans la doc désignent la bibliothèque `ai` (streaming, outils), pas l'hébergeur : conservés.
+- Ordre (runbook §10) : ce code ne quitte `main` qu'à la fusion, après la coupure des builds Vercel ; avant, `main` doit rester déployable sur Vercel, qui sert encore la production (et doit recevoir le code GPT-6 de la PR #148 avant la bascule du chat). Ménage Vercel côté plateformes (projet, application GitHub, Redirect URLs Supabase, éventuel webhook Stripe) listé au §10, chaque point sur OK de Hugo.
+- Regulatory impact : None (mentions légales inchangées, test plus strict). Rollback : revert du commit.
 
 ## [2026-08-30] – Claude (chat : anneau de progression, reprise après veille, prompts GPT-5.6)
 ### Files modified

@@ -33,6 +33,7 @@ import { summarizeSteps } from '@/ai/logging/stepMetrics';
 import { coerceConversationId, saveAssistantMessageServer } from '@/chat/serverHistory';
 import { createServerSupabaseClient } from '@/db/serverSupabase';
 import { keepAlive } from '@/server/keepAlive';
+import { STREAMING_RESPONSE_HEADERS } from '@/server/streamingHeaders';
 import {
   buildUserContextSection,
   coerceChatbot,
@@ -237,10 +238,11 @@ export async function POST(request: Request): Promise<Response> {
 
   // Page suspendue pendant le streaming (iOS coupe le flux en quittant Safari) : la
   // génération va au bout côté serveur et `onFinish` archive la réponse, que l'utilisateur
-  // retrouve dans son historique au retour. `consumeStream()` seul ne suffit pas en
-  // serverless (l'invocation est gelée dès la réponse HTTP avortée) — `keepAlive` la
-  // prolonge via le contexte de requête Vercel (no-op en local).
+  // retrouve dans son historique au retour. Le serveur Node reste vivant après la
+  // déconnexion du client : `consumeStream()` suffit, `keepAlive` neutralise seulement un
+  // éventuel rejet de cette promesse détachée (src/server/keepAlive.ts).
   keepAlive(result.consumeStream());
 
-  return result.toUIMessageStreamResponse();
+  // En-têtes anti-tampon : le flux traverse le proxy (et le CDN) de l'hébergeur.
+  return result.toUIMessageStreamResponse({ headers: STREAMING_RESPONSE_HEADERS });
 }

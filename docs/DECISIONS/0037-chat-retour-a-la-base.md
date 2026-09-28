@@ -257,3 +257,13 @@ un appel LLM, la recherche web du provider.
 - **Qualité non évaluée** avant la bascule : OpenAI ne publie aucune donnée médicale sur GPT-6.
   À surveiller en usage réel, comme pour la 5.6 : exactitude, sources réelles, prudence.
   Retour arrière = une ligne dans le panel admin (modèle `gpt-5.6-luna`).
+- **Constaté après la bascule (2026-09-27, 0046 appliquée après déploiement sur Vercel puis
+  Hostinger) :**
+  - 13 réponses réelles sans erreur (10 sur la recette, 3 en production), toutes servies par
+    `gpt-6-luna`.
+  - La verbosité et les efforts `none`, `low` et `high` sont acceptés.
+  - Le format produit est tenu : section SOURCES en `SRCn ::`.
+  - Premier mot : 1 à 2,5 s en mode rapide, 4 à 8 s en classique, jusqu'à 19 à 24 s en
+    approfondi pro.
+  - Coût dominé par la recherche web.
+  - Détail : CHANGELOG_AI, addendum du 2026-09-27.
