@@ -9,7 +9,7 @@ date: 2026-06-02
 Les prompts v1 (public/student/pro) contenaient un recueil patient (RECUEIL MINIMUM OBLIGATOIRE), un triage symptomatique et une synthèse décisionnelle — tous déclencheurs MDSW (MDCG 2019-11 Step 4). Ils reposaient aussi sur le hack des crochets AI Engine.
 
 ## Décision
-Réécriture v2 : suppression du recueil patient, du triage, du différentiel individualisé (public) et de la synthèse décisionnelle (pro). Refus déterministe sur symptômes personnels. Boutons/QCM/sources via tool-calling natif Vercel AI SDK (plus de crochets). Conservation de la rigueur de sourcing, anti-hallucination, anti-déférence, ancrage Collèges.
+Réécriture v2 : suppression du recueil patient, du triage, du différentiel individualisé (public) et de la synthèse décisionnelle (pro). Refus déterministe sur symptômes personnels. Boutons/QCM/sources via tool-calling natif AI SDK (plus de crochets). Conservation de la rigueur de sourcing, anti-hallucination, anti-déférence, ancrage Collèges.
 
 ## Conséquences
 - (+) Safe-box non-MDSW défendable. (+) UX plus riche (vrais composants React).

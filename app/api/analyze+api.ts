@@ -20,6 +20,7 @@ import { createServerSupabaseClient } from '@/db/serverSupabase';
 import { saveAnalysisServer } from '@/document/serverAnalysisHistory';
 import { logFeatureUsage } from '@/ai/logging/logFeatureUsage';
 import { buildCitationsFooter } from '@/document/citations';
+import { STREAMING_RESPONSE_HEADERS } from '@/server/streamingHeaders';
 import type { AnalysisMode } from '@/document/analysisHistory';
 
 const MAX_DOC_LENGTH = 12_000;
@@ -247,7 +248,7 @@ export async function POST(request: Request): Promise<Response> {
       },
     });
     return new Response(stream, {
-      headers: { 'content-type': 'text/plain; charset=utf-8' },
+      headers: { 'content-type': 'text/plain; charset=utf-8', ...STREAMING_RESPONSE_HEADERS },
     });
   } catch (e) {
     console.error('Analyze error:', e);

@@ -19,7 +19,7 @@ l'article est publié sur le blog.
 ## Décision
 
 1. **Pipeline en 3 étapes IA** (`src/blog/weeklyAgent.ts`), déclenché par un
-   **cron Vercel hebdomadaire** (lundi 06:00 UTC, `vercel.json` → `crons`) sur la
+   **cron hebdomadaire** (lundi 06:00, tâche cron hPanel — `docs/09_DEPLOYMENT.md` §9) sur la
    route `GET /api/cron/weekly-blog` :
    - **Choix du sujet** — feature `blog_topic` (web_search ON par défaut : actualité
      santé, saison). Reçoit les 40 derniers titres/catégories du blog pour éviter
@@ -48,7 +48,7 @@ l'article est publié sur le blog.
    6 derniers jours (re-déclenchements sans effet). RLS inchangée (lecture
    publique des publiés uniquement, zéro écriture client).
 4. **Sécurité de la route.** `GET /api/cron/weekly-blog` accepte :
-   le cron Vercel (`Authorization: Bearer ${CRON_SECRET}` — refusé si la variable
+   la tâche cron (`Authorization: Bearer ${CRON_SECRET}` — refusé si la variable
    n'est pas configurée, fail-closed) ; ou un token admin Supabase (`requireAdmin`)
    pour les tests manuels (`?force=1` saute la garde anti-doublon).
 5. **Convention admin respectée** : `blog_topic` et `blog_review` sont déclarées
@@ -62,10 +62,10 @@ l'article est publié sur le blog.
   avec le même disclaimer et les mêmes exigences que la génération manuelle.
 - Les articles rejetés par le relecteur apparaissent en brouillon dans le panel
   admin (l'onglet Blog existant suffit pour les arbitrer).
-- `vercel.json` : `maxDuration: 300` sur la fonction API (3 appels LLM + image
-  de couverture best-effort dépassent les 60 s par défaut).
-- **Action requise (Vercel)** : définir `CRON_SECRET` dans les variables
-  d'environnement du projet, sinon le déclenchement automatique est refusé.
+- Durée : le pipeline dure plusieurs minutes (3 appels LLM + image de couverture
+  best-effort) ; le serveur Node le mène à terme même si l'appel cron est coupé.
+- **Action requise (hPanel)** : définir `CRON_SECRET` dans les variables
+  d'environnement de l'application, sinon le déclenchement automatique est refusé.
 
 ## Suivi
 
@@ -114,4 +114,4 @@ correctifs :
    n'épuise plus le budget total. Étapes fail-open avortées silencieusement ;
    relecture finale avortée → brouillon (fail-closed).
 3. **Logs** : chaque étape (`[weekly-blog] … (+Ns)`) et le résultat/erreur de la
-   route sont tracés dans les logs runtime Vercel.
+   route sont tracés dans les journaux de l'application (hPanel).

@@ -49,7 +49,7 @@ Ce qui est **préservé pour la réactivation** :
   personnelles). C'est un choix produit explicite, pas un bug.
 - La règle CLAUDE.md #2 (« ne jamais dégrader la safe-box ») est **relâchée par cet ADR**,
   qui sert d'arbitrage Hugo. À la réactivation, on rétablit la doctrine.
-- Réactivation = `MEDINFO_GUARDRAILS=on` (env Vercel) **sans redéploiement de code**, puis
+- Réactivation = `MEDINFO_GUARDRAILS=on` (variable d'environnement de l'hébergement) **sans redéploiement de code**, puis
   travail sur la cause racine (élargir les marqueurs `general_info` / activer l'étage 2
   Gemini en prod) pour supprimer les sur-refus avant de rebasculer en « on » durable.
 

@@ -20,3 +20,7 @@ Option B. Le domaine reste chez Hostinger (~12 €/an). On change uniquement les
 
 ## Statut
 Accepted. Procédure détaillée : docs/02_ARCHITECTURE.md §10.
+
+> **Amendé par ADR-0038 (2026-09-25)** : l'application est désormais hébergée chez Hostinger.
+> Le principe « garder le domaine chez Hostinger, ne pas le transférer » tient toujours ; le
+> domaine est rattaché à l'application Node.js du même plan au lieu d'être repointé vers Vercel.

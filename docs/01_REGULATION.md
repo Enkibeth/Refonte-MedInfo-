@@ -123,7 +123,7 @@ GPAI (Art. 51-55) → **le ou les providers GPAI** (OpenAI et/ou Anthropic), pas
 
 ## 8. Mentions obligatoires (checklist)
 
-- [ ] Mentions légales (LCEN art. 6 : éditeur + hébergeur)
+- [ ] Mentions légales (LCEN art. 1-1 depuis la loi SREN du 21 mai 2024, ex-art. 6-III : éditeur + hébergeur — nom, adresse et **téléphone** de l'hébergeur, art. 1-1, I, 4°)
 - [ ] Politique confidentialité (RGPD Art. 13 + OpenAI sous-traitant Art. 28 + transferts hors UE)
 - [ ] CGU avec intended purpose verbatim (§1)
 - [ ] Charte qualité santé (8 principes type HONcode)

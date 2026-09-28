@@ -22,7 +22,7 @@ les deux sont supprimés.
 
 Ce qui n’est **pas** démontré : les parcours connectés par rôle et la reprise avec archive
 réelle, faute de comptes de test autorisés (aucune session n’a été simulée). Le chat réel
-a été vérifié en invité sur l’aperçu Vercel de la branche (GPT-6 Luna) : rendu, relances,
+a été vérifié en invité sur l’aperçu de déploiement de la branche (GPT-6 Luna) : rendu, relances,
 suivi du fil et arrêt conformes.
 
 ## Défauts constatés et corrections
@@ -73,9 +73,9 @@ complet rejoué sur le build final (15/15, résultats des 13 scénarios antérie
 identiques). Captures, axe, clavier, hydratation et mesures proviennent du build
 précédent, au rendu identique (seule la condition d’arrêt du suivi a changé).
 
-### Chat réel (aperçu Vercel de la branche, invité) — [rapport](chat/real/real-chat.json)
+### Chat réel (aperçu de déploiement de la branche, invité) — [rapport](chat/real/real-chat.json)
 
-Build Vercel du commit de revue, `/api/chat` réel (GPT-6 Luna, recherche web), un message
+Build de prévisualisation du commit de revue, `/api/chat` réel (GPT-6 Luna, recherche web), un message
 par contexte de navigateur (essai invité, parcours public normal). Questions d’information
 générale ; les réponses du modèle ne sont pas relues médicalement et ne sont montrées que
 pour le rendu. Captures : [`chat/real/`](chat/real/).

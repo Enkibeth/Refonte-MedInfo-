@@ -10,6 +10,7 @@ import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
 import { logFeatureUsage } from '@/ai/logging/logFeatureUsage';
+import { STREAMING_RESPONSE_HEADERS } from '@/server/streamingHeaders';
 
 interface EcosMessage {
   role: 'user' | 'assistant';
@@ -87,7 +88,7 @@ export async function POST(request: Request): Promise<Response> {
         logFeatureUsage({ feature: 'ecos_simulate', modelId: runtime.modelId, usage });
       },
     });
-    return result.toTextStreamResponse();
+    return result.toTextStreamResponse({ headers: STREAMING_RESPONSE_HEADERS });
   } catch (e) {
     console.error('ECOS simulate error:', e);
     return Response.json({ error: 'Échec de la simulation.' }, { status: 502 });

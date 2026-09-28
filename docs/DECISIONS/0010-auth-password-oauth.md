@@ -30,7 +30,7 @@ token de callback → reconnexion perçue à chaque visite).
 - **Authentication → Providers → Google / Apple** : activer et renseigner les Client ID/Secret
   (Google Cloud Console / Apple Developer).
 - **Authentication → URL Configuration** : définir le **Site URL** = URL de production
-  (`https://refonte-med-info.vercel.app` ou domaine final) et ajouter les **Redirect URLs**
+  (`https://medinfo-ai.com`, cf. `docs/09_DEPLOYMENT.md` §8.5) et ajouter les **Redirect URLs**
   autorisées (prod + previews + localhost de dev). Côté app, renseigner
   `EXPO_PUBLIC_AUTH_REDIRECT_URL` avec cette URL publique ; sinon Expo génère une URL dev
   (`localhost`/scheme local) via `Linking.createURL('/')`, ce qui peut rendre les liens email

@@ -34,7 +34,7 @@ Toute fonctionnalité contredisant cette doctrine est interdite ET bloquée par 
 
 Regulatory-first, **executable-compliance**. Les invariants réglementaires sont des tests CI bloquants, pas des conventions humaines.
 
-Stack TypeScript unifiée : **Expo** (une app, web+iOS+Android), **Supabase** (Postgres+Auth+pgvector), **Vercel AI SDK**, **Stripe web-first**. Zéro WordPress. Zéro fragmentation multi-langage backend. Détail dans `02_ARCHITECTURE.md`.
+Stack TypeScript unifiée : **Expo** (une app, web+iOS+Android), **Supabase** (Postgres+Auth+pgvector), **AI SDK** (paquet `ai`), **Stripe web-first**. Zéro WordPress. Zéro fragmentation multi-langage backend. Détail dans `02_ARCHITECTURE.md`.
 
 ## 4. Protocole de modification IA
 

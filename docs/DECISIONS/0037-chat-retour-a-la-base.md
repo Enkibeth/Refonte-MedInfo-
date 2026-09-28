@@ -168,7 +168,7 @@ Le chemin serveur était déjà bon et a été vérifié plutôt que supposé : 
 dans un `flush` que le SDK **attend** avant de fermer le stream, donc
 `keepAlive(result.consumeStream())` couvre bien l'archivage ; `teeStream()` fait un vrai
 `.tee()`, donc la déconnexion du client n'interrompt pas la branche drainée côté serveur ; et
-`vercel.json` accorde déjà `maxDuration: 300`.
+le serveur Node n'impose pas de durée maximale à la requête.
 
 Le trou était côté client. La reprise existante ne se déclenche que si une réponse est encore
 attendue — or iOS peut couper le flux **sans erreur** : `useChat` repasse en « prêt » avec une
@@ -251,9 +251,19 @@ un appel LLM, la recherche web du provider.
   transmet la verbosité telle quelle. Elle est donc gardée, et vérifiée en réel sur les 3 modes
   juste après la bascule.
 - **Ordre de déploiement :** la config vit en base, partagée par tous les environnements. La
-  migration 0046 ne s'applique qu'une fois ce code en ligne partout : production Vercel ET
-  Hostinger. Un runtime plus ancien traiterait gpt-6-luna comme un modèle inconnu, donc chat
+  migration 0046 ne s'applique qu'une fois ce code en ligne partout : tous les
+  environnements qui lisent la table. Un runtime plus ancien traiterait gpt-6-luna comme un modèle inconnu, donc chat
   sans recherche web ni effort.
 - **Qualité non évaluée** avant la bascule : OpenAI ne publie aucune donnée médicale sur GPT-6.
   À surveiller en usage réel, comme pour la 5.6 : exactitude, sources réelles, prudence.
   Retour arrière = une ligne dans le panel admin (modèle `gpt-5.6-luna`).
+- **Constaté après la bascule (2026-09-27, 0046 appliquée après déploiement du code sur tous
+  les environnements) :**
+  - 13 réponses réelles sans erreur (10 sur la recette, 3 en production), toutes servies par
+    `gpt-6-luna`.
+  - La verbosité et les efforts `none`, `low` et `high` sont acceptés.
+  - Le format produit est tenu : section SOURCES en `SRCn ::`.
+  - Premier mot : 1 à 2,5 s en mode rapide, 4 à 8 s en classique, jusqu'à 19 à 24 s en
+    approfondi pro.
+  - Coût dominé par la recherche web.
+  - Détail : CHANGELOG_AI, addendum du 2026-09-27.

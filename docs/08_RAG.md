@@ -52,7 +52,7 @@ Métadonnées obligatoires par chunk : `chunk_id`, `parent_doc_id`, `section_pat
 
 ## 4. Citation grounding (5 techniques cumulables)
 
-1. **Inline chunk IDs** via `generateObject` (Vercel AI SDK) + schéma Zod `{answer, citations:[{chunk_id, snippet}]}`.
+1. **Inline chunk IDs** via `generateObject` (AI SDK) + schéma Zod `{answer, citations:[{chunk_id, snippet}]}`.
 2. **Cite-or-refuse** strict : « si le contexte ne contient pas la réponse, répondre exactement : Les sources disponibles ne permettent pas de répondre avec certitude. »
 3. **Vérification NLI post-hoc** : entailment de chaque phrase vs chunk cité (`mDeBERTa-v3-base-mnli-xnli`, gratuit, FR). Sous seuil → phrase strippée/flaggée.
 4. **CRAG/Self-RAG** léger : évaluateur Correct/Ambiguous/Incorrect déclenchant refus.

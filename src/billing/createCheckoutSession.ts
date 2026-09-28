@@ -31,6 +31,18 @@ export interface CheckoutSessionResult {
 
 const STRIPE_CHECKOUT_URL = 'https://api.stripe.com/v1/checkout/sessions';
 
+/**
+ * Base absolue des URL de retour Checkout (`success_url`/`cancel_url`).
+ *
+ * `EXPO_PUBLIC_APP_URL` fait foi ; vide ou absente, on retombe sur l'origine de la requête.
+ * Une variable déclarée SANS valeur dans le panneau d'hébergement vaut `''` : avec un simple
+ * `??`, les URL de retour devenaient relatives (`/account?…`) et Stripe refusait la session.
+ */
+export function resolveCheckoutBaseUrl(configured: string | undefined, requestUrl: string): string {
+  const base = configured?.trim().replace(/\/+$/, '');
+  return base && /^https?:\/\//.test(base) ? base : new URL(requestUrl).origin;
+}
+
 export async function createCheckoutSession(
   params: CheckoutParams,
   deps: CheckoutDeps,

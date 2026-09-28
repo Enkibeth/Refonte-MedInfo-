@@ -6,7 +6,7 @@
 Refonte totale de MedInfo AI : plateforme d'information médicale (3 personas : public, étudiant, pro). Stack neuve, zéro WordPress, zéro migration de données.
 
 ## Stack cible
-Expo (web+iOS+Android, une app) · Supabase (Postgres+Auth+pgvector) · Vercel AI SDK · Stripe web-first · Claude Sonnet 4.6.
+Expo (web+iOS+Android, une app) · Supabase (Postgres+Auth+pgvector) · AI SDK · Stripe web-first · Claude Sonnet 4.6.
 
 ## Loi du projet (non négociable)
 1. **Safe-box non-MDSW** : jamais de triage symptomatique, diagnostic individualisé, calculateur clinique interprétatif, synthèse décisionnelle. Cf `docs/01_REGULATION.md` (source de vérité).
@@ -20,7 +20,7 @@ Expo (web+iOS+Android, une app) · Supabase (Postgres+Auth+pgvector) · Vercel A
 | Étape | Objectif | Doc de référence | Validation |
 |---|---|---|---|
 | **0** | Lire `.ai-governance.md` + tout `docs/`. Restituer l'archi + les invariants. | tous | Résumé correct de la safe-box |
-| **1** | Scaffold Expo + Supabase + Vercel AI SDK. Structure repo exacte. | `02_ARCHITECTURE §2` | `npm run dev` démarre, app web vide |
+| **1** | Scaffold Expo + Supabase + AI SDK. Structure repo exacte. | `02_ARCHITECTURE §2` | `npm run dev` démarre, app web vide |
 | **2** | Classifieur d'intention + tests de refus (TDD : tests d'abord). | `07_CLASSIFIER`, `03_SECURITY` | « j'ai mal au ventre » → refus ; tests verts |
 | **3** | Auth Supabase + routing par persona + RLS testées. | `02_ARCHITECTURE §4`, `03_SECURITY §2` | Login OK, 3 personas routés, test RLS cross-user échoue |
 | **4** | Chat streaming + prompt `public.v2` + 4 outils (tool-calling). | `04_CHATBOT §5,§8` | Question encyclopédique répond + boutons natifs |
