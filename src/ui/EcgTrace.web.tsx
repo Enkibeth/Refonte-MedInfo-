@@ -7,9 +7,9 @@ import { tokens } from './tokens';
  * app/+html.tsx), coupée sous prefers-reduced-motion. Aucun état ni dépendance à la fenêtre :
  * rendu identique au pré-rendu et au client (pas de risque d'hydratation).
  */
-export function EcgTrace() {
+export function EcgTrace({ height = 72 }: { height?: number } = {}) {
   return (
-    <div aria-hidden="true" style={wrapStyle}>
+    <div aria-hidden="true" style={{ ...wrapStyle, height }}>
       <svg viewBox="0 0 1200 160" preserveAspectRatio="none" style={svgStyle} focusable="false">
         <path
           className="medinfo-ecg-path"
@@ -29,7 +29,6 @@ export function EcgTrace() {
 
 const wrapStyle: React.CSSProperties = {
   width: '100%',
-  height: 72,
   pointerEvents: 'none',
   overflow: 'hidden',
 };
