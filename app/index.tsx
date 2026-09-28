@@ -7,6 +7,7 @@ import { APP_FEATURES, visibleFeatures } from '@/ai/routing/featureVisibility';
 import { INTENDED_PURPOSE, getAiDisclosure } from '@/compliance/disclosures';
 import { PAGE_SEO, faqPageJsonLd, organizationJsonLd, webSiteJsonLd, type FaqItem } from '@/seo/meta';
 import { Button } from '@/ui/Button';
+import { EcgTrace } from '@/ui/EcgTrace';
 import { Icon, type IconName } from '@/ui/icons';
 import { LandingHeader } from '@/ui/LandingHeader';
 import { SeoHead } from '@/ui/SeoHead';
@@ -100,6 +101,8 @@ export default function HomeScreen() {
             </Pressable>)}
           </View>
         </View>
+        {/* Signature visuelle historique : tracé ECG qui se dessine en boucle (web seulement). */}
+        <EcgTrace />
         <View style={styles.section}>
           <View style={styles.sectionHead}><Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>{user ? 'Vos outils de travail' : 'Un outil pour chaque travail'}</Text><Text style={styles.body}>{user ? 'Retrouvez les outils accessibles avec votre rôle.' : 'L’accès aux outils dépend de votre rôle vérifié.'}</Text></View>
           <View {...mi('landing-tools')} style={[styles.toolList, wide && styles.toolColumns]}>{features.map((f, i) => <Pressable {...mi('landing-tool')} key={f.id} accessibilityRole="link" accessibilityLabel={f.label} onPress={() => router.push(f.route as never)} style={({ hovered, focused }: { hovered?: boolean; focused?: boolean }) => [styles.tool, wide && styles.toolWide, hovered && styles.rowHover, focused && tokens.focus.ring]}>

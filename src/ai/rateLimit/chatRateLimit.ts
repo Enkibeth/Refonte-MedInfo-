@@ -148,6 +148,54 @@ export async function checkChatRateLimit(request: Request, persona: Persona): Pr
     return unlimitedResult(identityType, windowDate);
   }
 
+  return incrementPersisted(supabase, {
+    counterKey,
+    identityType,
+    userId,
+    ipHash,
+    persona,
+    dailyLimit,
+    windowDate,
+  });
+}
+
+/**
+ * Plafond journalier par IP de l'essai sans inscription du chat. Le verrou « 1 message par
+ * conversation » de `/api/chat` n'empêche pas d'ouvrir des conversations anonymes à l'infini
+ * (appels LLM à nos frais) : ce compteur borne le total par IP et par jour. Compteur distinct
+ * de celui de `/api/analyze` (préfixe `guest-chat:`), mêmes garanties : IP hachée, fail-closed.
+ */
+export const GUEST_CHAT_DAILY_LIMIT = 5;
+
+export async function checkGuestChatQuota(request: Request): Promise<ChatRateLimitResult> {
+  const windowDate = todayUtc();
+  const ipHash = hashIdentifier(clientIp(request));
+  const counterKey = `guest-chat:ip:${ipHash}`;
+  const params = {
+    counterKey,
+    identityType: 'ip' as const,
+    persona: 'public' as const,
+    dailyLimit: GUEST_CHAT_DAILY_LIMIT,
+    windowDate,
+  };
+  const supabase = getServiceClient();
+  if (!supabase) return incrementInMemory(params);
+  return incrementPersisted(supabase, { ...params, userId: null, ipHash });
+}
+
+async function incrementPersisted(
+  supabase: SupabaseClient,
+  params: {
+    counterKey: string;
+    identityType: 'user' | 'ip';
+    userId: string | null;
+    ipHash: string | null;
+    persona: Persona;
+    dailyLimit: number;
+    windowDate: string;
+  },
+): Promise<ChatRateLimitResult> {
+  const { counterKey, identityType, userId, ipHash, persona, dailyLimit, windowDate } = params;
   const { data, error } = await supabase.rpc('increment_usage_counter', {
     p_counter_key: counterKey,
     p_identity_type: identityType,

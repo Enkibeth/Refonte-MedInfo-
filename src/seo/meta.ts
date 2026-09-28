@@ -25,7 +25,7 @@ export const DEFAULT_SITE_URL = 'https://medinfo-ai.com';
 
 export const DEFAULT_DESCRIPTION =
   "Assistant IA d'information médicale en français : réponses sourcées (HAS, ANSM, PubMed), " +
-  'liens vérifiés, 3 chatbots pour le grand public, les étudiants et les professionnels de santé.';
+  'références citées, 3 chatbots pour le grand public, les étudiants et les professionnels de santé.';
 
 /** Base absolue du site, sans slash final. */
 export function siteUrl(): string {
@@ -174,17 +174,17 @@ export interface PageSeo {
 export const PAGE_SEO = {
   home: {
     path: '/',
-    title: 'MedInfo AI — Assistant IA médical : réponses sourcées et vérifiées',
+    title: 'MedInfo AI — Assistant IA médical : réponses sourcées',
     description:
       'Posez vos questions de santé à une IA qui recherche les sources en direct (HAS, ANSM, ' +
-      'Europe PMC, ClinicalTrials.gov) et vérifie chaque lien. Essai gratuit sans inscription.',
+      'PubMed, sociétés savantes) et les cite. Essai gratuit sans inscription.',
   },
   about: {
     path: '/a-propos',
     title: 'À propos — notre mission et notre méthode',
     description:
       "MedInfo AI rend l'information médicale fiable et accessible : 3 chatbots spécialisés, " +
-      'sources officielles citées et liens vérifiés à chaque réponse. Découvrez notre démarche.',
+      'sources officielles citées à chaque réponse. Découvrez notre démarche.',
   },
   contact: {
     path: '/contact',
@@ -211,8 +211,8 @@ export const PAGE_SEO = {
     path: '/chat',
     title: 'Chat santé IA — posez votre question, réponse sourcée',
     description:
-      'Chat IA médical en français : réponses claires appuyées sur des sources réelles et ' +
-      'vérifiées (HAS, ANSM, PubMed). Premier message gratuit, sans inscription.',
+      'Chat IA médical en français : réponses claires appuyées sur des sources citées ' +
+      '(HAS, ANSM, PubMed). Premier message gratuit, sans inscription.',
   },
 
   // ── Outils par feature (refonte SEO 2026-07) : chaque outil a son titre et sa

@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   __resetChatRateLimitForTests,
   checkChatRateLimit,
+  checkGuestChatQuota,
+  GUEST_CHAT_DAILY_LIMIT,
 } from '@/ai/rateLimit/chatRateLimit';
 
 function requestFromIp(ip: string): Request {
@@ -65,5 +67,33 @@ describe('chat rate-limit — free MVP', () => {
     expect(limitedIp.allowed).toBe(false);
     expect(otherIp.allowed).toBe(true);
     expect(otherIp.dailyCount).toBe(1);
+  });
+});
+
+describe('essai sans inscription du chat — plafond par IP', () => {
+  it(`la ${GUEST_CHAT_DAILY_LIMIT + 1}e conversation anonyme du jour depuis la même IP est refusée`, async () => {
+    vi.stubEnv('SUPABASE_URL', '');
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', '');
+
+    for (let i = 1; i <= GUEST_CHAT_DAILY_LIMIT; i += 1) {
+      expect((await checkGuestChatQuota(requestFromIp('198.51.100.7'))).allowed).toBe(true);
+    }
+    const over = await checkGuestChatQuota(requestFromIp('198.51.100.7'));
+    expect(over.allowed).toBe(false);
+    expect(over.identityType).toBe('ip');
+
+    expect((await checkGuestChatQuota(requestFromIp('198.51.100.8'))).allowed).toBe(true);
+  });
+
+  it("n'entame pas le quota de l'analyse de document (compteurs distincts)", async () => {
+    vi.stubEnv('SUPABASE_URL', '');
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', '');
+
+    for (let i = 1; i <= GUEST_CHAT_DAILY_LIMIT + 1; i += 1) {
+      await checkGuestChatQuota(requestFromIp('198.51.100.9'));
+    }
+    const analyze = await checkChatRateLimit(requestFromIp('198.51.100.9'), 'public');
+    expect(analyze.allowed).toBe(true);
+    expect(analyze.dailyCount).toBe(1);
   });
 });
