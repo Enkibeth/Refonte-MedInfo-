@@ -136,13 +136,13 @@ export function ConversationList({
             }}
             placeholder="Rechercher une conversation…"
             placeholderTextColor={tokens.colors.textMuted}
-            accessibilityLabel="Rechercher une conversation"
+            accessibilityLabel="Rechercher une conversation" {...(Platform.OS === 'web' ? { title: 'Rechercher une conversation' } : {})}
           />
           {query ? (
             <TouchableOpacity
               onPress={() => setQuery('')}
               accessibilityRole="button"
-              accessibilityLabel="Effacer la recherche"
+              accessibilityLabel="Effacer la recherche" {...(Platform.OS === 'web' ? { title: 'Effacer la recherche' } : {})}
               style={styles.searchClear}
             >
               <Icon name="x" size={13} color={tokens.colors.textMuted} />
@@ -193,23 +193,23 @@ export function ConversationList({
                         onSubmitEditing={submitRename}
                         placeholder="Titre de la conversation"
                         placeholderTextColor={tokens.colors.textMuted}
-                        accessibilityLabel="Nouveau titre de la conversation"
+                        accessibilityLabel="Nouveau titre de la conversation" {...(Platform.OS === 'web' ? { title: 'Nouveau titre de la conversation' } : {})}
                       />
-                      <TouchableOpacity
-                        onPress={submitRename}
-                        accessibilityRole="button"
-                        accessibilityLabel="Enregistrer le titre"
-                        style={styles.renameConfirm}
-                      >
-                        <Icon name="check" size={14} color={tokens.colors.onAccent} />
-                      </TouchableOpacity>
                       <TouchableOpacity
                         onPress={() => setEditingId(null)}
                         accessibilityRole="button"
-                        accessibilityLabel="Annuler le renommage"
+                        accessibilityLabel="Annuler le renommage" {...(Platform.OS === 'web' ? { title: 'Annuler le renommage' } : {})}
                         style={styles.confirmCancel}
                       >
                         <Icon name="x" size={14} color={tokens.colors.textMuted} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={submitRename}
+                        accessibilityRole="button"
+                        accessibilityLabel="Enregistrer le titre" {...(Platform.OS === 'web' ? { title: 'Enregistrer le titre' } : {})}
+                        style={styles.renameConfirm}
+                      >
+                        <Icon name="check" size={14} color={tokens.colors.onAccent} />
                       </TouchableOpacity>
                     </View>
                   );
@@ -253,7 +253,7 @@ export function ConversationList({
                         <TouchableOpacity
                           onPress={() => setConfirmDeleteId(null)}
                           accessibilityRole="button"
-                          accessibilityLabel="Annuler la suppression"
+                          accessibilityLabel="Annuler la suppression" {...(Platform.OS === 'web' ? { title: 'Annuler la suppression' } : {})}
                           style={styles.confirmCancel}
                         >
                           <Icon name="x" size={14} color={tokens.colors.textMuted} />
@@ -327,7 +327,7 @@ export function HistoryPanel({
   }, [visible, reduced, slide]);
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Animated.View
           style={[
@@ -347,7 +347,7 @@ export function HistoryPanel({
               <TouchableOpacity
                 onPress={onClose}
                 accessibilityRole="button"
-                accessibilityLabel="Fermer l'historique"
+                accessibilityLabel="Fermer l'historique" {...(Platform.OS === 'web' ? { title: "Fermer l'historique" } : {})}
                 style={styles.closeButton}
               >
                 <Icon name="x" size={18} color={tokens.colors.textMuted} />
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.h3.fontSize,
     fontWeight: tokens.weight.bold,
   },
-  closeButton: {
+  closeButton: { minHeight: tokens.size.controlMd,
     width: 32,
     height: 32,
     borderRadius: tokens.radius.pill,
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: tokens.colors.surfaceSunken,
   },
-  newButton: {
+  newButton: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
     letterSpacing: tokens.tracking.caps,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     marginBottom: 2,
   },
   item: {
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
   },
   itemActions: { flexDirection: 'row', alignItems: 'center' },
-  iconAction: {
+  iconAction: { minHeight: tokens.size.controlMd,
     width: 30,
     height: 30,
     borderRadius: tokens.radius.pill,

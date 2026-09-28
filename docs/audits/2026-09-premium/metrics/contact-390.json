@@ -1,0 +1,124 @@
+{
+  "route": "/contact",
+  "width": 390,
+  "height": 844,
+  "title": "Contact — support, partenariats et données personnelles — MedInfo AI",
+  "headings": [],
+  "text": "Menu\nCommencer\nCONTACT\nParlons-en.\nUne question, une suggestion, un problème ? Choisissez le bon canal ci-dessous. En cas d'urgence médicale, composez le 15 (SAMU) ou le 112 : MedInfo AI n'est pas une plateforme d'urgence.\nUne question santé ?\nLe chat MedInfo AI répond à vos questions d'information générale, avec sources. Le premier message ne demande pas d'inscription.\nOuvrir le chat\nSupport & partenariats\nUn problème avec votre compte, une suggestion, une demande presse ou partenariat : écrivez-nous, nous répondons sous 48 h ouvrées.\nmedaifr1@gmail.com\nDonnées personnelles\nPour exercer vos droits RGPD (accès, rectification, suppression), consultez notre politique de confidentialité ou contactez-nous par e-mail.\nPolitique de confidentialité\nL’information médicale sourcée et vérifiée, pour le grand public, les étudiants et les professionnels de santé.\nCHATBOTS IA\nChat grand public\nChat étudiant en santé\nChat professionnel de santé\nOUTILS\nAnalyse de document médical\nSimulation ECOS\nPlanning de révisions\nAnalyse des partiels\nGénérateur de présentations\nCréateur de CV médical\nCompte ren",
+  "overflow": true,
+  "smallControls": [
+    {
+      "label": "Ouvrir le chat",
+      "width": 113.125,
+      "height": 17
+    },
+    {
+      "label": "medaifr1@gmail.com",
+      "width": 164.71875,
+      "height": 17
+    },
+    {
+      "label": "Politique de confidentialité",
+      "width": 202.109375,
+      "height": 17
+    },
+    {
+      "label": "Chat grand public",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Chat étudiant en santé",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Chat professionnel de santé",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Analyse de document médical",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Simulation ECOS",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Planning de révisions",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Analyse des partiels",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Générateur de présentations",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Créateur de CV médical",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Compte rendu de consultation",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Blog santé",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "À propos",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Contact",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Tarifs",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Mentions légales",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Conditions d’utilisation",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Confidentialité (RGPD)",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Informations légales",
+      "width": 332,
+      "height": 20
+    }
+  ],
+  "violations": [],
+  "incomplete": [
+    {
+      "id": "bypass",
+      "count": 1
+    }
+  ],
+  "passes": 24
+}

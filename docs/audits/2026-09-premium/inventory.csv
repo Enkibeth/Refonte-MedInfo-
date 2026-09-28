@@ -1,0 +1,793 @@
+écran,route,état,largeur_css_px,observation,capture,axe,limite
+landing,/,contenu initial,390,observé,captures/baseline-landing-390.jpg,metrics/landing-390.json,première fenêtre uniquement ; pas de session connectée
+landing,/,vide,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+landing,/,chargement,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+landing,/,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+landing,/,succès,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+landing,/,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+landing,/,contenu initial,768,observé,captures/baseline-landing-768.jpg,metrics/landing-768.json,première fenêtre uniquement ; pas de session connectée
+landing,/,vide,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+landing,/,chargement,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+landing,/,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+landing,/,succès,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+landing,/,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+landing,/,contenu initial,1024,observé,captures/baseline-landing-1024.jpg,metrics/landing-1024.json,première fenêtre uniquement ; pas de session connectée
+landing,/,vide,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+landing,/,chargement,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+landing,/,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+landing,/,succès,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+landing,/,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+landing,/,contenu initial,1440,observé,captures/baseline-landing-1440.jpg,metrics/landing-1440.json,première fenêtre uniquement ; pas de session connectée
+landing,/,vide,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+landing,/,chargement,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+landing,/,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+landing,/,succès,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+landing,/,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,vide / essai invité disponible,390,observé,captures/baseline-chat-public-390.jpg,metrics/chat-public-390.json,première fenêtre uniquement ; pas de session connectée
+chat-public,/chat?bot=public,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,vide / essai invité disponible,768,observé,captures/baseline-chat-public-768.jpg,metrics/chat-public-768.json,première fenêtre uniquement ; pas de session connectée
+chat-public,/chat?bot=public,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,vide / essai invité disponible,1024,observé,captures/baseline-chat-public-1024.jpg,metrics/chat-public-1024.json,première fenêtre uniquement ; pas de session connectée
+chat-public,/chat?bot=public,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,vide / essai invité disponible,1440,observé,captures/baseline-chat-public-1440.jpg,metrics/chat-public-1440.json,première fenêtre uniquement ; pas de session connectée
+chat-public,/chat?bot=public,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-public,/chat?bot=public,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,vide / essai invité disponible,390,observé,captures/baseline-chat-student-390.jpg,metrics/chat-student-390.json,première fenêtre uniquement ; pas de session connectée
+chat-student,/chat?bot=student,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,vide / essai invité disponible,768,observé,captures/baseline-chat-student-768.jpg,metrics/chat-student-768.json,première fenêtre uniquement ; pas de session connectée
+chat-student,/chat?bot=student,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,vide / essai invité disponible,1024,observé,captures/baseline-chat-student-1024.jpg,metrics/chat-student-1024.json,première fenêtre uniquement ; pas de session connectée
+chat-student,/chat?bot=student,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,vide / essai invité disponible,1440,observé,captures/baseline-chat-student-1440.jpg,metrics/chat-student-1440.json,première fenêtre uniquement ; pas de session connectée
+chat-student,/chat?bot=student,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-student,/chat?bot=student,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,vide / essai invité disponible,390,observé,captures/baseline-chat-professional-390.jpg,metrics/chat-professional-390.json,première fenêtre uniquement ; pas de session connectée
+chat-professional,/chat?bot=professional,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,vide / essai invité disponible,768,observé,captures/baseline-chat-professional-768.jpg,metrics/chat-professional-768.json,première fenêtre uniquement ; pas de session connectée
+chat-professional,/chat?bot=professional,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,vide / essai invité disponible,1024,observé,captures/baseline-chat-professional-1024.jpg,metrics/chat-professional-1024.json,première fenêtre uniquement ; pas de session connectée
+chat-professional,/chat?bot=professional,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,vide / essai invité disponible,1440,observé,captures/baseline-chat-professional-1440.jpg,metrics/chat-professional-1440.json,première fenêtre uniquement ; pas de session connectée
+chat-professional,/chat?bot=professional,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+chat-professional,/chat?bot=professional,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,formulaire initial,390,observé,captures/baseline-sign-in-390.jpg,metrics/sign-in-390.json,première fenêtre uniquement ; pas de session connectée
+sign-in,/sign-in,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,formulaire initial,768,observé,captures/baseline-sign-in-768.jpg,metrics/sign-in-768.json,première fenêtre uniquement ; pas de session connectée
+sign-in,/sign-in,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,formulaire initial,1024,observé,captures/baseline-sign-in-1024.jpg,metrics/sign-in-1024.json,première fenêtre uniquement ; pas de session connectée
+sign-in,/sign-in,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,formulaire initial,1440,observé,captures/baseline-sign-in-1440.jpg,metrics/sign-in-1440.json,première fenêtre uniquement ; pas de session connectée
+sign-in,/sign-in,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-in,/sign-in,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,formulaire initial,390,observé,captures/baseline-sign-up-390.jpg,metrics/sign-up-390.json,première fenêtre uniquement ; pas de session connectée
+sign-up,/sign-in?mode=signup,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,formulaire initial,768,observé,captures/baseline-sign-up-768.jpg,metrics/sign-up-768.json,première fenêtre uniquement ; pas de session connectée
+sign-up,/sign-in?mode=signup,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,formulaire initial,1024,observé,captures/baseline-sign-up-1024.jpg,metrics/sign-up-1024.json,première fenêtre uniquement ; pas de session connectée
+sign-up,/sign-in?mode=signup,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,formulaire initial,1440,observé,captures/baseline-sign-up-1440.jpg,metrics/sign-up-1440.json,première fenêtre uniquement ; pas de session connectée
+sign-up,/sign-in?mode=signup,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+sign-up,/sign-in?mode=signup,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,lien de réinitialisation absent,390,observé,captures/baseline-reset-password-390.jpg,metrics/reset-password-390.json,première fenêtre uniquement ; pas de session connectée
+reset-password,/reset-password,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,lien de réinitialisation absent,768,observé,captures/baseline-reset-password-768.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+reset-password,/reset-password,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,lien de réinitialisation absent,1024,observé,captures/baseline-reset-password-1024.jpg,metrics/reset-password-1024.json,première fenêtre uniquement ; pas de session connectée
+reset-password,/reset-password,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,lien de réinitialisation absent,1440,observé,captures/baseline-reset-password-1440.jpg,metrics/reset-password-1440.json,première fenêtre uniquement ; pas de session connectée
+reset-password,/reset-password,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+reset-password,/reset-password,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,redirection invité vers chat public,390,observé,captures/baseline-dashboard-390.jpg,metrics/dashboard-390.json,première fenêtre uniquement ; pas de session connectée
+dashboard,/dashboard,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,redirection invité vers chat public,768,observé,captures/baseline-dashboard-768.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+dashboard,/dashboard,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,redirection invité vers chat public,1024,observé,captures/baseline-dashboard-1024.jpg,metrics/dashboard-1024.json,première fenêtre uniquement ; pas de session connectée
+dashboard,/dashboard,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,redirection invité vers chat public,1440,observé,captures/baseline-dashboard-1440.jpg,metrics/dashboard-1440.json,première fenêtre uniquement ; pas de session connectée
+dashboard,/dashboard,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+dashboard,/dashboard,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,barrière d’accès invité,390,observé,captures/baseline-document-390.jpg,metrics/document-390.json,première fenêtre uniquement ; pas de session connectée
+document,/document,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,barrière d’accès invité,768,observé,captures/baseline-document-768.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+document,/document,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,barrière d’accès invité,1024,observé,captures/baseline-document-1024.jpg,metrics/document-1024.json,première fenêtre uniquement ; pas de session connectée
+document,/document,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,barrière d’accès invité,1440,observé,captures/baseline-document-1440.jpg,metrics/document-1440.json,première fenêtre uniquement ; pas de session connectée
+document,/document,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+document,/document,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,barrière d’accès invité,390,observé,captures/baseline-ecos-390.jpg,metrics/ecos-390.json,première fenêtre uniquement ; pas de session connectée
+ecos,/ecos,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,barrière d’accès invité,768,observé,captures/baseline-ecos-768.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+ecos,/ecos,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,barrière d’accès invité,1024,observé,captures/baseline-ecos-1024.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+ecos,/ecos,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,barrière d’accès invité,1440,observé,captures/baseline-ecos-1440.jpg,metrics/ecos-1440.json,première fenêtre uniquement ; pas de session connectée
+ecos,/ecos,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+ecos,/ecos,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,barrière d’accès invité,390,observé,captures/baseline-scores-390.jpg,metrics/scores-390.json,première fenêtre uniquement ; pas de session connectée
+scores,/scores,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,barrière d’accès invité,768,observé,captures/baseline-scores-768.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+scores,/scores,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,barrière d’accès invité,1024,observé,captures/baseline-scores-1024.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+scores,/scores,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,barrière d’accès invité,1440,observé,captures/baseline-scores-1440.jpg,metrics/scores-1440.json,première fenêtre uniquement ; pas de session connectée
+scores,/scores,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+scores,/scores,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,barrière d’accès invité,390,observé,captures/baseline-partiel-390.jpg,metrics/partiel-390.json,première fenêtre uniquement ; pas de session connectée
+partiel,/partiel,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,barrière d’accès invité,768,observé,captures/baseline-partiel-768.jpg,metrics/partiel-768.json,première fenêtre uniquement ; pas de session connectée
+partiel,/partiel,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,barrière d’accès invité,1024,observé,captures/baseline-partiel-1024.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+partiel,/partiel,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,barrière d’accès invité,1440,observé,captures/baseline-partiel-1440.jpg,metrics/partiel-1440.json,première fenêtre uniquement ; pas de session connectée
+partiel,/partiel,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+partiel,/partiel,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,barrière d’accès invité,390,observé,captures/baseline-revision-390.jpg,metrics/revision-390.json,première fenêtre uniquement ; pas de session connectée
+revision,/revision,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,barrière d’accès invité,768,observé,captures/baseline-revision-768.jpg,metrics/revision-768.json,première fenêtre uniquement ; pas de session connectée
+revision,/revision,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,barrière d’accès invité,1024,observé,captures/baseline-revision-1024.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+revision,/revision,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,barrière d’accès invité,1440,observé,captures/baseline-revision-1440.jpg,metrics/revision-1440.json,première fenêtre uniquement ; pas de session connectée
+revision,/revision,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+revision,/revision,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,barrière d’accès invité,390,observé,captures/baseline-cv-builder-390.jpg,metrics/cv-builder-390.json,première fenêtre uniquement ; pas de session connectée
+cv-builder,/cv-builder,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,barrière d’accès invité,768,observé,captures/baseline-cv-builder-768.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+cv-builder,/cv-builder,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,barrière d’accès invité,1024,observé,captures/baseline-cv-builder-1024.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+cv-builder,/cv-builder,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,barrière d’accès invité,1440,observé,captures/baseline-cv-builder-1440.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+cv-builder,/cv-builder,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cv-builder,/cv-builder,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,barrière d’accès invité,390,observé,captures/baseline-presentation-390.jpg,metrics/presentation-390.json,première fenêtre uniquement ; pas de session connectée
+presentation,/presentation,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,barrière d’accès invité,768,observé,captures/baseline-presentation-768.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+presentation,/presentation,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,barrière d’accès invité,1024,observé,captures/baseline-presentation-1024.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+presentation,/presentation,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,barrière d’accès invité,1440,observé,captures/baseline-presentation-1440.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+presentation,/presentation,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+presentation,/presentation,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,barrière d’accès invité,390,observé,captures/baseline-article-390.jpg,metrics/article-390.json,première fenêtre uniquement ; pas de session connectée
+article,/article,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,barrière d’accès invité,768,observé,captures/baseline-article-768.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+article,/article,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,barrière d’accès invité,1024,observé,captures/baseline-article-1024.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+article,/article,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,barrière d’accès invité,1440,observé,captures/baseline-article-1440.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+article,/article,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+article,/article,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,barrière d’accès invité,390,observé,captures/baseline-audio-390.jpg,metrics/audio-390.json,première fenêtre uniquement ; pas de session connectée
+audio,/audio,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,barrière d’accès invité,768,observé,captures/baseline-audio-768.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+audio,/audio,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,barrière d’accès invité,1024,observé,captures/baseline-audio-1024.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+audio,/audio,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,barrière d’accès invité,1440,observé,captures/baseline-audio-1440.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+audio,/audio,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+audio,/audio,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,contenu initial,390,observé,captures/baseline-pricing-390.jpg,metrics/pricing-390.json,première fenêtre uniquement ; pas de session connectée
+pricing,/pricing,vide,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,chargement,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,succès,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,contenu initial,768,observé,captures/baseline-pricing-768.jpg,metrics/pricing-768.json,première fenêtre uniquement ; pas de session connectée
+pricing,/pricing,vide,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,chargement,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,succès,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,contenu initial,1024,observé,captures/baseline-pricing-1024.jpg,metrics/pricing-1024.json,première fenêtre uniquement ; pas de session connectée
+pricing,/pricing,vide,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,chargement,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,succès,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,contenu initial,1440,observé,captures/baseline-pricing-1440.jpg,metrics/pricing-1440.json,première fenêtre uniquement ; pas de session connectée
+pricing,/pricing,vide,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,chargement,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,succès,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+pricing,/pricing,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,redirection vers connexion,390,observé,captures/baseline-account-390.jpg,metrics/account-390.json,première fenêtre uniquement ; pas de session connectée
+account,/account,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,redirection vers connexion,768,observé,captures/baseline-account-768.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+account,/account,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,redirection vers connexion,1024,observé,captures/baseline-account-1024.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+account,/account,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,redirection vers connexion,1440,observé,captures/baseline-account-1440.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+account,/account,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+account,/account,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,redirection vers connexion,390,observé,captures/baseline-choose-role-390.jpg,metrics/choose-role-390.json,première fenêtre uniquement ; pas de session connectée
+choose-role,/choose-role,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,redirection vers connexion,768,observé,captures/baseline-choose-role-768.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+choose-role,/choose-role,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,redirection vers connexion,1024,observé,captures/baseline-choose-role-1024.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+choose-role,/choose-role,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,redirection vers connexion,1440,observé,captures/baseline-choose-role-1440.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+choose-role,/choose-role,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+choose-role,/choose-role,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,liste vide / chargement distant non validé,390,observé,captures/baseline-blog-390.jpg,metrics/blog-390.json,première fenêtre uniquement ; pas de session connectée
+blog,/blog,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,liste vide / chargement distant non validé,768,observé,captures/baseline-blog-768.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+blog,/blog,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,liste vide / chargement distant non validé,1024,observé,captures/baseline-blog-1024.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+blog,/blog,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,liste vide / chargement distant non validé,1440,observé,captures/baseline-blog-1440.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+blog,/blog,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog,/blog,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,article introuvable,390,observé,captures/baseline-blog-missing-390.jpg,metrics/blog-missing-390.json,première fenêtre uniquement ; pas de session connectée
+blog-missing,/blog/audit-slug-inexistant,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,article introuvable,768,observé,captures/baseline-blog-missing-768.jpg,metrics/blog-missing-768.json,première fenêtre uniquement ; pas de session connectée
+blog-missing,/blog/audit-slug-inexistant,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,article introuvable,1024,observé,captures/baseline-blog-missing-1024.jpg,metrics/blog-missing-1024.json,première fenêtre uniquement ; pas de session connectée
+blog-missing,/blog/audit-slug-inexistant,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,article introuvable,1440,observé,captures/baseline-blog-missing-1440.jpg,metrics/blog-missing-1440.json,première fenêtre uniquement ; pas de session connectée
+blog-missing,/blog/audit-slug-inexistant,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+blog-missing,/blog/audit-slug-inexistant,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,contenu initial,390,observé,captures/baseline-a-propos-390.jpg,metrics/a-propos-390.json,première fenêtre uniquement ; pas de session connectée
+a-propos,/a-propos,vide,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,chargement,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,succès,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,contenu initial,768,observé,captures/baseline-a-propos-768.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+a-propos,/a-propos,vide,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,chargement,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,succès,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,contenu initial,1024,observé,captures/baseline-a-propos-1024.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+a-propos,/a-propos,vide,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,chargement,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,succès,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,contenu initial,1440,observé,captures/baseline-a-propos-1440.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+a-propos,/a-propos,vide,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,chargement,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,succès,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+a-propos,/a-propos,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,contenu initial,390,observé,captures/baseline-contact-390.jpg,metrics/contact-390.json,première fenêtre uniquement ; pas de session connectée
+contact,/contact,vide,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,chargement,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,succès,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,contenu initial,768,observé,captures/baseline-contact-768.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+contact,/contact,vide,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,chargement,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,succès,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,contenu initial,1024,observé,captures/baseline-contact-1024.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+contact,/contact,vide,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,chargement,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,succès,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,contenu initial,1440,observé,captures/baseline-contact-1440.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+contact,/contact,vide,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,chargement,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,succès,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+contact,/contact,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,contenu initial,390,observé,captures/baseline-legal-390.jpg,metrics/legal-390.json,première fenêtre uniquement ; pas de session connectée
+legal,/legal,vide,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,chargement,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,succès,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,contenu initial,768,observé,captures/baseline-legal-768.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+legal,/legal,vide,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,chargement,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,succès,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,contenu initial,1024,observé,captures/baseline-legal-1024.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+legal,/legal,vide,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,chargement,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,succès,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,contenu initial,1440,observé,captures/baseline-legal-1440.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+legal,/legal,vide,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,chargement,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,succès,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+legal,/legal,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,contenu initial,390,observé,captures/baseline-cgu-390.jpg,metrics/cgu-390.json,première fenêtre uniquement ; pas de session connectée
+cgu,/cgu,vide,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,chargement,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,succès,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,contenu initial,768,observé,captures/baseline-cgu-768.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+cgu,/cgu,vide,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,chargement,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,succès,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,contenu initial,1024,observé,captures/baseline-cgu-1024.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+cgu,/cgu,vide,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,chargement,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,succès,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,contenu initial,1440,observé,captures/baseline-cgu-1440.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+cgu,/cgu,vide,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,chargement,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,succès,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+cgu,/cgu,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,contenu initial,390,observé,captures/baseline-confidentialite-390.jpg,metrics/confidentialite-390.json,première fenêtre uniquement ; pas de session connectée
+confidentialite,/confidentialite,vide,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,chargement,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,succès,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,contenu initial,768,observé,captures/baseline-confidentialite-768.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+confidentialite,/confidentialite,vide,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,chargement,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,succès,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,contenu initial,1024,observé,captures/baseline-confidentialite-1024.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+confidentialite,/confidentialite,vide,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,chargement,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,succès,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,contenu initial,1440,observé,captures/baseline-confidentialite-1440.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+confidentialite,/confidentialite,vide,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,chargement,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,succès,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+confidentialite,/confidentialite,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,contenu initial,390,observé,captures/baseline-mentions-legales-390.jpg,metrics/mentions-legales-390.json,première fenêtre uniquement ; pas de session connectée
+mentions-legales,/mentions-legales,vide,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,chargement,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,succès,390,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,contenu initial,768,observé,captures/baseline-mentions-legales-768.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+mentions-legales,/mentions-legales,vide,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,chargement,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,succès,768,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,contenu initial,1024,observé,captures/baseline-mentions-legales-1024.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+mentions-legales,/mentions-legales,vide,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,chargement,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,succès,1024,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,contenu initial,1440,observé,captures/baseline-mentions-legales-1440.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+mentions-legales,/mentions-legales,vide,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,chargement,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,succès,1440,sans état métier dédié,,,Ne pas confondre capture initiale et parcours complet
+mentions-legales,/mentions-legales,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),redirection vers connexion,390,observé,captures/baseline-admin-390.jpg,metrics/admin-390.json,première fenêtre uniquement ; pas de session connectée
+admin,/(admin),vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),redirection vers connexion,768,observé,captures/baseline-admin-768.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+admin,/(admin),vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),redirection vers connexion,1024,observé,captures/baseline-admin-1024.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+admin,/(admin),vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),redirection vers connexion,1440,observé,captures/baseline-admin-1440.jpg,non exécuté à cette largeur,première fenêtre uniquement ; pas de session connectée
+admin,/(admin),vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+admin,/(admin),hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,"éditeur ou import initial, sans compte",390,observé,captures/baseline-standalone-partiel-390.jpg,metrics/standalone-partiel-390.json,première fenêtre uniquement ; pas de session connectée
+standalone-partiel,/partiel.html,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,"éditeur ou import initial, sans compte",768,observé,captures/baseline-standalone-partiel-768.jpg,metrics/standalone-partiel-768.json,première fenêtre uniquement ; pas de session connectée
+standalone-partiel,/partiel.html,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,"éditeur ou import initial, sans compte",1024,observé,captures/baseline-standalone-partiel-1024.jpg,metrics/standalone-partiel-1024.json,première fenêtre uniquement ; pas de session connectée
+standalone-partiel,/partiel.html,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,"éditeur ou import initial, sans compte",1440,observé,captures/baseline-standalone-partiel-1440.jpg,metrics/standalone-partiel-1440.json,première fenêtre uniquement ; pas de session connectée
+standalone-partiel,/partiel.html,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-partiel,/partiel.html,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,"éditeur ou import initial, sans compte",390,observé,captures/baseline-standalone-presentation-390.jpg,metrics/standalone-presentation-390.json,première fenêtre uniquement ; pas de session connectée
+standalone-presentation,/presentation.html,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,"éditeur ou import initial, sans compte",768,observé,captures/baseline-standalone-presentation-768.jpg,metrics/standalone-presentation-768.json,première fenêtre uniquement ; pas de session connectée
+standalone-presentation,/presentation.html,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,"éditeur ou import initial, sans compte",1024,observé,captures/baseline-standalone-presentation-1024.jpg,metrics/standalone-presentation-1024.json,première fenêtre uniquement ; pas de session connectée
+standalone-presentation,/presentation.html,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,"éditeur ou import initial, sans compte",1440,observé,captures/baseline-standalone-presentation-1440.jpg,metrics/standalone-presentation-1440.json,première fenêtre uniquement ; pas de session connectée
+standalone-presentation,/presentation.html,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-presentation,/presentation.html,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,"éditeur ou import initial, sans compte",390,observé,captures/baseline-standalone-cv-390.jpg,metrics/standalone-cv-390.json,première fenêtre uniquement ; pas de session connectée
+standalone-cv,/cv-builder.html,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,"éditeur ou import initial, sans compte",768,observé,captures/baseline-standalone-cv-768.jpg,metrics/standalone-cv-768.json,première fenêtre uniquement ; pas de session connectée
+standalone-cv,/cv-builder.html,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,"éditeur ou import initial, sans compte",1024,observé,captures/baseline-standalone-cv-1024.jpg,metrics/standalone-cv-1024.json,première fenêtre uniquement ; pas de session connectée
+standalone-cv,/cv-builder.html,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,"éditeur ou import initial, sans compte",1440,observé,captures/baseline-standalone-cv-1440.jpg,metrics/standalone-cv-1440.json,première fenêtre uniquement ; pas de session connectée
+standalone-cv,/cv-builder.html,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-cv,/cv-builder.html,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,"éditeur ou import initial, sans compte",390,observé,captures/baseline-standalone-article-390.jpg,metrics/standalone-article-390.json,première fenêtre uniquement ; pas de session connectée
+standalone-article,/article.html,vide,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,chargement,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,erreur,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,succès,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,hors ligne,390,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,"éditeur ou import initial, sans compte",768,observé,captures/baseline-standalone-article-768.jpg,metrics/standalone-article-768.json,première fenêtre uniquement ; pas de session connectée
+standalone-article,/article.html,vide,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,chargement,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,erreur,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,succès,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,hors ligne,768,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,"éditeur ou import initial, sans compte",1024,observé,captures/baseline-standalone-article-1024.jpg,metrics/standalone-article-1024.json,première fenêtre uniquement ; pas de session connectée
+standalone-article,/article.html,vide,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,chargement,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,erreur,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,succès,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,hors ligne,1024,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,"éditeur ou import initial, sans compte",1440,observé,captures/baseline-standalone-article-1440.jpg,metrics/standalone-article-1440.json,première fenêtre uniquement ; pas de session connectée
+standalone-article,/article.html,vide,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,chargement,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,erreur,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,succès,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet
+standalone-article,/article.html,hors ligne,1440,à vérifier,,,Ne pas confondre capture initiale et parcours complet

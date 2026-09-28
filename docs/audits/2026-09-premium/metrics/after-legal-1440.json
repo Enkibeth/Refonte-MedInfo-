@@ -1,0 +1,16 @@
+{
+  "route": "/legal",
+  "width": 1440,
+  "height": 900,
+  "title": "Informations légales et conformité — MedInfo AI",
+  "headings": [
+    "Informations légales",
+    "Informations légales"
+  ],
+  "text": "Informations légales\nInformations légales\nMentions légales, finalité du service, statut réglementaire, information sur l’IA et protection des données, conformément à la LCEN (art. 6), au RGPD et à l’EU AI Act.\nFinalité du service\nMedInfo AI est une plateforme conversationnelle d'information et de référence éducative fournissant des informations médicales et pharmacologiques générales tirées de la littérature médicale française et européenne publiquement disponible (HAS, ANSM, VIDAL, Thériaque, PubMed). Elle ne fournit aucune recommandation diagnostique, pronostique ou thérapeutique individuelle. Elle n'est pas destinée à remplacer, compléter ou influencer les décisions cliniques concernant un patient identifiable. Le produit n'est pas destiné à être un dispositif médical au sens de l'article 2(1) du règlement (UE) 2017/745 et n'est pas qualifié de logiciel-dispositif médical (MDSW).\nStatut réglementaire\nMedInfo AI n’est pas un dispositif médical au sens de l’article 2(1) du règlement (UE) 2017/745 et n’est pas qualifié de logiciel-dispositif médical (MDSW). Le service ne fournit aucu",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [],
+  "passes": 22
+}

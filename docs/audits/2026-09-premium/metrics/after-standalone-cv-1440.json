@@ -1,0 +1,20 @@
+{
+  "route": "/cv-builder.html",
+  "width": 1440,
+  "height": 900,
+  "title": "Créateur de CV — MedInfo",
+  "headings": [
+    "Rubriques"
+  ],
+  "text": "↶\n↷\n−\n136 %\n+\n1 page\nAjuster…\nRelecture IA\nTélécharger le PDF\n⋯\nRUBRIQUES\n+ Rubrique\nEn-tête & contacts\nNom, accroche, photo\nCOLONNE PRINCIPALE\n⠿\nExpériences professionnelles\n+\nentrées\n2 éléments\n⠿\nMédecin stagiaire — externat de médecine\n⠿\nMédecin stagiaire\n⠿\nFormation\n+\nentrées\n3 éléments\n⠿\nDiplôme de formation approfondie en sciences médicales (DFASM)\n⠿\nDiplôme de formation générale en sciences médicales (DFGSM)\n⠿\nBaccalauréat général\n⠿\nExpériences associatives et encadrement\n+\nentrées\n1 élément\n⠿\nFonction associative\nBANDEAU LATÉRAL\n⠿\nCertificats\n+\nentrées\n2 éléments\n⠿\nAFGSU 2\n⠿\nLecture critique d'article en anglais\n⠿\nCentres d'intérêt\n+\nliste\n2 éléments\n⠿\nÀ compléter\n⠿\nÀ compléter\n⠿\nLangues\n+\nniveaux\n2 éléments\n⠿\nFrançais\n⠿\nAnglais\nPage 1 / 1\n56 % rempli\nÉtudiant(e) en Xe année de médecine à l'Université de Ville.\nExpériences professionnelles\nMédecin stagiaire — externat de médecine\nde sept. 20XX à juil. 20XX\nCHU de Ville, France\nService de Cardiologie du Pr. Nom, 3 mois\nService des Urgences du Pr. Nom, 3 mois\nMédecin stagiaire\naoût 20XX\nHôpital, Ville, Pays\nStage réalisé dans l",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [
+    {
+      "id": "color-contrast",
+      "count": 61
+    }
+  ],
+  "passes": 24
+}

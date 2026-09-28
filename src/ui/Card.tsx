@@ -3,8 +3,8 @@ import { View, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import { tokens } from './tokens';
 
 /**
- * Carte de contenu (05_DESIGN §5). Surface surélevée discrète : bordure fine +
- * ombre légère plutôt qu'un gros rayon « template ». Rayon mesuré (lg = 16).
+ * Carte de contenu (05_DESIGN §5). Surface blanche, bordure fine, sans ombre
+ * par défaut. Les élévations md/lg sont réservées aux surfaces superposées.
  */
 export function Card({
   children,
@@ -15,7 +15,7 @@ export function Card({
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   padded?: boolean;
-  /** Profondeur de la carte (défaut `sm`). `md`/`lg` pour les surfaces mises en avant. */
+  /** Profondeur de la carte (défaut `sm`). `md`/`lg` pour les surfaces superposées. */
   elevation?: 'sm' | 'md' | 'lg';
 }) {
   return (

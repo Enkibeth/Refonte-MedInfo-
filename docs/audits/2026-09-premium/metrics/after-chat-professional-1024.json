@@ -1,0 +1,16 @@
+{
+  "route": "/chat?bot=professional",
+  "width": 1024,
+  "height": 900,
+  "title": "Chat santé IA — posez votre question, réponse sourcée — MedInfo AI",
+  "headings": [
+    "Chat professionnel de santé",
+    "Quelle est votre question clinique ?"
+  ],
+  "text": "Chat professionnel de santé\nAide à la décision sourcée sur les recommandations en vigueur\nPays\nOutils\nPublic\nÉtudiant\nPro\nQuelle est votre question clinique ?\nAide à la décision sourcée sur les recommandations en vigueur.\nEssai gratuit : 1 message sans inscription (1/1)\nAnticoagulation en FA chez le sujet âgé insuffisant rénal ?\nStratégie diagnostique devant une suspicion d'EP chez la femme enceinte\nRelais AVK → DOAC : modalités pratiques ?\nEnvoyer\nSystème d’intelligence artificielle. Outil d'aide à la décision — la décision finale appartient au clinicien. En cas d’urgence : 15 ou 112.",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [],
+  "passes": 25
+}

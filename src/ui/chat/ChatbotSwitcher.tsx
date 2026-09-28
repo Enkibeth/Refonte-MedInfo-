@@ -54,13 +54,13 @@ export function ChatbotSwitcher({
             onPress={() => onChange(id)}
             disabled={disabled}
             accessibilityRole="tab"
-            accessibilityState={{ selected: active }}
+            aria-selected={active}
             accessibilityLabel={`Chat ${meta.label}`}
           >
             <Icon
               name={meta.icon}
               size={15}
-              color={active ? tokens.colors.onAccent : tokens.colors.accentDeep}
+              color={active ? tokens.colors.accent : tokens.colors.textMuted}
             />
             <Text style={[styles.pillText, active && styles.pillTextActive]}>{meta.shortLabel}</Text>
           </TouchableOpacity>
@@ -74,26 +74,29 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: tokens.space.xs,
-    backgroundColor: tokens.colors.surfaceSunken,
-    borderRadius: tokens.radius.pill,
-    padding: 3,
+    backgroundColor: tokens.colors.surface,
+    borderRadius: 0,
+    padding: 0,
     alignSelf: 'flex-start',
   },
   pill: {
+    minHeight: tokens.size.controlMd,
+    borderBottomWidth: tokens.size.stroke,
+    borderBottomColor: tokens.colors.transparent,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    borderRadius: tokens.radius.pill,
+    borderRadius: 0,
     paddingHorizontal: tokens.space.md,
-    paddingVertical: 6,
+    paddingVertical: tokens.space.sm,
     ...tokens.motion.transitionWeb,
   },
-  pillActive: { backgroundColor: tokens.colors.accent },
+  pillActive: { borderBottomColor: tokens.colors.accent, backgroundColor: tokens.colors.surface },
   pillText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textSubtle,
     fontSize: tokens.type.caption.fontSize + 0.5,
     fontWeight: tokens.weight.semibold,
   },
-  pillTextActive: { color: tokens.colors.onAccent },
+  pillTextActive: { color: tokens.colors.accent },
 });

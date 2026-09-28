@@ -1,3 +1,5 @@
+import { FieldInput } from '@/ui/FieldInput';
+import { PageTitle } from '@/ui/PageTitle';
 /**
  * Analyse de document médical — version premium.
  * L'utilisateur colle un texte OU importe un fichier (PDF, photo JPEG/PNG/WebP, texte)
@@ -18,6 +20,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { useSession } from '@/auth/AuthProvider';
 import { Icon } from '@/ui/icons';
@@ -272,6 +275,18 @@ function DocumentScreenInner() {
     setHistory((prev) => prev.filter((h) => h.id !== id));
   }
 
+  function confirmDeleteHistory(id: string) {
+    const message = 'Supprimer cette analyse de votre historique ? Cette action est définitive.';
+    if (Platform.OS === 'web') {
+      if (window.confirm(message)) void handleDeleteHistory(id);
+    } else {
+      Alert.alert('Supprimer l’analyse', message, [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Supprimer', style: 'destructive', onPress: () => void handleDeleteHistory(id) },
+      ]);
+    }
+  }
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -282,7 +297,7 @@ function DocumentScreenInner() {
         <View style={styles.headerTop}>
           <ToolsMenu />
         </View>
-        <Text style={styles.title}>Analyse de document</Text>
+        <PageTitle style={styles.title}>Analyse de document</PageTitle>
         <Text style={styles.subtitle}>
           Importez un PDF, une photo ou collez le texte d'un compte rendu, d'une ordonnance ou de
           résultats, pour un résumé patient clair ou une traduction.
@@ -329,12 +344,13 @@ function DocumentScreenInner() {
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    onPress={() => void handleDeleteHistory(item.id)}
+                    onPress={() => confirmDeleteHistory(item.id)}
                     accessibilityRole="button"
                     accessibilityLabel="Supprimer cette analyse"
+                    {...(Platform.OS === 'web' ? { title: 'Supprimer cette analyse' } : {})}
                     style={styles.historyDelete}
                   >
-                    <Icon name="x" size={15} color={tokens.colors.textMuted} />
+                    <Icon name="trash" size={tokens.size.iconSm} color={tokens.colors.danger} />
                   </TouchableOpacity>
                 </View>
               ))
@@ -371,7 +387,7 @@ function DocumentScreenInner() {
         {mode === 'translation' ? (
           <View style={styles.languageRow}>
             <Text style={styles.languageLabel}>Langue cible</Text>
-            <TextInput
+            <FieldInput
               style={styles.languageInput}
               value={targetLanguage}
               onChangeText={setTargetLanguage}
@@ -414,7 +430,7 @@ function DocumentScreenInner() {
         ) : null}
 
         {!pickedFile ? (
-          <TextInput
+          <FieldInput
             style={styles.textArea}
             value={documentText}
             onChangeText={setDocumentText}
@@ -535,7 +551,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.label.fontSize,
     lineHeight: 20,
-    marginTop: 4,
+    marginTop: tokens.space.xs,
   },
   scroll: { flex: 1 },
   // Colonne de lecture centrée (~800 px) : cohérente avec le fil du chat sur desktop.
@@ -543,10 +559,10 @@ const styles = StyleSheet.create({
     padding: tokens.space.lg,
     gap: tokens.space.md,
     width: '100%',
-    maxWidth: 800,
+    maxWidth: tokens.layout.reading,
     alignSelf: 'center',
   },
-  historyToggle: {
+  historyToggle: { minHeight: tokens.size.controlMd,
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
@@ -614,7 +630,7 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radius.pill,
     padding: 3,
   },
-  modeButton: {
+  modeButton: { minHeight: tokens.size.controlMd,
     flex: 1,
     height: 38,
     borderRadius: tokens.radius.pill,
@@ -648,7 +664,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.body.fontSize,
     color: tokens.colors.text,
   },
-  uploadButton: {
+  uploadButton: { minHeight: tokens.size.controlMd,
     borderRadius: tokens.radius.lg,
     borderWidth: 1,
     borderStyle: 'dashed',
@@ -657,7 +673,7 @@ const styles = StyleSheet.create({
     paddingVertical: tokens.space.xl,
     paddingHorizontal: tokens.space.lg,
     alignItems: 'center',
-    gap: 4,
+    gap: tokens.space.xs,
     ...tokens.motion.transitionWeb,
   },
   uploadIconWrap: {
@@ -681,7 +697,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
   },
-  fileChip: {
+  fileChip: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.sm,
@@ -704,7 +720,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
   },
-  fileChipRemove: { padding: 4 },
+  fileChipRemove: { padding: tokens.space.xs },
   textArea: {
     minHeight: 160,
     borderRadius: tokens.radius.md,
@@ -717,7 +733,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.text,
     lineHeight: tokens.type.body.lineHeight,
   },
-  button: {
+  button: { minHeight: tokens.size.controlMd,
     height: tokens.size.controlLg,
     borderRadius: tokens.radius.pill,
     // CTA principal : bleu électrique des actions primaires (convention 2026-07).
@@ -781,7 +797,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
   resultActions: { flexDirection: 'row', gap: tokens.space.xs },
-  resultAction: {
+  resultAction: { minHeight: tokens.size.controlMd,
     paddingHorizontal: tokens.space.sm,
     paddingVertical: 6,
     borderRadius: tokens.radius.sm,
@@ -819,7 +835,7 @@ const styles = StyleSheet.create({
     borderLeftColor: tokens.colors.accent,
     borderRadius: tokens.radius.sm,
     padding: tokens.space.md,
-    gap: 4,
+    gap: tokens.space.xs,
   },
   citationText: {
     fontFamily: tokens.font.sans,

@@ -1,3 +1,6 @@
+import { Button } from '@/ui/Button';
+import { useReducedMotion } from '@/ui/useReducedMotion';
+import { PageTitle } from '@/ui/PageTitle';
 /**
  * Article de blog — page publique avec sommaire cliquable (audit landing 2026-06).
  *
@@ -34,6 +37,9 @@ export default function BlogArticleScreen() {
   const router = useRouter();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const reducedMotion = useReducedMotion();
 
   const scrollRef = useRef<ScrollView>(null);
   const sectionYRef = useRef<Record<number, number>>({});
@@ -46,12 +52,15 @@ export default function BlogArticleScreen() {
       setLoading(false);
       return;
     }
+    let active = true;
     setLoading(true);
+    setLoadError(false);
     void getPostBySlug(String(slug))
-      .then((p) => setPost(p))
-      .catch(() => setPost(null))
-      .finally(() => setLoading(false));
-  }, [slug]);
+      .then(p => { if (active) setPost(p); })
+      .catch(() => { if (active) setLoadError(true); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [slug, attempt]);
 
   const sections = useMemo(
     () => (post ? splitArticleSections(post.content_md) : []),
@@ -63,7 +72,7 @@ export default function BlogArticleScreen() {
 
   const scrollToSection = (index: number) => {
     const y = sectionYRef.current[index];
-    if (y != null) scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
+    if (y != null) scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: !reducedMotion });
   };
 
   return (
@@ -95,7 +104,15 @@ export default function BlogArticleScreen() {
         // Article absent (slug inconnu ou dépublié) : métadonnées noindex pour que
         // les moteurs n'indexent pas une page d'erreur sans contenu.
         <SeoHead title="Article introuvable" path={PAGE_SEO.blog.path} noindex />
-      ) : null}
+      ) : (
+        // Chargement (et pré-rendu, qui ne connaît pas l'article) : jamais de page sans
+        // titre — un <title> vide est une erreur d'accessibilité (WCAG 2.4.2).
+        <SeoHead
+          title={PAGE_SEO.blog.title}
+          description={PAGE_SEO.blog.description}
+          path={slug ? `/blog/${String(slug)}` : PAGE_SEO.blog.path}
+        />
+      )}
       <LandingHeader />
       <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.inner}>
@@ -119,7 +136,7 @@ export default function BlogArticleScreen() {
               <Skeleton height={16} />
               <Skeleton height={16} />
             </View>
-          ) : !post ? (
+          ) : loadError ? <View style={styles.missingCard} accessibilityLiveRegion="polite"><Text style={styles.missingTitle}>L’article n’a pas pu être chargé</Text><Text style={styles.missingText}>Vérifiez votre connexion, puis réessayez.</Text><Button label="Réessayer" variant="secondary" onPress={() => setAttempt(n => n + 1)} /></View> : !post ? (
             <View style={styles.missingCard}>
               <Text style={styles.missingTitle}>Article introuvable</Text>
               <Text style={styles.missingText}>
@@ -140,7 +157,7 @@ export default function BlogArticleScreen() {
                 ) : null}
                 <Text style={styles.date}>{formatDate(post.published_at)}</Text>
               </View>
-              <Text style={styles.title}>{post.title}</Text>
+              <PageTitle style={styles.title}>{post.title}</PageTitle>
               {post.summary ? <Text style={styles.summary}>{post.summary}</Text> : null}
 
               {tocEntries.length > 1 ? (
@@ -254,7 +271,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.accentDeep,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
     marginBottom: tokens.space.xs,
   },

@@ -29,6 +29,7 @@ import {
 import { splitArticleSections } from '@/blog/toc';
 import { Icon } from '@/ui/icons';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
+import { ButtonRow } from '@/ui/Button';
 import { tokens } from '@/ui/tokens';
 
 interface EditorPost {
@@ -295,7 +296,7 @@ export function BlogEditorModal({
   ];
 
   return (
-    <Modal visible animationType="slide" onRequestClose={() => onClose(changedRef.current)}>
+    <Modal visible animationType="none" onRequestClose={() => onClose(changedRef.current)}>
       <View style={styles.screen}>
         {/* En-tête */}
         <View style={styles.header}>
@@ -508,15 +509,7 @@ export function BlogEditorModal({
         {/* Pied : actions */}
         {post ? (
           <View style={styles.footer}>
-            <TouchableOpacity
-              style={[styles.footerBtn, styles.saveBtn, (!dirty || saving) && styles.btnDisabled]}
-              onPress={() => void save()}
-              disabled={!dirty || saving}
-              accessibilityRole="button"
-            >
-              {saving ? <ActivityIndicator size="small" color={tokens.colors.onAccent} /> : null}
-              <Text style={styles.saveBtnText}>{saving ? 'Enregistrement…' : 'Enregistrer'}</Text>
-            </TouchableOpacity>
+<ButtonRow>
             <TouchableOpacity
               style={[styles.footerBtn, styles.publishBtn, publishing && styles.btnDisabled]}
               onPress={() => void togglePublish()}
@@ -533,6 +526,16 @@ export function BlogEditorModal({
                       : 'Publier'}
               </Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.footerBtn, styles.saveBtn, (!dirty || saving) && styles.btnDisabled]}
+              onPress={() => void save()}
+              disabled={!dirty || saving}
+              accessibilityRole="button"
+            >
+              {saving ? <ActivityIndicator size="small" color={tokens.colors.onAccent} /> : null}
+              <Text style={styles.saveBtnText}>{saving ? 'Enregistrement…' : 'Enregistrer'}</Text>
+            </TouchableOpacity>
+          </ButtonRow>
           </View>
         ) : null}
       </View>
@@ -552,7 +555,7 @@ const styles = StyleSheet.create({
     borderBottomColor: tokens.colors.border,
     backgroundColor: tokens.colors.surface,
   },
-  closeBtn: { padding: tokens.space.sm },
+  closeBtn: { minHeight: tokens.size.controlMd, padding: tokens.space.sm },
   headerTitle: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,
@@ -568,7 +571,7 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.surfaceSunken,
     padding: 2,
   },
-  modeBtn: { borderRadius: tokens.radius.pill, paddingHorizontal: tokens.space.md, paddingVertical: 5 },
+  modeBtn: { minHeight: tokens.size.controlMd, borderRadius: tokens.radius.pill, paddingHorizontal: tokens.space.md, paddingVertical: 5 },
   modeBtnActive: { backgroundColor: tokens.colors.surface },
   modeBtnText: {
     fontFamily: tokens.font.sans,
@@ -654,7 +657,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textSubtle,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
   },
   fieldHint: {
@@ -679,7 +682,7 @@ const styles = StyleSheet.create({
   coverNone: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.label.fontSize, fontStyle: 'italic' },
   coverActions: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm },
   urlRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
-  smallBtn: {
+  smallBtn: { minHeight: tokens.size.controlMd,
     borderRadius: tokens.radius.pill,
     borderWidth: 1,
     borderColor: tokens.colors.border,
@@ -700,13 +703,13 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
   toolbar: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.xs + 2 },
-  toolBtn: {
+  toolBtn: { minHeight: tokens.size.controlMd,
     borderRadius: tokens.radius.sm,
     borderWidth: 1,
     borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.surfaceSunken,
     paddingHorizontal: tokens.space.sm + 2,
-    paddingVertical: 4,
+    paddingVertical: tokens.space.xs,
   },
   toolBtnText: {
     fontFamily: tokens.font.sans,
@@ -738,7 +741,7 @@ const styles = StyleSheet.create({
     borderTopColor: tokens.colors.border,
     backgroundColor: tokens.colors.surface,
   },
-  footerBtn: {
+  footerBtn: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.sm,
@@ -746,14 +749,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.space.xl,
     paddingVertical: tokens.space.sm + 2,
   },
-  saveBtn: { backgroundColor: tokens.colors.accentVivid },
+  saveBtn: { minHeight: tokens.size.controlMd, backgroundColor: tokens.colors.accentVivid },
   saveBtnText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.onAccent,
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.semibold,
   },
-  publishBtn: { borderWidth: 1, borderColor: tokens.colors.border, backgroundColor: tokens.colors.surface },
+  publishBtn: { minHeight: tokens.size.controlMd, borderWidth: 1, borderColor: tokens.colors.border, backgroundColor: tokens.colors.surface },
   publishBtnText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,

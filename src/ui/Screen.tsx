@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { tokens } from './tokens';
+import { useWindowWidth } from './useWindowWidth';
 
 /**
  * Conteneur d'écran (05_DESIGN §5). Fond d'app + colonne centrée à largeur
@@ -9,7 +10,7 @@ import { tokens } from './tokens';
  */
 export function Screen({
   children,
-  maxWidth = 720,
+  maxWidth = tokens.layout.reading,
   center = false,
   contentStyle,
 }: {
@@ -18,10 +19,12 @@ export function Screen({
   center?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
 }) {
+  const width = useWindowWidth();
+  const compact = width < tokens.layout.compact;
   return (
     <ScrollView
       style={styles.scroll}
-      contentContainerStyle={[styles.content, center && styles.centerV]}
+      contentContainerStyle={[styles.content, compact && styles.compact, center && styles.centerV]}
       keyboardShouldPersistTaps="handled"
     >
       <View style={[styles.column, { maxWidth }, contentStyle]}>{children}</View>
@@ -38,6 +41,7 @@ const styles = StyleSheet.create({
     paddingTop: tokens.space['3xl'],
     paddingBottom: tokens.space['3xl'],
   },
+  compact: { paddingHorizontal: tokens.space.lg, paddingTop: tokens.space.xl },
   centerV: { justifyContent: 'center' },
   column: { width: '100%' },
 });

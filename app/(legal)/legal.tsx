@@ -1,3 +1,4 @@
+import { PageTitle } from '@/ui/PageTitle';
 import { Link } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -40,7 +41,7 @@ export default function LegalScreen() {
       <View style={styles.brandHeader}>
         <Logo size="sm" />
       </View>
-      <Text style={styles.title}>Informations légales</Text>
+      <PageTitle style={styles.title}>Informations légales</PageTitle>
       <Text style={styles.lead}>
         Mentions légales, finalité du service, statut réglementaire, information sur l’IA et
         protection des données, conformément à la LCEN (art. 6), au RGPD et à l’EU AI Act.
@@ -195,6 +196,9 @@ const styles = StyleSheet.create({
   },
   footer: { marginTop: tokens.space.xl },
   inlineLink: {
+    minHeight: tokens.size.controlMd,
+    lineHeight: tokens.type.label.lineHeight,
+    paddingVertical: tokens.space.md,
     fontFamily: tokens.font.sans,
     color: tokens.colors.accent,
     fontSize: tokens.type.label.fontSize,

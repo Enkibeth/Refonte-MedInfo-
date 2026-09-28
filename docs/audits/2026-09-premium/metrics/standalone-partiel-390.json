@@ -1,0 +1,20 @@
+{
+  "route": "/partiel.html",
+  "width": 390,
+  "height": 844,
+  "title": "Analyse des partiels",
+  "headings": [
+    "Ta position",
+    "Simulateur « et si »",
+    "Épreuve par épreuve",
+    "Statistiques de la promo",
+    "Distribution réelle",
+    "Ta progression"
+  ],
+  "text": "Dépose le relevé de notes de ta promo\n.xlsx · .xls · .csv · .pdf — une colonne d'identifiants, une colonne par épreuve\nPARCOURIR…\n\n🔒 Traitement 100 % local. Aucune note n'est envoyée sur internet et rien n'est stocké en ligne — le fichier ne quitte jamais cet appareil.\n\nÀ QUOI DOIT RESSEMBLER LE FICHIER ?",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [],
+  "passes": 11
+}

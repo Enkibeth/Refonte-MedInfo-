@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 /**
  * Section QCM du chatbot étudiant (2026-07) — génération à la demande + rendu interactif.
  *
@@ -85,7 +86,7 @@ export function QcmLauncher({
         onPress={generate}
         disabled={disabled || state === 'loading'}
         accessibilityRole="button"
-        accessibilityLabel="Générer un QCM d’entraînement sur ce sujet"
+        accessibilityLabel="Générer un QCM d’entraînement sur ce sujet" {...(Platform.OS === 'web' ? { title: 'Générer un QCM d’entraînement sur ce sujet' } : {})}
       >
         {state === 'loading' ? (
           <ActivityIndicator size="small" color={tokens.colors.onAccent} />
@@ -244,7 +245,7 @@ export function QcmRunner({
                   onPress={() => toggle(qi, pi)}
                   disabled={submitted}
                   accessibilityRole={question.kind === 'QCS' ? 'radio' : 'checkbox'}
-                  accessibilityState={{ checked }}
+                  aria-checked={checked}
                 >
                   <View
                     style={[
@@ -281,7 +282,7 @@ export function QcmRunner({
           onPress={() => setSubmitted(true)}
           disabled={answeredCount === 0}
           accessibilityRole="button"
-          accessibilityLabel="Valider mes réponses et voir la correction"
+          accessibilityLabel="Valider mes réponses et voir la correction" {...(Platform.OS === 'web' ? { title: 'Valider mes réponses et voir la correction' } : {})}
         >
           <Text style={styles.validateText}>
             Valider mes réponses{answeredCount < qcm.questions.length ? ` (${answeredCount}/${qcm.questions.length})` : ''}
@@ -309,7 +310,7 @@ export function QcmRunner({
             {regenerating ? (
               <ActivityIndicator size="small" color={tokens.colors.accentDeep} />
             ) : (
-              <Icon name="sparkles" size={14} color={tokens.colors.accentDeep} />
+              <Icon name="bookOpen" size={14} color={tokens.colors.accentDeep} />
             )}
             <Text style={styles.retryText}>Nouveau QCM</Text>
           </TouchableOpacity>
@@ -323,7 +324,7 @@ export function QcmRunner({
 
 const styles = StyleSheet.create({
   launcher: { marginTop: tokens.space.sm, gap: tokens.space.xs },
-  launchButton: {
+  launchButton: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.sm,
@@ -357,14 +358,14 @@ const styles = StyleSheet.create({
     gap: tokens.space.md,
     ...tokens.elevation.sm,
   },
-  header: { gap: 4 },
+  header: { gap: tokens.space.xs },
   headerBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start' },
   headerBadgeText: {
     fontFamily: tokens.font.mono,
     color: tokens.colors.accentDeep,
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.semibold,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
   },
   title: {
@@ -402,7 +403,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.medium,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
   },
   kindPill: {
@@ -410,7 +411,7 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.accentSurface,
     borderWidth: 1,
     borderColor: tokens.colors.accentSurfaceStrong,
-    paddingHorizontal: 8,
+    paddingHorizontal: tokens.space.sm,
     paddingVertical: 1,
   },
   kindPillText: {

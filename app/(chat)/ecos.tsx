@@ -1,3 +1,4 @@
+import { FieldInput } from '@/ui/FieldInput';
 /**
  * ECOS — Examen Clinique Objectif Structuré.
  * Dashboard d'entraînement (stats globales, filtres, cas classés par thème,
@@ -697,7 +698,7 @@ function EcosScreenInner() {
             <View style={dashStyles.filters}>
               <View style={dashStyles.searchRow}>
                 <Icon name="search" size={16} color={tokens.colors.textMuted} />
-                <TextInput
+                <FieldInput
                   style={dashStyles.searchInput}
                   value={query}
                   onChangeText={setQuery}
@@ -886,7 +887,7 @@ function EcosScreenInner() {
             <Text style={styles.prepInfoText}>Évaluation sur grille à la fin</Text>
           </View>
           <View style={styles.prepInfoItem}>
-            <Icon name="sparkles" size={18} color={tokens.colors.accentDeep} />
+            <Icon name="bookOpen" size={18} color={tokens.colors.accentDeep} />
             <Text style={styles.prepInfoText}>Le patient est joué par l'IA</Text>
           </View>
         </View>
@@ -954,7 +955,7 @@ function EcosScreenInner() {
               onTranscript={(text) => setInput((prev) => (prev.trim() ? `${prev.trim()} ${text}` : text))}
               disabled={aiLoading}
             />
-            <TextInput
+            <FieldInput
               style={styles.simInput}
               value={input}
               onChangeText={setInput}
@@ -1092,7 +1093,7 @@ const styles = StyleSheet.create({
 
   // Selection
   // Colonnes de lecture centrées (~800 px) : cohérentes avec le chat sur desktop.
-  selectionContent: { padding: tokens.space.lg, gap: tokens.space.md, width: '100%', maxWidth: 800, alignSelf: 'center' },
+  selectionContent: { padding: tokens.space.lg, gap: tokens.space.md, width: '100%', maxWidth: tokens.layout.reading, alignSelf: 'center' },
   selectionHeader: { marginBottom: tokens.space.sm },
   selectionTitle: {
     fontFamily: tokens.font.serif,
@@ -1107,7 +1108,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.body.fontSize,
     lineHeight: tokens.type.body.lineHeight,
-    marginTop: 4,
+    marginTop: tokens.space.xs,
   },
   casesState: {
     alignItems: 'center',
@@ -1134,9 +1135,9 @@ const styles = StyleSheet.create({
   },
 
   // Preparation
-  prepContent: { padding: tokens.space.lg, gap: tokens.space.md, width: '100%', maxWidth: 800, alignSelf: 'center' },
+  prepContent: { padding: tokens.space.lg, gap: tokens.space.md, width: '100%', maxWidth: tokens.layout.reading, alignSelf: 'center' },
   prepHeader: { gap: tokens.space.xs },
-  backButton: { marginBottom: tokens.space.xs },
+  backButton: { minHeight: tokens.size.controlMd, marginBottom: tokens.space.xs },
   backText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.accent,
@@ -1179,7 +1180,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.medium,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
   },
   consigneText: {
@@ -1203,7 +1204,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.label.fontSize,
     lineHeight: 20,
   },
-  startButton: {
+  startButton: { minHeight: tokens.size.controlMd,
     height: 52,
     borderRadius: tokens.radius.lg,
     backgroundColor: tokens.colors.accent,
@@ -1243,8 +1244,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   simMessages: { flex: 1 },
-  simMessagesContent: { padding: tokens.space.lg, gap: tokens.space.md, width: '100%', maxWidth: 800, alignSelf: 'center' },
-  simBubble: { maxWidth: '88%', borderRadius: tokens.radius.lg, padding: tokens.space.md, gap: 4 },
+  simMessagesContent: { padding: tokens.space.lg, gap: tokens.space.md, width: '100%', maxWidth: tokens.layout.reading, alignSelf: 'center' },
+  simBubble: { maxWidth: '88%', borderRadius: tokens.radius.lg, padding: tokens.space.md, gap: tokens.space.xs },
   simBubbleUser: {
     alignSelf: 'flex-end',
     backgroundColor: tokens.colors.accent,
@@ -1322,7 +1323,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.bold,
     fontSize: tokens.type.h3.fontSize,
   },
-  finishButton: {
+  finishButton: { minHeight: tokens.size.controlMd,
     height: 40,
     borderRadius: tokens.radius.md,
     borderWidth: 1,
@@ -1338,8 +1339,8 @@ const styles = StyleSheet.create({
   },
 
   // Evaluation
-  evalContent: { padding: tokens.space.lg, gap: tokens.space.md, width: '100%', maxWidth: 800, alignSelf: 'center' },
-  evalHeader: { gap: 4 },
+  evalContent: { padding: tokens.space.lg, gap: tokens.space.md, width: '100%', maxWidth: tokens.layout.reading, alignSelf: 'center' },
+  evalHeader: { gap: tokens.space.xs },
   evalTitle: {
     fontFamily: tokens.font.serif,
     color: tokens.colors.text,
@@ -1372,7 +1373,7 @@ const styles = StyleSheet.create({
     gap: tokens.space.xs,
     marginBottom: tokens.space.sm,
   },
-  evalAction: {
+  evalAction: { minHeight: tokens.size.controlMd,
     paddingHorizontal: tokens.space.sm,
     paddingVertical: 6,
     borderRadius: tokens.radius.sm,
@@ -1467,7 +1468,7 @@ const dashStyles = StyleSheet.create({
     borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.surface,
     padding: tokens.space.lg,
-    gap: 4,
+    gap: tokens.space.xs,
     ...tokens.elevation.sm,
   },
   statLabel: {
@@ -1475,7 +1476,7 @@ const dashStyles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.medium,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
   },
   statValue: {
@@ -1551,7 +1552,7 @@ const dashStyles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
   themeRow: { gap: tokens.space.sm, paddingVertical: 2 },
-  themeChip: {
+  themeChip: { minHeight: tokens.size.controlMd,
     borderRadius: tokens.radius.pill,
     borderWidth: 1,
     borderColor: tokens.colors.border,
@@ -1591,7 +1592,7 @@ const dashStyles = StyleSheet.create({
     color: tokens.colors.textSubtle,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
   },
   themeCount: {

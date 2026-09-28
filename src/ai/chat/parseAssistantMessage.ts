@@ -111,8 +111,39 @@ export interface ParsedAssistantMessage {
 
 type SectionKind = 'sources' | 'deepening' | 'questionsPatient' | 'interaction' | 'reflection';
 
-function sectionKindOf(line: string): SectionKind | null {
-  const t = line.trim();
+/**
+ * Retire la décoration markdown d'une ligne de titre de section : `### SOURCES`,
+ * `**SOURCES**`, `SOURCES :` → `SOURCES`. Les modèles récents écrivent parfois le titre
+ * imposé sous forme de titre markdown : sans cette tolérance, toute la section (sources,
+ * relances) tombait dans le corps et s'affichait en texte brut.
+ */
+function stripSectionDecoration(line: string): string {
+  return line
+    .trim()
+    .replace(/^#{1,6}\s*/, '')
+    .replace(/^\*\*\s*/, '')
+    .replace(/\s*\*\*$/, '')
+    .replace(/\s*:$/, '')
+    .trim();
+}
+
+/** Titres de section structurée tels que le flux peut les commencer (préfixes testés pendant le streaming). */
+const SECTION_HEADINGS = [
+  'SOURCES',
+  'SOURCES UTILISÉES',
+  'APPROFONDISSEMENTS',
+  'QUESTIONS_PATIENT',
+  'INTERACTION',
+  'AUTO-RÉFLEXION',
+  'AUTO-REFLEXION',
+  'AUTO RÉFLEXION',
+  'AUTO REFLEXION',
+  'AUTORÉFLEXION',
+  'AUTOREFLEXION',
+] as const;
+
+export function sectionKindOf(line: string): SectionKind | null {
+  const t = stripSectionDecoration(line);
   // « SOURCES UTILISÉES » : en-tête du format étudiant historique (prompt v3) —
   // reconnu pour que les anciennes conversations archivées restent bien rendues.
   if (/^SOURCES( UTILISÉES)?$/.test(t)) return 'sources';
@@ -121,6 +152,18 @@ function sectionKindOf(line: string): SectionKind | null {
   if (/^INTERACTION$/.test(t)) return 'interaction';
   if (/^AUTO[-\s]?R[ÉE]FLEXION$/.test(t)) return 'reflection';
   return null;
+}
+
+/**
+ * Ligne encore incomplète (streaming) qui pourrait devenir un titre de section structurée :
+ * elle reste masquée tant qu'on ne sait pas si elle ouvre une section différée.
+ */
+export function isSectionHeadingPrefix(partialLine: string): boolean {
+  const raw = partialLine.trim();
+  if (!raw) return false;
+  const t = stripSectionDecoration(raw);
+  if (!t) return /^[#*\s]+$/.test(raw);
+  return SECTION_HEADINGS.some((h) => h.startsWith(t));
 }
 
 /** Ligne titre de section MAJUSCULES (format public/pro) — utilisée pour borner les sections. */
@@ -141,6 +184,18 @@ const JUSTIF_RE = /^Justification\s*:\s*(.*)$/i;
 const BRACKET_OPTION_RE = /^\[([^\][]+)\]$/;
 const NUMBERED_RE = /^(\d+)[.)]\s+(.+)$/;
 const STUDENT_FOLLOWUP_MARKER_RE = /^\[1\]\s*\+\s*\[2\]\s*\+\s*\[3\]$/;
+const STUDENT_FOLLOWUP_MARKER_COMPACT = '[1]+[2]+[3]';
+
+/** Ligne `[1] + [2] + [3]` du format étudiant : consigne d'interface, jamais du contenu à afficher. */
+export function isStudentFollowupMarker(line: string): boolean {
+  return STUDENT_FOLLOWUP_MARKER_RE.test(line.trim());
+}
+
+/** Début (streaming) possible de la ligne `[1] + [2] + [3]`. */
+export function isStudentFollowupMarkerPrefix(partialLine: string): boolean {
+  const compact = partialLine.replace(/\s+/g, '');
+  return compact.length > 0 && STUDENT_FOLLOWUP_MARKER_COMPACT.startsWith(compact);
+}
 
 function normalizeBadge(raw: string): SourceBadge {
   const up = raw.toUpperCase();
@@ -276,11 +331,14 @@ function parseInteractionLines(lines: string[]): InteractionGroup[] {
 
 /**
  * Détecte le motif étudiant : 3 questions numérotées suivies de la ligne `[1] + [2] + [3]`.
- * Retourne les lignes du corps sans ce motif + le bloc followups, ou null si absent.
+ * Retourne les lignes sans ce motif + les questions, ou null si le marqueur est absent.
+ * Un marqueur sans question au-dessus est retiré quand même (questions vides) : c'est une
+ * consigne d'interface, jamais du texte à afficher.
  */
 function extractStudentFollowups(lines: string[]): { lines: string[]; questions: string[] } | null {
   const markerIdx = lines.findIndex((l) => STUDENT_FOLLOWUP_MARKER_RE.test(l.trim()));
   if (markerIdx < 0) return null;
+  const withoutMarkers = () => lines.filter((l) => !STUDENT_FOLLOWUP_MARKER_RE.test(l.trim()));
 
   // Remonte pour trouver les questions numérotées (1., 2., 3.) juste au-dessus du marqueur.
   const questions: { idx: number; text: string }[] = [];
@@ -297,11 +355,11 @@ function extractStudentFollowups(lines: string[]): { lines: string[]; questions:
       if (markerIdx - i > 6) break;
     }
   }
-  if (questions.length === 0) return null;
+  if (questions.length === 0) return { lines: withoutMarkers(), questions: [] };
 
-  const removeIdx = new Set([markerIdx, ...questions.map((q) => q.idx)]);
+  const removeIdx = new Set(questions.map((q) => q.idx));
   return {
-    lines: lines.filter((_, i) => !removeIdx.has(i)),
+    lines: lines.filter((l, i) => !removeIdx.has(i) && !STUDENT_FOLLOWUP_MARKER_RE.test(l.trim())),
     questions: questions.map((q) => q.text),
   };
 }
@@ -312,7 +370,11 @@ export function parseAssistantMessage(text: string): ParsedAssistantMessage {
   const blocks: ParsedBlock[] = [];
   const allSources: ParsedSource[] = [];
 
-  const rawLines = text.replace(/\r\n/g, '\n').split('\n');
+  let rawLines = text.replace(/\r\n/g, '\n').split('\n');
+  // Relances étudiantes extraites du texte ENTIER avant le découpage en sections : le prompt
+  // étudiant v4 les place APRÈS la section SOURCES, qui les avalait (boutons jamais affichés).
+  const followups = extractStudentFollowups(rawLines);
+  if (followups) rawLines = followups.lines;
 
   let bodyBuffer: string[] = [];
   let section: SectionKind | null = null;
@@ -389,8 +451,11 @@ export function parseAssistantMessage(text: string): ParsedAssistantMessage {
 
     if (section) {
       // Une section structurée se termine quand un nouveau titre MAJUSCULES apparaît
-      // (ex. POINTS DE VIGILANCE après SOURCES) — il repart dans le corps.
-      if (isUppercaseHeading(line) && !SRC_LINE_RE.test(line.trim())) {
+      // (ex. POINTS DE VIGILANCE après SOURCES) — il repart dans le corps. Un titre markdown
+      // (`### FIABILITÉ`) la termine aussi, sauf l'auto-réflexion, texte libre qui peut en contenir.
+      const trimmedLine = line.trim();
+      const markdownHeading = section !== 'reflection' && /^#{1,6}\s+\S/.test(trimmedLine);
+      if ((isUppercaseHeading(line) || markdownHeading) && !SRC_LINE_RE.test(trimmedLine)) {
         flushSection();
         bodyBuffer.push(line);
         continue;
@@ -403,15 +468,9 @@ export function parseAssistantMessage(text: string): ParsedAssistantMessage {
   }
 
   flushSection();
-
-  // Motif étudiant [1] + [2] + [3] dans le corps restant.
-  const followups = extractStudentFollowups(bodyBuffer);
-  if (followups) {
-    bodyBuffer = followups.lines;
-    flushBody();
+  flushBody();
+  if (followups && followups.questions.length > 0) {
     blocks.push({ type: 'followups', questions: followups.questions });
-  } else {
-    flushBody();
   }
 
   return { blocks, sources: allSources };

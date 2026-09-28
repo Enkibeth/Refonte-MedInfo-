@@ -1,0 +1,28 @@
+{
+  "route": "/__directions/direction-b-landing.html",
+  "width": 1024,
+  "height": 900,
+  "title": "MedInfo AI · Proposition B · landing",
+  "headings": [
+    "Comprendrela médecine.Lire ses références.",
+    "Trois façons d’explorer.",
+    "Un travail.Le bon outil."
+  ],
+  "text": "Chat\nOutils\nRessources\nTarifs\nSe connecter\n\nMedInfo AI\n\nComprendre\nla médecine.\n\nLire ses références.\n\nUn espace pour explorer la littérature médicale, approfondir vos connaissances et consulter les références d’une réponse.\n\nInformation générale. Jamais de diagnostic individuel.\n\nEssayer le chat\nUn premier message sans inscription.\n3\n\nEspaces de lecture.\nUne plateforme d’information médicale générale.\n\nProfessionnel\nConsulter les références et approfondir un sujet.\nÉtudiant\nComprendre un cours, préparer ses examens.\nGrand public\nMieux comprendre l’information de santé.\n\nLes sources restent accessibles, avec ou sans abonnement.\n\nUn travail.\nLe bon outil.\nAnalyse de document\nImporter ou coller un texte.\nEntraînement et révision\nECOS, partiels et planning.\nRédaction et présentation\nCV, article et diaporama.\n\nVous interagissez avec un système d'intelligence artificielle (Claude (Anthropic) ou GPT (OpenAI) selon le modèle servi). Les réponses sont générées automatiquement et peuvent contenir des erreurs.\n\nMedInfo AI fournit de l’information médicale générale, jamais un avis médical indiv",
+  "overflow": false,
+  "smallControls": [
+    {
+      "label": "Chat",
+      "width": 33.171875,
+      "height": 44
+    },
+    {
+      "label": "Outils",
+      "width": 40.4375,
+      "height": 44
+    }
+  ],
+  "violations": [],
+  "incomplete": [],
+  "passes": 17
+}

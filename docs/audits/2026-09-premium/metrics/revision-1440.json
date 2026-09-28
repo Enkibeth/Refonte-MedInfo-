@@ -1,0 +1,29 @@
+{
+  "route": "/revision",
+  "width": 1440,
+  "height": 900,
+  "title": "Planning de révisions médecine — planificateur intelligent — MedInfo AI",
+  "headings": [],
+  "text": "Révisions\nCet outil est réservé aux comptes MedInfo AI. Créez un compte gratuit pour y accéder. Planifie tes révisions : charge quotidienne réaliste, suivi et jauge de risque.\nCréer un compte\nRetour au chat",
+  "overflow": false,
+  "smallControls": [
+    {
+      "label": "Créer un compte",
+      "width": 160.984375,
+      "height": 41
+    },
+    {
+      "label": "Retour au chat",
+      "width": 98.078125,
+      "height": 17
+    }
+  ],
+  "violations": [],
+  "incomplete": [
+    {
+      "id": "bypass",
+      "count": 1
+    }
+  ],
+  "passes": 13
+}

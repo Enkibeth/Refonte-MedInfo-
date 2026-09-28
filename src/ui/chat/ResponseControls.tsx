@@ -39,7 +39,7 @@ const TOOLS: { id: ChatOutputTool; label: string; icon: IconName; description: s
   {
     id: 'keypoints',
     label: 'Points clés',
-    icon: 'sparkles',
+    icon: 'bookOpen',
     description: 'Un encadré « À retenir » synthétique en tête de réponse.',
   },
   {
@@ -76,7 +76,7 @@ export function ResponseControls({
 
   // ── Popovers partagés (profondeur + outils) ──
   const modeModal = (
-    <Modal visible={panel === 'mode'} transparent animationType="fade" onRequestClose={() => setPanel(null)}>
+    <Modal visible={panel === 'mode'} transparent animationType="none" onRequestClose={() => setPanel(null)}>
       <Pressable style={styles.backdrop} onPress={() => setPanel(null)}>
         <Pressable style={styles.modePanel} onPress={(e) => e.stopPropagation()}>
           <Text style={styles.panelTitle}>Profondeur de la réponse</Text>
@@ -90,7 +90,7 @@ export function ResponseControls({
                   setPanel(null);
                 }}
                 accessibilityRole="radio"
-                accessibilityState={{ selected: active }}
+                aria-checked={active}
                 accessibilityLabel={`${m.label} — ${m.hint}`}
                 style={[styles.optionRow, active && styles.optionRowActive]}
               >
@@ -111,7 +111,7 @@ export function ResponseControls({
   );
 
   const toolsModal = (
-    <Modal visible={panel === 'tools'} transparent animationType="fade" onRequestClose={() => setPanel(null)}>
+    <Modal visible={panel === 'tools'} transparent animationType="none" onRequestClose={() => setPanel(null)}>
       <Pressable style={styles.backdrop} onPress={() => setPanel(null)}>
         <Pressable style={styles.modePanel} onPress={(e) => e.stopPropagation()}>
           <Text style={styles.panelTitle}>Ajouter à la réponse</Text>
@@ -125,7 +125,7 @@ export function ResponseControls({
                 key={t.id}
                 onPress={() => toggleTool(t.id)}
                 accessibilityRole="checkbox"
-                accessibilityState={{ checked: active }}
+                aria-checked={active}
                 accessibilityLabel={t.label}
                 style={styles.optionRow}
               >
@@ -172,7 +172,7 @@ export function ResponseControls({
           disabled={disabled}
           accessibilityRole="button"
           accessibilityLabel={
-            tools.length > 0 ? `Outils de réponse (${tools.length} actifs)` : 'Ajouter des outils à la réponse'
+            tools.length > 0 ? `Outils de réponse (${tools.length} ${tools.length > 1 ? 'actifs' : 'actif'})` : 'Ajouter des outils à la réponse'
           }
           style={[styles.iconButton, tools.length > 0 && styles.iconButtonActive]}
         >
@@ -205,7 +205,7 @@ export function ResponseControls({
               onPress={() => onModeChange(m.id)}
               disabled={disabled}
               accessibilityRole="tab"
-              accessibilityState={{ selected: active }}
+              aria-selected={active}
               accessibilityLabel={`${m.label} — ${m.hint}`}
               style={[styles.segmentItem, active && styles.segmentItemActive]}
             >
@@ -221,7 +221,7 @@ export function ResponseControls({
         disabled={disabled}
         accessibilityRole="button"
         accessibilityLabel={
-          tools.length > 0 ? `Outils de réponse (${tools.length} actifs)` : 'Ajouter des outils à la réponse'
+          tools.length > 0 ? `Outils de réponse (${tools.length} ${tools.length > 1 ? 'actifs' : 'actif'})` : 'Ajouter des outils à la réponse'
         }
         style={[styles.addButton, tools.length > 0 && styles.addButtonActive]}
       >
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
   segmentLabelActive: { color: tokens.colors.onAccent },
-  addButton: {
+  addButton: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
@@ -290,9 +290,9 @@ const styles = StyleSheet.create({
   addLabelActive: { color: tokens.colors.onAccent },
 
   // ── Boutons-icônes compacts (variante inline) ──
-  iconButton: {
-    width: 40,
-    height: 40,
+  iconButton: { minHeight: tokens.size.controlMd,
+    width: tokens.size.controlMd,
+    height: tokens.size.controlMd,
     borderRadius: tokens.radius.md,
     alignItems: 'center',
     justifyContent: 'center',
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkActive: { backgroundColor: tokens.colors.accent, borderColor: tokens.colors.accent },
-  doneButton: {
+  doneButton: { minHeight: tokens.size.controlMd,
     marginTop: tokens.space.sm,
     alignSelf: 'flex-end',
     paddingHorizontal: tokens.space.lg,

@@ -7,11 +7,15 @@ import { describe, expect, it } from 'vitest';
 import {
   assistantTextForExport,
   formatInlineCitations,
+  isSectionHeadingPrefix,
+  isStudentFollowupMarkerPrefix,
   parseAssistantMessage,
+  sectionKindOf,
   sourceIdFromSuperscript,
   splitBodySections,
   isUppercaseHeading,
 } from '@/ai/chat/parseAssistantMessage';
+import { STUDENT_REAL_FORMAT } from './helpers/chatAnswerFixtures';
 
 const PUBLIC_ANSWER = `MAUX DE TÊTE FRÉQUENTS
 
@@ -399,5 +403,90 @@ describe('section SOURCES — robustesse (format étudiant historique)', () => {
     expect(bodyText).toContain('SOURCES UTILISÉES');
     expect(bodyText).toContain('CMIT — Item EDN 161');
     expect(bodyText).toContain('CNEC — Item EDN 230');
+  });
+});
+
+describe('forme réelle des modèles récents (relevé recette 2026-09)', () => {
+  const bodyOf = (text: string) =>
+    parseAssistantMessage(text)
+      .blocks.filter((b): b is { type: 'body'; markdown: string } => b.type === 'body')
+      .map((b) => b.markdown)
+      .join('\n');
+
+  it('reconnaît un titre de section décoré en markdown, en gras ou suivi de deux-points', () => {
+    for (const line of ['### SOURCES', '## SOURCES', '**SOURCES**', 'SOURCES :', '### **SOURCES :**', 'SOURCES']) {
+      expect(sectionKindOf(line)).toBe('sources');
+    }
+    expect(sectionKindOf('### AUTO-RÉFLEXION')).toBe('reflection');
+    expect(sectionKindOf('### Sources et niveau de preuve')).toBeNull();
+    expect(sectionKindOf('SOURCES DE FER')).toBeNull();
+  });
+
+  it('format étudiant v4 : sources en cartes et relances APRÈS SOURCES en propositions', () => {
+    const parsed = parseAssistantMessage(STUDENT_REAL_FORMAT);
+    expect(parsed.sources.map((s) => s.id)).toEqual(['SRC1', 'SRC2']);
+    expect(parsed.sources[0].url).toBe('https://example.org/un');
+    expect(parsed.sources[1].justification).toBe('seconde justification de test.');
+    const followups = parsed.blocks.find((b) => b.type === 'followups');
+    expect(followups).toEqual({
+      type: 'followups',
+      questions: ['Première question de relance ?', 'Deuxième question de relance ?', 'Troisième question de relance ?'],
+    });
+    expect(parsed.blocks.map((b) => b.type)).toEqual(['body', 'sources', 'followups']);
+    const body = bodyOf(STUDENT_REAL_FORMAT);
+    expect(body).toContain('### FIABILITÉ');
+    expect(body).not.toMatch(/SRC\d+ ::|\[1\] \+|question de relance|### SOURCES/);
+  });
+
+  it('titre SOURCES nu : les relances qui suivent ne sont plus avalées par la section', () => {
+    const text = 'Corps.\n\nSOURCES\nSRC1 :: Org :: Org :: Titre :: 2024\nhttps://example.org/x\n\n1. Question un ?\n2. Question deux ?\n3. Question trois ?\n\n[1] + [2] + [3]';
+    const parsed = parseAssistantMessage(text);
+    expect(parsed.sources).toHaveLength(1);
+    expect(parsed.blocks.at(-1)).toEqual({
+      type: 'followups',
+      questions: ['Question un ?', 'Question deux ?', 'Question trois ?'],
+    });
+  });
+
+  it('retire un marqueur [1] + [2] + [3] orphelin sans créer de propositions vides', () => {
+    const parsed = parseAssistantMessage('Réponse de test.\n\n[1] + [2] + [3]');
+    expect(parsed.blocks).toEqual([{ type: 'body', markdown: 'Réponse de test.' }]);
+  });
+
+  it('un titre markdown après SOURCES termine la section : son contenu revient au corps', () => {
+    const text = 'Corps.\n\n### SOURCES\nSRC1 :: Org :: Org :: Titre :: 2024\nhttps://example.org/x\n\n### POINTS DE VIGILANCE\nTexte après les sources.';
+    const parsed = parseAssistantMessage(text);
+    expect(parsed.sources).toHaveLength(1);
+    expect(bodyOf(text)).toContain('Texte après les sources.');
+  });
+
+  it("l'auto-réflexion garde ses sous-titres markdown dans sa carte", () => {
+    const parsed = parseAssistantMessage('Corps.\n\nAUTO-RÉFLEXION\n### Limites\n- Limite de test');
+    const reflection = parsed.blocks.find((b) => b.type === 'reflection');
+    expect(reflection).toEqual({ type: 'reflection', markdown: '### Limites\n- Limite de test' });
+    expect(bodyOf('Corps.\n\nAUTO-RÉFLEXION\n### Limites\n- Limite de test')).toBe('Corps.');
+  });
+
+  it('export texte : légende des sources, jamais le marqueur ni les relances', () => {
+    const out = assistantTextForExport(STUDENT_REAL_FORMAT);
+    expect(out).toContain('Sources');
+    expect(out).toContain('https://example.org/deux');
+    expect(out).not.toContain('[1] + [2] + [3]');
+    expect(out).not.toContain('question de relance');
+  });
+
+  it('préfixes en cours de streaming : titres de section et marqueur de relances', () => {
+    for (const partial of ['S', 'SOUR', '### SOU', '**SOURCES', 'SOURCES :', 'APPRO', 'AUTO-R', 'AUTO R', '###']) {
+      expect(isSectionHeadingPrefix(partial)).toBe(true);
+    }
+    for (const partial of ['Sou', '### Souffle', 'SOURCES DE', 'Texte', '']) {
+      expect(isSectionHeadingPrefix(partial)).toBe(false);
+    }
+    for (const partial of ['[', '[1', '[1] +', '[1] + [2] + [3]']) {
+      expect(isStudentFollowupMarkerPrefix(partial)).toBe(true);
+    }
+    for (const partial of ['[à vérifier]', '[1] Voir', '', '1.']) {
+      expect(isStudentFollowupMarkerPrefix(partial)).toBe(false);
+    }
   });
 });

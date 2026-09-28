@@ -1,0 +1,109 @@
+{
+  "route": "/blog",
+  "width": 390,
+  "height": 844,
+  "title": "Blog santé — articles sourcés et relus — MedInfo AI",
+  "headings": [],
+  "text": "Menu\nCommencer\nBLOG\nComprendre la santé, un article à la fois.\nPrévention, recherche, idées reçues : des articles d'information générale, sourcés et relus. Jamais un avis médical individuel.\nPrévention\nPrévention\n21 septembre 2026\nHoraires atypiques : ce que la science dit vraiment sur votre santé\nTravail de nuit, week-ends imposés, journées à rallonge : les risques documentés sur la santé physique et mentale des travailleurs aux horaires décalés sont aujourd'hui bien établis par la recherche. Tour d'horizon des mécanismes en jeu et des pistes pour limiter les dégâts.\nLire l'article →\nPrévention\nPrévention\n14 septembre 2026\nBronchiolite du nourrisson : la maladie expliquée et les nouveaux outils de prévention\nChaque automne, la bronchiolite touche jusqu'à 480 000 nourrissons en France et sature les services pédiatriques d'urgence. À l'heure où une nouvelle campagne nationale de prévention démarre, voici ce que les parents doivent savoir sur cette infection respiratoire et sur les moyens de la prévenir.\nLire l'article →\nPrévention\n7 septembre 2026\nPFAS : ce que la science sait vraimen",
+  "overflow": true,
+  "smallControls": [
+    {
+      "label": "Chat grand public",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Chat étudiant en santé",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Chat professionnel de santé",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Analyse de document médical",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Simulation ECOS",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Planning de révisions",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Analyse des partiels",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Générateur de présentations",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Créateur de CV médical",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Compte rendu de consultation",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Blog santé",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "À propos",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Contact",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Tarifs",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Mentions légales",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Conditions d’utilisation",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Confidentialité (RGPD)",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Informations légales",
+      "width": 332,
+      "height": 20
+    }
+  ],
+  "violations": [],
+  "incomplete": [
+    {
+      "id": "bypass",
+      "count": 1
+    }
+  ],
+  "passes": 24
+}

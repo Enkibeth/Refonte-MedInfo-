@@ -1,0 +1,15 @@
+{
+  "route": "/presentation",
+  "width": 1440,
+  "height": 900,
+  "title": "Générateur de présentations médicales — export PowerPoint — MedInfo AI",
+  "headings": [
+    "Présentations"
+  ],
+  "text": "Présentations\nCet outil est réservé aux comptes MedInfo AI. Créez un compte gratuit pour y accéder. Slides médicales prêtes pour Keynote (manuel ou IA) — export PPTX.\nCréer un compte\nRetour au chat",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [],
+  "passes": 18
+}

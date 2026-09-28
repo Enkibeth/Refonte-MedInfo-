@@ -17,6 +17,70 @@ None | Potential | Confirmed
 
 ---
 
+## [2026-09-27] – Claude (revue finale direction A : chat, hydratation web, accessibilité)
+### Files modified
+- Chat : `src/chat/streamingBody.ts`, `src/ai/chat/parseAssistantMessage.ts`, `src/ui/chat/AssistantBlocks.tsx`, `src/ui/MarkdownRenderer.tsx`, `app/(chat)/chat.tsx`, `src/ui/chat/ResponseControls.tsx`, `src/ui/chat/CountrySelector.tsx`, `src/ui/DictationButton.tsx`.
+- Hydratation / premier affichage : `src/ui/useWindowWidth.ts`, `src/ui/hydration.ts`, `src/ui/responsive.ts` (nouveaux), `app/+html.tsx`, `app/index.tsx`, `src/ui/LandingHeader.tsx`, `src/ui/AppTabBar.tsx`, 13 écrans/composants lisant la largeur, `app/(auth)/sign-in.tsx`, `app/(marketing)/blog/[slug].tsx`.
+- Accessibilité : 26 `accessibilityState` convertis en props ARIA (dont `Button`, `ChatbotSwitcher`, `QcmCard`, `SegmentedSlider`, `AppShell`, `scores`, `audio`, admin) ; `public/cv-builder.html` (barre d’outils à 1024 px).
+- Tests : `parse-assistant-message`, `chat-ui-streaming`, nouveaux `chat-answer-render` (rendu réel via react-native-web) et `hydration-hooks`, fixtures `tests/unit/helpers/chatAnswerFixtures.ts`, types `tests/unit/helpers/ssr-modules.d.ts`.
+- Docs : `docs/05_DESIGN.md` (règles pré-rendu et chat), `docs/audits/2026-09-premium/DELIVERY.md`, `docs/audits/2026-09-premium/review/` (rapport, captures, rapports JSON, banc).
+### Purpose
+Dernière optimisation UI/UX de la direction A sans la transformer (état final identique au
+pixel près). Corrige : notes de liens renumérotées à chaque bloc ; format réel GPT-6
+(`### SOURCES`, relances étudiantes après SOURCES) rendu en partie brut ; syntaxes partielles
+pendant le flux ; double clic sur Envoyer qui coupait la réponse ; remontée du fil annulée
+pendant un flux rapide (sans confondre une zone de lecture agrandie avec une remontée) ; erreur React #418 (déjà en production) et premier affichage desktop
+en mise en page mobile ; états ARIA absents sur le web ; titre d’article vide ; barre du CV
+débordante à 1024 px. 833 tests (+32), typecheck et build réussis ; 128 états sans violation
+axe ; 15 scénarios de chat verts sur banc local ; CLS labo chat desktop 0,031 → 0,004, chat
+mobile 0,236 → 0,158. Chat réel vérifié en invité sur l’aperçu Vercel (GPT-6 Luna). Parcours
+connectés par rôle non démontrés (pas de compte de test).
+### Regulatory impact
+None : aucun texte réglementaire, disclosure, avertissement ou mention 15/112 modifié ;
+aucune modification de prompt, API, serveur, base/RLS, autorisation ni hébergement. Aucune
+donnée médicale inventée (fixtures neutres, forme seule).
+### Rollback plan
+Revert des commits de la PR ; aucune migration ni donnée à restaurer.
+
+
+## [2026-09-27] – Codex (direction A, implémentation et relais Claude)
+### Files modified
+- UI app/, src/ui/, helpers client du chat et lecture blog ; quatre éditeurs public/.
+- Tokens v2, générateur CSS/sprite autonome, tests unitaires additionnels.
+- docs/05_DESIGN.md v2, ADR-0038 acceptée, audit DELIVERY et preuves avant/après.
+- docs/CLAUDE_PREMIUM_HANDOFF.md : dernière revue, limites, arbitrages et PR finale.
+### Purpose
+Direction A choisie par Hugo : identité éditoriale, composants cohérents, attente chat
+immédiate et honnête, rendu incrémental, arrêt et reprise protégés côté client.
+766 tests réussis, typecheck/build réussis ; 132 états responsive sans violation axe
+détectée. Vérifications connectées, natives et performances terrain encore requises.
+Intégration dédiée pour Claude ; aucune fusion de ce lot directement vers main.
+### Regulatory impact
+Potential (UI) : disclosures et textes réglementaires conservés ; aucune modification
+des prompts, API, serveur, base/RLS ou autorisations. Sources non paywallées.
+Aucune donnée médicale, statistique ou référence inventée. Pas de déploiement.
+### Rollback plan
+Revert des commits UI et documentation via PR ; aucune migration ni retour de données requis.
+
+
+## [2026-09-26] – Codex (audit UI initial et propositions premium)
+### Files modified
+- docs/audits/2026-09-premium/ : inventaire, contrats UX, mesures, captures et six études visuelles statiques.
+- docs/DECISIONS/0038-direction-premium-ui.md : décision Proposed, non acceptée.
+- docs/CHANGELOG_AI.md.
+### Purpose
+Étapes 0 et 1 demandées par Hugo : état initial vérifié, priorités de chargement du chat,
+deux directions visuelles sur accueil/chat/document, puis arrêt pour choix.
+Aucun code produit, token, prompt, API, serveur, droit, donnée ou fichier de déploiement modifié.
+Le design system reste en v1.4 jusqu’à validation. Les maquettes ne sont pas des fonctions livrées.
+### Regulatory impact
+Potential (constats seulement) : signalement des promesses de vérification de liens et de
+la terminologie d’aide à la décision ; aucun texte réglementaire produit n’est changé.
+Les prototypes conservent les mentions IA, information générale et urgences ; aucun contenu
+médical, patient, résultat ou témoignage inventé.
+### Rollback plan
+Revert du lot documentaire. Aucun rollback applicatif, base ou hébergement nécessaire.
+
 
 ## [2026-09-26] – Claude (modèles : GPT-6 Sol/Luna, Claude Sonnet 5 / Opus 5.5, grille de prix ; chat → GPT-6 Luna)
 ### Files modified

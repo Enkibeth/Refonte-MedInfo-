@@ -56,3 +56,19 @@ export function shouldReplaceWithArchived(
   const len = Math.min(RESUME_PREFIX_LEN, l.length);
   return a.slice(0, len) === l.slice(0, len);
 }
+
+type TurnMessage = { role: string; content: string };
+
+/** L'archive doit répondre au même tour, pas simplement finir par un assistant. */
+export function archiveMatchesTurn(local: readonly TurnMessage[], archived: readonly TurnMessage[]): boolean {
+  const questions = local.filter(m => m.role === 'user');
+  const savedQuestions = archived.filter(m => m.role === 'user');
+  if (!questions.length || questions.length !== savedQuestions.length) return false;
+  if (questions.some((m, i) => normalize(m.content) !== normalize(savedQuestions[i].content))) return false;
+  const last = archived[archived.length - 1];
+  if (last?.role !== 'assistant' || !last.content.trim()) return false;
+  const tail = local[local.length - 1];
+  if (tail.role !== 'assistant') return true;
+  // Comparer tout le texte reçu : deux générations peuvent partager une introduction.
+  return normalize(last.content).startsWith(normalize(tail.content));
+}

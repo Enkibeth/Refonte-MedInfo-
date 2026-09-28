@@ -21,6 +21,7 @@ import {
 } from '@/ai/routing/featureVisibility';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
+import { PageTitle } from '@/ui/PageTitle';
 
 const PERSONA_LABELS: Record<string, string> = {
   public: 'Grand public',
@@ -137,10 +138,7 @@ function RoleUnavailable({
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <View style={styles.iconBadge}>
-          <Icon name={meta?.icon ?? 'lock'} size={26} color={tokens.colors.accentDeep} />
-        </View>
-        <Text style={styles.title}>{meta?.label ?? 'Fonctionnalité'}</Text>
+        <PageTitle>{meta?.label ?? 'Fonctionnalité'}</PageTitle>
         <Text style={styles.text}>
           {guest
             ? `Cet outil est réservé aux comptes MedInfo AI. Créez un compte gratuit pour y accéder.${meta ? ` ${meta.description}` : ''}`
@@ -170,13 +168,16 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: tokens.radius.lg,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.surface,
     padding: tokens.space.xl,
-    alignItems: 'center',
+    alignItems: 'stretch',
+    maxWidth: tokens.layout.form,
+    width: '100%',
+    alignSelf: 'center',
     gap: tokens.space.md,
-    ...tokens.elevation.md,
+    ...tokens.elevation.sm,
   },
   iconBadge: {
     width: 56,
@@ -199,10 +200,12 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.body.fontSize,
     lineHeight: tokens.type.body.lineHeight,
-    textAlign: 'center',
-    maxWidth: 360,
+    textAlign: 'left',
   },
   primaryLink: {
+    minHeight: tokens.size.controlMd,
+    lineHeight: tokens.type.label.lineHeight,
+    textAlign: 'center',
     fontFamily: tokens.font.sans,
     color: tokens.colors.onAccent,
     fontWeight: tokens.weight.semibold,
@@ -215,12 +218,16 @@ const styles = StyleSheet.create({
     marginTop: tokens.space.sm,
   },
   secondaryLink: {
+    minHeight: tokens.size.controlMd,
+    lineHeight: tokens.type.label.lineHeight,
+    paddingVertical: tokens.space.md,
+    textAlign: 'center',
     fontFamily: tokens.font.sans,
     color: tokens.colors.accent,
     fontWeight: tokens.weight.semibold,
     fontSize: tokens.type.label.fontSize,
   },
-  primaryButton: {
+  primaryButton: { minHeight: tokens.size.controlMd,
     backgroundColor: tokens.colors.accent,
     paddingHorizontal: tokens.space.xl,
     paddingVertical: tokens.space.md,

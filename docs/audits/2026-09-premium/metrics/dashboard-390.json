@@ -1,0 +1,49 @@
+{
+  "route": "/dashboard",
+  "width": 390,
+  "height": 844,
+  "title": "Chat santé IA — posez votre question, réponse sourcée — MedInfo AI",
+  "headings": [],
+  "text": "Chat grand public\nInformation santé claire, sourcée et rassurante\nPays\nOutils\nPublic\nÉtudiant\nPro\nPosez votre question santé\nInformation santé claire, sourcée et rassurante.\nEssai gratuit : 1 message sans inscription (1/1)\nQue signifie une TSH élevée sur une prise de sang ?\nJ'ai mal à la gorge depuis 3 jours, que faire ?\nComment préparer ma consultation chez le cardiologue ?\nInformation générale — ne remplace pas un avis médical individuel.",
+  "overflow": false,
+  "smallControls": [
+    {
+      "label": "Choisir le pays",
+      "width": 70.15625,
+      "height": 29
+    },
+    {
+      "label": "Ouvrir le menu des outils",
+      "width": 81.09375,
+      "height": 33
+    },
+    {
+      "label": "Chat Grand public",
+      "width": 83.84375,
+      "height": 28
+    },
+    {
+      "label": "Chat Étudiant en santé",
+      "width": 96.953125,
+      "height": 28
+    },
+    {
+      "label": "Chat Professionnel de santé",
+      "width": 66.1875,
+      "height": 28
+    },
+    {
+      "label": "Profondeur de la réponse : Classique",
+      "width": 40,
+      "height": 40
+    },
+    {
+      "label": "Ajouter des outils à la réponse",
+      "width": 40,
+      "height": 40
+    }
+  ],
+  "violations": [],
+  "incomplete": [],
+  "passes": 25
+}

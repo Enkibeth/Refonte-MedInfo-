@@ -1,0 +1,21 @@
+{
+  "route": "/pricing",
+  "width": 390,
+  "height": 844,
+  "title": "Tarifs — offres grand public et étudiants — MedInfo AI",
+  "headings": [
+    "Offres"
+  ],
+  "text": "Offres\nMenu\nCommencer\nOffres\nLes références (HAS, ANSM…) restent gratuites et visibles pour tous, abonné ou non. Un abonnement lève seulement la limite de messages et débloque des fonctions avancées.\nPublic — Mid\n4,99 €/mois\nMessages illimités\nSuggestions de suivi\nS'abonner\nTVA non applicable, article 293 B du CGI.\nRetour au compte",
+  "overflow": true,
+  "smallControls": [
+    {
+      "label": "Retour au compte",
+      "width": 342,
+      "height": 17
+    }
+  ],
+  "violations": [],
+  "incomplete": [],
+  "passes": 24
+}

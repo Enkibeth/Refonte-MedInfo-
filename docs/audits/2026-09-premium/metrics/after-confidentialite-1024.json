@@ -1,0 +1,23 @@
+{
+  "route": "/confidentialite",
+  "width": 1024,
+  "height": 900,
+  "title": "Politique de confidentialité — MedInfo AI",
+  "headings": [
+    "Informations légales",
+    "Politique de confidentialité",
+    "Principe : aucune donnée de santé identifiable",
+    "Données traitées",
+    "Finalités et base légale",
+    "Sous-traitants et destinataires",
+    "Intelligence artificielle",
+    "Durée de conservation",
+    "Vos droits"
+  ],
+  "text": "Informations légales\nInformations légales\nPolitique de confidentialité\nDernière mise à jour : 2026-06-05\nCette politique décrit les données traitées par MedInfo AI, leurs finalités, leur base légale, leurs destinataires et vos droits au titre du Règlement général sur la protection des données (RGPD).\nPrincipe : aucune donnée de santé identifiable\nMedInfo AI est conçu pour ne PAS collecter ni conserver de donnée de santé rattachable à une personne identifiée. La plateforme refuse de traiter les situations personnelles : un message décrivant des symptômes ou une situation individuelle est intercepté avant tout traitement et n'est pas conservé comme donnée de santé.\nLe contenu des conversations n'est pas associé à un profil de santé. Seules des métadonnées techniques non médicales (compteurs d'usage, journaux d'audit de sécurité sans contenu identifiable) sont conservées.\nDonnées traitées\nDonnées de compte : adresse e-mail et, le cas échéant, identité de connexion via un fournisseur tiers (Google, Apple). Persona (public / étudiant / professionnel) et statut de vérification.\nDonnées de ",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [],
+  "passes": 19
+}

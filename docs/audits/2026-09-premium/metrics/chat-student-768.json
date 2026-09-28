@@ -1,0 +1,59 @@
+{
+  "route": "/chat?bot=student",
+  "width": 768,
+  "height": 900,
+  "title": "Chat santé IA — posez votre question, réponse sourcée — MedInfo AI",
+  "headings": [],
+  "text": "Chat étudiant en santé\nCours et raisonnement clinique fondés sur les Collèges (EDN/R2C)\nPays\nOutils\nPublic\nÉtudiant\nPro\nQue veux-tu réviser aujourd’hui ?\nCours et raisonnement clinique fondés sur les Collèges (EDN/R2C).\nEssai gratuit : 1 message sans inscription (1/1)\nExplique-moi la physiopathologie de l'insuffisance cardiaque\nFais-moi un cours sur la pyélonéphrite aiguë (item 161)\nQuels sont les critères diagnostiques de la maladie de Horton ?\nRapide\nClassique\nComplexe\nAjouter\nSupport de révision — ne remplace pas les référentiels ni la pratique encadrée.",
+  "overflow": false,
+  "smallControls": [
+    {
+      "label": "Choisir le pays",
+      "width": 70.15625,
+      "height": 29
+    },
+    {
+      "label": "Ouvrir le menu des outils",
+      "width": 81.09375,
+      "height": 33
+    },
+    {
+      "label": "Chat Grand public",
+      "width": 83.84375,
+      "height": 28
+    },
+    {
+      "label": "Chat Étudiant en santé",
+      "width": 96.953125,
+      "height": 28
+    },
+    {
+      "label": "Chat Professionnel de santé",
+      "width": 66.1875,
+      "height": 28
+    },
+    {
+      "label": "Rapide — Réponse brève, sans recherche web",
+      "width": 83.546875,
+      "height": 25
+    },
+    {
+      "label": "Classique — Réponse équilibrée",
+      "width": 101.515625,
+      "height": 25
+    },
+    {
+      "label": "Complexe — Réponse complète et approfondie",
+      "width": 102.53125,
+      "height": 25
+    },
+    {
+      "label": "Ajouter des outils à la réponse",
+      "width": 89.28125,
+      "height": 29
+    }
+  ],
+  "violations": [],
+  "incomplete": [],
+  "passes": 25
+}

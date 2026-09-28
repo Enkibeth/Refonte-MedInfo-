@@ -1,3 +1,5 @@
+import { FieldInput } from '@/ui/FieldInput';
+import { PageTitle } from '@/ui/PageTitle';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
@@ -45,7 +47,7 @@ export default function ChooseRoleScreen() {
 
   return (
     <Screen maxWidth={560}>
-      <Text style={styles.title}>Choisis ton rôle</Text>
+      <PageTitle style={styles.title}>Choisis ton rôle</PageTitle>
       <Text style={styles.body}>
         Le rôle adapte ton expérience.{persona ? ` Rôle actuel : ${ROLES[persona].label}.` : ''}
       </Text>
@@ -67,7 +69,7 @@ export default function ChooseRoleScreen() {
       <Card style={[styles.roleCard, { borderLeftWidth: 3, borderLeftColor: tokens.colors.personas.student.accent }]}>
         <Text style={styles.roleTitle}>{ROLES.student.label}</Text>
         <Text style={styles.roleDesc}>{ROLES.student.description}</Text>
-        <TextInput
+        <FieldInput
           accessibilityLabel="Email étudiant"
           autoCapitalize="none"
           inputMode="email"
@@ -95,7 +97,7 @@ export default function ChooseRoleScreen() {
       <Card style={[styles.roleCard, { borderLeftWidth: 3, borderLeftColor: tokens.colors.personas.pro.accent }]}>
         <Text style={styles.roleTitle}>{ROLES.professional.label}</Text>
         <Text style={styles.roleDesc}>{ROLES.professional.description}</Text>
-        <TextInput
+        <FieldInput
           accessibilityLabel="Numéro RPPS"
           autoCapitalize="none"
           inputMode="numeric"
@@ -175,7 +177,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.body.fontSize,
     paddingHorizontal: tokens.space.lg,
   },
-  roleAction: { marginTop: tokens.space.xs },
+  roleAction: { minHeight: tokens.size.controlMd, marginTop: tokens.space.xs },
   infoBox: {
     marginTop: tokens.space.lg,
     borderRadius: tokens.radius.md,

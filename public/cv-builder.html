@@ -18,20 +18,11 @@
     jsPDF, pdf.js et mammoth sont chargés À LA DEMANDE (rien au premier rendu).
 -->
 <style>
-  :root {
-    --accent: #2563eb; --accent-deep: #1e40af; --accent-soft: #eef4ff; --accent-tint: #d9e6ff;
-    --vivid: #0067ff; --vivid-deep: #0052d6;
-    --ink: #0e1626; --ink2: #36435a; --muted: #5d6b80;
-    --surface: #ffffff; --bg: #f7f9fc; --bg2: #eef2f8;
-    --line: #dde3ed; --line-fine: #eaeef5;
-    --danger: #c42233; --danger-soft: #fbeaec; --success: #157f50; --warn: #9a5b00; --warn-soft: #fff4e0;
-    --radius: 12px; --radius-sm: 8px;
-    --topbar-h: 52px;
-  }
+  :root { --serif: Georgia, "Times New Roman", serif; --topbar-h: 52px; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; height: 100%; }
   body {
-    font-family: 'Public Sans', system-ui, -apple-system, sans-serif;
+    font-family:var(--sans);
     color: var(--ink); background: var(--bg); font-size: 13.5px; line-height: 1.45;
     overflow: hidden;
   }
@@ -231,6 +222,12 @@
   /* ── Mobile / tablette ────────────────────────────────────────────────── */
   .lbl-short { display: none; }
   .mobile-tabs { display: none; }
+  /* 1024–1199 px : la barre complète dépassait de 20 px à 1024 px et poussait « ⋯ »
+     hors d'atteinte (la barre ne défile pas) — libellés courts, trois volets conservés. */
+  @media (max-width: 1199px) {
+    .lbl-full { display: none; }
+    .lbl-short { display: inline; }
+  }
   @media (max-width: 1023px) {
     /* La barre ne défile pas (body en overflow:hidden) : tout ce qui ne tient pas
        serait INATTEIGNABLE. Les réglages secondaires passent dans le menu « ⋯ ». */
@@ -253,6 +250,9 @@
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
+<link rel="stylesheet" href="/medinfo-tokens.css" />
+<link rel="stylesheet" href="/medinfo-ui.css" />
+<script src="/medinfo-controls.js"></script>
 </head>
 <body class="m-edit">
 
@@ -272,7 +272,7 @@
   <span id="pages-badge" class="badge" aria-live="polite">1 page</span>
   <button id="btn-fit" class="btn btn-sm" title="Resserrer la mise en page pour tenir en moins de pages">Ajuster…</button>
 
-  <button id="btn-review" class="btn"><span class="lbl-full">Relecture IA</span><span class="lbl-short">IA</span></button>
+  <button id="btn-review" class="btn" aria-label="Relecture IA"><span class="lbl-full">Relecture IA</span><span class="lbl-short">IA</span></button>
   <button id="btn-pdf" class="btn btn-primary"><span class="lbl-full">Télécharger le PDF</span><span class="lbl-short">PDF</span></button>
   <button id="btn-menu" class="btn btn-icon" aria-haspopup="true" aria-expanded="false" aria-label="Autres actions">⋯</button>
 </header>
@@ -300,7 +300,7 @@
   </aside>
 
   <!-- ── Colonne 2 : aperçu A4 ──────────────────────────────────────────── -->
-  <main class="pane-center" aria-label="Aperçu du CV">
+  <main class="pane-center" aria-label="Aperçu du CV" tabindex="0">
     <div class="preview-wrap">
       <div id="warnings" class="warnbar"></div>
       <div id="pages"></div>
@@ -2225,7 +2225,7 @@
       }
     }
     (kids || []).forEach(function (c) { if (c) node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
-    return node;
+    return window.medinfoDecorateControl(node);
   }
   function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); return node; }
   function debounce(fn, ms) {

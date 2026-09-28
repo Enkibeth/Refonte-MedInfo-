@@ -13,14 +13,12 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Image,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
-  useWindowDimensions,
 } from 'react-native';
 import { useRouter, usePathname, useSegments } from 'expo-router';
 
@@ -32,13 +30,14 @@ import { APP_FEATURES, visibleFeatures } from '@/ai/routing/featureVisibility';
 import { Icon, type IconName } from '@/ui/icons';
 import { Logo } from '@/ui/Logo';
 import { tokens } from '@/ui/tokens';
+import { useWindowWidth } from '@/ui/useWindowWidth';
 
 /** Largeur minimale (px) à partir de laquelle la sidebar remplace la tab bar. */
-export const SHELL_BREAKPOINT = 1024;
+export const SHELL_BREAKPOINT = tokens.layout.shell;
 
-const SIDEBAR_WIDTH = 264;
+const SIDEBAR_WIDTH = tokens.layout.sidebar;
 /** Largeur du rail replié : icônes seules, l'écran (chat, outils) récupère la place. */
-const SIDEBAR_WIDTH_COLLAPSED = 72;
+const SIDEBAR_WIDTH_COLLAPSED = tokens.layout.rail;
 
 /** Préférence de repli persistée (web only — le shell n'existe que sur desktop web). */
 const SIDEBAR_COLLAPSED_KEY = 'medinfo.shell.sidebarCollapsed';
@@ -121,7 +120,7 @@ interface NavEntry {
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { width } = useWindowDimensions();
+  const width = useWindowWidth();
   const { session, user, persona, personalInfo, loading, bootDegraded } = useSession();
   const segments = useSegments() as string[];
   const pathname = usePathname();
@@ -275,7 +274,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         onHoverOut={() => setRailTip(null)}
         accessibilityRole="link"
         accessibilityLabel={entry.label}
-        accessibilityState={{ selected: active }}
+        {...(Platform.OS === 'web' && active ? ({ 'aria-current': 'page' } as {}) : null)}
         style={({ hovered }: { hovered?: boolean }) => [
           styles.navItem,
           collapsed && styles.navItemCollapsed,
@@ -287,7 +286,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Icon
             name={entry.icon}
             size={17}
-            color={active ? tokens.colors.accentDeep : 'rgba(255,255,255,0.75)'}
+            color={active ? tokens.colors.accentDeep : tokens.colors.textMuted}
           />
         </View>
         {collapsed ? null : (
@@ -310,7 +309,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         hovered && styles.collapseButtonHovered,
       ]}
     >
-      <Icon name="panelLeft" size={16} color="rgba(255,255,255,0.75)" />
+      <Icon name="panelLeft" size={16} color={tokens.colors.textMuted} />
     </Pressable>
   );
 
@@ -327,14 +326,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           >
             {/* Illustration de l'équipe (demande Hugo) — même pastille que le header
                 public (src/ui/LandingHeader.tsx). Asset relatif (piège alias @/). */}
-            <Image
-              source={require('../../../assets/brand/team-illustration.png')}
-              style={styles.teamBadge}
-              resizeMode="cover"
-              accessibilityRole="image"
-              accessibilityLabel="L'équipe MedInfo AI"
-            />
-            {collapsed ? null : <Logo size="sm" tone="light" />}
+
+            {collapsed ? <Icon name="bookOpen" size={tokens.size.iconLg} color={tokens.colors.accent} /> : <Logo size="sm" />}
           </Pressable>
           {collapseToggle}
         </View>
@@ -384,7 +377,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {collapsed ? null : (
           <View style={styles.privacyCard}>
             <View style={styles.privacyTitleRow}>
-              <Icon name="shieldCheck" size={14} color="rgba(255,255,255,0.85)" />
+              <Icon name="shieldCheck" size={14} color={tokens.colors.textMuted} />
               <Text style={styles.privacyTitle}>Données protégées</Text>
             </View>
             <Text style={styles.privacyText}>
@@ -420,8 +413,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </View>
           <View style={styles.topBarRight}>
             <View style={styles.disclosurePill}>
-              <Icon name="sparkles" size={13} color={tokens.colors.accentDeep} />
-              <Text style={styles.disclosurePillText}>IA · information générale</Text>
+              <Icon name="bookOpen" size={13} color={tokens.colors.accentDeep} />
+              <Text style={styles.disclosurePillText}>Système d’intelligence artificielle</Text>
             </View>
             <Pressable
               onPress={() => router.push('/(marketing)/contact' as never)}
@@ -461,7 +454,9 @@ const styles = StyleSheet.create({
   // ── Sidebar ──
   sidebar: {
     width: SIDEBAR_WIDTH,
-    backgroundColor: tokens.colors.accentDarker,
+    borderRightWidth: tokens.border.thin,
+    borderRightColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surfaceAlt,
     paddingHorizontal: tokens.space.lg,
     paddingTop: tokens.space.xl,
     paddingBottom: tokens.space.lg,
@@ -492,16 +487,16 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     gap: tokens.space.md,
   },
-  collapseButton: {
-    width: 32,
-    height: 32,
+  collapseButton: { minHeight: tokens.size.controlMd,
+    width: tokens.size.iconButton,
+    height: tokens.size.iconButton,
     borderRadius: tokens.radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: tokens.colors.surfaceAlt,
     ...tokens.motion.transitionWeb,
   },
-  collapseButtonHovered: { backgroundColor: 'rgba(255,255,255,0.16)' },
+  collapseButtonHovered: { backgroundColor: tokens.colors.border },
   logoRow: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
@@ -514,16 +509,16 @@ const styles = StyleSheet.create({
     height: 46,
     borderRadius: tokens.radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.border,
   },
   userCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.md,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: tokens.colors.border,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
+    borderColor: tokens.colors.border,
     borderRadius: tokens.radius.lg,
     padding: tokens.space.md,
   },
@@ -531,43 +526,44 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: tokens.radius.md,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: tokens.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarCollapsed: { alignSelf: 'center' },
   avatarText: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
+    color: tokens.colors.text,
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.bold,
   },
   userText: { flex: 1, gap: 1 },
   userName: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
+    color: tokens.colors.text,
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.semibold,
   },
   userRole: {
     fontFamily: tokens.font.sans,
-    color: 'rgba(255,255,255,0.62)',
+    color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
   },
   navScroll: { flex: 1 },
   navContent: { gap: 2, paddingBottom: tokens.space.md },
   sectionLabel: {
     fontFamily: tokens.font.sans,
-    color: 'rgba(255,255,255,0.48)',
+    color: tokens.colors.textMuted,
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
     marginBottom: tokens.space.sm,
     marginTop: 2,
   },
   sectionLabelSpaced: { marginTop: tokens.space.xl },
   navItem: {
+    minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.md,
@@ -582,25 +578,25 @@ const styles = StyleSheet.create({
   },
   navDivider: {
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: tokens.colors.border,
     marginVertical: tokens.space.md,
     marginHorizontal: tokens.space.sm,
   },
-  navItemHovered: { backgroundColor: 'rgba(255,255,255,0.08)' },
-  navItemActive: { backgroundColor: tokens.colors.surface, ...tokens.elevation.sm },
+  navItemHovered: { backgroundColor: tokens.colors.border },
+  navItemActive: { backgroundColor: tokens.colors.accentSurface },
   navIcon: {
     width: 30,
     height: 30,
     borderRadius: tokens.radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: tokens.colors.border,
   },
   navIconActive: { backgroundColor: tokens.colors.accentSurface },
   navLabel: {
     flex: 1,
     fontFamily: tokens.font.sans,
-    color: 'rgba(255,255,255,0.85)',
+    color: tokens.colors.textMuted,
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.medium,
   },
@@ -609,9 +605,9 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
   privacyCard: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: tokens.colors.border,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
+    borderColor: tokens.colors.border,
     borderRadius: tokens.radius.lg,
     padding: tokens.space.md,
     gap: tokens.space.xs,
@@ -619,13 +615,13 @@ const styles = StyleSheet.create({
   privacyTitleRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
   privacyTitle: {
     fontFamily: tokens.font.sans,
-    color: 'rgba(255,255,255,0.9)',
+    color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
   },
   privacyText: {
     fontFamily: tokens.font.sans,
-    color: 'rgba(255,255,255,0.62)',
+    color: tokens.colors.textMuted,
     fontSize: tokens.type.micro.fontSize,
     lineHeight: tokens.type.micro.lineHeight + 2,
   },
@@ -680,7 +676,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.semibold,
   },
-  helpButton: {
+  helpButton: { minHeight: tokens.size.controlMd,
     borderRadius: tokens.radius.pill,
     borderWidth: 1,
     borderColor: tokens.colors.border,
@@ -703,9 +699,9 @@ const styles = StyleSheet.create({
     left: SIDEBAR_WIDTH_COLLAPSED + 6,
     height: 28,
     justifyContent: 'center',
-    backgroundColor: tokens.colors.accentDarker,
+    backgroundColor: tokens.colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
+    borderColor: tokens.colors.border,
     borderRadius: tokens.radius.sm,
     paddingHorizontal: tokens.space.md,
     zIndex: 100,
@@ -713,7 +709,7 @@ const styles = StyleSheet.create({
   },
   railTooltipText: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
+    color: tokens.colors.text,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
   },
@@ -723,17 +719,17 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: tokens.radius.md,
-    backgroundColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: tokens.colors.border,
   },
   skeletonCard: {
     height: 64,
     borderRadius: tokens.radius.lg,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: tokens.colors.border,
   },
   skeletonRows: { gap: tokens.space.sm },
   skeletonRow: {
     height: 38,
     borderRadius: tokens.radius.md,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: tokens.colors.border,
   },
 });

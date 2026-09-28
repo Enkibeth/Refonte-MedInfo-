@@ -1,3 +1,4 @@
+import { PageTitle } from '@/ui/PageTitle';
 /**
  * Fonctionnalités audio — version premium.
  * Mode 1 : Transcription d'un enregistrement audio (consultation, dictée).
@@ -295,13 +296,13 @@ function AudioFeature() {
         <View style={styles.headerTop}>
           <ToolsMenu />
         </View>
-        <Text style={styles.title}>Audio médical</Text>
+        <PageTitle style={styles.title}>Audio médical</PageTitle>
         <View style={styles.modeSwitcher}>
           <TouchableOpacity
             style={[styles.modeTab, tab === 'transcription' && styles.modeTabActive]}
             onPress={() => switchTab('transcription')}
             accessibilityRole="tab"
-            accessibilityState={{ selected: tab === 'transcription' }}
+            aria-selected={tab === 'transcription'}
           >
             <Text style={[styles.modeLabel, tab === 'transcription' && styles.modeLabelActive]}>
               Transcription
@@ -311,7 +312,7 @@ function AudioFeature() {
             style={[styles.modeTab, tab === 'report' && styles.modeTabActive]}
             onPress={() => switchTab('report')}
             accessibilityRole="tab"
-            accessibilityState={{ selected: tab === 'report' }}
+            aria-selected={tab === 'report'}
           >
             <Text style={[styles.modeLabel, tab === 'report' && styles.modeLabelActive]}>
               Compte rendu
@@ -321,7 +322,7 @@ function AudioFeature() {
             style={[styles.modeTab, tab === 'library' && styles.modeTabActive]}
             onPress={() => switchTab('library')}
             accessibilityRole="tab"
-            accessibilityState={{ selected: tab === 'library' }}
+            aria-selected={tab === 'library'}
           >
             <Text style={[styles.modeLabel, tab === 'library' && styles.modeLabelActive]}>
               Mes documents
@@ -521,7 +522,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
     gap: 0,
   },
-  modeTab: {
+  modeTab: { minHeight: tokens.size.controlMd,
     flex: 1,
     paddingVertical: tokens.space.sm + 2,
     alignItems: 'center',
@@ -542,7 +543,7 @@ const styles = StyleSheet.create({
     padding: tokens.space.lg,
     gap: tokens.space.md,
     width: '100%',
-    maxWidth: 800,
+    maxWidth: tokens.layout.reading,
     alignSelf: 'center',
   },
   infoBox: {
@@ -570,7 +571,7 @@ const styles = StyleSheet.create({
   },
   // Bouton d'enregistrement rond (motif dictaphone) : l'action principale est
   // immédiatement identifiable, cible tactile généreuse.
-  recordButton: {
+  recordButton: { minHeight: tokens.size.controlMd,
     alignItems: 'center',
     gap: tokens.space.md,
     padding: tokens.space.lg,
@@ -619,7 +620,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.h1.fontSize,
     fontWeight: tokens.weight.bold,
   },
-  stopButton: {
+  stopButton: { minHeight: tokens.size.controlMd,
     alignItems: 'center',
     gap: tokens.space.sm,
     padding: tokens.space.sm,
@@ -647,7 +648,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.body.fontSize,
   },
   haveAudioButtons: { flexDirection: 'row', gap: tokens.space.md, width: '100%' },
-  retryButton: {
+  retryButton: { minHeight: tokens.size.controlMd,
     flex: 1,
     height: 44,
     borderRadius: tokens.radius.md,
@@ -662,7 +663,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.medium,
     fontSize: tokens.type.label.fontSize,
   },
-  processButton: {
+  processButton: { minHeight: tokens.size.controlMd,
     flex: 2,
     height: 44,
     borderRadius: tokens.radius.pill,
@@ -685,7 +686,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.label.fontSize,
   },
-  newRecordingButton: {
+  newRecordingButton: { minHeight: tokens.size.controlMd,
     height: 44,
     borderRadius: tokens.radius.md,
     borderWidth: 1,
@@ -739,7 +740,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.semibold,
   },
-  copyBtn: {
+  copyBtn: { minHeight: tokens.size.controlMd,
     paddingHorizontal: tokens.space.sm,
     paddingVertical: 6,
     borderRadius: tokens.radius.sm,
@@ -761,7 +762,7 @@ const styles = StyleSheet.create({
     lineHeight: tokens.type.body.lineHeight,
     padding: tokens.space.lg,
   },
-  saveButton: {
+  saveButton: { minHeight: tokens.size.controlMd,
     height: tokens.size.controlLg,
     borderRadius: tokens.radius.pill,
     backgroundColor: tokens.colors.accentVivid,

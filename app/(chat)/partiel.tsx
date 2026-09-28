@@ -1,3 +1,4 @@
+import { PageTitle } from '@/ui/PageTitle';
 /**
  * Analyse des partiels (v3) — outil étudiant (persona student).
  *
@@ -26,7 +27,7 @@ function PartielInner() {
         <View style={styles.headerTop}>
           <ToolsMenu />
         </View>
-        <Text style={styles.title}>Analyse des partiels</Text>
+        <PageTitle style={styles.title}>Analyse des partiels</PageTitle>
         <Text style={styles.subtitle}>
           Importe les notes de ta promo (.xlsx, .csv, .pdf) : rang, coefficients, points forts et
           simulateur. Calcul privé, sur ton appareil.
@@ -102,7 +103,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.label.fontSize,
     lineHeight: 20,
-    marginTop: 4,
+    marginTop: tokens.space.xs,
   },
   fallback: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: tokens.space.lg },
   fallbackText: {

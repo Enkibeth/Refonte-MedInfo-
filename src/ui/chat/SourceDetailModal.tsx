@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 /**
  * Modale de détail d'une source (refonte 2026-06, enrichie 2026-07).
  * Ouverte au clic sur une carte source ou une référence inline : montre le niveau
@@ -39,7 +40,7 @@ export function SourceDetailModal({
   if (source?.year) metaRows.push({ label: 'Année', value: source.year });
 
   return (
-    <Modal visible={!!source} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={!!source} transparent animationType="none" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.card} onPress={(e) => e.stopPropagation()}>
           {source && evidence ? (
@@ -47,7 +48,7 @@ export function SourceDetailModal({
               <View style={styles.header}>
                 <Text style={styles.srcId}>{source.id}</Text>
                 {source.badge ? <SourceBadgePill badge={source.badge} /> : null}
-                <Pressable onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Fermer">
+                <Pressable onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Fermer" {...(Platform.OS === 'web' ? { title: 'Fermer' } : {})}>
                   <Icon name="x" size={18} color={tokens.colors.textMuted} />
                 </Pressable>
               </View>
@@ -120,7 +121,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
   },
-  closeButton: {
+  closeButton: { minHeight: tokens.size.controlMd,
     marginLeft: 'auto',
     width: 32,
     height: 32,
@@ -143,7 +144,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: tokens.colors.accentSurfaceStrong,
     padding: tokens.space.md,
-    gap: 4,
+    gap: tokens.space.xs,
   },
   evidenceHead: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
   evidenceLabel: {
@@ -164,7 +165,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
   },
   sectionText: {
@@ -173,7 +174,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.label.fontSize,
     lineHeight: 20,
   },
-  accessButton: {
+  accessButton: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

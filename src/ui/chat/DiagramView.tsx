@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.surface,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.sm,
-    gap: 4,
+    gap: tokens.space.xs,
   },
   branchLabel: {
     alignSelf: 'flex-start',
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.accentDeep,
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
   },
   branchText: {

@@ -1,0 +1,389 @@
+{
+  "route": "/article.html",
+  "width": 768,
+  "height": 900,
+  "title": "Rédaction d'article — MedInfo",
+  "headings": [
+    "Aide IA",
+    "Mes articles enregistrés",
+    "Insérer un appel de citation"
+  ],
+  "text": "＋ Nouveau\nCharger un exemple\nMes articles\nSauvegarder\nRédaction\nBibliographie\nAperçu\n⤓ Exporter ▾\nDocument\nType de document\nArticle original (IMRaD)\nAbstract / résumé de congrès\nCas clinique\nRevue de littérature\nThèse / mémoire\nTitre du manuscrit\nAuteurs (ex. Doré C, Martin A)\nMots-clés (séparés par des virgules)\nRevue / congrès cible (optionnel)\nLimite globale (abstract, congrès…)\nAucune limite\nCaractères (esp. comprises)\nCaractères hors espaces\nMots\nLa limite globale s’applique au texte assemblé (appels de citation rendus « [1] »).\nPlan (8 sections)\nRésumé\n0/250 mots\n↑\n↓\n🗑\nIntroduction\n0 car.\n↑\n↓\n🗑\nMatériels et méthodes\n0 car.\n↑\n↓\n🗑\nRésultats\n0 car.\n↑\n↓\n🗑\nDiscussion\n0 car.\n↑\n↓\n🗑\nConclusion\n0 car.\n↑\n↓\n🗑\nRemerciements\n0 car.\n↑\n↓\n🗑\nConflits d’intérêts\n0 car.\n↑\n↓\n🗑\n＋ Ajouter une section\n7 car. · 0 hors esp. · 0 mots\nCheck-list qualité (0/9)\nLes aides IA n’envoient que la section travaillée et le plan (jamais les auteurs). L’IA n’invente ni fait, ni chiffre, ni référence. N’inclus jamais de données identifiantes de patients.\nStructure : contexte, objectif, méthodes, résultats pr",
+  "overflow": false,
+  "smallControls": [
+    {
+      "label": "＋ Nouveau",
+      "width": 99.75,
+      "height": 37
+    },
+    {
+      "label": "Charger un exemple",
+      "width": 153.046875,
+      "height": 33
+    },
+    {
+      "label": "Mes articles",
+      "width": 104.625,
+      "height": 33
+    },
+    {
+      "label": "Sauvegarder",
+      "width": 108.515625,
+      "height": 33
+    },
+    {
+      "label": "Rédaction",
+      "width": 89.75,
+      "height": 29
+    },
+    {
+      "label": "Bibliographie",
+      "width": 109.53125,
+      "height": 29
+    },
+    {
+      "label": "Aperçu",
+      "width": 72.5,
+      "height": 29
+    },
+    {
+      "label": "⤓ Exporter ▾",
+      "width": 107.15625,
+      "height": 33
+    },
+    {
+      "label": "Article original (IMRaD)Abstract / résumé de congrèsCas cliniqueRevue de littératureThèse ",
+      "width": 697,
+      "height": 35
+    },
+    {
+      "label": "",
+      "width": 697,
+      "height": 33
+    },
+    {
+      "label": "",
+      "width": 697,
+      "height": 33
+    },
+    {
+      "label": "",
+      "width": 697,
+      "height": 33
+    },
+    {
+      "label": "",
+      "width": 697,
+      "height": 33
+    },
+    {
+      "label": "Aucune limiteCaractères (esp. comprises)Caractères hors espacesMots",
+      "width": 343.5,
+      "height": 35
+    },
+    {
+      "label": "max",
+      "width": 343.5,
+      "height": 35
+    },
+    {
+      "label": "↑",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "↓",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "🗑",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "↑",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "↓",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "🗑",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "↑",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "↓",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "🗑",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "↑",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "↓",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "🗑",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "↑",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "↓",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "🗑",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "↑",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "↓",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "🗑",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "↑",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "↓",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "🗑",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "↑",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "↓",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "🗑",
+      "width": 26,
+      "height": 26
+    },
+    {
+      "label": "＋ Ajouter une section",
+      "width": 124.765625,
+      "height": 23
+    },
+    {
+      "label": "",
+      "width": 13,
+      "height": 13
+    },
+    {
+      "label": "",
+      "width": 13,
+      "height": 13
+    },
+    {
+      "label": "",
+      "width": 13,
+      "height": 13
+    },
+    {
+      "label": "",
+      "width": 13,
+      "height": 13
+    },
+    {
+      "label": "",
+      "width": 13,
+      "height": 13
+    },
+    {
+      "label": "",
+      "width": 13,
+      "height": 13
+    },
+    {
+      "label": "",
+      "width": 13,
+      "height": 13
+    },
+    {
+      "label": "",
+      "width": 13,
+      "height": 13
+    },
+    {
+      "label": "",
+      "width": 13,
+      "height": 13
+    },
+    {
+      "label": "Titre de la section",
+      "width": 709,
+      "height": 40
+    },
+    {
+      "label": "Aucune limiteCaractères (esp. comprises)Caractères hors espacesMots",
+      "width": 191,
+      "height": 28
+    },
+    {
+      "label": "max",
+      "width": 84,
+      "height": 26
+    },
+    {
+      "label": "✦ Aide IA ▾",
+      "width": 97.65625,
+      "height": 33
+    },
+    {
+      "label": "✂ Réduire à une limite…",
+      "width": 176.328125,
+      "height": 33
+    },
+    {
+      "label": "🔎 Contrôle d’originalité",
+      "width": 177.5625,
+      "height": 33
+    },
+    {
+      "label": "❞ Citer une référence",
+      "width": 158.6875,
+      "height": 33
+    },
+    {
+      "label": "✕",
+      "width": 26,
+      "height": 26
+    }
+  ],
+  "violations": [
+    {
+      "id": "label",
+      "impact": "critical",
+      "help": "Form elements must have labels",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/label?application=axeAPI",
+      "nodes": [
+        {
+          "html": "<input type=\"text\" value=\"\">",
+          "target": [
+            ".field:nth-child(2) > input[type=\"text\"][value=\"\"]"
+          ],
+          "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+        },
+        {
+          "html": "<input type=\"text\" value=\"\">",
+          "target": [
+            ".field:nth-child(3) > input[type=\"text\"][value=\"\"]"
+          ],
+          "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+        },
+        {
+          "html": "<input type=\"text\" value=\"\">",
+          "target": [
+            ".field:nth-child(4) > input[type=\"text\"][value=\"\"]"
+          ],
+          "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+        },
+        {
+          "html": "<input type=\"text\" value=\"\">",
+          "target": [
+            ".field:nth-child(5) > input[type=\"text\"][value=\"\"]"
+          ],
+          "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+        }
+      ]
+    },
+    {
+      "id": "meta-viewport",
+      "impact": "moderate",
+      "help": "Zooming and scaling must not be disabled",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/meta-viewport?application=axeAPI",
+      "nodes": [
+        {
+          "html": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=1\">",
+          "target": [
+            "meta[name=\"viewport\"]"
+          ],
+          "summary": "Fix any of the following:\n  maximum-scale on <meta> tag disables zooming on mobile devices"
+        }
+      ]
+    },
+    {
+      "id": "select-name",
+      "impact": "critical",
+      "help": "Select element must have an accessible name",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/select-name?application=axeAPI",
+      "nodes": [
+        {
+          "html": "<select><option value=\"original\">Article original (IMRaD)</option><option value=\"abstract\">Abstract / résumé de congrès</option><option value=\"case_report\">Cas clinique</option><option value=\"review\">Revue de littérature</option><option value=\"thesis\">Thèse / mémoire</option></select>",
+          "target": [
+            ".field:nth-child(1) > select"
+          ],
+          "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+        },
+        {
+          "html": "<select><option value=\"\">Aucune limite</option><option value=\"chars\">Caractères (esp. comprises)</option><option value=\"chars_no_spaces\">Caractères hors espaces</option><option value=\"words\">Mots</option></select>",
+          "target": [
+            ".row2 > select"
+          ],
+          "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+        },
+        {
+          "html": "<select><option value=\"\">Aucune limite</option><option value=\"chars\">Caractères (esp. comprises)</option><option value=\"chars_no_spaces\">Caractères hors espaces</option><option value=\"words\">Mots</option></select>",
+          "target": [
+            ".limitrow > select"
+          ],
+          "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+        }
+      ]
+    }
+  ],
+  "incomplete": [
+    {
+      "id": "color-contrast",
+      "count": 14
+    }
+  ],
+  "passes": 12
+}

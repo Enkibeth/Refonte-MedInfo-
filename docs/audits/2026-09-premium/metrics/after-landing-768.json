@@ -1,0 +1,24 @@
+{
+  "route": "/",
+  "width": 768,
+  "height": 900,
+  "title": "MedInfo AI — Assistant IA médical : réponses sourcées et vérifiées",
+  "headings": [
+    "Une question médicale.\nRevenir aux sources.",
+    "Un outil pour chaque travail",
+    "Une réponse se lit.\nUne source se consulte.",
+    "Questions fréquentes",
+    "MedInfo AI est-il gratuit ?",
+    "MedInfo AI remplace-t-il un médecin ou un pharmacien ?",
+    "D'où viennent les réponses ?",
+    "Quelle différence entre les trois chatbots ?",
+    "Quels outils au-delà du chat ?",
+    "Mes conversations sont-elles privées ?"
+  ],
+  "text": "Services\nBlog\nSe connecter\nMenu\nCommencer\nMedInfo AI · Information médicale générale\nUne question médicale.\nRevenir aux sources.\nComprendre, apprendre, approfondir. Un espace de travail pour explorer l’information médicale et consulter les références citées.\nEssayer sans inscription\nSe connecter\nUn premier message gratuit, sans créer de compte.\nVous interagissez avec un système d'intelligence artificielle (Claude (Anthropic) ou GPT (OpenAI) selon le modèle servi). Les réponses sont générées automatiquement et peuvent contenir des erreurs.\nTrois espaces de conversation\nGrand public\nComprendre une information de santé\nDes explications accessibles, sans avis individuel.\nÉtudiants en santé\nApprofondir. Réviser. Comprendre.\nDes notions aux référentiels, pour structurer vos révisions.\nProfessionnels de santé\nConsulter les recommandations\nUne synthèse à confronter aux sources et à leur contexte.\nUn outil pour chaque travail\nL’accès aux outils dépend de votre rôle vérifié.\n01\nDocument\nRésumé patient d’un compte rendu ou d’une ordonnance.\n02\nECOS\nSimulation patient ECOS + évaluation pédagogiq",
+  "overflow": false,
+  "smallControls": [],
+  "violations": [],
+  "incomplete": [],
+  "passes": 25
+}

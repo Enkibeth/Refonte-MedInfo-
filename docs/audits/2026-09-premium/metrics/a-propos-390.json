@@ -1,0 +1,109 @@
+{
+  "route": "/a-propos",
+  "width": 390,
+  "height": 844,
+  "title": "À propos — notre mission et notre méthode — MedInfo AI",
+  "headings": [],
+  "text": "Menu\nCommencer\nQUI SOMMES-NOUS\nL'information santé, sans détour.\nMedInfo AI est né d'un constat simple : trouver une information de santé fiable, à jour et compréhensible est encore trop difficile. Entre les forums approximatifs et les publications scientifiques inaccessibles, il manquait un intermédiaire de confiance.\nNotre réponse : une intelligence artificielle qui appuie chaque réponse sur une recherche en direct. L'assistant interroge des sources réelles (recommandations HAS, ANSM et sociétés savantes, littérature scientifique via Europe PMC et PubMed, essais cliniques ClinicalTrials.gov), puis vérifie un à un les liens qu'il va citer avant de rédiger. Chaque réponse affiche ses sources, avec leur niveau de preuve.\nTrois assistants spécialisés accompagnent chacun à son niveau : le grand public (explications sans jargon, analyse de document médical), les étudiants en santé (référentiels des Collèges EDN/R2C, simulation ECOS, planning de révisions, présentations, CV) et les professionnels (synthèses fondées sur les preuves, recherche PubMed, compte rendu de consultation dicté).\nMe",
+  "overflow": true,
+  "smallControls": [
+    {
+      "label": "Chat grand public",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Chat étudiant en santé",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Chat professionnel de santé",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Analyse de document médical",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Simulation ECOS",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Planning de révisions",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Analyse des partiels",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Générateur de présentations",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Créateur de CV médical",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Compte rendu de consultation",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Blog santé",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "À propos",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Contact",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Tarifs",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Mentions légales",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Conditions d’utilisation",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Confidentialité (RGPD)",
+      "width": 332,
+      "height": 20
+    },
+    {
+      "label": "Informations légales",
+      "width": 332,
+      "height": 20
+    }
+  ],
+  "violations": [],
+  "incomplete": [
+    {
+      "id": "bypass",
+      "count": 1
+    }
+  ],
+  "passes": 24
+}

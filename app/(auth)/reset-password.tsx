@@ -1,3 +1,5 @@
+import { FieldInput } from '@/ui/FieldInput';
+import { PageTitle } from '@/ui/PageTitle';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
@@ -46,13 +48,13 @@ export default function ResetPasswordScreen() {
   }
 
   return (
-    <Screen maxWidth={460} center>
+    <Screen maxWidth={tokens.layout.form}>
       <View style={styles.logoWrap}>
         <Logo size="md" />
       </View>
 
-      <Card>
-        <Text style={styles.title}>Nouveau mot de passe</Text>
+      <Card style={styles.formCard}>
+        <PageTitle style={styles.title}>Nouveau mot de passe</PageTitle>
 
         {done ? (
           <>
@@ -71,7 +73,7 @@ export default function ResetPasswordScreen() {
 
             <View style={styles.form}>
               <Text style={styles.label}>Nouveau mot de passe</Text>
-              <TextInput
+              <FieldInput
                 accessibilityLabel="Nouveau mot de passe"
                 autoCapitalize="none"
                 autoComplete="new-password"
@@ -87,7 +89,7 @@ export default function ResetPasswordScreen() {
               />
 
               <Text style={styles.label}>Confirmer</Text>
-              <TextInput
+              <FieldInput
                 accessibilityLabel="Confirmer le mot de passe"
                 autoCapitalize="none"
                 autoComplete="new-password"
@@ -128,7 +130,8 @@ export default function ResetPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  logoWrap: { alignItems: 'center', marginBottom: tokens.space.xl },
+  formCard: { borderWidth: 0, padding: 0 },
+  logoWrap: { alignItems: 'flex-start', marginBottom: tokens.space.xl },
   title: {
     fontFamily: tokens.font.serif,
     color: tokens.colors.text,
@@ -170,7 +173,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.danger,
     fontSize: tokens.type.caption.fontSize,
   },
-  submit: { marginTop: tokens.space.sm },
+  submit: { minHeight: tokens.size.controlMd, marginTop: tokens.space.sm },
   errorBox: {
     marginTop: tokens.space.lg,
     borderRadius: tokens.radius.md,

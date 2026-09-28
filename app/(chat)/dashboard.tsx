@@ -19,7 +19,6 @@ import {
   StyleSheet,
   Text,
   View,
-  useWindowDimensions,
 } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -56,12 +55,12 @@ import { Button } from '@/ui/Button';
 import type { ChatbotId } from '@/ai/chat/chatContext';
 import { CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
 import { featureTint } from '@/ui/featureChips';
-import { HeroBackdrop } from '@/ui/HeroBackdrop';
 import { Icon } from '@/ui/icons';
 import { SeoHead } from '@/ui/SeoHead';
 import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 import { Skeleton } from '@/ui/Skeleton';
 import { tokens } from '@/ui/tokens';
+import { useWindowWidth } from '@/ui/useWindowWidth';
 
 const EXAM_LABELS: Record<ExamType, string> = {
   pass_las: 'le PASS/LAS',
@@ -186,7 +185,7 @@ function freshDashboardCache(userId: string): DashboardCache | null {
 export default function DashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const width = useWindowWidth();
   const { session, user, persona, personalInfo, loading } = useSession();
 
   const isAdmin = user ? isAdminUserId(user.id) : false;
@@ -468,7 +467,6 @@ export default function DashboardScreen() {
             <View style={styles.hero}>
               {/* Grille millimétrée + tracé ECG animé (motif métier du design system,
                   coupé sous prefers-reduced-motion) — cf. src/ui/HeroBackdrop. */}
-              <HeroBackdrop />
               <View style={styles.greetingPill}>
                 <Text style={styles.greetingText}>{greeting}</Text>
               </View>
@@ -479,13 +477,13 @@ export default function DashboardScreen() {
               <View style={styles.heroActions}>
                 <Button
                   label={primaryCta.label}
-                  variant="inverse"
+                  variant="primary"
                   fullWidth={false}
                   onPress={() => router.push(primaryCta.route as never)}
                 />
                 <Button
                   label={secondaryCta.label}
-                  variant="outlineLight"
+                  variant="secondary"
                   fullWidth={false}
                   onPress={() => router.push(secondaryCta.route as never)}
                 />
@@ -710,7 +708,7 @@ const styles = StyleSheet.create({
   },
   columns: {
     width: '100%',
-    maxWidth: 1160,
+    maxWidth: tokens.layout.page,
     gap: tokens.space.xl,
   },
   columnsWide: { flexDirection: 'row', alignItems: 'flex-start' },
@@ -718,29 +716,31 @@ const styles = StyleSheet.create({
 
   // ── Hero ──
   hero: {
-    backgroundColor: tokens.colors.accentDarker,
+    backgroundColor: tokens.colors.surface,
+    borderBottomWidth: tokens.border.thin,
+    borderBottomColor: tokens.colors.border,
     borderRadius: tokens.radius.xl,
     padding: tokens.space.xl,
     gap: tokens.space.md,
     overflow: 'hidden',
-    ...tokens.elevation.lg,
+
   },
   greetingPill: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: tokens.colors.surfaceAlt,
     borderRadius: tokens.radius.pill,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.xs,
   },
   greetingText: {
     fontFamily: tokens.font.sans,
-    color: 'rgba(255,255,255,0.88)',
+    color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
   },
   heroTitle: {
     fontFamily: tokens.font.serif,
-    color: tokens.colors.onAccent,
+    color: tokens.colors.text,
     fontSize: tokens.type.h1.fontSize,
     lineHeight: tokens.type.h1.lineHeight,
     letterSpacing: tokens.type.h1.letterSpacing,
@@ -748,10 +748,10 @@ const styles = StyleSheet.create({
   },
   heroSubtitle: {
     fontFamily: tokens.font.sans,
-    color: 'rgba(255,255,255,0.82)',
+    color: tokens.colors.textMuted,
     fontSize: tokens.type.body.fontSize,
     lineHeight: tokens.type.body.lineHeight,
-    maxWidth: 560,
+    maxWidth: tokens.layout.form,
   },
   heroActions: {
     flexDirection: 'row',
@@ -768,9 +768,9 @@ const styles = StyleSheet.create({
   tile: {
     flexGrow: 1,
     flexBasis: 140,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: tokens.colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
+    borderColor: tokens.colors.border,
     borderRadius: tokens.radius.lg,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.md,
@@ -778,15 +778,15 @@ const styles = StyleSheet.create({
   },
   tileLabel: {
     fontFamily: tokens.font.sans,
-    color: 'rgba(255,255,255,0.62)',
+    color: tokens.colors.textMuted,
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: tokens.tracking.caps,
   },
   tileValue: {
     fontFamily: tokens.font.display,
-    color: tokens.colors.onAccent,
+    color: tokens.colors.text,
     fontSize: tokens.type.h2.fontSize,
     lineHeight: tokens.type.h2.lineHeight,
     fontWeight: tokens.weight.bold,
@@ -809,8 +809,7 @@ const styles = StyleSheet.create({
     lineHeight: tokens.type.label.lineHeight,
   },
   toolsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: 'column',
     gap: tokens.space.md,
   },
   // Rangée d'accès direct aux 3 chatbots (étudiant / pro / admin).
@@ -819,7 +818,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: tokens.space.sm,
   },
-  chatbotChip: {
+  chatbotChip: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.sm,
@@ -834,7 +833,6 @@ const styles = StyleSheet.create({
   },
   chatbotChipHovered: {
     borderColor: tokens.colors.borderStrong,
-    transform: [{ translateY: -1 }],
     ...tokens.elevation.md,
   },
   chatbotChipText: {
@@ -845,7 +843,7 @@ const styles = StyleSheet.create({
   },
   toolCard: {
     flexGrow: 1,
-    flexBasis: 220,
+    flexBasis: 'auto',
     maxWidth: '100%',
     backgroundColor: tokens.colors.surface,
     borderWidth: 1,
@@ -858,10 +856,9 @@ const styles = StyleSheet.create({
   },
   toolCardHovered: {
     borderColor: tokens.colors.borderStrong,
-    transform: [{ translateY: -1 }],
     ...tokens.elevation.md,
   },
-  toolChip: {
+  toolChip: { minHeight: tokens.size.controlMd,
     width: 40,
     height: 40,
     borderRadius: tokens.radius.md,
@@ -998,7 +995,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: tokens.colors.border,
   },
-  activityChip: {
+  activityChip: { minHeight: tokens.size.controlMd,
     width: 32,
     height: 32,
     borderRadius: tokens.radius.sm,
