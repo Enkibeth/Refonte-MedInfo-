@@ -84,19 +84,19 @@ Trois raisons cumulatives :
 
 ## 8. Trajectoire revenus (réaliste 6 mois)
 
-~500 utilisateurs actifs, ~30-50 abonnés payants, ~**300-800 €/mois MRR**. Loin du break-even comptable mais valide la traction → décision bootstrap / seed / pivot. Bascule Supabase Pro + Vercel Pro **synchronisée au 1ᵉʳ revenu**, pas avant.
+~500 utilisateurs actifs, ~30-50 abonnés payants, ~**300-800 €/mois MRR**. Loin du break-even comptable mais valide la traction → décision bootstrap / seed / pivot. Bascule Supabase Pro **synchronisée au 1ᵉʳ revenu**, pas avant.
 
 ---
 
 ## 9. Coûts & abonnements (vue consolidée)
 
-> Tu quittes WordPress. La pile devient un ensemble de services managés, chacun gratuit au démarrage puis payant au-delà d'un seuil. **Mise à jour 2026-09-25 (ADR-0038)** : l'hébergement web + API revient chez Hostinger (serveur Node, offre déjà payée pour le domaine et l'e-mail) — le poste Vercel disparaît.
+> Tu quittes WordPress. La pile devient un ensemble de services managés, chacun gratuit au démarrage puis payant au-delà d'un seuil. **Mise à jour 2026-09-25 (ADR-0038)** : l'hébergement web + API revient chez Hostinger (serveur Node, offre déjà payée pour le domaine et l'e-mail).
 
 ### 9.1 Tous les services
 
 | Service | Remplace | Gratuit jusqu'à | Coût ensuite | Déclencheur du paiement |
 |---|---|---|---|---|
-| **Hostinger** (hébergement web + API, serveur Node — ADR-0038) | Vercel (qui remplaçait WordPress) | offre Business/Cloud déjà souscrite (domaine + e-mail) | selon l'offre en cours | Aucun palier à franchir au lancement : l'usage commercial n'y est pas restreint comme sur Vercel Hobby |
+| **Hostinger** (hébergement web + API, serveur Node — ADR-0038) | WordPress (Hostinger) | offre Business/Cloud déjà souscrite (domaine + e-mail) | selon l'offre en cours | Aucun palier à franchir au lancement : l'usage commercial y est autorisé |
 | **Supabase** (DB + Auth + pgvector) | Hostinger (back/DB) | Free : 50k MAU, 500 Mo DB | ~25 $/mois (Pro) | Dépassement free **ou** lancement payant (backups) |
 | **OpenAI API** (LLM) | — (AI Engine le masquait) | rien — payant à l'usage | ~0,016 €/conversation (mini) | **Dès le 1ᵉʳ test réel** |
 | **Apple Developer** | — | rien | ~92 €/**an** | Avant soumission iOS |
@@ -111,7 +111,7 @@ Trois raisons cumulatives :
 Hostinger (offre existante) + Supabase Free + Sentry Free = pas de nouveau coût fixe. Dépenses réelles = OpenAI API (quelques dizaines d'€ sur la période de dev/test) + Apple Developer (92 €). L'essentiel du budget 500 € part ici.
 
 **Phase lancement (mois 4-6) : ~25 $/mois (~23 €) récurrent**, hors offre Hostinger déjà payée.
-Bascule Supabase Pro (25 $) **synchronisée au 1ᵉʳ revenu** (plus de Vercel Pro à prévoir depuis ADR-0038) (règle `02_ARCHITECTURE.md §7`). Censé être déjà couvert par le MRR naissant.
+Bascule Supabase Pro (25 $) **synchronisée au 1ᵉʳ revenu** (règle `02_ARCHITECTURE.md §7`). Censé être déjà couvert par le MRR naissant.
 
 ### 9.3 Le coût qui scale avec le succès
 

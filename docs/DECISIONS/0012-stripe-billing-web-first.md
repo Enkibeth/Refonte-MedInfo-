@@ -61,10 +61,10 @@ et `billing_events` (idempotence). **Aucune donnée de santé.** L'e-mail reste 
 ## Secrets (hors repo — action Hugo)
 `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY`,
 `STRIPE_PRICE_PUBLIC_MID`, `STRIPE_PRICE_STUDENT_MID`, `STRIPE_PRICE_STUDENT_PREMIUM`,
-`EXPO_PUBLIC_APP_URL` → à poser dans Vercel (cf `docs/09_DEPLOYMENT.md`). Jamais committés.
+`EXPO_PUBLIC_APP_URL` → à poser dans les variables de l'application hPanel (cf `docs/09_DEPLOYMENT.md`). Jamais committés.
 
 ## Rollback
-`git revert` de la PR. Aucune destruction de données : retirer les variables Stripe de Vercel
+`git revert` de la PR. Aucune destruction de données : retirer les variables Stripe de l'hébergement (hPanel)
 suffit à désactiver la surface (les routes renvoient 503 « non configuré »). Les migrations
 `0007`/`0008` sont additives ; un `DROP TABLE subscriptions, billing_events` + `DROP TYPE
 billing_plan, subscription_status` les annule si besoin.

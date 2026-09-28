@@ -19,7 +19,7 @@ linked_to: [00_CHARTER.md, 01_REGULATION.md, 03_SECURITY.md, 04_CHATBOT.md]
 |---|---|---|
 | Front unifié | **Expo SDK 56** (RN 0.85 / React 19.2), Expo Router v6 | UNE app → web + iOS + Android. Effet de levier max pour dev solo + Claude Code (un seul langage). |
 | Backend / DB | **Supabase** (Postgres + Auth + pgvector + Storage) | Free ≤ 50k MAU. RLS native. RAG dans la même offre. |
-| Orchestration IA | **Vercel AI SDK 5/6** (`useChat`, streaming SSE, tool-calling) | Streaming natif Expo via `expo/fetch`. Tool-calling typé pour QCM/skills. |
+| Orchestration IA | **AI SDK 5/6** (paquet `ai`) (`useChat`, streaming SSE, tool-calling) | Streaming natif Expo via `expo/fetch`. Tool-calling typé pour QCM/skills. |
 | Paiement | **Stripe web-first** (PAS d'IAP) | Économise 15-30% commission. Cf `06_BILLING.md`. |
 | Design system | **NativeWind** (Tailwind RN) ou **Tamagui** | Cohérence cross-platform. Cf `05_DESIGN.md`. |
 | Erreurs | **Sentry** | Observabilité front. |
@@ -93,7 +93,7 @@ User message
    [4] Orchestrator → modèle routé (mini défaut, sonnet si flag difficulté)
         │  + prompt système versionné (persona)
         ▼
-   [5] Streaming réponse (Vercel AI SDK)
+   [5] Streaming réponse (AI SDK)
         │
         ▼
    [6] Output validation ──diagnostic individualisé détecté──▶ bloqué + remplacé + incident
@@ -180,7 +180,7 @@ Git : `ai/<agent>/<feature>/<desc>` → PR → 5 gates CI → merge. Cf `03_SECU
 ## 10. Domaine & mise en production
 
 > **Mise à jour 2026-09-25 (ADR-0038)** : l'application est hébergée **chez Hostinger** (serveur
-> Node autonome), plus chez Vercel. La procédure opérationnelle complète (recette sur le domaine
+> Node autonome). La procédure opérationnelle complète (recette sur le domaine
 > temporaire, bascule du jour J, vérifications, retour arrière) vit dans
 > **`09_DEPLOYMENT.md` §7-§10** ; ce paragraphe n'en garde que les principes.
 

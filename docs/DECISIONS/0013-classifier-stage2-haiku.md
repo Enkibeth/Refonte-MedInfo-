@@ -50,6 +50,6 @@ sortie JSON) pour combler ce manque.
   ultérieurement (hors périmètre de cette décision).
 
 ## Rollback
-`CLASSIFIER_STAGE2_ENABLED=false` (Vercel) désactive l'étage 2 sans déploiement. Pour retirer le
+`CLASSIFIER_STAGE2_ENABLED=false` (variable d'environnement de l'hébergement) désactive l'étage 2 sans déploiement. Pour retirer le
 code : `git revert` (supprime `src/ai/classifier/llmStage2.ts`, le branchement dans
 `app/api/chat+api.ts` et l'export d'index) ; le classifieur revient au regex-seul + fail-safe.

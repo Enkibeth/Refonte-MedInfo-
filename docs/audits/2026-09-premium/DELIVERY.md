@@ -114,7 +114,7 @@ titre d’article, barre du CV, accord). 833 tests unitaires, typecheck et build
 verts sur le banc local ; 0 erreur d’hydratation sur 28 routes. L’état final des écrans
 est inchangé (écart ≤ 0,19 % des pixels) : direction A affinée, non transformée.
 
-Chat réel vérifié en invité sur l’aperçu Vercel de la branche (GPT-6 Luna : rendu,
+Chat réel vérifié en invité sur l’aperçu de déploiement de la branche (GPT-6 Luna : rendu,
 relances, suivi, arrêt). Non démontré : parcours connectés par rôle, chat connecté et
 reprise avec archive réelle (aucun compte de test autorisé ; aucune session simulée),
 mesures terrain.

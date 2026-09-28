@@ -11,8 +11,7 @@
 - **Authentication → URL Configuration** (hébergement Hostinger, ADR-0038) :
   - **Site URL** = `https://medinfo-ai.com` au jour J (`docs/09_DEPLOYMENT.md` §8.5).
   - **Redirect URLs** : `https://medinfo-ai.com/**`, le domaine temporaire Hostinger pendant la
-    transition, `http://localhost:8081/**` (dev). Les URL `*.vercel.app` pourront être
-    retirées après la bascule (§10 du runbook).
+    transition, `http://localhost:8081/**` (dev).
 **Statut code** : ✅ déjà en place (ADR-0010, `detectSessionInUrl: true`, écrans + AuthProvider).
 
 ## 2. Hostinger — variables d'environnement (hPanel) *(critique pour que l'app marche)*
@@ -40,6 +39,5 @@ Le logo est pour l'instant **rendu en code** (`src/ui/Logo.tsx`). Pour passer au
 - Audit IA corrigé (B1/I1/I2/I3/M1/M2/M3/M4) ; safe-box 3 couches durcie.
 - Auth email+mot de passe + Google/Apple (ADR-0010). Rôles public/étudiant/pro + vérif (ADR-0011)
   avec garde anti-auto-promotion (testée RLS). Migrations Supabase `usage_counters` + vérif **appliquées**.
-- Thème blanc/bleu pétrole + logo (code). Fix déploiement Vercel (Node 22.x + 404) — historique :
-  hébergement désormais chez Hostinger (ADR-0038). 
+- Thème blanc/bleu pétrole + logo (code). Hébergement chez Hostinger (ADR-0038).
 - `main` = `staging` = `dev` alignés.

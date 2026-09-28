@@ -107,6 +107,6 @@ Aucun classifieur ne tient un recall 100% réel. Défenses complémentaires : di
 
 ## 9. Plan d'implémentation (12 semaines, < 50 €)
 
-S1-2 : lexique v1 + prompt v1 + middleware Vercel AI SDK (avant tout appel LLM principal) + refus hard-codés rédigés. S3-4 : golden set v1 (500) + eval + itération jusqu'à recall emergency ≥ 99%. S5-6 : table Supabase + admin + sampling 1%. S7-8 : shadow Haiku 4.5 + suite adversariale. S9-10 : red team (1 pair MD + 1 pair dev). S11-12 : dossier « non-MDSW rationale ».
+S1-2 : lexique v1 + prompt v1 + middleware AI SDK (avant tout appel LLM principal) + refus hard-codés rédigés. S3-4 : golden set v1 (500) + eval + itération jusqu'à recall emergency ≥ 99%. S5-6 : table Supabase + admin + sampling 1%. S7-8 : shadow Haiku 4.5 + suite adversariale. S9-10 : red team (1 pair MD + 1 pair dev). S11-12 : dossier « non-MDSW rationale ».
 
 **C'est l'étape 2 du développement (juste après le scaffold), en TDD : les tests de refus s'écrivent AVANT le classifieur.**

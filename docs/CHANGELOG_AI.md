@@ -4,6 +4,21 @@ Journal des modifications par agents IA. Une entrée par PR.
 
 ## Format
 ```
+## [2026-09-28] – Claude (documentation : retrait des mentions de Vercel, branche prête pour medinfo-ai.com)
+### Files modified
+- CLAUDE.md, START.md, docs/00_CHARTER.md, 02_ARCHITECTURE.md, 06_BILLING.md, 07_CLASSIFIER.md, 08_RAG.md, TODO.md
+- docs/DECISIONS/0002, 0005, 0010, 0012, 0013, 0023, 0025, 0037
+- docs/audits/2026-09-premium/{DELIVERY.md, review/REVIEW.md, review/harness/README.md}
+### Purpose
+Demande Hugo : « supprimer toute trace de Vercel dans la documentation ». Branche = migration Hostinger
+(#147, ADR-0038) + `main` à jour (refonte premium #151). Les consignes devenues fausses (variables
+« à poser dans Vercel », cron `vercel.json`, logs Vercel) renvoient à l'hébergement hPanel ; « Vercel AI SDK »
+→ « AI SDK » (nom officiel du paquet `ai`). Conservés volontairement : ADR-0038 et `09_DEPLOYMENT.md` §0/§8/§10
+(la bascule consiste justement à couper l'ancien hébergeur : les étapes doivent le nommer jusqu'au jour J),
+ce journal et les captures brutes d'audit (historique, non réécrit), l'en-tête de protocole
+`x-vercel-ai-ui-message-stream` (fonctionnel, défini par l'AI SDK) et la migration appliquée 0046.
+### Regulatory impact
+Aucun : documentation seule. Aucune table, policy, prompt ni route touchés.
 ## [DATE] – <Agent>
 ### Files modified
 - ...
