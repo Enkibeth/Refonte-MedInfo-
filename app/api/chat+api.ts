@@ -28,6 +28,7 @@ import { streamText, convertToModelMessages } from 'ai';
 import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { resolveChatPersona } from '@/ai/routing/serverPersona';
+import { checkGuestChatQuota } from '@/ai/rateLimit/chatRateLimit';
 import { logInteraction } from '@/ai/logging/logInteraction';
 import { summarizeSteps } from '@/ai/logging/stepMetrics';
 import { coerceConversationId, saveAssistantMessageServer } from '@/chat/serverHistory';
@@ -112,6 +113,20 @@ export async function POST(request: Request): Promise<Response> {
         JSON.stringify({
           error: 'signup_required',
           message: 'Créez un compte gratuit ou connectez-vous pour continuer la conversation.',
+        }),
+        { status: 401, headers: { 'content-type': 'application/json' } },
+      );
+    }
+    // Sans ce plafond, ouvrir une nouvelle conversation à chaque requête contournait le
+    // verrou ci-dessus : appels LLM illimités sans compte. Compté seulement ici, après le
+    // refus 401 (qui ne coûte rien), pour ne jamais décompter une requête refusée.
+    const quota = await checkGuestChatQuota(request);
+    if (!quota.allowed) {
+      return new Response(
+        JSON.stringify({
+          error: 'signup_required',
+          message:
+            "Limite de l'essai sans inscription atteinte pour aujourd'hui. Créez un compte gratuit ou connectez-vous pour continuer.",
         }),
         { status: 401, headers: { 'content-type': 'application/json' } },
       );

@@ -52,6 +52,7 @@ import {
   type PlanSnapshot,
 } from '@/dashboard/overview';
 import { Button } from '@/ui/Button';
+import { EcgTrace } from '@/ui/EcgTrace';
 import type { ChatbotId } from '@/ai/chat/chatContext';
 import { CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
 import { featureTint } from '@/ui/featureChips';
@@ -465,8 +466,6 @@ export default function DashboardScreen() {
           <View style={styles.mainColumn}>
             {/* Hero « Qu’est-ce qui compte aujourd’hui ? » */}
             <View style={styles.hero}>
-              {/* Grille millimétrée + tracé ECG animé (motif métier du design system,
-                  coupé sous prefers-reduced-motion) — cf. src/ui/HeroBackdrop. */}
               <View style={styles.greetingPill}>
                 <Text style={styles.greetingText}>{greeting}</Text>
               </View>
@@ -488,6 +487,8 @@ export default function DashboardScreen() {
                   onPress={() => router.push(secondaryCta.route as never)}
                 />
               </View>
+              {/* Tracé ECG animé (signature visuelle, coupé sous prefers-reduced-motion). */}
+              <EcgTrace height={48} />
               <View style={styles.tileRow}>
                 {tiles.map((tile) => (
                   <View key={tile.label} style={styles.tile}>

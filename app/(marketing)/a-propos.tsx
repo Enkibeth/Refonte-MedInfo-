@@ -28,7 +28,7 @@ const VALUES: { icon: IconName; title: string; text: string }[] = [
   {
     icon: 'shield',
     title: 'Fiabilité',
-    text: 'Des réponses appuyées sur les référentiels français et européens (HAS, ANSM, sociétés savantes, littérature scientifique) ; chaque lien cité est vérifié avant la rédaction.',
+    text: 'Des réponses appuyées sur les référentiels français et européens (HAS, ANSM, sociétés savantes, littérature scientifique), citées dans chaque réponse pour que vous puissiez les consulter.',
   },
   {
     icon: 'refresh',
@@ -69,11 +69,10 @@ export default function AboutScreen() {
             </Text>
             <Text style={styles.paragraph}>
               Notre réponse : une intelligence artificielle qui appuie chaque réponse sur une
-              recherche en direct. L'assistant interroge des sources réelles (recommandations
-              HAS, ANSM et sociétés savantes, littérature scientifique via Europe PMC et
-              PubMed, essais cliniques ClinicalTrials.gov), puis vérifie un à un les liens
-              qu'il va citer avant de rédiger. Chaque réponse affiche ses sources, avec leur
-              niveau de preuve.
+              recherche en direct. L'assistant consulte des sources réelles (recommandations
+              HAS, ANSM et sociétés savantes, littérature scientifique indexée dans PubMed)
+              et cite celles sur lesquelles il s'appuie. Chaque réponse affiche ses sources,
+              avec leur niveau de preuve : consultez-les, une IA peut se tromper.
             </Text>
             <Text style={styles.paragraph}>
               Trois assistants spécialisés accompagnent chacun à son niveau : le grand public

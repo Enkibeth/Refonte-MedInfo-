@@ -4,6 +4,23 @@ Journal des modifications par agents IA. Une entrée par PR.
 
 ## Format
 ```
+## [2026-09-28] – Claude (site public : quota invité du chat, promesses corrigées, RPC fermée, ECG de l'accueil)
+### Files modified
+- src/ai/rateLimit/chatRateLimit.ts (`checkGuestChatQuota`, `GUEST_CHAT_DAILY_LIMIT` = 5), app/api/chat+api.ts, tests/chat/rate-limit.test.ts
+- src/seo/meta.ts, app/(marketing)/a-propos.tsx
+- supabase/migrations/0047_revoke_purge_audio_rpc.sql
+- app/+html.tsx (keyframes ECG + lumière rétablies), src/ui/EcgTrace(.web).tsx, app/index.tsx
+### Purpose
+Le site étant public sur medinfo-ai.com : (1) le verrou « 1 message par conversation anonyme » se contournait en
+ouvrant une conversation par requête → plafond par IP (5/jour, IP hachée, compteur distinct de /api/analyze, même
+réponse 401 `signup_required` que le client sait déjà afficher) ; (2) descriptions SEO et page À propos promettaient
+la vérification de chaque lien et Europe PMC / ClinicalTrials.gov, retirés par l'ADR-0037 → formulations exactes ;
+(3) RPC de purge audio exécutable par anon/authenticated (conseiller Supabase) → REVOKE ; (4) demande Hugo : tracé
+ECG animé de retour sur l'accueil (les keyframes avaient disparu à la refonte, l'ECG du dashboard était figé aussi).
+### Regulatory impact
+Positif : fin d'allégations inexactes sur la vérification des sources (transparence) ; aucune couche de régulation retirée.
+Le chat invité reste ouvert (1 message/conversation), désormais borné en volume.
+
 ## [2026-09-28] – Claude (bascule réalisée : medinfo-ai.com sur Hostinger, ancienne plateforme abandonnée)
 ### Files modified
 - docs/09_DEPLOYMENT.md (v2.4 : bascule réalisée, §10 réécrit), docs/DECISIONS/0038, 0004

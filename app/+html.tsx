@@ -76,6 +76,32 @@ body { overflow-x: hidden; }
 .medinfo-reveal {
   animation: medinfo-reveal ${tokens.motion.duration.base}ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+/* Tracé ECG (accueil + hero du dashboard) : la ligne se dessine, tient, puis s'efface et
+   recommence — battement lent (cycle 9 s), discret. La réinitialisation du tracé a lieu
+   pendant que la ligne est invisible. Retiré par erreur à la refonte 2026-09, rétabli. */
+@keyframes medinfo-ecg-draw {
+  0%   { stroke-dashoffset: 1700; opacity: 1; }
+  30%  { stroke-dashoffset: 0; opacity: 1; }
+  80%  { stroke-dashoffset: 0; opacity: 1; }
+  90%  { stroke-dashoffset: 0; opacity: 0; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+.medinfo-ecg-path {
+  stroke-dasharray: 1700;
+  animation: medinfo-ecg-draw 9000ms cubic-bezier(0.4, 0, 0.2, 1) 300ms infinite;
+}
+
+/* Lumière du hero du dashboard qui « respire » lentement (une seule source). */
+@keyframes medinfo-hero-breathe {
+  0%, 100% { opacity: 0.82; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.06); }
+}
+.medinfo-hero-glow {
+  transform-origin: 16% -6%;
+  animation: medinfo-hero-breathe 14000ms cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: opacity, transform;
+}
 ${RESPONSIVE_CSS}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

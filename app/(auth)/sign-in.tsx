@@ -11,6 +11,7 @@ import { Card } from '@/ui/Card';
 import { useClientState } from '@/ui/hydration';
 import { GoogleIcon, AppleIcon } from '@/ui/icons';
 import { Logo } from '@/ui/Logo';
+import { EcgTrace } from '@/ui/EcgTrace';
 import { Screen } from '@/ui/Screen';
 import { tokens } from '@/ui/tokens';
 
@@ -143,6 +144,7 @@ export default function SignInScreen() {
       <View style={styles.logoWrap}>
         <Logo size="md" />
       </View>
+      <EcgTrace height={40} />
 
       <Card style={styles.formCard}>
         <PageTitle style={styles.title}>{title}</PageTitle>
