@@ -1,7 +1,7 @@
 /**
  * Modules purs du serveur Node autonome (migration Hostinger).
  *
- * Ils décident ce que Vercel décidait à notre place : quels chemins sont servis
+ * Ils décident ce que l'ancienne plateforme décidait à notre place : quels chemins sont servis
  * statiquement, avec quels en-têtes de cache, dans quel encodage, et comment lire les
  * en-têtes du reverse proxy. Une régression ici est invisible en développement (tout
  * fonctionne quand même) mais coûteuse en production : fuite de fichier hors `dist/client`,

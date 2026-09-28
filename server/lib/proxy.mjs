@@ -74,7 +74,7 @@ export function parseTrustedHops(raw) {
  * fiables : l'entrée de gauche est ce que le client a bien voulu envoyer. La lire (comme on
  * le faisait implicitement en prenant la première valeur) permettait de contourner le quota
  * anonyme de `/api/analyze` en changeant d'en-tête à chaque requête — donc de faire payer des
- * appels LLM illimités. Sur Vercel la plateforme réécrivait l'en-tête ; ici, c'est à nous.
+ * appels LLM illimités. Sur l'ancienne plateforme serverless, elle réécrivait l'en-tête ; ici, c'est à nous.
  *
  * Avec `hops` proxys de confiance, l'adresse du client est la `hops`-ième en partant de la
  * droite. Si la liste est plus courte (ou absente), on retombe sur l'entrée la plus à gauche

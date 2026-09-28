@@ -6,10 +6,10 @@ date: 2026-06-02
 ```
 
 ## Contexte
-medinfo-ai.com est enregistré chez Hostinger et pointe vers l'ancien WordPress. La refonte (ADR-0002) déploie sur Vercel. Deux options : (A) transférer la propriété du domaine vers un autre registrar, (B) garder Hostinger comme registrar et repointer les DNS vers Vercel.
+medinfo-ai.com est enregistré chez Hostinger et pointe vers l'ancien WordPress. La refonte (ADR-0002) déployait alors sur une plateforme serverless. Deux options : (A) transférer la propriété du domaine vers un autre registrar, (B) garder Hostinger comme registrar et repointer les DNS vers la plateforme d'hébergement.
 
 ## Décision
-Option B. Le domaine reste chez Hostinger (~12 €/an). On change uniquement les enregistrements DNS (A/CNAME) pour pointer vers Vercel, le jour de la mise en prod. Pas de transfert.
+Option B. Le domaine reste chez Hostinger (~12 €/an). On change uniquement les enregistrements DNS (A/CNAME) pour pointer vers la plateforme d'hébergement, le jour de la mise en prod. Pas de transfert.
 
 ## Conséquences
 - (+) Coût 0 €, sans délai, réversible en 2 min. Aucune fenêtre de risque ICANN (verrou 60 j, code EPP).
@@ -23,4 +23,4 @@ Accepted. Procédure détaillée : docs/02_ARCHITECTURE.md §10.
 
 > **Amendé par ADR-0038 (2026-09-25)** : l'application est désormais hébergée chez Hostinger.
 > Le principe « garder le domaine chez Hostinger, ne pas le transférer » tient toujours ; le
-> domaine est rattaché à l'application Node.js du même plan au lieu d'être repointé vers Vercel.
+> domaine est rattaché à l'application Node.js du même plan au lieu d'être repointé vers une plateforme externe.

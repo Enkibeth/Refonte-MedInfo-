@@ -1,7 +1,7 @@
 /**
  * En-têtes des réponses EN FLUX (chat, simulation ECOS, analyse de document).
  *
- * Sur Vercel, le streaming passait tel quel. Chez Hostinger, la réponse traverse le serveur
+ * Sur l'ancienne plateforme serverless, le streaming passait tel quel. Chez Hostinger, la réponse traverse le serveur
  * web (LiteSpeed) puis, si le domaine l'active, le CDN `hcdn` : deux intermédiaires qui
  * peuvent mettre le flux en tampon ou le recompresser — le symptôme est une réponse qui
  * n'apparaît qu'à la toute fin, voire une coupure. Ces deux en-têtes standard le leur

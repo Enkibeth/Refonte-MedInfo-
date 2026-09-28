@@ -2,8 +2,8 @@
  * Hébergeur de l'application — source unique de vérité.
  *
  * Depuis la migration 2026-08, MedInfo AI est servi par un **serveur Node autonome**
- * (`server/index.mjs`) déployé chez Hostinger. Il n'y a plus qu'une cible : Vercel a été
- * retiré du dépôt (plus de `vercel.json`, plus de fonction, plus d'analytics Vercel).
+ * (`server/index.mjs`) déployé chez Hostinger. Il n'y a plus qu'une cible : l'ancien déploiement serverless
+ * a été retiré du dépôt (configuration, fonction, analytics).
  *
  * Ce module existe parce que deux surfaces doivent nommer l'hébergeur exactement :
  *   1. les **mentions légales** (LCEN art. 1-1, I, 4° : nom, adresse et téléphone de
@@ -11,7 +11,7 @@
  *      afficher le mauvais hébergeur serait une mention légale fausse ;
  *   2. `/api/health`, qui expose `deployTarget` : pendant la propagation DNS, c'est le
  *      moyen le plus simple de savoir si c'est bien le nouveau serveur qui a répondu
- *      (l'ancien déploiement Vercel, lui, ne renvoyait pas ce champ).
+ *      (l'ancien déploiement serverless, lui, ne renvoyait pas ce champ).
  */
 
 /** Cible de déploiement unique du projet. */

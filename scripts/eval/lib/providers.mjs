@@ -6,7 +6,7 @@
 // Invariants :
 //  - Mode hors-ligne par défaut : sans `--live` ou sans clé, on utilise le provider STUB
 //    déterministe (réponses canned seedées sur un hash de la question). AUCUN appel réseau.
-//  - On n'appelle un vrai provider (openai / anthropic via le Vercel AI SDK) QUE si
+//  - On n'appelle un vrai provider (openai / anthropic via l'AI SDK) QUE si
 //    { live: true } ET la clé d'API correspondante est présente dans l'environnement.
 //  - Le harness est un OUTIL d'évaluation : il ne contient AUCUNE logique médicale.
 //    Le stub « medinfo » se contente d'appliquer la règle de refus canonique selon
@@ -82,7 +82,7 @@ function makeMedinfoStub(modelName, versionLabel) {
 }
 
 /**
- * Provider réel via le Vercel AI SDK (import dynamique pour rester hors-ligne par défaut).
+ * Provider réel via l'AI SDK (import dynamique pour rester hors-ligne par défaut).
  * @param {'openai'|'anthropic'} family
  * @param {string} defaultModelVersion identifiant exact du modèle (figé le jour J)
  */

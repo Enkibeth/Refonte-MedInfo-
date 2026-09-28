@@ -4,6 +4,18 @@ Journal des modifications par agents IA. Une entrée par PR.
 
 ## Format
 ```
+## [2026-09-28] – Claude (bascule réalisée : medinfo-ai.com sur Hostinger, ancienne plateforme abandonnée)
+### Files modified
+- docs/09_DEPLOYMENT.md (v2.4 : bascule réalisée, §10 réécrit), docs/DECISIONS/0038, 0004
+- commentaires : server/index.mjs, server/lib/proxy.mjs, src/server/{keepAlive,streamingHeaders}.ts, src/deploy/hosting.ts, app/api/health+api.ts, scripts/eval/lib/providers.mjs, tests/unit/{hostinger-server,seo-meta}.test.ts
+### Purpose
+Bascule constatée le 2026-09-28 : `medinfo-ai.com` servi par l'application Node Hostinger (`deployTarget: hostinger`,
+HSTS, `www` → 308 apex, MX/SPF/DKIM intacts), refonte #151 visible. Décision Hugo : abandon définitif de l'ancienne
+plateforme serverless → retrait de ses dernières mentions (runbook, ADR, commentaires). Conservés : ce journal,
+les captures brutes d'audit, la migration appliquée 0046, les tests qui verrouillent son absence.
+### Regulatory impact
+Aucun : documentation et commentaires seuls.
+
 ## [2026-09-28] – Claude (documentation : retrait des mentions de Vercel, branche prête pour medinfo-ai.com)
 ### Files modified
 - CLAUDE.md, START.md, docs/00_CHARTER.md, 02_ARCHITECTURE.md, 06_BILLING.md, 07_CLASSIFIER.md, 08_RAG.md, TODO.md
