@@ -3817,6 +3817,11 @@
       openModal('Relecture IA', el('div', { class: 'empty', text: 'Connecte-toi avec un compte étudiant ou professionnel vérifié pour utiliser la relecture.' }));
       return;
     }
+    if (S.reviewInFlight) {
+      // Relecture déjà lancée : son résultat s'affichera dans la fenêtre d'origine.
+      openModal('Relecture IA', el('div', { class: 'empty', text: 'Relecture déjà en cours… réessaie dans quelques secondes.' }));
+      return;
+    }
     // Chargement proactif (medinfo-controls.js) : étapes réelles de /api/cv.
     var progress = window.medinfoProgress ? window.medinfoProgress({
       title: 'Relecture de ton CV',
@@ -3830,7 +3835,6 @@
     }) : null;
     var body = el('div', {}, [progress ? progress.el : el('div', { class: 'empty', text: 'Relecture en cours…' })]);
     openModal('Relecture IA', body);
-    if (S.reviewInFlight) { if (progress) progress.stop(); return; }
     S.reviewInFlight = true;
     var stopProgress = function () { if (progress) { progress.stop(); progress = null; } };
     api('/api/cv', { method: 'POST', body: JSON.stringify({ document: minimizedDoc() }) })
