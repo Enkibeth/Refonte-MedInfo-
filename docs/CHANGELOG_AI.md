@@ -4,6 +4,22 @@ Journal des modifications par agents IA. Une entrée par PR.
 
 ## Format
 ```
+## [2026-09-30] – Claude (chargement proactif des fonctions IA + suggestions aléatoires)
+### Files modified
+- src/ui/progress/stagedProgress.ts (nouveau, pur, testé `tests/unit/staged-progress.test.ts`), src/ui/progress/ProgressSteps.tsx (nouveau)
+- src/ui/chat/QcmCard.tsx, app/(chat)/document.tsx, ecos.tsx, revision.tsx, audio.tsx, app/(admin)/index.tsx (onglet Blog)
+- public/medinfo-controls.js (`window.medinfoProgress`), public/medinfo-ui.css, public/presentation.html, cv-builder.html, article.html
+- src/ai/chat/starterSuggestions.ts (`shuffleSuggestions`, `shuffledStarterSuggestions`), app/(chat)/chat.tsx, tests/unit/starter-suggestions.test.ts
+### Purpose
+Retour Hugo : « Générer un QCM » n'affichait qu'un spinner dans le bouton — rien n'expliquait ce qui se passait ; idem
+ailleurs. Carte de chargement unique : étapes RÉELLES de la route (ordre exact), avancées selon le temps écoulé (aucune
+route n'émet de point d'étape), dernière étape « en cours » jusqu'à la réponse, barre jamais pleine, chrono, message de
+patience sans durée promise. Suggestions d'amorce : ordre aléatoire (Fisher-Yates) par ouverture, tiré après
+l'hydratation (évite React #418), rotation inchangée (30 s, aucune répétition avant les 50).
+### Limites
+Avancée des étapes ESTIMÉE (pas de progression serveur) : si une étape est plus longue que prévu, l'affichage peut
+passer à l'étape suivante avant le serveur. Aucune nouvelle feature IA, aucune migration.
+
 ## [2026-09-30] – Claude (chat mobile : une seule barre ☰ · chatbot ▾ · ＋)
 ### Files modified
 - src/ui/chat/ChatMobileHeader.tsx (nouveau), app/(chat)/chat.tsx, src/ui/chat/CountrySelector.tsx et src/ui/ToolsMenu.tsx (ouverture pilotable + `hideTrigger`), src/ui/iconPaths.ts (menu, chevronRight)
