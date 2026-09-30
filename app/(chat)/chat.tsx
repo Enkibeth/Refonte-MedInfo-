@@ -101,6 +101,10 @@ import { useWindowWidth } from '@/ui/useWindowWidth';
 // Suggestions d'amorce (état vide) : 50 questions par chatbot, rotation 3 par 3
 // toutes les 30 s — voir src/ai/chat/starterSuggestions.ts.
 
+/** Zone de saisie : une ligne (corps 24 px + marges 2 × 8 px) à vide, 140 px au plus. */
+const INPUT_MIN_HEIGHT = 40;
+const INPUT_MAX_HEIGHT = 140;
+
 const DISCLAIMER: Record<ChatbotId, string> = {
   public: 'Information générale — ne remplace pas un avis médical individuel.',
   student: 'Support de révision — ne remplace pas les référentiels ni la pratique encadrée.',
@@ -495,6 +499,8 @@ export default function ChatScreen() {
   const canAttach = Platform.OS === 'web' && !!session && canSwitch;
   const availableChatbots: ChatbotId[] = canSwitch || isGuest ? ALL_CHATBOTS : ['public'];
   const switcherPending = authLoading && availableChatbots.length <= 1;
+  const showSwitcher = availableChatbots.length > 1 || switcherPending;
+  const [inputHeight, setInputHeight] = useState(INPUT_MIN_HEIGHT);
   const defaultChatbot: ChatbotId =
     persona === 'student' || persona === 'professional' ? persona : 'public';
 
@@ -1108,6 +1114,7 @@ export default function ChatScreen() {
     if (!canSend) return;
     const text = input;
     setInput('');
+    setInputHeight(INPUT_MIN_HEIGHT);
     void sendText(text);
   };
 
@@ -1399,11 +1406,21 @@ export default function ChatScreen() {
             <Icon name="panelLeft" size={17} color={tokens.colors.accentDeep} />
           </TouchableOpacity>
         ) : null}
-        <View style={styles.headerTitleBlock}>
-          <Text style={styles.chatTitle} accessibilityRole="header" aria-level={1}>
+        {/* Téléphone : le fil prime. Les onglets de chatbot nomment déjà le chat affiché ;
+            le titre ne reste que sans onglets, et sans sous-titre. Sur le web, masquage en
+            CSS (mi) pour que le pré-rendu soit juste à toutes les largeurs. */}
+        <View
+          {...mi(showSwitcher ? 'ge640' : '')}
+          style={[styles.headerTitleBlock, compactHeader && showSwitcher && Platform.OS !== 'web' && styles.hidden]}
+        >
+          <Text style={[styles.chatTitle, compactHeader && styles.chatTitleCompact]} accessibilityRole="header" aria-level={1}>
             Chat {meta.label.toLowerCase()}
           </Text>
-          <Text style={styles.chatSubtitle} numberOfLines={1}>
+          <Text
+            {...mi('ge640')}
+            style={[styles.chatSubtitle, compactHeader && Platform.OS !== 'web' && styles.hidden]}
+            numberOfLines={1}
+          >
             {meta.description}
           </Text>
         </View>
@@ -1459,7 +1476,7 @@ export default function ChatScreen() {
       {/* ── Switch de chatbot (étudiant / pro / admin, essai invité) ──
           Pendant l'amorçage de la session, on ignore encore s'il s'affichera : sa place
           est réservée (invisible et inerte) pour que son arrivée ne décale pas le fil. */}
-      {availableChatbots.length > 1 || switcherPending ? (
+      {showSwitcher ? (
         <View
           style={[styles.switcherRow, switcherPending && styles.switcherPending]}
           {...(switcherPending ? PENDING_A11Y : null)}
@@ -1797,10 +1814,15 @@ export default function ChatScreen() {
         {attachError ? <Text style={styles.attachError}>{attachError}</Text> : null}
         <View style={[styles.composer, inputFocused && styles.composerFocused]}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { height: inputHeight }]}
             accessibilityLabel="Votre question" {...(Platform.OS === 'web' ? { title: 'Votre question' } : {})}
             value={input}
-            onChangeText={setInput}
+            onChangeText={(text) => {
+              setInput(text);
+              // Sur le web, la hauteur mesurée ne redescend jamais sous la hauteur courante
+              // (scrollHeight) : on la remet à une ligne quand le champ est vidé.
+              if (!text) setInputHeight(INPUT_MIN_HEIGHT);
+            }}
             onFocus={() => setInputFocused(true)}
             onBlur={() => setInputFocused(false)}
             placeholder={
@@ -1814,6 +1836,16 @@ export default function ChatScreen() {
             }
             placeholderTextColor={tokens.colors.textMuted}
             multiline
+            numberOfLines={1}
+            onContentSizeChange={(e) => {
+              // Une ligne à vide, puis la zone grandit avec le texte jusqu'à INPUT_MAX_HEIGHT
+              // (le fil garde la place sur téléphone ; au-delà, défilement interne).
+              const next = Math.min(
+                INPUT_MAX_HEIGHT,
+                Math.max(INPUT_MIN_HEIGHT, Math.ceil(e.nativeEvent.contentSize.height)),
+              );
+              setInputHeight((h) => (h === next ? h : next));
+            }}
             editable={!guestLocked}
             returnKeyType="send"
             onSubmitEditing={handleSend}
@@ -2069,6 +2101,11 @@ const styles = StyleSheet.create({
     letterSpacing: tokens.type.h2.letterSpacing,
     fontWeight: tokens.weight.semibold,
   },
+  chatTitleCompact: {
+    fontSize: tokens.type.h3.fontSize,
+    lineHeight: tokens.type.h3.lineHeight,
+  },
+  hidden: { display: 'none' },
   chatSubtitle: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
@@ -2498,8 +2535,8 @@ const styles = StyleSheet.create({
     marginBottom: tokens.space.sm,
   },
   input: {
-    minHeight: 36,
-    maxHeight: 140,
+    minHeight: INPUT_MIN_HEIGHT,
+    maxHeight: INPUT_MAX_HEIGHT,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.sm,
     color: tokens.colors.text,
@@ -2515,7 +2552,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     lineHeight: 16, // = rendu avec la police web ; stable à l'arrivée des polices
     color: tokens.colors.textMuted,
-    paddingHorizontal: tokens.space.lg,
+    paddingHorizontal: tokens.space.xs, // largeur pleine : 2 lignes au lieu de 3 sur téléphone
   },
   sendButton: { minHeight: tokens.size.controlMd,
     width: tokens.size.composerAction,
