@@ -4,6 +4,18 @@ Journal des modifications par agents IA. Une entrée par PR.
 
 ## Format
 ```
+## [2026-09-30] – Claude (chat mobile : une seule barre ☰ · chatbot ▾ · ＋)
+### Files modified
+- src/ui/chat/ChatMobileHeader.tsx (nouveau), app/(chat)/chat.tsx, src/ui/chat/CountrySelector.tsx et src/ui/ToolsMenu.tsx (ouverture pilotable + `hideTrigger`), src/ui/iconPaths.ts (menu, chevronRight)
+### Purpose
+Retour Hugo (capture iPhone) : « trop de boutons » — 7 boutons encadrés sur une ligne qui débordait (pays coupé) +
+une ligne d'onglets. Sous 640 px : une barre unique ☰ (feuille du bas : historique, sources, export PDF, plein écran,
+pays des sources, outils et compte) · sélecteur de chatbot au centre (remplace les onglets, avec descriptions) · ＋
+nouvelle conversation. Panneau des sources : bouton « Fermer » intégré. Ordinateur/tablette inchangés. Web : les deux
+en-têtes sont rendus et le CSS `mi('lt640'/'ge640')` n'en montre qu'un (pré-rendu juste, pas de #418).
+### Regulatory impact
+Aucun : autorisation des chatbots inchangée (serveur), avertissement IA conservé.
+
 ## [2026-09-30] – Claude (chat : mode plein écran « taille Messages », saisie à 16 px)
 ### Files modified
 - src/chat/focusMode.ts (nouveau), app/(chat)/chat.tsx, src/ui/AppTabBar.tsx, src/ui/shell/AppShell.tsx, src/ui/MarkdownRenderer.tsx (`MarkdownTextSizeContext`), src/ui/iconPaths.ts (maximize/minimize)

@@ -99,6 +99,7 @@ import { mi } from '@/ui/responsive';
 import { useWindowWidth } from '@/ui/useWindowWidth';
 import { FOCUS_TEXT_SIZE, readChatFocusPref, setChatFocus, useChatFocus } from '@/chat/focusMode';
 import { MarkdownTextSizeContext } from '@/ui/MarkdownRenderer';
+import { ChatMobileHeader } from '@/ui/chat/ChatMobileHeader';
 
 // Suggestions d'amorce (état vide) : 50 questions par chatbot, rotation 3 par 3
 // toutes les 30 s — voir src/ai/chat/starterSuggestions.ts.
@@ -1458,9 +1459,32 @@ export default function ChatScreen() {
           ) : null}
         </View>
       ) : null}
-      {/* ── En-tête ── */}
-      {!focus ? (
-      <View {...mi('chat-header')} style={[styles.chatHeader, compactHeader && styles.chatHeaderCompact, { paddingTop: tokens.space.md + insets.top }]}>
+      {/* ── Téléphone (< 640 px) : UNE barre ☰ · chatbot ▾ · ＋ (ChatMobileHeader) ──
+          Sur le web, les deux en-têtes sont rendus et le CSS (mi) n'en montre qu'un : le
+          pré-rendu (largeur 0) est juste à toutes les largeurs. Sur natif, le JS choisit. */}
+      {!focus && (Platform.OS === 'web' || compactHeader) ? (
+        <View {...mi('lt640')}>
+          <ChatMobileHeader
+            chatbot={chatbot}
+            chatbots={availableChatbots}
+            onSwitchChatbot={handleSwitchChatbot}
+            switchDisabled={isLoading || switcherPending}
+            onNew={messages.length > 0 ? () => startNewConversation() : undefined}
+            onHistory={user && !desktopShell ? () => setHistoryOpen(true) : undefined}
+            onExport={messages.length > 0 ? handleExportPdf : undefined}
+            sourcesCount={latestSources.length}
+            onSources={() => setSourcesOpen(true)}
+            onFullscreen={toggleFocus}
+            country={country}
+            onCountryChange={handleCountryChange}
+            topInset={insets.top}
+            isGuest={isGuest}
+          />
+        </View>
+      ) : null}
+      {/* ── En-tête (tablette / ordinateur) ── */}
+      {!focus && (Platform.OS === 'web' || !compactHeader) ? (
+      <View {...mi('chat-header', 'ge640')} style={[styles.chatHeader, compactHeader && styles.chatHeaderCompact, { paddingTop: tokens.space.md + insets.top }]}>
         {desktopShell && user && historyCollapsed ? (
           <TouchableOpacity
             onPress={() => setHistoryCollapsed(false)}
@@ -1471,21 +1495,11 @@ export default function ChatScreen() {
             <Icon name="panelLeft" size={17} color={tokens.colors.accentDeep} />
           </TouchableOpacity>
         ) : null}
-        {/* Téléphone : le fil prime. Les onglets de chatbot nomment déjà le chat affiché ;
-            le titre ne reste que sans onglets, et sans sous-titre. Sur le web, masquage en
-            CSS (mi) pour que le pré-rendu soit juste à toutes les largeurs. */}
-        <View
-          {...mi(showSwitcher ? 'ge640' : '')}
-          style={[styles.headerTitleBlock, compactHeader && showSwitcher && Platform.OS !== 'web' && styles.hidden]}
-        >
-          <Text style={[styles.chatTitle, compactHeader && styles.chatTitleCompact]} accessibilityRole="header" aria-level={1}>
+        <View style={styles.headerTitleBlock}>
+          <Text style={styles.chatTitle} accessibilityRole="header" aria-level={1}>
             Chat {meta.label.toLowerCase()}
           </Text>
-          <Text
-            {...mi('ge640')}
-            style={[styles.chatSubtitle, compactHeader && Platform.OS !== 'web' && styles.hidden]}
-            numberOfLines={1}
-          >
+          <Text style={styles.chatSubtitle} numberOfLines={1}>
             {meta.description}
           </Text>
         </View>
@@ -1550,8 +1564,9 @@ export default function ChatScreen() {
       {/* ── Switch de chatbot (étudiant / pro / admin, essai invité) ──
           Pendant l'amorçage de la session, on ignore encore s'il s'affichera : sa place
           est réservée (invisible et inerte) pour que son arrivée ne décale pas le fil. */}
-      {showSwitcher && !focus ? (
+      {showSwitcher && !focus && (Platform.OS === 'web' || !compactHeader) ? (
         <View
+          {...mi('ge640')}
           style={[styles.switcherRow, switcherPending && styles.switcherPending]}
           {...(switcherPending ? PENDING_A11Y : null)}
         >
@@ -1595,6 +1610,19 @@ export default function ChatScreen() {
       {/* ── Onglet sources global ── */}
       {sourcesOpen && latestSources.length > 0 ? (
         <ScrollView style={styles.sourcesPane} contentContainerStyle={styles.sourcesPaneContent}>
+          {/* Fermeture dans le panneau : sur téléphone, le bouton bascule n'est plus dans l'en-tête. */}
+          <View style={styles.sourcesPaneHeader}>
+            <Text style={styles.sourcesPaneTitle}>Sources ({latestSources.length})</Text>
+            <TouchableOpacity
+              onPress={() => setSourcesOpen(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Fermer les sources"
+              style={styles.sourcesPaneClose}
+            >
+              <Icon name="x" size={16} color={tokens.colors.textMuted} />
+              <Text style={styles.sourcesPaneCloseText}>Fermer</Text>
+            </TouchableOpacity>
+          </View>
           <SourcesBlock
             sources={latestSources}
             startOpen
@@ -2176,6 +2204,21 @@ const styles = StyleSheet.create({
     letterSpacing: tokens.type.h2.letterSpacing,
     fontWeight: tokens.weight.semibold,
   },
+  sourcesPaneHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  sourcesPaneTitle: {
+    fontFamily: tokens.font.sans,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+    color: tokens.colors.text,
+  },
+  sourcesPaneClose: {
+    minHeight: tokens.size.controlMd,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: tokens.space.sm,
+  },
+  sourcesPaneCloseText: { fontFamily: tokens.font.sans, fontSize: tokens.type.caption.fontSize, color: tokens.colors.textMuted },
   focusBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2194,11 +2237,6 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     textAlign: 'center',
   },
-  chatTitleCompact: {
-    fontSize: tokens.type.h3.fontSize,
-    lineHeight: tokens.type.h3.lineHeight,
-  },
-  hidden: { display: 'none' },
   chatSubtitle: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
