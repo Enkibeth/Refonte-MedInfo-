@@ -21,6 +21,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useChatFocus } from '@/chat/focusMode';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSession } from '@/auth/AuthProvider';
@@ -71,6 +72,7 @@ export function AppTabBar({ state, navigation }: AppTabBarProps) {
   const width = useWindowWidth();
   const { persona, user, session, loading } = useSession();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const chatFocus = useChatFocus();
 
   const isAdmin = user ? isAdminUserId(user.id) : false;
   // Même garde que app/(chat)/_layout.tsx : pendant l'hydratation de session,
@@ -83,6 +85,9 @@ export function AppTabBar({ state, navigation }: AppTabBarProps) {
   const { bar, overflow } = tabBarFeatures(persona, ctx, { reservedSlots: showHome ? 1 : 0 });
   const allTools = visibleFeatures(persona, ctx);
   const activeName = state.routes[state.index]?.name;
+
+  // Plein écran du chat : la barre disparaît (retour par le bouton « Quitter le plein écran »).
+  if (chatFocus && activeName === 'chat') return null;
 
   // Desktop web : la sidebar du shell (src/ui/shell/AppShell.tsx) porte la navigation.
   if (Platform.OS === 'web' && width >= SHELL_BREAKPOINT) return null;

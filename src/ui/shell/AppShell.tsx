@@ -31,6 +31,7 @@ import { Icon, type IconName } from '@/ui/icons';
 import { Logo } from '@/ui/Logo';
 import { tokens } from '@/ui/tokens';
 import { useWindowWidth } from '@/ui/useWindowWidth';
+import { useChatFocus } from '@/chat/focusMode';
 
 /** Largeur minimale (px) à partir de laquelle la sidebar remplace la tab bar. */
 export const SHELL_BREAKPOINT = tokens.layout.shell;
@@ -132,6 +133,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const entryRefs = useRef(new Map<string, View | null>());
 
   const isAdmin = user ? isAdminUserId(user.id) : false;
+  // Plein écran du chat : sidebar et barre supérieure masquées (même arbre, jamais démonté :
+  // l'écran de chat garderait sinon perdu sa conversation en cours).
+  const chatFocus = useChatFocus() && segments.includes('chat');
   const inShellGroup = SHELL_GROUPS.has(segments[0] ?? '');
   const desktop = Platform.OS === 'web' && width >= SHELL_BREAKPOINT;
   const shellReady = desktop && !!session && inShellGroup;
@@ -316,7 +320,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <View style={styles.frame}>
       {/* ── Sidebar bleu nuit (repliable en rail d'icônes) ── */}
-      <View style={[styles.sidebar, collapsed && styles.sidebarCollapsed]}>
+      <View style={[styles.sidebar, collapsed && styles.sidebarCollapsed, chatFocus && styles.hidden]}>
         <View style={[styles.sidebarHeader, collapsed && styles.sidebarHeaderCollapsed]}>
           <Pressable
             onPress={() => router.push('/')}
@@ -390,7 +394,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* ── Colonne principale : top bar + écran ── */}
       <View style={styles.main}>
-        <View style={styles.topBar}>
+        <View style={[styles.topBar, chatFocus && styles.hidden]}>
           <View style={styles.breadcrumb}>
             {/* Racine cliquable : retour à la Vue d'ensemble. */}
             <Pressable
@@ -445,6 +449,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 const styles = StyleSheet.create({
+  hidden: { display: 'none' },
   frame: {
     flex: 1,
     flexDirection: 'row',

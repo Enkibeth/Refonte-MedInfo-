@@ -4,7 +4,7 @@
  * et liens markdown → notes de bas de page numérotées cliquables.
  * No external dependency — uses React Native primitives + design tokens.
  */
-import React, { useMemo } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Platform, Linking, Image } from 'react-native';
 import { tokens } from './tokens';
 import { DIAGRAM_FENCE, parseDiagramSpec, type DiagramSpec } from '@/ai/chat/diagram';
@@ -333,6 +333,12 @@ function TableBlock({
 
 // ── Main component ────────────────────────────────────────────────────────────
 
+/**
+ * Taille du texte courant (paragraphes, listes) imposée par l'écran parent — ex. mode plein
+ * écran du chat, à la taille de l'app Messages. `null` = tailles du design system.
+ */
+export const MarkdownTextSizeContext = createContext<{ fontSize: number; lineHeight: number } | null>(null);
+
 export function MarkdownRenderer({
   text,
   onDark = false,
@@ -351,6 +357,7 @@ export function MarkdownRenderer({
   footnotes?: FootnoteRegistry;
 }) {
   const blocks = useMemo(() => parseBlocks(text), [text]);
+  const size = useContext(MarkdownTextSizeContext) ?? {};
   const textColor = onDark ? tokens.colors.onAccent : tokens.colors.text;
   const mutedColor = onDark ? 'rgba(255,255,255,0.75)' : tokens.colors.textMuted;
 
@@ -394,12 +401,12 @@ export function MarkdownRenderer({
           case 'listItem':
             return (
               <View key={i} style={mdStyles.listRow}>
-                <Text style={[mdStyles.bullet, { color: mutedColor }]}>
+                <Text style={[mdStyles.bullet, size, { color: mutedColor }]}>
                   {block.ordered ? `${block.index}.` : '•'}
                 </Text>
                 {parseInline(
                   block.text,
-                  { ...mdStyles.listText, color: textColor },
+                  { ...mdStyles.listText, ...size, color: textColor },
                   footnotes,
                   undefined,
                   onCitationPress,
@@ -451,7 +458,7 @@ export function MarkdownRenderer({
           case 'paragraph':
             return parseInline(
               block.text,
-              { ...mdStyles.paragraph, color: textColor },
+              { ...mdStyles.paragraph, ...size, color: textColor },
               footnotes,
               String(i),
               onCitationPress,

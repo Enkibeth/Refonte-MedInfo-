@@ -10,7 +10,7 @@
  *    par IA (/api/chat-meta, défaut Gemini 2.5 Flash).
  *  - Export PDF de la conversation.
  */
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -97,6 +97,8 @@ import { SourceDetailModal } from '@/ui/chat/SourceDetailModal';
 import { useClientState } from '@/ui/hydration';
 import { mi } from '@/ui/responsive';
 import { useWindowWidth } from '@/ui/useWindowWidth';
+import { FOCUS_TEXT_SIZE, readChatFocusPref, setChatFocus, useChatFocus } from '@/chat/focusMode';
+import { MarkdownTextSizeContext } from '@/ui/MarkdownRenderer';
 
 // Suggestions d'amorce (état vide) : 50 questions par chatbot, rotation 3 par 3
 // toutes les 30 s — voir src/ai/chat/starterSuggestions.ts.
@@ -357,13 +359,14 @@ const MessageRow = memo(function MessageRow({
 }) {
   const isUser = message.role === 'user';
   const text = messageText(message);
+  const textSize = useContext(MarkdownTextSizeContext);
   if (!text.trim()) return null;
 
   if (isUser) {
     return (
       <View style={styles.userRow}>
         <View style={styles.bubbleUser}>
-          <Text style={styles.textUser}>{text}</Text>
+          <Text style={[styles.textUser, textSize]}>{text}</Text>
         </View>
       </View>
     );
@@ -501,6 +504,29 @@ export default function ChatScreen() {
   const switcherPending = authLoading && availableChatbots.length <= 1;
   const showSwitcher = availableChatbots.length > 1 || switcherPending;
   const [inputHeight, setInputHeight] = useState(INPUT_MIN_HEIGHT);
+  // Plein écran (demande Hugo) : fil + saisie seuls, texte à la taille de Messages (17 px).
+  const focus = useChatFocus();
+  useEffect(() => {
+    if (readChatFocusPref()) setChatFocus(true, false);
+    return () => setChatFocus(false, false);
+  }, []);
+  const toggleFocus = useCallback(() => {
+    const next = !focus;
+    setChatFocus(next);
+    // Ordinateur / Android : on demande aussi le vrai plein écran du navigateur (masque les
+    // barres). iPhone : API absente pour une page (Safari ne l'accorde qu'aux vidéos) — le
+    // mode reste « immersif » dans la page, ce qui suffit pour la lecture.
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    try {
+      if (next && document.fullscreenEnabled && !document.fullscreenElement) {
+        void document.documentElement.requestFullscreen().catch(() => {});
+      } else if (!next && document.fullscreenElement) {
+        void document.exitFullscreen().catch(() => {});
+      }
+    } catch {
+      // Refus du navigateur : le mode immersif reste actif.
+    }
+  }, [focus]);
   const defaultChatbot: ChatbotId =
     persona === 'student' || persona === 'professional' ? persona : 'public';
 
@@ -1364,9 +1390,10 @@ export default function ChatScreen() {
           }),
         ]}
       />
+      <MarkdownTextSizeContext.Provider value={focus ? FOCUS_TEXT_SIZE : null}>
       <View style={styles.screenRow}>
       {/* ── Colonne d'historique persistante (desktop shell, D5) ── */}
-      {desktopShell && user && !historyCollapsed ? (
+      {desktopShell && user && !historyCollapsed && !focus ? (
         <View style={styles.historyRail}>
           <View style={styles.historyRailHeader}>
             <Icon name="clock" size={16} color={tokens.colors.accentDeep} />
@@ -1394,7 +1421,45 @@ export default function ChatScreen() {
       ) : null}
 
       <View style={styles.screenMain}>
+      {/* ── Plein écran : une barre fine (quitter, sources, nouvelle conversation) ── */}
+      {focus ? (
+        <View style={[styles.focusBar, { paddingTop: tokens.space.xs + insets.top }]}>
+          <TouchableOpacity
+            style={styles.headerIconButton}
+            onPress={toggleFocus}
+            accessibilityRole="button"
+            accessibilityLabel="Quitter le plein écran" {...(Platform.OS === 'web' ? { title: 'Quitter le plein écran' } : {})}
+          >
+            <Icon name="minimize" size={17} color={tokens.colors.accentDeep} />
+          </TouchableOpacity>
+          <Text style={styles.focusTitle} numberOfLines={1}>{meta.label}</Text>
+          {latestSources.length > 0 ? (
+            <TouchableOpacity
+              style={[styles.sourcesPill, sourcesOpen && styles.sourcesPillActive]}
+              onPress={() => setSourcesOpen((o) => !o)}
+              accessibilityRole="button"
+              accessibilityLabel={`Sources (${latestSources.length})`}
+            >
+              <Icon name="bookOpen" size={16} color={sourcesOpen ? tokens.colors.onAccent : tokens.colors.accentDeep} />
+              <Text style={[styles.sourcesPillText, sourcesOpen && styles.sourcesPillTextActive]}>
+                {latestSources.length}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+          {messages.length > 0 ? (
+            <TouchableOpacity
+              style={styles.headerIconButton}
+              onPress={() => startNewConversation()}
+              accessibilityRole="button"
+              accessibilityLabel="Nouvelle conversation" {...(Platform.OS === 'web' ? { title: 'Nouvelle conversation' } : {})}
+            >
+              <Icon name="plus" size={18} color={tokens.colors.accentDeep} />
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      ) : null}
       {/* ── En-tête ── */}
+      {!focus ? (
       <View {...mi('chat-header')} style={[styles.chatHeader, compactHeader && styles.chatHeaderCompact, { paddingTop: tokens.space.md + insets.top }]}>
         {desktopShell && user && historyCollapsed ? (
           <TouchableOpacity
@@ -1469,14 +1534,23 @@ export default function ChatScreen() {
               <Icon name="plus" size={18} color={tokens.colors.accentDeep} />
             </TouchableOpacity>
           ) : null}
+          <TouchableOpacity
+            style={styles.headerIconButton}
+            onPress={toggleFocus}
+            accessibilityRole="button"
+            accessibilityLabel="Plein écran" {...(Platform.OS === 'web' ? { title: 'Plein écran' } : {})}
+          >
+            <Icon name="maximize" size={17} color={tokens.colors.accentDeep} />
+          </TouchableOpacity>
           <ToolsMenu />
         </View>
       </View>
+      ) : null}
 
       {/* ── Switch de chatbot (étudiant / pro / admin, essai invité) ──
           Pendant l'amorçage de la session, on ignore encore s'il s'affichera : sa place
           est réservée (invisible et inerte) pour que son arrivée ne décale pas le fil. */}
-      {showSwitcher ? (
+      {showSwitcher && !focus ? (
         <View
           style={[styles.switcherRow, switcherPending && styles.switcherPending]}
           {...(switcherPending ? PENDING_A11Y : null)}
@@ -1814,7 +1888,7 @@ export default function ChatScreen() {
         {attachError ? <Text style={styles.attachError}>{attachError}</Text> : null}
         <View style={[styles.composer, inputFocused && styles.composerFocused]}>
           <TextInput
-            style={[styles.input, { height: inputHeight }]}
+            style={[styles.input, focus && styles.inputFocusMode, { height: inputHeight }]}
             accessibilityLabel="Votre question" {...(Platform.OS === 'web' ? { title: 'Votre question' } : {})}
             value={input}
             onChangeText={(text) => {
@@ -1920,6 +1994,7 @@ export default function ChatScreen() {
       </View>
       </View>
       </View>
+      </MarkdownTextSizeContext.Provider>
 
       <SourceDetailModal
         source={detailSource}
@@ -2100,6 +2175,24 @@ const styles = StyleSheet.create({
     lineHeight: tokens.type.h2.lineHeight,
     letterSpacing: tokens.type.h2.letterSpacing,
     fontWeight: tokens.weight.semibold,
+  },
+  focusBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    paddingHorizontal: tokens.space.md,
+    paddingBottom: tokens.space.xs,
+    backgroundColor: tokens.colors.surface,
+    borderBottomWidth: 1,
+    borderColor: tokens.colors.border,
+  },
+  focusTitle: {
+    flex: 1,
+    fontFamily: tokens.font.sans,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+    color: tokens.colors.textMuted,
+    textAlign: 'center',
   },
   chatTitleCompact: {
     fontSize: tokens.type.h3.fontSize,
@@ -2541,11 +2634,14 @@ const styles = StyleSheet.create({
     paddingVertical: tokens.space.sm,
     color: tokens.colors.text,
     fontFamily: tokens.font.sans,
-    fontSize: tokens.type.body.fontSize,
+    // 16 px minimum : en dessous, Safari iPhone zoome toute la page au toucher du champ.
+    fontSize: 16,
     lineHeight: tokens.type.body.lineHeight,
     // Le focus est porté par la carte du composer, pas par le champ lui-même.
     ...(Platform.select({ web: { outlineStyle: 'none' } as object, default: {} }) as object),
   },
+  // Plein écran : taille de l'app Messages (17 px).
+  inputFocusMode: { fontSize: 17, lineHeight: 24 },
   disclaimer: {
     fontFamily: tokens.font.sans,
     textAlign: 'center',
