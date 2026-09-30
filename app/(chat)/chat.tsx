@@ -45,6 +45,7 @@ import {
 import {
   STARTER_SUGGESTIONS,
   SUGGESTIONS_ROTATION_MS,
+  shuffledStarterSuggestions,
   suggestionWindow,
 } from '@/ai/chat/starterSuggestions';
 import { isGuestMessageUsed, markGuestMessageUsed } from '@/chat/guestTrial';
@@ -1026,9 +1027,13 @@ export default function ChatScreen() {
     const id = setInterval(() => setSuggestionTick((t) => t + 1), SUGGESTIONS_ROTATION_MS);
     return () => clearInterval(id);
   }, [showEmptyState, suggestionsPaused, reducedMotion]);
+  // Ordre aléatoire tiré APRÈS l'hydratation (un tirage au premier rendu donnerait un HTML
+  // différent du pré-rendu → erreur React #418) ; en attendant, les suggestions restent
+  // invisibles pour ne pas afficher l'ordre fixe puis le remplacer sous les yeux.
+  const [starterOrder, , starterOrderReady] = useClientState(shuffledStarterSuggestions, STARTER_SUGGESTIONS);
   const starters = useMemo(
-    () => suggestionWindow(STARTER_SUGGESTIONS[chatbot], suggestionTick),
-    [chatbot, suggestionTick],
+    () => suggestionWindow(starterOrder[chatbot], suggestionTick),
+    [starterOrder, chatbot, suggestionTick],
   );
 
   const lastAssistant = useMemo(
@@ -1680,7 +1685,7 @@ export default function ChatScreen() {
             {/* La rotation des suggestions se suspend au survol : le contenu ne
                 change jamais sous le curseur au moment du clic. */}
             <Pressable
-              style={styles.starterColumn}
+              style={[styles.starterColumn, !starterOrderReady && styles.starterColumnPending]}
               onHoverIn={() => setSuggestionsPaused(true)}
               onHoverOut={() => setSuggestionsPaused(false)}
               // Simple zone de survol : pas un arrêt de tabulation (chaque suggestion l'est).
@@ -2428,6 +2433,7 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
   starterColumn: { gap: tokens.space.sm, marginTop: tokens.space.md, alignSelf: 'stretch' },
+  starterColumnPending: { opacity: 0 },
   starterChip: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'flex-start',

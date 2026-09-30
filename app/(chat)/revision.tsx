@@ -23,6 +23,7 @@ import {
 
 import { useSession } from '@/auth/AuthProvider';
 import { Icon } from '@/ui/icons';
+import { ProgressSteps } from '@/ui/progress/ProgressSteps';
 import { tokens } from '@/ui/tokens';
 import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
@@ -669,7 +670,7 @@ function RevisionScreenInner() {
                   </TouchableOpacity>
                 ))}
               </View>
-              {boostLoading ? <ActivityIndicator color={tokens.colors.accent} /> : null}
+              {boostLoading ? <ProgressSteps plan="revisionBoost" /> : null}
               {boostError ? <Text style={styles.boostErrorText}>{boostError}</Text> : null}
               {boostText ? (
                 <View style={styles.boostResult}>

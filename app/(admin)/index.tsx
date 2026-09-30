@@ -36,6 +36,7 @@ import {
 import { BlogEditorModal } from '@/ui/admin/BlogEditorModal';
 import { Icon, type IconName } from '@/ui/icons';
 import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
+import { ProgressSteps } from '@/ui/progress/ProgressSteps';
 import { tokens } from '@/ui/tokens';
 import { useWindowWidth } from '@/ui/useWindowWidth';
 
@@ -976,6 +977,7 @@ function BlogTab({ session }: { session: { access_token: string } | null }) {
             {generating ? 'Génération en cours (1 à 2 min)…' : '📰 Générer un article'}
           </Text>
         </TouchableOpacity>
+        {generating ? <ProgressSteps plan="blogGenerate" /> : null}
       </View>
 
       {error ? <Text style={blogStyles.error}>{error}</Text> : null}

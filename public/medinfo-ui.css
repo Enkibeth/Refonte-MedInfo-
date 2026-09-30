@@ -34,3 +34,24 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="
 .mip-slide .pv-footer > span:last-child { color:var(--ink2); opacity:1; }
 .checkline { min-height:var(--control); align-items:center; }
 .medinfo-icon { width:var(--space-lg); height:var(--space-lg); flex-shrink:0; vertical-align:middle; }
+
+/* Chargement proactif des aides IA (window.medinfoProgress, medinfo-controls.js). */
+.mi-progress { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: var(--r-lg, 12px); background: var(--surface, #fff); color: var(--ink); font-family: var(--sans, inherit); }
+.mi-progress-head { display: flex; align-items: center; gap: 8px; }
+.mi-progress-spin { width: 14px; height: 14px; flex: none; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: mi-progress-spin .8s linear infinite; }
+.mi-progress-title { flex: 1; font-size: 14px; font-weight: 600; }
+.mi-progress-time { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.mi-progress-track { height: 4px; border-radius: 2px; background: var(--sunken, #eef1f5); overflow: hidden; }
+.mi-progress-fill { height: 100%; width: 0; border-radius: 2px; background: var(--accent); transition: width .5s linear; }
+.mi-progress-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.mi-progress-steps li { position: relative; padding-left: 24px; font-size: 13px; line-height: 18px; color: var(--muted); }
+.mi-progress-steps li::before { content: ''; position: absolute; left: 0; top: 1px; width: 16px; height: 16px; box-sizing: border-box; border: 1.5px solid var(--line); border-radius: 50%; }
+.mi-progress-steps li.is-active { color: var(--ink); font-weight: 600; }
+.mi-progress-steps li.is-active::after { content: '…'; }
+.mi-progress-steps li.is-active::before { border: 4px solid var(--accent); }
+.mi-progress-steps li.is-done { color: var(--ink-2, var(--muted)); }
+.mi-progress-steps li.is-done::before { background: var(--accent); border-color: var(--accent); }
+.mi-progress-steps li.is-done::after { content: '✓'; position: absolute; left: 4px; top: 0; font-size: 10px; color: #fff; font-weight: 700; }
+.mi-progress-slow { margin: 0; font-size: 13px; line-height: 18px; color: var(--muted); font-style: italic; }
+@keyframes mi-progress-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .mi-progress-spin { animation: none; } .mi-progress-fill { transition: none; } }

@@ -1340,9 +1340,20 @@
     document.getElementById('drawer').classList.remove('open');
     document.getElementById('overlay').classList.remove('open');
   }
-  function drawerLoading(msg) {
-    document.getElementById('drawer-body').innerHTML =
-      '<div class="privacy">' + esc(PRIVACY) + '</div>' +
+  // Chargement proactif (medinfo-controls.js) : étapes réelles de /api/article, arrêté
+  // par aiCall() à la réponse (succès comme échec).
+  var drawerProgress = null;
+  function stopDrawerProgress() { if (drawerProgress) { drawerProgress.stop(); drawerProgress = null; } }
+  function drawerLoading(msg, steps) {
+    stopDrawerProgress();
+    var bodyEl = document.getElementById('drawer-body');
+    bodyEl.innerHTML = '<div class="privacy">' + esc(PRIVACY) + '</div>';
+    if (steps && window.medinfoProgress) {
+      drawerProgress = window.medinfoProgress({ title: msg, steps: steps, slowAfterMs: 50000 });
+      bodyEl.appendChild(drawerProgress.el);
+      return;
+    }
+    bodyEl.innerHTML +=
       '<div style="display:flex;align-items:center;gap:8px;color:var(--muted)"><span class="spinner"></span> ' + esc(msg) + '</div>';
   }
   function drawerError(msg) {
@@ -1355,7 +1366,8 @@
 
   function aiCall(body) {
     return api('/api/article', { method: 'POST', body: JSON.stringify(body) })
-      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); });
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .finally(stopDrawerProgress);
   }
 
   function runAssist(instruction, customInstruction) {
@@ -1364,7 +1376,11 @@
     var snapshotContent = sec.content || '';
     var orderSnapshot = citationOrder().ordered.slice();
     openDrawer('Aide à la rédaction');
-    drawerLoading('L’IA travaille sur « ' + (sec.title || 'Section') + ' »…');
+    drawerLoading('L’IA travaille sur « ' + (sec.title || 'Section') + ' »', [
+      { label: 'Lecture de la section et du plan de l’article', afterMs: 0 },
+      { label: 'Application de ta consigne', afterMs: 4000 },
+      { label: 'Vérification : aucun fait ni référence ajouté', afterMs: 14000 },
+    ]);
     aiCall({ mode: 'assist', document: art, sectionId: sec.id, instruction: instruction, customInstruction: customInstruction })
       .then(function (res) {
         if (!res.ok) { drawerError((res.j && res.j.error) || 'Aide indisponible.'); return; }
@@ -1438,7 +1454,12 @@
     var snapshotContent = sec.content || '';
     var orderSnapshot = citationOrder().ordered.slice();
     openDrawer('Réduction à la limite');
-    drawerLoading('Réduction en cours (objectif : ' + fmtN(max) + ' ' + KIND_SHORT[kind] + ')…');
+    drawerLoading('Réduction à ' + fmtN(max) + ' ' + KIND_SHORT[kind], [
+      { label: 'Lecture de la section', afterMs: 0 },
+      { label: 'Repérage des redondances et des passages secondaires', afterMs: 4000 },
+      { label: 'Réécriture plus concise, sans perdre les messages clés', afterMs: 10000 },
+      { label: 'Recomptage exact de la longueur', afterMs: 24000 },
+    ]);
     aiCall({ mode: 'reduce', document: art, sectionId: sec.id, target: { kind: kind, max: max } })
       .then(function (res) {
         if (!res.ok) { drawerError((res.j && res.j.error) || 'Réduction indisponible.'); return; }
@@ -1482,7 +1503,12 @@
     var text = renderTokens((sec.content || '').trim(), order);
     if (text.length < 200) { alert('Écris au moins quelques paragraphes (200 caractères) pour un contrôle utile.'); return; }
     openDrawer('Contrôle d’originalité');
-    drawerLoading('Recherche de formulations proches dans les sources publiées…');
+    drawerLoading('Contrôle d’originalité', [
+      { label: 'Lecture de la section', afterMs: 0 },
+      { label: 'Recherche de formulations proches dans les sources publiées', afterMs: 3000 },
+      { label: 'Comparaison des passages trouvés', afterMs: 25000 },
+      { label: 'Rédaction du rapport', afterMs: 40000 },
+    ]);
     aiCall({ mode: 'originality', text: text })
       .then(function (res) {
         if (!res.ok) { drawerError((res.j && res.j.error) || 'Contrôle indisponible.'); return; }

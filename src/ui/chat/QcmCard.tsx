@@ -16,6 +16,7 @@ import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'rea
 
 import { tokens } from '@/ui/tokens';
 import { Icon } from '@/ui/icons';
+import { ProgressSteps } from '@/ui/progress/ProgressSteps';
 import {
   scoreQcm,
   scoreQuestion,
@@ -97,6 +98,9 @@ export function QcmLauncher({
           {state === 'loading' ? 'Génération du QCM…' : 'Générer un QCM (type EDN)'}
         </Text>
       </TouchableOpacity>
+      {/* Chargement proactif : la génération dure plusieurs dizaines de secondes, un simple
+          spinner ne disait pas ce qui se passait (retour Hugo 2026-09). */}
+      {state === 'loading' ? <ProgressSteps plan="qcm" /> : null}
       {state === 'error' ? <Text style={styles.launchError}>{errorMsg}</Text> : null}
     </View>
   );

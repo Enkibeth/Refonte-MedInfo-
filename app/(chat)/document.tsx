@@ -24,6 +24,7 @@ import {
 } from 'react-native';
 import { useSession } from '@/auth/AuthProvider';
 import { Icon } from '@/ui/icons';
+import { ProgressSteps } from '@/ui/progress/ProgressSteps';
 import { tokens } from '@/ui/tokens';
 import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
@@ -461,6 +462,12 @@ function DocumentScreenInner() {
           Le document importé n'est pas conservé : il est transmis à l'IA puis oublié. Seul le
           résultat est enregistré dans votre historique.
         </Text>
+
+        {/* Chargement proactif jusqu'aux premiers mots du résultat (flux) : avant, seul un
+            spinner dans le bouton signalait l'attente. */}
+        {loading && !analysis ? (
+          <ProgressSteps plan={mode === 'translation' ? 'translate' : 'analyze'} />
+        ) : null}
 
         {error ? (
           <View style={styles.errorBox}>

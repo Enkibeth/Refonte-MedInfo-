@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { useSession } from '@/auth/AuthProvider';
 import { Icon } from '@/ui/icons';
+import { ProgressSteps } from '@/ui/progress/ProgressSteps';
 import { tokens } from '@/ui/tokens';
 import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
@@ -401,10 +402,7 @@ function AudioFeature() {
 
           {recordState === 'processing' && (
             <View style={styles.processingState}>
-              <ActivityIndicator color={tokens.colors.accent} size="large" />
-              <Text style={styles.processingText}>
-                {mode === 'transcription' ? 'Transcription en cours…' : 'Rédaction du compte rendu…'}
-              </Text>
+              <ProgressSteps plan={mode === 'transcription' ? 'audioTranscription' : 'audioReport'} />
             </View>
           )}
 
@@ -680,12 +678,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
     fontSize: tokens.type.label.fontSize,
   },
-  processingState: { alignItems: 'center', gap: tokens.space.lg, padding: tokens.space.xl },
-  processingText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
-    fontSize: tokens.type.label.fontSize,
-  },
+  processingState: { padding: tokens.space.md },
   newRecordingButton: { minHeight: tokens.size.controlMd,
     height: 44,
     borderRadius: tokens.radius.md,
