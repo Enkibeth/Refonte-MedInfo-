@@ -14,8 +14,9 @@
  *
  * Pure ergonomie : l'autorisation des chatbots reste serveur (allowedChatbotsFor).
  */
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { ChatbotId } from '@/ai/chat/chatContext';
 import { getCountry, type CountryCode } from '@/ai/chat/country';
@@ -54,9 +55,34 @@ export function ChatMobileHeader(props: ChatMobileHeaderProps) {
 
   const meta = CHATBOT_META[chatbot];
   const canPick = chatbots.length > 1;
+  const insets = useSafeAreaInsets();
+
+  // Action à lancer APRÈS la fermeture de la feuille (pays, outils, historique ouvrent
+  // chacun leur propre fenêtre). Sur iOS natif, une fenêtre ne peut pas s'ouvrir pendant
+  // que la précédente se ferme : elle ne s'afficherait pas, sans erreur. On attend donc
+  // `onDismiss` (iOS seulement) ; ailleurs, l'ouverture immédiate fonctionne.
+  const afterClose = useRef<(() => void) | null>(null);
+  const closeMenuThen = (action: () => void) => {
+    if (Platform.OS === 'ios') {
+      afterClose.current = action;
+      setMenuOpen(false);
+    } else {
+      setMenuOpen(false);
+      action();
+    }
+  };
+  const runAfterClose = () => {
+    const action = afterClose.current;
+    afterClose.current = null;
+    action?.();
+  };
 
   return (
     <View style={[styles.bar, { paddingTop: tokens.space.xs + topInset }]}>
+      {/* Titre de page pour les lecteurs d'écran (l'en-tête d'ordinateur, qui le porte, est masqué ici). */}
+      <Text style={styles.srOnly} accessibilityRole="header" aria-level={1}>
+        Chat {meta.label.toLowerCase()}
+      </Text>
       <IconButton icon="menu" label="Menu du chat" onPress={() => setMenuOpen(true)} />
 
       <Pressable
@@ -114,26 +140,35 @@ export function ChatMobileHeader(props: ChatMobileHeaderProps) {
       </Modal>
 
       {/* ── Menu (feuille en bas d'écran) ── */}
-      <Modal visible={menuOpen} transparent animationType="none" onRequestClose={() => setMenuOpen(false)}>
+      <Modal
+        visible={menuOpen}
+        transparent
+        animationType="none"
+        onRequestClose={() => setMenuOpen(false)}
+        onDismiss={runAfterClose}
+      >
         <Pressable style={styles.sheetBackdrop} onPress={() => setMenuOpen(false)}>
-          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+          <Pressable
+            style={[styles.sheet, { paddingBottom: tokens.space['2xl'] + insets.bottom }]}
+            onPress={(e) => e.stopPropagation()}
+          >
             <View style={styles.grabber} />
             <MenuSection title="Conversation">
               {props.onHistory ? (
-                <MenuRow icon="clock" label="Historique des conversations" onPress={() => { setMenuOpen(false); props.onHistory?.(); }} />
+                <MenuRow icon="clock" label="Historique des conversations" onPress={() => closeMenuThen(() => props.onHistory?.())} />
               ) : null}
               {props.sourcesCount > 0 ? (
                 <MenuRow
                   icon="bookOpen"
                   label="Sources de la réponse"
                   value={String(props.sourcesCount)}
-                  onPress={() => { setMenuOpen(false); props.onSources(); }}
+                  onPress={() => closeMenuThen(props.onSources)}
                 />
               ) : null}
               {props.onExport ? (
-                <MenuRow icon="download" label="Exporter en PDF" onPress={() => { setMenuOpen(false); props.onExport?.(); }} />
+                <MenuRow icon="download" label="Exporter en PDF" onPress={() => closeMenuThen(() => props.onExport?.())} />
               ) : null}
-              <MenuRow icon="maximize" label="Plein écran" onPress={() => { setMenuOpen(false); props.onFullscreen(); }} />
+              <MenuRow icon="maximize" label="Plein écran" onPress={() => closeMenuThen(props.onFullscreen)} />
             </MenuSection>
             <MenuSection title="Réglages">
               <MenuRow
@@ -142,11 +177,11 @@ export function ChatMobileHeader(props: ChatMobileHeaderProps) {
                 value={props.country ? getCountry(props.country)?.name : 'Choisir'}
                 valueFlag={props.country}
                 chevron
-                onPress={() => { setMenuOpen(false); setCountryOpen(true); }}
+                onPress={() => closeMenuThen(() => setCountryOpen(true))}
               />
             </MenuSection>
             <MenuSection title="Navigation">
-              <MenuRow icon="layoutGrid" label="Outils et mon compte" chevron onPress={() => { setMenuOpen(false); setToolsOpen(true); }} />
+              <MenuRow icon="layoutGrid" label="Outils et mon compte" chevron onPress={() => closeMenuThen(() => setToolsOpen(true))} />
             </MenuSection>
           </Pressable>
         </Pressable>
@@ -232,6 +267,8 @@ const styles = StyleSheet.create({
     borderColor: tokens.colors.border,
   },
   iconSlot: { width: ICON_SLOT, height: ICON_SLOT },
+  // Masqué à l'écran, lu par les lecteurs d'écran.
+  srOnly: { position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0 },
   iconButton: { alignItems: 'center', justifyContent: 'center', borderRadius: tokens.radius.pill },
   pressed: { opacity: 0.6 },
   titleButton: {
@@ -281,7 +318,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: tokens.radius.xl,
     paddingHorizontal: tokens.space.md,
     paddingTop: tokens.space.sm,
-    paddingBottom: tokens.space['2xl'],
     gap: tokens.space.md,
     ...tokens.elevation.lg,
   },
