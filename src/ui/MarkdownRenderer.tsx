@@ -545,13 +545,15 @@ const inlineStyles = StyleSheet.create({
     borderRadius: 3,
     paddingHorizontal: 3,
   },
-  // Exposant de source : petit numéro accent cliquable (style « ¹ ² »).
+  // Exposant de source : numéro accent cliquable. Le caractère (¹ ²…) est DÉJÀ un exposant :
+  // taille du corps, ni `vertical-align: super` ni taille réduite — les deux ensemble le
+  // rendaient minuscule et agrandissaient la ligne qui le portait (interlignes irréguliers).
   footnote: {
     fontFamily: tokens.font.sans,
-    fontSize: tokens.type.micro.fontSize,
+    fontSize: tokens.type.body.fontSize,
+    lineHeight: tokens.type.body.lineHeight,
     fontWeight: tokens.weight.bold,
     color: tokens.colors.accent,
-    ...Platform.select({ web: { verticalAlign: 'super' } as object, default: {} }),
   },
 });
 
