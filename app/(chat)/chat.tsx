@@ -1478,6 +1478,7 @@ export default function ChatScreen() {
             country={country}
             onCountryChange={handleCountryChange}
             topInset={insets.top}
+            isGuest={isGuest}
           />
         </View>
       ) : null}

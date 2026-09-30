@@ -14,7 +14,7 @@
  *
  * Pure ergonomie : l'autorisation des chatbots reste serveur (allowedChatbotsFor).
  */
-import { useRef, useState } from 'react';
+import { Children, Fragment, useRef, useState } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -44,6 +44,8 @@ export interface ChatMobileHeaderProps {
   country: CountryCode | null;
   onCountryChange: (code: CountryCode) => void;
   topInset: number;
+  /** Visiteur non connecté : le menu de navigation mène à l'accueil et à la connexion. */
+  isGuest?: boolean;
 }
 
 export function ChatMobileHeader(props: ChatMobileHeaderProps) {
@@ -88,7 +90,8 @@ export function ChatMobileHeader(props: ChatMobileHeaderProps) {
       <Pressable
         onPress={() => canPick && setPickerOpen(true)}
         disabled={!canPick || switchDisabled}
-        accessibilityRole={canPick ? 'button' : 'header'}
+        // Un seul chatbot : simple libellé (le titre de page est porté par le h1 masqué).
+        accessibilityRole={canPick ? 'button' : undefined}
         accessibilityLabel={canPick ? `Chatbot : ${meta.label}. Changer de chatbot` : `Chat ${meta.label}`}
         aria-expanded={canPick ? pickerOpen : undefined}
         style={({ pressed }: { pressed: boolean }) => [styles.titleButton, pressed && styles.pressed]}
@@ -181,7 +184,12 @@ export function ChatMobileHeader(props: ChatMobileHeaderProps) {
               />
             </MenuSection>
             <MenuSection title="Navigation">
-              <MenuRow icon="layoutGrid" label="Outils et mon compte" chevron onPress={() => closeMenuThen(() => setToolsOpen(true))} />
+              <MenuRow
+                icon={props.isGuest ? 'userRound' : 'layoutGrid'}
+                label={props.isGuest ? 'Accueil et connexion' : 'Outils et mon compte'}
+                chevron
+                onPress={() => closeMenuThen(() => setToolsOpen(true))}
+              />
             </MenuSection>
           </Pressable>
         </Pressable>
@@ -217,7 +225,15 @@ function MenuSection({ title, children }: { title: string; children: React.React
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.sectionCard}>{children}</View>
+      <View style={styles.sectionCard}>
+        {/* Filet entre deux lignes (aligné sur le texte, comme les listes iOS). */}
+        {Children.toArray(children).map((child, i) => (
+          <Fragment key={i}>
+            {i > 0 ? <View style={styles.separator} /> : null}
+            {child}
+          </Fragment>
+        ))}
+      </View>
     </View>
   );
 }
@@ -351,6 +367,7 @@ const styles = StyleSheet.create({
     gap: tokens.space.md,
     paddingHorizontal: tokens.space.md,
   },
+  separator: { height: StyleSheet.hairlineWidth, backgroundColor: tokens.colors.border, marginLeft: tokens.space.md + 19 + tokens.space.md },
   rowPressed: { backgroundColor: tokens.colors.surfaceAlt },
   rowLabel: { flex: 1, fontFamily: tokens.font.sans, fontSize: 16, color: tokens.colors.text },
   rowValue: { fontFamily: tokens.font.sans, fontSize: 15, color: tokens.colors.textMuted, maxWidth: 140 },

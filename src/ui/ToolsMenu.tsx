@@ -47,7 +47,7 @@ export function ToolsMenu({
   const router = useRouter();
   const segments = useSegments();
   const width = useWindowWidth();
-  const { persona, user, session } = useSession();
+  const { persona, user, session, loading, bootDegraded } = useSession();
   const [openState, setOpenState] = useState(false);
   const open = openProp ?? openState;
   const setOpen = (next: boolean) => {
@@ -57,7 +57,9 @@ export function ToolsMenu({
 
   const isAdmin = user ? isAdminUserId(user.id) : false;
   // Visiteur non connecté (essai sans inscription) : seul le chat apparaît dans le menu.
-  const isGuest = !session;
+  // Session en cours de chargement ou de récupération (amorçage dégradé) : jamais traitée
+  // comme un visiteur (CLAUDE.md, incident « chargement infini ») — même règle que le chat.
+  const isGuest = !session && !loading && !bootDegraded;
   const current = (segments as string[])[segments.length - 1];
 
   // Sous le shell desktop (sidebar, src/ui/shell/AppShell.tsx), ce menu ferait
