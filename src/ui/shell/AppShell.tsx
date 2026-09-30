@@ -13,6 +13,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Image,
   Platform,
   Pressable,
   ScrollView,
@@ -329,9 +330,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             style={[styles.logoRow, collapsed && styles.logoRowCollapsed]}
           >
             {/* Illustration de l'équipe (demande Hugo) — même pastille que le header
-                public (src/ui/LandingHeader.tsx). Asset relatif (piège alias @/). */}
-
-            {collapsed ? <Icon name="bookOpen" size={tokens.size.iconLg} color={tokens.colors.accent} /> : <Logo size="sm" />}
+                public (src/ui/LandingHeader.tsx). Asset relatif (piège alias @/). Seule dans
+                le rail replié. */}
+            <Image
+              source={require('../../../assets/brand/team-illustration.png')}
+              style={[styles.teamBadge, collapsed && styles.teamBadgeCollapsed]}
+              resizeMode="cover"
+              accessibilityRole="image"
+              accessibilityLabel="L'équipe MedInfo AI"
+            />
+            {collapsed ? null : <Logo size="sm" />}
           </Pressable>
           {collapseToggle}
         </View>
@@ -449,6 +457,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 const styles = StyleSheet.create({
+  teamBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surfaceAlt,
+  },
+  teamBadgeCollapsed: { width: 36, height: 36 },
   hidden: { display: 'none' },
   frame: {
     flex: 1,
@@ -509,14 +526,6 @@ const styles = StyleSheet.create({
     gap: tokens.space.md,
   },
   logoRowCollapsed: { alignSelf: 'center' },
-  teamBadge: {
-    width: 46,
-    height: 46,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.border,
-  },
   userCard: {
     flexDirection: 'row',
     alignItems: 'center',

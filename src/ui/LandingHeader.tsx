@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
@@ -87,7 +87,13 @@ export function LandingHeader() {
         >
           {/* Illustration de l'équipe (demande Hugo 2026-06) — dans le coin haut gauche,
               le logo MedInfo à sa droite. Asset relatif (cf. piège alias @/). */}
-
+          <Image
+            source={require('../../assets/brand/team-illustration.png')}
+            style={styles.teamBadge}
+            resizeMode="cover"
+            accessibilityRole="image"
+            accessibilityLabel="L'équipe MedInfo AI"
+          />
           <Logo size="sm" />
         </Pressable>
 
@@ -211,6 +217,14 @@ function DropdownCard({ entries, onSelect }: { entries: MenuEntry[]; onSelect: (
 }
 
 const styles = StyleSheet.create({
+  teamBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surfaceAlt,
+  },
   clickAway: {
     // RN web transmet 'fixed' au CSS ; sur natif, repli absolu (les dropdowns du
     // header sont une surface web-first).
@@ -245,14 +259,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.sm,
-  },
-  teamBadge: {
-    width: 52,
-    height: 52,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surfaceAlt,
   },
   nav: {
     flexDirection: 'row',
