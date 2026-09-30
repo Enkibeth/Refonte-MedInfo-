@@ -17,16 +17,29 @@ import { tokens } from '@/ui/tokens';
 export function CountrySelector({
   value,
   onChange,
+  open: openProp,
+  onOpenChange,
+  hideTrigger = false,
 }: {
   value: CountryCode | null;
   onChange: (code: CountryCode) => void;
+  /** Ouverture pilotée par le parent (menu mobile du chat) ; sinon état interne. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Sans bouton déclencheur : seule la liste s'affiche, ouverte par le parent. */
+  hideTrigger?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (next: boolean) => {
+    setOpenState(next);
+    onOpenChange?.(next);
+  };
   const current = value ? getCountry(value) : undefined;
 
   return (
     <>
-      <Pressable
+      {hideTrigger ? null : <Pressable
         onPress={() => setOpen(true)}
         accessibilityRole="button"
         accessibilityLabel={current ? `Pays : ${current.name}` : 'Choisir le pays'}
@@ -41,7 +54,7 @@ export function CountrySelector({
           <Icon name="globe" size={14} color={tokens.colors.accentDeep} />
         )}
         <Text style={styles.triggerLabel}>{current ? current.code : 'Pays'}</Text>
-      </Pressable>
+      </Pressable>}
 
       <Modal visible={open} transparent animationType="none" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>

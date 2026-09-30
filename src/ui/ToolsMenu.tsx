@@ -33,12 +33,27 @@ interface MenuItem {
   featureId?: AppFeatureId;
 }
 
-export function ToolsMenu() {
+export function ToolsMenu({
+  open: openProp,
+  onOpenChange,
+  hideTrigger = false,
+}: {
+  /** Ouverture pilotée par le parent (menu mobile du chat) ; sinon état interne. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Sans bouton déclencheur : seul le panneau s'affiche, ouvert par le parent. */
+  hideTrigger?: boolean;
+} = {}) {
   const router = useRouter();
   const segments = useSegments();
   const width = useWindowWidth();
   const { persona, user, session } = useSession();
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (next: boolean) => {
+    setOpenState(next);
+    onOpenChange?.(next);
+  };
 
   const isAdmin = user ? isAdminUserId(user.id) : false;
   // Visiteur non connecté (essai sans inscription) : seul le chat apparaît dans le menu.
@@ -79,7 +94,7 @@ export function ToolsMenu() {
 
   return (
     <>
-      <Pressable
+      {hideTrigger ? null : <Pressable
         onPress={() => setOpen(true)}
         accessibilityRole="button"
         accessibilityLabel="Ouvrir le menu des outils" {...(Platform.OS === 'web' ? { title: 'Ouvrir le menu des outils' } : {})}
@@ -88,7 +103,7 @@ export function ToolsMenu() {
       >
         <Icon name="layoutGrid" size={14} color={tokens.colors.accentDeep} />
         <Text style={styles.triggerLabel}>Outils</Text>
-      </Pressable>
+      </Pressable>}
 
       <Modal visible={open} transparent animationType="none" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
