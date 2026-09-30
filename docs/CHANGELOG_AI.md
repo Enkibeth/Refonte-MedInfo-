@@ -4,6 +4,19 @@ Journal des modifications par agents IA. Une entrée par PR.
 
 ## Format
 ```
+## [2026-09-30] – Claude (chat : mode plein écran « taille Messages », saisie à 16 px)
+### Files modified
+- src/chat/focusMode.ts (nouveau), app/(chat)/chat.tsx, src/ui/AppTabBar.tsx, src/ui/shell/AppShell.tsx, src/ui/MarkdownRenderer.tsx (`MarkdownTextSizeContext`), src/ui/iconPaths.ts (maximize/minimize)
+### Purpose
+Demande Hugo : bouton plein écran dans l'en-tête du chat. Actif : en-tête, onglets de chatbot, barre du bas, sidebar et
+historique desktop masqués (masquage par style, jamais de démontage — la conversation en cours est conservée) ; barre
+fine quitter / sources / nouvelle conversation ; texte des messages et saisie à 17 px (taille de l'app Messages
+d'iOS) ; préférence mémorisée (`medinfo:chatFocus`, relue après montage : pas d'erreur d'hydratation) ; vrai plein écran
+du navigateur demandé sur ordinateur/Android (API absente sur iPhone pour une page). Saisie passée de 15 à 16 px hors
+plein écran : sous 16 px, Safari iPhone zoome la page entière au toucher du champ.
+### Regulatory impact
+Aucun : l'avertissement IA et les numéros d'urgence restent affichés en plein écran.
+
 ## [2026-09-28] – Claude (site public : quota invité du chat, promesses corrigées, RPC fermée, ECG de l'accueil)
 ### Files modified
 - src/ai/rateLimit/chatRateLimit.ts (`checkGuestChatQuota`, `GUEST_CHAT_DAILY_LIMIT` = 5), app/api/chat+api.ts, tests/chat/rate-limit.test.ts

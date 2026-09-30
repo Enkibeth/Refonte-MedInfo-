@@ -84,6 +84,11 @@ export function AppTabBar({ state, navigation }: AppTabBarProps) {
   const allTools = visibleFeatures(persona, ctx);
   const activeName = state.routes[state.index]?.name;
 
+  // Écran de chat : pas de barre du bas (demande Hugo 2026-09) — la place revient au fil.
+  // Le menu « Outils » de l'en-tête du chat mène aux mêmes destinations (Vue d'ensemble,
+  // outils du rôle, Mon compte, admin), et le plein écran masque de toute façon l'en-tête.
+  if (activeName === 'chat') return null;
+
   // Desktop web : la sidebar du shell (src/ui/shell/AppShell.tsx) porte la navigation.
   if (Platform.OS === 'web' && width >= SHELL_BREAKPOINT) return null;
 
