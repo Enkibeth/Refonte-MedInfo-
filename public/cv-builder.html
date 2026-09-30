@@ -3749,10 +3749,23 @@
       if (text.length < 40) { info.textContent = 'Texte trop court.'; return; }
       if (!authToken) { info.textContent = 'Connecte-toi pour utiliser l\'import assisté par IA.'; return; }
       run.disabled = true;
-      info.textContent = 'Analyse en cours…';
+      info.textContent = '';
+      // Chargement proactif (medinfo-controls.js) : étapes réelles de /api/cv-import.
+      var progress = window.medinfoProgress ? window.medinfoProgress({
+        title: 'Import de ton CV',
+        steps: [
+          { label: 'Lecture du texte de ton CV', afterMs: 0 },
+          { label: 'Repérage des rubriques (formation, stages, publications…)', afterMs: 3000 },
+          { label: 'Rangement de chaque entrée dans le CV', afterMs: 10000 },
+        ],
+        slowAfterMs: 45000,
+      }) : null;
+      if (progress) info.after(progress.el); else info.textContent = 'Analyse en cours…';
+      var stopProgress = function () { if (progress) { progress.stop(); progress = null; } };
       api('/api/cv-import', { method: 'POST', body: JSON.stringify({ text: text }) })
         .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
         .then(function (res) {
+          stopProgress();
           run.disabled = false;
           if (!res.ok) { info.textContent = res.j.error || 'Import impossible.'; return; }
           var imported = E.migrate(res.j.document || res.j);
@@ -3763,7 +3776,7 @@
           closeModal();
           replaceDocument(imported, 'CV importé — vérifie chaque rubrique.');
         })
-        .catch(function () { run.disabled = false; info.textContent = 'Réseau indisponible.'; });
+        .catch(function () { stopProgress(); run.disabled = false; info.textContent = 'Réseau indisponible.'; });
     });
     openModal('Importer un CV existant', body, [el('button', { class: 'btn', text: 'Annuler', onclick: closeModal }), run]);
   }
@@ -3804,13 +3817,30 @@
       openModal('Relecture IA', el('div', { class: 'empty', text: 'Connecte-toi avec un compte étudiant ou professionnel vérifié pour utiliser la relecture.' }));
       return;
     }
-    var body = el('div', {}, [el('div', { class: 'empty', text: 'Relecture en cours… (quelques secondes)' })]);
+    if (S.reviewInFlight) {
+      // Relecture déjà lancée : son résultat s'affichera dans la fenêtre d'origine.
+      openModal('Relecture IA', el('div', { class: 'empty', text: 'Relecture déjà en cours… réessaie dans quelques secondes.' }));
+      return;
+    }
+    // Chargement proactif (medinfo-controls.js) : étapes réelles de /api/cv.
+    var progress = window.medinfoProgress ? window.medinfoProgress({
+      title: 'Relecture de ton CV',
+      steps: [
+        { label: 'Lecture de ton CV (sans photo ni coordonnées)', afterMs: 0 },
+        { label: 'Contrôle de la structure et de la clarté', afterMs: 4000 },
+        { label: 'Repérage des formulations à renforcer', afterMs: 12000 },
+        { label: 'Rédaction des suggestions', afterMs: 22000 },
+      ],
+      slowAfterMs: 50000,
+    }) : null;
+    var body = el('div', {}, [progress ? progress.el : el('div', { class: 'empty', text: 'Relecture en cours…' })]);
     openModal('Relecture IA', body);
-    if (S.reviewInFlight) return;
     S.reviewInFlight = true;
+    var stopProgress = function () { if (progress) { progress.stop(); progress = null; } };
     api('/api/cv', { method: 'POST', body: JSON.stringify({ document: minimizedDoc() }) })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
       .then(function (res) {
+        stopProgress();
         S.reviewInFlight = false;
         clear(body);
         if (!res.ok) { body.appendChild(el('div', { class: 'empty', text: res.j.error || 'Relecture impossible.' })); return; }
@@ -3850,6 +3880,7 @@
         }
       })
       .catch(function () {
+        stopProgress();
         S.reviewInFlight = false;
         clear(body);
         body.appendChild(el('div', { class: 'empty', text: 'Réseau indisponible.' }));

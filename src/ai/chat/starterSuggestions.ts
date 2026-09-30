@@ -1,6 +1,10 @@
 /**
  * Questions d'amorce du chat (état vide) — 50 questions par chatbot, affichées
  * 3 par 3 avec rotation toutes les 30 secondes (décision Hugo, 2026-06).
+ * Ordre ALÉATOIRE à chaque ouverture du chat (retour Hugo 2026-09 : « elles commencent
+ * toujours par les mêmes ») : `shuffleSuggestions` tire une permutation, que
+ * `suggestionWindow` parcourt ensuite — aucune question ne revient avant que les 50
+ * aient été montrées.
  *
  * ⚠️ Module PUR et testable : aucune dépendance réseau, aucune donnée de santé
  * individuelle — uniquement des questions d'information générale.
@@ -182,4 +186,26 @@ export function suggestionWindow(list: string[], tick: number, count = SUGGESTIO
   const size = Math.min(count, list.length);
   const start = ((tick * size) % list.length + list.length) % list.length;
   return Array.from({ length: size }, (_, i) => list[(start + i) % list.length]);
+}
+
+/**
+ * Permutation aléatoire uniforme (Fisher-Yates) d'une liste, sans la modifier.
+ * `random` est injectable pour les tests (défaut : Math.random).
+ */
+export function shuffleSuggestions<T>(list: readonly T[], random: () => number = Math.random): T[] {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/** Un ordre aléatoire par chatbot (tiré une fois à l'ouverture du chat). */
+export function shuffledStarterSuggestions(random: () => number = Math.random): Record<ChatbotId, string[]> {
+  return {
+    public: shuffleSuggestions(STARTER_SUGGESTIONS.public, random),
+    student: shuffleSuggestions(STARTER_SUGGESTIONS.student, random),
+    professional: shuffleSuggestions(STARTER_SUGGESTIONS.professional, random),
+  };
 }

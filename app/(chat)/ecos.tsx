@@ -24,6 +24,7 @@ import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
 import { getSupabaseClient } from '@/db/supabase';
 import { Icon } from '@/ui/icons';
+import { ProgressSteps } from '@/ui/progress/ProgressSteps';
 import { tokens } from '@/ui/tokens';
 import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
@@ -1002,8 +1003,7 @@ function EcosScreenInner() {
 
         {evalLoading ? (
           <View style={styles.evalLoading}>
-            <ActivityIndicator color={tokens.colors.accent} size="large" />
-            <Text style={styles.evalLoadingText}>Évaluation en cours…</Text>
+            <ProgressSteps plan="ecosEvaluate" />
           </View>
         ) : (
           <>
@@ -1353,12 +1353,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.label.fontSize,
   },
-  evalLoading: { alignItems: 'center', gap: tokens.space.lg, padding: tokens.space['2xl'] },
-  evalLoadingText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
-    fontSize: tokens.type.label.fontSize,
-  },
+  evalLoading: { paddingVertical: tokens.space.lg },
   evalResult: {
     borderRadius: tokens.radius.md,
     borderWidth: 1,

@@ -746,7 +746,8 @@ function aiChatEl() {
       log.append(msg);
     }
   }
-  if (state.aiBusy) log.append(h("div", { class: "mip-msg mip-msg-ai" }, h("div", { class: "mip-msg-meta" }, "Co-auteur"), "Rédaction en cours…"));
+  // Chargement proactif (medinfo-controls.js) : le MÊME nœud est ré-attaché à chaque rendu.
+  if (state.aiBusy && aiProgress) log.append(aiProgress.el);
   const ta = h("textarea", { class: "mip-textarea", placeholder: "Décris ou affine la présentation… (Ctrl/⌘+Entrée pour envoyer)", disabled: state.aiBusy });
   ta.value = aiDraft; ta.addEventListener("input", (e) => { aiDraft = e.target.value; });
   ta.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sendAI(aiDraft); } });
@@ -758,12 +759,22 @@ function aiChatEl() {
       h("div", { class: "mip-chat-input" }, ta, h("button", { class: "mip-btn mip-btn-primary", onclick: () => sendAI(aiDraft), disabled: state.aiBusy }, "Envoyer")),
       h("div", { class: "mip-disclaimer" }, "Réponses générées par une IA : information médicale générale destinée à des professionnels/étudiants. Vérifie chaque donnée et chaque référence.")));
 }
+let aiProgress = null;
 async function sendAI(text) {
   const content = (text || "").trim();
   if (!content || state.aiBusy) return;
   aiDraft = "";
   state.aiHistory.push({ role: "user", content });
-  state.aiBusy = true; render();
+  state.aiBusy = true;
+  const firstDraft = !state.aiHistory.some((m) => m.role === "assistant");
+  aiProgress = window.medinfoProgress ? window.medinfoProgress({
+    title: firstDraft ? "Création de ta présentation" : "Mise à jour de ta présentation",
+    steps: firstDraft
+      ? [{ label: "Lecture de ta demande", afterMs: 0 }, { label: "Construction du plan", afterMs: 4000 }, { label: "Rédaction des slides", afterMs: 12000 }, { label: "Ajout des sources et des messages clés", afterMs: 35000 }]
+      : [{ label: "Lecture de ta demande et du deck actuel", afterMs: 0 }, { label: "Réécriture des slides concernées", afterMs: 6000 }, { label: "Mise en forme du deck", afterMs: 25000 }],
+    slowAfterMs: 70000,
+  }) : null;
+  render();
   const cover = state.deck.slides.find((s) => s.type === "cover");
   const aiOptions = { theme: state.deck.theme, slideCount: state.slideCount, density: state.deck.options.density, audience: state.deck.options.audience || "", presentationType: (cover && cover.typeLabel) || "" };
   try {
@@ -775,6 +786,7 @@ async function sendAI(text) {
   } catch (e) {
     state.aiHistory.push({ role: "assistant", content: "Échec de l'appel IA : " + (e.message || e) });
   } finally {
+    if (aiProgress) { aiProgress.stop(); aiProgress = null; }
     state.aiBusy = false; render();
   }
 }
