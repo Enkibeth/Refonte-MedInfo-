@@ -3,7 +3,7 @@ import { LANDING_PHOTOS, type LandingPhotoProps } from './landingPhotos';
 import { tokens } from './tokens';
 
 const images = {
-  study: require('../../assets/landing/study.jpg'),
+  study: require('../../assets/landing/medical-study.jpg'),
   work: require('../../assets/landing/work.jpg'),
   sources: require('../../assets/landing/sources.jpg'),
 };

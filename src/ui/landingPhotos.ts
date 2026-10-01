@@ -1,6 +1,6 @@
 /** Photographies d’illustration ; provenance et licences : assets/landing/README.md. */
 export const LANDING_PHOTOS = {
-  study: 'Deux étudiants échangent autour de livres et d’un ordinateur dans une bibliothèque.',
+  study: 'Trois étudiants en médecine, en blouse blanche, échangent leurs notes dans un couloir.',
   work: 'Une professionnelle de santé consulte une tablette à son bureau.',
   sources: 'Une personne prend des notes en consultant des livres ouverts.',
 } as const;

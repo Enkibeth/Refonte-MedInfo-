@@ -1,7 +1,7 @@
 # MedInfo AI — Design System v2
 
-Version 2.1 — 30 septembre 2026. Direction A « Bureau de référence », enrichie à la demande de Hugo (« trop blanc et uniformisé »).
-Source exécutable : `src/ui/tokens.ts`. Décisions : ADR-0038 et ADR-0040. Web prioritaire ; variantes natives conservées.
+Version 2.2 — 1er octobre 2026. Direction A « Bureau de référence », enrichie à la demande de Hugo (« trop blanc et uniformisé »), avec un accueil davantage orienté produit.
+Source exécutable : `src/ui/tokens.ts`. Décisions : ADR-0038, ADR-0040 et ADR-0041. Web prioritaire ; variantes natives conservées.
 
 ## 1. Principes
 
@@ -32,6 +32,8 @@ Espacement : 4, 8, 12, 16, 24, 32, 48, 64. Rayons : 4/6/8/12 ; pilule réservée
 ## 3. Typographie
 
 Source Serif 4 : titres de page, accroche et sections éditoriales. Schibsted Grotesk : titres d’interface, navigation et actions. Inter : corps, aides et champs. JetBrains Mono : identifiants et valeurs techniques déjà présentes.
+
+Expo web et les quatre outils HTML chargent la même feuille locale `public/vendor/fonts/fonts.css`. Inter et Schibsted Grotesk 400–700 sont incluses, avec licences OFL ; Source Serif 4 et JetBrains Mono réutilisent les fichiers existants. Aucune requête Google Fonts au chargement. Les polices des documents exportés gardent leur logique propre.
 
 | Niveau | Taille / interligne |
 |---|---|
@@ -119,9 +121,17 @@ Conserver le contenu photographique naturel et les rayons mesurés du design sys
 - Hero bleu brume pleine largeur, photographie sur un passe-partout lilas, filet bleu dans la navigation.
 - Trois portes d’entrée sur papier ivoire, avec fonds doux distincts et contours au survol.
 - Outils sur fond blanc, pastilles colorées et photographie encadrée de sable.
-- Sources sur bleu nuit, textes clairs contrastés, accent menthe ; mentions canoniques inchangées.
+- Bloc produit/IA/références sur bleu nuit, textes clairs contrastés, accent menthe ; mentions canoniques inchangées dans les emplacements légaux.
 - FAQ sur ivoire, questions numérotées et composition en deux colonnes sur grand écran.
 - Fond général et surfaces de navigation partagés par les pages existantes ; pages autonomes synchronisées par `scripts/design/sync-web-theme.cjs`.
 - Aucun effet continu, aucune dépendance ajoutée, aucun changement de parcours ou d’autorisation.
 
 Hugo confie la recette fonctionnelle finale à Claude Code. Les contrôles visuels de cette itération ne valent pas validation des problèmes d’hydratation et de navigation antérieurs. Reprise : `docs/audits/2026-09-editorial-life/CLAUDE_HANDOFF.md`.
+
+## 12. Présentation du produit et couverture du thème (ADR-0041)
+
+L’accueil met d’abord en avant les trois assistants, les ECOS/révisions et les outils de création. La première photo montre une scène d’études médicales ; son ratio 3:2 conserve les trois personnes. Les photos travail et sources validées par Hugo sont inchangées.
+
+Le long énoncé `INTENDED_PURPOSE` n’est plus recopié dans le bloc commercial de l’accueil. Il reste inchangé dans les CGU, mentions et informations légales. L’accueil conserve la disclosure IA canonique, le footer permanent et la FAQ avec 15/112. Pas de nouvelle promesse clinique, de certification inventée ni de garantie de fiabilité universelle. Les noms de modèles désignent une configuration par défaut de version, pas une garantie sur la configuration administrateur effective.
+
+Les 26 pages applicatives consomment les tokens directement ou via `LegalScreen`; le shell, le dashboard et les menus reprennent les surfaces et pastilles partagées. Les quatre outils autonomes chargent les tokens CSS et la même typographie. Ce constat est une vérification des fondations dans le code, **pas une recette visuelle exhaustive**. Les drapeaux, marques et thèmes de documents/export ne doivent pas être recolorés pour imiter le chrome de l’application.

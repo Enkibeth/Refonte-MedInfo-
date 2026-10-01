@@ -4,7 +4,7 @@ import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
 import type { Persona } from '@/ai/prompts/_schema';
 import { APP_FEATURES, visibleFeatures } from '@/ai/routing/featureVisibility';
-import { INTENDED_PURPOSE, getAiDisclosure } from '@/compliance/disclosures';
+import { getAiDisclosure } from '@/compliance/disclosures';
 import { PAGE_SEO, faqPageJsonLd, organizationJsonLd, webSiteJsonLd, type FaqItem } from '@/seo/meta';
 import { Button } from '@/ui/Button';
 import { Icon, type IconName } from '@/ui/icons';
@@ -61,9 +61,9 @@ const FAQ_ITEMS: FaqItem[] = [
 ];
 
 const AUDIENCES: { id: Persona; label: string; title: string; description: string; icon: IconName }[] = [
-  { id: 'public', label: 'Grand public', title: 'Comprendre une information de santé', description: 'Des explications accessibles, sans avis individuel.', icon: 'users' },
+  { id: 'public', label: 'Grand public', title: 'Comprendre une information de santé', description: 'Des explications accessibles pour explorer les sujets de santé.', icon: 'users' },
   { id: 'student', label: 'Étudiants en santé', title: 'Approfondir. Réviser. Comprendre.', description: 'Des notions aux référentiels, pour structurer vos révisions.', icon: 'bookOpen' },
-  { id: 'professional', label: 'Professionnels de santé', title: 'Consulter les recommandations', description: 'Une synthèse à confronter aux sources et à leur contexte.', icon: 'stethoscope' },
+  { id: 'professional', label: 'Professionnels de santé', title: 'Explorer la littérature médicale', description: 'Des références pour enrichir votre travail documentaire.', icon: 'stethoscope' },
 ];
 
 const AUDIENCE_COLORS = {
@@ -73,9 +73,9 @@ const AUDIENCE_COLORS = {
 };
 
 const TRUST_ITEMS = [
-  ['Retrouver les références', 'Les citations permettent de revenir aux documents d’origine. Consultez leur date et leur contexte.'],
-  ['Des sources accessibles', 'L’abonnement ne bloque jamais l’accès aux sources citées.'],
-  ['Un cadre explicite', INTENDED_PURPOSE],
+  ['Des modèles d’IA récents', 'MedInfo AI intègre les modèles OpenAI et Anthropic. GPT-6 Luna est le modèle de chat configuré par défaut dans cette version.'],
+  ['Des outils pour vos projets', 'Simulations ECOS, planning de révisions, présentations, CV et rédaction d’articles : un espace pour apprendre, organiser et créer, selon votre profil.'],
+  ['Les références à portée de main', 'Retrouvez les documents cités pour approfondir votre lecture. L’accès aux sources reste gratuit, avec ou sans abonnement.'],
 ] as const;
 
 export default function HomeScreen() {
@@ -101,8 +101,13 @@ export default function HomeScreen() {
                   <View style={styles.eyebrowRule} aria-hidden />
                   <Text style={styles.kicker}>MedInfo AI · Information médicale générale</Text>
                 </View>
-                <Text {...mi('landing-headline')} accessibilityRole="header" aria-level={1} style={[styles.headline, !wide && styles.headlineCompact]}>Une question médicale.{'\n'}<Text style={styles.headlineAccent}>Revenir aux sources.</Text></Text>
-                <Text style={styles.subhead}>Comprendre, apprendre, approfondir. Un espace de travail pour explorer l’information médicale et consulter les références citées.</Text>
+                <Text {...mi('landing-headline')} accessibilityRole="header" aria-level={1} style={[styles.headline, !wide && styles.headlineCompact]}>L’IA pour apprendre.{'\n'}<Text style={styles.headlineAccent}>Des outils pour créer.</Text></Text>
+                <Text style={styles.subhead}>Explorez les connaissances médicales, préparez vos ECOS et donnez forme à vos travaux. Trois assistants et des outils réunis dans un même espace.</Text>
+                <View style={styles.highlights}>
+                  <Text style={styles.highlight}>3 assistants</Text>
+                  <Text style={styles.highlight}>ECOS & révisions</Text>
+                  <Text style={styles.highlight}>Documents & créations</Text>
+                </View>
                 <View {...mi('landing-actions')} style={[styles.heroActions, compact && styles.actionsCompact]}>
                   <Button label={user ? 'Ouvrir le chat' : 'Essayer sans inscription'} onPress={() => router.push('/(chat)/chat')} fullWidth={compact} />
                   <Button label={user ? 'Mon espace' : 'Se connecter'} variant="ghost" onPress={() => router.push(user ? '/(chat)/dashboard' : '/(auth)/sign-in')} fullWidth={compact} />
@@ -117,9 +122,9 @@ export default function HomeScreen() {
                     <Icon name="bookOpen" size={tokens.size.iconMd} color={tokens.colors.personas.student.accent} />
                   </View>
                   <View {...mi('landing-photo-image')}>
-                    <LandingPhoto photo="study" priority aspectRatio={wide ? 4 / 5 : 3 / 2} sizes="(min-width: 1024px) 352px, (min-width: 640px) calc(100vw - 80px), calc(100vw - 64px)" />
+                    <LandingPhoto photo="study" priority aspectRatio={3 / 2} sizes="(min-width: 1200px) 512px, (min-width: 1024px) calc((100vw - 144px) / 2), (min-width: 640px) calc(100vw - 80px), calc(100vw - 64px)" />
                   </View>
-                  <Text style={styles.photoCaption}>La curiosité se partage.</Text>
+                  <Text style={styles.photoCaption}>Le savoir se construit ensemble.</Text>
                 </View>
               </View>
             </View>
@@ -149,8 +154,8 @@ export default function HomeScreen() {
               <View {...mi('landing-tools-intro')} style={[styles.toolsIntro, wide && styles.toolsIntroWide]}>
                 <View style={styles.sectionHead}>
                   <Text style={styles.label}>Votre espace de travail</Text>
-                  <Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>{user ? 'Vos outils de travail' : 'Un outil pour chaque travail'}</Text>
-                  <Text style={styles.toolsDescription}>Pour comprendre une notion, organiser ses idées ou préparer son prochain travail.</Text>
+                  <Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>{user ? 'Vos outils de travail' : 'De vos révisions à vos créations'}</Text>
+                  <Text style={styles.toolsDescription}>Simulez un ECOS, construisez votre planning, préparez une présentation ou donnez forme à votre CV. Choisissez l’outil qui accompagne votre prochain projet.</Text>
                   <Text style={styles.body}>{user ? 'Retrouvez les outils accessibles avec votre rôle.' : 'L’accès aux outils dépend de votre rôle vérifié.'}</Text>
                 </View>
                 <View {...mi('landing-tools-photo')} style={[styles.toolsVisual, wide && styles.toolsVisualWide]}>
@@ -172,9 +177,9 @@ export default function HomeScreen() {
           <View {...mi('landing-container')} style={[styles.page, compact && styles.pageCompact]}>
             <View {...mi('landing-trust')} style={[styles.section, styles.trust, wide && styles.trustWide]}>
               <View style={styles.trustIntro}>
-                <Text style={[styles.label, styles.trustAccent]}>Sources & esprit critique</Text>
-                <Text accessibilityRole="header" aria-level={2} style={[styles.sectionTitle, styles.trustTitle]}>Une réponse se lit.{'\n'}<Text style={styles.trustAccent}>Une source se consulte.</Text></Text>
-                <Text style={[styles.body, styles.trustBody]}>Gardez un regard critique sur les informations produites par un système d’intelligence artificielle.</Text>
+                <Text style={[styles.label, styles.trustAccent]}>IA, outils & références</Text>
+                <Text accessibilityRole="header" aria-level={2} style={[styles.sectionTitle, styles.trustTitle]}>Une nouvelle façon d’apprendre.{'\n'}<Text style={styles.trustAccent}>Un espace pour aller plus loin.</Text></Text>
+                <Text style={[styles.body, styles.trustBody]}>Pensé pour les études et le travail médical, MedInfo AI associe assistants conversationnels, outils de création et accès aux références.</Text>
                 <LandingPhoto photo="sources" />
               </View>
               <View style={styles.trustList}>
@@ -224,12 +229,14 @@ const styles = StyleSheet.create({
   headlineCompact: { ...tokens.type.display },
   headlineAccent: { color: tokens.colors.accent, fontStyle: 'italic' },
   subhead: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, ...tokens.type.bodyLg, maxWidth: tokens.layout.form },
+  highlights: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm },
+  highlight: { fontFamily: tokens.font.display, color: tokens.colors.accent, ...tokens.type.caption, backgroundColor: tokens.colors.surface, paddingHorizontal: tokens.space.md, paddingVertical: tokens.space.sm, borderRadius: tokens.radius.md },
   heroActions: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.md },
   actionsCompact: { flexDirection: 'column', alignItems: 'stretch' },
   meta: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, ...tokens.type.caption },
   disclosure: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, ...tokens.type.caption, borderLeftWidth: tokens.border.accent, borderLeftColor: tokens.colors.accent, paddingLeft: tokens.space.md },
   heroVisual: { gap: tokens.space.md, width: '100%' },
-  heroVisualWide: { flex: 1, maxWidth: tokens.layout.audience, alignSelf: 'center' },
+  heroVisualWide: { flex: 1, maxWidth: tokens.layout.form, alignSelf: 'center' },
   photoMount: { padding: tokens.space.lg, backgroundColor: tokens.colors.editorial.photoMount, borderRadius: tokens.radius.xl, gap: tokens.space.lg },
   photoTopline: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: tokens.space.md },
   photoLabel: { flex: 1, fontFamily: tokens.font.display, color: tokens.colors.personas.student.accent, ...tokens.type.label, fontWeight: tokens.weight.medium },

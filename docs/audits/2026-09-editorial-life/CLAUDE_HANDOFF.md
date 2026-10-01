@@ -3,6 +3,48 @@
 Date : 2026-09-30. Branche de travail : `ai/codex/landing/editorial-life`.
 Base de cette itération : `13beb994766d46a6fb0de80c8bee161c4b1cacc6`.
 
+## Mise à jour du 1er octobre 2026 — à lire en premier
+
+Hugo valide les photos travail et sources, demande une première photo médecine,
+une communication davantage orientée produit et confirme sa demande de cohérence
+du thème. Nouvelle photo : `medical-study*` (Pexels 3985154, Gustavo Fring), ratio
+3:2 ; les deux autres fichiers et leurs scènes sont inchangés.
+
+L’accueil et À propos mettent d’abord en avant assistants, ECOS/révisions,
+présentations/CV/articles et références. À propos cite Hugo comme créateur et
+étudiant en médecine, sans nouvelle qualification. Le long `INTENDED_PURPOSE`
+reste dans les emplacements légaux mais n’est plus recopié dans la section
+commerciale de l’accueil. Disclosure IA, footer permanent, FAQ et 15/112 restent
+présents ; `src/compliance` n’a pas été modifié. Relecture éditoriale finale à faire.
+
+GPT-6 Luna est nommé comme défaut de cette version, conforme à
+`src/ai/providers/featureModel.ts`. La configuration admin effective peut
+surcharger ce défaut : vérifier la configuration active avant publication,
+et mettre à jour la copie si la version de référence change. Aucun accès à la
+base, secret extrait, changement de modèle/API ou nouvelle migration.
+
+Couverture du thème vérifiée dans le code : 26 pages consomment les tokens ou
+`LegalScreen`, les quatre outils HTML utilisent les feuilles partagées. Quelques
+couleurs de chrome ont été recentralisées. Expo web et les quatre outils chargent
+désormais **la même feuille locale de polices**. Inter/Schibsted 400–700 sont
+incluses avec licences OFL (sous-ensemble latin, accents français testés). Source
+Serif 4 et Mono réutilisent les WOFF2 présents. Le rendu natif n’a pas été testé.
+Les thèmes des documents exportés, drapeaux et marques ne sont pas des exceptions
+de chrome à recolorer. Vérifier tous les écrans avec les vraies polices.
+
+Contrôles de la révision : 44 tests ciblés réussis sur cinq fichiers
+(`design-tokens`, `landing-editorial`, `legal`, `disclosure`, `feature-visibility`),
+typecheck/build web et `compliance:grep`. Pas de suite intégrale ni recette réelle.
+
+**Attention captures :** la nouvelle tentative échoue au lancement du Chromium
+local (SIGSEGV), avant toute page. Les images `apercu-*` et `visual-check.json`
+plus bas restent celles de la révision du 30 septembre : **elles ne montrent pas
+la première photo, les textes ni les polices locales de cette mise à jour**.
+Ne pas les présenter comme une nouvelle validation. Les anciens points de
+reprise routage/hydratation ci-dessous restent ouverts.
+
+Décision : ADR-0041. Toujours aucun merge ni déploiement.
+
 ## Demande et périmètre
 
 Hugo trouve le site « trop blanc et tout uniformisé », délègue les décisions

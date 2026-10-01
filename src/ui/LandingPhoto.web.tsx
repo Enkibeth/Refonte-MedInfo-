@@ -5,7 +5,7 @@ import { tokens } from './tokens';
 // Expo/Metro émet les assets web sous forme { uri, width, height }.
 // Image.resolveAssetSource appartient au natif et n’existe pas dans react-native-web.
 const images: Record<LandingPhotoProps['photo'], readonly [{ uri: string }, { uri: string }]> = {
-  study: [require('../../assets/landing/study-640.webp'), require('../../assets/landing/study-1000.webp')],
+  study: [require('../../assets/landing/medical-study-640.webp'), require('../../assets/landing/medical-study-1000.webp')],
   work: [require('../../assets/landing/work-640.webp'), require('../../assets/landing/work-1000.webp')],
   sources: [require('../../assets/landing/sources-640.webp'), require('../../assets/landing/sources-1000.webp')],
 };

@@ -2,6 +2,31 @@
 
 Journal des modifications par agents IA. Une entrée par PR.
 
+## [2026-10-01] – Codex (accueil produit, photo médecine, thème partagé)
+### Files modified
+- `app/index.tsx`, `app/(marketing)/a-propos.tsx`, `app/+html.tsx`, composants `LandingPhoto`, `landingPhotos.ts`, `responsive.ts`.
+- `assets/landing/medical-study*`, provenance ; photos travail et sources inchangées.
+- `public/vendor/fonts/` : Inter/Schibsted locaux 400–700, feuille commune, licences et provenance.
+- Couleurs de chrome dans `public/article.html`, `presentation.html`, `partiel.html` ; thèmes/export documentaires préservés.
+- `tests/unit/landing-editorial.test.ts`, design, ADR-0041 et transmission Claude.
+### Purpose
+Donner la priorité aux trois assistants, ECOS/révisions et outils de création.
+Valoriser le créateur du projet et sa démarche ; remplacer la première photo
+par une scène d’études médicales. Confirmer les fondations du thème sur 26 pages
+et quatre outils HTML, corriger la divergence de chargement des polices.
+### Regulatory impact
+Potential — présentation marketing rééquilibrée. `INTENDED_PURPOSE` n’est plus
+recopié dans le bloc commercial d’accueil ; texte canonique, pages légales,
+disclosure IA, footer médical et FAQ 15/112 inchangés. Aucune promesse clinique
+ou certification nouvelle. Le modèle nommé est explicitement un défaut de
+version, pas une garantie de runtime. Relecture finale réservée à Claude.
+### Verification / handoff
+Voir `docs/audits/2026-09-editorial-life/CLAUDE_HANDOFF.md`, mise à jour du 1er octobre.
+Capture actuelle non obtenue (Chromium local SIGSEGV) : ne pas réutiliser les
+aperçus précédents comme preuve de cette nouvelle composition.
+### Rollback plan
+Revert de l’ajustement visuel/éditorial ; aucune migration ou configuration métier.
+
 ## [2026-09-30] – Codex (direction éditoriale plus vivante)
 ### Files modified
 - `app/index.tsx`, `src/ui/tokens.ts`, `src/ui/responsive.ts`, `src/ui/LandingHeader.tsx`, `src/ui/SiteFooter.tsx`.
