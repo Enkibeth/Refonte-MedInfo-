@@ -17,11 +17,17 @@ hors-ligne, CSP stricte).
 | `xlsx.full.min.js` | SheetJS xlsx | 0.18.5 | cdnjs |
 
 ## `fonts/` — sous-ensemble latin
-`fonts.css` + 5 `.woff2` (Source Serif 4, Public Sans, JetBrains Mono). Sous-ensemble
+`fonts.css` + 5 `.woff2` (Source Serif 4, Public Sans, JetBrains Mono), plus
+`Inter-latin.woff2` et `SchibstedGrotesk-latin.woff2` (polices variables) déclarées par
+`app/+html.tsx` pour l'application elle-même (2026-10 : fin de la dépendance Google Fonts,
+qui bloquait le premier affichage). Toutes sous licence SIL Open Font License 1.1. Sous-ensemble
 **latin** uniquement (couvre les accents français) pour rester léger. Généré
 depuis `fonts.googleapis.com/css2`. Repli système conservé dans les CSS des
 outils (`Georgia`, `system-ui`, `ui-monospace`).
 
 ## Mise à jour
+⚠️ `fonts/` est servi en cache **immuable 1 an** (`server/lib/static.mjs`) : une police mise
+à jour doit prendre un **nouveau nom de fichier** (sinon les navigateurs gardent l'ancienne).
+
 Re-télécharger depuis la même source à la version voulue et remplacer le fichier
 (les chemins référencés sont `/vendor/js/…` et `/vendor/fonts/fonts.css`).

@@ -4,6 +4,19 @@ Journal des modifications par agents IA. Une entrée par PR.
 
 ## Format
 ```
+## [2026-10-01] – Claude (performance PageSpeed mobile)
+### Files modified
+- app/+html.tsx (polices auto-hébergées + préchargement, fin de Google Fonts), public/vendor/fonts/ (+ Inter, Schibsted Grotesk), public/vendor/README.md
+- assets/brand/team-illustration-144.webp, logo-wordmark-360.webp (+ src/ui/Logo.tsx, LandingHeader.tsx, shell/AppShell.tsx)
+- server/lib/static.mjs (+ tests/unit/hostinger-server.test.ts) : `/assets/*` (noms hachés) et `/vendor/fonts/*` immuables 1 an ; favicon, image OG et sprite d'icônes en cache 1 jour
+### Purpose
+PageSpeed signalait : requêtes bloquant le rendu (feuille Google Fonts, ~2,7 s), chaîne réseau
+googleapis → gstatic, cache insuffisant, images trop lourdes (illustration 421 Ko affichée en 44 px,
+logo 244 Ko). Lighthouse mobile local (3 mesures) : score 67 → 80-89, LCP 4,4 s → 2,0-2,6 s,
+bloquant le rendu et cache : résolus. Vrai italique Source Serif 4 (le romain était penché par le
+navigateur). Découpage du bundle par route (`asyncRoutes`, expérimental) testé puis ÉCARTÉ : TBT
+meilleur mais LCP de l'accueil dégradé (3,3-4,9 s).
+
 ## [2026-10-01] – Claude (accueil servi comme page Admin + noindex — collision de routes)
 ### Files modified
 - app/(admin)/ → app/admin/ (URL `/admin`), liens `/(admin)` → `/admin` (AppShell, AppTabBar, ToolsMenu, account), app/_layout.tsx

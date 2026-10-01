@@ -12,6 +12,29 @@ import { tokens } from '@/ui/tokens';
  *   l'aspect générique « système brut ».
  * Ce fichier ne s'exécute pas sur natif ; n'y mettre aucune logique applicative.
  */
+// Polices AUTO-HÉBERGÉES (public/vendor/fonts, sous-ensemble latin des fichiers variables
+// Google Fonts, licence SIL OFL — cf. public/vendor/README.md ; mêmes fichiers que les pages
+// autonomes pour Source Serif 4 et JetBrains Mono). PageSpeed 2026-10 : la feuille Google
+// Fonts bloquait le rendu (~2,7 s) puis la bascule de police repoussait le LCP à 4,4 s
+// (1,7 s sans). Même origine + préchargement des deux polices du haut de l'accueil = plus de
+// chaîne googleapis → gstatic. `swap` : le texte s'affiche aussitôt en police système.
+const LATIN_RANGE =
+  'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD';
+const FONT_FACES: { family: string; file: string; weight: string; style?: 'italic' }[] = [
+  { family: 'Inter', file: 'Inter-latin.woff2', weight: '400 700' },
+  { family: 'Schibsted Grotesk', file: 'SchibstedGrotesk-latin.woff2', weight: '400 700' },
+  { family: 'Source Serif 4', file: 'SourceSerif4-normal.woff2', weight: '200 900' },
+  // Vrai italique (accroche « Revenir aux sources. ») : sans lui, le navigateur penchait le romain.
+  { family: 'Source Serif 4', file: 'SourceSerif4-italic.woff2', weight: '200 900', style: 'italic' },
+  { family: 'JetBrains Mono', file: 'JetBrainsMono-480c0625.woff2', weight: '400 600' },
+];
+/** Préchargées : texte courant (Inter) et grand titre de l'accueil (Source Serif 4). */
+const PRELOADED_FONTS = ['Inter-latin.woff2', 'SourceSerif4-normal.woff2'];
+const fontFaceCss = FONT_FACES.map(
+  (f) =>
+    `@font-face{font-family:'${f.family}';font-style:${f.style ?? 'normal'};font-weight:${f.weight};font-display:swap;src:url(/vendor/fonts/${f.file}) format('woff2');unicode-range:${LATIN_RANGE};}`,
+).join('\n');
+
 export default function Root({ children }: PropsWithChildren) {
   return (
     <html lang="fr">
@@ -21,12 +44,10 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no" />
         <meta name="theme-color" content={tokens.colors.accentVivid} />
 
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Schibsted+Grotesk:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500&display=swap"
-        />
+        {PRELOADED_FONTS.map((file) => (
+          <link key={file} rel="preload" as="font" type="font/woff2" href={`/vendor/fonts/${file}`} crossOrigin="anonymous" />
+        ))}
+        <style dangerouslySetInnerHTML={{ __html: fontFaceCss }} />
 
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: baseStyle }} />

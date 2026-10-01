@@ -53,8 +53,12 @@ describe('cacheControlFor', () => {
   });
 
   it('met les assets versionnés en cache court avec revalidation', () => {
-    expect(cacheControlFor('/assets/assets/icon.png')).toBe(ASSET_CACHE_CONTROL);
+    expect(cacheControlFor('/assets/assets/icon.5a281d8481702f2ec73e7e272c7b4923.png')).toBe(IMMUTABLE_CACHE_CONTROL);
+    expect(cacheControlFor('/vendor/fonts/Inter-latin.woff2')).toBe(IMMUTABLE_CACHE_CONTROL);
     expect(cacheControlFor('/vendor/js/pdf.min.js')).toBe(ASSET_CACHE_CONTROL);
+    expect(cacheControlFor('/favicon.ico')).toBe(ASSET_CACHE_CONTROL);
+    expect(cacheControlFor('/og-image.png')).toBe(ASSET_CACHE_CONTROL);
+    expect(cacheControlFor('/favicon.ico.html')).toBe(NO_STORE_CACHE_CONTROL);
   });
 
   it("n'autorise aucun cache pour les coquilles HTML et les pages autonomes", () => {

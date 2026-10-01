@@ -7,8 +7,8 @@
  * `tests/unit/hostinger-server.test.ts`.
  *
  * Durées de cache :
- *   - `/_expo/static/*` : bundles au nom haché → immuables 1 an ;
- *   - `/assets/*` : assets Expo → 1 jour + revalidation en arrière-plan ;
+ *   - `/_expo/static/*`, `/assets/*` (noms hachés) et `/vendor/fonts/*` → immuables 1 an ;
+ *   - `/vendor/*` (+ favicon, image Open Graph, sprite d'icônes) : 1 jour + revalidation en arrière-plan ;
  *   - tout le reste : `no-store` (coquilles HTML, pages autonomes, robots.txt…).
  * `/vendor/*` (librairies des pages autonomes — pdf.js, SheetJS, jsPDF… — plusieurs Mo,
  * jamais modifiées hors mise à jour du dépôt) suit la politique `/assets/*`, sinon chaque
@@ -20,10 +20,20 @@ export const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 export const ASSET_CACHE_CONTROL = 'public, max-age=86400, stale-while-revalidate=604800';
 export const NO_STORE_CACHE_CONTROL = 'no-store';
 
-/** Préfixes d'URL dont le contenu est immuable (nom de fichier haché par Metro). */
-export const IMMUTABLE_PREFIXES = ['/_expo/static/'];
+/**
+ * Préfixes d'URL dont le contenu est immuable : bundles et assets Expo (nom de fichier haché
+ * par Metro, `logo.<hash>.webp`) et polices auto-hébergées (un fichier de police n'est jamais
+ * modifié sur place : une mise à jour CHANGE son nom — règle dans public/vendor/README.md).
+ * PageSpeed 2026-10 : 1 jour de cache sur ces fichiers était signalé comme insuffisant.
+ */
+export const IMMUTABLE_PREFIXES = ['/_expo/static/', '/assets/', '/vendor/fonts/'];
 /** Préfixes d'URL versionnés par le dépôt (rafraîchis à chaque déploiement). */
-export const ASSET_PREFIXES = ['/assets/', '/vendor/'];
+export const ASSET_PREFIXES = ['/vendor/'];
+/**
+ * Fichiers racine stables qui suivent aussi la politique `/assets/*` (PageSpeed 2026-10 :
+ * le favicon était servi en `no-store`, donc retéléchargé à chaque page).
+ */
+export const ASSET_FILES = ['/favicon.ico', '/og-image.png', '/medinfo-icons.svg'];
 
 /**
  * En-tête `Cache-Control` d'un chemin statique.
@@ -34,7 +44,7 @@ export function cacheControlFor(pathname) {
   if (IMMUTABLE_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return IMMUTABLE_CACHE_CONTROL;
   }
-  if (ASSET_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+  if (ASSET_PREFIXES.some((prefix) => pathname.startsWith(prefix)) || ASSET_FILES.includes(pathname)) {
     return ASSET_CACHE_CONTROL;
   }
   return NO_STORE_CACHE_CONTROL;
