@@ -57,16 +57,24 @@ ${from(compact)} {
 
 /* Accueil (app/index.tsx) : mêmes valeurs que les styles JS non compacts / larges. */
 ${from(compact)} {
-  [data-mi~="landing-page"] { padding-left: ${space.xl}px !important; padding-right: ${space.xl}px !important; }
+  [data-mi~="landing-container"] { padding-left: ${space.xl}px !important; padding-right: ${space.xl}px !important; }
   [data-mi~="landing-actions"] { flex-direction: row !important; }
   [data-mi~="landing-actions"] > * { align-self: auto !important; width: auto !important; }
 }
 ${from(shell)} {
   [data-mi~="landing-hero"] { flex-direction: row !important; padding-top: ${space['4xl']}px !important; padding-bottom: ${space['4xl']}px !important; row-gap: ${space['4xl']}px !important; column-gap: ${space['4xl']}px !important; }
   [data-mi~="landing-headline"] { font-size: ${type.landing.fontSize}px !important; line-height: ${type.landing.lineHeight}px !important; letter-spacing: ${type.landing.letterSpacing}px !important; }
-  [data-mi~="landing-audiences"] { flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; max-width: ${tokens.layout.audience}px !important; }
+  [data-mi~="landing-hero-photo"] { flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; max-width: ${tokens.layout.form}px !important; align-self: center !important; }
+  [data-mi~="landing-photo-image"] > :first-child { aspect-ratio: 3 / 2 !important; }
+  [data-mi~="landing-audiences"] { flex-direction: row !important; row-gap: ${space.lg}px !important; column-gap: ${space.lg}px !important; }
+  [data-mi~="landing-audience"] { flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; }
+  [data-mi~="landing-tools-intro"] { flex-direction: row !important; align-items: center !important; row-gap: ${space['4xl']}px !important; column-gap: ${space['4xl']}px !important; }
+  [data-mi~="landing-tools-photo"] { flex-grow: 1 !important; flex-shrink: 1 !important; flex-basis: 0% !important; max-width: ${tokens.layout.audience}px !important; }
   [data-mi~="landing-tools"] { flex-direction: row !important; flex-wrap: wrap !important; column-gap: ${space['2xl']}px !important; }
   [data-mi~="landing-tool"] { width: 48% !important; }
   [data-mi~="landing-trust"] { flex-direction: row !important; row-gap: ${space['4xl']}px !important; column-gap: ${space['4xl']}px !important; }
+  [data-mi~="landing-faq"] { flex-direction: row !important; column-gap: ${space['3xl']}px !important; }
+  [data-mi~="landing-faq-question"] { flex: 1 !important; }
+  [data-mi~="landing-faq-answer"] { flex: 2 !important; }
 }
 `;

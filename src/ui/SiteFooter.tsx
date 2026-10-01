@@ -61,7 +61,6 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
 export function SiteFooter() {
   return (
     <View style={styles.footer}>
-      {/* Grain filmique (Grainient) : matière sur le bleu nuit, no-op en natif. */}
       <View style={styles.inner}>
         <View style={styles.brandBlock}>
           <Logo size="sm" />
@@ -103,11 +102,12 @@ const styles = StyleSheet.create({
     // (consomme l'espace libre du contentContainer flexGrow:1).
     marginTop: 'auto',
     backgroundColor: tokens.colors.surfaceAlt,
+    borderTopWidth: tokens.border.accent,
+    borderTopColor: tokens.colors.editorial.highlight,
     paddingHorizontal: tokens.space.xl,
     paddingTop: tokens.space['2xl'],
     paddingBottom: tokens.space.xl,
     alignItems: 'center',
-    // Contient la couche de grain (absolue) au cadre du footer.
     overflow: 'hidden',
     position: 'relative',
   },

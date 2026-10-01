@@ -2,6 +2,66 @@
 
 Journal des modifications par agents IA. Une entrée par PR.
 
+## [2026-10-01] – Codex (accueil produit, photo médecine, thème partagé)
+### Files modified
+- `app/index.tsx`, `app/(marketing)/a-propos.tsx`, `app/+html.tsx`, composants `LandingPhoto`, `landingPhotos.ts`, `responsive.ts`.
+- `assets/landing/medical-study*`, provenance ; photos travail et sources inchangées.
+- `public/vendor/fonts/` : Inter/Schibsted locaux 400–700, feuille commune, licences et provenance.
+- Couleurs de chrome dans `public/article.html`, `presentation.html`, `partiel.html` ; thèmes/export documentaires préservés.
+- `tests/unit/landing-editorial.test.ts`, design, ADR-0041 et transmission Claude.
+### Purpose
+Donner la priorité aux trois assistants, ECOS/révisions et outils de création.
+Valoriser le créateur du projet et sa démarche ; remplacer la première photo
+par une scène d’études médicales. Confirmer les fondations du thème sur 26 pages
+et quatre outils HTML, corriger la divergence de chargement des polices.
+### Regulatory impact
+Potential — présentation marketing rééquilibrée. `INTENDED_PURPOSE` n’est plus
+recopié dans le bloc commercial d’accueil ; texte canonique, pages légales,
+disclosure IA, footer médical et FAQ 15/112 inchangés. Aucune promesse clinique
+ou certification nouvelle. Le modèle nommé est explicitement un défaut de
+version, pas une garantie de runtime. Relecture finale réservée à Claude.
+### Verification / handoff
+Voir `docs/audits/2026-09-editorial-life/CLAUDE_HANDOFF.md`, mise à jour du 1er octobre.
+Capture actuelle non obtenue (Chromium local SIGSEGV) : ne pas réutiliser les
+aperçus précédents comme preuve de cette nouvelle composition.
+### Rollback plan
+Revert de l’ajustement visuel/éditorial ; aucune migration ou configuration métier.
+
+## [2026-09-30] – Codex (direction éditoriale plus vivante)
+### Files modified
+- `app/index.tsx`, `src/ui/tokens.ts`, `src/ui/responsive.ts`, `src/ui/LandingHeader.tsx`, `src/ui/SiteFooter.tsx`.
+- `public/medinfo-tokens.css` régénéré, `tests/unit/design-tokens.test.ts`.
+- `docs/05_DESIGN.md`, `docs/DECISIONS/0040-editorial-vivant.md`, `docs/audits/2026-09-editorial-life/`.
+### Purpose
+Répondre au retour « trop blanc et uniformisé » : papier ivoire, hero bleu brume,
+audiences sauge/lilas/bleu, outils avec repères colorés et sources sur bleu nuit.
+Les trois photographies de l’itération précédente sont conservées. Les tokens
+communs diffusent les surfaces et accents dans les pages existantes.
+### Regulatory impact
+None : modification de présentation uniquement. Aucun texte médical, prompt,
+filtrage par rôle, accès serveur, schéma ou contrat API modifié.
+### Verification / handoff
+Recette finale déléguée à Claude Code par Hugo. Voir le handoff dédié : ne pas
+confondre contrôle de composition et validation fonctionnelle complète.
+### Rollback plan
+Revert de la modification UI et régénération des tokens CSS ; aucune migration.
+
+## [2026-09-28] – Codex (photographies de l’accueil)
+### Files modified
+- `app/index.tsx`, `src/ui/LandingPhoto.tsx`, `src/ui/LandingPhoto.web.tsx`, `src/ui/landingPhotos.ts`, `src/ui/responsive.ts`.
+- `assets/landing/` : trois photographies avec variantes web et natives, provenance et licence.
+- `docs/05_DESIGN.md`, `docs/DECISIONS/0039-photographies-accueil.md`, `docs/audits/2026-09-home-photos/`.
+### Purpose
+Humaniser la page d’accueil à la demande de Hugo : photographie d’apprentissage dans
+le premier écran, travail sur tablette près des outils, lecture près des sources.
+Les trois liens d’audience sont regroupés après le hero. Images locales, alternatives
+textuelles, dimensions réservées, WebP adaptatif et chargement différé sous le hero.
+### Regulatory impact
+None : illustrations éditoriales uniquement, sans témoignages ou nouvelles promesses
+médicales. Mentions, accès par rôle, prompts, API, données et hébergement inchangés.
+### Rollback plan
+Revert du commit ; aucune migration ni modification de configuration.
+
 ## Format
 ```
 ## [2026-10-01] – Claude (performance PageSpeed mobile)

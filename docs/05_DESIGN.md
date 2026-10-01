@@ -1,18 +1,22 @@
 # MedInfo AI — Design System v2
 
-Version 2.0 — 26 septembre 2026. Direction A « Bureau de référence », choisie par Hugo.
-Source exécutable : `src/ui/tokens.ts`. Décision : ADR-0038. Web prioritaire ; variantes natives conservées.
+Version 2.2 — 1er octobre 2026. Direction A « Bureau de référence », enrichie à la demande de Hugo (« trop blanc et uniformisé »), avec un accueil davantage orienté produit.
+Source exécutable : `src/ui/tokens.ts`. Décisions : ADR-0038, ADR-0040 et ADR-0041. Web prioritaire ; variantes natives conservées.
 
 ## 1. Principes
 
-Une interface de lecture et de travail. Blanc, encre nette, bleu vif parcimonieux, composition éditoriale asymétrique. La personnalité vient des proportions, des alignements et de la typographie. Ni dégradé décoratif, ni halo, ni verre, ni emoji/icône étincelle, ni grille uniforme de cartes. Les références, dates et niveaux de preuve sont ceux effectivement disponibles ; aucune garantie de vérification universelle.
+Une interface de lecture et de travail, plus chaleureuse. Papier ivoire, bleu brume, encre nette, bleu vif pour agir. Des touches sauge, lilas et argile servent de repères ; le blanc reste réservé aux surfaces de lecture et de travail. La composition éditoriale alterne sections claires et section sources bleu nuit. Ni dégradé décoratif, ni halo, ni verre, ni emoji/icône étincelle, ni grille uniforme de cartes. Les références, dates et niveaux de preuve sont ceux effectivement disponibles ; aucune garantie de vérification universelle.
 
 ## 2. Tokens sémantiques
 
 | Usage | Token | Valeur web |
 |---|---|---|
-| Page / surface | background / surface | #FFFFFF |
-| Navigation, surfaces secondaires | surfaceAlt | #F6F7F9 |
+| Page / papier | background | #F8F7F3 |
+| Lecture / formulaires | surface | #FFFFFF |
+| Navigation, surfaces secondaires | surfaceAlt | #EDF1F7 |
+| Premier écran | editorial.hero | #E8EFFA |
+| Section sources | editorial.ink | #172E46 |
+| Texte sur bleu nuit | editorial.onInk / onInkMuted | #F4F7FC / #C7D5E3 |
 | Encre | text | #142034 |
 | Texte secondaire | textMuted | #526174 |
 | Accent texte, focus | accent | #0052D6 |
@@ -21,13 +25,15 @@ Une interface de lecture et de travail. Blanc, encre nette, bleu vif parcimonieu
 | Limite interactive | borderStrong | #7D8998 |
 | Avertissement | warningText / warningBackground | #80500C / #FBF1DD |
 
-Les aliases d’audience et d’outils convergent vers le même bleu. Vert, rouge et ambre désignent exclusivement succès, erreur et avertissement ; toujours accompagnés de texte/icône. Aucun mode sombre livré. Les noms sémantiques permettent une future autre palette.
+Les audiences ont trois repères stables : sauge pour le public, lilas pour les étudiants, bleu pour les professionnels. Les pastilles d’outils reprennent les mêmes associations dans l’accueil, le dashboard et les menus via `featureTint`. Ces couleurs ne sont pas des statuts : les noms et icônes restent présents. Succès, erreur et avertissement conservent leurs tokens sémantiques dédiés, avec texte/icône. La section sources sombre est une composition éditoriale locale, pas un mode sombre global.
 
 Espacement : 4, 8, 12, 16, 24, 32, 48, 64. Rayons : 4/6/8/12 ; pilule réservée aux petits états. Contrôles : minimum 44 px de hauteur et de largeur pour une icône. Bordure 1 px ; filet éditorial 3 px. Les cartes de contenu n’ont pas d’ombre ; seules les surfaces superposées peuvent avoir une ombre discrète.
 
 ## 3. Typographie
 
 Source Serif 4 : titres de page, accroche et sections éditoriales. Schibsted Grotesk : titres d’interface, navigation et actions. Inter : corps, aides et champs. JetBrains Mono : identifiants et valeurs techniques déjà présentes.
+
+Expo web et les quatre outils HTML chargent la même feuille locale `public/vendor/fonts/fonts.css`. Inter et Schibsted Grotesk 400–700 sont incluses, avec licences OFL ; Source Serif 4 et JetBrains Mono réutilisent les fichiers existants. Aucune requête Google Fonts au chargement. Les polices des documents exportés gardent leur logique propre.
 
 | Niveau | Taille / interligne |
 |---|---|
@@ -97,3 +103,35 @@ Conserver les textes canoniques de `src/compliance/disclosures.ts`, la mention �
 ## 9. Vérification et suivi
 
 Inventaire et contrats par écran dans `docs/audits/2026-09-premium/screen-contracts.md`. Captures 390/768/1024/1440, reduced-motion, axe et journaux de typecheck/test:unit/build web accompagnent la PR. Le tableau de livraison distingue implémenté, observé et non vérifié. Aucun score Lighthouse, p75 Core Web Vitals ou résultat sur appareil natif n’est annoncé sans mesure correspondante.
+
+## 10. Photographies de l’accueil (ADR-0039)
+
+Trois scènes réelles d’apprentissage et de travail documentaire ponctuent l’accueil.
+Les images accompagnent le propos sans remplacer les liens d’accès aux trois publics
+ni les outils. Elles n’illustrent pas une consultation ou un résultat clinique.
+Aucun texte de promesse, avis utilisateur ou badge de validation n’est superposé.
+
+Utiliser `LandingPhoto` : textes alternatifs explicites, ratio réservé avant chargement,
+WebP adaptatif sur le web, JPEG sur natif. Seule la photo du hero est prioritaire.
+Les photos sont servies localement ; provenance et licence dans `assets/landing/README.md`.
+Conserver le contenu photographique naturel et les rayons mesurés du design system.
+
+## 11. Rythme et couleurs (ADR-0040)
+
+- Hero bleu brume pleine largeur, photographie sur un passe-partout lilas, filet bleu dans la navigation.
+- Trois portes d’entrée sur papier ivoire, avec fonds doux distincts et contours au survol.
+- Outils sur fond blanc, pastilles colorées et photographie encadrée de sable.
+- Bloc produit/IA/références sur bleu nuit, textes clairs contrastés, accent menthe ; mentions canoniques inchangées dans les emplacements légaux.
+- FAQ sur ivoire, questions numérotées et composition en deux colonnes sur grand écran.
+- Fond général et surfaces de navigation partagés par les pages existantes ; pages autonomes synchronisées par `scripts/design/sync-web-theme.cjs`.
+- Aucun effet continu, aucune dépendance ajoutée, aucun changement de parcours ou d’autorisation.
+
+Hugo confie la recette fonctionnelle finale à Claude Code. Les contrôles visuels de cette itération ne valent pas validation des problèmes d’hydratation et de navigation antérieurs. Reprise : `docs/audits/2026-09-editorial-life/CLAUDE_HANDOFF.md`.
+
+## 12. Présentation du produit et couverture du thème (ADR-0041)
+
+L’accueil met d’abord en avant les trois assistants, les ECOS/révisions et les outils de création. La première photo montre une scène d’études médicales ; son ratio 3:2 conserve les trois personnes. Les photos travail et sources validées par Hugo sont inchangées.
+
+Le long énoncé `INTENDED_PURPOSE` n’est plus recopié dans le bloc commercial de l’accueil. Il reste inchangé dans les CGU, mentions et informations légales. L’accueil conserve la disclosure IA canonique, le footer permanent et la FAQ avec 15/112. Pas de nouvelle promesse clinique, de certification inventée ni de garantie de fiabilité universelle. Les noms de modèles désignent une configuration par défaut de version, pas une garantie sur la configuration administrateur effective.
+
+Les 26 pages applicatives consomment les tokens directement ou via `LegalScreen`; le shell, le dashboard et les menus reprennent les surfaces et pastilles partagées. Les quatre outils autonomes chargent les tokens CSS et la même typographie. Ce constat est une vérification des fondations dans le code, **pas une recette visuelle exhaustive**. Les drapeaux, marques et thèmes de documents/export ne doivent pas être recolorés pour imiter le chrome de l’application.
