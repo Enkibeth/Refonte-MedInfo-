@@ -35,6 +35,20 @@ const fontFaceCss = FONT_FACES.map(
     `@font-face{font-family:'${f.family}';font-style:${f.style ?? 'normal'};font-weight:${f.weight};font-display:swap;src:url(/vendor/fonts/${f.file}) format('woff2');unicode-range:${LATIN_RANGE};}`,
 ).join('\n');
 
+/**
+ * Polices de SECOURS aux dimensions des polices web (anti-CLS, PageSpeed 2026-10 : la bascule
+ * Georgia → Source Serif 4 du grand titre changeait ses retours à la ligne et poussait les
+ * boutons, CLS 0,18). Une police système (Times New Roman / Arial, ou leurs clones
+ * métriques Liberation) est mise à l'échelle pour occuper la même largeur et la même hauteur
+ * de ligne : la bascule ne déplace plus rien. Valeurs MESURÉES avec fontTools sur le texte du
+ * haut de l'accueil (largeur cumulée des glyphes ; Source Serif 4 au corps optique du titre
+ * mobile 40 px) — à recalculer si les polices changent.
+ */
+const fallbackFaceCss = [
+  "@font-face{font-family:'Source Serif 4 Fallback';src:local('Times New Roman'),local('TimesNewRomanPSMT'),local('Liberation Serif'),local('Tinos');size-adjust:107%;ascent-override:96.8%;descent-override:31.3%;line-gap-override:0%;}",
+  "@font-face{font-family:'Inter Fallback';src:local('Arial'),local('ArialMT'),local('Liberation Sans'),local('Arimo');size-adjust:106.9%;ascent-override:90.6%;descent-override:22.6%;line-gap-override:0%;}",
+].join('\n');
+
 export default function Root({ children }: PropsWithChildren) {
   return (
     <html lang="fr">
@@ -47,7 +61,7 @@ export default function Root({ children }: PropsWithChildren) {
         {PRELOADED_FONTS.map((file) => (
           <link key={file} rel="preload" as="font" type="font/woff2" href={`/vendor/fonts/${file}`} crossOrigin="anonymous" />
         ))}
-        <style dangerouslySetInnerHTML={{ __html: fontFaceCss }} />
+        <style dangerouslySetInnerHTML={{ __html: `${fontFaceCss}\n${fallbackFaceCss}` }} />
 
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: baseStyle }} />

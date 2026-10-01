@@ -14,7 +14,9 @@ PageSpeed signalait : requêtes bloquant le rendu (feuille Google Fonts, ~2,7 s)
 googleapis → gstatic, cache insuffisant, images trop lourdes (illustration 421 Ko affichée en 44 px,
 logo 244 Ko). Lighthouse mobile local (3 mesures) : score 67 → 80-89, LCP 4,4 s → 2,0-2,6 s,
 bloquant le rendu et cache : résolus. Vrai italique Source Serif 4 (le romain était penché par le
-navigateur). Découpage du bundle par route (`asyncRoutes`, expérimental) testé puis ÉCARTÉ : TBT
+navigateur). Anti-CLS : polices de secours mises à l'échelle (« Inter Fallback » = Arial, « Source Serif 4
+Fallback » = Times New Roman ; size-adjust/ascent/descent mesurés avec fontTools) — en production la bascule
+de police du grand titre décalait les boutons (CLS 0,18). Découpage du bundle par route (`asyncRoutes`, expérimental) testé puis ÉCARTÉ : TBT
 meilleur mais LCP de l'accueil dégradé (3,3-4,9 s).
 
 ## [2026-10-01] – Claude (accueil servi comme page Admin + noindex — collision de routes)
