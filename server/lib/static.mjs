@@ -7,7 +7,7 @@
  * `tests/unit/hostinger-server.test.ts`.
  *
  * Durées de cache :
- *   - `/_expo/static/*`, `/assets/*` (noms hachés) et `/vendor/fonts/*` → immuables 1 an ;
+ *   - `/_expo/static/*`, `/assets/*` (noms hachés) et `/vendor/fonts/*.woff2` → immuables 1 an ;
  *   - `/vendor/*` (+ favicon, image Open Graph, sprite d'icônes) : 1 jour + revalidation en arrière-plan ;
  *   - tout le reste : `no-store` (coquilles HTML, pages autonomes, robots.txt…).
  * `/vendor/*` (librairies des pages autonomes — pdf.js, SheetJS, jsPDF… — plusieurs Mo,
@@ -22,11 +22,23 @@ export const NO_STORE_CACHE_CONTROL = 'no-store';
 
 /**
  * Préfixes d'URL dont le contenu est immuable : bundles et assets Expo (nom de fichier haché
- * par Metro, `logo.<hash>.webp`) et polices auto-hébergées (un fichier de police n'est jamais
- * modifié sur place : une mise à jour CHANGE son nom — règle dans public/vendor/README.md).
+ * par Metro, `logo.<hash>.webp`) ; s'y ajoutent les polices `.woff2` (isImmutableWebFont).
  * PageSpeed 2026-10 : 1 jour de cache sur ces fichiers était signalé comme insuffisant.
  */
-export const IMMUTABLE_PREFIXES = ['/_expo/static/', '/assets/', '/vendor/fonts/'];
+export const IMMUTABLE_PREFIXES = ['/_expo/static/', '/assets/'];
+
+/**
+ * Police web auto-hébergée (`/vendor/fonts/*.woff2`, hors sous-dossier `cv/`) : immuable.
+ * `fonts.css` (référence les polices par leur nom) et les `.ttf` du CV Builder (embarqués
+ * dans les PDF exportés) restent à 1 jour : leur nom ne change pas quand ils changent.
+ */
+function isImmutableWebFont(pathname) {
+  return (
+    pathname.startsWith('/vendor/fonts/') &&
+    !pathname.startsWith('/vendor/fonts/cv/') &&
+    pathname.endsWith('.woff2')
+  );
+}
 /** Préfixes d'URL versionnés par le dépôt (rafraîchis à chaque déploiement). */
 export const ASSET_PREFIXES = ['/vendor/'];
 /**
@@ -41,7 +53,7 @@ export const ASSET_FILES = ['/favicon.ico', '/og-image.png', '/medinfo-icons.svg
  * @returns {string}
  */
 export function cacheControlFor(pathname) {
-  if (IMMUTABLE_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+  if (IMMUTABLE_PREFIXES.some((prefix) => pathname.startsWith(prefix)) || isImmutableWebFont(pathname)) {
     return IMMUTABLE_CACHE_CONTROL;
   }
   if (ASSET_PREFIXES.some((prefix) => pathname.startsWith(prefix)) || ASSET_FILES.includes(pathname)) {

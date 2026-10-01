@@ -26,8 +26,9 @@ depuis `fonts.googleapis.com/css2`. Repli système conservé dans les CSS des
 outils (`Georgia`, `system-ui`, `ui-monospace`).
 
 ## Mise à jour
-⚠️ `fonts/` est servi en cache **immuable 1 an** (`server/lib/static.mjs`) : une police mise
-à jour doit prendre un **nouveau nom de fichier** (sinon les navigateurs gardent l'ancienne).
+⚠️ Les `.woff2` de `fonts/` (hors `cv/`) sont servis en cache **immuable 1 an**
+(`server/lib/static.mjs`) : une police mise à jour doit prendre un **nouveau nom de fichier**
+(sinon les navigateurs gardent l'ancienne). `fonts.css` et `fonts/cv/` restent à 1 jour.
 
 Re-télécharger depuis la même source à la version voulue et remplacer le fichier
 (les chemins référencés sont `/vendor/js/…` et `/vendor/fonts/fonts.css`).
