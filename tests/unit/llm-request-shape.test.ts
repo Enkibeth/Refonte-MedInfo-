@@ -19,6 +19,7 @@ import { z } from 'zod';
 
 import {
   CLAUDE_GEN5_MAX_OUTPUT_TOKENS,
+  REASONING_OUTPUT_RESERVE,
   resolveFeatureRuntime,
   type FeatureRuntimeOverrides,
 } from '@/ai/providers/featureRuntime';
@@ -94,17 +95,21 @@ describe('OpenAI GPT-6 Luna — requête réellement émise (API Responses)', ()
     expect(body).not.toHaveProperty('temperature');
   });
 
-  it('étudiant/pro, mode Approfondi : effort high, verbosité high', async () => {
+  it('étudiant/pro, mode Approfondi : effort high, verbosité high, réserve de réflexion en plus de la réponse', async () => {
     const { body } = await openaiBody(
       settings({ modelId: 'gpt-6-luna', provider: 'openai', ...CHAT }),
       { reasoningEffort: 'high', verbosity: 'high', maxOutputTokens: 4096 },
     );
     expect(body.reasoning).toEqual({ effort: 'high' });
     expect(body.text).toEqual({ verbosity: 'high' });
-    expect(body.max_output_tokens).toBe(4096);
+    // Régression de production (2026-10-01) : `max_output_tokens` compte AUSSI la réflexion.
+    // À 4 096, une réflexion `high` + recherches web l'épuisait avant le premier mot de la
+    // réponse (6 appels Pro sur 12 arrêtés à exactement 4 096 tokens, réponse vide).
+    expect(body.max_output_tokens).toBe(4096 + REASONING_OUTPUT_RESERVE.high);
+    expect(body.max_output_tokens).toBeGreaterThanOrEqual(25_000); // recommandation OpenAI
   });
 
-  it('mode Rapide : effort none, verbosité low, aucun outil', async () => {
+  it('mode Rapide : effort none, verbosité low, aucun outil, budget inchangé (aucune réflexion à réserver)', async () => {
     const { body } = await openaiBody(
       settings({ modelId: 'gpt-6-luna', provider: 'openai', ...CHAT }),
       { reasoningEffort: 'minimal', verbosity: 'low', maxOutputTokens: 3000, webSearch: false },
@@ -112,6 +117,22 @@ describe('OpenAI GPT-6 Luna — requête réellement émise (API Responses)', ()
     expect(body.reasoning).toEqual({ effort: 'none' });
     expect(body.text).toEqual({ verbosity: 'low' });
     expect(body.tools).toBeUndefined();
+    expect(body.max_output_tokens).toBe(3000);
+  });
+
+  it('grand public, mode Approfondi (effort plafonné) : réserve à la mesure de l\'effort effectif', async () => {
+    const { body } = await openaiBody(
+      settings({ modelId: 'gpt-6-luna', provider: 'openai', ...CHAT }),
+      { capReasoningEffort: 'medium', verbosity: 'high', maxOutputTokens: 4096 },
+    );
+    // Config `chat` en base : effort low, sous le plafond medium → réserve `low`.
+    expect(body.reasoning).toEqual({ effort: 'low' });
+    expect(body.max_output_tokens).toBe(4096 + REASONING_OUTPUT_RESERVE.low);
+  });
+
+  it('mode Classique (aucun budget demandé) : aucun max_output_tokens, plafond du modèle', async () => {
+    const { body } = await openaiBody(settings({ modelId: 'gpt-6-luna', provider: 'openai', ...CHAT }));
+    expect(body).not.toHaveProperty('max_output_tokens');
   });
 
   it("témoin : SANS forceReasoning, le SDK installé jette l'effort de GPT-6 (raison d'être du contournement)", async () => {
@@ -172,6 +193,17 @@ describe('Anthropic Claude 5 — requête réellement émise (API Messages)', ()
     expect(body.thinking).toEqual({ type: 'adaptive' });
     expect(body.output_config).toEqual({ effort: 'medium' });
     expect(body.tools).toEqual([expect.objectContaining({ type: 'web_search_20250305', max_uses: 3 })]);
+  });
+
+  it('Sonnet 4.6 réflexion adaptative + budget de réponse demandé : la réflexion a sa propre réserve', async () => {
+    // Même piège qu'OpenAI si le chat bascule sur Claude : `max_tokens` inclut la réflexion.
+    const { body } = await anthropicBody(
+      settings({ modelId: 'claude-sonnet-4-6', provider: 'anthropic', reasoningEffort: 'high' }),
+      'text',
+      { maxOutputTokens: 4096 },
+    );
+    expect(body.thinking).toEqual({ type: 'adaptive' });
+    expect(body.max_tokens).toBe(4096 + REASONING_OUTPUT_RESERVE.high);
   });
 
   it('Opus 4.8 avec effort : adaptatif (et non plus budget fixe, refusé par l\'API)', async () => {

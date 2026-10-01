@@ -4,6 +4,39 @@ Journal des modifications par agents IA. Une entrée par PR.
 
 ## Format
 ```
+## [2026-10-01] – Claude (chat Approfondi : réponses vides, coupures > 1 min, image « invisible »)
+### Files modified
+- src/ai/providers/featureRuntime.ts (`REASONING_OUTPUT_RESERVE`, `reasoningOutputReserve`), src/ai/chat/responseMode.ts (doc du budget)
+- src/ai/chat/modelHistory.ts (nouveau : `sanitizeChatHistory`, `buildPriorAttachmentSection`), src/ai/chat/attachment.ts (`withAttachmentMarker`, `mentionedAttachmentName`)
+- src/server/sseHeartbeat.ts (nouveau), app/api/chat+api.ts
+- src/chat/resume.ts (`turnOutcome`), src/chat/serverHistory.ts (`replaceLast` limité au dernier tour), app/(chat)/chat.tsx (pièce jointe du tour, bandeau « La réponse n'a pas pu être rédigée »)
+- tests : feature-runtime, llm-request-shape, chat-model-history (nouveau), sse-heartbeat (nouveau), chat-server-history (nouveau), chat-resume ; scripts/dev/chat-smoke.mjs (nouveau, opt-in)
+- docs : ADR-0037 et ADR-0034 (addenda 2026-10), 09_DEPLOYMENT §6, CLAUDE.md
+### Purpose
+Signalement Hugo (captures iPhone) : en réflexion avancée, une image jointe semblait invisible et les réponses de plus
+d'une minute « coupaient » sans rien produire. Constat en production : 6 appels Pro sur 12 s'arrêtaient à exactement
+4 096 tokens de sortie, le plafond du mode Approfondi. Ce plafond comptait aussi la réflexion `high` : réponse vide,
+rien d'archivé, écran muet. Le « ? » tapé ensuite partait sans l'image, d'où « je ne vois pas le contenu de
+IMG_0847.png ». Correctifs :
+- le budget couvre désormais la réponse plus une réserve de réflexion (Approfondi Pro : 32 768) ;
+- l'historique est transmis en texte seul (fin du rejeu des recherches web en `item_reference` : 46k → 228k tokens
+  d'entrée en 9 tours) ;
+- battement de cœur SSE après 15 s de silence ;
+- bandeau « Réessayer » au lieu d'un écran muet ;
+- la pièce jointe appartient à son tour ;
+- « Réessayer » n'efface plus la réponse du tour précédent.
+### Vérifications
+970 tests unitaires et types verts. Ancien code : 3 tests de forme de requête rouges (4 096 envoyé) et le test
+`replaceLast` rouge. Route réelle derrière `server/index.mjs` avec un faux fournisseur OpenAI : battements à 20 s et
+35 s pendant 40 s de silence ; `finishReason: "length"` sans texte transmis au client ; aucune `item_reference` dans
+la requête au fournisseur. Fumigation Chromium (vue mobile) : 13/13 ; l'ancien écran échoue d'emblée (aucun bandeau).
+### Limites
+- Battement non mesuré à travers le CDN Hostinger lui-même.
+- `/api/analyze` et `/api/ecos` (texte brut) n'ont pas de battement.
+- Le document n'est pas renvoyé aux tours suivants, après une réponse réussie : décision produit à prendre
+  (ADR-0034, addendum).
+- Aucune migration, aucune nouvelle feature IA.
+
 ## [2026-10-01] – Claude (accueil servi comme page Admin + noindex — collision de routes)
 ### Files modified
 - app/(admin)/ → app/admin/ (URL `/admin`), liens `/(admin)` → `/admin` (AppShell, AppTabBar, ToolsMenu, account), app/_layout.tsx

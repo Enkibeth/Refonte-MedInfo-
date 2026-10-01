@@ -267,3 +267,61 @@ un appel LLM, la recherche web du provider.
     approfondi pro.
   - Coût dominé par la recherche web.
   - Détail : CHANGELOG_AI, addendum du 2026-09-27.
+
+## Addendum 2026-10 — réponses vides en mode Approfondi, coupures au-delà d'une minute
+
+**Signalement Hugo (2026-10-01, captures iPhone)** : avec la réflexion avancée, une image jointe
+semble « invisible » pour le modèle, et une réponse qui dépasse la minute « coupe » sans rien
+produire.
+
+**Constat en production** (`ai_interactions` + `chat_messages`, métadonnées seulement) :
+
+- 6 des 12 derniers appels du chatbot Pro arrêtés à **exactement 4 096 tokens de sortie** — le
+  `maxOutputTokens` du mode Approfondi — et **aucune réponse archivée** pour 4 d'entre eux. Les
+  deux captures correspondent à deux de ces appels (20:37:56 et 20:55:42, heure de Paris).
+- L'image était bien transmise au premier envoi. C'est la réponse qui était vide : la
+  réflexion `high` et les recherches web consommaient tout le budget, réponse comprise
+  (`max_output_tokens` les compte ensemble chez OpenAI). L'écran restait muet : `MessageRow`
+  n'affiche rien pour un message sans texte, sans erreur ni bouton. L'utilisateur envoyait
+  alors « ? », et le document, qui n'accompagnait que le premier envoi, n'était plus transmis :
+  « je ne vois pas le contenu de IMG_0847.png ».
+- Les tokens d'entrée passaient de 46 000 à 228 000 en neuf tours d'une même conversation.
+  Le SDK rejouait la réflexion et les recherches web de chaque tour précédent en
+  `item_reference` (option `store` d'OpenAI).
+
+**Décisions** (aucune couche de régulation touchée, aucun appel LLM ajouté, aucune migration) :
+
+1. **Budget de sortie = réponse visible + réserve de réflexion**
+   (`REASONING_OUTPUT_RESERVE`, `featureRuntime.ts`).
+   - Réserve par effort, sur OpenAI et Claude en réflexion adaptative : `low` 4 096,
+     `medium` 12 288, `high` 28 672.
+   - Mode Approfondi Pro : 32 768 tokens au total. OpenAI recommande au moins 25 000 ; le
+     plafond de gpt-6-luna est de 128 000 (fiche modèle).
+   - Mode Rapide inchangé (pas de réflexion), Classique inchangé (aucun plafond posé).
+2. **Historique transmis au modèle : texte seul** (`src/ai/chat/modelHistory.ts`).
+   - Plus de réflexion ni de recherches web des tours précédents.
+   - Le modèle relance une recherche si un tour l'exige.
+   - Effets voulus : un rôle `system` ou une part `file` fournis par le client n'atteignent plus
+     le modèle. La garde de la pièce jointe ne peut donc plus être contournée par cette voie.
+3. **Battement de cœur SSE** (`src/server/sseHeartbeat.ts`).
+   - Un commentaire `: keep-alive` part après 15 s de silence, ignoré par le parseur du client.
+   - Il couvre la réflexion longue désormais possible face au délai d'inactivité, non
+     documenté, du CDN et de LiteSpeed.
+   - Mesuré à travers le vrai serveur Node : battements à 20 s puis à 35 s pendant 40 s de
+     silence du fournisseur.
+4. **Plus jamais d'écran muet** (`turnOutcome`, `src/chat/resume.ts`).
+   - Réponse terminée sans texte : bandeau « La réponse n'a pas pu être rédigée » avec
+     « Réessayer ».
+   - Flux clos sans son fragment final : reprise depuis l'historique, puis le bandeau si rien
+     n'arrive.
+5. **« Réessayer » ne détruit plus la réponse du tour précédent.**
+   - `replaceLast` ne supprime que si le dernier message archivé est une réponse.
+   - Avant, réessayer un tour resté sans réponse effaçait la réponse du tour d'avant.
+
+**Suivi** :
+
+- Dans `ai_interactions`, plus aucun `tokens_out` égal à 4 096 en Approfondi ; surveiller ceux
+  qui atteignent 32 768.
+- Surveiller la chute des `tokens_in` sur les conversations longues.
+- `/api/analyze` et `/api/ecos` diffusent du texte brut, sans battement possible sans changer
+  leur protocole. Le risque est faible tant qu'ils commencent à écrire en moins d'une minute.

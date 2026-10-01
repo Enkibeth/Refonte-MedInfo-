@@ -58,6 +58,25 @@ export function shouldReplaceWithArchived(
   return a.slice(0, len) === l.slice(0, len);
 }
 
+/**
+ * Issue d'un tour à la fin du flux, quand rien n'a été rédigé (pur, testé).
+ *
+ *  - `answered`    : du texte est arrivé (même partiel) — affiché tel quel ;
+ *  - `interrupted` : aucun texte ET flux clos sans son fragment final `finish` — coupé en
+ *                    route par un intermédiaire ; la génération continue côté serveur, on va
+ *                    chercher la réponse archivée (reprise) ;
+ *  - `empty`       : aucun texte alors que le modèle a TERMINÉ (`finishReason` présent — ex.
+ *                    `length` : plafond de sortie épuisé par la réflexion). Rien ne sera
+ *                    archivé : il faut le dire et proposer de réessayer, au lieu de l'écran
+ *                    muet constaté en production (ni réponse, ni erreur, ni bouton).
+ */
+export type TurnOutcome = 'answered' | 'interrupted' | 'empty';
+
+export function turnOutcome(text: string, finishReason: string | null | undefined): TurnOutcome {
+  if (text.trim()) return 'answered';
+  return finishReason == null ? 'interrupted' : 'empty';
+}
+
 type TurnMessage = { role: string; content: string };
 
 /** L'archive doit répondre au même tour, pas simplement finir par un assistant. */

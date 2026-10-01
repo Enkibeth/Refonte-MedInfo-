@@ -85,13 +85,14 @@ import {
   type ChatProgressStep,
 } from '@/ai/chat/progress';
 import { coerceChatOutputTools, type ChatOutputTool } from '@/ai/chat/outputTools';
-import { shouldReplaceWithArchived, archiveMatchesTurn } from '@/chat/resume';
+import { shouldReplaceWithArchived, archiveMatchesTurn, turnOutcome } from '@/chat/resume';
 import { createSubmissionGate } from '@/chat/submission';
 import { chatPhaseLabel, phaseFromParts, streamingSources, type ChatPhase } from '@/ai/chat/statusPhases';
 import { ChatStatusRing } from '@/ui/chat/ChatStatusRing';
 import {
   ATTACHMENT_ACCEPT,
   ATTACHMENT_MAX_BYTES,
+  withAttachmentMarker,
   type ChatAttachment,
 } from '@/ai/chat/attachment';
 import { SourceDetailModal } from '@/ui/chat/SourceDetailModal';
@@ -613,6 +614,15 @@ export default function ChatScreen() {
   // Pièce jointe (document) — réservé aux comptes vérifiés étudiant/pro (+ admin), web only.
   const [attachment, setAttachment] = useState<ChatAttachment | null>(null);
   const [attachError, setAttachError] = useState<string | null>(null);
+  // Pièce jointe du DERNIER tour envoyé (mémoire de l'onglet seulement, jamais stockée) :
+  // « Réessayer » et « Régénérer » rejouent ce tour document compris. Avant, le document
+  // quittait la mémoire dès l'envoi : un réessai ne transmettait plus que son nom et le
+  // modèle répondait « je ne vois pas le contenu de IMG_0847.png » (retour Hugo 2026-10).
+  const turnAttachmentRef = useRef<ChatAttachment | null>(null);
+  // Tour terminé sans aucune réponse rédigée (réflexion qui épuise le plafond de sortie,
+  // flux coupé sans archive) : sans ce signal, l'écran restait muet — ni réponse, ni
+  // erreur, ni bouton « Réessayer » — et l'utilisateur en était réduit à envoyer « ? ».
+  const [unansweredTurn, setUnansweredTurn] = useState(false);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [conversationsLoading, setConversationsLoading] = useState(true);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -696,7 +706,9 @@ export default function ChatScreen() {
           country: countryRef.current ?? undefined,
           responseMode: responseModeRef.current,
           tools: outputToolsRef.current.length > 0 ? outputToolsRef.current : undefined,
-          attachment: attachmentRef.current ?? undefined,
+          // Le document du tour envoyé (et rejoué par Réessayer/Régénérer), pas celui du
+          // composeur : le composeur est vidé dès l'envoi.
+          attachment: turnAttachmentRef.current ?? undefined,
           // Résilience hors-ligne : le serveur archive la réponse dans cette conversation
           // même si la page est suspendue pendant le streaming (voir /api/chat).
           conversationId: conversationIdRef.current ?? undefined,
@@ -733,16 +745,47 @@ export default function ChatScreen() {
   const awaitingRef = useRef(false);
   /** Une génération était-elle en cours au moment où l'app est passée en arrière-plan ? */
   const generatedWhileHiddenRef = useRef(false);
+  /** Reprise depuis l'historique (définie plus bas, appelée depuis `onFinish`). */
+  const startRecoveryRef = useRef<() => void>(() => {});
+
+  /** Tour sans réponse : le signaler, et rendre son document au composeur pour la suite. */
+  const markTurnUnanswered = useCallback(() => {
+    setUnansweredTurn(true);
+    // Un message tapé ensuite (« ? ») renverra ainsi le document, au lieu de son seul nom.
+    const turnAttachment = turnAttachmentRef.current;
+    if (turnAttachment && !attachmentRef.current) setAttachment(turnAttachment);
+  }, []);
+
+  /** Tour enfin répondu : retirer du composeur le document qu'on y avait rendu. */
+  const settleTurn = useCallback(() => {
+    setUnansweredTurn(false);
+    if (attachmentRef.current && attachmentRef.current === turnAttachmentRef.current) setAttachment(null);
+  }, []);
 
   const { messages, sendMessage, status, error, setMessages, regenerate, clearError, stop } = useChat({
     transport,
-    onFinish: async ({ message, isAbort, isDisconnect, isError }) => {
+    onFinish: async ({ message, isAbort, isDisconnect, isError, finishReason }) => {
       if (isAbort || isDisconnect || isError || !awaitingRef.current) return;
+      const text = messageText(message);
+      const outcome = turnOutcome(text, finishReason);
+      if (outcome === 'interrupted' && conversationIdRef.current) {
+        // Flux clos sans un mot ni fragment final : coupé en route. La génération continue
+        // côté serveur et sera archivée — on va l'y chercher (l'échec est signalé si rien
+        // n'arrive dans la fenêtre de reprise).
+        startRecoveryRef.current();
+        return;
+      }
       awaitingRef.current = false;
       regenerateRef.current = false;
-      const text = messageText(message);
+      if (outcome !== 'answered') {
+        // Réponse vide (ex. réflexion qui a épuisé le plafond de sortie) : rien ne sera
+        // archivé, rien à attendre — le dire et proposer « Réessayer ».
+        markTurnUnanswered();
+        return;
+      }
+      settleTurn();
       const convId = conversationIdRef.current;
-      if (!convId || !user?.id || !text.trim()) return;
+      if (!convId || !user?.id) return;
       // La réponse est archivée par le SERVEUR (/api/chat onFinish) — le client ne
       // sauvegarde plus que le titre/catégorie et rafraîchit la liste.
       if (!titleGeneratedRef.current && tokenRef.current) {
@@ -870,8 +913,9 @@ export default function ChatScreen() {
     );
     clearError();
     awaitingRef.current = false;
+    settleTurn();
     return true;
-  }, [setMessages, clearError]);
+  }, [setMessages, clearError, settleTurn]);
 
   // Fenêtre de reprise : une réponse evidence-first peut demander bien plus d'une minute
   // (recherche → lecture → vérification → rédaction). L'ancienne fenêtre de 60 s abandonnait
@@ -894,11 +938,18 @@ export default function ChatScreen() {
       // Le flux tourne encore (retour rapide dans l'onglet) : on le laisse finir.
       const busy = statusRef.current === 'streaming' || statusRef.current === 'submitted';
       if (!busy && (await recoverFromHistory())) return stop();
-      if (attempt >= RECOVERY_MAX_ATTEMPTS) return stop();
+      if (attempt >= RECOVERY_MAX_ATTEMPTS) {
+        // Rien d'archivé dans la fenêtre : le dire (bannière « Réessayer ») plutôt que de
+        // laisser un écran muet quand le flux s'est clos sans erreur. `awaitingRef` reste
+        // armé : un retour dans l'onglet relance la reprise, comme avant.
+        if (!busy) markTurnUnanswered();
+        return stop();
+      }
       recoveryTimerRef.current = setTimeout(() => void poll(attempt + 1), RECOVERY_INTERVAL_MS);
     };
     void poll(0);
-  }, [recoverFromHistory]);
+  }, [recoverFromHistory, markTurnUnanswered]);
+  startRecoveryRef.current = startRecovery;
 
   /**
    * Resynchronisation SILENCIEUSE au retour de veille.
@@ -1008,9 +1059,10 @@ export default function ChatScreen() {
     if (epoch !== turnEpoch.current) return;
     if (recovered) return;
     clearError();
+    setUnansweredTurn(false);
     awaitingRef.current = true;
-    // Réessayer relance la même question : la réponse partielle éventuellement déjà
-    // archivée doit être remplacée, pas doublée.
+    // Réessayer relance la même question, document du tour compris (turnAttachmentRef) : la
+    // réponse éventuellement déjà archivée pour ce tour est remplacée, pas doublée.
     regenerateRef.current = true;
     void regenerate();
   }, [recoverFromHistory, clearError, regenerate]);
@@ -1102,12 +1154,13 @@ export default function ChatScreen() {
     turnEpoch.current++;
     generatedWhileHiddenRef.current = false;
     draftRef.current = text;
-    const displayText = att ? `${trimmed}${trimmed ? '\n\n' : ''}Pièce jointe : ${att.name}` : trimmed;
+    const displayText = att ? withAttachmentMarker(trimmed, att.name) : trimmed;
     setPreparationError(null);
     setPreparing(true);
     setPendingMessage({ id: `pending-${ticket}`, role: 'user', parts: [{ type: 'text', text: displayText }] });
     setWaitStartedAt(Date.now());
     setStoppedNotice(false);
+    setUnansweredTurn(false);
     scrollToBottom(false);
     try {
       if (user && !conversationIdRef.current) {
@@ -1126,6 +1179,9 @@ export default function ChatScreen() {
       if (isGuest) { markGuestMessageUsed(); setGuestUsed(true); }
       awaitingRef.current = true;
       regenerateRef.current = false;
+      // Le document appartient à CE tour (null s'il n'y en a pas : un « Régénérer » ultérieur
+      // ne doit jamais renvoyer le document d'un tour plus ancien).
+      turnAttachmentRef.current = att;
       const request = sendMessage({ text: displayText });
       setPendingMessage(null);
       setPreparing(false);
@@ -1222,6 +1278,7 @@ export default function ChatScreen() {
     awaitingRef.current = true;
     regenerateRef.current = true;
     setStoppedNotice(false);
+    setUnansweredTurn(false);
     void regenerate();
   }, [regenerate]);
 
@@ -1238,6 +1295,8 @@ export default function ChatScreen() {
       if (statusRef.current === 'streaming' || statusRef.current === 'submitted') void stop();
       awaitingRef.current = false;
       regenerateRef.current = false;
+      turnAttachmentRef.current = null;
+      setUnansweredTurn(false);
       setStoppedNotice(false);
       setMessages([]);
       conversationIdRef.current = null;
@@ -1292,6 +1351,8 @@ export default function ChatScreen() {
       if (statusRef.current === 'streaming' || statusRef.current === 'submitted') void stop();
       awaitingRef.current = false;
       regenerateRef.current = false;
+      turnAttachmentRef.current = null;
+      setUnansweredTurn(false);
       setStoppedNotice(false);
       const stored = await loadMessages(c.id);
       if (epoch !== turnEpoch.current) return;
@@ -1845,6 +1906,26 @@ export default function ChatScreen() {
           </View>
         )}
         {preparationError ? <View style={styles.errorBanner} accessibilityLiveRegion="polite"><Text style={styles.errorText}>{preparationError}</Text><TouchableOpacity style={styles.retryButton} accessibilityRole="button" accessibilityLabel="Réessayer l’envoi" {...(Platform.OS === 'web' ? { title: 'Réessayer l’envoi' } : {})} onPress={() => void sendText(draftRef.current)}><Text style={styles.retryButtonText}>Réessayer</Text></TouchableOpacity></View> : null}
+        {/* ── Tour resté sans réponse (réflexion qui a épuisé son budget, flux clos sans
+            archive) : le dire et proposer de relancer — document compris ── */}
+        {unansweredTurn && !isLoading && !recovering && !error ? (
+          <View style={styles.errorBanner} accessibilityLiveRegion="polite">
+            <Text style={styles.errorText}>
+              {turnAttachmentRef.current
+                ? 'La réponse n’a pas pu être rédigée. Réessayez : votre question et votre document seront renvoyés.'
+                : 'La réponse n’a pas pu être rédigée. Réessayez : votre question sera renvoyée.'}
+            </Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={() => void handleRetry()}
+              accessibilityRole="button"
+              accessibilityLabel="Réessayer la dernière question" {...(Platform.OS === 'web' ? { title: 'Réessayer la dernière question' } : {})}
+            >
+              <Icon name="refresh" size={14} color={tokens.colors.onAccent} />
+              <Text style={styles.retryButtonText}>Réessayer</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
         {error && !recovering && errorKind === 'generic' && (
           <View style={styles.errorBanner} accessibilityLiveRegion="polite">
             <Text style={styles.errorText}>

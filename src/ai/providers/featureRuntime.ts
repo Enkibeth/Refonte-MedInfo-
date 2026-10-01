@@ -132,6 +132,48 @@ export function anthropicEffort(effort: ReasoningEffort): 'low' | 'medium' | 'hi
  */
 export const CLAUDE_GEN5_MAX_OUTPUT_TOKENS = 64_000;
 
+/**
+ * Réserve de sortie pour la RÉFLEXION, ajoutée à un budget de sortie explicite (pur, testé).
+ *
+ * Chez OpenAI (API Responses) comme chez Claude en réflexion adaptative, les tokens de
+ * réflexion sont décomptés du MÊME plafond que la réponse (`max_output_tokens` /
+ * `max_tokens`). Le budget du mode Approfondi du chat (4 096, pensé pour la réponse
+ * visible) était donc consommé en entier par une réflexion `high` avant le premier mot :
+ * réponse vide, rien d'archivé, rien d'affiché. Constat en production (2026-10-01) : 6 des
+ * 12 derniers appels du chatbot Pro arrêtés à exactement 4 096 tokens de sortie, sans
+ * aucune réponse archivée — dont l'analyse d'image signalée par Hugo. OpenAI recommande de
+ * réserver au moins 25 000 tokens à la réflexion et à la réponse (guide « Reasoning ») ;
+ * gpt-6-luna accepte jusqu'à 128 000 tokens de sortie (fiche modèle OpenAI, 2026-10).
+ *
+ * `minimal` : aucune réflexion chez GPT-5.6/6 (`none`), quelques centaines de tokens au
+ * plus ailleurs — pas de réserve, le budget du mode Rapide reste tel quel.
+ */
+export const REASONING_OUTPUT_RESERVE: Record<ReasoningEffort, number> = {
+  minimal: 0,
+  low: 4_096,
+  medium: 12_288,
+  high: 28_672,
+};
+
+/**
+ * Tokens à réserver à la réflexion quand celle-ci partage le plafond de sortie (pur, testé).
+ * 0 quand le modèle ne réfléchit pas, et pour Claude à budget fixe, dont le plancher
+ * (`budget + 4 096`) est déjà posé par `resolveFeatureRuntime`.
+ */
+export function reasoningOutputReserve(settings: FeatureSettings, caps: { reasoning: boolean }): number {
+  if (!caps.reasoning) return 0;
+  if (settings.provider === 'openai') {
+    // Effort non réglé : le modèle réfléchit à son effort par défaut (`medium` chez OpenAI).
+    return REASONING_OUTPUT_RESERVE[settings.reasoningEffort ?? 'medium'];
+  }
+  if (settings.provider === 'anthropic' && anthropicThinkingStyle(settings.modelId) === 'adaptive') {
+    if (settings.reasoningEffort) return REASONING_OUTPUT_RESERVE[settings.reasoningEffort];
+    // Génération 5 : réflexion active par défaut, même sans effort réglé.
+    return isClaudeGeneration5(settings.modelId) ? REASONING_OUTPUT_RESERVE.medium : 0;
+  }
+  return 0;
+}
+
 /** Applique le plafond d'effort : abaisse si au-dessus, ne relève jamais (pur, testé). */
 export function capReasoningEffort(
   effort: ReasoningEffort | null,
@@ -285,10 +327,15 @@ export function resolveFeatureRuntime(
     }
   }
 
-  // Override explicite du budget de sortie (ex. niveau de détail du chat). On respecte le
-  // plancher imposé par le thinking Anthropic (max_tokens doit dépasser le budget).
+  // Override explicite du budget de sortie (ex. mode de réponse du chat) : il porte sur la
+  // RÉPONSE visible. Quand la réflexion partage ce plafond, on lui ajoute sa réserve — sans
+  // quoi elle le consomme en entier et la réponse revient vide (REASONING_OUTPUT_RESERVE).
+  // On respecte aussi le plancher du thinking Anthropic à budget fixe (max_tokens > budget).
   if (overrides.maxOutputTokens != null) {
-    options.maxOutputTokens = Math.max(overrides.maxOutputTokens, options.maxOutputTokens ?? 0);
+    options.maxOutputTokens = Math.max(
+      overrides.maxOutputTokens + reasoningOutputReserve(settings, caps),
+      options.maxOutputTokens ?? 0,
+    );
   }
 
   if (Object.keys(providerOptions).length > 0) options.providerOptions = providerOptions;

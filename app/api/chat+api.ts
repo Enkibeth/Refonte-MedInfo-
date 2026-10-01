@@ -34,6 +34,7 @@ import { summarizeSteps } from '@/ai/logging/stepMetrics';
 import { coerceConversationId, saveAssistantMessageServer } from '@/chat/serverHistory';
 import { createServerSupabaseClient } from '@/db/serverSupabase';
 import { keepAlive } from '@/server/keepAlive';
+import { withSseHeartbeat } from '@/server/sseHeartbeat';
 import { STREAMING_RESPONSE_HEADERS } from '@/server/streamingHeaders';
 import {
   buildUserContextSection,
@@ -51,6 +52,7 @@ import {
 } from '@/ai/chat/responseMode';
 import { buildOutputToolsSection, coerceChatOutputTools } from '@/ai/chat/outputTools';
 import { appendAttachmentToModelMessages, coerceChatAttachment } from '@/ai/chat/attachment';
+import { buildPriorAttachmentSection, sanitizeChatHistory } from '@/ai/chat/modelHistory';
 import { isConversationalTurn, latestUserText } from '@/ai/chat/turnKind';
 import { isAdminUserId } from '@/admin/index';
 import type { Persona } from '@/ai/prompts/_schema';
@@ -94,6 +96,11 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const uiMessages = Array.isArray(body.messages) ? body.messages : [];
+  // Ce que le modèle reçoit de la conversation : le TEXTE des messages, rien d'autre — ni
+  // réflexion ni recherches web des tours précédents, rejouées sinon par OpenAI à chaque
+  // tour (46k → 228k tokens d'entrée mesurés), ni rôle `system` ou part `file` fournis par
+  // le client (src/ai/chat/modelHistory.ts).
+  const history = sanitizeChatHistory(uiMessages);
   const personalInfo = coercePersonalInfo(body.personalInfo);
   const country = coerceCountry(body.country);
 
@@ -158,7 +165,7 @@ export async function POST(request: Request): Promise<Response> {
       resolution.persona === 'professional' ||
       (!!resolution.userId && isAdminUserId(resolution.userId)));
   const hasAttachment = Boolean(attachment && canAttach);
-  const conversational = !hasAttachment && isConversationalTurn(latestUserText(uiMessages));
+  const conversational = !hasAttachment && isConversationalTurn(latestUserText(history));
 
   // Recherche web du provider : c'est la SEULE source externe du chat depuis le retour à
   // la base. Elle s'exécute DANS l'appel (aucune étape LLM supplémentaire).
@@ -179,13 +186,17 @@ export async function POST(request: Request): Promise<Response> {
     }),
   ]);
 
-  const modelMessages = await convertToModelMessages(uiMessages as any);
+  const modelMessages = await convertToModelMessages(history);
   if (attachment && canAttach) {
     appendAttachmentToModelMessages(modelMessages as any, attachment);
   }
 
   // Cœur clinique du prompt produit : TOUJOURS envoyé (rôle, sécurité, recueil, formats).
-  const coreSystem = `${template}${buildUserContextSection(personalInfo)}${buildCountryContextSection(country)}`;
+  // Une pièce jointe n'est transmise qu'avec son message : si l'historique en cite une que
+  // le modèle ne reçoit pas, il doit le savoir plutôt que de commenter un nom de fichier.
+  const coreSystem =
+    `${template}${buildUserContextSection(personalInfo)}${buildCountryContextSection(country)}` +
+    buildPriorAttachmentSection(history, { attachedName: hasAttachment && attachment ? attachment.name : null });
   const system = conversational
     ? coreSystem
     : `${coreSystem}${buildPharmacologySection(chatbot)}${buildResponseModeSection(responseMode)}${buildOutputToolsSection(outputTools)}`;
@@ -258,6 +269,8 @@ export async function POST(request: Request): Promise<Response> {
   // éventuel rejet de cette promesse détachée (src/server/keepAlive.ts).
   keepAlive(result.consumeStream());
 
-  // En-têtes anti-tampon : le flux traverse le proxy (et le CDN) de l'hébergeur.
-  return result.toUIMessageStreamResponse({ headers: STREAMING_RESPONSE_HEADERS });
+  // En-têtes anti-tampon : le flux traverse le proxy (et le CDN) de l'hébergeur. Battement
+  // de cœur : une réflexion longue (mode Approfondi) n'émet rien pendant plus d'une minute,
+  // et aucun intermédiaire ne doit prendre ce silence pour une connexion morte.
+  return withSseHeartbeat(result.toUIMessageStreamResponse({ headers: STREAMING_RESPONSE_HEADERS }));
 }

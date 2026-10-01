@@ -256,6 +256,15 @@ fragments en 6 paquets étalés sur 1,1 s ; 166 en 1,7 s), jamais en un bloc fin
 connectées de 34 à 44 s menées à terme. Aucune mise en tampon constatée → **CDN conservé**.
 Reste non mesuré : une génération de plus de 60 s (délai de lecture du CDN non documenté).
 
+**Battement de cœur du chat (2026-10)** : le mode Approfondi peut désormais réfléchir plus
+d'une minute sans émettre un octet (budget de réflexion relevé, ADR-0037 addendum 2026-10).
+`/api/chat` envoie donc un commentaire SSE `: keep-alive` après 15 s de silence
+(`src/server/sseHeartbeat.ts`), ignoré par le client. Aucun intermédiaire ne voit plus de
+connexion inactive au-delà de ~20 s. Mesuré localement à travers `server/index.mjs` : battements
+à 20 s puis 35 s pendant 40 s de silence du fournisseur, réponse intacte ensuite. À confirmer en
+production sur une réponse Approfondie de plus d'une minute. Une coupure résiduelle reste
+rattrapée : reprise depuis l'historique, puis bandeau « Réessayer ».
+
 ## 7. Recette sur le domaine temporaire (avant de toucher au domaine)
 
 Application hPanel sur la **branche de migration**, `EXPO_PUBLIC_APP_URL` = URL du domaine

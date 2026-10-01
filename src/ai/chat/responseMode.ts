@@ -45,6 +45,11 @@ export interface ResponseModeRuntime {
   /** Plafond d'effort (jamais relevé) — cloisonnement coût du grand public. */
   capReasoningEffort?: ReasoningEffort;
   verbosity?: Verbosity | null;
+  /**
+   * Budget de la RÉPONSE visible. La réflexion du modèle partage le même plafond chez
+   * OpenAI : sa réserve est ajoutée au bord (`REASONING_OUTPUT_RESERVE`, featureRuntime) —
+   * sans elle, une réflexion `high` consommait tout le budget et la réponse revenait vide.
+   */
   maxOutputTokens?: number;
   /**
    * Recherche web du provider. `false` en mode rapide seulement : la réponse est alors

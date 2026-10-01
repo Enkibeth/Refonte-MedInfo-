@@ -9,6 +9,8 @@ import {
   isClaudeGeneration5,
   openaiNeedsForcedReasoning,
   openaiReasoningEffort,
+  REASONING_OUTPUT_RESERVE,
+  reasoningOutputReserve,
   resolveFeatureRuntime,
 } from '@/ai/providers/featureRuntime';
 import {
@@ -290,6 +292,68 @@ describe('Claude — options d\'appel', () => {
       { maxOutputTokens: 3000 },
     );
     expect(options.maxOutputTokens).toBe(CLAUDE_GEN5_MAX_OUTPUT_TOKENS);
+  });
+});
+
+// ── Budget de sortie explicite = réponse visible ; la réflexion a sa propre réserve ──
+
+describe('reasoningOutputReserve — la réflexion ne doit plus épuiser le budget de la réponse', () => {
+  it('réserve croissante avec l\'effort, aucune pour minimal (aucune réflexion chez GPT-5.6/6)', () => {
+    expect(REASONING_OUTPUT_RESERVE.minimal).toBe(0);
+    expect(REASONING_OUTPUT_RESERVE.low).toBeLessThan(REASONING_OUTPUT_RESERVE.medium);
+    expect(REASONING_OUTPUT_RESERVE.medium).toBeLessThan(REASONING_OUTPUT_RESERVE.high);
+  });
+
+  it('OpenAI à raisonnement : réserve de l\'effort effectif, effort par défaut (medium) si rien n\'est réglé', () => {
+    const caps = { reasoning: true };
+    expect(reasoningOutputReserve(settings({ modelId: 'gpt-6-luna', provider: 'openai', reasoningEffort: 'high' }), caps))
+      .toBe(REASONING_OUTPUT_RESERVE.high);
+    expect(reasoningOutputReserve(settings({ modelId: 'gpt-6-luna', provider: 'openai' }), caps))
+      .toBe(REASONING_OUTPUT_RESERVE.medium);
+  });
+
+  it('aucune réserve pour un modèle sans raisonnement, ni pour Claude à budget fixe (plancher déjà posé)', () => {
+    expect(reasoningOutputReserve(settings({ modelId: 'gpt-4o-mini', provider: 'openai', reasoningEffort: 'high' }), { reasoning: false }))
+      .toBe(0);
+    expect(
+      reasoningOutputReserve(
+        settings({ modelId: 'claude-haiku-4-5-20251001', provider: 'anthropic', reasoningEffort: 'high' }),
+        { reasoning: true },
+      ),
+    ).toBe(0);
+  });
+
+  it('Claude adaptatif : réserve si la réflexion est active (effort réglé, ou génération 5 par défaut)', () => {
+    const caps = { reasoning: true };
+    expect(reasoningOutputReserve(settings({ modelId: 'claude-sonnet-4-6', provider: 'anthropic', reasoningEffort: 'high' }), caps))
+      .toBe(REASONING_OUTPUT_RESERVE.high);
+    expect(reasoningOutputReserve(settings({ modelId: 'claude-sonnet-4-6', provider: 'anthropic' }), caps)).toBe(0);
+    expect(reasoningOutputReserve(settings({ modelId: 'claude-sonnet-5', provider: 'anthropic' }), caps))
+      .toBe(REASONING_OUTPUT_RESERVE.medium);
+  });
+
+  it('chat Pro, mode Approfondi (gpt-6-luna, high, 4 096) : la réponse garde ses 4 096 tokens après la réflexion', () => {
+    const { options } = resolveFeatureRuntime(
+      settings({ modelId: 'gpt-6-luna', provider: 'openai', reasoningEffort: 'low', verbosity: 'medium', webSearch: true }),
+      { reasoningEffort: 'high', verbosity: 'high', maxOutputTokens: 4096 },
+    );
+    expect(options.maxOutputTokens).toBe(4096 + REASONING_OUTPUT_RESERVE.high);
+  });
+
+  it('mode Rapide (effort minimal → none) : budget inchangé', () => {
+    const { options } = resolveFeatureRuntime(
+      settings({ modelId: 'gpt-6-luna', provider: 'openai', reasoningEffort: 'low', webSearch: true }),
+      { reasoningEffort: 'minimal', verbosity: 'low', maxOutputTokens: 3000, webSearch: false },
+    );
+    expect(options.maxOutputTokens).toBe(3000);
+  });
+
+  it('Haiku 4.5 (budget fixe) : plancher budget + 4 096 conservé, sans réserve ajoutée', () => {
+    const { options } = resolveFeatureRuntime(
+      settings({ modelId: 'claude-haiku-4-5-20251001', provider: 'anthropic', reasoningEffort: 'low' }),
+      { maxOutputTokens: 3000 },
+    );
+    expect(options.maxOutputTokens).toBe(2048 + 4096);
   });
 });
 
