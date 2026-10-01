@@ -223,6 +223,8 @@ const styles = StyleSheet.create({
   },
   bar: {
     backgroundColor: tokens.colors.surface,
+    borderTopWidth: tokens.border.accent,
+    borderTopColor: tokens.colors.accent,
     borderBottomWidth: 1,
     borderBottomColor: tokens.colors.border,
     // Marque collée au coin gauche (demande Hugo) : padding réduit, pas de centrage max-width.

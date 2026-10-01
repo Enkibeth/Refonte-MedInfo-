@@ -1,10 +1,10 @@
 /* Généré depuis src/ui/tokens.ts. Ne pas modifier à la main. */
 :root {
-  --bg: #FFFFFF;
+  --bg: #F8F7F3;
   --surface: #FFFFFF;
   --card: #FFFFFF;
-  --bg2: #F6F7F9;
-  --cardalt: #F6F7F9;
+  --bg2: #EDF1F7;
+  --cardalt: #EDF1F7;
   --sunken: #EAEEF5;
   --ink: #142034;
   --ink2: #36435A;
@@ -27,7 +27,7 @@
   --a1s: #EEF4FF;
   --a1m: #D9E6FF;
   --a2: #526174;
-  --a2s: #F6F7F9;
+  --a2s: #EDF1F7;
   --a2m: #7D8998;
   --danger: #C42233;
   --err: #C42233;
