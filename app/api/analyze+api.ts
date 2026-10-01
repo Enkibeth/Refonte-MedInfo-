@@ -8,7 +8,7 @@
  *     seul le résultat est archivé dans l'historique (`document_analyses`, onFinish).
  *
  * ⚠️  CONVENTION : le modèle utilisé (feature key: "analyze") est configurable
- * depuis le panel admin (app/(admin)/index.tsx).
+ * depuis le panel admin (app/admin/index.tsx).
  * Si tu ajoutes une étape IA ici, déclare-la dans src/admin/index.ts AI_FEATURES.
  */
 import { streamText, type ModelMessage } from 'ai';

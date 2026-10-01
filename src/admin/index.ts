@@ -2,7 +2,7 @@
  * Contrôle d'accès admin (lecture seule côté client).
  *
  * ⚠️  CONVENTION : chaque nouvelle fonctionnalité IA DOIT être enregistrée dans
- * le panel admin (app/(admin)/index.tsx) — voir README_ADMIN.md et le registre
+ * le panel admin (app/admin/index.tsx) — voir README_ADMIN.md et le registre
  * AI_FEATURES ci-dessous. Ne pas oublier de déclarer le feature key dans
  * featureModel.ts et d'insérer une ligne dans ai_model_config (migration SQL).
  */

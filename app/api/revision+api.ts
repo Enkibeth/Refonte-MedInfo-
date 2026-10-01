@@ -11,7 +11,7 @@
  * du body. L'IA n'invente aucun volume/item/rang (prompt + contexte chiffré vérifié).
  *
  * ⚠️  CONVENTION : le modèle utilisé (feature key: "revision_plan_assist") est configurable
- * depuis le panel admin (app/(admin)/index.tsx). Si tu ajoutes une étape IA ici, déclare-la
+ * depuis le panel admin (app/admin/index.tsx). Si tu ajoutes une étape IA ici, déclare-la
  * dans src/admin/index.ts AI_FEATURES.
  */
 import { generateText } from 'ai';

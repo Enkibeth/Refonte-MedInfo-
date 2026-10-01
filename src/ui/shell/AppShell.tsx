@@ -80,7 +80,7 @@ function readHadSession(): boolean {
 }
 
 /** Groupes de routes qui vivent DANS le shell (espace connecté). */
-const SHELL_GROUPS = new Set(['(chat)', '(account)', '(billing)', '(admin)']);
+const SHELL_GROUPS = new Set(['(chat)', '(account)', '(billing)', 'admin']);
 
 const PERSONA_LABEL: Record<Persona, string> = {
   public: 'Grand public',
@@ -233,7 +233,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       key: 'admin',
       label: 'Panel admin IA',
       icon: 'settings',
-      route: '/(admin)',
+      route: '/admin',
       match: '__admin__', // géré via le groupe de segments, pas le pathname
     });
   }
@@ -246,7 +246,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { key: 'pricing', label: 'Tarifs', icon: 'scale', route: '/(billing)/pricing', match: '/pricing' },
   ];
 
-  const adminGroup = segments[0] === '(admin)';
+  const adminGroup = segments[0] === 'admin';
   const isActive = (entry: NavEntry) =>
     entry.match === '__admin__' ? adminGroup : !adminGroup && pathname === entry.match;
 

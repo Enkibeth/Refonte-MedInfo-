@@ -16,7 +16,7 @@
  * la table blog_posts n'a AUCUNE policy d'écriture client (migration 0022).
  *
  * ⚠️  CONVENTION : le modèle utilisé (feature key: "blog_generate") est configurable
- * depuis le panel admin (app/(admin)/index.tsx).
+ * depuis le panel admin (app/admin/index.tsx).
  * Si tu ajoutes une étape IA ici, déclare-la dans src/admin/index.ts AI_FEATURES.
  *
  * Image de couverture : best-effort via l'API OpenAI Images (gpt-image-1) si

@@ -87,7 +87,7 @@ export function ToolsMenu({
         { key: 'blog', label: 'Blog santé', icon: 'bookOpen', route: '/(marketing)/blog' },
         { key: 'pricing', label: 'Tarifs', icon: 'scale', route: '/(billing)/pricing' },
       ];
-  if (isAdmin) extras.push({ key: 'admin', label: 'Panel admin', icon: 'settings', route: '/(admin)' });
+  if (isAdmin) extras.push({ key: 'admin', label: 'Panel admin', icon: 'settings', route: '/admin' });
 
   const go = (route: string) => {
     setOpen(false);

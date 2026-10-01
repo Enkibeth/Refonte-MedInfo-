@@ -242,7 +242,7 @@ const [model, systemPrompt] = await Promise.all([
 ```ts
 /**
  * ⚠️  CONVENTION : le modèle utilisé (feature key: "ma_feature") est configurable
- * depuis le panel admin (app/(admin)/index.tsx).
+ * depuis le panel admin (app/admin/index.tsx).
  * Si tu ajoutes une étape IA ici, déclare-la dans src/admin/index.ts AI_FEATURES.
  */
 ```
@@ -256,7 +256,7 @@ const [model, systemPrompt] = await Promise.all([
 | `src/admin/index.ts` | Registre de toutes les features IA + contrôle accès admin |
 | `src/ai/providers/featureModel.ts` | Sélection du modèle par feature (cache 60s depuis Supabase) |
 | `src/ai/prompts/promptStore.ts` | Chargement des prompts (Supabase override > fichiers TS) |
-| `app/(admin)/index.tsx` | Panel admin UI (modèles + prompts) |
+| `app/admin/index.tsx` | Panel admin UI (modèles + prompts) |
 | `app/api/admin/config+api.ts` | API admin (lecture/écriture config) |
 
 | `src/ai/providers/featureRuntime.ts` | Construit les options d'appel LLM par feature (température, raisonnement, verbosité, web search) → `getRuntimeForFeature()` ; cœur PUR `resolveFeatureRuntime()` où vivent les traductions par modèle (2026-09) : effort `minimal` → `none` (GPT-5.6, GPT-6 Sol/Luna ; `low` pour les autres GPT-6), `forceReasoning` pour GPT-6 (inconnu du SDK installé, qui jetait sinon l'effort), réflexion ADAPTATIVE + `effort` pour Claude 4.6+ et génération 5 (le budget fixe y est refusé), plafond de sortie 64 000 + sorties structurées natives pour Claude 5 (sinon 4 096 tokens et `tool_choice` forcé, refusé par Opus 5.5). Requête HTTP réellement émise vérifiée par `tests/unit/llm-request-shape.test.ts` |
@@ -361,6 +361,9 @@ toute conversation anonyme contenant plus d'un message utilisateur.
 > jamais `useWindowDimensions` ; préférence locale, paramètre d'URL ou capacité navigateur
 > qui change l'affichage : `useClientState()` (`src/ui/hydration.ts`) ; bascule de mise en
 > page visible au premier affichage : règle CSS de pré-rendu via `mi()` (`src/ui/responsive.ts`).
+> Deux écrans ne doivent JAMAIS résoudre vers la même URL (un `index.tsx` dans un groupe `(x)` = « / ») :
+> le pré-rendu en garde un seul — incident 2026-10, accueil servi comme page Admin + `noindex`
+> (`tests/unit/route-collisions.test.ts`).
 > Sur le web, `accessibilityState` est ignoré par react-native-web : utiliser les props ARIA
 > (`aria-checked`, `aria-selected`, `aria-disabled`, `aria-expanded`, `aria-busy`).
 

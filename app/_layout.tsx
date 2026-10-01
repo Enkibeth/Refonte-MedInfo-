@@ -86,7 +86,7 @@ function RootNavigator() {
         <Stack.Screen name="(billing)" />
         <Stack.Screen name="(legal)" />
         <Stack.Screen name="(marketing)" />
-        <Stack.Screen name="(admin)" />
+        <Stack.Screen name="admin" />
       </Stack>
     </AppShell>
   );

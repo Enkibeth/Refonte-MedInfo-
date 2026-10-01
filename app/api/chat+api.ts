@@ -20,7 +20,7 @@
  * serveur (résilience hors-ligne) et instrumentation des coûts.
  *
  * ⚠️  CONVENTION : le modèle utilisé (feature key: "chat") est configurable depuis le
- * panel admin (app/(admin)/index.tsx). Si tu ajoutes une étape IA ici, déclare-la dans
+ * panel admin (app/admin/index.tsx). Si tu ajoutes une étape IA ici, déclare-la dans
  * src/admin/index.ts AI_FEATURES.
  */
 import { streamText, convertToModelMessages } from 'ai';

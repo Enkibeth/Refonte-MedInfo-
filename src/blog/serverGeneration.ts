@@ -4,7 +4,7 @@
  * (/api/cron/weekly-blog, pipeline sujet → rédaction → relecture → publication).
  *
  * ⚠️  CONVENTION : le modèle du rédacteur (feature key: "blog_generate") est
- * configurable depuis le panel admin (app/(admin)/index.tsx).
+ * configurable depuis le panel admin (app/admin/index.tsx).
  */
 import { createClient } from '@supabase/supabase-js';
 import { generateText } from 'ai';
