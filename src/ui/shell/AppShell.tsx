@@ -333,7 +333,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 public (src/ui/LandingHeader.tsx). Asset relatif (piège alias @/). Seule dans
                 le rail replié. */}
             <Image
-              source={require('../../../assets/brand/team-illustration.png')}
+              source={require('../../../assets/brand/team-illustration-144.webp')}
               style={[styles.teamBadge, collapsed && styles.teamBadgeCollapsed]}
               resizeMode="cover"
               accessibilityRole="image"
