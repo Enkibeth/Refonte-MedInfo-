@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     lineHeight: tokens.type.label.lineHeight,
     paddingVertical: tokens.space.md,
     fontFamily: tokens.font.sans,
-    color: tokens.colors.accentVivid,
+    color: tokens.colors.accentDeep, // texte : accentVivid n’atteint pas 4,5:1 sur le fond ivoire
     fontSize: tokens.type.body.fontSize,
     fontWeight: tokens.weight.semibold,
   },

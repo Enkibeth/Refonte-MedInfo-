@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   },
   backLinkText: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.accentVivid,
+    color: tokens.colors.accentDeep, // texte : accentVivid n’atteint pas 4,5:1 sur le fond ivoire
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.semibold,
   },
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   },
   tocIndex: {
     fontFamily: tokens.font.mono,
-    color: tokens.colors.accentVivid,
+    color: tokens.colors.accentDeep, // texte : accentVivid n’atteint pas 4,5:1 sur le fond ivoire
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
   },

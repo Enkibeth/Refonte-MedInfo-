@@ -21,7 +21,7 @@ const VALUES: { icon: IconName; title: string; text: string }[] = [
     text: "Une information médicale claire, en français, compréhensible sans bagage scientifique, et des sources toujours consultables gratuitement.",
   },
   {
-    icon: 'bookOpen',
+    icon: 'sparkles',
     title: 'Innovation',
     text: "Une IA de dernière génération au service de l'information en santé : réponses sourcées, outils pour étudiants et professionnels.",
   },
@@ -69,14 +69,14 @@ export default function AboutScreen() {
             <Text style={styles.paragraph}>
               Le projet associe des modèles d’IA OpenAI et Anthropic à des outils dédiés :
               simulation ECOS, planning de révisions, présentations, CV et rédaction d’articles.
-              GPT-6 Luna est le modèle de chat configuré par défaut dans cette version.
+              Le chat fonctionne aujourd’hui avec GPT-6 Luna.
             </Text>
             <Text style={styles.paragraph}>
               Trois assistants spécialisés accompagnent chacun à son niveau : le grand public
               (explications sans jargon, analyse de document médical), les étudiants en santé
               (référentiels des Collèges EDN/R2C, simulation ECOS, planning de révisions,
               présentations, CV) et les professionnels (synthèses fondées sur les preuves,
-              recherche PubMed, compte rendu de consultation dicté).
+              compte rendu de consultation dicté).
             </Text>
             <Text style={styles.paragraph}>
               Les assistants peuvent rechercher des références médicales selon le mode choisi.
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.accentVivid,
+    color: tokens.colors.accentDeep, // texte : accentVivid n’atteint pas 4,5:1 sur le fond ivoire
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
     letterSpacing: tokens.tracking.capsWide,

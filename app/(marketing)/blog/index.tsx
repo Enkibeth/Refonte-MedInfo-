@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.accentVivid,
+    color: tokens.colors.accentDeep, // texte : accentVivid n’atteint pas 4,5:1 sur le fond ivoire
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
     letterSpacing: tokens.tracking.capsWide,
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   },
   readMore: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.accentVivid,
+    color: tokens.colors.accentDeep, // texte : accentVivid n’atteint pas 4,5:1 sur le fond ivoire
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.semibold,
     marginTop: tokens.space.xs,

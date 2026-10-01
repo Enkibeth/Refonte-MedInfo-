@@ -31,7 +31,7 @@ export const BILLING_PLANS: Record<BillingPlanId, BillingPlan> = {
   public_mid: {
     id: 'public_mid',
     persona: 'public',
-    label: 'Public — Mid',
+    label: 'Grand public',
     priceLabel: '4,99 €/mois',
     priceEnvVar: 'STRIPE_PRICE_PUBLIC_MID',
     perks: ['Messages illimités', 'Suggestions de suivi'],
@@ -39,10 +39,10 @@ export const BILLING_PLANS: Record<BillingPlanId, BillingPlan> = {
   student_mid: {
     id: 'student_mid',
     persona: 'student',
-    label: 'Étudiant — Mid',
+    label: 'Étudiant',
     priceLabel: '7,99 €/mois',
     priceEnvVar: 'STRIPE_PRICE_STUDENT_MID',
-    perks: ['Messages illimités', 'Mode EDN/ECOS', 'Export de fiches'],
+    perks: ['Messages illimités', 'Mode EDN/ECOS', 'Export PDF des conversations'],
   },
   student_premium: {
     id: 'student_premium',
@@ -50,7 +50,7 @@ export const BILLING_PLANS: Record<BillingPlanId, BillingPlan> = {
     label: 'Étudiant — Premium',
     priceLabel: '14,99 €/mois',
     priceEnvVar: 'STRIPE_PRICE_STUDENT_PREMIUM',
-    perks: ['Tout Mid', 'Stations ECOS simulées', 'Classement gamifié'],
+    perks: ['Toute l’offre Étudiant', 'Stations ECOS simulées', 'Analyse des partiels'],
   },
 };
 

@@ -22,7 +22,7 @@ describe('accueil orienté produit, cadre préservé', () => {
   });
 
   it('présente le modèle comme un défaut de version, pas comme une garantie de runtime', () => {
-    expect(home).toContain('GPT-6 Luna est le modèle de chat configuré par défaut dans cette version.');
+    expect(home).toContain('Le chat fonctionne aujourd’hui avec GPT-6 Luna.');
     expect(read('src/ai/providers/featureModel.ts')).toMatch(/chat:\s*\{ modelId: 'gpt-6-luna'/);
     expect(home).not.toMatch(/meilleur modèle|tous les derniers modèles|réponses garanties/i);
   });

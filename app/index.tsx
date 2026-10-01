@@ -49,9 +49,9 @@ const FAQ_ITEMS: FaqItem[] = [
   {
     question: 'Quels outils au-delà du chat ?',
     answer:
-      'Analyse de document médical avec citations ancrées (grand public), simulation ECOS, planning de ' +
-      'révisions et analyse des partiels (étudiants), compte rendu de consultation dicté (professionnels), ' +
-      'générateur de présentations et créateur de CV médical (étudiants et professionnels).',
+      'Analyse de document médical (grand public), simulation ECOS, planning de révisions et analyse ' +
+      'des partiels (étudiants), compte rendu de consultation dicté (professionnels), générateur de ' +
+      'présentations, créateur de CV, rédaction d’article et scores cliniques (étudiants et professionnels).',
   },
   {
     question: 'Mes conversations sont-elles privées ?',
@@ -74,9 +74,9 @@ const AUDIENCE_COLORS = {
 };
 
 const TRUST_ITEMS = [
-  ['Des modèles d’IA récents', 'MedInfo AI intègre les modèles OpenAI et Anthropic. GPT-6 Luna est le modèle de chat configuré par défaut dans cette version.'],
+  ['Des modèles d’IA récents', 'MedInfo AI associe des modèles d’OpenAI et d’Anthropic, choisis selon la tâche. Le chat fonctionne aujourd’hui avec GPT-6 Luna.'],
   ['Des outils pour vos projets', 'Simulations ECOS, planning de révisions, présentations, CV et rédaction d’articles : un espace pour apprendre, organiser et créer, selon votre profil.'],
-  ['Les références à portée de main', 'Retrouvez les documents cités pour approfondir votre lecture. L’accès aux sources reste gratuit, avec ou sans abonnement.'],
+  ['Les références à portée de main', 'Les documents cités s’ouvrent depuis la réponse, avec leur type de source, pour poursuivre votre lecture.'],
 ] as const;
 
 export default function HomeScreen() {

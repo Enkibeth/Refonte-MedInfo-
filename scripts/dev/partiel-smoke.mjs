@@ -128,7 +128,7 @@ console.log('\n[1] État vide');
 ok(await page.isVisible('#sec-upload'), 'zone de dépôt visible');
 ok(await page.isHidden('#bar'), 'barre masquée');
 const eagerVendor = await page.evaluate(() =>
-  [...document.querySelectorAll('script[src]')].map((s) => s.getAttribute('src')));
+  [...document.querySelectorAll('script[src]')].map((s) => s.getAttribute('src')).filter((src) => src !== '/medinfo-controls.js'));
 ok(eagerVendor.length === 0, 'aucune librairie chargée d’emblée (lazy)', JSON.stringify(eagerVendor));
 
 console.log('\n[2] Import du fichier');
@@ -139,8 +139,10 @@ ok(await page.isVisible('#sec-results'), 'résultats affichés sans identifiant'
 const sub = await page.textContent('#bfsub');
 ok(/12 étudiants/.test(sub) && /3 épreuves/.test(sub) && /35 notes/.test(sub), 'compteurs corrects', sub);
 ok(/\/20/.test(sub), 'échelle /20 détectée', sub);
+// `/medinfo-controls.js` (habillage des boutons, 2 Ko, commun aux outils depuis 2026-09-27)
+// n'est pas une librairie à charger paresseusement : il est exclu du décompte.
 const loadedVendor = await page.evaluate(() =>
-  [...document.querySelectorAll('script[src]')].map((s) => s.getAttribute('src')));
+  [...document.querySelectorAll('script[src]')].map((s) => s.getAttribute('src')).filter((src) => src !== '/medinfo-controls.js'));
 ok(loadedVendor.length === 0, 'un CSV ne charge AUCUNE librairie (lecteur maison)', JSON.stringify(loadedVendor));
 
 console.log('\n[3] Statistiques de la promo');
@@ -360,7 +362,7 @@ const xlsxBuf = XLSXmod.buildWorkbook(rows);
 await page.setInputFiles('#fi', { name: 'promo.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: xlsxBuf });
 await page.waitForSelector('#bar:not([hidden])', { timeout: 15000 });
 const xlsxVendor = await page.evaluate(() =>
-  [...document.querySelectorAll('script[src]')].map((s) => s.getAttribute('src')));
+  [...document.querySelectorAll('script[src]')].map((s) => s.getAttribute('src')).filter((src) => src !== '/medinfo-controls.js'));
 ok(xlsxVendor.length === 1 && xlsxVendor[0].includes('xlsx'), 'SheetJS chargé seulement pour le .xlsx', JSON.stringify(xlsxVendor));
 await page.fill('#idinput', '28710012');
 await page.waitForTimeout(200);
@@ -380,7 +382,7 @@ const pdfBuf = await makeGradesPdf(browser, header, rows.slice(1));
 await page.setInputFiles('#fi', { name: 'releve-notes.pdf', mimeType: 'application/pdf', buffer: pdfBuf });
 await page.waitForSelector('#bar:not([hidden])', { timeout: 20000 });
 const pdfVendor = await page.evaluate(() =>
-  [...document.querySelectorAll('script[src]')].map((s) => s.getAttribute('src')));
+  [...document.querySelectorAll('script[src]')].map((s) => s.getAttribute('src')).filter((src) => src !== '/medinfo-controls.js'));
 ok(pdfVendor.some((s) => s.includes('pdf.min.js')), 'pdf.js chargé seulement pour le PDF', JSON.stringify(pdfVendor));
 const pdfSub = await page.textContent('#bfsub');
 ok(/12 étudiants/.test(pdfSub), 'les 12 lignes des 2 pages sont lues', pdfSub);

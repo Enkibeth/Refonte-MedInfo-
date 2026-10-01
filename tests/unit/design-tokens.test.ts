@@ -42,6 +42,7 @@ describe('palette éditoriale vivante', () => {
       expect(contrast(tokens.colors.text, surface)).toBeGreaterThanOrEqual(4.5);
       expect(contrast(tokens.colors.textMuted, surface)).toBeGreaterThanOrEqual(4.5);
       expect(contrast(tokens.colors.accent, surface)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(tokens.colors.accentDeep, surface)).toBeGreaterThanOrEqual(4.5);
     }
     for (const color of Object.values(tokens.colors.personas)) {
       expect(contrast(color.accent, color.soft)).toBeGreaterThanOrEqual(4.5);
@@ -52,5 +53,13 @@ describe('palette éditoriale vivante', () => {
     for (const foreground of [tokens.colors.editorial.onInk, tokens.colors.editorial.onInkMuted, tokens.colors.editorial.highlight]) {
       expect(contrast(foreground, tokens.colors.editorial.ink)).toBeGreaterThanOrEqual(4.5);
     }
+  });
+
+  it('n’utilise jamais le bleu vif des CTA comme couleur de TEXTE', async () => {
+    // Recette 2026-10-02 : accentVivid sur le fond ivoire = 4,46:1 (< 4,5 WCAG AA) pour les
+    // libellés 13-14 px. Il reste réservé aux fonds de boutons et aux icônes.
+    const { execSync } = await import('node:child_process');
+    const hits = execSync("grep -rn 'color: tokens.colors.accentVivid' app src || true", { encoding: 'utf8' }).trim();
+    expect(hits).toBe('');
   });
 });
