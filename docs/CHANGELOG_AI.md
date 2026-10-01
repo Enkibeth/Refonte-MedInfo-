@@ -4,6 +4,17 @@ Journal des modifications par agents IA. Une entrée par PR.
 
 ## Format
 ```
+## [2026-10-01] – Claude (accueil servi comme page Admin + noindex — collision de routes)
+### Files modified
+- app/(admin)/ → app/admin/ (URL `/admin`), liens `/(admin)` → `/admin` (AppShell, AppTabBar, ToolsMenu, account), app/_layout.tsx
+- tests/unit/route-collisions.test.ts (nouveau)
+### Purpose
+`app/(admin)/index.tsx` et `app/index.tsx` résolvaient tous deux vers « / » : le pré-rendu gardait la page Admin pour
+`dist/server/index.html`. En production, l'accueil de medinfo-ai.com était livré avec le titre « Admin — MedInfo AI » et
+`<meta name="robots" content="noindex, nofollow">` (désindexation de la page d'accueil), puis React levait l'erreur
+#418 en hydratant la vraie page par-dessus. Le panel admin vit désormais sur un vrai segment `/admin` ; un test
+échoue si deux écrans servent la même URL.
+
 ## [2026-09-30] – Claude (chargement proactif des fonctions IA + suggestions aléatoires)
 ### Files modified
 - src/ui/progress/stagedProgress.ts (nouveau, pur, testé `tests/unit/staged-progress.test.ts`), src/ui/progress/ProgressSteps.tsx (nouveau)

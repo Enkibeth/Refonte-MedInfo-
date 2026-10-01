@@ -20,7 +20,7 @@
  * section + plan, jamais les auteurs ni le manuscrit entier).
  *
  * ⚠️  CONVENTION : les modèles utilisés (feature keys: "article_assist", "article_reduce",
- * "article_originality") sont configurables depuis le panel admin (app/(admin)/index.tsx).
+ * "article_originality") sont configurables depuis le panel admin (app/admin/index.tsx).
  * Si tu ajoutes une étape IA ici, déclare-la dans src/admin/index.ts AI_FEATURES.
  */
 import { generateObject, generateText } from 'ai';

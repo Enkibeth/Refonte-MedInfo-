@@ -119,7 +119,7 @@ export function AppTabBar({ state, navigation }: AppTabBarProps) {
         { key: 'pricing', label: 'Tarifs', icon: 'scale', route: '/(billing)/pricing' },
         { key: 'home', label: 'Accueil du site', icon: 'globe', route: '/' },
       ];
-  if (isAdmin) extras.push({ key: 'admin', label: 'Panel admin', icon: 'settings', route: '/(admin)' });
+  if (isAdmin) extras.push({ key: 'admin', label: 'Panel admin', icon: 'settings', route: '/admin' });
 
   const goToExtra = (route: string) => {
     setSheetOpen(false);

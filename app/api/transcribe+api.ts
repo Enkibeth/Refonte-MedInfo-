@@ -5,7 +5,7 @@
  *   3. Compte rendu GPT (mode "report") → document médical structuré
  *
  * ⚠️  CONVENTION : les modèles utilisés (audio_diarize, audio_report) sont
- * configurables depuis le panel admin (app/(admin)/index.tsx).
+ * configurables depuis le panel admin (app/admin/index.tsx).
  * Si tu ajoutes une étape IA ici, déclare-la dans src/admin/index.ts AI_FEATURES.
  */
 import { generateText } from 'ai';

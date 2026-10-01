@@ -14,7 +14,7 @@
  * individuel : ce sont des questions d'entraînement sur des connaissances générales.
  *
  * ⚠️  CONVENTION : le modèle utilisé (feature key: "qcm_generate") est configurable
- * depuis le panel admin (app/(admin)/index.tsx). Si tu ajoutes une étape IA ici,
+ * depuis le panel admin (app/admin/index.tsx). Si tu ajoutes une étape IA ici,
  * déclare-la dans src/admin/index.ts AI_FEATURES.
  */
 import { generateObject } from 'ai';

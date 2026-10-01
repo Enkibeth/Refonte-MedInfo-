@@ -4,7 +4,7 @@
  * à partir du premier échange (message utilisateur + début de réponse de l'IA).
  *
  * ⚠️  CONVENTION : le modèle utilisé (feature key: "chat_meta", défaut Gemini 2.5 Flash)
- * est configurable depuis le panel admin (app/(admin)/index.tsx).
+ * est configurable depuis le panel admin (app/admin/index.tsx).
  * Si tu ajoutes une étape IA ici, déclare-la dans src/admin/index.ts AI_FEATURES.
  */
 import { generateObject } from 'ai';

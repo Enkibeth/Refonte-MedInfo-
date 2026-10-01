@@ -2,7 +2,7 @@
  * POST /api/ecos — Simulation patient ECOS et évaluation.
  *
  * ⚠️  CONVENTION : les modèles utilisés (ecos_simulate, ecos_evaluate) sont
- * configurables depuis le panel admin (app/(admin)/index.tsx).
+ * configurables depuis le panel admin (app/admin/index.tsx).
  * Si tu ajoutes un mode IA ici, déclare-le dans src/admin/index.ts AI_FEATURES.
  */
 import { streamText, generateText } from 'ai';

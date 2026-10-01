@@ -10,7 +10,7 @@
  * persona dérivée du profil vérifié côté serveur (jamais du body). Rate-limit (compteur étudiant).
  *
  * ⚠️  CONVENTION : le modèle utilisé (feature key: "cv_import") est configurable depuis le
- * panel admin (app/(admin)/index.tsx). Si tu ajoutes une étape IA ici, déclare-la dans
+ * panel admin (app/admin/index.tsx). Si tu ajoutes une étape IA ici, déclare-la dans
  * src/admin/index.ts AI_FEATURES.
  */
 import { generateObject } from 'ai';

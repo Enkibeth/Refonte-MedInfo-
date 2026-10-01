@@ -297,7 +297,7 @@ export default function AccountScreen() {
           <Text style={styles.sectionText}>
             Configurer les modèles IA et éditer les prompts système.
           </Text>
-          <Link href="/(admin)" style={styles.adminLink}>
+          <Link href="/admin" style={styles.adminLink}>
             Ouvrir le panel admin IA
           </Link>
         </Card>

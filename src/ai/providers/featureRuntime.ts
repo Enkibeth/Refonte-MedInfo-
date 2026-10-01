@@ -4,7 +4,7 @@
  * recherche internet. Centralise le mapping vers les `providerOptions` / `tools`
  * de l'AI SDK pour que toutes les routes appliquent la config de façon identique.
  *
- * ⚠️  CONVENTION : réglages configurables depuis le panel admin (app/(admin)/index.tsx),
+ * ⚠️  CONVENTION : réglages configurables depuis le panel admin (app/admin/index.tsx),
  * stockés dans ai_model_config (migrations 0011 + 0015). Le toggle web_search n'est
  * exposé que pour les modèles dont les capabilities.webSearch === true
  * (cf AVAILABLE_MODELS dans featureModel.ts).
