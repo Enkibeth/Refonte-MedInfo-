@@ -117,7 +117,8 @@ export const tokens = {
   // Inter sur web (chargé via app/+html.tsx), police système native ailleurs.
   font: {
     sans: Platform.select({
-      web: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+      // « Inter Fallback » : Arial mis à l'échelle d'Inter (app/+html.tsx, anti-CLS).
+      web: "'Inter', 'Inter Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
       default: 'System',
     }) as string,
     // Schibsted Grotesk — grotesk éditoriale open-source (Free Faces), réservée aux
@@ -132,7 +133,8 @@ export const tokens = {
     // hors des serifs par défaut des générateurs (ex-Fraunces, remplacée 2026-07).
     // Réservée aux niveaux display/h1 ; jamais en corps de texte.
     serif: Platform.select({
-      web: "'Source Serif 4', 'Georgia', 'Times New Roman', serif",
+      // « Source Serif 4 Fallback » : Times New Roman mis à l'échelle (app/+html.tsx, anti-CLS).
+      web: "'Source Serif 4', 'Source Serif 4 Fallback', 'Georgia', 'Times New Roman', serif",
       default: Platform.OS === 'ios' ? 'Georgia' : 'serif',
     }) as string,
     mono: Platform.select({
