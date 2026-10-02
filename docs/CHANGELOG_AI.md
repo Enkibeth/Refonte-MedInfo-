@@ -21,8 +21,9 @@ retirés ; libellés internes « Mid » masqués. Contraste : `accentVivid` (4,4
 de texte.
 ### Limites
 Parcours connectés (étudiant/pro/admin, dashboard, compte, facturation réelle) NON recettés : aucun compte de test
-autorisé (DELIVERY.md) — rien n'a été créé en base. Rendu natif non testé. Les avantages des offres restent
-déclaratifs tant que Stripe/quotas ne sont pas branchés (décision Hugo).
+autorisé (DELIVERY.md) — rien n'a été créé en base. Rendu natif non testé. Offres : les trois plans n'annoncent plus que « Messages illimités », seul droit réellement accordé par
+`resolveEntitlement()` — Premium n'apporte donc rien de plus que l'offre Étudiant : contenu des offres à
+redéfinir par Hugo avec Stripe.
 
 ## [2026-10-01] – Codex (accueil produit, photo médecine, thème partagé)
 ### Files modified

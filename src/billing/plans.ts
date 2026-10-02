@@ -23,7 +23,11 @@ export interface BillingPlan {
   priceLabel: string;
   /** Nom de la variable d'env portant le `price_id` Stripe (jamais committé). */
   priceEnvVar: string;
-  /** Résumé non gating des avantages (jamais « sources »). */
+  /**
+   * Résumé non gating des avantages (jamais « sources »). N'annoncer QUE ce que
+   * `resolveEntitlement()` accorde réellement (recette 2026-10-02 : toute offre active =
+   * messages illimités, rien d'autre ; ECOS, suggestions, exports sont déjà gratuits).
+   */
   perks: string[];
 }
 
@@ -34,7 +38,7 @@ export const BILLING_PLANS: Record<BillingPlanId, BillingPlan> = {
     label: 'Grand public',
     priceLabel: '4,99 €/mois',
     priceEnvVar: 'STRIPE_PRICE_PUBLIC_MID',
-    perks: ['Messages illimités', 'Suggestions de suivi'],
+    perks: ['Messages illimités'],
   },
   student_mid: {
     id: 'student_mid',
@@ -42,7 +46,7 @@ export const BILLING_PLANS: Record<BillingPlanId, BillingPlan> = {
     label: 'Étudiant',
     priceLabel: '7,99 €/mois',
     priceEnvVar: 'STRIPE_PRICE_STUDENT_MID',
-    perks: ['Messages illimités', 'Mode EDN/ECOS'],
+    perks: ['Messages illimités'],
   },
   student_premium: {
     id: 'student_premium',
@@ -50,7 +54,7 @@ export const BILLING_PLANS: Record<BillingPlanId, BillingPlan> = {
     label: 'Étudiant — Premium',
     priceLabel: '14,99 €/mois',
     priceEnvVar: 'STRIPE_PRICE_STUDENT_PREMIUM',
-    perks: ['Toute l’offre Étudiant', 'Stations ECOS simulées'],
+    perks: ['Messages illimités'],
   },
 };
 
