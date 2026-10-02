@@ -42,7 +42,7 @@ export const BILLING_PLANS: Record<BillingPlanId, BillingPlan> = {
     label: 'Étudiant',
     priceLabel: '7,99 €/mois',
     priceEnvVar: 'STRIPE_PRICE_STUDENT_MID',
-    perks: ['Messages illimités', 'Mode EDN/ECOS', 'Export PDF des conversations'],
+    perks: ['Messages illimités', 'Mode EDN/ECOS'],
   },
   student_premium: {
     id: 'student_premium',
@@ -50,7 +50,7 @@ export const BILLING_PLANS: Record<BillingPlanId, BillingPlan> = {
     label: 'Étudiant — Premium',
     priceLabel: '14,99 €/mois',
     priceEnvVar: 'STRIPE_PRICE_STUDENT_PREMIUM',
-    perks: ['Toute l’offre Étudiant', 'Stations ECOS simulées', 'Analyse des partiels'],
+    perks: ['Toute l’offre Étudiant', 'Stations ECOS simulées'],
   },
 };
 

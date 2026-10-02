@@ -83,6 +83,10 @@ export default function AboutScreen() {
               Les documents cités restent accessibles pour poursuivre la lecture : recommandations,
               référentiels et publications scientifiques.
             </Text>
+            <Text style={styles.paragraph}>
+              MedInfo AI fournit de l’information médicale générale, jamais un avis médical
+              individuel. En cas d’urgence, composez le 15 ou le 112.
+            </Text>
           </Reveal>
 
           <Reveal delay={tokens.motion.revealStagger * 2} style={styles.valuesPanel}>
