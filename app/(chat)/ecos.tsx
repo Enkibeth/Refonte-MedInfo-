@@ -980,7 +980,7 @@ function EcosScreenInner() {
                 (aiLoading || !input.trim()) && composerButtonStyles.sendDisabled,
                 !!input.trim() && !aiLoading && hovered && composerButtonStyles.sendHover,
                 focused && composerButtonStyles.focus,
-                pressed && composerButtonStyles.pressed,
+                pressed && composerButtonStyles.sendPressed,
               ]}
             >
               <Icon

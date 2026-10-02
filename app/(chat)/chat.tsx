@@ -2087,7 +2087,7 @@ export default function ChatScreen() {
                   composerButtonStyles.send,
                   composerButtonStyles.stop,
                   focused && composerButtonStyles.focus,
-                  pressed && composerButtonStyles.pressed,
+                  pressed && composerButtonStyles.sendPressed,
                 ]}
               >
                 <Icon name="stop" size={16} color={tokens.colors.onAccent} />
@@ -2104,7 +2104,7 @@ export default function ChatScreen() {
                   !canSend && composerButtonStyles.sendDisabled,
                   canSend && hovered && composerButtonStyles.sendHover,
                   canSend && focused && composerButtonStyles.focus,
-                  canSend && pressed && composerButtonStyles.pressed,
+                  canSend && pressed && composerButtonStyles.sendPressed,
                 ]}
               >
                 <Icon name="arrowUp" size={COMPOSER_ICON_SIZE} color={canSend ? tokens.colors.onAccent : tokens.colors.textMuted} />

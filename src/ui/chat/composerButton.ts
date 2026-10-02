@@ -50,6 +50,8 @@ export const composerButtonStyles = StyleSheet.create({
     ...tokens.motion.transitionWeb,
   },
   sendHover: { backgroundColor: tokens.colors.accentVividStrong },
+  // Appui sur envoi/arrêt : on garde le fond (une icône blanche sur fond clair disparaissait).
+  sendPressed: { opacity: 0.8 },
   sendDisabled: {
     backgroundColor: tokens.colors.surfaceSunken,
     ...(Platform.select({ web: { boxShadow: 'none' } as object, default: {} }) as object),

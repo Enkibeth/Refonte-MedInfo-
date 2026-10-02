@@ -2275,14 +2275,15 @@
   };
 
   // Message d'état passager : effacé après 6 s (sur téléphone il s'affiche en bulle flottante,
-  // qui ne doit pas rester sur le document). Les erreurs restent jusqu'au message suivant.
+  // qui ne doit pas rester sur le document). Erreurs et progressions restent jusqu'au message suivant.
   var statusTimer = null;
   function setStatus(text, kind) {
     var node = $('status');
     node.textContent = text || '';
     node.className = 'status' + (kind ? ' ' + kind : '');
     clearTimeout(statusTimer);
-    if (text && kind !== 'err') statusTimer = setTimeout(function () { node.textContent = ''; }, 6000);
+    // Un message de progression (« Génération du PDF… ») reste affiché jusqu'au message suivant.
+    if (text && kind !== 'err' && !/…$/.test(text)) statusTimer = setTimeout(function () { node.textContent = ''; }, 6000);
   }
   function announce(text) { $('live').textContent = text; }
 
