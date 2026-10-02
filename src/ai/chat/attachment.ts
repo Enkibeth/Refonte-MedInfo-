@@ -37,6 +37,31 @@ export type AttachmentModelPart =
   | { type: 'file'; data: Uint8Array; mediaType: string }
   | { type: 'image'; image: Uint8Array; mediaType: string };
 
+/**
+ * Mention de la pièce jointe dans le texte du message (affiché, archivé, et renvoyé dans
+ * l'historique). Seul le NOM du fichier est conservé : le contenu n'est jamais stocké.
+ */
+const ATTACHMENT_MARKER = 'Pièce jointe : ';
+
+/** Texte affiché et archivé d'un message accompagné d'une pièce jointe. */
+export function withAttachmentMarker(text: string, name: string): string {
+  const trimmed = text.trim();
+  return `${trimmed}${trimmed ? '\n\n' : ''}${ATTACHMENT_MARKER}${name}`;
+}
+
+/** Nom du fichier mentionné par le message (dernière ligne « Pièce jointe : … »), sinon null. */
+export function mentionedAttachmentName(text: string): string | null {
+  const lastLine = text.trimEnd().split('\n').pop() ?? '';
+  if (!lastLine.startsWith(ATTACHMENT_MARKER)) return null;
+  const name = lastLine.slice(ATTACHMENT_MARKER.length).trim();
+  return name || null;
+}
+
+/** Le message mentionne-t-il une pièce jointe ? */
+export function mentionsAttachment(text: string): boolean {
+  return mentionedAttachmentName(text) !== null;
+}
+
 export function isPdfAttachment(a: ChatAttachment): boolean {
   return a.mediaType === PDF_TYPE;
 }
