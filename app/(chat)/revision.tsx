@@ -924,7 +924,7 @@ const styles = StyleSheet.create({
   saveButton: { minHeight: tokens.size.controlMd,
     height: 48,
     borderRadius: tokens.radius.lg,
-    backgroundColor: tokens.colors.accent,
+    backgroundColor: tokens.colors.accentVivid,
     justifyContent: 'center',
     alignItems: 'center',
     ...tokens.elevation.sm,

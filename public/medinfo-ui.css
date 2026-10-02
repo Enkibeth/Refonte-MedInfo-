@@ -55,3 +55,16 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="
 .mi-progress-slow { margin: 0; font-size: 13px; line-height: 18px; color: var(--muted); font-style: italic; }
 @keyframes mi-progress-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .mi-progress-spin { animation: none; } .mi-progress-fill { transition: none; } }
+
+/* Boutons des outils — même langage que l'application (retour Hugo 2026-10 : « les boutons ne
+   font pas très propre »). Secondaire : filet clair + fond discret au survol (le filet gris
+   foncé alourdissait les barres d'outils) ; principal : le même bleu vif que les CTA de l'app
+   (la présentation utilisait un bleu plus sombre). Le libellé identifie le bouton : le filet
+   n'est pas l'unique indice visuel (WCAG 1.4.11). */
+.btn:not(.btn-primary):not(.btn-accent):not(.btn-ghost),
+.mip-btn:not(.mip-btn-primary) { border-color:var(--rule); background:var(--surface); color:var(--ink); }
+.btn:not(.btn-primary):not(.btn-accent):not(.btn-ghost):hover:not(:disabled),
+.mip-btn:not(.mip-btn-primary):hover:not(:disabled) { border-color:var(--rule); background:var(--sunken); color:var(--ink); }
+.btn.btn-primary, .mip-btn.mip-btn-primary { background:var(--vivid); border-color:var(--vivid); color:#fff; }
+.btn.btn-primary:hover:not(:disabled), .mip-btn.mip-btn-primary:hover:not(:disabled) { background:var(--vivid-deep); border-color:var(--vivid-deep); color:#fff; }
+.btn, .mip-btn { transition:background-color .15s ease, border-color .15s ease, color .15s ease; }

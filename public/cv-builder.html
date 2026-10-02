@@ -244,9 +244,17 @@
     .mobile-tabs {
       display: flex; gap: 6px; padding: 6px 10px; background: var(--surface); border-bottom: 1px solid var(--line);
     }
-    .mobile-tabs button { flex: 1; }
+    .mobile-tabs button { flex: 1; justify-content: center; border-color: transparent !important; background: transparent !important; color: var(--ink2); }
+    /* Onglet actif lisible comme un ONGLET (pastille teintée), plus comme deux boutons bordés. */
+    .mobile-tabs button[aria-selected="true"] { background: var(--accent-soft) !important; color: var(--accent-deep); }
     .layout { height: calc(100% - var(--topbar-h) - 41px); }
     .doc-title { max-width: 120px; }
+    /* Le message d'état (zone live) devient une bulle flottante : il ne pousse plus les
+       boutons sur une deuxième ligne de barre. */
+    .topbar .status { position: fixed; left: 12px; right: 12px; bottom: 16px; z-index: 50; margin: 0;
+      padding: 10px 14px; border-radius: 10px; background: var(--ink); color: #fff; text-align: center;
+      white-space: normal; max-width: none; pointer-events: none; box-shadow: 0 6px 18px rgba(20,32,52,.18); }
+    .topbar .status:empty { display: none; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
@@ -2266,10 +2274,15 @@
     reviewInFlight: false,
   };
 
+  // Message d'état passager : effacé après 6 s (sur téléphone il s'affiche en bulle flottante,
+  // qui ne doit pas rester sur le document). Les erreurs restent jusqu'au message suivant.
+  var statusTimer = null;
   function setStatus(text, kind) {
     var node = $('status');
     node.textContent = text || '';
     node.className = 'status' + (kind ? ' ' + kind : '');
+    clearTimeout(statusTimer);
+    if (text && kind !== 'err') statusTimer = setTimeout(function () { node.textContent = ''; }, 6000);
   }
   function announce(text) { $('live').textContent = text; }
 

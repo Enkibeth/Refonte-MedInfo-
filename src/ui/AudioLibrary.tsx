@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
   muted: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.body.fontSize },
   mutedSmall: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.caption.fontSize, textAlign: 'center', maxWidth: 320 },
   errorText: { fontFamily: tokens.font.sans, color: tokens.colors.danger, fontSize: tokens.type.label.fontSize },
-  retry: { paddingHorizontal: tokens.space.lg, paddingVertical: tokens.space.sm, borderRadius: tokens.radius.md, backgroundColor: tokens.colors.accent },
+  retry: { paddingHorizontal: tokens.space.lg, paddingVertical: tokens.space.sm, borderRadius: tokens.radius.md, backgroundColor: tokens.colors.accentVivid },
   retryText: { fontFamily: tokens.font.sans, color: tokens.colors.onAccent, fontWeight: tokens.weight.semibold },
   list: { padding: tokens.space.lg, gap: tokens.space.lg },
   group: { gap: tokens.space.sm },
@@ -308,6 +308,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: tokens.space.sm, marginTop: tokens.space.xs },
   ghostBtn: { minHeight: tokens.size.controlMd, flex: 1, height: 40, borderRadius: tokens.radius.md, borderWidth: 1, borderColor: tokens.colors.borderStrong, justifyContent: 'center', alignItems: 'center' },
   ghostBtnText: { fontFamily: tokens.font.sans, color: tokens.colors.textSubtle, fontWeight: tokens.weight.medium, fontSize: tokens.type.label.fontSize },
-  primaryBtn: { minHeight: tokens.size.controlMd, flex: 2, height: 40, borderRadius: tokens.radius.md, backgroundColor: tokens.colors.accent, justifyContent: 'center', alignItems: 'center' },
+  primaryBtn: { minHeight: tokens.size.controlMd, flex: 2, height: 40, borderRadius: tokens.radius.md, backgroundColor: tokens.colors.accentVivid, justifyContent: 'center', alignItems: 'center' },
   primaryBtnText: { fontFamily: tokens.font.sans, color: tokens.colors.onAccent, fontWeight: tokens.weight.semibold, fontSize: tokens.type.label.fontSize },
 });

@@ -76,6 +76,7 @@ import { ConversationList, HistoryPanel } from '@/ui/chat/HistoryPanel';
 import { CountrySelector } from '@/ui/chat/CountrySelector';
 import { coerceCountry, type CountryCode } from '@/ai/chat/country';
 import { ResponseControls } from '@/ui/chat/ResponseControls';
+import { COMPOSER_ICON_SIZE, composerButtonStyles, composerIconColor } from '@/ui/chat/composerButton';
 import { coerceResponseMode, type ResponseMode } from '@/ai/chat/responseMode';
 import {
   LONG_WAIT_MS,
@@ -2046,9 +2047,15 @@ export default function ChatScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Joindre un document" {...(Platform.OS === 'web' ? { title: 'Joindre un document' } : {})}
                 disabled={isLoading}
-                style={styles.attachButton}
+                style={({ pressed, hovered, focused }: { pressed: boolean; hovered?: boolean; focused?: boolean }) => [
+                  composerButtonStyles.button,
+                  hovered && composerButtonStyles.hover,
+                  pressed && composerButtonStyles.pressed,
+                  focused && composerButtonStyles.focus,
+                  isLoading && composerButtonStyles.disabled,
+                ]}
               >
-                <Icon name="paperclip" size={18} color={tokens.colors.accentDeep} />
+                <Icon name="paperclip" size={COMPOSER_ICON_SIZE} color={composerIconColor()} />
               </Pressable>
             ) : null}
             {/* Session connue seulement : pendant l'amorçage, le micro apparaissait puis
@@ -2076,13 +2083,14 @@ export default function ChatScreen() {
                 onPress={handleStop}
                 accessibilityRole="button"
                 accessibilityLabel="Arrêter la génération" {...(Platform.OS === 'web' ? { title: 'Arrêter la génération' } : {})}
-                style={({ pressed }: { pressed: boolean }) => [
-                  styles.sendButton,
-                  styles.stopButton,
-                  pressed && styles.sendButtonPressed,
+                style={({ pressed, focused }: { pressed: boolean; focused?: boolean }) => [
+                  composerButtonStyles.send,
+                  composerButtonStyles.stop,
+                  focused && composerButtonStyles.focus,
+                  pressed && composerButtonStyles.pressed,
                 ]}
               >
-                <Icon name="stop" size={tokens.size.iconSm} color={tokens.colors.text} /><Text style={styles.messageActionText}>Arrêter</Text>
+                <Icon name="stop" size={16} color={tokens.colors.onAccent} />
               </Pressable>
             ) : (
               <Pressable
@@ -2090,16 +2098,16 @@ export default function ChatScreen() {
                 disabled={!canSend}
                 accessibilityRole="button"
                 accessibilityLabel="Envoyer le message" {...(Platform.OS === 'web' ? { title: 'Envoyer le message' } : {})}
+                aria-disabled={!canSend}
                 style={({ pressed, hovered, focused }: { pressed: boolean; hovered?: boolean; focused?: boolean }) => [
-                  styles.sendButton,
-                  !canSend && styles.sendButtonDisabled,
-                  canSend && hovered && styles.sendButtonHover,
-                  canSend && focused && styles.sendButtonFocus,
-                  canSend && pressed && styles.sendButtonPressed,
+                  composerButtonStyles.send,
+                  !canSend && composerButtonStyles.sendDisabled,
+                  canSend && hovered && composerButtonStyles.sendHover,
+                  canSend && focused && composerButtonStyles.focus,
+                  canSend && pressed && composerButtonStyles.pressed,
                 ]}
               >
-                <Icon name="arrowUp" size={tokens.size.iconSm} color={canSend ? tokens.colors.onAccent : tokens.colors.textMuted} />
-                <Text style={[styles.messageActionText, canSend && { color: tokens.colors.onAccent }]}>Envoyer</Text>
+                <Icon name="arrowUp" size={COMPOSER_ICON_SIZE} color={canSend ? tokens.colors.onAccent : tokens.colors.textMuted} />
               </Pressable>
             )}
           </View>
@@ -2212,8 +2220,8 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
   },
   docHintAction: { minHeight: tokens.size.controlMd,
-    borderRadius: tokens.radius.pill,
-    backgroundColor: tokens.colors.accent,
+    borderRadius: tokens.radius.md,
+    backgroundColor: tokens.colors.accentVivid,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.xs + 1,
     ...tokens.motion.transitionWeb,
@@ -2408,8 +2416,8 @@ const styles = StyleSheet.create({
     minHeight: tokens.size.controlMd,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: tokens.radius.sm,
-    backgroundColor: tokens.colors.accent,
+    borderRadius: tokens.radius.md,
+    backgroundColor: tokens.colors.accentVivid,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.sm + 2,
     ...tokens.elevation.sm,
@@ -2669,8 +2677,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: tokens.space.sm,
     marginTop: tokens.space.md,
-    borderRadius: tokens.radius.pill,
-    backgroundColor: tokens.colors.accent,
+    borderRadius: tokens.radius.md,
+    backgroundColor: tokens.colors.accentVivid,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.sm,
     ...tokens.motion.transitionWeb,
@@ -2704,27 +2712,22 @@ const styles = StyleSheet.create({
 
     ...tokens.motion.transitionWeb,
   },
+  // Focus du champ : bordure accent + halo doux (l'anneau de focus standard doublait la
+  // bordure en un cadre bleu épais autour de toute la carte — retour Hugo 2026-10).
   composerFocused: {
     borderColor: tokens.colors.accent,
-    ...tokens.focus.ring,
+    ...(Platform.select({
+      web: { boxShadow: `0 0 0 3px ${tokens.colors.accentSurfaceStrong}`, outlineStyle: 'none' } as object,
+      default: {},
+    }) as object),
   },
   composerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: tokens.space.sm,
+    gap: tokens.space.xs, // boutons ronds sans bordure : leur fond au survol fait l'espacement
     paddingHorizontal: tokens.space.xs,
   },
   composerSpacer: { flex: 1 },
-  attachButton: { minHeight: tokens.size.controlMd,
-    width: tokens.size.iconButton,
-    height: tokens.size.iconButton,
-    borderRadius: tokens.radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: tokens.colors.accentSurface,
-    borderWidth: 1,
-    borderColor: tokens.colors.accentSurfaceStrong,
-  },
   attachmentChip: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
@@ -2775,27 +2778,4 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     paddingHorizontal: tokens.space.xs, // largeur pleine : 2 lignes au lieu de 3 sur téléphone
   },
-  sendButton: { minHeight: tokens.size.controlMd,
-    width: tokens.size.composerAction,
-    paddingHorizontal: tokens.space.md,
-    flexDirection: 'row',
-    gap: tokens.space.sm,
-    borderRadius: tokens.radius.sm,
-    // CTA principal du chat : même bleu électrique que les boutons primaires (2026-07).
-    backgroundColor: tokens.colors.accentVivid,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    borderWidth: tokens.border.thin,
-    borderColor: tokens.colors.transparent,
-    ...tokens.motion.transitionWeb,
-  },
-  sendButtonHover: { backgroundColor: tokens.colors.accentVividStrong },
-  sendButtonFocus: tokens.focus.ring,
-  sendButtonPressed: { opacity: 0.85 },
-  sendButtonDisabled: {
-    backgroundColor: tokens.colors.surfaceSunken,
-    ...Platform.select({ web: { boxShadow: 'none' } as object, default: {} }),
-  },
-  // Pendant la génération, le bouton d'envoi devient un bouton d'arrêt (encre sombre).
-  stopButton: { borderColor: tokens.colors.borderStrong, backgroundColor: tokens.colors.surface },
 });
