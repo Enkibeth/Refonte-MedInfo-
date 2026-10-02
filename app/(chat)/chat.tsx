@@ -16,7 +16,6 @@ import {
   Text,
   TextInput,
   ScrollView,
-  TouchableOpacity,
   Pressable,
   StyleSheet,
   KeyboardAvoidingView,
@@ -66,8 +65,11 @@ import { tokens } from '@/ui/tokens';
 import { DictationButton } from '@/ui/DictationButton';
 import { ToolsMenu } from '@/ui/ToolsMenu';
 import { SessionRecovery } from '@/ui/RoleGate';
+import { Button } from '@/ui/Button';
 import { Icon } from '@/ui/icons';
 import { Reveal } from '@/ui/Reveal';
+import { Touchable } from '@/ui/Touchable';
+import { toolbarButtonStyles, toolbarContentColor } from '@/ui/toolbarButton';
 import { useReducedMotion } from '@/ui/useReducedMotion';
 import { AssistantBlocks, SourcesBlock } from '@/ui/chat/AssistantBlocks';
 import { QcmLauncher } from '@/ui/chat/QcmCard';
@@ -301,7 +303,7 @@ function MessageActions({
   return (
     <View testID="response-actions" style={styles.messageActions}>
       {CAN_COPY ? (
-        <TouchableOpacity
+        <Touchable
           style={styles.messageActionButton}
           onPress={() => void copy()}
           accessibilityRole="button"
@@ -315,10 +317,10 @@ function MessageActions({
           <Text style={[styles.messageActionText, copied && styles.messageActionTextDone]}>
             {copied ? 'Copié' : 'Copier'}
           </Text>
-        </TouchableOpacity>
+        </Touchable>
       ) : null}
       {showRegenerate && onRegenerate ? (
-        <TouchableOpacity
+        <Touchable
           style={styles.messageActionButton}
           onPress={onRegenerate}
           accessibilityRole="button"
@@ -326,12 +328,12 @@ function MessageActions({
         >
           <Icon name="refresh" size={14} color={tokens.colors.textMuted} />
           <Text style={styles.messageActionText}>Régénérer</Text>
-        </TouchableOpacity>
+        </Touchable>
       ) : null}
-      <TouchableOpacity style={styles.messageActionButton} onPress={onExport} accessibilityRole="button" accessibilityLabel="Exporter la réponse en PDF" {...(Platform.OS === 'web' ? { title: 'Exporter la réponse en PDF' } : {})}>
+      <Touchable style={styles.messageActionButton} onPress={onExport} accessibilityRole="button" accessibilityLabel="Exporter la réponse en PDF" {...(Platform.OS === 'web' ? { title: 'Exporter la réponse en PDF' } : {})}>
         <Icon name="download" size={tokens.size.iconSm} color={tokens.colors.textMuted} />
         <Text style={styles.messageActionText}>Exporter</Text>
-      </TouchableOpacity>
+      </Touchable>
     </View>
   );
 }
@@ -1467,14 +1469,14 @@ export default function ChatScreen() {
             <Icon name="clock" size={16} color={tokens.colors.accentDeep} />
             <Text style={styles.historyRailTitle}>Historique</Text>
             <View style={{ flex: 1 }} />
-            <TouchableOpacity
+            <Touchable
               onPress={() => setHistoryCollapsed(true)}
               accessibilityRole="button"
               accessibilityLabel="Masquer l’historique" {...(Platform.OS === 'web' ? { title: 'Masquer l’historique' } : {})}
               style={styles.historyCollapseBtn}
             >
               <Icon name="panelLeft" size={16} color={tokens.colors.textMuted} />
-            </TouchableOpacity>
+            </Touchable>
           </View>
           <ConversationList
             conversations={conversations}
@@ -1492,37 +1494,38 @@ export default function ChatScreen() {
       {/* ── Plein écran : une barre fine (quitter, sources, nouvelle conversation) ── */}
       {focus ? (
         <View style={[styles.focusBar, { paddingTop: tokens.space.xs + insets.top }]}>
-          <TouchableOpacity
-            style={styles.headerIconButton}
+          <Touchable
+            style={[toolbarButtonStyles.button, toolbarButtonStyles.icon]}
             onPress={toggleFocus}
             accessibilityRole="button"
             accessibilityLabel="Quitter le plein écran" {...(Platform.OS === 'web' ? { title: 'Quitter le plein écran' } : {})}
           >
-            <Icon name="minimize" size={17} color={tokens.colors.accentDeep} />
-          </TouchableOpacity>
+            <Icon name="minimize" size={17} color={toolbarContentColor()} />
+          </Touchable>
           <Text style={styles.focusTitle} numberOfLines={1}>{meta.label}</Text>
           {latestSources.length > 0 ? (
-            <TouchableOpacity
-              style={[styles.sourcesPill, sourcesOpen && styles.sourcesPillActive]}
+            <Touchable
+              style={[toolbarButtonStyles.button, sourcesOpen && toolbarButtonStyles.active]}
+              aria-expanded={sourcesOpen}
               onPress={() => setSourcesOpen((o) => !o)}
               accessibilityRole="button"
               accessibilityLabel={`Sources (${latestSources.length})`}
             >
-              <Icon name="bookOpen" size={16} color={sourcesOpen ? tokens.colors.onAccent : tokens.colors.accentDeep} />
-              <Text style={[styles.sourcesPillText, sourcesOpen && styles.sourcesPillTextActive]}>
+              <Icon name="bookOpen" size={16} color={toolbarContentColor(sourcesOpen)} />
+              <Text style={[toolbarButtonStyles.label, sourcesOpen && toolbarButtonStyles.labelActive]}>
                 {latestSources.length}
               </Text>
-            </TouchableOpacity>
+            </Touchable>
           ) : null}
           {messages.length > 0 ? (
-            <TouchableOpacity
-              style={styles.headerIconButton}
+            <Touchable
+              style={[toolbarButtonStyles.button, toolbarButtonStyles.icon]}
               onPress={() => startNewConversation()}
               accessibilityRole="button"
               accessibilityLabel="Nouvelle conversation" {...(Platform.OS === 'web' ? { title: 'Nouvelle conversation' } : {})}
             >
-              <Icon name="plus" size={18} color={tokens.colors.accentDeep} />
-            </TouchableOpacity>
+              <Icon name="plus" size={18} color={toolbarContentColor()} />
+            </Touchable>
           ) : null}
         </View>
       ) : null}
@@ -1553,14 +1556,14 @@ export default function ChatScreen() {
       {!focus && (Platform.OS === 'web' || !compactHeader) ? (
       <View {...mi('chat-header', 'ge640')} style={[styles.chatHeader, compactHeader && styles.chatHeaderCompact, { paddingTop: tokens.space.md + insets.top }]}>
         {desktopShell && user && historyCollapsed ? (
-          <TouchableOpacity
+          <Touchable
             onPress={() => setHistoryCollapsed(false)}
             accessibilityRole="button"
             accessibilityLabel="Afficher l’historique" {...(Platform.OS === 'web' ? { title: 'Afficher l’historique' } : {})}
-            style={[styles.headerIconButton, { marginRight: tokens.space.sm }]}
+            style={[toolbarButtonStyles.button, toolbarButtonStyles.icon, { marginRight: tokens.space.sm }]}
           >
-            <Icon name="panelLeft" size={17} color={tokens.colors.accentDeep} />
-          </TouchableOpacity>
+            <Icon name="panelLeft" size={17} color={toolbarContentColor()} />
+          </Touchable>
         ) : null}
         <View style={styles.headerTitleBlock}>
           <Text style={styles.chatTitle} accessibilityRole="header" aria-level={1}>
@@ -1573,56 +1576,57 @@ export default function ChatScreen() {
         <View {...mi('chat-header-actions')} style={[styles.headerActions, compactHeader && { justifyContent: 'flex-end' }]}>
           <CountrySelector value={country} onChange={handleCountryChange} />
           {latestSources.length > 0 ? (
-            <TouchableOpacity
-              style={[styles.sourcesPill, sourcesOpen && styles.sourcesPillActive]}
+            <Touchable
+              style={[toolbarButtonStyles.button, sourcesOpen && toolbarButtonStyles.active]}
+              aria-expanded={sourcesOpen}
               onPress={() => setSourcesOpen((o) => !o)}
               accessibilityRole="button"
               accessibilityLabel={`Sources (${latestSources.length})`}
             >
-              <Icon name="bookOpen" size={16} color={sourcesOpen ? tokens.colors.onAccent : tokens.colors.accentDeep} />
-              <Text style={[styles.sourcesPillText, sourcesOpen && styles.sourcesPillTextActive]}>
+              <Icon name="bookOpen" size={16} color={toolbarContentColor(sourcesOpen)} />
+              <Text style={[toolbarButtonStyles.label, sourcesOpen && toolbarButtonStyles.labelActive]}>
                 {latestSources.length}
               </Text>
-            </TouchableOpacity>
+            </Touchable>
           ) : null}
           {messages.length > 0 ? (
-            <TouchableOpacity
-              style={styles.headerIconButton}
+            <Touchable
+              style={[toolbarButtonStyles.button, toolbarButtonStyles.icon]}
               onPress={handleExportPdf}
               accessibilityRole="button"
               accessibilityLabel="Exporter la conversation en PDF" {...(Platform.OS === 'web' ? { title: 'Exporter la conversation en PDF' } : {})}
             >
-              <Icon name="download" size={17} color={tokens.colors.accentDeep} />
-            </TouchableOpacity>
+              <Icon name="download" size={17} color={toolbarContentColor()} />
+            </Touchable>
           ) : null}
           {user && !desktopShell ? (
-            <TouchableOpacity
-              style={styles.headerIconButton}
+            <Touchable
+              style={[toolbarButtonStyles.button, toolbarButtonStyles.icon]}
               onPress={() => setHistoryOpen(true)}
               accessibilityRole="button"
               accessibilityLabel="Historique des conversations" {...(Platform.OS === 'web' ? { title: 'Historique des conversations' } : {})}
             >
-              <Icon name="clock" size={17} color={tokens.colors.accentDeep} />
-            </TouchableOpacity>
+              <Icon name="clock" size={17} color={toolbarContentColor()} />
+            </Touchable>
           ) : null}
           {messages.length > 0 ? (
-            <TouchableOpacity
-              style={styles.headerIconButton}
+            <Touchable
+              style={[toolbarButtonStyles.button, toolbarButtonStyles.icon]}
               onPress={() => startNewConversation()}
               accessibilityRole="button"
               accessibilityLabel="Nouvelle conversation" {...(Platform.OS === 'web' ? { title: 'Nouvelle conversation' } : {})}
             >
-              <Icon name="plus" size={18} color={tokens.colors.accentDeep} />
-            </TouchableOpacity>
+              <Icon name="plus" size={18} color={toolbarContentColor()} />
+            </Touchable>
           ) : null}
-          <TouchableOpacity
-            style={styles.headerIconButton}
+          <Touchable
+            style={[toolbarButtonStyles.button, toolbarButtonStyles.icon]}
             onPress={toggleFocus}
             accessibilityRole="button"
             accessibilityLabel="Plein écran" {...(Platform.OS === 'web' ? { title: 'Plein écran' } : {})}
           >
-            <Icon name="maximize" size={17} color={tokens.colors.accentDeep} />
-          </TouchableOpacity>
+            <Icon name="maximize" size={17} color={toolbarContentColor()} />
+          </Touchable>
           <ToolsMenu />
         </View>
       </View>
@@ -1680,7 +1684,7 @@ export default function ChatScreen() {
           {/* Fermeture dans le panneau : sur téléphone, le bouton bascule n'est plus dans l'en-tête. */}
           <View style={styles.sourcesPaneHeader}>
             <Text style={styles.sourcesPaneTitle}>Sources ({latestSources.length})</Text>
-            <TouchableOpacity
+            <Touchable
               onPress={() => setSourcesOpen(false)}
               accessibilityRole="button"
               accessibilityLabel="Fermer les sources"
@@ -1688,7 +1692,7 @@ export default function ChatScreen() {
             >
               <Icon name="x" size={16} color={tokens.colors.textMuted} />
               <Text style={styles.sourcesPaneCloseText}>Fermer</Text>
-            </TouchableOpacity>
+            </Touchable>
           </View>
           <SourcesBlock
             sources={latestSources}
@@ -1755,7 +1759,7 @@ export default function ChatScreen() {
               tabIndex={-1}
             >
               {starters.map((s) => (
-                <TouchableOpacity
+                <Touchable
                   key={s}
                   style={[styles.starterChip, guestLocked && styles.starterChipDisabled]}
                   onPress={() => void sendText(s)}
@@ -1764,8 +1768,8 @@ export default function ChatScreen() {
                   aria-disabled={guestLocked}
                 >
                   <Text style={styles.starterChipText}>{s}</Text>
-                  <Icon name="arrowRight" size={14} color={tokens.colors.accent} />
-                </TouchableOpacity>
+                  <Icon name="arrowRight" size={tokens.size.iconSm} color={tokens.colors.textMuted} />
+                </Touchable>
               ))}
             </Pressable>
           </Reveal>
@@ -1798,7 +1802,7 @@ export default function ChatScreen() {
               startedAt={waitStartedAt}
               guest={isGuest}
             />
-            {foundSources.map(source => <TouchableOpacity key={source.url} accessibilityRole="link" accessibilityLabel={`Source trouvée : ${source.title}`} style={styles.messageActionButton} onPress={() => void Linking.openURL(source.url)}><Icon name="externalLink" size={tokens.size.iconSm} color={tokens.colors.accent} /><Text style={styles.messageActionText}>{source.title}</Text></TouchableOpacity>)}
+            {foundSources.map(source => <Touchable key={source.url} accessibilityRole="link" accessibilityLabel={`Source trouvée : ${source.title}`} style={styles.messageActionButton} onPress={() => void Linking.openURL(source.url)}><Icon name="externalLink" size={tokens.size.iconSm} color={tokens.colors.accent} /><Text style={styles.messageActionText}>{source.title}</Text></Touchable>)}
           </View>
         )}
 
@@ -1807,7 +1811,7 @@ export default function ChatScreen() {
           <View style={styles.bridgeRow}>
             <Text style={styles.bridgeLabel}>Continuer avec</Text>
             {isFeatureVisible('ecos', persona, { isAdmin }) ? (
-              <TouchableOpacity
+              <Touchable
                 style={styles.bridgeChip}
                 onPress={() => router.push('/(chat)/ecos' as never)}
                 accessibilityRole="link"
@@ -1815,10 +1819,10 @@ export default function ChatScreen() {
               >
                 <Icon name="stethoscope" size={14} color={tokens.colors.accentDeep} />
                 <Text style={styles.bridgeChipText}>S’entraîner (ECOS)</Text>
-              </TouchableOpacity>
+              </Touchable>
             ) : null}
             {isFeatureVisible('revision', persona, { isAdmin }) ? (
-              <TouchableOpacity
+              <Touchable
                 style={styles.bridgeChip}
                 onPress={() => router.push('/(chat)/revision' as never)}
                 accessibilityRole="link"
@@ -1826,7 +1830,7 @@ export default function ChatScreen() {
               >
                 <Icon name="calendarCheck" size={14} color={tokens.colors.accentDeep} />
                 <Text style={styles.bridgeChipText}>Planifier (Révisions)</Text>
-              </TouchableOpacity>
+              </Touchable>
             ) : null}
           </View>
         ) : null}
@@ -1858,22 +1862,19 @@ export default function ChatScreen() {
                 connectez-vous pour continuer et enregistrer vos prochaines conversations.
               </Text>
               <View style={[styles.guestCtaActions, compactHeader && styles.guestCtaActionsCompact]}>
-                <TouchableOpacity
-                  style={styles.guestCtaPrimary}
+                <Button
+                  label="Créer un compte gratuit"
+                  size="md"
+                  fullWidth={compactHeader}
                   onPress={() => router.push('/(auth)/sign-in?mode=signup' as never)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Créer un compte gratuit" {...(Platform.OS === 'web' ? { title: 'Créer un compte gratuit' } : {})}
-                >
-                  <Text style={styles.guestCtaPrimaryText}>Créer un compte gratuit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.guestCtaSecondary}
+                />
+                <Button
+                  label="Se connecter"
+                  variant="secondary"
+                  size="md"
+                  fullWidth={compactHeader}
                   onPress={() => router.push('/(auth)/sign-in' as never)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Se connecter" {...(Platform.OS === 'web' ? { title: 'Se connecter' } : {})}
-                >
-                  <Text style={styles.guestCtaSecondaryText}>Se connecter</Text>
-                </TouchableOpacity>
+                />
               </View>
             </View>
           </Reveal>
@@ -1895,18 +1896,18 @@ export default function ChatScreen() {
             <Text style={styles.errorText}>
               Votre session a expiré : reconnectez-vous pour continuer la conversation.
             </Text>
-            <TouchableOpacity
-              style={styles.retryButton}
+            <Button
+              label="Se reconnecter"
+              variant="secondary"
+              size="md"
+              fullWidth={false}
+              leftIcon={<Icon name="userRound" size={tokens.size.iconSm} color={tokens.colors.textSubtle} />}
               onPress={() => router.push('/(auth)/sign-in' as never)}
-              accessibilityRole="button"
-              accessibilityLabel="Se reconnecter" {...(Platform.OS === 'web' ? { title: 'Se reconnecter' } : {})}
-            >
-              <Icon name="userRound" size={14} color={tokens.colors.onAccent} />
-              <Text style={styles.retryButtonText}>Se reconnecter</Text>
-            </TouchableOpacity>
+              style={styles.retryButton}
+            />
           </View>
         )}
-        {preparationError ? <View style={styles.errorBanner} accessibilityLiveRegion="polite"><Text style={styles.errorText}>{preparationError}</Text><TouchableOpacity style={styles.retryButton} accessibilityRole="button" accessibilityLabel="Réessayer l’envoi" {...(Platform.OS === 'web' ? { title: 'Réessayer l’envoi' } : {})} onPress={() => void sendText(draftRef.current)}><Text style={styles.retryButtonText}>Réessayer</Text></TouchableOpacity></View> : null}
+        {preparationError ? <View style={styles.errorBanner} accessibilityLiveRegion="polite"><Text style={styles.errorText}>{preparationError}</Text><Button label="Réessayer" accessibilityLabel="Réessayer l’envoi" variant="secondary" size="md" fullWidth={false} leftIcon={<Icon name="refresh" size={tokens.size.iconSm} color={tokens.colors.textSubtle} />} onPress={() => void sendText(draftRef.current)} style={styles.retryButton} /></View> : null}
         {/* ── Tour resté sans réponse (réflexion qui a épuisé son budget, flux clos sans
             archive) : le dire et proposer de relancer — document compris ── */}
         {unansweredTurn && !isLoading && !recovering && !error ? (
@@ -1916,15 +1917,16 @@ export default function ChatScreen() {
                 ? 'La réponse n’a pas pu être rédigée. Réessayez : votre question et votre document seront renvoyés.'
                 : 'La réponse n’a pas pu être rédigée. Réessayez : votre question sera renvoyée.'}
             </Text>
-            <TouchableOpacity
-              style={styles.retryButton}
+            <Button
+              label="Réessayer"
+              accessibilityLabel="Réessayer la dernière question"
+              variant="secondary"
+              size="md"
+              fullWidth={false}
+              leftIcon={<Icon name="refresh" size={tokens.size.iconSm} color={tokens.colors.textSubtle} />}
               onPress={() => void handleRetry()}
-              accessibilityRole="button"
-              accessibilityLabel="Réessayer la dernière question" {...(Platform.OS === 'web' ? { title: 'Réessayer la dernière question' } : {})}
-            >
-              <Icon name="refresh" size={14} color={tokens.colors.onAccent} />
-              <Text style={styles.retryButtonText}>Réessayer</Text>
-            </TouchableOpacity>
+              style={styles.retryButton}
+            />
           </View>
         ) : null}
         {error && !recovering && errorKind === 'generic' && (
@@ -1932,29 +1934,30 @@ export default function ChatScreen() {
             <Text style={styles.errorText}>
               Une erreur est survenue ; la réponse a peut-être été interrompue.
             </Text>
-            <TouchableOpacity
-              style={styles.retryButton}
+            <Button
+              label="Réessayer"
+              accessibilityLabel="Réessayer la dernière question"
+              variant="secondary"
+              size="md"
+              fullWidth={false}
+              leftIcon={<Icon name="refresh" size={tokens.size.iconSm} color={tokens.colors.textSubtle} />}
               onPress={() => void handleRetry()}
-              accessibilityRole="button"
-              accessibilityLabel="Réessayer la dernière question" {...(Platform.OS === 'web' ? { title: 'Réessayer la dernière question' } : {})}
-            >
-              <Icon name="refresh" size={14} color={tokens.colors.onAccent} />
-              <Text style={styles.retryButtonText}>Réessayer</Text>
-            </TouchableOpacity>
+              style={styles.retryButton}
+            />
           </View>
         )}
       </ScrollView>
 
       {/* ── Bouton « revenir en bas » (fil remonté pendant/après une réponse) ── */}
       {!atBottom && !showEmptyState ? (
-        <TouchableOpacity
+        <Touchable
           style={styles.scrollDownButton}
           onPress={() => scrollToBottom()}
           accessibilityRole="button"
           accessibilityLabel="Revenir en bas de la conversation" {...(Platform.OS === 'web' ? { title: 'Revenir en bas de la conversation' } : {})}
         >
           <Icon name="chevronDown" size={tokens.size.iconSm} color={tokens.colors.accentDeep} /><Text style={styles.messageActionText}>Revenir en bas</Text>
-        </TouchableOpacity>
+        </Touchable>
       ) : null}
       </View>
 
@@ -1966,22 +1969,22 @@ export default function ChatScreen() {
             <Text style={styles.docHintText} numberOfLines={2}>
               Long document ? L’outil Analyse de document résume comptes rendus et ordonnances.
             </Text>
-            <TouchableOpacity
+            <Touchable
               onPress={() => router.push('/(chat)/document' as never)}
               accessibilityRole="link"
               accessibilityLabel="Ouvrir l'outil Analyse de document" {...(Platform.OS === 'web' ? { title: "Ouvrir l'outil Analyse de document" } : {})}
               style={styles.docHintAction}
             >
               <Text style={styles.docHintActionText}>Ouvrir</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+            </Touchable>
+            <Touchable
               onPress={() => setDocHintDismissed(true)}
               accessibilityRole="button"
               accessibilityLabel="Masquer la suggestion" {...(Platform.OS === 'web' ? { title: 'Masquer la suggestion' } : {})}
               style={styles.docHintClose}
             >
               <Icon name="x" size={13} color={tokens.colors.textMuted} />
-            </TouchableOpacity>
+            </Touchable>
           </View>
         ) : null}
         {attachment ? (
@@ -2219,7 +2222,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.accentDeep,
     fontSize: tokens.type.caption.fontSize,
   },
-  docHintAction: { minHeight: tokens.size.controlMd,
+  docHintAction: { minHeight: tokens.size.controlMd, justifyContent: 'center',
     borderRadius: tokens.radius.md,
     backgroundColor: tokens.colors.accentVivid,
     paddingHorizontal: tokens.space.md,
@@ -2252,42 +2255,6 @@ const styles = StyleSheet.create({
   },
   headerTitleBlock: { flex: 1, flexShrink: 1, minWidth: 0, marginRight: tokens.space.sm },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm, flexShrink: 0 },
-  headerIconButton: { minHeight: tokens.size.controlMd,
-    width: tokens.size.iconButton,
-    height: tokens.size.iconButton,
-    borderRadius: tokens.radius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: tokens.colors.surface,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderStrong,
-    ...tokens.motion.transitionWeb,
-  },
-  headerIconButtonActive: {
-    backgroundColor: tokens.colors.accent,
-    borderColor: tokens.colors.accent,
-  },
-  // Bouton Sources : pastille texte « livre + N » (plus lisible qu'un rond + badge).
-  sourcesPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    height: tokens.size.iconButton,
-    paddingHorizontal: tokens.space.md,
-    borderRadius: tokens.radius.sm,
-    backgroundColor: tokens.colors.surface,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderStrong,
-    ...tokens.motion.transitionWeb,
-  },
-  sourcesPillActive: { backgroundColor: tokens.colors.accent, borderColor: tokens.colors.accent },
-  sourcesPillText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
-    fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.bold,
-  },
-  sourcesPillTextActive: { color: tokens.colors.onAccent },
   // Hauteurs de ligne explicites (= rendu avec les polices web) : sans elles, l'arrivée
   // des polices faisait grandir l'en-tête de 5 px et décalait tout le fil (CLS mobile).
   chatTitle: {
@@ -2412,41 +2379,6 @@ const styles = StyleSheet.create({
     marginTop: tokens.space.xs,
   },
   guestCtaActionsCompact: { flexDirection: 'column', alignItems: 'stretch' },
-  guestCtaPrimary: {
-    minHeight: tokens.size.controlMd,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: tokens.radius.md,
-    backgroundColor: tokens.colors.accentVivid,
-    paddingHorizontal: tokens.space.lg,
-    paddingVertical: tokens.space.sm + 2,
-    ...tokens.elevation.sm,
-    ...tokens.motion.transitionWeb,
-  },
-  guestCtaPrimaryText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.semibold,
-  },
-  guestCtaSecondary: {
-    minHeight: tokens.size.controlMd,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: tokens.radius.sm,
-    borderWidth: 1,
-    borderColor: tokens.colors.accent,
-    backgroundColor: tokens.colors.surface,
-    paddingHorizontal: tokens.space.lg,
-    paddingVertical: tokens.space.sm + 2,
-    ...tokens.motion.transitionWeb,
-  },
-  guestCtaSecondaryText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
-    fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.semibold,
-  },
 
   sourcesPane: {
     backgroundColor: tokens.colors.surfaceAlt,
@@ -2523,18 +2455,19 @@ const styles = StyleSheet.create({
   },
   starterColumn: { gap: tokens.space.sm, marginTop: tokens.space.md, alignSelf: 'stretch' },
   starterColumnPending: { opacity: 0 },
-  starterChip: { minHeight: tokens.size.controlMd,
+  // Suggestion = ligne cliquable à part entière : filet léger, marge intérieure, flèche
+  // centrée (elle flottait au-dessus du texte). Survol/appui : couche d'état de <Touchable>.
+  starterChip: {
+    minHeight: tokens.size.controlMd,
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: tokens.space.sm,
-    borderRadius: 0,
-    borderBottomWidth: tokens.border.thin,
+    alignItems: 'center',
+    gap: tokens.space.md,
+    borderRadius: tokens.radius.md,
+    borderWidth: tokens.border.thin,
     borderColor: tokens.colors.border,
     backgroundColor: tokens.colors.surface,
-    paddingHorizontal: 0,
-    paddingVertical: tokens.space.lg,
-    ...tokens.elevation.sm,
-    ...tokens.motion.transitionWeb,
+    paddingHorizontal: tokens.space.lg,
+    paddingVertical: tokens.space.md,
   },
   // Essai invité épuisé : les chips restent visibles mais clairement inertes (C2).
   starterChipDisabled: { opacity: 0.45 },
@@ -2567,18 +2500,22 @@ const styles = StyleSheet.create({
   // Réponse assistant : posée pleine largeur sur le fond, sans bulle bordée —
   // le contenu (texte, sources, propositions) occupe l'espace de lecture.
   assistantRow: { alignSelf: 'stretch', gap: tokens.space.sm },
+  // Marge négative : le libellé du premier bouton reste aligné sur le texte de la réponse,
+  // tandis que chaque bouton a sa propre marge intérieure (fond arrondi au survol).
   messageActions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
-    gap: tokens.space.lg,
+    gap: tokens.space.xs,
+    marginLeft: -tokens.space.sm,
   },
   messageActionButton: {
     minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.xs + 2,
-    paddingVertical: tokens.space.xs,
-    ...tokens.motion.transitionWeb,
+    paddingHorizontal: tokens.space.sm,
+    borderRadius: tokens.radius.sm,
   },
   messageActionText: {
     fontFamily: tokens.font.sans,
@@ -2671,24 +2608,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.danger,
     fontSize: tokens.type.label.fontSize,
   },
-  retryButton: { minHeight: tokens.size.controlMd,
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: tokens.space.sm,
-    marginTop: tokens.space.md,
-    borderRadius: tokens.radius.md,
-    backgroundColor: tokens.colors.accentVivid,
-    paddingHorizontal: tokens.space.lg,
-    paddingVertical: tokens.space.sm,
-    ...tokens.motion.transitionWeb,
-  },
-  retryButtonText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.semibold,
-  },
+  retryButton: { alignSelf: 'flex-start', marginTop: tokens.space.md },
 
   // ── Composer unifié (motif ChatGPT/Claude : une carte, texte + actions) ──
   composerZone: {

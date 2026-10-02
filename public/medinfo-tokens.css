@@ -17,6 +17,9 @@
   --rule: #D8DFE7;
   --linef: #D8DFE7;
   --line-fine: #D8DFE7;
+  --control-line: #C9D2DD;
+  --vivid-pressed: #0043B0;
+  --shadow-control: 0 1px 2px rgba(20,32,52,.06);
   --accent: #0052D6;
   --accent-deep: #0052D6;
   --accent-soft: #EEF4FF;

@@ -101,7 +101,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.semibold,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
   },
   tileValue: {
     fontFamily: tokens.font.display,

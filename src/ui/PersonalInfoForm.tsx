@@ -6,13 +6,14 @@
  * ils n'ouvrent jamais diagnostic, anamnèse, triage ou avis médical individuel.
  */
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
 import { SEX_OPTIONS, type PersonalInfo, type Sex } from '@/profile/personalInfo';
 import { FieldInput } from '@/ui/FieldInput';
 import { Button, ButtonRow } from '@/ui/Button';
 import { tokens } from '@/ui/tokens';
+import { Chip, ChipRow } from '@/ui/Chip';
 
 export function PersonalInfoForm() {
   const { user, personalInfo, updatePersonalInfo } = useSession();
@@ -106,33 +107,30 @@ export function PersonalInfoForm() {
       />
 
       <Text style={styles.fieldLabel}>Sexe</Text>
-      <View style={styles.sexRow}>
-        {SEX_OPTIONS.map((o) => {
-          const active = sex === o.value;
-          return (
-            <TouchableOpacity
-              key={o.value}
-              accessibilityRole="radio"
-              aria-checked={active}
-              style={[styles.sexChip, active && styles.sexChipActive]}
-              onPress={() => setSex(active ? null : o.value)}
-            >
-              <Text style={[styles.sexChipText, active && styles.sexChipTextActive]}>{o.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      <ChipRow label="Sexe">
+        {SEX_OPTIONS.map((o) => (
+          <Chip
+            key={o.value}
+            role="radio"
+            label={o.label}
+            selected={sex === o.value}
+            onPress={() => setSex(sex === o.value ? null : o.value)}
+          />
+        ))}
+      </ChipRow>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {savedMessage ? <Text style={styles.saved}>{savedMessage}</Text> : null}
 
-      <ButtonRow><Button
-        label={saving ? 'Enregistrement…' : 'Enregistrer'}
-        onPress={handleSave}
-        loading={saving}
-        disabled={saving}
-        style={styles.saveButton}
-      /></ButtonRow>
+      <ButtonRow>
+        <Button
+          label={saving ? 'Enregistrement…' : 'Enregistrer'}
+          onPress={handleSave}
+          loading={saving}
+          fullWidth={false}
+          style={styles.saveButton}
+        />
+      </ButtonRow>
     </View>
   );
 }
@@ -157,30 +155,13 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radius.md,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.sm,
-    backgroundColor: tokens.colors.surfaceSunken,
+    backgroundColor: tokens.colors.surface,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
+    borderColor: tokens.colors.borderStrong,
     color: tokens.colors.text,
     fontFamily: tokens.font.sans,
     fontSize: tokens.type.body.fontSize,
   },
-  sexRow: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm },
-  sexChip: { minHeight: tokens.size.controlMd,
-    borderRadius: tokens.radius.pill,
-    paddingHorizontal: tokens.space.lg,
-    paddingVertical: tokens.space.sm,
-    backgroundColor: tokens.colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-  },
-  sexChipActive: { backgroundColor: tokens.colors.accent, borderColor: tokens.colors.accent },
-  sexChipText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textSubtle,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.medium,
-  },
-  sexChipTextActive: { color: tokens.colors.onAccent, fontWeight: tokens.weight.semibold },
   error: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.danger,
@@ -192,5 +173,5 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
   },
-  saveButton: { minHeight: tokens.size.controlMd, marginTop: tokens.space.sm },
+  saveButton: { marginTop: tokens.space.sm },
 });

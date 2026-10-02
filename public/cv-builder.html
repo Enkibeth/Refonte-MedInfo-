@@ -47,6 +47,12 @@
   .status { font-size: 12px; color: var(--muted); white-space: nowrap; }
   .status.saved { color: var(--success); }
   .status.err { color: var(--danger); }
+  /* Le message d'état (souvent long) cède la place : c'est lui qui s'abrège, jamais les
+     libellés des boutons (« Télécharger l… » coupé, zoom « 98 % » sur deux lignes à 1440 px
+     avec la barre latérale de l'application). */
+  .topbar > .btn, .topbar > .seg, .topbar > .badge { flex-shrink: 0; }
+  .topbar > .status { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .seg button { white-space: nowrap; }
 
   .btn {
     display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px;

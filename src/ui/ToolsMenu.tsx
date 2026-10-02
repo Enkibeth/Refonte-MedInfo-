@@ -22,6 +22,8 @@ import { featureTint } from '@/ui/featureChips';
 import { Icon, type IconName } from '@/ui/icons';
 import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 import { tokens } from '@/ui/tokens';
+import { Touchable } from '@/ui/Touchable';
+import { toolbarButtonStyles, toolbarContentColor } from '@/ui/toolbarButton';
 import { useWindowWidth } from '@/ui/useWindowWidth';
 
 interface MenuItem {
@@ -96,16 +98,16 @@ export function ToolsMenu({
 
   return (
     <>
-      {hideTrigger ? null : <Pressable
+      {hideTrigger ? null : <Touchable
         onPress={() => setOpen(true)}
         accessibilityRole="button"
         accessibilityLabel="Ouvrir le menu des outils" {...(Platform.OS === 'web' ? { title: 'Ouvrir le menu des outils' } : {})}
         aria-expanded={open}
-        style={styles.trigger}
+        style={toolbarButtonStyles.button}
       >
-        <Icon name="layoutGrid" size={14} color={tokens.colors.accentDeep} />
-        <Text style={styles.triggerLabel}>Outils</Text>
-      </Pressable>}
+        <Icon name="layoutGrid" size={16} color={toolbarContentColor()} />
+        <Text style={toolbarButtonStyles.label}>Outils</Text>
+      </Touchable>}
 
       <Modal visible={open} transparent animationType="none" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
@@ -116,7 +118,7 @@ export function ToolsMenu({
                 const active = item.key === current;
                 const tint = item.featureId ? featureTint(item.featureId) : null;
                 return (
-                  <Pressable
+                  <Touchable
                     key={item.key}
                     onPress={() => go(item.route)}
                     accessibilityRole="button"
@@ -131,12 +133,12 @@ export function ToolsMenu({
                     </View>
                     <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>{item.label}</Text>
                     {active ? <Text style={styles.itemDot}>•</Text> : null}
-                  </Pressable>
+                  </Touchable>
                 );
               })}
               <View style={styles.separator} />
               {extras.map((item) => (
-                <Pressable
+                <Touchable
                   key={item.key}
                   onPress={() => go(item.route)}
                   accessibilityRole="button"
@@ -146,7 +148,7 @@ export function ToolsMenu({
                     <Icon name={item.icon} size={17} color={tokens.colors.textSubtle} />
                   </View>
                   <Text style={styles.itemLabel}>{item.label}</Text>
-                </Pressable>
+                </Touchable>
               ))}
             </ScrollView>
           </Pressable>
@@ -157,23 +159,6 @@ export function ToolsMenu({
 }
 
 const styles = StyleSheet.create({
-  trigger: { minHeight: tokens.size.controlMd,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderRadius: tokens.radius.sm,
-    paddingHorizontal: tokens.space.md,
-    paddingVertical: tokens.space.sm,
-    backgroundColor: tokens.colors.surface,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderStrong,
-  },
-  triggerLabel: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.semibold,
-  },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.32)',
@@ -197,7 +182,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
     paddingHorizontal: tokens.space.sm,
     paddingVertical: tokens.space.xs,
   },

@@ -24,6 +24,7 @@ const palette = {
   // (hérité de l'essai 2026-06, conservé et généralisé par la refonte 2026-07).
   electric600: '#0067FF',
   electric700: '#0052D6', // hover / actif
+  electric800: '#0043B0', // appui du primaire
 
   // Neutres — slate froid légèrement teinté bleu (rafraîchi 2026-07), jamais boueux.
   white: '#FFFFFF',
@@ -31,6 +32,7 @@ const palette = {
   neutral50: '#EDF1F7', // Navigation et surfaces secondaires bleu brume.
   neutral100: '#EAEEF5',
   neutral200: '#D8DFE7', // séparateurs non interactifs
+  neutral250: '#C9D2DD', // filet des boutons secondaires au repos (le libellé identifie le bouton)
   neutral300: '#7D8998', // limites de contrôles : contraste > 3:1 sur blanc
   neutral500: '#526174', // texte secondaire
   neutral700: '#36435A',
@@ -71,6 +73,9 @@ export const tokens = {
     surfaceSunken: palette.neutral100, // champs, fonds enfoncés
     border: palette.neutral200,
     borderStrong: palette.neutral300,
+    // Filet d'un bouton secondaire au repos : plus léger que borderStrong (le gris foncé
+    // alourdissait barres d'outils et formulaires), renforcé au survol (05_DESIGN §5).
+    borderControl: palette.neutral250,
 
     // Texte
     text: palette.neutral900, // ink
@@ -87,6 +92,7 @@ export const tokens = {
     accentSurfaceStrong: palette.blue100,
     accentVivid: palette.electric600, // CTA primaires et liens d'action (« bleu pétant »)
     accentVividStrong: palette.electric700, // hover des CTA vifs
+    accentVividPressed: palette.electric800, // appui des CTA vifs (plus d'atténuation d'opacité)
 
     // États
     success: palette.green600,
@@ -100,6 +106,7 @@ export const tokens = {
     onDarkMuted: 'rgba(255,255,255,0.8)',
     onDarkBorder: 'rgba(255,255,255,0.6)',
     onDarkHover: 'rgba(255,255,255,0.12)',
+    onDarkPressed: 'rgba(255,255,255,0.2)',
 
     // États d'interaction (web : hover/focus). Sobres, dérivés de la rampe existante.
     surfaceHover: palette.neutral50, // survol d'une surface blanche (boutons, cartes)
@@ -225,6 +232,7 @@ export const tokens = {
     controlMd: 44,
     composerAction: 104,
     controlLg: 52,
+    buttonLg: 48, // bouton « lg » : assez grand au doigt, sans l'effet « pavé » de 52 px
     iconButton: 44,
     iconSm: 16,
     iconMd: 20,
@@ -239,6 +247,20 @@ export const tokens = {
   // Ombres en deux couches (contact + diffusion) : profondeur crédible sans halo
   // « template ». Une seule grande ombre floue est un tell de design générique.
   elevation: {
+    // Contrôles (boutons) : ombre de contact d'1 px, jamais un halo. Donne de la matière
+    // au bouton secondaire sur fond blanc ; retirée à l'état désactivé.
+    control: Platform.select({
+      web: { boxShadow: '0 1px 2px rgba(20,32,52,0.06)' },
+      default: {},
+    }) as object,
+    controlPrimary: Platform.select({
+      web: { boxShadow: '0 1px 2px rgba(0,52,140,0.22)' },
+      default: {},
+    }) as object,
+    none: Platform.select({
+      web: { boxShadow: 'none' },
+      default: {},
+    }) as object,
     sm: Platform.select({
       web: {},
       default: {},

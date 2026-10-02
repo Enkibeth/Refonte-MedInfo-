@@ -14,9 +14,7 @@ import {
   Text,
   TextInput,
   ScrollView,
-  TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
@@ -31,6 +29,9 @@ import { RoleGate } from '@/ui/RoleGate';
 import { ToolsMenu } from '@/ui/ToolsMenu';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { DateField } from '@/ui/revision/DateField';
+import { Chip, ChipRow } from '@/ui/Chip';
+import { Button } from '@/ui/Button';
+import { Touchable } from '@/ui/Touchable';
 import { getAiDisclosure } from '@/compliance/disclosures';
 import { redistribute } from '@/revision/engine/redistribution';
 import { daysBetween } from '@/revision/engine/dates';
@@ -373,7 +374,7 @@ function RevisionScreenInner() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {/* Mes plans */}
         {userId ? (
-          <TouchableOpacity
+          <Touchable
             style={styles.plansToggle}
             onPress={() => setPlansOpen((v) => !v)}
             accessibilityRole="button"
@@ -383,7 +384,7 @@ function RevisionScreenInner() {
             <View style={{ transform: [{ rotate: plansOpen ? '180deg' : '0deg' }] }}>
               <Icon name="chevronDown" size={14} color={tokens.colors.accentDeep} />
             </View>
-          </TouchableOpacity>
+          </Touchable>
         ) : null}
 
         {plansOpen ? (
@@ -393,7 +394,7 @@ function RevisionScreenInner() {
             ) : (
               plans.map((p) => (
                 <View key={p.id} style={styles.planItem}>
-                  <TouchableOpacity
+                  <Touchable
                     style={styles.planItemBody}
                     onPress={() => void loadPlan(p.id)}
                     accessibilityRole="button"
@@ -404,22 +405,22 @@ function RevisionScreenInner() {
                     <Text style={styles.planItemMeta}>
                       {EXAM_LABELS[p.exam_type]} · examen le {p.exam_date}
                     </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
+                  </Touchable>
+                  <Touchable
                     onPress={() => void handleDelete(p.id)}
                     accessibilityRole="button"
                     accessibilityLabel="Supprimer ce plan"
                     style={styles.planDelete}
                   >
                     <Icon name="trash" size={15} color={tokens.colors.textMuted} />
-                  </TouchableOpacity>
+                  </Touchable>
                 </View>
               ))
             )}
-            <TouchableOpacity style={styles.newPlanButton} onPress={startNewPlan} accessibilityRole="button">
+            <Touchable style={styles.newPlanButton} onPress={startNewPlan} accessibilityRole="button">
               <Icon name="plus" size={15} color={tokens.colors.accentDeep} />
               <Text style={styles.newPlanText}>Nouveau plan</Text>
-            </TouchableOpacity>
+            </Touchable>
           </View>
         ) : null}
 
@@ -440,23 +441,20 @@ function RevisionScreenInner() {
           </Field>
 
           <Text style={styles.fieldLabel}>Type d'examen</Text>
-          <View style={styles.examRow}>
+          <ChipRow style={styles.examRow} label="Type d'examen">
             {EXAM_TYPES.map((t) => (
-              <TouchableOpacity
+              <Chip
                 key={t}
-                style={[styles.examChip, examType === t && styles.examChipActive]}
+                role="radio"
+                label={EXAM_LABELS[t]}
+                selected={examType === t}
                 onPress={() => {
                   setExamType(t);
                   markDirty();
                 }}
-                accessibilityRole="button"
-              >
-                <Text style={[styles.examChipText, examType === t && styles.examChipTextActive]}>
-                  {EXAM_LABELS[t]}
-                </Text>
-              </TouchableOpacity>
+              />
             ))}
-          </View>
+          </ChipRow>
 
           <View style={styles.dualRow}>
             <Field label="Début">
@@ -468,28 +466,20 @@ function RevisionScreenInner() {
           </View>
 
           <Text style={styles.fieldLabel}>Répartition de la charge</Text>
-          <View style={styles.examRow}>
+          <ChipRow style={styles.examRow} label="Répartition de la charge">
             {([
               ['smooth', 'Lissée (régulier)'],
               ['frontload', 'En avance (fin allégée)'],
             ] as const).map(([mode, label]) => (
-              <TouchableOpacity
+              <Chip
                 key={mode}
-                style={[styles.examChip, stored.distributionMode === mode && styles.examChipActive]}
+                role="radio"
+                label={label}
+                selected={stored.distributionMode === mode}
                 onPress={() => patchStored({ distributionMode: mode })}
-                accessibilityRole="button"
-              >
-                <Text
-                  style={[
-                    styles.examChipText,
-                    stored.distributionMode === mode && styles.examChipTextActive,
-                  ]}
-                >
-                  {label}
-                </Text>
-              </TouchableOpacity>
+              />
             ))}
-          </View>
+          </ChipRow>
 
           <View style={styles.dualRow}>
             <NumberField
@@ -536,14 +526,14 @@ function RevisionScreenInner() {
                   placeholder={`Bloc ${index + 1} (ex. Cardiologie)`}
                   placeholderTextColor={tokens.colors.textMuted}
                 />
-                <TouchableOpacity
+                <Touchable
                   onPress={() => removeResource(r.id)}
                   accessibilityRole="button"
                   accessibilityLabel="Retirer ce bloc"
                   style={styles.resourceRemove}
                 >
                   <Icon name="x" size={15} color={tokens.colors.textMuted} />
-                </TouchableOpacity>
+                </Touchable>
               </View>
               <View style={styles.resourceFields}>
                 <NumberField small label="Pages" value={r.pages} onChange={(n) => patchResource(r.id, { pages: n })} />
@@ -563,30 +553,24 @@ function RevisionScreenInner() {
               </View>
             </View>
           ))}
-          <TouchableOpacity style={styles.addResource} onPress={addResource} accessibilityRole="button">
+          <Touchable style={styles.addResource} onPress={addResource} accessibilityRole="button">
             <Icon name="plus" size={16} color={tokens.colors.accentDeep} />
             <Text style={styles.addResourceText}>Ajouter un bloc</Text>
-          </TouchableOpacity>
+          </Touchable>
         </View>
 
-        <TouchableOpacity
-          style={[styles.saveButton, !canSave && styles.saveButtonIdle]}
-          onPress={() => void persist(stored, title, examType)}
+        <Button
+          label={
+            planId === null
+              ? 'Enregistrer le plan'
+              : dirty
+                ? 'Enregistrer les modifications'
+                : 'Plan enregistré ✓'
+          }
+          loading={saving}
           disabled={!canSave}
-          accessibilityRole="button"
-        >
-          {saving ? (
-            <ActivityIndicator color={tokens.colors.onAccent} size="small" />
-          ) : (
-            <Text style={styles.saveButtonText}>
-              {planId === null
-                ? 'Enregistrer le plan'
-                : dirty
-                  ? 'Enregistrer les modifications'
-                  : 'Plan enregistré ✓'}
-            </Text>
-          )}
-        </TouchableOpacity>
+          onPress={() => void persist(stored, title, examType)}
+        />
 
         {error ? (
           <View style={styles.errorBox}>
@@ -629,13 +613,13 @@ function RevisionScreenInner() {
                       </Text>
                       <Text style={styles.taskMeta}>{formatMinutes(t.minutes)}</Text>
                     </View>
-                    <TouchableOpacity
+                    <Touchable
                       style={styles.taskDone}
                       onPress={() => markTaskDone(t.resourceId, t.minutes)}
                       accessibilityRole="button"
                     >
                       <Text style={styles.taskDoneText}>Fait</Text>
-                    </TouchableOpacity>
+                    </Touchable>
                   </View>
                 ))
               )}
@@ -659,7 +643,7 @@ function RevisionScreenInner() {
               </Text>
               <View style={styles.boostRow}>
                 {BOOST_INTENTS.map((b) => (
-                  <TouchableOpacity
+                  <Touchable
                     key={b.key}
                     style={[styles.boostChip, boostLoading && styles.boostChipDisabled]}
                     onPress={() => void runBoost(b.key)}
@@ -667,7 +651,7 @@ function RevisionScreenInner() {
                     accessibilityRole="button"
                   >
                     <Text style={styles.boostChipText}>{b.label}</Text>
-                  </TouchableOpacity>
+                  </Touchable>
                 ))}
               </View>
               {boostLoading ? <ProgressSteps plan="revisionBoost" /> : null}
@@ -862,7 +846,7 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: tokens.radius.md,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
+    borderColor: tokens.colors.borderStrong,
     backgroundColor: tokens.colors.surface,
     paddingHorizontal: tokens.space.md,
     fontFamily: tokens.font.sans,
@@ -872,23 +856,7 @@ const styles = StyleSheet.create({
   dualRow: { flexDirection: 'row', gap: tokens.space.sm },
   numberHalf: { flex: 1 },
   numberSmall: { flexGrow: 1, flexBasis: '22%' },
-  examRow: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm },
-  examChip: { minHeight: tokens.size.controlMd,
-    paddingHorizontal: tokens.space.md,
-    paddingVertical: tokens.space.sm,
-    borderRadius: tokens.radius.pill,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
-  },
-  examChipActive: { borderColor: tokens.colors.accent, backgroundColor: tokens.colors.accentSurface },
-  examChipText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.semibold,
-  },
-  examChipTextActive: { color: tokens.colors.accentDeep },
+  examRow: { marginBottom: tokens.space.xs },
 
   resource: {
     borderRadius: tokens.radius.md,
@@ -907,7 +875,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    height: 42,
+    minHeight: tokens.size.controlMd,
     borderRadius: tokens.radius.md,
     borderWidth: 1,
     borderStyle: 'dashed',
@@ -921,21 +889,6 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
 
-  saveButton: { minHeight: tokens.size.controlMd,
-    height: 48,
-    borderRadius: tokens.radius.lg,
-    backgroundColor: tokens.colors.accentVivid,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...tokens.elevation.sm,
-  },
-  saveButtonIdle: { opacity: 0.55 },
-  saveButtonText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.semibold,
-    fontSize: tokens.type.label.fontSize,
-  },
   errorBox: {
     borderRadius: tokens.radius.md,
     borderLeftWidth: 4,
@@ -984,7 +937,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.bold,
   },
   boostRow: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm },
-  boostChip: { minHeight: tokens.size.controlMd,
+  boostChip: { minHeight: tokens.size.controlMd, justifyContent: 'center',
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.sm,
     borderRadius: tokens.radius.pill,

@@ -10,9 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   ScrollView,
-  TouchableOpacity,
   Pressable,
   StyleSheet,
   ActivityIndicator,
@@ -26,6 +24,7 @@ import { isAdminUserId } from '@/admin/index';
 import { getSupabaseClient } from '@/db/supabase';
 import { Icon } from '@/ui/icons';
 import { ProgressSteps } from '@/ui/progress/ProgressSteps';
+import { buttonLinkProps } from '@/ui/interaction';
 import { tokens } from '@/ui/tokens';
 import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
@@ -33,6 +32,11 @@ import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
 import { DictationButton } from '@/ui/DictationButton';
 import { COMPOSER_ICON_SIZE, composerButtonStyles } from '@/ui/chat/composerButton';
+import { Button } from '@/ui/Button';
+import { Chip } from '@/ui/Chip';
+import { mi } from '@/ui/responsive';
+import { SearchField } from '@/ui/SearchField';
+import { Touchable } from '@/ui/Touchable';
 import { exportAnalysisToPdf } from '@/document/exportAnalysisPdf';
 import { parseScoreFromEvaluation, scoreTone, formatScore, type ScoreTone } from '@/ecos/score';
 import {
@@ -207,7 +211,7 @@ function CaseCard({
 }) {
   const done = (summary?.attempts ?? 0) > 0;
   return (
-    <TouchableOpacity style={caseStyles.card} onPress={onSelect} accessibilityRole="button">
+    <Touchable style={caseStyles.card} onPress={onSelect} accessibilityRole="button">
       <View style={caseStyles.cardHeader}>
         <Text style={caseStyles.cardTitle}>{cas.titre}</Text>
         <View style={caseStyles.badge}>
@@ -232,7 +236,7 @@ function CaseCard({
           </View>
         )}
       </View>
-    </TouchableOpacity>
+    </Touchable>
   );
 }
 
@@ -395,7 +399,7 @@ function EcosScreenInner() {
             Le module ECOS est conçu pour les étudiants en santé. Changez votre profil en
             « Étudiant en santé » pour y accéder.
           </Text>
-          <Link href="/(account)/choose-role" style={styles.gateLink}>
+          <Link href="/(account)/choose-role" style={styles.gateLink} {...buttonLinkProps()}>
             Gérer mon profil
           </Link>
         </View>
@@ -658,9 +662,7 @@ function EcosScreenInner() {
         ) : casesError ? (
           <View style={styles.casesState}>
             <Text style={styles.casesStateText}>{casesError}</Text>
-            <TouchableOpacity style={styles.casesRetry} onPress={loadDashboard}>
-              <Text style={styles.casesRetryText}>Réessayer</Text>
-            </TouchableOpacity>
+            <Button label="Réessayer" variant="secondary" size="md" fullWidth={false} onPress={loadDashboard} />
           </View>
         ) : (
           <>
@@ -699,33 +701,25 @@ function EcosScreenInner() {
 
             {/* Filtres */}
             <View style={dashStyles.filters}>
-              <View style={dashStyles.searchRow}>
-                <Icon name="search" size={16} color={tokens.colors.textMuted} />
-                <FieldInput
-                  style={dashStyles.searchInput}
-                  value={query}
-                  onChangeText={setQuery}
-                  placeholder="Rechercher un cas, un thème…"
-                  placeholderTextColor={tokens.colors.textMuted}
-                />
-                {query !== '' && (
-                  <TouchableOpacity onPress={() => setQuery('')} accessibilityLabel="Effacer la recherche">
-                    <Icon name="x" size={16} color={tokens.colors.textMuted} />
-                  </TouchableOpacity>
-                )}
-              </View>
+              <SearchField
+                value={query}
+                onChangeText={setQuery}
+                placeholder="Rechercher un cas, un thème…"
+              />
 
-              <View style={dashStyles.segmentRow}>
+              <View style={dashStyles.segmentRow} accessibilityRole="radiogroup" accessibilityLabel="Filtrer par statut">
                 {([
                   ['all', 'Tous'],
                   ['todo', 'À faire'],
                   ['done', 'Déjà passés'],
                 ] as [StatusFilter, string][]).map(([value, label]) => (
-                  <TouchableOpacity
+                  <Touchable
                     key={value}
                     style={[dashStyles.segment, statusFilter === value && dashStyles.segmentActive]}
                     onPress={() => setStatusFilter(value)}
-                    accessibilityRole="button"
+                    accessibilityRole="radio"
+                    aria-checked={statusFilter === value}
+                    {...mi('touch44')}
                   >
                     <Text
                       style={[
@@ -735,7 +729,7 @@ function EcosScreenInner() {
                     >
                       {label}
                     </Text>
-                  </TouchableOpacity>
+                  </Touchable>
                 ))}
               </View>
 
@@ -744,35 +738,23 @@ function EcosScreenInner() {
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={dashStyles.themeRow}
+                  accessibilityRole="radiogroup"
+                  accessibilityLabel="Filtrer par thème"
                 >
-                  <TouchableOpacity
-                    style={[dashStyles.themeChip, themeFilter === null && dashStyles.themeChipActive]}
+                  <Chip
+                    role="radio"
+                    label="Tous les thèmes"
+                    selected={themeFilter === null}
                     onPress={() => setThemeFilter(null)}
-                  >
-                    <Text
-                      style={[
-                        dashStyles.themeChipText,
-                        themeFilter === null && dashStyles.themeChipTextActive,
-                      ]}
-                    >
-                      Tous les thèmes
-                    </Text>
-                  </TouchableOpacity>
+                  />
                   {themes.map((theme) => (
-                    <TouchableOpacity
+                    <Chip
                       key={theme}
-                      style={[dashStyles.themeChip, themeFilter === theme && dashStyles.themeChipActive]}
+                      role="radio"
+                      label={theme}
+                      selected={themeFilter === theme}
                       onPress={() => setThemeFilter(themeFilter === theme ? null : theme)}
-                    >
-                      <Text
-                        style={[
-                          dashStyles.themeChipText,
-                          themeFilter === theme && dashStyles.themeChipTextActive,
-                        ]}
-                      >
-                        {theme}
-                      </Text>
-                    </TouchableOpacity>
+                    />
                   ))}
                 </ScrollView>
               )}
@@ -786,16 +768,17 @@ function EcosScreenInner() {
             ) : filtered.length === 0 ? (
               <View style={styles.casesState}>
                 <Text style={styles.casesStateText}>Aucun cas ne correspond à ces filtres.</Text>
-                <TouchableOpacity
-                  style={styles.casesRetry}
+                <Button
+                  label="Réinitialiser les filtres"
+                  variant="secondary"
+                  size="md"
+                  fullWidth={false}
                   onPress={() => {
                     setQuery('');
                     setThemeFilter(null);
                     setStatusFilter('all');
                   }}
-                >
-                  <Text style={styles.casesRetryText}>Réinitialiser les filtres</Text>
-                </TouchableOpacity>
+                />
               </View>
             ) : (
               <>
@@ -832,7 +815,7 @@ function EcosScreenInner() {
                 </View>
                 <View style={dashStyles.historyCard}>
                   {recentAttempts.map((attempt, index) => (
-                    <TouchableOpacity
+                    <Touchable
                       key={attempt.id}
                       style={[dashStyles.historyRow, index > 0 && dashStyles.historyRowBorder]}
                       onPress={() => openAttempt(attempt)}
@@ -850,7 +833,7 @@ function EcosScreenInner() {
                         </Text>
                       </View>
                       <Icon name="arrowRight" size={16} color={tokens.colors.textMuted} />
-                    </TouchableOpacity>
+                    </Touchable>
                   ))}
                 </View>
               </View>
@@ -866,9 +849,9 @@ function EcosScreenInner() {
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.prepContent}>
         <View style={styles.prepHeader}>
-          <TouchableOpacity onPress={backToDashboard} style={styles.backButton}>
+          <Touchable onPress={backToDashboard} style={styles.backButton} feedback="link" accessibilityRole="link">
             <Text style={styles.backText}>← Retour au dashboard</Text>
-          </TouchableOpacity>
+          </Touchable>
           <Text style={styles.prepTitle}>{selectedCase.titre}</Text>
           <View style={styles.prepBadge}>
             <Text style={styles.prepBadgeText}>{selectedCase.specialite}</Text>
@@ -895,9 +878,7 @@ function EcosScreenInner() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.startButton} onPress={startSimulation}>
-          <Text style={styles.startText}>Démarrer la simulation</Text>
-        </TouchableOpacity>
+        <Button label="Démarrer la simulation" onPress={startSimulation} />
       </ScrollView>
     );
   }
@@ -990,9 +971,7 @@ function EcosScreenInner() {
               />
             </Pressable>
           </View>
-          <TouchableOpacity style={styles.finishButton} onPress={requestFinish}>
-            <Text style={styles.finishText}>Terminer et évaluer</Text>
-          </TouchableOpacity>
+          <Button label="Terminer et évaluer" variant="secondary" size="md" onPress={requestFinish} />
         </View>
       </KeyboardAvoidingView>
     );
@@ -1043,26 +1022,26 @@ function EcosScreenInner() {
 
             <View style={styles.evalResult}>
               <View style={styles.evalActions}>
-                <TouchableOpacity
+                <Touchable
                   onPress={() => void copyEvaluation()}
                   accessibilityRole="button"
                   accessibilityLabel="Copier l'évaluation"
                   style={styles.evalAction}
                 >
                   <Text style={styles.evalActionText}>{copied ? 'Copié ✓' : 'Copier'}</Text>
-                </TouchableOpacity>
+                </Touchable>
                 {Platform.OS === 'web' ? (
-                  <TouchableOpacity
+                  <Touchable
                     onPress={handleExportEval}
                     accessibilityRole="button"
                     accessibilityLabel="Exporter l'évaluation en PDF"
                     style={styles.evalAction}
                   >
                     <Text style={styles.evalActionText}>Export PDF</Text>
-                  </TouchableOpacity>
+                  </Touchable>
                 ) : null}
                 {viewedAttempt ? (
-                  <TouchableOpacity
+                  <Touchable
                     onPress={() => void removeViewedAttempt()}
                     accessibilityRole="button"
                     accessibilityLabel="Supprimer ce passage de l'historique"
@@ -1071,7 +1050,7 @@ function EcosScreenInner() {
                     <Text style={[styles.evalActionText, { color: tokens.colors.danger }]}>
                       Supprimer
                     </Text>
-                  </TouchableOpacity>
+                  </Touchable>
                 ) : null}
               </View>
               <MarkdownRenderer text={evalMarkdown} />
@@ -1079,21 +1058,15 @@ function EcosScreenInner() {
           </>
         )}
 
-        {replayCase && (
-          <TouchableOpacity style={styles.retryEcos} onPress={() => selectCase(replayCase)}>
-            <Text style={styles.retryEcosText}>Repasser ce cas</Text>
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity
-          style={viewedAttempt ? dashStyles.backToDashSecondary : styles.retryEcos}
-          onPress={backToDashboard}
-        >
-          <Text
-            style={viewedAttempt ? dashStyles.backToDashSecondaryText : styles.retryEcosText}
-          >
-            Retour au dashboard
-          </Text>
-        </TouchableOpacity>
+        {/* Une seule action principale : repasser le cas s'il existe, sinon revenir. */}
+        <View style={styles.resultActions}>
+          {replayCase && <Button label="Repasser ce cas" onPress={() => selectCase(replayCase)} />}
+          <Button
+            label="Retour au dashboard"
+            variant={replayCase || viewedAttempt ? 'secondary' : 'primary'}
+            onPress={backToDashboard}
+          />
+        </View>
       </ScrollView>
     );
   }
@@ -1125,6 +1098,7 @@ const styles = StyleSheet.create({
     lineHeight: tokens.type.body.lineHeight,
     marginTop: tokens.space.xs,
   },
+  resultActions: { gap: tokens.space.sm, marginTop: tokens.space.sm },
   casesState: {
     alignItems: 'center',
     gap: tokens.space.md,
@@ -1136,23 +1110,11 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.label.fontSize,
     textAlign: 'center',
   },
-  casesRetry: {
-    borderRadius: tokens.radius.md,
-    backgroundColor: tokens.colors.accentVivid,
-    paddingHorizontal: tokens.space.xl,
-    paddingVertical: tokens.space.sm,
-  },
-  casesRetryText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.semibold,
-    fontSize: tokens.type.label.fontSize,
-  },
 
   // Preparation
   prepContent: { padding: tokens.space.lg, gap: tokens.space.md, width: '100%', maxWidth: tokens.layout.reading, alignSelf: 'center' },
   prepHeader: { gap: tokens.space.xs },
-  backButton: { minHeight: tokens.size.controlMd, marginBottom: tokens.space.xs },
+  backButton: { minHeight: tokens.size.controlMd, justifyContent: 'center', marginBottom: tokens.space.xs },
   backText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.accent,
@@ -1191,12 +1153,11 @@ const styles = StyleSheet.create({
     ...tokens.elevation.sm,
   },
   consigneLabel: {
-    fontFamily: tokens.font.mono,
+    fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.medium,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
   },
   consigneText: {
     fontFamily: tokens.font.sans,
@@ -1218,20 +1179,6 @@ const styles = StyleSheet.create({
     color: tokens.colors.textSubtle,
     fontSize: tokens.type.label.fontSize,
     lineHeight: 20,
-  },
-  startButton: { minHeight: tokens.size.controlMd,
-    height: 52,
-    borderRadius: tokens.radius.lg,
-    backgroundColor: tokens.colors.accentVivid,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...tokens.elevation.sm,
-  },
-  startText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.bold,
-    fontSize: tokens.type.body.fontSize,
   },
 
   // Simulation
@@ -1274,7 +1221,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 6,
   },
   simBubbleRole: {
-    fontFamily: tokens.font.mono,
+    fontFamily: tokens.font.sans,
     fontSize: tokens.type.micro.fontSize,
     color: 'rgba(255,255,255,0.6)',
     fontWeight: tokens.weight.medium,
@@ -1324,20 +1271,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.body.fontSize,
     color: tokens.colors.text,
   },
-  finishButton: { minHeight: tokens.size.controlMd,
-    height: 40,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderStrong,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  finishText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textSubtle,
-    fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.medium,
-  },
 
   // Evaluation
   evalContent: { padding: tokens.space.lg, gap: tokens.space.md, width: '100%', maxWidth: tokens.layout.reading, alignSelf: 'center' },
@@ -1369,34 +1302,25 @@ const styles = StyleSheet.create({
     gap: tokens.space.xs,
     marginBottom: tokens.space.sm,
   },
-  evalAction: { minHeight: tokens.size.controlMd,
-    paddingHorizontal: tokens.space.sm,
-    paddingVertical: 6,
-    borderRadius: tokens.radius.sm,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surfaceAlt,
+  // Petite action sur un résultat (Copier, Export PDF…) : même langage que les boutons de
+  // barre d'outils (src/ui/toolbarButton.ts).
+  evalAction: {
+    minHeight: tokens.size.controlMd,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: tokens.space.md,
+    borderRadius: tokens.radius.md,
+    borderWidth: tokens.border.thin,
+    borderColor: tokens.colors.borderControl,
+    backgroundColor: tokens.colors.surface,
+    ...tokens.elevation.control,
   },
   evalActionText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.semibold,
-  },
-  retryEcos: {
-    height: 48,
-    borderRadius: tokens.radius.lg,
-    backgroundColor: tokens.colors.accentVivid,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: tokens.space.sm,
-    ...tokens.elevation.sm,
-  },
-  retryEcosText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.semibold,
+    fontFamily: tokens.font.display,
+    color: tokens.colors.text,
     fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.medium,
   },
 
   // Gate
@@ -1436,14 +1360,15 @@ const styles = StyleSheet.create({
     maxWidth: 340,
   },
   gateLink: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
+    position: 'relative',
     color: tokens.colors.onAccent,
     fontWeight: tokens.weight.semibold,
     fontSize: tokens.type.label.fontSize,
     backgroundColor: tokens.colors.accentVivid,
     paddingHorizontal: tokens.space.xl,
     paddingVertical: tokens.space.md,
-    borderRadius: tokens.radius.lg,
+    borderRadius: tokens.radius.md,
     overflow: 'hidden',
     marginTop: tokens.space.sm,
   },
@@ -1468,12 +1393,11 @@ const dashStyles = StyleSheet.create({
     ...tokens.elevation.sm,
   },
   statLabel: {
-    fontFamily: tokens.font.mono,
+    fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.medium,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
   },
   statValue: {
     fontFamily: tokens.font.display,
@@ -1499,25 +1423,6 @@ const dashStyles = StyleSheet.create({
 
   // Filtres
   filters: { gap: tokens.space.sm, marginTop: tokens.space.xs },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: tokens.space.sm,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
-    paddingHorizontal: tokens.space.md,
-    height: 44,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: tokens.font.sans,
-    fontSize: tokens.type.body.fontSize,
-    color: tokens.colors.text,
-    paddingVertical: 0,
-    height: '100%',
-  },
   segmentRow: {
     flexDirection: 'row',
     borderRadius: tokens.radius.md,
@@ -1529,13 +1434,15 @@ const dashStyles = StyleSheet.create({
   },
   segment: {
     flex: 1,
+    minHeight: 36,
     borderRadius: tokens.radius.sm,
-    paddingVertical: tokens.space.sm,
+    paddingHorizontal: tokens.space.sm,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   segmentActive: {
     backgroundColor: tokens.colors.surface,
-    ...tokens.elevation.sm,
+    ...tokens.elevation.control,
   },
   segmentText: {
     fontFamily: tokens.font.sans,
@@ -1548,28 +1455,6 @@ const dashStyles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
   themeRow: { gap: tokens.space.sm, paddingVertical: 2 },
-  themeChip: { minHeight: tokens.size.controlMd,
-    borderRadius: tokens.radius.pill,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
-    paddingHorizontal: tokens.space.md,
-    paddingVertical: tokens.space.xs + 2,
-  },
-  themeChipActive: {
-    backgroundColor: tokens.colors.accent,
-    borderColor: tokens.colors.accent,
-  },
-  themeChipText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textSubtle,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.medium,
-  },
-  themeChipTextActive: {
-    color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.semibold,
-  },
   resultCount: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
@@ -1584,15 +1469,14 @@ const dashStyles = StyleSheet.create({
     gap: tokens.space.sm,
   },
   themeTitle: {
-    fontFamily: tokens.font.mono,
+    fontFamily: tokens.font.sans,
     color: tokens.colors.textSubtle,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
   },
   themeCount: {
-    fontFamily: tokens.font.mono,
+    fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.medium,
@@ -1612,7 +1496,8 @@ const dashStyles = StyleSheet.create({
     paddingVertical: 3,
   },
   scorePillText: {
-    fontFamily: tokens.font.mono,
+    fontFamily: tokens.font.sans,
+    fontVariant: ['tabular-nums'],
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
   },
@@ -1622,7 +1507,8 @@ const dashStyles = StyleSheet.create({
     borderColor: tokens.colors.border,
   },
   scorePillEmptyText: {
-    fontFamily: tokens.font.mono,
+    fontFamily: tokens.font.sans,
+    fontVariant: ['tabular-nums'],
     color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.medium,
@@ -1692,21 +1578,6 @@ const dashStyles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     lineHeight: tokens.type.caption.lineHeight,
   },
-  backToDashSecondary: {
-    height: 48,
-    borderRadius: tokens.radius.lg,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderStrong,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  backToDashSecondaryText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textSubtle,
-    fontWeight: tokens.weight.semibold,
-    fontSize: tokens.type.label.fontSize,
-  },
 });
 
 const caseStyles = StyleSheet.create({
@@ -1771,7 +1642,7 @@ const caseStyles = StyleSheet.create({
     paddingVertical: 3,
   },
   todoPillText: {
-    fontFamily: tokens.font.mono,
+    fontFamily: tokens.font.sans,
     color: tokens.colors.accentDeep,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,

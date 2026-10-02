@@ -1,5 +1,7 @@
 import { FieldInput } from '@/ui/FieldInput';
+import { Chip } from '@/ui/Chip';
 import { PageTitle } from '@/ui/PageTitle';
+import { SearchField } from '@/ui/SearchField';
 /**
  * Scores médicaux — calculateurs cliniques interactifs (persona étudiant + pro).
  *
@@ -9,7 +11,7 @@ import { PageTitle } from '@/ui/PageTitle';
  * hémorragie anticoagulant » → HAS-BLED). Aide à la décision, jamais un diagnostic.
  */
 import { useMemo, useState } from 'react';
-import { View, Text, TextInput, ScrollView, Pressable, StyleSheet, Platform } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Platform } from 'react-native';
 
 import { Icon, type IconName } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
@@ -113,31 +115,29 @@ function ScoreBrowser({ onSelect }: { onSelect: (id: string) => void }) {
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
       {/* Barre de recherche double (nom OU fonction) */}
-      <View style={styles.searchBox}>
-        <Icon name="search" size={18} color={tokens.colors.textMuted} />
-        <FieldInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Nom (CHA₂DS₂-VASc) ou fonction (risque hémorragie…)"
-          placeholderTextColor={tokens.colors.textMuted}
-          style={styles.searchInput}
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="search"
-        />
-        {query.length > 0 ? (
-          <Pressable onPress={() => setQuery('')} accessibilityLabel="Effacer la recherche" hitSlop={8}>
-            <Icon name="x" size={16} color={tokens.colors.textMuted} />
-          </Pressable>
-        ) : null}
-      </View>
+      <SearchField
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Nom (CHA₂DS₂-VASc) ou fonction (risque hémorragie…)"
+        accessibilityLabel="Rechercher un score par nom ou par fonction"
+        autoCapitalize="none"
+        autoCorrect={false}
+        returnKeyType="search"
+      />
       <Text style={styles.searchHint}>
         Nom oublié ? Décris ce que le score évalue (ex. « probabilité embolie pulmonaire »,
         « clairance rénale »).
       </Text>
 
       {/* Chips de catégories */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow} contentContainerStyle={styles.chipsContent}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.chipsRow}
+        contentContainerStyle={styles.chipsContent}
+        accessibilityRole="radiogroup"
+        accessibilityLabel="Catégorie de scores"
+      >
         <CategoryChip label="Tous" active={category === 'all'} onPress={() => setCategory('all')} />
         {CATEGORIES.map((c) => (
           <CategoryChip
@@ -173,10 +173,7 @@ function ScoreBrowser({ onSelect }: { onSelect: (id: string) => void }) {
 
 function CategoryChip({ label, icon, active, onPress }: { label: string; icon?: IconName; active: boolean; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={[styles.chip, active && styles.chipActive]} accessibilityRole="button">
-      {icon ? <Icon name={icon} size={14} color={active ? tokens.colors.onAccent : tokens.colors.accentDeep} /> : null}
-      <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>{label}</Text>
-    </Pressable>
+    <Chip role="radio" label={label} icon={icon} selected={active} onPress={onPress} />
   );
 }
 
@@ -365,25 +362,6 @@ const styles = StyleSheet.create({
   scrollContent: { padding: tokens.space.lg, paddingBottom: tokens.space['3xl'], maxWidth: 760, width: '100%', alignSelf: 'center' },
 
   // Recherche
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: tokens.space.sm,
-    backgroundColor: tokens.colors.surface,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    borderRadius: tokens.radius.lg,
-    paddingHorizontal: tokens.space.md,
-    height: tokens.size.controlLg,
-    ...tokens.elevation.sm,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: tokens.font.sans,
-    fontSize: tokens.type.body.fontSize,
-    color: tokens.colors.text,
-    ...(Platform.select({ web: { outlineStyle: 'none' } as object, default: {} }) as object),
-  },
   searchHint: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
@@ -396,27 +374,12 @@ const styles = StyleSheet.create({
   // Chips catégories
   chipsRow: { flexGrow: 0, marginBottom: tokens.space.md },
   chipsContent: { gap: tokens.space.sm, paddingRight: tokens.space.lg },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: tokens.space.md,
-    paddingVertical: tokens.space.sm,
-    borderRadius: tokens.radius.pill,
-    backgroundColor: tokens.colors.accentSurface,
-    borderWidth: 1,
-    borderColor: tokens.colors.accentSurfaceStrong,
-  },
-  chipActive: { backgroundColor: tokens.colors.accent, borderColor: tokens.colors.accent },
-  chipLabel: { fontFamily: tokens.font.sans, fontSize: tokens.type.caption.fontSize, fontWeight: tokens.weight.semibold, color: tokens.colors.accentDeep },
-  chipLabelActive: { color: tokens.colors.onAccent },
 
   resultCount: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
     fontWeight: tokens.weight.bold,
     marginBottom: tokens.space.sm,
   },
@@ -486,7 +449,6 @@ const styles = StyleSheet.create({
     fontFamily: tokens.font.sans,
     fontSize: tokens.type.micro.fontSize,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
     fontWeight: tokens.weight.bold,
     color: tokens.colors.textMuted,
   },

@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 /**
  * Section QCM du chatbot étudiant (2026-07) — génération à la demande + rendu interactif.
  *
@@ -12,11 +11,13 @@ import { Platform } from 'react-native';
  * + explications). Rien n'est archivé.
  */
 import { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
 
 import { tokens } from '@/ui/tokens';
 import { Icon } from '@/ui/icons';
 import { ProgressSteps } from '@/ui/progress/ProgressSteps';
+import { Button } from '@/ui/Button';
+import { Touchable } from '@/ui/Touchable';
 import {
   scoreQcm,
   scoreQuestion,
@@ -82,22 +83,16 @@ export function QcmLauncher({
 
   return (
     <View style={styles.launcher}>
-      <TouchableOpacity
-        style={[styles.launchButton, (disabled || state === 'loading') && styles.launchButtonDisabled]}
+      <Button
+        label={state === 'loading' ? 'Génération du QCM…' : 'Générer un QCM (type EDN)'}
+        accessibilityLabel="Générer un QCM d’entraînement sur ce sujet"
+        size="md"
+        fullWidth={false}
+        loading={state === 'loading'}
+        disabled={disabled}
+        leftIcon={<Icon name="fileText" size={tokens.size.iconSm} color={tokens.colors.onAccent} />}
         onPress={generate}
-        disabled={disabled || state === 'loading'}
-        accessibilityRole="button"
-        accessibilityLabel="Générer un QCM d’entraînement sur ce sujet" {...(Platform.OS === 'web' ? { title: 'Générer un QCM d’entraînement sur ce sujet' } : {})}
-      >
-        {state === 'loading' ? (
-          <ActivityIndicator size="small" color={tokens.colors.onAccent} />
-        ) : (
-          <Icon name="fileText" size={16} color={tokens.colors.onAccent} />
-        )}
-        <Text style={styles.launchButtonText}>
-          {state === 'loading' ? 'Génération du QCM…' : 'Générer un QCM (type EDN)'}
-        </Text>
-      </TouchableOpacity>
+      />
       {/* Chargement proactif : la génération dure plusieurs dizaines de secondes, un simple
           spinner ne disait pas ce qui se passait (retour Hugo 2026-09). */}
       {state === 'loading' ? <ProgressSteps plan="qcm" /> : null}
@@ -237,7 +232,7 @@ export function QcmRunner({
                       : 'neutral';
 
               return (
-                <TouchableOpacity
+                <Touchable
                   key={pi}
                   style={[
                     styles.prop,
@@ -272,7 +267,7 @@ export function QcmRunner({
                       </Text>
                     ) : null}
                   </View>
-                </TouchableOpacity>
+                </Touchable>
               );
             })}
           </View>
@@ -281,20 +276,15 @@ export function QcmRunner({
 
       {/* Actions */}
       {!submitted ? (
-        <TouchableOpacity
-          style={[styles.validate, answeredCount === 0 && styles.validateDisabled]}
-          onPress={() => setSubmitted(true)}
+        <Button
+          label={`Valider mes réponses${answeredCount < qcm.questions.length ? ` (${answeredCount}/${qcm.questions.length})` : ''}`}
+          accessibilityLabel="Valider mes réponses et voir la correction"
           disabled={answeredCount === 0}
-          accessibilityRole="button"
-          accessibilityLabel="Valider mes réponses et voir la correction" {...(Platform.OS === 'web' ? { title: 'Valider mes réponses et voir la correction' } : {})}
-        >
-          <Text style={styles.validateText}>
-            Valider mes réponses{answeredCount < qcm.questions.length ? ` (${answeredCount}/${qcm.questions.length})` : ''}
-          </Text>
-        </TouchableOpacity>
+          onPress={() => setSubmitted(true)}
+        />
       ) : (
         <View style={styles.afterActions}>
-          <TouchableOpacity
+          <Touchable
             style={styles.retry}
             onPress={() => {
               setAnswers(qcm.questions.map(() => new Set<number>()));
@@ -304,8 +294,8 @@ export function QcmRunner({
           >
             <Icon name="refresh" size={14} color={tokens.colors.accentDeep} />
             <Text style={styles.retryText}>Refaire ce QCM</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Touchable>
+          <Touchable
             style={styles.retry}
             onPress={onRegenerate}
             disabled={regenerating}
@@ -317,7 +307,7 @@ export function QcmRunner({
               <Icon name="bookOpen" size={14} color={tokens.colors.accentDeep} />
             )}
             <Text style={styles.retryText}>Nouveau QCM</Text>
-          </TouchableOpacity>
+          </Touchable>
         </View>
       )}
     </View>
@@ -328,24 +318,6 @@ export function QcmRunner({
 
 const styles = StyleSheet.create({
   launcher: { marginTop: tokens.space.sm, gap: tokens.space.xs },
-  launchButton: { minHeight: tokens.size.controlMd,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: tokens.space.sm,
-    alignSelf: 'flex-start',
-    backgroundColor: tokens.colors.accentVivid,
-    paddingHorizontal: tokens.space.lg,
-    paddingVertical: tokens.space.sm,
-    borderRadius: tokens.radius.md,
-    ...tokens.elevation.sm,
-  },
-  launchButtonDisabled: { opacity: 0.55 },
-  launchButtonText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.semibold,
-    fontSize: tokens.type.label.fontSize,
-  },
   launchError: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.danger,
@@ -370,7 +342,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.semibold,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
   },
   title: {
     fontFamily: tokens.font.display,
@@ -408,7 +379,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.medium,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
   },
   kindPill: {
     borderRadius: tokens.radius.pill,
@@ -488,21 +458,6 @@ const styles = StyleSheet.create({
     lineHeight: tokens.type.caption.lineHeight,
   },
 
-  validate: {
-    height: 46,
-    borderRadius: tokens.radius.lg,
-    backgroundColor: tokens.colors.accentVivid,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...tokens.elevation.sm,
-  },
-  validateDisabled: { opacity: 0.5 },
-  validateText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.bold,
-    fontSize: tokens.type.body.fontSize,
-  },
   afterActions: { flexDirection: 'row', gap: tokens.space.sm, flexWrap: 'wrap' },
   retry: {
     flexDirection: 'row',

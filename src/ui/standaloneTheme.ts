@@ -8,6 +8,8 @@ export const standaloneVariables: Record<string, string> = {
   muted: tokens.colors.textMuted, muted2: tokens.colors.textSubtle, 'ink-3': tokens.colors.textMuted,
   line: tokens.colors.borderStrong, 'rule-2': tokens.colors.borderStrong,
   rule: tokens.colors.border, linef: tokens.colors.border, 'line-fine': tokens.colors.border,
+  'control-line': tokens.colors.borderControl, 'vivid-pressed': tokens.colors.accentVividPressed,
+  'shadow-control': '0 1px 2px rgba(20,32,52,.06)',
   accent: tokens.colors.accent, 'accent-deep': tokens.colors.accentDeep, 'accent-soft': tokens.colors.accentSurface,
   'accent-tint': tokens.colors.accentSurfaceStrong, vivid: tokens.colors.accentVivid, 'vivid-deep': tokens.colors.accentVividStrong,
   a1: tokens.colors.accent, a1s: tokens.colors.accentSurface, a1m: tokens.colors.accentSurfaceStrong,

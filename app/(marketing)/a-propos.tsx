@@ -142,7 +142,6 @@ const styles = StyleSheet.create({
     color: tokens.colors.accentDeep, // texte : accentVivid n’atteint pas 4,5:1 sur le fond ivoire
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
-    letterSpacing: tokens.tracking.capsWide,
     textTransform: 'none',
     marginBottom: tokens.space.sm,
   },

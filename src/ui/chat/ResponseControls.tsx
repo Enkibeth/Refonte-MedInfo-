@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkActive: { backgroundColor: tokens.colors.accent, borderColor: tokens.colors.accent },
-  doneButton: { minHeight: tokens.size.controlMd,
+  doneButton: { minHeight: tokens.size.controlMd, justifyContent: 'center',
     marginTop: tokens.space.sm,
     alignSelf: 'flex-end',
     paddingHorizontal: tokens.space.lg,

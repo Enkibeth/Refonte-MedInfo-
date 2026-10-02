@@ -22,7 +22,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -31,6 +30,7 @@ import { Icon } from '@/ui/icons';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { ButtonRow } from '@/ui/Button';
 import { tokens } from '@/ui/tokens';
+import { Touchable } from '@/ui/Touchable';
 
 interface EditorPost {
   id: string;
@@ -300,14 +300,14 @@ export function BlogEditorModal({
       <View style={styles.screen}>
         {/* En-tête */}
         <View style={styles.header}>
-          <TouchableOpacity
+          <Touchable
             onPress={() => onClose(changedRef.current)}
             style={styles.closeBtn}
             accessibilityRole="button"
             accessibilityLabel="Fermer l'éditeur"
           >
             <Icon name="x" size={18} color={tokens.colors.textSubtle} />
-          </TouchableOpacity>
+          </Touchable>
           <View style={{ flex: 1 }}>
             <Text style={styles.headerTitle} numberOfLines={1}>
               {post ? title || post.title : 'Article'}
@@ -321,7 +321,7 @@ export function BlogEditorModal({
           </View>
           <View style={styles.modeSwitch}>
             {(['preview', 'edit'] as const).map((m) => (
-              <TouchableOpacity
+              <Touchable
                 key={m}
                 style={[styles.modeBtn, mode === m && styles.modeBtnActive]}
                 onPress={() => setMode(m)}
@@ -330,7 +330,7 @@ export function BlogEditorModal({
                 <Text style={[styles.modeBtnText, mode === m && styles.modeBtnTextActive]}>
                   {m === 'preview' ? 'Aperçu' : 'Modifier'}
                 </Text>
-              </TouchableOpacity>
+              </Touchable>
             ))}
           </View>
         </View>
@@ -382,7 +382,7 @@ export function BlogEditorModal({
                     </Text>
                     <View style={styles.coverActions}>
                       {Platform.OS === 'web' ? (
-                        <TouchableOpacity
+                        <Touchable
                           style={styles.smallBtn}
                           onPress={() => void uploadImage('cover')}
                           disabled={uploading}
@@ -391,17 +391,17 @@ export function BlogEditorModal({
                           <Text style={styles.smallBtnText}>
                             {uploading ? 'Envoi…' : '📷 Importer une photo'}
                           </Text>
-                        </TouchableOpacity>
+                        </Touchable>
                       ) : null}
-                      <TouchableOpacity
+                      <Touchable
                         style={styles.smallBtn}
                         onPress={() => setShowCoverUrlInput((v) => !v)}
                         accessibilityRole="button"
                       >
                         <Text style={styles.smallBtnText}>🔗 Depuis une URL</Text>
-                      </TouchableOpacity>
+                      </Touchable>
                       {coverUrl ? (
-                        <TouchableOpacity
+                        <Touchable
                           style={styles.smallBtn}
                           onPress={() => {
                             setCoverUrl(null);
@@ -410,7 +410,7 @@ export function BlogEditorModal({
                           accessibilityRole="button"
                         >
                           <Text style={styles.smallBtnDanger}>Retirer l'image</Text>
-                        </TouchableOpacity>
+                        </Touchable>
                       ) : null}
                     </View>
                     {showCoverUrlInput ? (
@@ -424,9 +424,9 @@ export function BlogEditorModal({
                           autoCapitalize="none"
                           autoCorrect={false}
                         />
-                        <TouchableOpacity style={styles.smallBtn} onPress={applyCoverUrl} accessibilityRole="button">
+                        <Touchable style={styles.smallBtn} onPress={applyCoverUrl} accessibilityRole="button">
                           <Text style={styles.smallBtnText}>OK</Text>
-                        </TouchableOpacity>
+                        </Touchable>
                       </View>
                     ) : null}
                   </View>
@@ -474,7 +474,7 @@ export function BlogEditorModal({
                     </Text>
                     <View style={styles.toolbar}>
                       {toolbar.map((t) => (
-                        <TouchableOpacity
+                        <Touchable
                           key={t.label}
                           style={styles.toolBtn}
                           onPress={t.onPress}
@@ -482,7 +482,7 @@ export function BlogEditorModal({
                           accessibilityRole="button"
                         >
                           <Text style={styles.toolBtnText}>{t.label}</Text>
-                        </TouchableOpacity>
+                        </Touchable>
                       ))}
                     </View>
                     <TextInput
@@ -510,7 +510,7 @@ export function BlogEditorModal({
         {post ? (
           <View style={styles.footer}>
 <ButtonRow>
-            <TouchableOpacity
+            <Touchable
               style={[styles.footerBtn, styles.publishBtn, publishing && styles.btnDisabled]}
               onPress={() => void togglePublish()}
               disabled={publishing}
@@ -525,8 +525,8 @@ export function BlogEditorModal({
                       ? 'Enregistrer et publier'
                       : 'Publier'}
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+            </Touchable>
+            <Touchable
               style={[styles.footerBtn, styles.saveBtn, (!dirty || saving) && styles.btnDisabled]}
               onPress={() => void save()}
               disabled={!dirty || saving}
@@ -534,7 +534,7 @@ export function BlogEditorModal({
             >
               {saving ? <ActivityIndicator size="small" color={tokens.colors.onAccent} /> : null}
               <Text style={styles.saveBtnText}>{saving ? 'Enregistrement…' : 'Enregistrer'}</Text>
-            </TouchableOpacity>
+            </Touchable>
           </ButtonRow>
           </View>
         ) : null}
@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
     borderBottomColor: tokens.colors.border,
     backgroundColor: tokens.colors.surface,
   },
-  closeBtn: { minHeight: tokens.size.controlMd, padding: tokens.space.sm },
+  closeBtn: { minHeight: tokens.size.controlMd, justifyContent: 'center', padding: tokens.space.sm },
   headerTitle: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,
@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.surfaceSunken,
     padding: 2,
   },
-  modeBtn: { minHeight: tokens.size.controlMd, borderRadius: tokens.radius.pill, paddingHorizontal: tokens.space.md, paddingVertical: 5 },
+  modeBtn: { minHeight: tokens.size.controlMd, justifyContent: 'center', borderRadius: tokens.radius.pill, paddingHorizontal: tokens.space.md, paddingVertical: 5 },
   modeBtnActive: { backgroundColor: tokens.colors.surface },
   modeBtnText: {
     fontFamily: tokens.font.sans,
@@ -658,7 +658,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
   },
   fieldHint: {
     fontFamily: tokens.font.sans,
@@ -669,8 +668,8 @@ const styles = StyleSheet.create({
   input: {
     borderRadius: tokens.radius.sm,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surfaceSunken,
+    borderColor: tokens.colors.borderStrong,
+    backgroundColor: tokens.colors.surface,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.sm + 2,
     fontFamily: tokens.font.sans,
@@ -682,7 +681,7 @@ const styles = StyleSheet.create({
   coverNone: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.label.fontSize, fontStyle: 'italic' },
   coverActions: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm },
   urlRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
-  smallBtn: { minHeight: tokens.size.controlMd,
+  smallBtn: { minHeight: tokens.size.controlMd, justifyContent: 'center',
     borderRadius: tokens.radius.pill,
     borderWidth: 1,
     borderColor: tokens.colors.border,
@@ -703,7 +702,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
   toolbar: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.xs + 2 },
-  toolBtn: { minHeight: tokens.size.controlMd,
+  toolBtn: { minHeight: tokens.size.controlMd, justifyContent: 'center',
     borderRadius: tokens.radius.sm,
     borderWidth: 1,
     borderColor: tokens.colors.border,
@@ -720,8 +719,8 @@ const styles = StyleSheet.create({
   contentInput: {
     borderRadius: tokens.radius.sm,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surfaceSunken,
+    borderColor: tokens.colors.borderStrong,
+    backgroundColor: tokens.colors.surface,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.md,
     fontFamily: tokens.font.mono,
@@ -749,14 +748,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.space.xl,
     paddingVertical: tokens.space.sm + 2,
   },
-  saveBtn: { minHeight: tokens.size.controlMd, backgroundColor: tokens.colors.accentVivid },
+  saveBtn: { minHeight: tokens.size.controlMd, justifyContent: 'center', backgroundColor: tokens.colors.accentVivid },
   saveBtnText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.onAccent,
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.semibold,
   },
-  publishBtn: { minHeight: tokens.size.controlMd, borderWidth: 1, borderColor: tokens.colors.border, backgroundColor: tokens.colors.surface },
+  publishBtn: { minHeight: tokens.size.controlMd, justifyContent: 'center', borderWidth: 1, borderColor: tokens.colors.border, backgroundColor: tokens.colors.surface },
   publishBtnText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.text,

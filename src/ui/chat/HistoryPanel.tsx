@@ -21,7 +21,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -30,6 +29,10 @@ import { CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
 import { Icon } from '@/ui/icons';
 import { Skeleton } from '@/ui/Skeleton';
 import { tokens } from '@/ui/tokens';
+import { Button } from '@/ui/Button';
+import { mi } from '@/ui/responsive';
+import { SearchField } from '@/ui/SearchField';
+import { Touchable } from '@/ui/Touchable';
 import { useReducedMotion } from '@/ui/useReducedMotion';
 
 function formatDate(iso: string): string {
@@ -112,43 +115,29 @@ export function ConversationList({
 
   return (
     <>
-      <TouchableOpacity
-        style={styles.newButton}
+      {/* Secondaire : l'action principale de l'écran reste la saisie du message. */}
+      <Button
+        label="Nouvelle conversation"
+        variant="secondary"
+        size="md"
+        leftIcon={<Icon name="plus" size={tokens.size.iconSm} color={tokens.colors.textSubtle} />}
         onPress={() => {
           resetTransientState();
           onNew();
         }}
-        accessibilityRole="button"
-      >
-        <Icon name="plus" size={16} color={tokens.colors.onAccent} />
-        <Text style={styles.newButtonText}>Nouvelle conversation</Text>
-      </TouchableOpacity>
+      />
 
       {conversations.length > 0 ? (
-        <View style={styles.searchBox}>
-          <Icon name="search" size={15} color={tokens.colors.textMuted} />
-          <TextInput
-            style={styles.searchInput}
-            value={query}
-            onChangeText={(t) => {
-              setQuery(t);
-              setConfirmDeleteId(null);
-            }}
-            placeholder="Rechercher une conversation…"
-            placeholderTextColor={tokens.colors.textMuted}
-            accessibilityLabel="Rechercher une conversation" {...(Platform.OS === 'web' ? { title: 'Rechercher une conversation' } : {})}
-          />
-          {query ? (
-            <TouchableOpacity
-              onPress={() => setQuery('')}
-              accessibilityRole="button"
-              accessibilityLabel="Effacer la recherche" {...(Platform.OS === 'web' ? { title: 'Effacer la recherche' } : {})}
-              style={styles.searchClear}
-            >
-              <Icon name="x" size={13} color={tokens.colors.textMuted} />
-            </TouchableOpacity>
-          ) : null}
-        </View>
+        <SearchField
+          value={query}
+          onChangeText={(t) => {
+            setQuery(t);
+            setConfirmDeleteId(null);
+          }}
+          placeholder="Rechercher…"
+          accessibilityLabel="Rechercher une conversation"
+          style={styles.searchBox}
+        />
       ) : null}
 
       <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
@@ -195,27 +184,27 @@ export function ConversationList({
                         placeholderTextColor={tokens.colors.textMuted}
                         accessibilityLabel="Nouveau titre de la conversation" {...(Platform.OS === 'web' ? { title: 'Nouveau titre de la conversation' } : {})}
                       />
-                      <TouchableOpacity
+                      <Touchable
                         onPress={() => setEditingId(null)}
                         accessibilityRole="button"
                         accessibilityLabel="Annuler le renommage" {...(Platform.OS === 'web' ? { title: 'Annuler le renommage' } : {})}
                         style={styles.confirmCancel}
                       >
                         <Icon name="x" size={14} color={tokens.colors.textMuted} />
-                      </TouchableOpacity>
-                      <TouchableOpacity
+                      </Touchable>
+                      <Touchable
                         onPress={submitRename}
                         accessibilityRole="button"
                         accessibilityLabel="Enregistrer le titre" {...(Platform.OS === 'web' ? { title: 'Enregistrer le titre' } : {})}
                         style={styles.renameConfirm}
                       >
                         <Icon name="check" size={14} color={tokens.colors.onAccent} />
-                      </TouchableOpacity>
+                      </Touchable>
                     </View>
                   );
                 }
                 return (
-                  <TouchableOpacity
+                  <Touchable
                     key={c.id}
                     style={[styles.item, active && styles.itemActive]}
                     onPress={() => {
@@ -223,6 +212,8 @@ export function ConversationList({
                       onSelect(c);
                     }}
                     accessibilityRole="button"
+                    aria-current={active ? 'page' : undefined}
+                    {...mi('reveal-host')}
                   >
                     <View style={styles.itemBody}>
                       <Text
@@ -239,7 +230,7 @@ export function ConversationList({
                       // Suppression en deux temps : le premier appui demande
                       // confirmation au lieu de supprimer immédiatement.
                       <View style={styles.confirmRow}>
-                        <TouchableOpacity
+                        <Touchable
                           onPress={() => {
                             setConfirmDeleteId(null);
                             onDelete(c.id);
@@ -249,39 +240,44 @@ export function ConversationList({
                           style={styles.confirmDelete}
                         >
                           <Text style={styles.confirmDeleteText}>Supprimer</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
+                        </Touchable>
+                        <Touchable
                           onPress={() => setConfirmDeleteId(null)}
                           accessibilityRole="button"
                           accessibilityLabel="Annuler la suppression" {...(Platform.OS === 'web' ? { title: 'Annuler la suppression' } : {})}
                           style={styles.confirmCancel}
                         >
                           <Icon name="x" size={14} color={tokens.colors.textMuted} />
-                        </TouchableOpacity>
+                        </Touchable>
                       </View>
                     ) : (
-                      <View style={styles.itemActions}>
+                      // Souris : actions révélées au survol / focus de la ligne (une
+                      // colonne d'icônes répétées sur chaque ligne surchargeait la liste).
+                      // Écran tactile : toujours visibles (INTERACTION_CSS).
+                      <View style={styles.itemActions} {...mi('reveal')}>
                         {onRename ? (
-                          <TouchableOpacity
+                          <Touchable
                             onPress={() => startRename(c)}
                             accessibilityRole="button"
                             accessibilityLabel={`Renommer « ${c.title ?? 'Conversation'} »`}
                             style={styles.iconAction}
+                            {...mi('touch44')}
                           >
                             <Icon name="penLine" size={14} color={tokens.colors.textMuted} />
-                          </TouchableOpacity>
+                          </Touchable>
                         ) : null}
-                        <TouchableOpacity
+                        <Touchable
                           onPress={() => setConfirmDeleteId(c.id)}
                           accessibilityRole="button"
                           accessibilityLabel={`Supprimer « ${c.title ?? 'Conversation'} »`}
                           style={styles.iconAction}
+                          {...mi('touch44')}
                         >
                           <Icon name="trash" size={15} color={tokens.colors.textMuted} />
-                        </TouchableOpacity>
+                        </Touchable>
                       </View>
                     )}
-                  </TouchableOpacity>
+                  </Touchable>
                 );
               })}
             </View>
@@ -344,14 +340,14 @@ export function HistoryPanel({
             <View style={styles.header}>
               <Icon name="clock" size={18} color={tokens.colors.accentDeep} />
               <Text style={styles.headerTitle}>Historique</Text>
-              <TouchableOpacity
+              <Touchable
                 onPress={onClose}
                 accessibilityRole="button"
                 accessibilityLabel="Fermer l'historique" {...(Platform.OS === 'web' ? { title: "Fermer l'historique" } : {})}
                 style={styles.closeButton}
               >
                 <Icon name="x" size={18} color={tokens.colors.textMuted} />
-              </TouchableOpacity>
+              </Touchable>
             </View>
             <ConversationList
               conversations={conversations}
@@ -400,22 +396,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: tokens.colors.surfaceSunken,
   },
-  newButton: { minHeight: tokens.size.controlMd,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: tokens.space.sm,
-    borderRadius: tokens.radius.md,
-    backgroundColor: tokens.colors.accentVivid,
-    paddingVertical: tokens.space.md,
-    ...tokens.motion.transitionWeb,
-  },
-  newButtonText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.semibold,
-  },
   list: { flex: 1 },
   listContent: { gap: tokens.space.lg, paddingBottom: tokens.space['2xl'] },
   skeletonGroup: { gap: tokens.space.md, marginTop: tokens.space.sm },
@@ -439,7 +419,6 @@ const styles = StyleSheet.create({
     color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
-    letterSpacing: tokens.tracking.caps,
     textTransform: 'none',
     marginBottom: 2,
   },
@@ -469,10 +448,12 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
   },
   itemActions: { flexDirection: 'row', alignItems: 'center' },
-  iconAction: { minHeight: tokens.size.controlMd,
-    width: 30,
-    height: 30,
-    borderRadius: tokens.radius.pill,
+  // 36 px à la souris, 44 px au doigt (mi('touch44')) ; carré arrondi comme les autres
+  // boutons d'icône (une capsule 30 × 44 se dessinait au survol).
+  iconAction: {
+    width: 36,
+    height: 36,
+    borderRadius: tokens.radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -492,29 +473,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: tokens.colors.accentVivid,
   },
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: tokens.space.sm,
-    height: 38,
-    paddingHorizontal: tokens.space.md,
-    borderRadius: tokens.radius.pill,
-    backgroundColor: tokens.colors.surfaceSunken,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: tokens.font.sans,
-    fontSize: tokens.type.label.fontSize,
-    color: tokens.colors.text,
-    ...(Platform.select({ web: { outlineStyle: 'none' } as object, default: {} }) as object),
-  },
-  searchClear: {
-    width: 24,
-    height: 24,
-    borderRadius: tokens.radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  searchBox: { marginBottom: tokens.space.xs },
   confirmRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.xs },
   confirmDelete: {
     borderRadius: tokens.radius.pill,

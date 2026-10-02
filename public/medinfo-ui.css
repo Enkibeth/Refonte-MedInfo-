@@ -64,6 +64,14 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="
    (.btn-primary, .btn-accent, .btn-ghost, .mip-btn-primary) sont exclues, et tout état à
    deux classes ou plus (.btn.on, .btn.pri, :hover…) l'emporte toujours. */
 .btn:where(:not(.btn-primary):not(.btn-accent):not(.btn-ghost)),
-.mip-btn:where(:not(.mip-btn-primary)) { border-color:var(--rule); }
+.mip-btn:where(:not(.mip-btn-primary)) { border-color:var(--control-line); box-shadow:var(--shadow-control); }
 .mip-btn.mip-btn-primary { background:var(--vivid); border-color:var(--vivid); color:#fff; }
 .mip-btn.mip-btn-primary:hover:not(:disabled) { background:var(--vivid-deep); border-color:var(--vivid-deep); color:#fff; }
+/* Appui (révision 2026-10, même règle que <Button>) : fond plus dense, jamais d'atténuation
+   d'opacité ; désactivé lisible ; un double-clic ne sélectionne pas le libellé. */
+.btn, .mip-btn, .mip-tab, .seg button, .iconbtn, .ibtn, .mip-iconbtn { -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+.btn:where(:not(.btn-primary):not(.btn-accent):not(.btn-ghost)):active:not(:disabled),
+.mip-btn:where(:not(.mip-btn-primary)):active:not(:disabled) { background:var(--sunken); box-shadow:none; }
+.mip-btn.mip-btn-primary:active:not(:disabled), .btn.btn-primary:active:not(:disabled), .btn.btn-accent:active:not(:disabled),
+.btn.pri:active:not(:disabled) { background:var(--vivid-pressed); border-color:var(--vivid-pressed); color:#fff; }
+.btn:disabled, .mip-btn:disabled { cursor:not-allowed; box-shadow:none; }
