@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { RESUME_PREFIX_LEN, shouldReplaceWithArchived } from '@/chat/resume';
+import { RESUME_PREFIX_LEN, shouldReplaceWithArchived, turnOutcome } from '@/chat/resume';
 
 const LONG = 'Voici une réponse clinique complète et détaillée sur le sujet demandé, avec ses sections.';
 
@@ -47,5 +47,23 @@ describe('shouldReplaceWithArchived — compléter une réponse coupée par la m
   it('un local plus court que le préfixe de comparaison reste géré', () => {
     expect(shouldReplaceWithArchived('Voici', LONG)).toBe(true);
     expect(shouldReplaceWithArchived('Autre', LONG)).toBe(false);
+  });
+});
+
+describe('turnOutcome — ne jamais laisser un tour sans réponse ni issue', () => {
+  it('du texte reçu, même partiel : réponse affichée', () => {
+    expect(turnOutcome('Début de réponse', 'stop')).toBe('answered');
+    expect(turnOutcome('Début de réponse', undefined)).toBe('answered');
+  });
+
+  it('cas de production : réflexion qui épuise le plafond de sortie → réponse vide, à signaler', () => {
+    expect(turnOutcome('', 'length')).toBe('empty');
+    expect(turnOutcome('  \n ', 'stop')).toBe('empty');
+    expect(turnOutcome('', 'content-filter')).toBe('empty');
+  });
+
+  it('flux clos sans son fragment final : coupé en route, la réponse est à reprendre de l’historique', () => {
+    expect(turnOutcome('', undefined)).toBe('interrupted');
+    expect(turnOutcome('', null)).toBe('interrupted');
   });
 });

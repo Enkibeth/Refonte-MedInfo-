@@ -25,9 +25,11 @@ export function coerceConversationId(value: unknown): string | null {
  * conversation appartient au user vérifié. Échec silencieux : l'archivage ne doit
  * jamais casser la réponse du chat.
  *
- * `replaceLast` (régénération) : la dernière réponse assistant archivée de la
- * conversation est supprimée avant l'insertion — sinon la conversation rouverte
- * montrerait l'ancienne ET la nouvelle réponse à la suite.
+ * `replaceLast` (régénération) : la réponse déjà archivée pour CE tour est supprimée avant
+ * l'insertion — sinon la conversation rouverte montrerait l'ancienne ET la nouvelle réponse
+ * à la suite. Seulement si le dernier message archivé est bien une réponse : quand c'est la
+ * question (tour resté sans réponse — réflexion épuisée, flux coupé), il n'y a rien à
+ * remplacer, et supprimer « la dernière réponse assistant » effaçait celle du tour d'AVANT.
  */
 export async function saveAssistantMessageServer(
   supabase: SupabaseClient,
@@ -50,15 +52,14 @@ export async function saveAssistantMessageServer(
     if (replaceLast) {
       const { data: last } = await supabase
         .from('chat_messages')
-        .select('id')
+        .select('id, role')
         .eq('conversation_id', conversationId)
-        .eq('role', 'assistant')
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
-      const lastId = (last as { id?: string } | null)?.id;
-      if (lastId) {
-        await supabase.from('chat_messages').delete().eq('id', lastId);
+      const row = last as { id?: string; role?: string } | null;
+      if (row?.id && row.role === 'assistant') {
+        await supabase.from('chat_messages').delete().eq('id', row.id);
       }
     }
 

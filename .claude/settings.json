@@ -1,4 +1,7 @@
 {
+  "permissions": {
+    "allow": ["mcp__Supabase", "mcp__Supabase__*"]
+  },
   "hooks": {
     "Stop": [
       {

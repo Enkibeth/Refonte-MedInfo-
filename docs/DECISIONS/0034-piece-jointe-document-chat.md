@@ -50,3 +50,25 @@ le fichier (PDF/image) est **transmis tel quel au modèle multimodal** (lu nativ
 
 - Étendre au picker natif (expo-document-picker) si le besoin mobile se confirme.
 - Surveiller la taille des payloads base64 (cap 6 Mo) ; envisager un upload multipart dédié si besoin.
+
+## Addendum 2026-10 — la pièce jointe appartient à son tour
+
+Constat (ADR-0037, addendum 2026-10) : le document quittait la mémoire du navigateur dès
+l'envoi. Un « Réessayer » ou un « ? » après une réponse vide ne transmettait plus que la
+mention « Pièce jointe : nom », d'où « je ne vois pas le contenu de IMG_0847.png ».
+
+- Le document est rattaché au **tour** où il a été joint, en mémoire de l'onglet seulement.
+  « Réessayer » et « Régénérer » rejouent ce tour, document compris. Le tour suivant ne le
+  renvoie pas.
+- Si le tour reste **sans réponse**, le document revient dans le composeur. Un message tapé
+  ensuite le transporte, et l'utilisateur peut le retirer.
+- Côté serveur, si l'historique mentionne une pièce jointe que la requête ne transporte pas,
+  une consigne le dit au modèle (`buildPriorAttachmentSection`). Le modèle invite alors à
+  joindre à nouveau le document et ne commente **jamais** un document qu'il ne reçoit pas.
+- **Confidentialité inchangée** : le document n'est jamais stocké côté serveur. La mention
+  archivée est « Pièce jointe : nom » (et non « 📎 nom » comme écrit plus haut), produite et
+  lue par un seul module (`withAttachmentMarker` / `mentionedAttachmentName`).
+- **Non retenu à ce stade** (décision produit à prendre) : renvoyer le document à chaque tour
+  suivant de la conversation, comme ChatGPT, pour les questions de relance sur la même
+  image. Coût : ré-envoi jusqu'à 8 Mo par tour depuis un mobile, sauf à réduire l'image côté
+  client.
