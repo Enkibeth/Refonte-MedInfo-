@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: tokens.space.sm,
     borderRadius: tokens.radius.md,
-    backgroundColor: tokens.colors.accent,
+    backgroundColor: tokens.colors.accentVivid,
     paddingVertical: tokens.space.md,
     marginTop: tokens.space.xs,
     ...tokens.motion.transitionWeb,

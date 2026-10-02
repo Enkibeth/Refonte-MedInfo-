@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: tokens.space.sm,
     borderRadius: tokens.radius.md,
-    backgroundColor: tokens.colors.accent,
+    backgroundColor: tokens.colors.accentVivid,
     paddingVertical: tokens.space.md,
     ...tokens.motion.transitionWeb,
   },
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: tokens.colors.accent,
+    backgroundColor: tokens.colors.accentVivid,
   },
   searchBox: {
     flexDirection: 'row',

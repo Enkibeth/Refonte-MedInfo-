@@ -21,6 +21,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ResponseMode } from '@/ai/chat/responseMode';
 import type { ChatOutputTool } from '@/ai/chat/outputTools';
 import { Icon, type IconName } from '@/ui/icons';
+import { COMPOSER_ICON_SIZE, composerButtonStyles, composerIconColor } from '@/ui/chat/composerButton';
 import { tokens } from '@/ui/tokens';
 
 const MODES: { id: ResponseMode; label: string; icon: IconName; hint: string }[] = [
@@ -159,13 +160,17 @@ export function ResponseControls({
           disabled={disabled}
           accessibilityRole="button"
           accessibilityLabel={`Profondeur de la réponse : ${activeMode.label}`}
-          style={[styles.iconButton, mode !== 'standard' && styles.iconButtonActive]}
+          aria-pressed={mode !== 'standard'}
+          style={({ pressed, hovered, focused }: { pressed: boolean; hovered?: boolean; focused?: boolean }) => [
+            composerButtonStyles.button,
+            hovered && composerButtonStyles.hover,
+            mode !== 'standard' && composerButtonStyles.active,
+            pressed && composerButtonStyles.pressed,
+            focused && composerButtonStyles.focus,
+            disabled && composerButtonStyles.disabled,
+          ]}
         >
-          <Icon
-            name="brain"
-            size={18}
-            color={mode !== 'standard' ? tokens.colors.onAccent : tokens.colors.accentDeep}
-          />
+          <Icon name="brain" size={COMPOSER_ICON_SIZE} color={composerIconColor({ active: mode !== 'standard' })} />
         </Pressable>
         <Pressable
           onPress={() => setPanel('tools')}
@@ -174,13 +179,16 @@ export function ResponseControls({
           accessibilityLabel={
             tools.length > 0 ? `Outils de réponse (${tools.length} ${tools.length > 1 ? 'actifs' : 'actif'})` : 'Ajouter des outils à la réponse'
           }
-          style={[styles.iconButton, tools.length > 0 && styles.iconButtonActive]}
+          style={({ pressed, hovered, focused }: { pressed: boolean; hovered?: boolean; focused?: boolean }) => [
+            composerButtonStyles.button,
+            hovered && composerButtonStyles.hover,
+            tools.length > 0 && composerButtonStyles.active,
+            pressed && composerButtonStyles.pressed,
+            focused && composerButtonStyles.focus,
+            disabled && composerButtonStyles.disabled,
+          ]}
         >
-          <Icon
-            name="layoutGrid"
-            size={17}
-            color={tools.length > 0 ? tokens.colors.onAccent : tokens.colors.accentDeep}
-          />
+          <Icon name="layoutGrid" size={COMPOSER_ICON_SIZE - 1} color={composerIconColor({ active: tools.length > 0 })} />
           {tools.length > 0 ? (
             <View style={styles.countBadge}>
               <Text style={styles.countBadgeText}>{tools.length}</Text>
@@ -290,16 +298,6 @@ const styles = StyleSheet.create({
   addLabelActive: { color: tokens.colors.onAccent },
 
   // ── Boutons-icônes compacts (variante inline) ──
-  iconButton: { minHeight: tokens.size.controlMd,
-    width: tokens.size.controlMd,
-    height: tokens.size.controlMd,
-    borderRadius: tokens.radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: tokens.colors.accentSurface,
-    ...tokens.motion.transitionWeb,
-  },
-  iconButtonActive: { backgroundColor: tokens.colors.accent },
   countBadge: {
     position: 'absolute',
     top: -2,

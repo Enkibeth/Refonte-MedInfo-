@@ -13,6 +13,7 @@ import {
   TextInput,
   ScrollView,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -31,6 +32,7 @@ import { SeoHead } from '@/ui/SeoHead';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
 import { DictationButton } from '@/ui/DictationButton';
+import { COMPOSER_ICON_SIZE, composerButtonStyles } from '@/ui/chat/composerButton';
 import { exportAnalysisToPdf } from '@/document/exportAnalysisPdf';
 import { parseScoreFromEvaluation, scoreTone, formatScore, type ScoreTone } from '@/ecos/score';
 import {
@@ -967,13 +969,26 @@ function EcosScreenInner() {
               onSubmitEditing={sendMessage}
               returnKeyType="send"
             />
-            <TouchableOpacity
-              style={[styles.simSend, (aiLoading || !input.trim()) && styles.simSendDisabled]}
+            <Pressable
               onPress={sendMessage}
               disabled={aiLoading || !input.trim()}
+              accessibilityRole="button"
+              accessibilityLabel="Envoyer au patient"
+              aria-disabled={aiLoading || !input.trim()}
+              style={({ pressed, hovered, focused }: { pressed: boolean; hovered?: boolean; focused?: boolean }) => [
+                composerButtonStyles.send,
+                (aiLoading || !input.trim()) && composerButtonStyles.sendDisabled,
+                !!input.trim() && !aiLoading && hovered && composerButtonStyles.sendHover,
+                focused && composerButtonStyles.focus,
+                pressed && composerButtonStyles.sendPressed,
+              ]}
             >
-              <Text style={styles.simSendText}>→</Text>
-            </TouchableOpacity>
+              <Icon
+                name="arrowUp"
+                size={COMPOSER_ICON_SIZE}
+                color={aiLoading || !input.trim() ? tokens.colors.textMuted : tokens.colors.onAccent}
+              />
+            </Pressable>
           </View>
           <TouchableOpacity style={styles.finishButton} onPress={requestFinish}>
             <Text style={styles.finishText}>Terminer et évaluer</Text>
@@ -1123,7 +1138,7 @@ const styles = StyleSheet.create({
   },
   casesRetry: {
     borderRadius: tokens.radius.md,
-    backgroundColor: tokens.colors.accent,
+    backgroundColor: tokens.colors.accentVivid,
     paddingHorizontal: tokens.space.xl,
     paddingVertical: tokens.space.sm,
   },
@@ -1207,7 +1222,7 @@ const styles = StyleSheet.create({
   startButton: { minHeight: tokens.size.controlMd,
     height: 52,
     borderRadius: tokens.radius.lg,
-    backgroundColor: tokens.colors.accent,
+    backgroundColor: tokens.colors.accentVivid,
     justifyContent: 'center',
     alignItems: 'center',
     ...tokens.elevation.sm,
@@ -1309,20 +1324,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.body.fontSize,
     color: tokens.colors.text,
   },
-  simSend: {
-    width: 44,
-    height: 44,
-    borderRadius: tokens.radius.lg,
-    backgroundColor: tokens.colors.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  simSendDisabled: { opacity: 0.45 },
-  simSendText: {
-    color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.bold,
-    fontSize: tokens.type.h3.fontSize,
-  },
   finishButton: { minHeight: tokens.size.controlMd,
     height: 40,
     borderRadius: tokens.radius.md,
@@ -1385,7 +1386,7 @@ const styles = StyleSheet.create({
   retryEcos: {
     height: 48,
     borderRadius: tokens.radius.lg,
-    backgroundColor: tokens.colors.accent,
+    backgroundColor: tokens.colors.accentVivid,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: tokens.space.sm,
@@ -1439,7 +1440,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.onAccent,
     fontWeight: tokens.weight.semibold,
     fontSize: tokens.type.label.fontSize,
-    backgroundColor: tokens.colors.accent,
+    backgroundColor: tokens.colors.accentVivid,
     paddingHorizontal: tokens.space.xl,
     paddingVertical: tokens.space.md,
     borderRadius: tokens.radius.lg,

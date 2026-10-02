@@ -9,11 +9,12 @@
  * Le texte dicté est ensuite traité par la safe-box normale de la route cible.
  */
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
 import { useClientState } from '@/ui/hydration';
 import { Icon } from '@/ui/icons';
+import { COMPOSER_ICON_SIZE, composerButtonStyles, composerIconColor } from '@/ui/chat/composerButton';
 import { tokens } from '@/ui/tokens';
 
 type State = 'idle' | 'recording' | 'transcribing';
@@ -160,23 +161,31 @@ export function DictationButton({
           <Text style={styles.errorBubbleText}>{error}</Text>
         </View>
       ) : null}
-      <TouchableOpacity
+      <Pressable
         onPress={onPress}
         disabled={disabled || busy}
         accessibilityRole="button"
         accessibilityLabel={recording ? 'Arrêter la dictée' : 'Dicter au micro'}
-        style={[styles.button, recording && styles.buttonRecording, (disabled || busy) && styles.buttonDisabled]}
+        aria-pressed={recording}
+        style={({ pressed, hovered, focused }: { pressed: boolean; hovered?: boolean; focused?: boolean }) => [
+          composerButtonStyles.button,
+          hovered && composerButtonStyles.hover,
+          pressed && composerButtonStyles.pressed,
+          focused && composerButtonStyles.focus,
+          recording && styles.buttonRecording,
+          (disabled || busy) && !recording && composerButtonStyles.disabled,
+        ]}
       >
         {busy ? (
           <ActivityIndicator size="small" color={tokens.colors.accent} />
         ) : (
           <Icon
             name={recording ? 'stop' : 'micVoice'}
-            size={19}
-            color={recording ? tokens.colors.danger : tokens.colors.accentDeep}
+            size={recording ? 16 : COMPOSER_ICON_SIZE}
+            color={recording ? tokens.colors.danger : composerIconColor()}
           />
         )}
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 }
@@ -201,19 +210,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     lineHeight: 16,
   },
-  button: { minHeight: tokens.size.controlMd,
-    width: 44,
-    height: 44,
-    borderRadius: tokens.radius.lg,
-    backgroundColor: tokens.colors.surfaceSunken,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonRecording: {
-    backgroundColor: tokens.colors.dangerBackground,
-    borderColor: tokens.colors.danger,
-  },
-  buttonDisabled: { opacity: 0.45 },
+  // Enregistrement en cours : pastille rouge pâle (état d'urgence lisible, pas un aplat).
+  buttonRecording: { backgroundColor: tokens.colors.dangerBackground },
 });

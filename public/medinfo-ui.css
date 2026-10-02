@@ -55,3 +55,15 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="
 .mi-progress-slow { margin: 0; font-size: 13px; line-height: 18px; color: var(--muted); font-style: italic; }
 @keyframes mi-progress-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .mi-progress-spin { animation: none; } .mi-progress-fill { transition: none; } }
+
+/* Boutons des outils — même langage que l'application (retour Hugo 2026-10 : « les boutons ne
+   font pas très propre »). Seul le filet AU REPOS des boutons secondaires est allégé (le gris
+   foncé alourdissait les barres d'outils). Le libellé identifie le bouton : le filet n'est pas l'unique indice (WCAG 1.4.11).
+   Principal de la présentation : le même bleu vif que les CTA de l'app. */
+/* :where() = spécificité d'UNE classe (celle des pages) : les variantes à classe propre
+   (.btn-primary, .btn-accent, .btn-ghost, .mip-btn-primary) sont exclues, et tout état à
+   deux classes ou plus (.btn.on, .btn.pri, :hover…) l'emporte toujours. */
+.btn:where(:not(.btn-primary):not(.btn-accent):not(.btn-ghost)),
+.mip-btn:where(:not(.mip-btn-primary)) { border-color:var(--rule); }
+.mip-btn.mip-btn-primary { background:var(--vivid); border-color:var(--vivid); color:#fff; }
+.mip-btn.mip-btn-primary:hover:not(:disabled) { background:var(--vivid-deep); border-color:var(--vivid-deep); color:#fff; }

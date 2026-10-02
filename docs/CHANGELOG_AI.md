@@ -2,6 +2,22 @@
 
 Journal des modifications par agents IA. Une entrée par PR.
 
+## [2026-10-02] – Claude (boutons : un seul langage visuel)
+### Files modified
+- `src/ui/chat/composerButton.ts` (nouveau, styles partagés), `app/(chat)/chat.tsx`, `app/(chat)/ecos.tsx`, `src/ui/chat/ResponseControls.tsx`, `src/ui/DictationButton.tsx`
+- CTA faits main → bleu vif + arrondi de `<Button>` : admin, révision, ECOS, chat, RoleGate, QCM, historique, fiche source, propositions, bibliothèque audio
+- `public/medinfo-ui.css`, `public/cv-builder.html`
+### Purpose
+Retour Hugo (capture du composer étudiant) : « les boutons ne font pas très propre » — 5 styles différents dans une
+même barre (rond bordé, carré gris bordé, aplat bleu, carré pâle, rectangle « Envoyer »). Composer chat + ECOS : boutons
+ronds sans bordure (fond au survol, pastille teintée quand actifs), envoi rond bleu vif/gris, arrêt rond sombre ; ECOS
+avait un « → » texte sans libellé d'accessibilité ; focus du composer = bordure + halo doux (plus de double cadre).
+Deux bleus coexistaient pour les actions principales (`accent` vs `accentVivid` de `<Button>`) : 21 CTA alignés ; les
+ÉTATS de sélection (puces, cases, onglets) gardent `accent`. Outils HTML : filet clair au repos des boutons secondaires
+(variantes et états préservés via `:where()`), principal de la présentation en bleu vif ; CV mobile : onglets Édition/
+Aperçu lisibles comme des onglets, message d'état en bulle passagère (barre sur une ligne ; erreurs et progressions
+non effacées).
+
 ## [2026-10-02] – Claude (recette et livraison de l'identité éditoriale — fusion `ai/codex/landing/editorial-life`)
 ### Files modified
 - Fusion de `ai/codex/landing/editorial-life` (983b515) dans main à jour ; conflits `app/+html.tsx`, `app/index.tsx`, `a-propos.tsx`
