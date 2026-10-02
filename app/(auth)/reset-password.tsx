@@ -1,6 +1,6 @@
 import { FieldInput } from '@/ui/FieldInput';
 import { PageTitle } from '@/ui/PageTitle';
-import { useRouter } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -125,11 +125,24 @@ export default function ResetPasswordScreen() {
           </View>
         ) : null}
       </Card>
+      {/* Web : l'en-tête de pile est masqué (app/(auth)/_layout.tsx) — sortie explicite. */}
+      <Link href="/" style={styles.homeLink}>
+        Retour à l'accueil
+      </Link>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  homeLink: {
+    minHeight: tokens.size.controlMd,
+    lineHeight: tokens.type.label.lineHeight,
+    paddingVertical: tokens.space.md,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accent,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
   formCard: { borderWidth: 0, padding: 0 },
   logoWrap: { alignItems: 'flex-start', marginBottom: tokens.space.xl },
   title: {

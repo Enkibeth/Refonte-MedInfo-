@@ -1,0 +1,1233 @@
+[
+ {
+  "route": "/",
+  "width": 390,
+  "finalPath": "/",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4",
+   "JetBrains Mono",
+   "Source Serif 4 Fallback",
+   "Inter Fallback"
+  ],
+  "wide": [],
+  "h1": "L’IA pour apprendre.\nDes outils pour créer.",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/",
+  "width": 768,
+  "finalPath": "/",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4",
+   "JetBrains Mono",
+   "Source Serif 4 Fallback",
+   "Inter Fallback"
+  ],
+  "wide": [],
+  "h1": "L’IA pour apprendre.\nDes outils pour créer.",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/",
+  "width": 1024,
+  "finalPath": "/",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4",
+   "JetBrains Mono",
+   "Source Serif 4 Fallback",
+   "Inter Fallback"
+  ],
+  "wide": [],
+  "h1": "L’IA pour apprendre.\nDes outils pour créer.",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/",
+  "width": 1440,
+  "finalPath": "/",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4",
+   "JetBrains Mono",
+   "Source Serif 4 Fallback",
+   "Inter Fallback"
+  ],
+  "wide": [],
+  "h1": "L’IA pour apprendre.\nDes outils pour créer.",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/a-propos",
+  "width": 390,
+  "finalPath": "/a-propos",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Pensé depuis les études de médecine.",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/a-propos",
+  "width": 768,
+  "finalPath": "/a-propos",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Pensé depuis les études de médecine.",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/a-propos",
+  "width": 1024,
+  "finalPath": "/a-propos",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Pensé depuis les études de médecine.",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/a-propos",
+  "width": 1440,
+  "finalPath": "/a-propos",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Pensé depuis les études de médecine.",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/blog",
+  "width": 390,
+  "finalPath": "/blog",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Comprendre la santé, un article à la fois.",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/blog",
+  "width": 768,
+  "finalPath": "/blog",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Comprendre la santé, un article à la fois.",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/blog",
+  "width": 1024,
+  "finalPath": "/blog",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Comprendre la santé, un article à la fois.",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/blog",
+  "width": 1440,
+  "finalPath": "/blog",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Comprendre la santé, un article à la fois.",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/contact",
+  "width": 390,
+  "finalPath": "/contact",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Parlons-en.",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/contact",
+  "width": 768,
+  "finalPath": "/contact",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Parlons-en.",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/contact",
+  "width": 1024,
+  "finalPath": "/contact",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Parlons-en.",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/contact",
+  "width": 1440,
+  "finalPath": "/contact",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Parlons-en.",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/pricing",
+  "width": 390,
+  "finalPath": "/pricing",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Offres",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/pricing",
+  "width": 768,
+  "finalPath": "/pricing",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Offres",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/pricing",
+  "width": 1024,
+  "finalPath": "/pricing",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Offres",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/pricing",
+  "width": 1440,
+  "finalPath": "/pricing",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Offres",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/mentions-legales",
+  "width": 390,
+  "finalPath": "/mentions-legales",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Mentions légales",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/mentions-legales",
+  "width": 768,
+  "finalPath": "/mentions-legales",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Mentions légales",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/mentions-legales",
+  "width": 1024,
+  "finalPath": "/mentions-legales",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Mentions légales",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/mentions-legales",
+  "width": 1440,
+  "finalPath": "/mentions-legales",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Mentions légales",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/cgu",
+  "width": 390,
+  "finalPath": "/cgu",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Conditions générales d'utilisation et de vente",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/cgu",
+  "width": 768,
+  "finalPath": "/cgu",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Conditions générales d'utilisation et de vente",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/cgu",
+  "width": 1024,
+  "finalPath": "/cgu",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Conditions générales d'utilisation et de vente",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/cgu",
+  "width": 1440,
+  "finalPath": "/cgu",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Conditions générales d'utilisation et de vente",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/confidentialite",
+  "width": 390,
+  "finalPath": "/confidentialite",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Politique de confidentialité",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/confidentialite",
+  "width": 768,
+  "finalPath": "/confidentialite",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Politique de confidentialité",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/confidentialite",
+  "width": 1024,
+  "finalPath": "/confidentialite",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Politique de confidentialité",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/confidentialite",
+  "width": 1440,
+  "finalPath": "/confidentialite",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Politique de confidentialité",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/legal",
+  "width": 390,
+  "finalPath": "/legal",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Informations légales",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/legal",
+  "width": 768,
+  "finalPath": "/legal",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Informations légales",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/legal",
+  "width": 1024,
+  "finalPath": "/legal",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Informations légales",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/legal",
+  "width": 1440,
+  "finalPath": "/legal",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Informations légales",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/sign-in",
+  "width": 390,
+  "finalPath": "/sign-in",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Connexion",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/sign-in",
+  "width": 768,
+  "finalPath": "/sign-in",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Connexion",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/sign-in",
+  "width": 1024,
+  "finalPath": "/sign-in",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Connexion",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/sign-in",
+  "width": 1440,
+  "finalPath": "/sign-in",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Connexion",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/chat",
+  "width": 390,
+  "finalPath": "/chat",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Chat grand public",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/chat",
+  "width": 768,
+  "finalPath": "/chat",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Chat grand public",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/chat",
+  "width": 1024,
+  "finalPath": "/chat",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Chat grand public",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/chat",
+  "width": 1440,
+  "finalPath": "/chat",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Chat grand public",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/dashboard",
+  "width": 390,
+  "finalPath": "/chat",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Chat grand public",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/dashboard",
+  "width": 768,
+  "finalPath": "/chat",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Chat grand public",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/dashboard",
+  "width": 1024,
+  "finalPath": "/chat",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Chat grand public",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/dashboard",
+  "width": 1440,
+  "finalPath": "/chat",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Chat grand public",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/account",
+  "width": 390,
+  "finalPath": "/sign-in",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Connexion",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/account",
+  "width": 768,
+  "finalPath": "/sign-in",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Connexion",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/account",
+  "width": 1024,
+  "finalPath": "/sign-in",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Connexion",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/account",
+  "width": 1440,
+  "finalPath": "/sign-in",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Connexion",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/admin",
+  "width": 390,
+  "finalPath": "/sign-in",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4",
+   "Inter Fallback"
+  ],
+  "wide": [],
+  "h1": "Connexion",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/admin",
+  "width": 768,
+  "finalPath": "/sign-in",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4",
+   "Inter Fallback"
+  ],
+  "wide": [],
+  "h1": "Connexion",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/admin",
+  "width": 1024,
+  "finalPath": "/sign-in",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4",
+   "Inter Fallback"
+  ],
+  "wide": [],
+  "h1": "Connexion",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/admin",
+  "width": 1440,
+  "finalPath": "/sign-in",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4",
+   "Inter Fallback"
+  ],
+  "wide": [],
+  "h1": "Connexion",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/scores",
+  "width": 390,
+  "finalPath": "/scores",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Source Serif 4",
+   "Inter Fallback"
+  ],
+  "wide": [],
+  "h1": "Scores",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/scores",
+  "width": 768,
+  "finalPath": "/scores",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Source Serif 4",
+   "Inter Fallback"
+  ],
+  "wide": [],
+  "h1": "Scores",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/scores",
+  "width": 1024,
+  "finalPath": "/scores",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Source Serif 4",
+   "Inter Fallback"
+  ],
+  "wide": [],
+  "h1": "Scores",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/scores",
+  "width": 1440,
+  "finalPath": "/scores",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Source Serif 4",
+   "Inter Fallback"
+  ],
+  "wide": [],
+  "h1": "Scores",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/reset-password",
+  "width": 390,
+  "finalPath": "/reset-password",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Nouveau mot de passe",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/reset-password",
+  "width": 768,
+  "finalPath": "/reset-password",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Nouveau mot de passe",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/reset-password",
+  "width": 1024,
+  "finalPath": "/reset-password",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Nouveau mot de passe",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/reset-password",
+  "width": 1440,
+  "finalPath": "/reset-password",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Nouveau mot de passe",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/choose-role",
+  "width": 390,
+  "finalPath": "/sign-in",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Connexion",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/choose-role",
+  "width": 768,
+  "finalPath": "/sign-in",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Connexion",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/choose-role",
+  "width": 1024,
+  "finalPath": "/sign-in",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Connexion",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ },
+ {
+  "route": "/choose-role",
+  "width": 1440,
+  "finalPath": "/sign-in",
+  "ok": true,
+  "overflow": 0,
+  "imgs": [],
+  "fonts": [
+   "Inter",
+   "Schibsted Grotesk",
+   "Source Serif 4"
+  ],
+  "wide": [],
+  "h1": "Connexion",
+  "errors": [],
+  "consoleErr": [],
+  "bad": []
+ }
+]

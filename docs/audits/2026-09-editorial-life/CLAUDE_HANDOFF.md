@@ -3,6 +3,36 @@
 Date : 2026-09-30. Branche de travail : `ai/codex/landing/editorial-life`.
 Base de cette itération : `13beb994766d46a6fb0de80c8bee161c4b1cacc6`.
 
+## Mise à jour du 2 octobre 2026 (Claude Code) — recette et livraison — à lire en premier
+
+**Branche livrée** : fusionnée dans `claude/medinfo-vercel-hostinger-bxicwg` (à jour de main) puis PR vers main.
+Captures récentes, JavaScript actif, serveur Node réel + Supabase configuré :
+`recette-2026-10-02/` (`recette.json` = 17 routes × 390/768/1024/1440 px).
+
+**Points ouverts précédents — résolus sur main avant la fusion** : la garde admin sur `/` venait d'une vraie
+collision `app/(admin)/index.tsx` ↔ `app/index.tsx` (le pré-rendu gardait la page Admin, avec `noindex`) ; le
+panel vit sur `/admin` depuis la PR #160, test `tests/unit/route-collisions.test.ts`. React #418 : disparue
+(0 erreur sur les 68 vues de la recette). Contrôles d'accès inchangés.
+
+**Polices** : une seule source. `app/+html.tsx` déclare inline et précharge les WOFF2 variables de
+`public/vendor/fonts/` (+ polices de secours métriques anti-CLS) ; `fonts.css` des outils HTML pointe sur les
+MÊMES fichiers. Les 8 WOFF statiques de la branche sont retirés.
+
+**Vérifié réellement** : typecheck, 940 tests unitaires, `compliance:grep`, build, `smoke:node` 19/19 ;
+fumigations navigateur partiel (75 ✓, exports CSV/PDF) et CV (34 ✓, export PDF) ; exports PPTX
+(zip valide), Word et Markdown (accents) ; 17 routes × 4 largeurs sans erreur JS, débordement ni image cassée ;
+clavier (ordre logique, focus visible), zoom 200 % sans débordement, polices et accents chargés ;
+Lighthouse accessibilité 100 sur 8 pages après correction du contraste ; parcours invité complet (1 vrai
+message → réponse → carte d'inscription) ; blog liste + article.
+
+**Non vérifié (bloqué)** : parcours connectés étudiant/pro/admin, dashboard, compte, facturation (pas de compte
+de test autorisé, aucun compte créé) ; natif. Réseau du bac à sable instable vers Supabase depuis Chromium
+(retries) : le blog a nécessité plusieurs tentatives, sans lien avec l'application.
+
+**À surveiller** : « Le chat fonctionne aujourd'hui avec GPT-6 Luna » (accueil, À propos) est vrai au
+2026-10-02 (`ai_model_config.chat`), mais le modèle se change depuis le panel admin : mettre la copie à jour
+en même temps.
+
 ## Mise à jour du 1er octobre 2026 — à lire en premier
 
 Hugo valide les photos travail et sources, demande une première photo médecine,

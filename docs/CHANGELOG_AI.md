@@ -2,6 +2,28 @@
 
 Journal des modifications par agents IA. Une entrée par PR.
 
+## [2026-10-02] – Claude (recette et livraison de l'identité éditoriale — fusion `ai/codex/landing/editorial-life`)
+### Files modified
+- Fusion de `ai/codex/landing/editorial-life` (983b515) dans main à jour ; conflits `app/+html.tsx`, `app/index.tsx`, `a-propos.tsx`
+- `public/vendor/fonts/fonts.css` (Inter/Schibsted → WOFF2 variables communs à Expo web), 8 WOFF retirés, `THEME-FONTS.md`
+- Copie : `app/index.tsx`, `app/(marketing)/a-propos.tsx`, `src/billing/plans.ts`, `app/(billing)/pricing.tsx`
+- Contraste : `contact.tsx`, `blog/index.tsx`, `blog/[slug].tsx`, `a-propos.tsx`, `src/ui/LegalScreen.tsx` ; test `tests/unit/design-tokens.test.ts`
+- En-têtes : `app/(legal)/_layout.tsx` (en-tête du site sur le web), `app/(auth)/_layout.tsx` (sans barre native sur le web), `reset-password.tsx` (lien d'accueil)
+- Fumigations `scripts/dev/partiel-smoke.mjs`, `cv-smoke.mjs` (attentes obsolètes)
+- Recette : `docs/audits/2026-09-editorial-life/recette-2026-10-02/` (captures JS actif + `recette.json`)
+### Purpose
+Recette réelle de la direction éditoriale validée par Hugo, puis corrections. Les deux points ouverts du handoff
+(garde admin sur `/` et React #418) étaient déjà corrigés sur main (#160 : collision `(admin)/index` ↔ `index`).
+Affirmations vérifiées contre la configuration RÉELLE (`ai_model_config` lu le 2026-10-02 : chat = gpt-6-luna,
+analyze = gpt-5-mini) : « citations ancrées » (Claude uniquement → inactives en prod) et « recherche PubMed »
+(sous-agent retiré, ADR-0037) supprimées ; avantages payants inexistants (« Classement gamifié ») ou déjà gratuits
+retirés ; libellés internes « Mid » masqués. Contraste : `accentVivid` (4,46:1 sur l'ivoire) n'est plus une couleur
+de texte.
+### Limites
+Parcours connectés (étudiant/pro/admin, dashboard, compte, facturation réelle) NON recettés : aucun compte de test
+autorisé (DELIVERY.md) — rien n'a été créé en base. Rendu natif non testé. Les avantages des offres restent
+déclaratifs tant que Stripe/quotas ne sont pas branchés (décision Hugo).
+
 ## [2026-10-01] – Codex (accueil produit, photo médecine, thème partagé)
 ### Files modified
 - `app/index.tsx`, `app/(marketing)/a-propos.tsx`, `app/+html.tsx`, composants `LandingPhoto`, `landingPhotos.ts`, `responsive.ts`.
