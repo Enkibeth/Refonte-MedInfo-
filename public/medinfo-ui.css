@@ -58,10 +58,12 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="
 
 /* Boutons des outils — même langage que l'application (retour Hugo 2026-10 : « les boutons ne
    font pas très propre »). Seul le filet AU REPOS des boutons secondaires est allégé (le gris
-   foncé alourdissait les barres d'outils) : règle de même spécificité que celles des pages,
-   chargée après elles, mais toujours battue par leurs états (.on, .pri, .btn-primary, danger…)
-   et leurs survols. Le libellé identifie le bouton : le filet n'est pas l'unique indice (WCAG 1.4.11).
+   foncé alourdissait les barres d'outils). Le libellé identifie le bouton : le filet n'est pas l'unique indice (WCAG 1.4.11).
    Principal de la présentation : le même bleu vif que les CTA de l'app. */
-.btn, .mip-btn { border-color:var(--rule); }
+/* :where() = spécificité d'UNE classe (celle des pages) : les variantes à classe propre
+   (.btn-primary, .btn-accent, .btn-ghost, .mip-btn-primary) sont exclues, et tout état à
+   deux classes ou plus (.btn.on, .btn.pri, :hover…) l'emporte toujours. */
+.btn:where(:not(.btn-primary):not(.btn-accent):not(.btn-ghost)),
+.mip-btn:where(:not(.mip-btn-primary)) { border-color:var(--rule); }
 .mip-btn.mip-btn-primary { background:var(--vivid); border-color:var(--vivid); color:#fff; }
 .mip-btn.mip-btn-primary:hover:not(:disabled) { background:var(--vivid-deep); border-color:var(--vivid-deep); color:#fff; }
