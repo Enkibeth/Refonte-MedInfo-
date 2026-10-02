@@ -144,8 +144,9 @@ export default function PricingScreen() {
       ) : null}
 
       <View style={styles.footer}>
-        <Link href="/(account)/account" style={styles.inlineLink}>
-          Retour au compte
+        {/* Page publique : un visiteur n'a pas de compte où revenir. */}
+        <Link href={session ? '/(account)/account' : '/'} style={styles.inlineLink}>
+          {session ? 'Retour au compte' : 'Retour à l’accueil'}
         </Link>
       </View>
       </Screen>

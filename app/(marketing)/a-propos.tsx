@@ -21,19 +21,19 @@ const VALUES: { icon: IconName; title: string; text: string }[] = [
     text: "Une information médicale claire, en français, compréhensible sans bagage scientifique, et des sources toujours consultables gratuitement.",
   },
   {
-    icon: 'bookOpen',
+    icon: 'sparkles',
     title: 'Innovation',
     text: "Une IA de dernière génération au service de l'information en santé : réponses sourcées, outils pour étudiants et professionnels.",
   },
   {
     icon: 'shield',
-    title: 'Fiabilité',
-    text: 'Des réponses appuyées sur les référentiels français et européens (HAS, ANSM, sociétés savantes, littérature scientifique), citées dans chaque réponse pour que vous puissiez les consulter.',
+    title: 'Références',
+    text: 'Des références citées pour approfondir vos lectures et revenir aux recommandations ou publications d’origine.',
   },
   {
     icon: 'refresh',
     title: 'Amélioration continue',
-    text: 'Modèles, prompts et contenus mis à jour en continu, avec une exigence : jamais un avis médical individuel, toujours de l\'information générale.',
+    text: 'Un projet qui évolue avec les usages : outils, modèles et soin porté à l’expérience d’apprentissage et de travail.',
   },
 ];
 
@@ -58,33 +58,34 @@ export default function AboutScreen() {
         <View style={styles.inner}>
           <Reveal>
             <Text style={styles.eyebrow}>Qui sommes-nous</Text>
-            <PageTitle style={styles.title}>L'information santé, sans détour.</PageTitle>
+            <PageTitle style={styles.title}>Pensé depuis les études de médecine.</PageTitle>
           </Reveal>
           <Reveal delay={tokens.motion.revealStagger}>
             <Text style={styles.lead}>
-              MedInfo AI est né d'un constat simple : trouver une information de santé fiable,
-              à jour et compréhensible est encore trop difficile. Entre les forums approximatifs
-              et les publications scientifiques inaccessibles, il manquait un intermédiaire de
-              confiance.
+              Créé par Hugo Bettembourg, étudiant en médecine, MedInfo AI part des besoins
+              concrets de la formation médicale : comprendre, réviser, retrouver les références
+              et produire des travaux structurés.
             </Text>
             <Text style={styles.paragraph}>
-              Notre réponse : une intelligence artificielle qui appuie chaque réponse sur une
-              recherche en direct. L'assistant consulte des sources réelles (recommandations
-              HAS, ANSM et sociétés savantes, littérature scientifique indexée dans PubMed)
-              et cite celles sur lesquelles il s'appuie. Chaque réponse affiche ses sources,
-              avec leur niveau de preuve : consultez-les, une IA peut se tromper.
+              Le projet associe des modèles d’IA OpenAI et Anthropic à des outils dédiés :
+              simulation ECOS, planning de révisions, présentations, CV et rédaction d’articles.
+              Le chat fonctionne aujourd’hui avec GPT-6 Luna.
             </Text>
             <Text style={styles.paragraph}>
               Trois assistants spécialisés accompagnent chacun à son niveau : le grand public
               (explications sans jargon, analyse de document médical), les étudiants en santé
               (référentiels des Collèges EDN/R2C, simulation ECOS, planning de révisions,
               présentations, CV) et les professionnels (synthèses fondées sur les preuves,
-              recherche PubMed, compte rendu de consultation dicté).
+              compte rendu de consultation dicté).
             </Text>
             <Text style={styles.paragraph}>
-              MedInfo AI ne remplace ni votre médecin ni votre pharmacien : nous fournissons de
-              l'information générale, jamais un avis médical individuel. En cas d'urgence,
-              composez le 15 (SAMU) ou le 112.
+              Les assistants peuvent rechercher des références médicales selon le mode choisi.
+              Les documents cités restent accessibles pour poursuivre la lecture : recommandations,
+              référentiels et publications scientifiques.
+            </Text>
+            <Text style={styles.paragraph}>
+              MedInfo AI fournit de l’information médicale générale, jamais un avis médical
+              individuel. En cas d’urgence, composez le 15 ou le 112.
             </Text>
           </Reveal>
 
@@ -138,7 +139,7 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.accentVivid,
+    color: tokens.colors.accentDeep, // texte : accentVivid n’atteint pas 4,5:1 sur le fond ivoire
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
     letterSpacing: tokens.tracking.capsWide,

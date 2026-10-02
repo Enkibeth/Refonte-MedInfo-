@@ -1,0 +1,128 @@
+{
+  "date": "2026-09-30T17:47:34.442Z",
+  "mode": "static-prerender-no-javascript",
+  "scope": "Composition du fichier public dist/server/index.html servi directement, sans JavaScript ni routage applicatif. Ni recette fonctionnelle, ni validation de production.",
+  "knownIssues": "Hydratation React #418 et précédent test de navigation non concluant : reprise Claude Code. Le build local actuel ne dispose pas des variables publiques de connexion ; aucune validation fonctionnelle en mode statique.",
+  "cases": [
+    {
+      "width": 390,
+      "images": [
+        {
+          "alt": "Deux étudiants échangent autour de livres et d’un ordinateur dans une bibliothèque.",
+          "loaded": true
+        },
+        {
+          "alt": "Une professionnelle de santé consulte une tablette à son bureau.",
+          "loaded": true
+        },
+        {
+          "alt": "Une personne prend des notes en consultant des livres ouverts.",
+          "loaded": true
+        }
+      ],
+      "overflow": [],
+      "bodyFontCheck": true,
+      "titleFontCheck": true,
+      "fontFaces": [],
+      "errors": [
+        "Failed to load resource: net::ERR_EMPTY_RESPONSE"
+      ],
+      "failedRequests": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Schibsted+Grotesk:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500&display=swap",
+          "error": "net::ERR_EMPTY_RESPONSE"
+        }
+      ]
+    },
+    {
+      "width": 768,
+      "images": [
+        {
+          "alt": "Deux étudiants échangent autour de livres et d’un ordinateur dans une bibliothèque.",
+          "loaded": true
+        },
+        {
+          "alt": "Une professionnelle de santé consulte une tablette à son bureau.",
+          "loaded": true
+        },
+        {
+          "alt": "Une personne prend des notes en consultant des livres ouverts.",
+          "loaded": true
+        }
+      ],
+      "overflow": [],
+      "bodyFontCheck": true,
+      "titleFontCheck": true,
+      "fontFaces": [],
+      "errors": [
+        "Failed to load resource: net::ERR_EMPTY_RESPONSE"
+      ],
+      "failedRequests": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Schibsted+Grotesk:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500&display=swap",
+          "error": "net::ERR_EMPTY_RESPONSE"
+        }
+      ]
+    },
+    {
+      "width": 1024,
+      "images": [
+        {
+          "alt": "Deux étudiants échangent autour de livres et d’un ordinateur dans une bibliothèque.",
+          "loaded": true
+        },
+        {
+          "alt": "Une professionnelle de santé consulte une tablette à son bureau.",
+          "loaded": true
+        },
+        {
+          "alt": "Une personne prend des notes en consultant des livres ouverts.",
+          "loaded": true
+        }
+      ],
+      "overflow": [],
+      "bodyFontCheck": true,
+      "titleFontCheck": true,
+      "fontFaces": [],
+      "errors": [
+        "Failed to load resource: net::ERR_EMPTY_RESPONSE"
+      ],
+      "failedRequests": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Schibsted+Grotesk:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500&display=swap",
+          "error": "net::ERR_EMPTY_RESPONSE"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "images": [
+        {
+          "alt": "Deux étudiants échangent autour de livres et d’un ordinateur dans une bibliothèque.",
+          "loaded": true
+        },
+        {
+          "alt": "Une professionnelle de santé consulte une tablette à son bureau.",
+          "loaded": true
+        },
+        {
+          "alt": "Une personne prend des notes en consultant des livres ouverts.",
+          "loaded": true
+        }
+      ],
+      "overflow": [],
+      "bodyFontCheck": true,
+      "titleFontCheck": true,
+      "fontFaces": [],
+      "errors": [
+        "Failed to load resource: net::ERR_EMPTY_RESPONSE"
+      ],
+      "failedRequests": [
+        {
+          "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Schibsted+Grotesk:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500&display=swap",
+          "error": "net::ERR_EMPTY_RESPONSE"
+        }
+      ]
+    }
+  ]
+}

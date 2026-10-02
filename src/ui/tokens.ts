@@ -1,8 +1,8 @@
 /**
  * Design system MedInfo AI — source unique (05_DESIGN §2, §3, §4, §9).
  *
- * Direction A, septembre 2026 : blanc, encre et un accent bleu vif.
- * Hiérarchie éditoriale, contrôles contrastés et bordures fines.
+ * Direction A enrichie, septembre 2026 : papier ivoire, encre et bleu vif.
+ * Surfaces éditoriales et repères colorés ; contenu long sur surface blanche.
  *
  * Règle : aucune valeur hex/typo en dur dans les composants — tout passe par ce fichier.
  */
@@ -27,8 +27,8 @@ const palette = {
 
   // Neutres — slate froid légèrement teinté bleu (rafraîchi 2026-07), jamais boueux.
   white: '#FFFFFF',
-  neutral25: '#FFFFFF', // Direction A : le contenu repose sur le blanc.
-  neutral50: '#F6F7F9', // navigation et surfaces secondaires
+  neutral25: '#F8F7F3', // Papier ivoire : distingue la page des surfaces de lecture.
+  neutral50: '#EDF1F7', // Navigation et surfaces secondaires bleu brume.
   neutral100: '#EAEEF5',
   neutral200: '#D8DFE7', // séparateurs non interactifs
   neutral300: '#7D8998', // limites de contrôles : contraste > 3:1 sur blanc
@@ -43,6 +43,22 @@ const palette = {
   red50: '#FBEAEC',
   amber600: '#80500C',
   amber50: '#FBF1DD',
+
+  // Couleurs éditoriales : repères d'audience et d'outils, jamais des statuts.
+  sage50: '#E5F0E9',
+  sage700: '#285C4B',
+  lilac50: '#F0EAF8',
+  lilac700: '#654582',
+  clay50: '#F9EDE7',
+  clay700: '#874932',
+  sand50: '#F6EEDC',
+  sand700: '#775622',
+  mist: '#E8EFFA',
+  midnight: '#172E46',
+  moonlight: '#F4F7FC',
+  moonlightMuted: '#C7D5E3',
+  midnightRule: '#4F667D',
+  mintLight: '#CDE6D9',
 
 } as const;
 
@@ -89,12 +105,24 @@ export const tokens = {
     surfaceHover: palette.neutral50, // survol d'une surface blanche (boutons, cartes)
     accentSurfaceHover: palette.blue100, // survol d'une pastille teintée bleue
 
+    // ── Surfaces éditoriales ────────────────────────────────────────────────
+    editorial: {
+      hero: palette.mist,
+      photoMount: palette.lilac50,
+      warmMount: palette.sand50,
+      ink: palette.midnight,
+      onInk: palette.moonlight,
+      onInkMuted: palette.moonlightMuted,
+      inkRule: palette.midnightRule,
+      highlight: palette.mintLight,
+    },
+
     // ── Accents par audience (persona) ───────────────────────────────────────
-    // Trois publics distincts du design system : pro / étudiant / grand public.
+    // Toujours accompagnés du nom et d'une icône ; aucun sens clinique.
     personas: {
       pro: { accent: palette.electric700, soft: palette.blue50 },
-      student: { accent: palette.electric700, soft: palette.blue50 },
-      public: { accent: palette.electric700, soft: palette.blue50 },
+      student: { accent: palette.lilac700, soft: palette.lilac50 },
+      public: { accent: palette.sage700, soft: palette.sage50 },
     },
 
     // ── Teintes de pastilles par outil (shell 2026-07) ───────────────────────
@@ -103,12 +131,12 @@ export const tokens = {
     // d'icône et monogramme — jamais des aplats de section entiers.
     tints: {
       blue: { fg: palette.electric700, bg: palette.blue50 },
-      green: { fg: palette.electric700, bg: palette.blue50 },
-      amber: { fg: palette.electric700, bg: palette.blue50 },
-      rose: { fg: palette.electric700, bg: palette.blue50 },
-      violet: { fg: palette.electric700, bg: palette.blue50 },
-      teal: { fg: palette.electric700, bg: palette.blue50 },
-      indigo: { fg: palette.electric700, bg: palette.blue50 },
+      green: { fg: palette.sage700, bg: palette.sage50 },
+      amber: { fg: palette.sand700, bg: palette.sand50 },
+      rose: { fg: palette.clay700, bg: palette.clay50 },
+      violet: { fg: palette.lilac700, bg: palette.lilac50 },
+      teal: { fg: palette.sage700, bg: palette.sage50 },
+      indigo: { fg: palette.blue800, bg: palette.mist },
       slate: { fg: palette.neutral700, bg: palette.neutral100 },
     },
   },

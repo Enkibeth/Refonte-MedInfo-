@@ -214,7 +214,7 @@ console.log('\n▶ Réordonnancement au clavier (accessibilité)');
 await page.locator('.pane-left .sec .sec-name').nth(2).click();
 await page.waitForTimeout(150);
 const orderBeforeKb = await titlesInPreview();
-await page.getByRole('button', { name: '↑ Monter' }).first().click();
+await page.getByRole('button', { name: 'Monter' }).first().click();
 await page.waitForTimeout(400);
 const orderAfterKb = await titlesInPreview();
 ok(JSON.stringify(orderAfterKb) !== JSON.stringify(orderBeforeKb),
