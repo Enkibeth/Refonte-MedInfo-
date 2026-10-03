@@ -506,7 +506,11 @@ export default function ChatScreen() {
   // Pièce jointe : réservée aux comptes vérifiés étudiant/pro (+ admin), web only
   // (extraction/lecture du fichier côté navigateur). Le serveur regarde la persona.
   const canAttach = Platform.OS === 'web' && !!session && canSwitch;
-  const availableChatbots: ChatbotId[] = canSwitch || isGuest ? ALL_CHATBOTS : ['public'];
+  // Mémorisé : la liste sert de dépendance à openConversation (sinon recréé à chaque rendu).
+  const availableChatbots = useMemo<ChatbotId[]>(
+    () => (canSwitch || isGuest ? ALL_CHATBOTS : ['public']),
+    [canSwitch, isGuest],
+  );
   const switcherPending = authLoading && availableChatbots.length <= 1;
   const showSwitcher = availableChatbots.length > 1 || switcherPending;
   const [inputHeight, setInputHeight] = useState(INPUT_MIN_HEIGHT);
@@ -580,7 +584,7 @@ export default function ChatScreen() {
       setCountry(code);
       if (session) void updateChatCountry(code);
     },
-    [session, updateChatCountry],
+    [session, updateChatCountry, setCountry],
   );
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof window === 'undefined' || !country) return;
@@ -1145,6 +1149,20 @@ export default function ChatScreen() {
   // le provider en déclenche une, puis en rédaction dès le premier fragment de texte.
   const phase: ChatPhase = preparing ? 'thinking' : phaseFromParts(activeAssistant?.parts);
   const foundSources = useMemo(() => streamingSources(activeAssistant?.parts), [activeAssistant]);
+
+  // Fin de réponse annoncée aux lecteurs d'écran (région polie, masquée à l'écran) : le texte
+  // diffusé fragment par fragment n'est volontairement PAS lu au fil de l'eau (il submergerait
+  // la synthèse vocale) ; la bulle de statut annonce déjà les phases d'attente.
+  const [responseAnnouncement, setResponseAnnouncement] = useState('');
+  const previousStatusRef = useRef(status);
+  useEffect(() => {
+    const previous = previousStatusRef.current;
+    previousStatusRef.current = status;
+    if (status === 'submitted') setResponseAnnouncement('');
+    else if ((previous === 'streaming' || previous === 'submitted') && status === 'ready') {
+      setResponseAnnouncement('Réponse terminée.');
+    }
+  }, [status]);
 
   const sendText = useCallback(async (text: string) => {
     const trimmed = text.trim();
@@ -1880,6 +1898,10 @@ export default function ChatScreen() {
           </Reveal>
         ) : null}
 
+        <Text style={styles.srOnly} accessibilityLiveRegion="polite">
+          {responseAnnouncement}
+        </Text>
+
         {/* ── Note honnête après un arrêt volontaire (le serveur archive la réponse
             complète — résilience hors-ligne) ── */}
         {stoppedNotice && !isLoading && !error ? (
@@ -2132,6 +2154,8 @@ export default function ChatScreen() {
 // ── Styles ─────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
+  // Texte réservé aux lecteurs d'écran (annonce de fin de réponse).
+  srOnly: { position: 'absolute', width: 1, height: 1, margin: -1, overflow: 'hidden', opacity: 0 },
   container: { flex: 1, backgroundColor: tokens.colors.background },
   // Desktop shell : colonne d'historique persistante + écran de chat (D5).
   screenRow: { flex: 1, flexDirection: 'row', minHeight: 0 },
