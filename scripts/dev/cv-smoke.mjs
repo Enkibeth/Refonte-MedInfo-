@@ -24,6 +24,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { buildCsp, inlineScriptHashes } from '../../server/lib/security.mjs';
+
 const { chromium } = await import(process.env.PLAYWRIGHT_CORE || 'playwright-core');
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -51,7 +53,13 @@ const server = http.createServer((req, res) => {
   if (!p.startsWith(ROOT) || !fs.existsSync(p) || fs.statSync(p).isDirectory()) {
     res.writeHead(404); res.end('nope'); return;
   }
-  res.writeHead(200, { 'content-type': MIME[path.extname(p)] || 'application/octet-stream' });
+  const headers = { 'content-type': MIME[path.extname(p)] || 'application/octet-stream' };
+  // Même CSP que le serveur de production (server/lib/security.mjs) : une librairie ou un
+  // script inline qui l'enfreindrait apparaît ici comme « erreur console » (contrôle final).
+  if (p.endsWith('.html')) {
+    headers['content-security-policy'] = buildCsp({ scriptHashes: inlineScriptHashes(fs.readFileSync(p, 'utf8')) });
+  }
+  res.writeHead(200, headers);
   fs.createReadStream(p).pipe(res);
 });
 await new Promise((r) => server.listen(0, r));

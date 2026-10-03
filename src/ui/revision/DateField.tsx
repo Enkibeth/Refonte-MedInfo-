@@ -7,9 +7,19 @@ import { TextInput, StyleSheet } from 'react-native';
 
 import { tokens } from '@/ui/tokens';
 
-export function DateField({ value, onChange }: { value: string; onChange: (iso: string) => void }) {
+export function DateField({
+  value,
+  onChange,
+  label,
+}: {
+  value: string;
+  onChange: (iso: string) => void;
+  /** Nom accessible (le libellé visible du champ n'est pas relié au champ). */
+  label: string;
+}) {
   return (
     <TextInput
+      accessibilityLabel={label}
       style={styles.input}
       defaultValue={value}
       onChangeText={(t) => onChange(t.trim())}

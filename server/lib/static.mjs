@@ -40,12 +40,17 @@ function isImmutableWebFont(pathname) {
   );
 }
 /** Préfixes d'URL versionnés par le dépôt (rafraîchis à chaque déploiement). */
-export const ASSET_PREFIXES = ['/vendor/'];
+export const ASSET_PREFIXES = ['/vendor/', '/icons/'];
 /**
  * Fichiers racine stables qui suivent aussi la politique `/assets/*` (PageSpeed 2026-10 :
  * le favicon était servi en `no-store`, donc retéléchargé à chaque page).
  */
-export const ASSET_FILES = ['/favicon.ico', '/og-image.png', '/medinfo-icons.svg'];
+export const ASSET_FILES = [
+  '/favicon.ico',
+  '/og-image.png',
+  '/medinfo-icons.svg',
+  '/manifest.webmanifest',
+];
 
 /**
  * En-tête `Cache-Control` d'un chemin statique.

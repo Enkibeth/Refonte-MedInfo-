@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { listPublishedPosts, type BlogPost } from '@/blog/posts';
 import { PAGE_SEO, breadcrumbJsonLd } from '@/seo/meta';
 import { LandingHeader } from '@/ui/LandingHeader';
+import { MainContent } from '@/ui/landmarks';
 import { Reveal } from '@/ui/Reveal';
 import { SeoHead } from '@/ui/SeoHead';
 import { SiteFooter } from '@/ui/SiteFooter';
@@ -61,7 +62,7 @@ export default function BlogScreen() {
       />
       <LandingHeader />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <View style={styles.inner}>
+        <MainContent style={styles.inner}>
           <Reveal>
             <Text style={styles.eyebrow}>Blog</Text>
             <PageTitle style={styles.title}>Comprendre la santé, un article à la fois.</PageTitle>
@@ -128,7 +129,7 @@ export default function BlogScreen() {
               ))}
             </View>
           )}
-        </View>
+        </MainContent>
         <View style={styles.footerSpacer} />
         <SiteFooter />
       </ScrollView>

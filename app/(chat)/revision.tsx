@@ -458,10 +458,10 @@ function RevisionScreenInner() {
 
           <View style={styles.dualRow}>
             <Field label="Début">
-              <DateField value={stored.startDate} onChange={(d) => patchStored({ startDate: d })} />
+              <DateField label="Début" value={stored.startDate} onChange={(d) => patchStored({ startDate: d })} />
             </Field>
             <Field label="Date d'examen">
-              <DateField value={stored.examDate} onChange={(d) => patchStored({ examDate: d })} />
+              <DateField label="Date d'examen" value={stored.examDate} onChange={(d) => patchStored({ examDate: d })} />
             </Field>
           </View>
 

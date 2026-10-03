@@ -1,0 +1,6 @@
+# Signalement de vulnérabilités — MedInfo AI (RFC 9116).
+# Merci de décrire le problème et sa reproduction ; ne jamais accéder aux données d'autrui.
+Contact: mailto:medaifr1@gmail.com
+Expires: 2027-10-01T00:00:00.000Z
+Preferred-Languages: fr, en
+Canonical: https://medinfo-ai.com/.well-known/security.txt

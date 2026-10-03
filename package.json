@@ -13,6 +13,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint app src",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:rls": "vitest run tests/rls",
@@ -64,8 +65,11 @@
   "devDependencies": {
     "@types/pg": "^8.20.0",
     "@types/react": "~19.2.2",
+    "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "pg": "^8.21.0",
     "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.0",
     "vitest": "^4.1.8"
   }
 }

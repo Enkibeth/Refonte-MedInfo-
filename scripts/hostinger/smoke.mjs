@@ -3,8 +3,8 @@
  * Fumigation du serveur Node autonome (hors CI, nécessite un build : `npm run build`).
  *
  * Démarre le vrai serveur sur un port éphémère et vérifie le contrat de la migration
- * Hostinger : routes API servies, HTML pré-rendu servi, statiques avec les bons en-têtes de
- * cache, compression négociée, 304 conditionnels, traversée de répertoire refusée, en-têtes
+ * Hostinger : routes API servies, HTML pré-rendu servi (compressé, avec sa CSP), en-têtes de
+ * sécurité, statiques avec les bons en-têtes de cache, compression négociée, 304 conditionnels, traversée de répertoire refusée, en-têtes
  * de proxy respectés.
  *
  * Usage : `npm run smoke:node`
@@ -15,6 +15,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { createServer } from '../../server/index.mjs';
+import { inlineScriptHashes } from '../../server/lib/security.mjs';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 for (const dir of ['dist/client', 'dist/server']) {
@@ -221,6 +222,74 @@ await check('X-Forwarded-For falsifié ne contourne pas le quota anonyme de /api
     if (res.status === 429) limited = true;
   }
   assert.ok(limited, 'le quota aurait dû s’appliquer à l’IP réelle (203.0.113.9)');
+});
+
+// ── Fondations web (boucle « site ultra propre », 2026-10) ──────────────────────────
+
+await check('en-têtes de sécurité sur HTML, statiques et API', async () => {
+  for (const url of ['/', '/robots.txt', '/api/health']) {
+    const res = await fetch(`${base}${url}`);
+    await res.arrayBuffer();
+    assert.equal(res.headers.get('x-content-type-options'), 'nosniff', url);
+    assert.equal(res.headers.get('referrer-policy'), 'strict-origin-when-cross-origin', url);
+    assert.equal(res.headers.get('x-frame-options'), 'SAMEORIGIN', url);
+    assert.match(res.headers.get('permissions-policy') ?? '', /microphone=\(self\)/, url);
+    assert.equal(res.headers.get('cross-origin-opener-policy'), 'same-origin-allow-popups', url);
+  }
+});
+
+await check('coquille HTML : compressée, charset déclaré, CSP à empreintes couvrant ses scripts inline', async () => {
+  const res = await fetch(`${base}/`, { headers: { 'Accept-Encoding': 'br' } });
+  assert.equal(res.headers.get('content-encoding'), 'br');
+  assert.equal(res.headers.get('content-type'), 'text/html; charset=utf-8');
+  const csp = res.headers.get('content-security-policy') ?? '';
+  const html = await res.text(); // fetch décompresse
+  const hashes = inlineScriptHashes(html);
+  assert.ok(hashes.length > 0, 'la coquille Expo contient au moins un script inline');
+  for (const hash of hashes) assert.ok(csp.includes(hash), `empreinte absente de la CSP : ${hash}`);
+  assert.match(csp, /frame-ancestors 'self'/);
+  assert.doesNotMatch(csp, /'unsafe-eval'|script-src[^;]*'unsafe-inline'/);
+});
+
+await check('page autonome : CSP avec les empreintes de SES scripts', async () => {
+  const res = await fetch(`${base}/cv-builder.html`);
+  const csp = res.headers.get('content-security-policy') ?? '';
+  for (const hash of inlineScriptHashes(await res.text())) assert.ok(csp.includes(hash), hash);
+});
+
+await check('adresse inconnue → page 404 de marque (statut 404, noindex)', async () => {
+  const res = await fetch(`${base}/cette-page-nexiste-pas`);
+  assert.equal(res.status, 404);
+  assert.match(res.headers.get('content-type') ?? '', /text\/html/);
+  const html = await res.text();
+  assert.match(html, /<title[^>]*>Page introuvable — MedInfo AI<\/title>/);
+  assert.match(html, /noindex/);
+});
+
+await check('page de débogage /_sitemap d’Expo absente en production', async () => {
+  const res = await fetch(`${base}/_sitemap`);
+  assert.equal(res.status, 404);
+  assert.doesNotMatch(await res.text(), /Sitemap/i);
+});
+
+await check('/llms.txt, /.well-known/security.txt et manifeste web servis', async () => {
+  const llms = await fetch(`${base}/llms.txt`);
+  assert.equal(llms.status, 200);
+  assert.match(await llms.text(), /^# MedInfo AI/);
+  const sec = await fetch(`${base}/.well-known/security.txt`);
+  assert.equal(sec.status, 200);
+  assert.match(await sec.text(), /^Contact: mailto:/m);
+  const manifest = await fetch(`${base}/manifest.webmanifest`);
+  assert.equal(manifest.status, 200);
+  assert.match(manifest.headers.get('content-type') ?? '', /application\/manifest\+json/);
+  assert.equal((await manifest.json()).start_url, '/');
+});
+
+await check('HEAD sur une page HTML → en-têtes sans corps', async () => {
+  const res = await fetch(`${base}/pricing`, { method: 'HEAD' });
+  assert.equal(res.status, 200);
+  assert.ok(res.headers.get('content-security-policy'));
+  assert.equal((await res.arrayBuffer()).byteLength, 0);
 });
 
 server.close();

@@ -2,6 +2,57 @@
 
 Journal des modifications par agents IA. Une entrée par PR.
 
+## [2026-10-03] – Claude (fondations web « site ultra propre » : sécurité HTTP, CSP, accessibilité structurelle, 3 boucles mesurées)
+### Files modified
+- Serveur : `server/lib/security.mjs` (NOUVEAU, pur : en-têtes, CSP à empreintes), `server/lib/html.mjs` (NOUVEAU : coquilles
+  HTML compressées d'après le manifeste Expo), `server/index.mjs`, `server/lib/serve-static.mjs`, `server/lib/static.mjs`
+- Accessibilité : `src/ui/landmarks.tsx` (NOUVEAU : `<MainContent>`, `screenMainLayout`, lien d'évitement),
+  `src/ui/BannerStackHeader.tsx`, `src/ui/PlainHeaderTitle.tsx`, `src/ui/navLink.ts` + `navHref.ts` (vrais liens),
+  `LandingHeader`, `SiteFooter`, `AppShell`, `AppTabBar`, layouts `(chat)`/`(account)`/`(auth)`/`(legal)`/`(billing)`/`admin`,
+  pages publiques, `dashboard` (niveaux de titres), `ecos` (H1), `revision` + `DateField` (champs nommés), `chat` (annonce
+  de fin de réponse, 2 dépendances de hooks), outils `public/{partiel,cv-builder,presentation,article}.html` + `medinfo-ui.css`
+- Pages : `app/+not-found.tsx` (NOUVEAU), `src/ui/AppErrorScreen.tsx` (NOUVEAU, `ErrorBoundary` racine), `app/_layout.tsx`
+  (Zod `jitless`, lien d'évitement), `app/+html.tsx` (manifeste, icône iOS, `color-scheme`), `app.json` (`sitemap: false`)
+- Fichiers publics : `public/manifest.webmanifest`, `public/icons/*`, `public/.well-known/security.txt`, `app/llms.txt+api.ts`
+  + `src/seo/llms.ts` ; `src/seo/meta.ts` (description de l'analyse de document corrigée)
+- Qualité : `eslint.config.mjs` + `npm run lint` (règles des hooks React) dans la CI, devDependencies ESLint 10 ;
+  `scripts/hostinger/smoke.mjs` (19 → 26 contrôles), fumigations `partiel-smoke`/`cv-smoke` servies avec la CSP
+- Tests : `tests/unit/server-security.test.ts`, `tests/unit/seo-llms.test.ts`, `tests/unit/nav-link.test.ts`
+- Docs : ADR-0042, `docs/03_SECURITY.md` §10, `docs/05_DESIGN.md` §7, `docs/09_DEPLOYMENT.md`, `CLAUDE.md`
+### Purpose
+Demande Hugo : appliquer à MedInfo les bonnes pratiques actuelles d'un site « ultra propre », décisions déléguées, trois
+boucles. Mesures sur le build de production local (session simulée pour les écrans connectés) : axe-core sur 25 écrans ×
+2 largeurs + les 4 outils autonomes, Lighthouse mobile, en-têtes HTTP. Constats avant : aucune CSP ni protection contre
+l'encadrement, HTML non compressé et sans `charset`, `/_sitemap` de débogage public, 404 de développement sans titre, aucune
+`ErrorBoundary`, aucun repère `main/nav/header/footer` (565 nœuds en violation axe), pas de lien d'évitement, H1 multiples
+ou absents, barre d'onglets en `role="tab"` orphelins, liens de menu sans `href`, aucun linter.
+### Résultats mesurés
+- axe-core (WCAG 2.2 AA + bonnes pratiques) : 565 nœuds en violation → **0** sur 50 audits applicatifs ; outils autonomes
+  → **0** sur 8 audits ; un seul `<main>` et un seul H1 visibles sur chaque écran ; 0 erreur JS ; 0 violation CSP.
+- HTML de l'accueil : 85 Ko → **16 Ko** (Brotli), `text/html; charset=utf-8`. Lighthouse mobile : Best Practices 96 →
+  **100** (le blog reste à 96 en local : erreur console due au Supabase factice), Accessibilité et SEO 100 ; performance de laboratoire très variable dans ce conteneur (accueil 56 → 63–72) ;
+  LCP **observé** 343 ms (accueil) / 180 ms (tarifs).
+- Fonctionnel sous CSP : fumigations partiels (xlsx, pdf.js, exports) et CV (jsPDF, polices, photo) vertes ; export PPTX
+  (pptxgen), import Word (mammoth), appels CrossRef/Europe PMC vérifiés ; navigation interne sans rechargement, Ctrl+clic
+  vers un nouvel onglet, menu au clavier (Échap).
+- Revue : un défaut trouvé avant livraison — la réécoute audio (URL signée Supabase) aurait été bloquée par `media-src`.
+### Option écartée
+Découpage du bundle par route (`asyncRoutes`) : −30 % de JS sur l'accueil mais écran vide ~1 s à chaque première navigation
+interne sur mobile lent — non retenu (détail dans l'ADR-0042).
+### Regulatory impact
+None : aucun texte médical, prompt, droit d'accès, schéma ou appel IA modifié. La description SEO de l'analyse de document
+ne promet plus des « citations mot pour mot » (inactives avec le modèle configuré en production). `llms.txt` reprend les
+descriptions SEO existantes et les limites d'usage (information générale, 15/112).
+### Vérifications
+`tsc` ; `npm run lint` (246 fichiers) ; `vitest tests/unit` (1004 tests) ; `test:rls` (108, vrai Postgres + pgvector) ;
+`compliance:grep` ; `validate:rag` ; build web ; `smoke:node` 26/26 ; audits axe et Lighthouse ; fumigations navigateur citées.
+### Limites
+Rendu natif iOS/Android non testé (les rôles ajoutés y sont sans effet visuel). CSP non testée derrière le CDN Hostinger :
+si une ressource tierce imprévue était bloquée en production, `CSP=report-only` dans hPanel la révèle sans couper le site.
+`security.txt` expire le 2027-10-01 (à renouveler).
+### Rollback plan
+`CSP=off` (CSP seule, redémarrage) ; sinon revert de la PR — aucune migration ni donnée.
+
 ## [2026-10-02] – Claude (boutons et UX « ultra pro » : primitives communes, 3 boucles de recette visuelle)
 ### Files modified
 - Nouveaux : `src/ui/Touchable.tsx`, `src/ui/interaction.ts` (couche d'état CSS), `src/ui/Chip.tsx`, `src/ui/SearchField.tsx`,

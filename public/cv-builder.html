@@ -271,6 +271,7 @@
 <body class="m-edit">
 
 <header class="topbar">
+  <h1 class="sr">Créateur de CV</h1>
   <input id="doc-title" class="doc-title" aria-label="Titre du CV" value="Mon CV" />
   <span id="status" class="status" role="status" aria-live="polite"></span>
   <span class="grow"></span>
@@ -291,14 +292,16 @@
   <button id="btn-menu" class="btn btn-icon" aria-haspopup="true" aria-expanded="false" aria-label="Autres actions">⋯</button>
 </header>
 
+<div role="region" aria-label="Choix de la vue">
 <div class="mobile-tabs" role="tablist">
   <button id="tab-edit" class="btn" role="tab" aria-selected="true">Édition</button>
   <button id="tab-preview" class="btn" role="tab" aria-selected="false">Aperçu</button>
 </div>
+</div>
 
-<div class="layout">
+<main class="layout">
   <!-- ── Colonne 1 : arborescence des rubriques ─────────────────────────── -->
-  <aside class="pane pane-left" aria-label="Rubriques du CV">
+  <section class="pane pane-left" aria-label="Rubriques du CV">
     <div class="pane-head">
       <h2>Rubriques</h2>
       <span class="grow"></span>
@@ -311,18 +314,18 @@
       </button>
       <div id="tree"></div>
     </div>
-  </aside>
+  </section>
 
   <!-- ── Colonne 2 : aperçu A4 ──────────────────────────────────────────── -->
-  <main class="pane-center" aria-label="Aperçu du CV" tabindex="0">
+  <section class="pane-center" aria-label="Aperçu du CV" tabindex="0">
     <div class="preview-wrap">
       <div id="warnings" class="warnbar"></div>
       <div id="pages"></div>
     </div>
-  </main>
+  </section>
 
   <!-- ── Colonne 3 : inspecteur ─────────────────────────────────────────── -->
-  <aside class="pane pane-right" aria-label="Inspecteur">
+  <section class="pane pane-right" aria-label="Inspecteur">
     <div class="pane-head">
       <div class="tabs" role="tablist">
         <button id="itab-content" role="tab" aria-selected="true">Contenu</button>
@@ -330,8 +333,8 @@
       </div>
     </div>
     <div id="inspector" class="pane-body"></div>
-  </aside>
-</div>
+  </section>
+</main>
 
 <div id="overlays"></div>
 <span id="live" class="sr" role="status" aria-live="polite"></span>

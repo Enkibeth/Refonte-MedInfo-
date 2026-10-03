@@ -6,10 +6,20 @@
  */
 import { tokens } from '@/ui/tokens';
 
-export function DateField({ value, onChange }: { value: string; onChange: (iso: string) => void }) {
+export function DateField({
+  value,
+  onChange,
+  label,
+}: {
+  value: string;
+  onChange: (iso: string) => void;
+  /** Nom accessible (le libellé visible du champ n'est pas relié au <input>). */
+  label: string;
+}) {
   return (
     <input
       type="date"
+      aria-label={label}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       style={{

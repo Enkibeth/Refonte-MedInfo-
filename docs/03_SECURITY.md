@@ -152,6 +152,31 @@ Procédure : (1) rollback immédiat, (2) consignation, (3) ajout d'un test qui a
 - Corpus RAG : source PDF + scripts d'ingestion versionnés → ré-ingestion reproductible.
 - Pas de SPOF documentaire : `docs/` est dans le repo, pas dans un outil tiers.
 
+---
+
+## 10. En-têtes HTTP et politique de sécurité du contenu (ADR-0042)
+
+Posés par le serveur Node (`server/lib/security.mjs`), vérifiés par `npm run smoke:node` :
+
+- **Toutes les réponses** : `X-Content-Type-Options: nosniff`, `Referrer-Policy:
+  strict-origin-when-cross-origin`, `X-Frame-Options: SAMEORIGIN`, `Permissions-Policy`
+  (micro et plein écran pour le site seul ; caméra, géolocalisation, paiement, USB coupés),
+  `Cross-Origin-Opener-Policy: same-origin-allow-popups` ; HSTS derrière TLS (inchangé).
+- **Documents HTML** (coquilles Expo et outils `public/*.html`) : CSP dont `script-src` n'admet
+  que la même origine et l'**empreinte SHA-256 de chaque script inline du document** (calculée
+  au premier service du fichier). Ni `'unsafe-inline'` ni `'unsafe-eval'` pour les scripts : un
+  script injecté (XSS) ne s'exécute pas. `connect-src` = même origine + Supabase + CrossRef +
+  Europe PMC ; `media-src` ajoute le Storage Supabase (réécoute audio) ; `frame-ancestors 'self'`,
+  `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`.
+- **Règles pour les évolutions** : un nouveau service appelé DEPUIS LE NAVIGATEUR s'ajoute à
+  `THIRD_PARTY_CONNECT` ; jamais d'`eval`/`new Function` (Zod tourne en mode `jitless`) ; les
+  fenêtres d'impression ouvertes par `window.open('')` héritent de la CSP (aucun script inline).
+- **Interrupteur** `CSP=report-only` (violations visibles dans la console, rien n'est bloqué) ou
+  `CSP=off`, à poser dans hPanel puis redémarrer — diagnostic uniquement.
+
+Divulgation responsable : `/.well-known/security.txt` (RFC 9116, contact et date d'expiration
+à renouveler avant le 2027-10-01).
+
 
 ### Gate RLS — prérequis local
 

@@ -172,8 +172,21 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
   de `public/robots.txt` restent alignés (test) ; (12) cron hebdo du blog = tâche cron hPanel
   vers l'URL publique (`scripts/hostinger/weekly-blog-cron.sh` ou `curl` direct). Hébergeur
   nommé dans les mentions légales : `src/deploy/hosting.ts` (LCEN art. 6-III ; région et
-  téléphone à compléter, jamais devinés). Fumigation : `npm run smoke:node` (19 vérifications,
+  téléphone à compléter, jamais devinés). Fumigation : `npm run smoke:node` (26 vérifications,
   nécessite un build).
+- **Fondations web (ADR-0042, 2026-10)** : (1) **CSP à empreintes** sur chaque document HTML
+  (`server/lib/security.mjs`) — un script inline ajouté est couvert automatiquement, mais
+  `eval`/`new Function` sont bloqués (Zod tourne en `jitless`, `app/_layout.tsx`) et tout
+  nouveau service appelé DEPUIS LE NAVIGATEUR doit rejoindre `THIRD_PARTY_CONNECT` (sinon requête
+  bloquée, visible en console) ; diagnostic : `CSP=report-only` dans hPanel ; (2) les coquilles
+  HTML sont servies par `server/lib/html.mjs` d'après `dist/server/_expo/routes.json` (repli
+  automatique sur Expo si SSR/middleware/`loader` apparaissent) ; (3) **repères d'accessibilité** :
+  un écran public met son contenu dans `<MainContent>` (en-tête et pied HORS du `<main>`), un
+  nouveau groupe connecté passe `screenLayout={screenMainLayout}` à son navigateur, un seul H1
+  visible par écran, liens de menu via `navLinkProps` (vrai `<a href>` + navigation interne) —
+  `<Link asChild>` autour d'un `Pressable` provoquait un rechargement complet ; (4) `npm run lint`
+  (règles des hooks React, en CI) ; (5) découpage du bundle par route (`asyncRoutes`) **essayé et
+  rejeté** : écran vide ~1 s à chaque première navigation interne (mesures dans l'ADR).
 - `chat_meta` (titre/catégorie d'historique) requiert `GOOGLE_GENERATIVE_AI_API_KEY` côté serveur ; sans clé, repli déterministe sur les premiers mots de la question (l'archivage fonctionne quand même).
 - L'agent hebdo du blog requiert `CRON_SECRET` (sinon le déclenchement cron est refusé, fail-closed) ; le verdict `reject` du relecteur laisse l'article en brouillon — surveiller l'onglet Blog du panel admin.
 

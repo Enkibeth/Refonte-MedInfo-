@@ -4,6 +4,7 @@ import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
 import { isFeatureVisible, type AppFeatureId } from '@/ai/routing/featureVisibility';
 import { AppTabBar, type AppTabBarProps } from '@/ui/AppTabBar';
+import { screenMainLayout } from '@/ui/landmarks';
 
 /**
  * Navigation adaptée au rôle (persona) — chaque rôle ne voit QUE ses outils
@@ -30,6 +31,8 @@ export default function ChatLayout() {
   return (
     <Tabs
       screenOptions={{ headerShown: false }}
+      // Chaque écran dans un <main> ; la barre d'onglets reste hors du contenu (repères).
+      screenLayout={screenMainLayout}
       // Le type exact (BottomTabBarProps) vient d'une dépendance transitive ;
       // on n'en consomme qu'un sous-ensemble stable (cf. AppTabBarProps).
       tabBar={(props) => <AppTabBar {...(props as unknown as AppTabBarProps)} />}

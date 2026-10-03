@@ -131,13 +131,20 @@ export function AppTabBar({ state, navigation }: AppTabBarProps) {
   const homeActive = activeName === 'dashboard';
 
   return (
-    <View {...mi(`lt${SHELL_BREAKPOINT}`)} style={[styles.bar, { paddingBottom: bottomInset }]}>
+    <View
+      {...mi(`lt${SHELL_BREAKPOINT}`)}
+      role="navigation"
+      aria-label="Navigation de l’espace"
+      style={[styles.bar, { paddingBottom: bottomInset }]}
+    >
       {showHome ? (
         <Pressable
           onPress={() => goToRoute('dashboard')}
-          accessibilityRole="tab"
-          aria-selected={homeActive}
-          accessibilityLabel="Vue d’ensemble"
+          // Navigation entre pages (pas un jeu d'onglets dans la page) : liens, page courante
+          // annoncée par aria-current. Nom accessible = libellé visible (WCAG 2.5.3).
+          accessibilityRole="link"
+          {...(homeActive ? ({ 'aria-current': 'page' } as object) : null)}
+          accessibilityLabel="Accueil, vue d’ensemble"
           style={styles.tab}
         >
           <View style={[styles.tabPill, homeActive && styles.tabPillActive]}>
@@ -158,8 +165,8 @@ export function AppTabBar({ state, navigation }: AppTabBarProps) {
           <Pressable
             key={feature.id}
             onPress={() => goToFeature(feature)}
-            accessibilityRole="tab"
-            aria-selected={focused}
+            accessibilityRole="link"
+            {...(focused ? ({ 'aria-current': 'page' } as object) : null)}
             accessibilityLabel={feature.label}
             style={styles.tab}
           >

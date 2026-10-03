@@ -2,6 +2,7 @@ import { ScrollViewStyleReset } from 'expo-router/html';
 import type { PropsWithChildren } from 'react';
 import { CHIP_CSS } from '@/ui/Chip';
 import { INTERACTION_CSS } from '@/ui/interaction';
+import { SKIP_LINK_CSS } from '@/ui/landmarks';
 import { RESPONSIVE_CSS } from '@/ui/responsive';
 import { tokens } from '@/ui/tokens';
 
@@ -59,6 +60,12 @@ export default function Root({ children }: PropsWithChildren) {
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no" />
         <meta name="theme-color" content={tokens.colors.accentVivid} />
+        {/* Thème clair uniquement : sans cette déclaration, le mode sombre du système
+            assombrit les champs et barres de défilement natifs sur un fond ivoire. */}
+        <meta name="color-scheme" content="light" />
+        {/* Installation (PWA) et icône d'écran d'accueil iOS — public/manifest.webmanifest. */}
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 
         {PRELOADED_FONTS.map((file) => (
           <link key={file} rel="preload" as="font" type="font/woff2" href={`/vendor/fonts/${file}`} crossOrigin="anonymous" />
@@ -142,6 +149,7 @@ body { overflow-x: hidden; }
 ${RESPONSIVE_CSS}
 ${INTERACTION_CSS}
 ${CHIP_CSS}
+${SKIP_LINK_CSS}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;

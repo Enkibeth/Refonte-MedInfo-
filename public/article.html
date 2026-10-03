@@ -200,7 +200,8 @@
 <script src="/medinfo-controls.js"></script>
 </head>
 <body>
-  <div class="toolbar">
+  <header class="toolbar">
+    <h1 class="sr-only">Rédaction d’article médical</h1>
     <button class="btn" id="btn-new">＋ Nouveau</button>
     <button class="btn" id="btn-example">Charger un exemple</button>
     <button class="btn" id="btn-history">Mes articles</button>
@@ -222,16 +223,16 @@
         <div class="mhint">Citations [@…] rendues en appels numérotés, bibliographie incluse.</div>
       </div>
     </span>
-  </div>
+  </header>
 
   <div class="layout">
-    <aside class="side" id="side"></aside>
+    <aside class="side" id="side" aria-label="Structure de l’article"></aside>
     <main class="main" id="main"></main>
   </div>
 
   <!-- Drawer IA -->
   <div class="overlay" id="overlay"></div>
-  <aside class="drawer" id="drawer">
+  <aside class="drawer" id="drawer" aria-labelledby="drawer-title">
     <header>
       <h2 id="drawer-title">Aide IA</h2>
       <button class="iconbtn" id="drawer-close">✕</button>

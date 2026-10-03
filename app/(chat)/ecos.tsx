@@ -647,7 +647,9 @@ function EcosScreenInner() {
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.selectionContent}>
         <View style={styles.selectionHeader}>
-          <Text style={styles.selectionTitle}>Dashboard ECOS</Text>
+          <Text style={styles.selectionTitle} accessibilityRole="header" aria-level={1}>
+            Dashboard ECOS
+          </Text>
           <Text style={styles.selectionSubtitle}>
             Entraîne-toi sur des stations fictives avec un patient joué par l'IA, suis tes notes
             et repère les thèmes à retravailler.
@@ -893,7 +895,9 @@ function EcosScreenInner() {
       >
         <View style={styles.simHeader}>
           <View>
-            <Text style={styles.simTitle}>{selectedCase.titre}</Text>
+            <Text style={styles.simTitle} accessibilityRole="header" aria-level={1}>
+              {selectedCase.titre}
+            </Text>
             <Text style={styles.simSubtitle}>{selectedCase.specialite}</Text>
           </View>
           <Timer
@@ -988,7 +992,9 @@ function EcosScreenInner() {
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.evalContent}>
         <View style={styles.evalHeader}>
-          <Text style={styles.evalTitle}>Évaluation</Text>
+          <Text style={styles.evalTitle} accessibilityRole="header" aria-level={1}>
+            Évaluation
+          </Text>
           <Text style={styles.evalSubtitle}>
             {evalCaseTitle}
             {viewedAttempt ? ` · ${formatDay(viewedAttempt.created_at)}` : ''}
