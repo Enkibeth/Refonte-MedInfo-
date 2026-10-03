@@ -12,8 +12,9 @@
  *     `screenMainLayout` (option `screenLayout` des navigateurs) ; barre d'onglets mobile et
  *     barre latérale du shell = `navigation`, barre supérieure du shell = `banner`.
  * Les écrans d'onglets déjà visités restent montés mais masqués (`display: none`) : leurs
- * `<main>` sont absents de l'arbre d'accessibilité, d'où la recherche du `<main>` VISIBLE par
- * le lien d'évitement plutôt qu'un identifiant (qui serait dupliqué).
+ * `<main>` sont absents de l'arbre d'accessibilité. Seul l'écran au premier plan porte
+ * l'identifiant cible (`#contenu`, jamais dupliqué) ; le lien d'évitement donne de toute façon
+ * le focus au `<main>` réellement affiché.
  */
 import type { ReactNode } from 'react';
 import { Platform, StyleSheet, Text, View, type ViewProps } from 'react-native';

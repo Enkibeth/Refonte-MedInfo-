@@ -122,14 +122,21 @@ export function createHtmlHandler({ buildDir, headersFor, onUnsupported }) {
   function loadPage(page) {
     let entry = pages.get(page);
     if (!entry) {
-      entry = readPage(buildDir, page).then(async (raw) => {
-        if (!raw) return null;
-        const [br, gz] = await Promise.all([
-          brotli(raw, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 } }),
-          gzip(raw, { level: 9 }),
-        ]);
-        return { raw, br, gzip: gz, headers: headersFor(raw.toString('utf8')) };
-      });
+      entry = readPage(buildDir, page)
+        .then(async (raw) => {
+          if (!raw) return null;
+          const [br, gz] = await Promise.all([
+            brotli(raw, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 } }),
+            gzip(raw, { level: 9 }),
+          ]);
+          return { raw, br, gzip: gz, headers: headersFor(raw.toString('utf8')) };
+        })
+        .catch((error) => {
+          // Jamais d'échec mis en cache : la requête suivante réessaie ; celle-ci part chez Expo.
+          pages.delete(page);
+          console.error(`[medinfo] page ${page} non préparée, service par le moteur Expo :`, error);
+          return null;
+        });
       pages.set(page, entry);
     }
     return entry;

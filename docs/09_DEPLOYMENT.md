@@ -40,7 +40,7 @@ sert les fichiers statiques **et** exécute les routes API.
 | `server/index.mjs` | Le serveur : statiques, routes Expo, en-têtes de proxy, IP client, HSTS, redirection `www`, arrêt gracieux, journal d'accès. |
 | `server/lib/*.mjs` | Modules purs (cache, `.env`, proxy, écoute, diagnostic des clés Supabase `keycheck.mjs`) testés dans `tests/unit/hostinger-server.test.ts`. |
 | `scripts/hostinger/precompress.mjs` | Compression Brotli/gzip au build (7,1 Mo → 1,5 Mo servis). |
-| `scripts/hostinger/smoke.mjs` | Fumigation du serveur réel sur le build (`npm run smoke:node`, 19 vérifications). |
+| `scripts/hostinger/smoke.mjs` | Fumigation du serveur réel sur le build (`npm run smoke:node`, 26 vérifications). |
 | `scripts/hostinger/weekly-blog-cron.sh` | Déclencheur du cron hebdo du blog. |
 | `ecosystem.config.cjs` | Config PM2 — **uniquement** sur un VPS. |
 | `app/api/health+api.ts` | Smoke-test non secret : `GET /api/health` (`deployTarget: "hostinger"`). |
@@ -187,6 +187,7 @@ Les secrets vivent uniquement dans hPanel (jamais dans le dépôt).
 | `CANONICAL_HOST` | dérivé de `EXPO_PUBLIC_APP_URL` | rarement |
 | `ACCESS_LOG` | activé | `off` pour taire le journal d'accès |
 | `EXPO_DIST_DIR` | `dist` | si le build est déposé ailleurs |
+| `CSP` | appliquée | `report-only` pour diagnostiquer une ressource bloquée (violations dans la console du navigateur, rien n'est bloqué), `off` en dernier recours — voir `docs/03_SECURITY.md` §10 |
 
 Le serveur lit aussi un `.env` à la racine (`.env.production.local`, `.env.local`,
 `.env.production`, `.env`), mais **les variables du processus gagnent toujours**.
@@ -226,7 +227,10 @@ Chemin d'une requête : navigateur → **CDN Hostinger** (`hcdn`, TLS) → serve
 - `X-Forwarded-Proto/Host` lus pour reconstruire l'URL publique (Stripe, HSTS) ;
 - IP client lue à **droite** de `X-Forwarded-For` (`TRUST_PROXY_HOPS`) et réécrite pour les
   routes : un client ne peut plus contourner le quota anonyme en inventant l'en-tête ;
-- `Strict-Transport-Security: max-age=63072000` derrière TLS ; `www.` → 308 vers l'apex.
+- `Strict-Transport-Security: max-age=63072000` derrière TLS ; `www.` → 308 vers l'apex ;
+- en-têtes de sécurité sur toutes les réponses et CSP à empreintes sur chaque document HTML
+  (ADR-0042) ; coquilles HTML servies par `server/lib/html.mjs` en Brotli/gzip (accueil 85 →
+  16 Ko) avec `charset=utf-8`, statut 404 sur la page introuvable.
 
 Vérifié en local : fragments du chat reçus au fil de l'eau à travers le serveur ; génération
 menée à terme et `onFinish` exécuté après coupure du client.

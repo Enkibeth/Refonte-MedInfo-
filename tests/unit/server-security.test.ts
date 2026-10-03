@@ -80,6 +80,13 @@ describe('buildCsp', () => {
     }
     expect(connect).not.toMatch(/(^| )https:( |$)/);
   });
+
+  it('autorise la réécoute audio depuis le Storage Supabase (URL signée), domaine propre compris', () => {
+    const media = directive('media-src');
+    expect(media).toContain('https://*.supabase.co');
+    expect(media).toContain('https://db.example.org');
+    expect(media).not.toContain('wss:');
+  });
 });
 
 describe('interrupteur CSP', () => {

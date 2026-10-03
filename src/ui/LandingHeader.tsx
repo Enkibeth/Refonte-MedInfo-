@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -70,6 +70,16 @@ export function LandingHeader() {
   };
   /** Vrai lien `<a href>` sur le web (nouvel onglet possible), navigation client sinon. */
   const linkTo = (route: string) => navLinkProps(route, () => go(route));
+
+  // Menu ouvert : Échap le referme (comportement attendu d'un menu déroulant au clavier).
+  useEffect(() => {
+    if (!openMenu || Platform.OS !== 'web' || typeof window === 'undefined') return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpenMenu(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [openMenu]);
 
   return (
     <View style={styles.bar} role="banner">

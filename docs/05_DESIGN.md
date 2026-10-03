@@ -121,6 +121,16 @@ Transitions fonctionnelles 120–320 ms, ease-out, aucun rebond. Reveal est stat
 
 Focus visible 2 px, décalé de 3 px ; navigation clavier complète. Contraste visé 4,5:1 texte et 3:1 limites de contrôle. Les séparateurs décoratifs ne sont pas des limites interactives. Icônes de la famille existante via `iconPaths.ts` et `icons.web.tsx`. Aucun ajout de dépendance de production.
 
+Structure de page (ADR-0042, vérifiée par axe-core sur 25 écrans × 2 largeurs) : un lien
+« Aller au contenu principal » en premier élément tabulable ; en-tête du site = `banner` avec sa
+`navigation`, pied = `contentinfo`, contenu dans un seul `<main>` visible (`<MainContent>` ou
+`screenMainLayout`, `src/ui/landmarks.tsx`) ; un seul titre de niveau 1 par écran (les outils
+autonomes en portent un réservé aux lecteurs d'écran, classe `.sr-only`) ; nom accessible d'un
+contrôle = son libellé visible (WCAG 2.5.3) ; navigation entre pages = liens (`aria-current`),
+jamais `role="tab"` hors d'un vrai jeu d'onglets ; menus déroulants annoncés `aria-expanded` et
+refermés par Échap. Les réponses du chat ne sont pas lues au fil du flux : la bulle de statut
+annonce les phases, une région polie annonce « Réponse terminée ».
+
 ## 8. Réglementaire
 
 Conserver les textes canoniques de `src/compliance/disclosures.ts`, la mention « système d’intelligence artificielle », les avertissements médicaux et les urgences 15/112. Les sources ne sont jamais verrouillées par l’abonnement. Aucun diagnostic ni conduite à tenir individualisée introduit. RoleGate, contrôles serveur et politiques d’accès restent intacts.

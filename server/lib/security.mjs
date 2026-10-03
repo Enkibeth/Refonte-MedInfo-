@@ -12,7 +12,7 @@
  * premier service du fichier, et seule cette liste est autorisée (+ les scripts de la même
  * origine). Un script injecté (XSS) n'a pas d'empreinte connue → bloqué. Pas de
  * `'unsafe-inline'` pour les scripts, pas de `'unsafe-eval'` : aucune des pages ne l'exige
- * (vérifié sur les outils autonomes et leurs librairies, cf. docs/03_SECURITY.md §7).
+ * (vérifié sur les outils autonomes et leurs librairies, cf. docs/03_SECURITY.md §10, ADR-0042).
  * Les styles gardent `'unsafe-inline'` : react-native-web injecte ses feuilles et des
  * attributs `style` à l'exécution.
  *
@@ -45,10 +45,12 @@ export const BASE_SECURITY_HEADERS = Object.freeze({
   'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
 });
 
+/** Supabase : authentification, base (RLS), temps réel et Storage (URL signées). */
+const SUPABASE_HTTPS = 'https://*.supabase.co';
+
 /** Services tiers appelés DEPUIS LE NAVIGATEUR (tout le reste passe par nos routes API). */
 const THIRD_PARTY_CONNECT = Object.freeze([
-  // Supabase : authentification, base (RLS), temps réel.
-  'https://*.supabase.co',
+  SUPABASE_HTTPS,
   'wss://*.supabase.co',
   // Rédaction d'article : métadonnées bibliographiques par DOI / PMID (public/article.html).
   'https://api.crossref.org',
@@ -149,7 +151,9 @@ export function buildCsp({ scriptHashes = [], connectExtra = [] } = {}) {
     ['img-src', ["'self'", 'data:', 'blob:', 'https:']],
     ['font-src', ["'self'", 'data:']],
     ['connect-src', ["'self'", ...THIRD_PARTY_CONNECT, ...connectExtra, 'data:', 'blob:']],
-    ['media-src', ["'self'", 'data:', 'blob:']],
+    // Réécoute d'un enregistrement de consultation : URL signée du Storage Supabase
+    // (src/ui/AudioLibrary.tsx → new Audio(url)).
+    ['media-src', ["'self'", 'data:', 'blob:', SUPABASE_HTTPS, ...connectExtra.filter((o) => o.startsWith('https://'))]],
     // pdf.js (worker servi depuis /vendor) ; `blob:` pour son repli.
     ['worker-src', ["'self'", 'blob:']],
     // Outils autonomes embarqués (même origine) et aperçus de fichiers locaux.

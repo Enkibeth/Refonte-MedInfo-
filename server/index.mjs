@@ -127,9 +127,9 @@ export function createServer() {
   const hops = parseTrustedHops(process.env.TRUST_PROXY_HOPS);
   const canonicalHost = canonicalHostFrom(process.env);
 
-  // CSP des documents HTML (docs/03_SECURITY.md §7) : empreintes des scripts inline de
-  // CHAQUE document, calculées une fois par fichier. `CSP=off|report-only` : interrupteur
-  // d'exploitation (redémarrage), jamais nécessaire en temps normal.
+  // CSP des documents HTML (docs/03_SECURITY.md §10, ADR-0042) : empreintes des scripts
+  // inline de CHAQUE document, calculées une fois par fichier. `CSP=off|report-only` :
+  // interrupteur d'exploitation (redémarrage), jamais nécessaire en temps normal.
   const cspHeader = cspHeaderName(cspModeFrom(process.env));
   const connectExtra = extraConnectOrigins(process.env.EXPO_PUBLIC_SUPABASE_URL);
   /** @param {string} html */

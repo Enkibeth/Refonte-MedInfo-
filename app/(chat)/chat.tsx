@@ -1159,10 +1159,11 @@ export default function ChatScreen() {
     const previous = previousStatusRef.current;
     previousStatusRef.current = status;
     if (status === 'submitted') setResponseAnnouncement('');
-    else if ((previous === 'streaming' || previous === 'submitted') && status === 'ready') {
+    else if ((previous === 'streaming' || previous === 'submitted') && status === 'ready' && !stoppedNotice) {
+      // Arrêt volontaire : la note « Lecture interrompue » s'annonce déjà, pas de « terminée ».
       setResponseAnnouncement('Réponse terminée.');
     }
-  }, [status]);
+  }, [status, stoppedNotice]);
 
   const sendText = useCallback(async (text: string) => {
     const trimmed = text.trim();
