@@ -10,6 +10,7 @@ import { Button } from '@/ui/Button';
 import { EcgTrace } from '@/ui/EcgTrace';
 import { Icon, type IconName } from '@/ui/icons';
 import { LandingHeader } from '@/ui/LandingHeader';
+import { MainContent } from '@/ui/landmarks';
 import { LandingPhoto } from '@/ui/LandingPhoto';
 import { SeoHead } from '@/ui/SeoHead';
 import { SiteFooter } from '@/ui/SiteFooter';
@@ -93,7 +94,7 @@ export default function HomeScreen() {
     <SeoHead title={PAGE_SEO.home.title} description={PAGE_SEO.home.description} path={PAGE_SEO.home.path} jsonLd={[organizationJsonLd(), webSiteJsonLd(), faqPageJsonLd(FAQ_ITEMS)]} />
     <LandingHeader />
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <View {...mi('landing-page')}>
+      <MainContent {...mi('landing-page')}>
         <View style={styles.heroBand}>
           <View {...mi('landing-container')} style={[styles.page, compact && styles.pageCompact]}>
             <View {...mi('landing-hero')} style={[styles.hero, wide && styles.heroWide]}>
@@ -208,7 +209,7 @@ export default function HomeScreen() {
             </View>)}</View>
           </View>
         </View>
-      </View>
+      </MainContent>
       <SiteFooter />
     </ScrollView>
   </View>;

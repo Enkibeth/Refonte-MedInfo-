@@ -17,6 +17,7 @@ import { getPostBySlug, type BlogPost } from '@/blog/posts';
 import { splitArticleSections } from '@/blog/toc';
 import { PAGE_SEO, blogPostingJsonLd, breadcrumbJsonLd } from '@/seo/meta';
 import { LandingHeader } from '@/ui/LandingHeader';
+import { MainContent } from '@/ui/landmarks';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { Icon } from '@/ui/icons';
 import { SeoHead } from '@/ui/SeoHead';
@@ -116,7 +117,7 @@ export default function BlogArticleScreen() {
       )}
       <LandingHeader />
       <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.content}>
-        <View style={styles.inner}>
+        <MainContent style={styles.inner}>
           <Touchable
             style={styles.backLink}
             feedback="link"
@@ -195,7 +196,7 @@ export default function BlogArticleScreen() {
               ))}
             </>
           )}
-        </View>
+        </MainContent>
         <View style={styles.footerSpacer} />
         <SiteFooter />
       </ScrollView>

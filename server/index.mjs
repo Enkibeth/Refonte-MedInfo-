@@ -40,6 +40,15 @@ import {
   withRawHeader,
   withoutRawHeaders,
 } from './lib/proxy.mjs';
+import { createHtmlHandler } from './lib/html.mjs';
+import {
+  BASE_SECURITY_HEADERS,
+  buildCsp,
+  cspHeaderName,
+  cspModeFrom,
+  extraConnectOrigins,
+  inlineScriptHashes,
+} from './lib/security.mjs';
 import { createStaticHandler } from './lib/serve-static.mjs';
 import { NO_STORE_CACHE_CONTROL } from './lib/static.mjs';
 
@@ -118,11 +127,29 @@ export function createServer() {
   const hops = parseTrustedHops(process.env.TRUST_PROXY_HOPS);
   const canonicalHost = canonicalHostFrom(process.env);
 
+  // CSP des documents HTML (docs/03_SECURITY.md §7) : empreintes des scripts inline de
+  // CHAQUE document, calculées une fois par fichier. `CSP=off|report-only` : interrupteur
+  // d'exploitation (redémarrage), jamais nécessaire en temps normal.
+  const cspHeader = cspHeaderName(cspModeFrom(process.env));
+  const connectExtra = extraConnectOrigins(process.env.EXPO_PUBLIC_SUPABASE_URL);
+  /** @param {string} html */
+  const documentHeaders = (html) =>
+    cspHeader ? { [cspHeader]: buildCsp({ scriptHashes: inlineScriptHashes(html), connectExtra }) } : {};
+
   const serveStatic = createStaticHandler({
     root: CLIENT_DIR,
+    htmlHeaders: documentHeaders,
     onError: (error) => {
       if (!isClientDisconnect(error)) console.error('[medinfo] erreur de lecture statique :', error);
     },
+  });
+
+  // Coquilles HTML d'Expo servies compressées, avec `charset` et CSP (server/lib/html.mjs).
+  const serveHtml = createHtmlHandler({
+    buildDir: BUILD_DIR,
+    headersFor: documentHeaders,
+    onUnsupported: (reason) =>
+      console.warn(`[medinfo] pages HTML servies par le moteur Expo (sans compression ni CSP) : ${reason}.`),
   });
 
   const handleExpoRequest = createRequestHandler(
@@ -134,6 +161,9 @@ export function createServer() {
         if (!responseInit.headers.has('cache-control')) {
           responseInit.headers.set('cache-control', NO_STORE_CACHE_CONTROL);
         }
+        // Repli (manifeste non pris en charge par serveHtml) : au moins le jeu de caractères,
+        // que la balise <meta charset> — rejetée après les balises SEO — ne garantit pas.
+        responseInit.headers.set('content-type', 'text/html; charset=utf-8');
         return responseInit;
       },
     },
@@ -226,7 +256,7 @@ export function createServer() {
         return;
       }
 
-      res.setHeader('X-Content-Type-Options', 'nosniff');
+      for (const [name, value] of Object.entries(BASE_SECURITY_HEADERS)) res.setHeader(name, value);
       if (wantsHsts(forwarded.protocol, forwarded.host)) {
         res.setHeader('Strict-Transport-Security', HSTS_VALUE);
       }
@@ -234,6 +264,13 @@ export function createServer() {
       if (await serveStatic(req, res)) return;
 
       const pathname = (req.url ?? '').split('?')[0];
+
+      if (await serveHtml(req, res)) {
+        if (accessLog) {
+          console.log(`[medinfo] ${req.method} ${pathname} ${res.statusCode} ${Date.now() - startedAt}ms`);
+        }
+        return;
+      }
 
       if (pathname === '/api' || pathname.startsWith('/api/')) {
         // Valeurs PAR DÉFAUT (une route qui pose les siennes les remplace) : jamais de cache

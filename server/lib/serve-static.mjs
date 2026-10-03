@@ -31,10 +31,31 @@ async function statFile(file) {
 }
 
 /**
- * @param {{ root: string; onError?: (error: unknown) => void }} params
+ * @param {{
+ *   root: string;
+ *   onError?: (error: unknown) => void;
+ *   htmlHeaders?: (html: string) => Record<string, string>;
+ * }} params `htmlHeaders` : en-têtes propres à un document HTML (CSP à empreintes des pages
+ *   autonomes), calculés une fois par version du fichier.
  * @returns {(req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => Promise<boolean>}
  */
-export function createStaticHandler({ root, onError }) {
+export function createStaticHandler({ root, onError, htmlHeaders }) {
+  /** @type {Map<string, { etag: string; headers: Promise<Record<string, string>> }>} */
+  const htmlHeaderCache = new Map();
+
+  /** @param {string} filePath @param {string} etag */
+  function documentHeaders(filePath, etag) {
+    if (!htmlHeaders || !filePath.endsWith('.html')) return Promise.resolve({});
+    const cached = htmlHeaderCache.get(filePath);
+    if (cached && cached.etag === etag) return cached.headers;
+    const headers = fsp
+      .readFile(filePath, 'utf8')
+      .then((html) => htmlHeaders(html))
+      .catch(() => ({}));
+    htmlHeaderCache.set(filePath, { etag, headers });
+    return headers;
+  }
+
   return async function serveStatic(req, res) {
     const method = req.method ?? 'GET';
     if (method !== 'GET' && method !== 'HEAD') return false;
@@ -57,6 +78,9 @@ export function createStaticHandler({ root, onError }) {
     res.setHeader('ETag', etag);
     res.setHeader('X-Content-Type-Options', 'nosniff');
     if (compressible) res.setHeader('Vary', 'Accept-Encoding');
+    for (const [name, value] of Object.entries(await documentHeaders(filePath, etag))) {
+      res.setHeader(name, value);
+    }
 
     if (
       isNotModified(

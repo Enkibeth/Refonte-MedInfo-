@@ -10,6 +10,7 @@ import { Icon } from '@/ui/icons';
 import { Logo } from '@/ui/Logo';
 import { CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
 import { tokens } from '@/ui/tokens';
+import { navLinkProps } from '@/ui/navLink';
 import { mi, NAV_COMPACT_BREAKPOINT, NAV_WIDE_BREAKPOINT } from '@/ui/responsive';
 import { Touchable } from '@/ui/Touchable';
 import { useWindowWidth } from '@/ui/useWindowWidth';
@@ -67,9 +68,11 @@ export function LandingHeader() {
     setOpenMenu(null);
     router.push(route as never);
   };
+  /** Vrai lien `<a href>` sur le web (nouvel onglet possible), navigation client sinon. */
+  const linkTo = (route: string) => navLinkProps(route, () => go(route));
 
   return (
-    <View style={styles.bar}>
+    <View style={styles.bar} role="banner">
       {/* Fermeture au clic à l'extérieur : calque plein écran (web : position fixed)
           rendu SOUS la barre — les liens du header et le menu restent cliquables. */}
       {openMenu ? (
@@ -81,8 +84,8 @@ export function LandingHeader() {
       ) : null}
       <View style={styles.inner}>
         <Pressable
+          {...linkTo('/')}
           style={styles.brandRow}
-          onPress={() => go('/')}
           accessibilityRole="link"
           accessibilityLabel="Accueil MedInfo AI"
         >
@@ -98,32 +101,33 @@ export function LandingHeader() {
           <Logo size="sm" />
         </Pressable>
 
-        <View style={styles.nav}>
+        <View style={styles.nav} role="navigation" aria-label="Navigation principale">
           {web || !compact ? (
             <View {...mi(`ge${NAV_COMPACT_BREAKPOINT}`)}>
               <NavLink
                 label="Services"
                 chevron
+                expanded={openMenu === 'chatbots'}
                 active={openMenu === 'chatbots'}
                 onPress={() => setOpenMenu((m) => (m === 'chatbots' ? null : 'chatbots'))}
               />
               {openMenu === 'chatbots' ? (
-                <DropdownCard entries={chatbotEntries} onSelect={go} />
+                <DropdownCard entries={chatbotEntries} linkTo={linkTo} />
               ) : null}
             </View>
           ) : null}
 
           {web || wide
             ? pageEntries.map((e) => (
-                <NavLink key={e.route} layout={mi(`ge${NAV_WIDE_BREAKPOINT}`)} label={e.label} onPress={() => go(e.route)} />
+                <NavLink key={e.route} layout={mi(`ge${NAV_WIDE_BREAKPOINT}`)} label={e.label} link={linkTo(e.route)} />
               ))
             : null}
           {web || (!compact && !wide) ? (
-            <NavLink layout={mi('nav-mid')} label="Blog" onPress={() => go('/(marketing)/blog')} />
+            <NavLink layout={mi('nav-mid')} label="Blog" link={linkTo('/(marketing)/blog')} />
           ) : null}
 
           {web || !compact ? (
-            <NavLink layout={mi(`ge${NAV_COMPACT_BREAKPOINT}`)} label={accountEntry.label} onPress={() => go(accountEntry.route)} />
+            <NavLink layout={mi(`ge${NAV_COMPACT_BREAKPOINT}`)} label={accountEntry.label} link={linkTo(accountEntry.route)} />
           ) : null}
 
           {web || compact || !wide ? (
@@ -131,6 +135,7 @@ export function LandingHeader() {
               <NavLink
                 label="Menu"
                 chevron
+                expanded={openMenu === 'compact'}
                 active={openMenu === 'compact'}
                 onPress={() => setOpenMenu((m) => (m === 'compact' ? null : 'compact'))}
               />
@@ -141,7 +146,7 @@ export function LandingHeader() {
                       ? [...chatbotEntries, ...pageEntries, accountEntry]
                       : pageEntries.filter((e) => e.label !== 'Blog')
                   }
-                  onSelect={go}
+                  linkTo={linkTo}
                 />
               ) : null}
             </View>
@@ -167,22 +172,30 @@ export function LandingHeader() {
 function NavLink({
   label,
   onPress,
+  link,
   chevron = false,
   active = false,
+  expanded,
   layout,
 }: {
   label: string;
-  onPress: () => void;
+  /** Bouton d'ouverture d'un menu. */
+  onPress?: () => void;
+  /** Destination (`navLinkProps`) : rendu en vrai lien `<a href>` sur le web. */
+  link?: ReturnType<typeof navLinkProps>;
   chevron?: boolean;
   active?: boolean;
+  /** Bouton d'ouverture d'un menu : état ouvert/fermé annoncé (`aria-expanded`). */
+  expanded?: boolean;
   /** Attribut de mise en page web (`mi(…)`), cf. src/ui/responsive.ts. */
   layout?: {};
 }) {
   return (
     <Pressable
       {...layout}
-      accessibilityRole="link"
-      onPress={onPress}
+      {...(link ?? { onPress })}
+      accessibilityRole={link ? 'link' : 'button'}
+      {...(expanded === undefined ? null : { 'aria-expanded': expanded })}
       style={({ hovered, focused }: { hovered?: boolean; focused?: boolean }) => [
         styles.link,
         (hovered || active) && styles.linkHovered,
@@ -199,14 +212,20 @@ function NavLink({
   );
 }
 
-function DropdownCard({ entries, onSelect }: { entries: MenuEntry[]; onSelect: (route: string) => void }) {
+function DropdownCard({
+  entries,
+  linkTo,
+}: {
+  entries: MenuEntry[];
+  linkTo: (route: string) => ReturnType<typeof navLinkProps>;
+}) {
   return (
     <View style={styles.dropdown}>
       {entries.map((e) => (
         <Touchable
           key={e.route + e.label}
+          {...linkTo(e.route)}
           style={styles.dropdownRow}
-          onPress={() => onSelect(e.route)}
           accessibilityRole="link"
           accessibilityLabel={e.label}
         >

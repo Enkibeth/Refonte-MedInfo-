@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router';
 
 import { PAGE_SEO, breadcrumbJsonLd, organizationJsonLd } from '@/seo/meta';
 import { LandingHeader } from '@/ui/LandingHeader';
+import { MainContent } from '@/ui/landmarks';
 import { Icon, type IconName } from '@/ui/icons';
 import { Reveal } from '@/ui/Reveal';
 import { SeoHead } from '@/ui/SeoHead';
@@ -67,7 +68,7 @@ export default function ContactScreen() {
       />
       <LandingHeader />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <View style={styles.inner}>
+        <MainContent style={styles.inner}>
           <Reveal>
             <Text style={styles.eyebrow}>Contact</Text>
             <PageTitle style={styles.title}>Parlons-en.</PageTitle>
@@ -101,7 +102,7 @@ export default function ContactScreen() {
               </View>
             </Reveal>
           ))}
-        </View>
+        </MainContent>
         <View style={styles.footerSpacer} />
         <SiteFooter />
       </ScrollView>

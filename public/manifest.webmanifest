@@ -1,0 +1,19 @@
+{
+  "name": "MedInfo AI",
+  "short_name": "MedInfo AI",
+  "description": "Assistant IA d'information médicale en français : réponses sourcées, références citées, outils pour étudiants et professionnels de santé.",
+  "lang": "fr",
+  "dir": "ltr",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F8F7F3",
+  "theme_color": "#0067FF",
+  "categories": ["education", "medical"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

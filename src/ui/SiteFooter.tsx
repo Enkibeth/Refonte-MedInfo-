@@ -60,7 +60,7 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
 
 export function SiteFooter() {
   return (
-    <View style={styles.footer}>
+    <View style={styles.footer} role="contentinfo">
       <View style={styles.inner}>
         <View style={styles.brandBlock}>
           <Logo size="sm" />
@@ -70,7 +70,7 @@ export function SiteFooter() {
           </Text>
         </View>
 
-        <View style={styles.columns}>
+        <View style={styles.columns} role="navigation" aria-label="Plan du site">
           {COLUMNS.map((col) => (
             <View key={col.title} style={styles.column}>
               <Text style={styles.columnTitle}>{col.title}</Text>

@@ -10,6 +10,7 @@ import { PAGE_SEO, breadcrumbJsonLd } from '@/seo/meta';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { LandingHeader } from '@/ui/LandingHeader';
+import { MainContent } from '@/ui/landmarks';
 import { Screen } from '@/ui/Screen';
 import { SeoHead } from '@/ui/SeoHead';
 import { tokens } from '@/ui/tokens';
@@ -81,6 +82,7 @@ export default function PricingScreen() {
       {/* Header public (refonte SEO 2026-07) : Tarifs est une page marketing,
           elle partage la navigation des pages publiques. */}
       <LandingHeader />
+      <MainContent style={styles.main}>
       <Screen maxWidth={640}>
       <PageTitle style={styles.title}>Offres</PageTitle>
 
@@ -150,11 +152,13 @@ export default function PricingScreen() {
         </Link>
       </View>
       </Screen>
+      </MainContent>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  main: { flex: 1 },
   screen: { flex: 1, backgroundColor: tokens.colors.background },
   title: {
     fontFamily: tokens.font.serif,

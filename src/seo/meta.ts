@@ -223,7 +223,7 @@ export const PAGE_SEO = {
     title: 'Analyse de document médical par IA — explication claire',
     description:
       "Déposez un compte rendu, une ordonnance ou un résultat d'analyse : l'IA l'explique " +
-      'en langage clair, avec des citations tirées mot pour mot du document.',
+      'en langage clair. Le document lui-même n’est jamais conservé.',
   },
   ecos: {
     path: '/ecos',

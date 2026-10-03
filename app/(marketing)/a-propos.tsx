@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import { PAGE_SEO, breadcrumbJsonLd, organizationJsonLd } from '@/seo/meta';
 import { Button } from '@/ui/Button';
 import { LandingHeader } from '@/ui/LandingHeader';
+import { MainContent } from '@/ui/landmarks';
 import { Icon, type IconName } from '@/ui/icons';
 import { Reveal } from '@/ui/Reveal';
 import { SeoHead } from '@/ui/SeoHead';
@@ -55,7 +56,7 @@ export default function AboutScreen() {
       />
       <LandingHeader />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <View style={styles.inner}>
+        <MainContent style={styles.inner}>
           <Reveal>
             <Text style={styles.eyebrow}>Qui sommes-nous</Text>
             <PageTitle style={styles.title}>Pensé depuis les études de médecine.</PageTitle>
@@ -117,7 +118,7 @@ export default function AboutScreen() {
               onPress={() => router.push('/(marketing)/contact' as never)}
             />
           </Reveal>
-        </View>
+        </MainContent>
         <View style={styles.footerSpacer} />
         <SiteFooter />
       </ScrollView>

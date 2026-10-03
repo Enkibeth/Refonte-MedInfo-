@@ -30,6 +30,7 @@ import type { Persona } from '@/ai/prompts/_schema';
 import { APP_FEATURES, visibleFeatures } from '@/ai/routing/featureVisibility';
 import { Icon, type IconName } from '@/ui/icons';
 import { Logo } from '@/ui/Logo';
+import { navLinkProps } from '@/ui/navLink';
 import { Touchable } from '@/ui/Touchable';
 import { tokens } from '@/ui/tokens';
 import { useWindowWidth } from '@/ui/useWindowWidth';
@@ -265,7 +266,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         ref={(node) => {
           entryRefs.current.set(entry.key, node as unknown as View | null);
         }}
-        onPress={() => router.push(entry.route as never)}
+        // Vrai lien sur le web : clic du milieu / Ctrl+clic ouvrent l'outil dans un nouvel onglet.
+        {...navLinkProps(entry.route, () => router.push(entry.route as never))}
         onHoverIn={() => {
           if (!collapsed) return;
           // Tooltip rendu HORS du ScrollView (qui rognerait tout débordement) :
@@ -322,10 +324,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <View style={styles.frame}>
       {/* ── Sidebar bleu nuit (repliable en rail d'icônes) ── */}
-      <View style={[styles.sidebar, collapsed && styles.sidebarCollapsed, chatFocus && styles.hidden]}>
+      <View
+        role="navigation"
+        aria-label="Menu principal"
+        style={[styles.sidebar, collapsed && styles.sidebarCollapsed, chatFocus && styles.hidden]}
+      >
         <View style={[styles.sidebarHeader, collapsed && styles.sidebarHeaderCollapsed]}>
           <Pressable
-            onPress={() => router.push('/')}
+            {...navLinkProps('/', () => router.push('/'))}
             accessibilityRole="link"
             accessibilityLabel="MedInfo AI — accueil"
             style={[styles.logoRow, collapsed && styles.logoRowCollapsed]}
@@ -403,13 +409,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* ── Colonne principale : top bar + écran ── */}
       <View style={styles.main}>
-        <View style={[styles.topBar, chatFocus && styles.hidden]}>
+        <View role="banner" style={[styles.topBar, chatFocus && styles.hidden]}>
           <View style={styles.breadcrumb}>
             {/* Racine cliquable : retour à la Vue d'ensemble. */}
             <Pressable
-              onPress={() => router.push('/(chat)/dashboard' as never)}
+              {...navLinkProps('/(chat)/dashboard', () => router.push('/(chat)/dashboard' as never))}
               accessibilityRole="link"
-              accessibilityLabel="Vue d’ensemble"
+              // Nom accessible = libellé visible + destination (WCAG 2.5.3).
+              accessibilityLabel="MedInfo AI, vue d’ensemble"
             >
               {({ hovered }: { hovered?: boolean }) => (
                 <Text style={[styles.breadcrumbRoot, hovered && styles.breadcrumbRootHovered]}>

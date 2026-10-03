@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { config as configureZod } from 'zod';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -6,7 +7,17 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { MedInfoThemeProvider } from '@/ui/MedInfoThemeProvider';
 import { AuthProvider, useSession } from '@/auth/AuthProvider';
 import { resolvePersonaRoute } from '@/ai/routing/persona';
+import { AppErrorScreen } from '@/ui/AppErrorScreen';
+import { SkipLink } from '@/ui/landmarks';
 import { AppShell } from '@/ui/shell/AppShell';
+
+// Zod sonde `new Function` pour accélérer la validation : la politique de sécurité du
+// contenu (CSP, server/lib/security.mjs) interdit `eval`, d'où une violation signalée dans la
+// console à chaque page. Sans effet fonctionnel ; le mode sans compilation l'évite.
+configureZod({ jitless: true });
+
+/** Filet d'erreur global : une exception de rendu affiche un écran utile, jamais une page blanche. */
+export { AppErrorScreen as ErrorBoundary };
 
 /**
  * Garde de navigation par persona (02_ARCHITECTURE §4).
@@ -47,7 +58,10 @@ function useProtectedRoute() {
       // groupe, un visiteur cliquant « Tarifs » était renvoyé vers sign-in.
       segments[0] === '(billing)' ||
       // Pages marketing publiques (audit landing 2026-06) : à propos, contact, blog.
-      segments[0] === '(marketing)';
+      segments[0] === '(marketing)' ||
+      // Page 404 : un visiteur sur une adresse inconnue voit la page introuvable, il n'est
+      // pas renvoyé vers la connexion.
+      String(segments[0] ?? '').startsWith('+not-found');
 
     // Mode récupération de mot de passe : prioritaire sur toute autre redirection.
     if (passwordRecovery) {
@@ -96,6 +110,8 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <MedInfoThemeProvider>
+        {/* Premier élément tabulable de chaque page (WCAG 2.4.1), invisible hors focus. */}
+        <SkipLink />
         <AuthProvider>
           <RootNavigator />
         </AuthProvider>

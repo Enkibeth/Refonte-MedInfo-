@@ -469,7 +469,7 @@ export default function DashboardScreen() {
               <View style={styles.greetingPill}>
                 <Text style={styles.greetingText}>{greeting}</Text>
               </View>
-              <Text style={styles.heroTitle} accessibilityRole="header">
+              <Text style={styles.heroTitle} accessibilityRole="header" aria-level={1}>
                 Qu’est-ce qui compte aujourd’hui ?
               </Text>
               <Text style={styles.heroSubtitle}>{subtitle}</Text>
@@ -505,7 +505,7 @@ export default function DashboardScreen() {
 
             {/* Grille des outils du rôle */}
             <View style={styles.toolsHead}>
-              <Text style={styles.sectionTitle} accessibilityRole="header">
+              <Text style={styles.sectionTitle} accessibilityRole="header" aria-level={2}>
                 Mes outils
               </Text>
               <Text style={styles.sectionSubtitle}>
@@ -645,7 +645,7 @@ export default function DashboardScreen() {
             )}
 
             <View style={styles.railCard}>
-              <Text style={styles.railTitle} accessibilityRole="header">
+              <Text style={styles.railTitle} accessibilityRole="header" aria-level={2}>
                 Activité récente
               </Text>
               {activityLoading ? (
