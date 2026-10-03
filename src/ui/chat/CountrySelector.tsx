@@ -13,6 +13,8 @@ import { COUNTRIES, getCountry, type CountryCode } from '@/ai/chat/country';
 import { CountryFlag } from '@/ui/chat/CountryFlag';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
+import { Touchable } from '@/ui/Touchable';
+import { toolbarButtonStyles, toolbarContentColor } from '@/ui/toolbarButton';
 
 export function CountrySelector({
   value,
@@ -39,22 +41,22 @@ export function CountrySelector({
 
   return (
     <>
-      {hideTrigger ? null : <Pressable
+      {hideTrigger ? null : <Touchable
         onPress={() => setOpen(true)}
         accessibilityRole="button"
         accessibilityLabel={current ? `Pays : ${current.name}` : 'Choisir le pays'}
         aria-expanded={open}
-        style={styles.trigger}
+        style={toolbarButtonStyles.button}
       >
         {current ? (
           // Drapeau via CountryFlag : emoji natif partout, SVG inline sur Windows
           // (Segoe UI Emoji n'a pas les drapeaux — ils s'affichaient « FR » en lettres).
           <CountryFlag code={current.code} size={14} />
         ) : (
-          <Icon name="globe" size={14} color={tokens.colors.accentDeep} />
+          <Icon name="globe" size={16} color={toolbarContentColor()} />
         )}
-        <Text style={styles.triggerLabel}>{current ? current.code : 'Pays'}</Text>
-      </Pressable>}
+        <Text style={toolbarButtonStyles.label}>{current ? current.code : 'Pays'}</Text>
+      </Touchable>}
 
       <Modal visible={open} transparent animationType="none" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
@@ -68,7 +70,7 @@ export function CountrySelector({
               {COUNTRIES.map((c) => {
                 const active = c.code === value;
                 return (
-                  <Pressable
+                  <Touchable
                     key={c.code}
                     onPress={() => {
                       onChange(c.code);
@@ -83,7 +85,7 @@ export function CountrySelector({
                     </View>
                     <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>{c.name}</Text>
                     {active ? <Icon name="check" size={16} color={tokens.colors.accentDeep} /> : <View />}
-                  </Pressable>
+                  </Touchable>
                 );
               })}
             </ScrollView>
@@ -95,23 +97,6 @@ export function CountrySelector({
 }
 
 const styles = StyleSheet.create({
-  trigger: { minHeight: tokens.size.controlMd,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    borderRadius: tokens.radius.sm,
-    paddingHorizontal: tokens.space.sm + 2,
-    paddingVertical: tokens.space.xs + 2,
-    backgroundColor: tokens.colors.surface,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderStrong,
-  },
-  triggerLabel: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.semibold,
-  },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.32)',

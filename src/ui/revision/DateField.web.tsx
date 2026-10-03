@@ -16,7 +16,7 @@ export function DateField({ value, onChange }: { value: string; onChange: (iso: 
         height: 44,
         boxSizing: 'border-box',
         borderRadius: tokens.radius.md,
-        border: `1px solid ${tokens.colors.border}`,
+        border: `1px solid ${tokens.colors.borderStrong}`,
         backgroundColor: tokens.colors.surface,
         padding: `0 ${tokens.space.md}px`,
         fontFamily: tokens.font.sans,

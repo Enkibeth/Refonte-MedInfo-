@@ -14,6 +14,7 @@ import { domainOfUrl, evidenceLevelFor, type ParsedSource } from '@/ai/chat/pars
 import { SourceBadgePill } from '@/ui/chat/AssistantBlocks';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
+import { Button } from '@/ui/Button';
 
 function MetaRow({ label, value }: { label: string; value: string }) {
   return (
@@ -80,12 +81,12 @@ export function SourceDetailModal({
               ) : null}
 
               {source.url ? (
-                <Pressable style={styles.accessButton} onPress={open} accessibilityRole="link">
-                  <Icon name="externalLink" size={16} color={tokens.colors.onAccent} />
-                  <Text style={styles.accessButtonText}>
-                    Accéder à la source{domain ? ` (${domain})` : ''}
-                  </Text>
-                </Pressable>
+                <Button
+                  label={`Accéder à la source${domain ? ` (${domain})` : ''}`}
+                  accessibilityRole="link"
+                  leftIcon={<Icon name="externalLink" size={tokens.size.iconSm} color={tokens.colors.onAccent} />}
+                  onPress={open}
+                />
               ) : (
                 <Text style={styles.noUrl}>Lien non fourni par la réponse.</Text>
               )}
@@ -166,30 +167,12 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
   },
   sectionText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textSubtle,
     fontSize: tokens.type.label.fontSize,
     lineHeight: 20,
-  },
-  accessButton: { minHeight: tokens.size.controlMd,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: tokens.space.sm,
-    borderRadius: tokens.radius.md,
-    backgroundColor: tokens.colors.accentVivid,
-    paddingVertical: tokens.space.md,
-    marginTop: tokens.space.xs,
-    ...tokens.motion.transitionWeb,
-  },
-  accessButtonText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.semibold,
   },
   noUrl: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.caption.fontSize },
   metaBox: {

@@ -6,7 +6,6 @@ import {
   Platform,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -24,7 +23,9 @@ import { PersonalInfoForm } from '@/ui/PersonalInfoForm';
 import { Logo } from '@/ui/Logo';
 import { Screen } from '@/ui/Screen';
 import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
+import { buttonLinkProps } from '@/ui/interaction';
 import { tokens } from '@/ui/tokens';
+import { Touchable } from '@/ui/Touchable';
 import { useWindowWidth } from '@/ui/useWindowWidth';
 
 /**
@@ -175,7 +176,7 @@ export default function AccountScreen() {
             {visibleFeatures(persona, { isAdmin }).map((f) => {
               const tint = featureTint(f.id);
               return (
-                <TouchableOpacity
+                <Touchable
                   key={f.id}
                   style={styles.toolItem}
                   onPress={() => router.push(f.route as never)}
@@ -187,7 +188,7 @@ export default function AccountScreen() {
                   </View>
                   <Text style={styles.toolItemLabel}>{f.label}</Text>
                   <Icon name="arrowRight" size={14} color={tokens.colors.textMuted} />
-                </TouchableOpacity>
+                </Touchable>
               );
             })}
           </View>
@@ -297,7 +298,7 @@ export default function AccountScreen() {
           <Text style={styles.sectionText}>
             Configurer les modèles IA et éditer les prompts système.
           </Text>
-          <Link href="/admin" style={styles.adminLink}>
+          <Link href="/admin" style={styles.adminLink} {...buttonLinkProps('light')}>
             Ouvrir le panel admin IA
           </Link>
         </Card>
@@ -531,7 +532,8 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
   adminLink: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
+    position: 'relative',
     color: tokens.colors.onAccent,
     fontWeight: tokens.weight.semibold,
     fontSize: tokens.type.label.fontSize,

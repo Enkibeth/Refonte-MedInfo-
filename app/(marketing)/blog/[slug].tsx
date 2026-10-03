@@ -1,4 +1,5 @@
 import { Button } from '@/ui/Button';
+import { Touchable } from '@/ui/Touchable';
 import { useReducedMotion } from '@/ui/useReducedMotion';
 import { PageTitle } from '@/ui/PageTitle';
 /**
@@ -9,7 +10,7 @@ import { PageTitle } from '@/ui/PageTitle';
  * ScrollView vers la section choisie.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { getPostBySlug, type BlogPost } from '@/blog/posts';
@@ -116,8 +117,9 @@ export default function BlogArticleScreen() {
       <LandingHeader />
       <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.inner}>
-          <TouchableOpacity
+          <Touchable
             style={styles.backLink}
+            feedback="link"
             onPress={() => router.push('/(marketing)/blog' as never)}
             accessibilityRole="link"
             accessibilityLabel="Retour au blog"
@@ -126,7 +128,7 @@ export default function BlogArticleScreen() {
               <Icon name="arrowRight" size={14} color={tokens.colors.accentVivid} />
             </View>
             <Text style={styles.backLinkText}>Tous les articles</Text>
-          </TouchableOpacity>
+          </Touchable>
 
           {loading ? (
             <View style={{ gap: tokens.space.lg }}>
@@ -164,16 +166,17 @@ export default function BlogArticleScreen() {
                 <View style={styles.tocCard}>
                   <Text style={styles.tocTitle}>Sommaire</Text>
                   {tocEntries.map((e, i) => (
-                    <TouchableOpacity
+                    <Touchable
                       key={e.index}
                       style={styles.tocRow}
+                      feedback="link"
                       onPress={() => scrollToSection(e.index)}
                       accessibilityRole="button"
                       accessibilityLabel={`Aller à la section : ${e.heading}`}
                     >
                       <Text style={styles.tocIndex}>{String(i + 1).padStart(2, '0')}</Text>
                       <Text style={styles.tocText}>{e.heading}</Text>
-                    </TouchableOpacity>
+                    </Touchable>
                   ))}
                 </View>
               ) : null}
@@ -272,7 +275,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
     marginBottom: tokens.space.xs,
   },
   tocRow: {

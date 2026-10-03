@@ -4,9 +4,10 @@
  * discrètes (idéal pour réflexion/détail). Accessible et tactile (chaque cran cliquable).
  */
 import { useMemo } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { tokens } from '@/ui/tokens';
+import { Touchable } from '@/ui/Touchable';
 
 export interface SegmentedSliderOption<T extends string> {
   value: T;
@@ -49,7 +50,7 @@ export function SegmentedSlider<T extends string>({
           const active = i === index;
           const passed = i <= index;
           return (
-            <TouchableOpacity
+            <Touchable
               key={o.value}
               accessibilityRole="radio"
               aria-checked={active}
@@ -57,6 +58,7 @@ export function SegmentedSlider<T extends string>({
               accessibilityLabel={`${label} : ${o.label}`}
               disabled={disabled}
               style={styles.notchHit}
+              feedback="none"
               onPress={() => onChange(o.value)}
             >
               <View
@@ -66,7 +68,7 @@ export function SegmentedSlider<T extends string>({
                   active && styles.notchActive,
                 ]}
               />
-            </TouchableOpacity>
+            </Touchable>
           );
         })}
       </View>

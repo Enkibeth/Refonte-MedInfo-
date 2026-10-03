@@ -12,12 +12,13 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { tokens } from '@/ui/tokens';
+import { Button } from '@/ui/Button';
+import { Touchable } from '@/ui/Touchable';
 import {
   deleteAudioDocument,
   getAudioSignedUrl,
@@ -139,9 +140,7 @@ export function AudioLibrary({ refreshToken }: { refreshToken: number }) {
     return (
       <View style={styles.center}>
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retry} onPress={load}>
-          <Text style={styles.retryText}>Réessayer</Text>
-        </TouchableOpacity>
+        <Button label="Réessayer" variant="secondary" size="md" fullWidth={false} onPress={load} />
       </View>
     );
   }
@@ -183,17 +182,20 @@ export function AudioLibrary({ refreshToken }: { refreshToken: number }) {
                       placeholderTextColor={tokens.colors.textMuted}
                     />
                     <View style={styles.row}>
-                      <TouchableOpacity style={styles.ghostBtn} onPress={() => setEditingId(null)}>
-                        <Text style={styles.ghostBtnText}>Annuler</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.primaryBtn} onPress={() => saveEdit(doc.id)} disabled={busyId === doc.id}>
-                        <Text style={styles.primaryBtnText}>{busyId === doc.id ? '…' : 'Enregistrer'}</Text>
-                      </TouchableOpacity>
+                      <Button label="Annuler" variant="secondary" size="md" fullWidth={false} onPress={() => setEditingId(null)} style={styles.flex1} />
+                      <Button
+                        label="Enregistrer"
+                        size="md"
+                        fullWidth={false}
+                        loading={busyId === doc.id}
+                        onPress={() => saveEdit(doc.id)}
+                        style={styles.flex2}
+                      />
                     </View>
                   </View>
                 ) : (
                   <>
-                    <TouchableOpacity onPress={() => setExpandedId(expanded ? null : doc.id)}>
+                    <Touchable onPress={() => setExpandedId(expanded ? null : doc.id)}>
                       <View style={styles.cardHeader}>
                         <Text style={styles.cardTitle} numberOfLines={1}>{doc.title}</Text>
                         <View style={[styles.kindBadge, doc.kind === 'report' ? styles.kindReport : styles.kindTrans]}>
@@ -204,7 +206,7 @@ export function AudioLibrary({ refreshToken }: { refreshToken: number }) {
                         {new Date(doc.created_at).toLocaleDateString('fr-FR')} ·{' '}
                         {audioOk ? 'audio dispo' : 'audio expiré'}
                       </Text>
-                    </TouchableOpacity>
+                    </Touchable>
 
                     {expanded ? (
                       <View style={styles.body}>
@@ -217,7 +219,7 @@ export function AudioLibrary({ refreshToken }: { refreshToken: number }) {
                     ) : null}
 
                     <View style={styles.actions}>
-                      <TouchableOpacity
+                      <Touchable
                         style={styles.actionBtn}
                         onPress={() =>
                           exportDocumentToPdf({
@@ -229,18 +231,18 @@ export function AudioLibrary({ refreshToken }: { refreshToken: number }) {
                         }
                       >
                         <Text style={styles.actionText}>PDF</Text>
-                      </TouchableOpacity>
+                      </Touchable>
                       {audioOk ? (
-                        <TouchableOpacity style={styles.actionBtn} onPress={() => void play(doc)}>
+                        <Touchable style={styles.actionBtn} onPress={() => void play(doc)}>
                           <Text style={styles.actionText}>▶ Écouter</Text>
-                        </TouchableOpacity>
+                        </Touchable>
                       ) : null}
-                      <TouchableOpacity style={styles.actionBtn} onPress={() => startEdit(doc)}>
+                      <Touchable style={styles.actionBtn} onPress={() => startEdit(doc)}>
                         <Text style={styles.actionText}>Renommer / classer</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.actionBtn} onPress={() => remove(doc)} disabled={busyId === doc.id}>
+                      </Touchable>
+                      <Touchable style={styles.actionBtn} onPress={() => remove(doc)} disabled={busyId === doc.id}>
                         <Text style={[styles.actionText, styles.deleteText]}>Supprimer</Text>
-                      </TouchableOpacity>
+                      </Touchable>
                     </View>
                   </>
                 )}
@@ -258,8 +260,6 @@ const styles = StyleSheet.create({
   muted: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.body.fontSize },
   mutedSmall: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.caption.fontSize, textAlign: 'center', maxWidth: 320 },
   errorText: { fontFamily: tokens.font.sans, color: tokens.colors.danger, fontSize: tokens.type.label.fontSize },
-  retry: { paddingHorizontal: tokens.space.lg, paddingVertical: tokens.space.sm, borderRadius: tokens.radius.md, backgroundColor: tokens.colors.accentVivid },
-  retryText: { fontFamily: tokens.font.sans, color: tokens.colors.onAccent, fontWeight: tokens.weight.semibold },
   list: { padding: tokens.space.lg, gap: tokens.space.lg },
   group: { gap: tokens.space.sm },
   groupTitle: {
@@ -268,7 +268,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
   },
   card: {
     borderRadius: tokens.radius.md,
@@ -288,7 +287,7 @@ const styles = StyleSheet.create({
   body: { borderTopWidth: 1, borderTopColor: tokens.colors.border, paddingTop: tokens.space.sm },
   transcriptionText: { fontFamily: tokens.font.sans, color: tokens.colors.text, fontSize: tokens.type.body.fontSize, lineHeight: tokens.type.body.lineHeight },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm, borderTopWidth: 1, borderTopColor: tokens.colors.border, paddingTop: tokens.space.sm },
-  actionBtn: { minHeight: tokens.size.controlMd, paddingHorizontal: tokens.space.md, paddingVertical: tokens.space.xs + 2, borderRadius: tokens.radius.sm, backgroundColor: tokens.colors.surfaceAlt, borderWidth: 1, borderColor: tokens.colors.border },
+  actionBtn: { minHeight: tokens.size.controlMd, justifyContent: 'center', paddingHorizontal: tokens.space.md, paddingVertical: tokens.space.xs + 2, borderRadius: tokens.radius.sm, backgroundColor: tokens.colors.surfaceAlt, borderWidth: 1, borderColor: tokens.colors.border },
   actionText: { fontFamily: tokens.font.sans, color: tokens.colors.accentDeep, fontSize: tokens.type.caption.fontSize, fontWeight: tokens.weight.medium },
   deleteText: { color: tokens.colors.danger },
   editBox: { gap: tokens.space.xs },
@@ -298,16 +297,14 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radius.md,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.sm,
-    backgroundColor: tokens.colors.surfaceSunken,
+    backgroundColor: tokens.colors.surface,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
+    borderColor: tokens.colors.borderStrong,
     color: tokens.colors.text,
     fontFamily: tokens.font.sans,
     fontSize: tokens.type.body.fontSize,
   },
   row: { flexDirection: 'row', gap: tokens.space.sm, marginTop: tokens.space.xs },
-  ghostBtn: { minHeight: tokens.size.controlMd, flex: 1, height: 40, borderRadius: tokens.radius.md, borderWidth: 1, borderColor: tokens.colors.borderStrong, justifyContent: 'center', alignItems: 'center' },
-  ghostBtnText: { fontFamily: tokens.font.sans, color: tokens.colors.textSubtle, fontWeight: tokens.weight.medium, fontSize: tokens.type.label.fontSize },
-  primaryBtn: { minHeight: tokens.size.controlMd, flex: 2, height: 40, borderRadius: tokens.radius.md, backgroundColor: tokens.colors.accentVivid, justifyContent: 'center', alignItems: 'center' },
-  primaryBtnText: { fontFamily: tokens.font.sans, color: tokens.colors.onAccent, fontWeight: tokens.weight.semibold, fontSize: tokens.type.label.fontSize },
+  flex1: { flex: 1 },
+  flex2: { flex: 2 },
 });

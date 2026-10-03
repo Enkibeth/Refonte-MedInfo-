@@ -19,7 +19,9 @@ import {
   isFeatureVisible,
   type AppFeatureId,
 } from '@/ai/routing/featureVisibility';
+import { Button } from '@/ui/Button';
 import { Icon } from '@/ui/icons';
+import { buttonLinkProps } from '@/ui/interaction';
 import { tokens } from '@/ui/tokens';
 import { PageTitle } from '@/ui/PageTitle';
 
@@ -97,18 +99,13 @@ export function SessionRecovery() {
           Ta session n’a pas pu être rétablie (connexion instable ou session expirée).
           Réessaie, ou réinitialise la session pour te reconnecter proprement.
         </Text>
-        <Pressable
-          style={styles.primaryButton}
-          onPress={() => void run('retry')}
+        <Button
+          label="Réessayer"
+          fullWidth={false}
+          loading={busy === 'retry'}
           disabled={busy !== null}
-          accessibilityRole="button"
-        >
-          {busy === 'retry' ? (
-            <ActivityIndicator color={tokens.colors.onAccent} size="small" />
-          ) : (
-            <Text style={styles.primaryButtonText}>Réessayer</Text>
-          )}
-        </Pressable>
+          onPress={() => void run('retry')}
+        />
         <Pressable
           onPress={() => void run('reset')}
           disabled={busy !== null}
@@ -146,7 +143,7 @@ function RoleUnavailable({
         </Text>
         <Link
           href={guest ? '/(auth)/sign-in?mode=signup' : '/(account)/choose-role'}
-          style={styles.primaryLink}
+          style={styles.primaryLink} {...buttonLinkProps()}
         >
           {guest ? 'Créer un compte' : 'Changer de rôle'}
         </Link>
@@ -206,14 +203,15 @@ const styles = StyleSheet.create({
     minHeight: tokens.size.controlMd,
     lineHeight: tokens.type.label.lineHeight,
     textAlign: 'center',
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
+    position: 'relative',
     color: tokens.colors.onAccent,
     fontWeight: tokens.weight.semibold,
     fontSize: tokens.type.label.fontSize,
     backgroundColor: tokens.colors.accentVivid,
     paddingHorizontal: tokens.space.xl,
     paddingVertical: tokens.space.md,
-    borderRadius: tokens.radius.lg,
+    borderRadius: tokens.radius.md,
     overflow: 'hidden',
     marginTop: tokens.space.sm,
   },
@@ -224,22 +222,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: tokens.font.sans,
     color: tokens.colors.accent,
-    fontWeight: tokens.weight.semibold,
-    fontSize: tokens.type.label.fontSize,
-  },
-  primaryButton: { minHeight: tokens.size.controlMd,
-    backgroundColor: tokens.colors.accentVivid,
-    paddingHorizontal: tokens.space.xl,
-    paddingVertical: tokens.space.md,
-    borderRadius: tokens.radius.lg,
-    marginTop: tokens.space.sm,
-    minWidth: 160,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryButtonText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
     fontWeight: tokens.weight.semibold,
     fontSize: tokens.type.label.fontSize,
   },

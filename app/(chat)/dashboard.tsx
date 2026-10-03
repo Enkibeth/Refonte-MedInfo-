@@ -473,17 +473,19 @@ export default function DashboardScreen() {
                 Qu’est-ce qui compte aujourd’hui ?
               </Text>
               <Text style={styles.heroSubtitle}>{subtitle}</Text>
-              <View style={styles.heroActions}>
+              {/* Mobile : deux boutons pleine largeur empilés (des largeurs inégales faisaient
+                  « brouillon ») ; au-delà, côte à côte à leur largeur naturelle. */}
+              <View style={[styles.heroActions, width < tokens.layout.compact && styles.heroActionsStacked]}>
                 <Button
                   label={primaryCta.label}
                   variant="primary"
-                  fullWidth={false}
+                  fullWidth={width < tokens.layout.compact}
                   onPress={() => router.push(primaryCta.route as never)}
                 />
                 <Button
                   label={secondaryCta.label}
                   variant="secondary"
-                  fullWidth={false}
+                  fullWidth={width < tokens.layout.compact}
                   onPress={() => router.push(secondaryCta.route as never)}
                 />
               </View>
@@ -760,6 +762,7 @@ const styles = StyleSheet.create({
     gap: tokens.space.md,
     marginTop: tokens.space.xs,
   },
+  heroActionsStacked: { flexDirection: 'column', alignItems: 'stretch', gap: tokens.space.sm },
   tileRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -783,7 +786,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
   },
   tileValue: {
     fontFamily: tokens.font.display,

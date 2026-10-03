@@ -26,7 +26,7 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: tokens.radius.md,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
+    borderColor: tokens.colors.borderStrong,
     backgroundColor: tokens.colors.surface,
     paddingHorizontal: tokens.space.md,
     fontFamily: tokens.font.sans,

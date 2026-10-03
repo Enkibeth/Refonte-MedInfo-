@@ -2,6 +2,38 @@
 
 Journal des modifications par agents IA. Une entrée par PR.
 
+## [2026-10-02] – Claude (boutons et UX « ultra pro » : primitives communes, 3 boucles de recette visuelle)
+### Files modified
+- Nouveaux : `src/ui/Touchable.tsx`, `src/ui/interaction.ts` (couche d'état CSS), `src/ui/Chip.tsx`, `src/ui/SearchField.tsx`,
+  `src/ui/toolbarButton.ts`, `tests/unit/interaction.test.ts`, `scripts/design/capture-ui.mjs` (captures avec session simulée)
+- `src/ui/Button.tsx` (appui, désactivé neutre, secondaire allégé, `lg` 48 px, rôle `link`), `src/ui/tokens.ts`
+  (`borderControl`, `accentVividPressed`, `onDarkPressed`, `buttonLg`, `elevation.control/controlPrimary/none`),
+  `src/ui/iconPaths.ts` (`helpCircle`), `app/+html.tsx` (CSS d'interaction et de densité tactile)
+- `TouchableOpacity` → `Touchable` dans 19 fichiers ; boutons faits main → `<Button>` (ECOS, chat, QCM, sources,
+  propositions, révision, document, audio, bibliothèque audio, RoleGate, historique)
+- Puces (`Chip`) : révision, profil, ECOS, scores ; recherche (`SearchField`) : ECOS, scores, historique ; barre d'outils :
+  en-tête du chat, menu Outils, sélecteur de pays, actions « Copier / Export PDF »
+- Libellés recentrés (≈ 45 styles), champs harmonisés (fond blanc, filet ≥ 3:1), interlettrage retiré de 28 étiquettes
+  en casse normale, étiquettes ECOS hors police mono, `AppShell` (bouton Aide, libellés non tronqués)
+- Outils HTML : `public/medinfo-ui.css`, `public/medinfo-tokens.css` (régénéré), `src/ui/standaloneTheme.ts`,
+  `public/cv-builder.html` (barre du haut : libellés plus jamais coupés)
+- `docs/05_DESIGN.md` §5 bis
+### Purpose
+Demande Hugo : « améliorer le visuel de tous les boutons et l'expérience utilisateur — objectif 0 IA et ultra pro », en
+trois boucles. Constats sur captures réelles (écrans connectés compris, session simulée) : libellés collés en HAUT de
+leur bouton sur une cinquantaine de contrôles (une passe d'accessibilité avait imposé 44 px sans recentrer), ~300
+contrôles en `TouchableOpacity` (flash à 20 % d'opacité au clic, aucun survol), cinq styles de puces, champs de
+recherche à double cadre, champs gris pleins à filet < 3:1, deux boutons principaux empilés en fin de station ECOS,
+actions d'historique répétées sur chaque ligne et titres tronqués, interlettrage sur du texte en minuscules, police
+« machine à écrire » sur des étiquettes. Résultat : une couche d'état unique (survol 5 %, appui 10 %, épouse l'arrondi),
+un bouton principal par bloc, des états désactivés lisibles, cibles 44 px au doigt (15 cibles trop petites → 0).
+### Vérifications
+`tsc` ; `vitest tests/unit` (985 tests, dont 7 nouveaux garde-fous) ; build web ; captures 390/1440 de 16 écrans
+avant/après + états survol/focus (dashboard, chat, historique) ; fumigation serveur.
+### Limites
+Rendu natif iOS/Android non testé (seule l'opacité d'appui change). Panel admin converti mécaniquement, non revu écran
+par écran. Doublon de titre entre l'écran et l'outil HTML embarqué (présentation) laissé en l'état (hors boutons).
+
 ## [2026-10-02] – Claude (boutons : un seul langage visuel)
 ### Files modified
 - `src/ui/chat/composerButton.ts` (nouveau, styles partagés), `app/(chat)/chat.tsx`, `app/(chat)/ecos.tsx`, `src/ui/chat/ResponseControls.tsx`, `src/ui/DictationButton.tsx`

@@ -158,7 +158,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
   },
   branchText: {
     fontFamily: tokens.font.sans,

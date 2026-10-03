@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
@@ -11,6 +11,7 @@ import { Logo } from '@/ui/Logo';
 import { CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
 import { tokens } from '@/ui/tokens';
 import { mi, NAV_COMPACT_BREAKPOINT, NAV_WIDE_BREAKPOINT } from '@/ui/responsive';
+import { Touchable } from '@/ui/Touchable';
 import { useWindowWidth } from '@/ui/useWindowWidth';
 
 /**
@@ -202,7 +203,7 @@ function DropdownCard({ entries, onSelect }: { entries: MenuEntry[]; onSelect: (
   return (
     <View style={styles.dropdown}>
       {entries.map((e) => (
-        <TouchableOpacity
+        <Touchable
           key={e.route + e.label}
           style={styles.dropdownRow}
           onPress={() => onSelect(e.route)}
@@ -210,7 +211,7 @@ function DropdownCard({ entries, onSelect }: { entries: MenuEntry[]; onSelect: (
           accessibilityLabel={e.label}
         >
           <Text style={styles.dropdownText}>{e.label}</Text>
-        </TouchableOpacity>
+        </Touchable>
       ))}
     </View>
   );

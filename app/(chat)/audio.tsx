@@ -11,10 +11,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   ScrollView,
   StyleSheet,
-  ActivityIndicator,
   Platform,
 } from 'react-native';
 import { useSession } from '@/auth/AuthProvider';
@@ -27,6 +25,8 @@ import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
 import { ToolsMenu } from '@/ui/ToolsMenu';
 import { AudioLibrary } from '@/ui/AudioLibrary';
+import { Button } from '@/ui/Button';
+import { Touchable } from '@/ui/Touchable';
 import { saveAudioDocument } from '@/audio/audioLibrary';
 
 type Mode = 'transcription' | 'report';
@@ -299,7 +299,7 @@ function AudioFeature() {
         </View>
         <PageTitle style={styles.title}>Audio médical</PageTitle>
         <View style={styles.modeSwitcher}>
-          <TouchableOpacity
+          <Touchable
             style={[styles.modeTab, tab === 'transcription' && styles.modeTabActive]}
             onPress={() => switchTab('transcription')}
             accessibilityRole="tab"
@@ -308,8 +308,8 @@ function AudioFeature() {
             <Text style={[styles.modeLabel, tab === 'transcription' && styles.modeLabelActive]}>
               Transcription
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Touchable>
+          <Touchable
             style={[styles.modeTab, tab === 'report' && styles.modeTabActive]}
             onPress={() => switchTab('report')}
             accessibilityRole="tab"
@@ -318,8 +318,8 @@ function AudioFeature() {
             <Text style={[styles.modeLabel, tab === 'report' && styles.modeLabelActive]}>
               Compte rendu
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Touchable>
+          <Touchable
             style={[styles.modeTab, tab === 'library' && styles.modeTabActive]}
             onPress={() => switchTab('library')}
             accessibilityRole="tab"
@@ -328,7 +328,7 @@ function AudioFeature() {
             <Text style={[styles.modeLabel, tab === 'library' && styles.modeLabelActive]}>
               Mes documents
             </Text>
-          </TouchableOpacity>
+          </Touchable>
         </View>
       </View>
 
@@ -348,7 +348,7 @@ function AudioFeature() {
         {/* Recorder */}
         <View style={styles.recorder}>
           {recordState === 'idle' && (
-            <TouchableOpacity
+            <Touchable
               style={styles.recordButton}
               onPress={startRecording}
               accessibilityRole="button"
@@ -358,7 +358,7 @@ function AudioFeature() {
                 <Icon name="micVoice" size={36} color={tokens.colors.onAccent} />
               </View>
               <Text style={styles.recordLabel}>Démarrer l'enregistrement</Text>
-            </TouchableOpacity>
+            </Touchable>
           )}
 
           {recordState === 'recording' && (
@@ -368,7 +368,7 @@ function AudioFeature() {
                 <Text style={styles.recordingBadgeText}>Enregistrement en cours</Text>
               </View>
               <Text style={styles.recordingTime}>{formatTime(duration)}</Text>
-              <TouchableOpacity
+              <Touchable
                 style={styles.stopButton}
                 onPress={stopRecording}
                 accessibilityRole="button"
@@ -378,7 +378,7 @@ function AudioFeature() {
                   <Icon name="stop" size={28} color={tokens.colors.onAccent} />
                 </View>
                 <Text style={styles.stopLabel}>Arrêter</Text>
-              </TouchableOpacity>
+              </Touchable>
             </View>
           )}
 
@@ -388,14 +388,13 @@ function AudioFeature() {
                 Enregistrement prêt ({formatTime(duration)})
               </Text>
               <View style={styles.haveAudioButtons}>
-                <TouchableOpacity style={styles.retryButton} onPress={reset}>
-                  <Text style={styles.retryText}>Recommencer</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.processButton} onPress={processAudio}>
-                  <Text style={styles.processText}>
-                    {mode === 'transcription' ? 'Transcrire' : 'Générer le compte rendu'}
-                  </Text>
-                </TouchableOpacity>
+                <Button label="Recommencer" variant="secondary" fullWidth={false} onPress={reset} style={styles.retryButton} />
+                <Button
+                  label={mode === 'transcription' ? 'Transcrire' : 'Générer le compte rendu'}
+                  fullWidth={false}
+                  onPress={processAudio}
+                  style={styles.processButton}
+                />
               </View>
             </View>
           )}
@@ -407,9 +406,9 @@ function AudioFeature() {
           )}
 
           {recordState === 'done' && (
-            <TouchableOpacity style={styles.newRecordingButton} onPress={reset}>
+            <Touchable style={styles.newRecordingButton} onPress={reset}>
               <Text style={styles.newRecordingText}>Nouvel enregistrement</Text>
-            </TouchableOpacity>
+            </Touchable>
           )}
         </View>
 
@@ -423,14 +422,14 @@ function AudioFeature() {
           <View style={styles.resultCard}>
             <View style={styles.resultCardHeader}>
               <Text style={styles.resultCardTitle}>Transcription</Text>
-              <TouchableOpacity
+              <Touchable
                 onPress={() => void copyText(transcription, 'tr')}
                 accessibilityRole="button"
                 accessibilityLabel="Copier la transcription"
                 style={styles.copyBtn}
               >
                 <Text style={styles.copyBtnText}>{copiedKey === 'tr' ? 'Copié ✓' : 'Copier'}</Text>
-              </TouchableOpacity>
+              </Touchable>
             </View>
             <Text style={styles.transcriptionText}>{transcription}</Text>
           </View>
@@ -440,14 +439,14 @@ function AudioFeature() {
           <View style={styles.resultCard}>
             <View style={styles.resultCardHeader}>
               <Text style={styles.resultCardTitle}>Compte rendu généré</Text>
-              <TouchableOpacity
+              <Touchable
                 onPress={() => void copyText(report, 'rp')}
                 accessibilityRole="button"
                 accessibilityLabel="Copier le compte rendu"
                 style={styles.copyBtn}
               >
                 <Text style={styles.copyBtnText}>{copiedKey === 'rp' ? 'Copié ✓' : 'Copier'}</Text>
-              </TouchableOpacity>
+              </Touchable>
             </View>
             <View style={styles.reportBody}>
               <MarkdownRenderer text={report} />
@@ -467,22 +466,17 @@ function AudioFeature() {
                 <Icon name="check" size={15} color={tokens.colors.success} />
                 <Text style={styles.savedText}>Enregistré dans « Mes documents ».</Text>
               </View>
-              <TouchableOpacity onPress={() => switchTab('library')} accessibilityRole="button">
+              <Touchable onPress={() => switchTab('library')} accessibilityRole="button">
                 <Text style={styles.savedLink}>Voir ma bibliothèque</Text>
-              </TouchableOpacity>
+              </Touchable>
             </View>
           ) : (
-            <TouchableOpacity
-              style={styles.saveButton}
+            <Button
+              label={saving ? 'Enregistrement…' : 'Enregistrer dans ma bibliothèque'}
+              loading={saving}
+              leftIcon={<Icon name="download" size={tokens.size.iconSm} color={tokens.colors.onAccent} />}
               onPress={saveToLibrary}
-              disabled={saving}
-              accessibilityRole="button"
-            >
-              <Icon name="download" size={17} color={tokens.colors.onAccent} />
-              <Text style={styles.saveButtonText}>
-                {saving ? 'Enregistrement…' : 'Enregistrer dans ma bibliothèque'}
-              </Text>
-            </TouchableOpacity>
+            />
           )
         ) : null}
 
@@ -520,7 +514,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
     gap: 0,
   },
-  modeTab: { minHeight: tokens.size.controlMd,
+  modeTab: { minHeight: tokens.size.controlMd, justifyContent: 'center',
     flex: 1,
     paddingVertical: tokens.space.sm + 2,
     alignItems: 'center',
@@ -569,7 +563,7 @@ const styles = StyleSheet.create({
   },
   // Bouton d'enregistrement rond (motif dictaphone) : l'action principale est
   // immédiatement identifiable, cible tactile généreuse.
-  recordButton: { minHeight: tokens.size.controlMd,
+  recordButton: { minHeight: tokens.size.controlMd, justifyContent: 'center',
     alignItems: 'center',
     gap: tokens.space.md,
     padding: tokens.space.lg,
@@ -618,7 +612,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.h1.fontSize,
     fontWeight: tokens.weight.bold,
   },
-  stopButton: { minHeight: tokens.size.controlMd,
+  stopButton: { minHeight: tokens.size.controlMd, justifyContent: 'center',
     alignItems: 'center',
     gap: tokens.space.sm,
     padding: tokens.space.sm,
@@ -646,38 +640,8 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.body.fontSize,
   },
   haveAudioButtons: { flexDirection: 'row', gap: tokens.space.md, width: '100%' },
-  retryButton: { minHeight: tokens.size.controlMd,
-    flex: 1,
-    height: 44,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
-    borderColor: tokens.colors.borderStrong,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  retryText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textSubtle,
-    fontWeight: tokens.weight.medium,
-    fontSize: tokens.type.label.fontSize,
-  },
-  processButton: { minHeight: tokens.size.controlMd,
-    flex: 2,
-    height: 44,
-    borderRadius: tokens.radius.pill,
-    // CTA principal : bleu électrique des actions primaires (convention 2026-07).
-    backgroundColor: tokens.colors.accentVivid,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...tokens.elevation.sm,
-    ...tokens.motion.transitionWeb,
-  },
-  processText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.semibold,
-    fontSize: tokens.type.label.fontSize,
-  },
+  retryButton: { flex: 1 },
+  processButton: { flex: 2 },
   processingState: { padding: tokens.space.md },
   newRecordingButton: { minHeight: tokens.size.controlMd,
     height: 44,
@@ -733,19 +697,25 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.semibold,
   },
-  copyBtn: { minHeight: tokens.size.controlMd,
-    paddingHorizontal: tokens.space.sm,
-    paddingVertical: 6,
-    borderRadius: tokens.radius.sm,
-    borderWidth: 1,
-    borderColor: tokens.colors.accentSurfaceStrong,
+  // Petite action sur un résultat (Copier, Export PDF…) : même langage que les boutons de
+  // barre d'outils (src/ui/toolbarButton.ts).
+  copyBtn: {
+    minHeight: tokens.size.controlMd,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: tokens.space.md,
+    borderRadius: tokens.radius.md,
+    borderWidth: tokens.border.thin,
+    borderColor: tokens.colors.borderControl,
     backgroundColor: tokens.colors.surface,
+    ...tokens.elevation.control,
   },
   copyBtnText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.semibold,
+    fontFamily: tokens.font.display,
+    color: tokens.colors.text,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.medium,
   },
   reportBody: { padding: tokens.space.lg },
   transcriptionText: {
@@ -754,23 +724,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.body.fontSize,
     lineHeight: tokens.type.body.lineHeight,
     padding: tokens.space.lg,
-  },
-  saveButton: { minHeight: tokens.size.controlMd,
-    height: tokens.size.controlLg,
-    borderRadius: tokens.radius.pill,
-    backgroundColor: tokens.colors.accentVivid,
-    flexDirection: 'row',
-    gap: tokens.space.sm,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...tokens.elevation.sm,
-    ...tokens.motion.transitionWeb,
-  },
-  saveButtonText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.semibold,
-    fontSize: tokens.type.label.fontSize,
   },
   savedBox: {
     borderRadius: tokens.radius.md,

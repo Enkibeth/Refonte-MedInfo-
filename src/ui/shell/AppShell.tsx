@@ -30,6 +30,7 @@ import type { Persona } from '@/ai/prompts/_schema';
 import { APP_FEATURES, visibleFeatures } from '@/ai/routing/featureVisibility';
 import { Icon, type IconName } from '@/ui/icons';
 import { Logo } from '@/ui/Logo';
+import { Touchable } from '@/ui/Touchable';
 import { tokens } from '@/ui/tokens';
 import { useWindowWidth } from '@/ui/useWindowWidth';
 import { useChatFocus } from '@/chat/focusMode';
@@ -84,7 +85,7 @@ const SHELL_GROUPS = new Set(['(chat)', '(account)', '(billing)', 'admin']);
 
 const PERSONA_LABEL: Record<Persona, string> = {
   public: 'Grand public',
-  student: 'Étudiant en médecine',
+  student: 'Étudiant en santé', // même libellé que src/auth/roles.ts et l'écran Compte
   professional: 'Professionnel de santé',
 };
 
@@ -222,7 +223,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const accountEntries: NavEntry[] = [
     {
       key: 'account',
-      label: 'Profil & abonnement',
+      label: 'Mon compte', // = titre de la page ; « Profil & abonnement » était tronqué
       icon: 'userRound',
       route: '/(account)/account',
       match: '/account',
@@ -361,7 +362,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Text style={styles.userName} numberOfLines={1}>
                 {displayName}
               </Text>
-              <Text style={styles.userRole} numberOfLines={1}>
+              <Text style={styles.userRole} numberOfLines={2}>
                 {isAdmin ? 'Administrateur' : PERSONA_LABEL[persona ?? 'public']}
               </Text>
             </View>
@@ -428,16 +429,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Icon name="bookOpen" size={13} color={tokens.colors.accentDeep} />
               <Text style={styles.disclosurePillText}>Système d’intelligence artificielle</Text>
             </View>
-            <Pressable
+            <Touchable
               onPress={() => router.push('/(marketing)/contact' as never)}
               accessibilityRole="link"
-              style={({ hovered }: { hovered?: boolean }) => [
-                styles.helpButton,
-                hovered && styles.helpButtonHovered,
-              ]}
+              accessibilityLabel="Aide et contact"
+              style={styles.helpButton}
             >
+              <Icon name="helpCircle" size={tokens.size.iconSm} color={tokens.colors.textSubtle} />
               <Text style={styles.helpButtonText}>Aide</Text>
-            </Pressable>
+            </Touchable>
           </View>
         </View>
         <View style={styles.content}>{children}</View>
@@ -571,7 +571,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
     marginBottom: tokens.space.sm,
     marginTop: 2,
   },
@@ -690,20 +689,25 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.semibold,
   },
-  helpButton: { minHeight: tokens.size.controlMd,
-    borderRadius: tokens.radius.pill,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    paddingHorizontal: tokens.space.lg,
-    paddingVertical: tokens.space.xs + 2,
-    ...tokens.motion.transitionWeb,
+  // Bouton secondaire compact (même langage que <Button variant="secondary">) : icône +
+  // libellé centrés — le libellé flottait en haut d'une pilule de 44 px.
+  helpButton: {
+    minHeight: tokens.size.controlMd,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.xs + 2,
+    borderRadius: tokens.radius.md,
+    borderWidth: tokens.border.thin,
+    borderColor: tokens.colors.borderControl,
+    backgroundColor: tokens.colors.surface,
+    paddingHorizontal: tokens.space.md,
+    ...tokens.elevation.control,
   },
-  helpButtonHovered: { backgroundColor: tokens.colors.surfaceHover },
   helpButtonText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textSubtle,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.semibold,
+    fontFamily: tokens.font.display,
+    color: tokens.colors.text,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.medium,
   },
   content: { flex: 1, minHeight: 0 },
 

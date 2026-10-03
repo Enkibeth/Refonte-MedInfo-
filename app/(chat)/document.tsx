@@ -15,9 +15,7 @@ import {
   Text,
   TextInput,
   ScrollView,
-  TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Alert,
@@ -31,6 +29,8 @@ import { SeoHead } from '@/ui/SeoHead';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
 import { ToolsMenu } from '@/ui/ToolsMenu';
+import { Button } from '@/ui/Button';
+import { Touchable } from '@/ui/Touchable';
 import {
   listAnalyses,
   deleteAnalysis,
@@ -307,7 +307,7 @@ function DocumentScreenInner() {
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {userId ? (
-          <TouchableOpacity
+          <Touchable
             style={styles.historyToggle}
             onPress={() => setHistoryOpen((v) => !v)}
             accessibilityRole="button"
@@ -318,7 +318,7 @@ function DocumentScreenInner() {
             <View style={{ transform: [{ rotate: historyOpen ? '180deg' : '0deg' }] }}>
               <Icon name="chevronDown" size={14} color={tokens.colors.accentDeep} />
             </View>
-          </TouchableOpacity>
+          </Touchable>
         ) : null}
 
         {historyOpen ? (
@@ -328,7 +328,7 @@ function DocumentScreenInner() {
             ) : (
               history.map((item) => (
                 <View key={item.id} style={styles.historyItem}>
-                  <TouchableOpacity
+                  <Touchable
                     style={styles.historyItemBody}
                     onPress={() => openHistoryItem(item)}
                     accessibilityRole="button"
@@ -343,8 +343,8 @@ function DocumentScreenInner() {
                       {' · '}
                       {formatDate(item.created_at)}
                     </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
+                  </Touchable>
+                  <Touchable
                     onPress={() => confirmDeleteHistory(item.id)}
                     accessibilityRole="button"
                     accessibilityLabel="Supprimer cette analyse"
@@ -352,7 +352,7 @@ function DocumentScreenInner() {
                     style={styles.historyDelete}
                   >
                     <Icon name="trash" size={tokens.size.iconSm} color={tokens.colors.danger} />
-                  </TouchableOpacity>
+                  </Touchable>
                 </View>
               ))
             )}
@@ -363,26 +363,28 @@ function DocumentScreenInner() {
         ) : null}
 
         <View style={styles.modeRow}>
-          <TouchableOpacity
+          <Touchable
             style={[styles.modeButton, mode === 'analysis' && styles.modeButtonActive]}
             onPress={() => setMode('analysis')}
             disabled={loading}
-            accessibilityRole="button"
+            accessibilityRole="radio"
+            aria-checked={mode === 'analysis'}
           >
             <Text style={[styles.modeButtonText, mode === 'analysis' && styles.modeButtonTextActive]}>
               Analyse
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Touchable>
+          <Touchable
             style={[styles.modeButton, mode === 'translation' && styles.modeButtonActive]}
             onPress={() => setMode('translation')}
             disabled={loading}
-            accessibilityRole="button"
+            accessibilityRole="radio"
+            aria-checked={mode === 'translation'}
           >
             <Text style={[styles.modeButtonText, mode === 'translation' && styles.modeButtonTextActive]}>
               Traduction
             </Text>
-          </TouchableOpacity>
+          </Touchable>
         </View>
 
         {mode === 'translation' ? (
@@ -407,7 +409,7 @@ function DocumentScreenInner() {
                 {pickedFile.name}
               </Text>
               <Text style={styles.fileChipSize}>{formatSize(pickedFile.size)}</Text>
-              <TouchableOpacity
+              <Touchable
                 onPress={() => setPickedFile(null)}
                 disabled={loading}
                 accessibilityRole="button"
@@ -415,10 +417,10 @@ function DocumentScreenInner() {
                 style={styles.fileChipRemove}
               >
                 <Icon name="x" size={15} color={tokens.colors.textMuted} />
-              </TouchableOpacity>
+              </Touchable>
             </View>
           ) : (
-            <TouchableOpacity style={styles.uploadButton} onPress={pickFile} accessibilityRole="button">
+            <Touchable style={styles.uploadButton} onPress={pickFile} accessibilityRole="button">
               <View style={styles.uploadIconWrap}>
                 <Icon name="fileText" size={22} color={tokens.colors.accentDeep} />
               </View>
@@ -426,7 +428,7 @@ function DocumentScreenInner() {
                 Importer un fichier (PDF, photo JPEG/PNG, texte)
               </Text>
               <Text style={styles.uploadButtonHint}>15 Mo maximum, ou collez le texte ci-dessous</Text>
-            </TouchableOpacity>
+            </Touchable>
           )
         ) : null}
 
@@ -443,20 +445,12 @@ function DocumentScreenInner() {
           />
         ) : null}
 
-        <TouchableOpacity
-          style={[styles.button, !canSubmit && styles.buttonDisabled]}
-          onPress={handleAnalyze}
+        <Button
+          label={mode === 'translation' ? 'Traduire le document' : 'Analyser le document'}
+          loading={loading}
           disabled={!canSubmit}
-          accessibilityRole="button"
-        >
-          {loading ? (
-            <ActivityIndicator color={tokens.colors.onAccent} size="small" />
-          ) : (
-            <Text style={styles.buttonText}>
-              {mode === 'translation' ? 'Traduire le document' : 'Analyser le document'}
-            </Text>
-          )}
-        </TouchableOpacity>
+          onPress={handleAnalyze}
+        />
 
         <Text style={styles.privacyNote}>
           Le document importé n'est pas conservé : il est transmis à l'IA puis oublié. Seul le
@@ -481,23 +475,23 @@ function DocumentScreenInner() {
               <Text style={styles.resultTitle}>{resultLabel}</Text>
               {!loading && analysis.text ? (
                 <View style={styles.resultActions}>
-                  <TouchableOpacity
+                  <Touchable
                     onPress={handleCopy}
                     accessibilityRole="button"
                     accessibilityLabel="Copier le résultat"
                     style={styles.resultAction}
                   >
                     <Text style={styles.resultActionText}>{copied ? 'Copié ✓' : 'Copier'}</Text>
-                  </TouchableOpacity>
+                  </Touchable>
                   {Platform.OS === 'web' ? (
-                    <TouchableOpacity
+                    <Touchable
                       onPress={handleExportPdf}
                       accessibilityRole="button"
                       accessibilityLabel="Exporter le résultat en PDF"
                       style={styles.resultAction}
                     >
                       <Text style={styles.resultActionText}>Export PDF</Text>
-                    </TouchableOpacity>
+                    </Touchable>
                   ) : null}
                 </View>
               ) : null}
@@ -664,14 +658,14 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: tokens.radius.md,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
+    borderColor: tokens.colors.borderStrong,
     backgroundColor: tokens.colors.surface,
     paddingHorizontal: tokens.space.md,
     fontFamily: tokens.font.sans,
     fontSize: tokens.type.body.fontSize,
     color: tokens.colors.text,
   },
-  uploadButton: { minHeight: tokens.size.controlMd,
+  uploadButton: { minHeight: tokens.size.controlMd, justifyContent: 'center',
     borderRadius: tokens.radius.lg,
     borderWidth: 1,
     borderStyle: 'dashed',
@@ -732,30 +726,13 @@ const styles = StyleSheet.create({
     minHeight: 160,
     borderRadius: tokens.radius.md,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
+    borderColor: tokens.colors.borderStrong,
     backgroundColor: tokens.colors.surface,
     padding: tokens.space.md,
     fontFamily: tokens.font.sans,
     fontSize: tokens.type.body.fontSize,
     color: tokens.colors.text,
     lineHeight: tokens.type.body.lineHeight,
-  },
-  button: { minHeight: tokens.size.controlMd,
-    height: tokens.size.controlLg,
-    borderRadius: tokens.radius.pill,
-    // CTA principal : bleu électrique des actions primaires (convention 2026-07).
-    backgroundColor: tokens.colors.accentVivid,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...tokens.elevation.sm,
-    ...tokens.motion.transitionWeb,
-  },
-  buttonDisabled: { opacity: 0.45 },
-  buttonText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontWeight: tokens.weight.semibold,
-    fontSize: tokens.type.body.fontSize,
   },
   privacyNote: {
     fontFamily: tokens.font.sans,
@@ -804,19 +781,25 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
   resultActions: { flexDirection: 'row', gap: tokens.space.xs },
-  resultAction: { minHeight: tokens.size.controlMd,
-    paddingHorizontal: tokens.space.sm,
-    paddingVertical: 6,
-    borderRadius: tokens.radius.sm,
-    borderWidth: 1,
-    borderColor: tokens.colors.accentSurfaceStrong,
+  // Petite action sur un résultat (Copier, Export PDF…) : même langage que les boutons de
+  // barre d'outils (src/ui/toolbarButton.ts).
+  resultAction: {
+    minHeight: tokens.size.controlMd,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: tokens.space.md,
+    borderRadius: tokens.radius.md,
+    borderWidth: tokens.border.thin,
+    borderColor: tokens.colors.borderControl,
     backgroundColor: tokens.colors.surface,
+    ...tokens.elevation.control,
   },
   resultActionText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.semibold,
+    fontFamily: tokens.font.display,
+    color: tokens.colors.text,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.medium,
   },
   resultBody: { padding: tokens.space.lg },
   citations: {

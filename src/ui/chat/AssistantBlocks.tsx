@@ -17,7 +17,7 @@
  * « Envoyer (N) » explicite déclenche l'envoi groupé — cohérent avec QUESTIONS_PATIENT.
  */
 import { memo, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import {
   formatInlineCitations,
@@ -34,6 +34,8 @@ import {
 import { createFootnoteRegistry, MarkdownRenderer, type FootnoteRegistry } from '@/ui/MarkdownRenderer';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
+import { Button } from '@/ui/Button';
+import { Touchable } from '@/ui/Touchable';
 import { advanceStreamingBody, EMPTY_STREAMING_BODY, visibleStreamingTail } from '@/chat/streamingBody';
 
 // ── Sources ───────────────────────────────────────────────────────────────────
@@ -69,7 +71,7 @@ export function SourceCard({
   const title = source.title || source.shortLabel || source.org || source.id;
   const domain = domainOfUrl(source.url);
   return (
-    <TouchableOpacity
+    <Touchable
       style={styles.sourceCard}
       onPress={() => onPress(source)}
       accessibilityRole="button"
@@ -99,7 +101,7 @@ export function SourceCard({
           <Text style={styles.sourceDomain}>{domain}</Text>
         </View>
       ) : null}
-    </TouchableOpacity>
+    </Touchable>
   );
 }
 
@@ -115,7 +117,7 @@ export function SourcesBlock({
   const [open, setOpen] = useState(startOpen);
   return (
     <View style={styles.sourcesWrapper}>
-      <TouchableOpacity
+      <Touchable
         style={styles.sourcesToggle}
         onPress={() => setOpen((o) => !o)}
         accessibilityRole="button"
@@ -126,7 +128,7 @@ export function SourcesBlock({
         <View style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }}>
           <Icon name="chevronDown" size={16} color={tokens.colors.textMuted} />
         </View>
-      </TouchableOpacity>
+      </Touchable>
       {open ? (
         <View style={styles.sourcesList}>
           {sources.map((s) => (
@@ -164,16 +166,14 @@ function SendSelectionButton({
 }) {
   if (count === 0 && !sent) return null;
   return (
-    <TouchableOpacity
-      style={[styles.submitButton, (sent || disabled) && styles.submitButtonDisabled]}
-      onPress={onPress}
+    <Button
+      label={sent ? 'Envoyé' : `Envoyer (${count})`}
+      size="md"
+      fullWidth={false}
       disabled={sent || disabled}
-      accessibilityRole="button"
-    >
-      <Text style={styles.submitButtonText}>
-        {sent ? 'Envoyé' : `Envoyer (${count})`}
-      </Text>
-    </TouchableOpacity>
+      onPress={onPress}
+      style={styles.submitButton}
+    />
   );
 }
 
@@ -216,7 +216,7 @@ function DeepeningBlock({
       {items.map((item, i) => {
         const checked = selected.has(i);
         return (
-          <TouchableOpacity
+          <Touchable
             key={i}
             style={[styles.deepeningButton, checked && styles.deepeningButtonSelected]}
             onPress={() => toggle(i)}
@@ -231,7 +231,7 @@ function DeepeningBlock({
                 <Text style={styles.deepeningDescription}>{item.description}</Text>
               ) : null}
             </View>
-          </TouchableOpacity>
+          </Touchable>
         );
       })}
       <SendSelectionButton count={selected.size} sent={sent} disabled={disabled} onPress={submit} />
@@ -275,7 +275,7 @@ function PatientQuestionsBlock({
             {q.options.map((opt) => {
               const selected = answers[qi] === opt;
               return (
-                <TouchableOpacity
+                <Touchable
                   key={opt}
                   style={[styles.optionChip, selected && styles.optionChipSelected]}
                   onPress={() =>
@@ -288,22 +288,20 @@ function PatientQuestionsBlock({
                   <Text style={[styles.optionChipText, selected && styles.optionChipTextSelected]}>
                     {opt}
                   </Text>
-                </TouchableOpacity>
+                </Touchable>
               );
             })}
           </View>
         </View>
       ))}
-      <TouchableOpacity
-        style={[styles.submitButton, (answeredCount === 0 || sent || disabled) && styles.submitButtonDisabled]}
-        onPress={submit}
+      <Button
+        label={sent ? 'Réponses envoyées' : `Envoyer mes réponses (${answeredCount}/${questions.length})`}
+        size="md"
+        fullWidth={false}
         disabled={answeredCount === 0 || sent || disabled}
-        accessibilityRole="button"
-      >
-        <Text style={styles.submitButtonText}>
-          {sent ? 'Réponses envoyées' : `Envoyer mes réponses (${answeredCount}/${questions.length})`}
-        </Text>
-      </TouchableOpacity>
+        onPress={submit}
+        style={styles.submitButton}
+      />
     </View>
   );
 }
@@ -354,7 +352,7 @@ function InteractionBlock({
             {group.options.map((opt) => {
               const checked = selected[gi]?.has(opt) ?? false;
               return (
-                <TouchableOpacity
+                <Touchable
                   key={opt}
                   style={[styles.actionButton, checked && styles.actionButtonSelected]}
                   onPress={() => toggle(gi, opt)}
@@ -366,7 +364,7 @@ function InteractionBlock({
                   <Text style={[styles.actionButtonText, checked && styles.actionButtonTextSelected]}>
                     {opt}
                   </Text>
-                </TouchableOpacity>
+                </Touchable>
               );
             })}
           </View>
@@ -413,7 +411,7 @@ function FollowupsBlock({
       {questions.map((q, i) => {
         const checked = selected.has(i);
         return (
-          <TouchableOpacity
+          <Touchable
             key={i}
             style={[styles.deepeningButton, checked && styles.deepeningButtonSelected]}
             onPress={() => toggle(i)}
@@ -426,7 +424,7 @@ function FollowupsBlock({
               <Text style={styles.followupIndexText}>{i + 1}</Text>
             </View>
             <Text style={styles.followupQuestion}>{q}</Text>
-          </TouchableOpacity>
+          </Touchable>
         );
       })}
       <SendSelectionButton count={selected.size} sent={sent} disabled={disabled} onPress={submit} />
@@ -506,7 +504,7 @@ function CalcBlock({
           const label = CALC_LABELS[id] ?? id.toUpperCase();
           const checked = selected.has(id);
           return (
-            <TouchableOpacity
+            <Touchable
               key={id}
               style={[styles.calcChip, checked && styles.calcChipSelected]}
               onPress={() => toggle(id)}
@@ -517,7 +515,7 @@ function CalcBlock({
               <CheckToggle checked={checked} />
               <Icon name="calculator" size={14} color={tokens.colors.accentDeep} />
               <Text style={styles.calcChipText}>{label}</Text>
-            </TouchableOpacity>
+            </Touchable>
           );
         })}
       </View>
@@ -552,7 +550,7 @@ function ReflectionBlock({
   const onCitationPress = useCitationResolver(sources, onOpenSource);
   return (
     <View style={styles.reflectionWrapper}>
-      <TouchableOpacity
+      <Touchable
         style={styles.sourcesToggle}
         onPress={() => setOpen((o) => !o)}
         accessibilityRole="button"
@@ -562,7 +560,7 @@ function ReflectionBlock({
         <View style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }}>
           <Icon name="chevronDown" size={15} color={tokens.colors.textMuted} />
         </View>
-      </TouchableOpacity>
+      </Touchable>
       {open ? (
         <View style={styles.reflectionBody}>
           <MarkdownRenderer
@@ -728,7 +726,6 @@ const styles = StyleSheet.create({
     color: tokens.colors.textSubtle,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
-    letterSpacing: tokens.tracking.caps,
     textTransform: 'none',
   },
 
@@ -913,7 +910,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm },
-  optionChip: { minHeight: tokens.size.controlMd,
+  optionChip: { minHeight: tokens.size.controlMd, justifyContent: 'center',
     borderRadius: tokens.radius.pill,
     borderWidth: 1,
     borderColor: tokens.colors.borderStrong,
@@ -933,21 +930,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.medium,
   },
   optionChipTextSelected: { color: tokens.colors.onAccent },
-  submitButton: { minHeight: tokens.size.controlMd,
-    alignSelf: 'flex-start',
-    borderRadius: tokens.radius.md,
-    backgroundColor: tokens.colors.accentVivid,
-    paddingHorizontal: tokens.space.xl,
-    paddingVertical: tokens.space.sm + 2,
-    ...tokens.motion.transitionWeb,
-  },
-  submitButtonDisabled: { backgroundColor: tokens.colors.borderStrong },
-  submitButtonText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.onAccent,
-    fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.semibold,
-  },
+  submitButton: { alignSelf: 'flex-start', marginTop: tokens.space.xs },
 
   interactionWrapper: { gap: tokens.space.md, marginTop: tokens.space.xs },
   interactionGroup: { gap: tokens.space.sm },

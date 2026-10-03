@@ -16,7 +16,6 @@ import {
   Text,
   TextInput,
   ScrollView,
-  TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
   Platform,
@@ -38,6 +37,7 @@ import { Icon, type IconName } from '@/ui/icons';
 import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 import { ProgressSteps } from '@/ui/progress/ProgressSteps';
 import { tokens } from '@/ui/tokens';
+import { Touchable } from '@/ui/Touchable';
 import { useWindowWidth } from '@/ui/useWindowWidth';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -242,7 +242,7 @@ function ModelsTab({
               {featureModels.map((m) => {
                 const isSelected = current.model_id === m.id;
                 return (
-                  <TouchableOpacity
+                  <Touchable
                     key={m.id}
                     style={[modelStyles.option, isSelected && modelStyles.selected]}
                     onPress={() => patch(feature.key, { model_id: m.id, provider: m.provider })}
@@ -256,7 +256,7 @@ function ModelsTab({
                         {PROVIDER_LABELS[m.provider] ?? m.provider}
                       </Text>
                     </View>
-                  </TouchableOpacity>
+                  </Touchable>
                 );
               })}
             </View>
@@ -272,7 +272,7 @@ function ModelsTab({
                       {REASONING_OPTIONS.map((opt) => {
                         const active = current.reasoning_effort === opt;
                         return (
-                          <TouchableOpacity
+                          <Touchable
                             key={opt}
                             style={[paramStyles.segment, active && paramStyles.segmentActive]}
                             onPress={() =>
@@ -282,7 +282,7 @@ function ModelsTab({
                             <Text style={[paramStyles.segmentText, active && paramStyles.segmentTextActive]}>
                               {opt}
                             </Text>
-                          </TouchableOpacity>
+                          </Touchable>
                         );
                       })}
                     </View>
@@ -296,7 +296,7 @@ function ModelsTab({
                       {VERBOSITY_OPTIONS.map((opt) => {
                         const active = current.verbosity === opt;
                         return (
-                          <TouchableOpacity
+                          <Touchable
                             key={opt}
                             style={[paramStyles.segment, active && paramStyles.segmentActive]}
                             onPress={() => patch(feature.key, { verbosity: active ? null : opt })}
@@ -304,7 +304,7 @@ function ModelsTab({
                             <Text style={[paramStyles.segmentText, active && paramStyles.segmentTextActive]}>
                               {opt === 'low' ? 'court' : opt === 'medium' ? 'moyen' : 'long'}
                             </Text>
-                          </TouchableOpacity>
+                          </Touchable>
                         );
                       })}
                     </View>
@@ -320,7 +320,7 @@ function ModelsTab({
                       {TEMPERATURE_PRESETS.map((t) => {
                         const active = current.temperature === t;
                         return (
-                          <TouchableOpacity
+                          <Touchable
                             key={t}
                             style={[paramStyles.segment, active && paramStyles.segmentActive]}
                             onPress={() => patch(feature.key, { temperature: active ? null : t })}
@@ -328,7 +328,7 @@ function ModelsTab({
                             <Text style={[paramStyles.segmentText, active && paramStyles.segmentTextActive]}>
                               {t}
                             </Text>
-                          </TouchableOpacity>
+                          </Touchable>
                         );
                       })}
                     </View>
@@ -336,7 +336,7 @@ function ModelsTab({
                 ) : null}
 
                 {caps.webSearch ? (
-                  <TouchableOpacity
+                  <Touchable
                     style={paramStyles.toggleRow}
                     onPress={() => patch(feature.key, { web_search: !current.web_search })}
                   >
@@ -349,12 +349,12 @@ function ModelsTab({
                     <View style={[paramStyles.switch, current.web_search && paramStyles.switchOn]}>
                       <View style={[paramStyles.knob, current.web_search && paramStyles.knobOn]} />
                     </View>
-                  </TouchableOpacity>
+                  </Touchable>
                 ) : null}
               </View>
             ) : null}
 
-            <TouchableOpacity
+            <Touchable
               style={[
                 cardStyles.saveBtn,
                 saving === feature.key && cardStyles.saveBtnLoading,
@@ -370,7 +370,7 @@ function ModelsTab({
                   {saved === feature.key ? '✓ Sauvegardé' : 'Appliquer'}
                 </Text>
               )}
-            </TouchableOpacity>
+            </Touchable>
           </View>
         );
       })}
@@ -458,7 +458,7 @@ function PromptsTab({
             const isOpen = editing === p.key;
             return (
               <View key={p.key} style={promptStyles.card}>
-                <TouchableOpacity
+                <Touchable
                   style={promptStyles.header}
                   onPress={() => setEditing(isOpen ? null : p.key)}
                 >
@@ -476,7 +476,7 @@ function PromptsTab({
                     </Text>
                   </View>
                   <Text style={promptStyles.chevron}>{isOpen ? '▲' : '▼'}</Text>
-                </TouchableOpacity>
+                </Touchable>
 
                 {isOpen ? (
                   <View style={promptStyles.editor}>
@@ -492,15 +492,15 @@ function PromptsTab({
                     />
                     <View style={promptStyles.actions}>
                       {p.isOverridden ? (
-                        <TouchableOpacity
+                        <Touchable
                           style={promptStyles.resetBtn}
                           onPress={() => resetPrompt(p.key)}
                           disabled={saving !== null}
                         >
                           <Text style={promptStyles.resetBtnText}>↩ Remettre défaut</Text>
-                        </TouchableOpacity>
+                        </Touchable>
                       ) : null}
-                      <TouchableOpacity
+                      <Touchable
                         style={[
                           promptStyles.saveBtn,
                           saved === p.key && promptStyles.saveBtnSaved,
@@ -515,7 +515,7 @@ function PromptsTab({
                             {saved === p.key ? '✓ Sauvegardé' : 'Sauvegarder'}
                           </Text>
                         )}
-                      </TouchableOpacity>
+                      </Touchable>
                     </View>
                   </View>
                 ) : null}
@@ -730,7 +730,7 @@ function EcosTab({ session }: { session: { access_token: string } | null }) {
           tall
         />
 
-        <TouchableOpacity
+        <Touchable
           style={ecosStyles.publishToggle}
           onPress={() => setDraft((d) => (d ? { ...d, is_published: !d.is_published } : d))}
         >
@@ -738,19 +738,19 @@ function EcosTab({ session }: { session: { access_token: string } | null }) {
             {draft.is_published ? <Text style={ecosStyles.checkboxMark}>✓</Text> : null}
           </View>
           <Text style={ecosStyles.publishLabel}>Publié (visible des étudiants)</Text>
-        </TouchableOpacity>
+        </Touchable>
 
         <View style={ecosStyles.formActions}>
-          <TouchableOpacity style={ecosStyles.cancelBtn} onPress={() => setDraft(null)} disabled={saving}>
+          <Touchable style={ecosStyles.cancelBtn} onPress={() => setDraft(null)} disabled={saving}>
             <Text style={ecosStyles.cancelBtnText}>Annuler</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={ecosStyles.saveBtn} onPress={saveDraft} disabled={saving}>
+          </Touchable>
+          <Touchable style={ecosStyles.saveBtn} onPress={saveDraft} disabled={saving}>
             {saving ? (
               <ActivityIndicator color={tokens.colors.onAccent} size="small" />
             ) : (
               <Text style={ecosStyles.saveBtnText}>Enregistrer</Text>
             )}
-          </TouchableOpacity>
+          </Touchable>
         </View>
       </ScrollView>
     );
@@ -764,9 +764,9 @@ function EcosTab({ session }: { session: { access_token: string } | null }) {
         Crée, édite et publie les cas proposés aux étudiants.
       </Text>
 
-      <TouchableOpacity style={ecosStyles.newBtn} onPress={() => setDraft({ ...EMPTY_DRAFT })}>
+      <Touchable style={ecosStyles.newBtn} onPress={() => setDraft({ ...EMPTY_DRAFT })}>
         <Text style={ecosStyles.newBtnText}>+ Nouveau cas</Text>
-      </TouchableOpacity>
+      </Touchable>
 
       {loading ? (
         <View style={styles.loading}>
@@ -775,9 +775,9 @@ function EcosTab({ session }: { session: { access_token: string } | null }) {
       ) : error ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={load} style={styles.retryBtn}>
+          <Touchable onPress={load} style={styles.retryBtn}>
             <Text style={styles.retryText}>Réessayer</Text>
-          </TouchableOpacity>
+          </Touchable>
         </View>
       ) : cases.length === 0 ? (
         <Text style={ecosStyles.empty}>Aucun cas pour le moment.</Text>
@@ -802,23 +802,23 @@ function EcosTab({ session }: { session: { access_token: string } | null }) {
               </View>
             </View>
             <View style={ecosStyles.cardActions}>
-              <TouchableOpacity style={ecosStyles.actionBtn} onPress={() => togglePublish(row)}>
+              <Touchable style={ecosStyles.actionBtn} onPress={() => togglePublish(row)}>
                 <Text style={ecosStyles.actionText}>
                   {row.is_published ? 'Dépublier' : 'Publier'}
                 </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Touchable>
+              <Touchable
                 style={ecosStyles.actionBtn}
                 onPress={() => setDraft(rowToDraft(row))}
               >
                 <Text style={ecosStyles.actionText}>Éditer</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Touchable>
+              <Touchable
                 style={[ecosStyles.actionBtn, ecosStyles.actionBtnDanger]}
                 onPress={() => remove(row)}
               >
                 <Text style={[ecosStyles.actionText, ecosStyles.actionTextDanger]}>Supprimer</Text>
-              </TouchableOpacity>
+              </Touchable>
             </View>
           </View>
         ))
@@ -966,7 +966,7 @@ function BlogTab({ session }: { session: { access_token: string } | null }) {
           placeholderTextColor={tokens.colors.textMuted}
           editable={!generating}
         />
-        <TouchableOpacity
+        <Touchable
           style={[blogStyles.generateBtn, generating && blogStyles.generateBtnDisabled]}
           onPress={generate}
           disabled={generating}
@@ -976,7 +976,7 @@ function BlogTab({ session }: { session: { access_token: string } | null }) {
           <Text style={blogStyles.generateBtnText}>
             {generating ? 'Génération en cours (1 à 2 min)…' : '📰 Générer un article'}
           </Text>
-        </TouchableOpacity>
+        </Touchable>
         {generating ? <ProgressSteps plan="blogGenerate" /> : null}
       </View>
 
@@ -1014,27 +1014,27 @@ function BlogTab({ session }: { session: { access_token: string } | null }) {
             <View style={blogStyles.postActions}>
               {/* La page publique ne voit que les articles publiés (RLS) : pour un
                   brouillon, la relecture passe par l'aperçu de l'éditeur admin. */}
-              <TouchableOpacity style={blogStyles.actionBtn} onPress={() => setEditingId(p.id)}>
+              <Touchable style={blogStyles.actionBtn} onPress={() => setEditingId(p.id)}>
                 <Text style={blogStyles.actionText}>
                   {p.status === 'published' ? 'Modifier' : 'Relire / modifier'}
                 </Text>
-              </TouchableOpacity>
+              </Touchable>
               {p.status === 'published' ? (
-                <TouchableOpacity
+                <Touchable
                   style={blogStyles.actionBtn}
                   onPress={() => router.push(`/(marketing)/blog/${p.slug}` as never)}
                 >
                   <Text style={blogStyles.actionText}>Voir en ligne</Text>
-                </TouchableOpacity>
+                </Touchable>
               ) : null}
-              <TouchableOpacity style={blogStyles.actionBtn} onPress={() => togglePublish(p)}>
+              <Touchable style={blogStyles.actionBtn} onPress={() => togglePublish(p)}>
                 <Text style={blogStyles.actionText}>
                   {p.status === 'published' ? 'Dépublier' : 'Publier'}
                 </Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={blogStyles.actionBtn} onPress={() => remove(p)}>
+              </Touchable>
+              <Touchable style={blogStyles.actionBtn} onPress={() => remove(p)}>
                 <Text style={blogStyles.actionDanger}>Supprimer</Text>
-              </TouchableOpacity>
+              </Touchable>
             </View>
           </View>
         ))
@@ -1159,7 +1159,7 @@ function CostsTab({ session }: { session: { access_token: string } | null }) {
         {COST_WINDOWS.map((w) => {
           const active = days === w;
           return (
-            <TouchableOpacity
+            <Touchable
               key={w}
               onPress={() => setDays(w)}
               accessibilityRole="tab"
@@ -1169,7 +1169,7 @@ function CostsTab({ session }: { session: { access_token: string } | null }) {
               <Text style={[costStyles.windowLabel, active && costStyles.windowLabelActive]}>
                 {w} jours
               </Text>
-            </TouchableOpacity>
+            </Touchable>
           );
         })}
       </View>
@@ -1191,9 +1191,9 @@ function CostsTab({ session }: { session: { access_token: string } | null }) {
       ) : error ? (
         <View style={costStyles.errorBox}>
           <Text style={costStyles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={load} style={costStyles.retryBtn}>
+          <Touchable onPress={load} style={costStyles.retryBtn}>
             <Text style={costStyles.retryText}>Réessayer</Text>
-          </TouchableOpacity>
+          </Touchable>
         </View>
       ) : summary.chatbots.length === 0 ? (
         <Text style={costStyles.empty}>Aucune interaction sur cette période.</Text>
@@ -1286,7 +1286,7 @@ const costStyles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { padding: tokens.space.lg, gap: tokens.space.md, paddingBottom: tokens.space['3xl'] },
   windowRow: { flexDirection: 'row', gap: tokens.space.sm },
-  windowBtn: { minHeight: tokens.size.controlMd,
+  windowBtn: { minHeight: tokens.size.controlMd, justifyContent: 'center',
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.sm,
     borderRadius: tokens.radius.pill,
@@ -1327,7 +1327,7 @@ const costStyles = StyleSheet.create({
   },
   errorBox: { gap: tokens.space.sm, padding: tokens.space.lg },
   errorText: { fontFamily: tokens.font.sans, color: tokens.colors.danger, fontSize: tokens.type.label.fontSize },
-  retryBtn: { minHeight: tokens.size.controlMd,
+  retryBtn: { minHeight: tokens.size.controlMd, justifyContent: 'center',
     alignSelf: 'flex-start',
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.sm,
@@ -1347,7 +1347,6 @@ const costStyles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
   },
   totalValue: {
     fontFamily: tokens.font.display,
@@ -1456,8 +1455,8 @@ const blogStyles = StyleSheet.create({
   topicInput: {
     borderRadius: tokens.radius.sm,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surfaceSunken,
+    borderColor: tokens.colors.borderStrong,
+    backgroundColor: tokens.colors.surface,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.sm + 2,
     fontFamily: tokens.font.sans,
@@ -1516,7 +1515,7 @@ const blogStyles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
   postActions: { gap: tokens.space.xs, alignItems: 'flex-end' },
-  actionBtn: { minHeight: tokens.size.controlMd, paddingVertical: 2, paddingHorizontal: tokens.space.sm },
+  actionBtn: { minHeight: tokens.size.controlMd, justifyContent: 'center', paddingVertical: 2, paddingHorizontal: tokens.space.sm },
   actionText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.accent,
@@ -1587,9 +1586,9 @@ export default function AdminScreen() {
     return (
       <View style={styles.notAdmin}>
         <Text style={styles.notAdminText}>Accès réservé aux administrateurs.</Text>
-        <TouchableOpacity onPress={() => router.back()}>
+        <Touchable onPress={() => router.back()}>
           <Text style={styles.back}>← Retour</Text>
-        </TouchableOpacity>
+        </Touchable>
       </View>
     );
   }
@@ -1603,14 +1602,14 @@ export default function AdminScreen() {
           (la sidebar + le fil d'Ariane portent déjà la marque et le retour). */}
       <View style={[styles.header, inShell && styles.headerInShell]}>
         {!inShell ? (
-          <TouchableOpacity
+          <Touchable
             onPress={() => router.back()}
             style={styles.backBtn}
             accessibilityRole="button"
             accessibilityLabel="Retour"
           >
             <Icon name="arrowLeft" size={tokens.size.iconLg} color={tokens.colors.text} />
-          </TouchableOpacity>
+          </Touchable>
         ) : null}
         <View>
           <Text accessibilityRole="header" aria-level={1} style={[styles.headerTitle, inShell && styles.headerTitleInShell]}>
@@ -1632,7 +1631,7 @@ export default function AdminScreen() {
         {ADMIN_TABS.map((t) => {
           const active = tab === t.key;
           return (
-            <TouchableOpacity
+            <Touchable
               key={t.key}
               style={[styles.tabBtn, active && styles.tabBtnActive]}
               onPress={() => setTab(t.key)}
@@ -1647,7 +1646,7 @@ export default function AdminScreen() {
                 />
                 <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{t.label}</Text>
               </View>
-            </TouchableOpacity>
+            </Touchable>
           );
         })}
       </View>
@@ -1666,9 +1665,9 @@ export default function AdminScreen() {
       ) : error ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={loadConfig} style={styles.retryBtn}>
+          <Touchable onPress={loadConfig} style={styles.retryBtn}>
             <Text style={styles.retryText}>Réessayer</Text>
-          </TouchableOpacity>
+          </Touchable>
         </View>
       ) : config ? (
         tab === 'models' ? (
@@ -1699,7 +1698,7 @@ const styles = StyleSheet.create({
     paddingTop: tokens.space.xl,
     paddingHorizontal: tokens.space.xl,
   },
-  backBtn: { minHeight: tokens.size.controlMd, padding: tokens.space.xs },
+  backBtn: { minHeight: tokens.size.controlMd, justifyContent: 'center', padding: tokens.space.xs },
   headerTitle: {
     fontFamily: tokens.font.serif,
     color: tokens.colors.text,
@@ -1749,7 +1748,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: tokens.colors.border,
   },
-  tabBtn: { minHeight: tokens.size.controlMd,
+  tabBtn: { minHeight: tokens.size.controlMd, justifyContent: 'center',
     flex: 1,
     paddingVertical: tokens.space.md,
     alignItems: 'center',
@@ -1777,7 +1776,7 @@ const styles = StyleSheet.create({
     gap: tokens.space.md,
   },
   errorText: { fontFamily: tokens.font.sans, color: tokens.colors.danger, fontSize: tokens.type.label.fontSize },
-  retryBtn: { minHeight: tokens.size.controlMd,
+  retryBtn: { minHeight: tokens.size.controlMd, justifyContent: 'center',
     alignSelf: 'flex-start',
     borderRadius: tokens.radius.sm,
     backgroundColor: tokens.colors.danger,
@@ -1787,7 +1786,7 @@ const styles = StyleSheet.create({
   retryText: { fontFamily: tokens.font.sans, color: tokens.colors.onAccent, fontWeight: tokens.weight.semibold, fontSize: tokens.type.label.fontSize },
   notAdmin: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: tokens.space.lg },
   notAdminText: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, fontSize: tokens.type.body.fontSize },
-  back: { minHeight: tokens.size.controlMd, fontFamily: tokens.font.sans, color: tokens.colors.accent, fontSize: tokens.type.label.fontSize, fontWeight: tokens.weight.semibold },
+  back: { minHeight: tokens.size.controlMd, justifyContent: 'center', fontFamily: tokens.font.sans, color: tokens.colors.accent, fontSize: tokens.type.label.fontSize, fontWeight: tokens.weight.semibold },
 });
 
 const tabStyles = StyleSheet.create({
@@ -1817,7 +1816,6 @@ const sectionStyles = StyleSheet.create({
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
   },
 });
 
@@ -1928,7 +1926,6 @@ const paramStyles = StyleSheet.create({
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
     marginBottom: 2,
   },
   row: { gap: tokens.space.xs },
@@ -2199,12 +2196,11 @@ const ecosStyles = StyleSheet.create({
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.medium,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
   },
   input: {
     borderRadius: tokens.radius.sm,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
+    borderColor: tokens.colors.borderStrong,
     backgroundColor: tokens.colors.surface,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.sm,

@@ -1,5 +1,7 @@
 import { ScrollViewStyleReset } from 'expo-router/html';
 import type { PropsWithChildren } from 'react';
+import { CHIP_CSS } from '@/ui/Chip';
+import { INTERACTION_CSS } from '@/ui/interaction';
 import { RESPONSIVE_CSS } from '@/ui/responsive';
 import { tokens } from '@/ui/tokens';
 
@@ -138,6 +140,8 @@ body { overflow-x: hidden; }
   will-change: opacity, transform;
 }
 ${RESPONSIVE_CSS}
+${INTERACTION_CSS}
+${CHIP_CSS}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;

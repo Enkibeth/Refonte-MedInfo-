@@ -6,7 +6,7 @@ import { PageTitle } from '@/ui/PageTitle';
  * la RLS ne montre ici que `status = 'published'` (migration 0022).
  */
 import { useEffect, useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { listPublishedPosts, type BlogPost } from '@/blog/posts';
@@ -17,6 +17,7 @@ import { SeoHead } from '@/ui/SeoHead';
 import { SiteFooter } from '@/ui/SiteFooter';
 import { Skeleton } from '@/ui/Skeleton';
 import { tokens } from '@/ui/tokens';
+import { Touchable } from '@/ui/Touchable';
 
 function formatDate(iso: string | null): string {
   if (!iso) return '';
@@ -92,7 +93,7 @@ export default function BlogScreen() {
             <View style={styles.grid}>
               {posts.map((p, i) => (
                 <Reveal key={p.id} delay={tokens.motion.revealStagger * (i % 3)} style={styles.cell}>
-                  <TouchableOpacity
+                  <Touchable
                     style={styles.card}
                     onPress={() => router.push(`/(marketing)/blog/${p.slug}` as never)}
                     accessibilityRole="button"
@@ -122,7 +123,7 @@ export default function BlogScreen() {
                       ) : null}
                       <Text style={styles.readMore}>Lire l'article →</Text>
                     </View>
-                  </TouchableOpacity>
+                  </Touchable>
                 </Reveal>
               ))}
             </View>
@@ -152,7 +153,6 @@ const styles = StyleSheet.create({
     color: tokens.colors.accentDeep, // texte : accentVivid n’atteint pas 4,5:1 sur le fond ivoire
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
-    letterSpacing: tokens.tracking.capsWide,
     textTransform: 'none',
     marginBottom: tokens.space.sm,
   },

@@ -74,7 +74,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.capsWide,
     marginBottom: tokens.space.md,
   },
   title: {

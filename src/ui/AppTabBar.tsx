@@ -343,7 +343,6 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'none',
-    letterSpacing: tokens.tracking.caps,
     marginBottom: tokens.space.md,
   },
   sheetScroll: { flexGrow: 0 },

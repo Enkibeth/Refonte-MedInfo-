@@ -4,7 +4,7 @@ import { PageTitle } from '@/ui/PageTitle';
  * Pas de formulaire serveur pour l'instant : contact par e-mail (mailto) +
  * renvois vers les pages légales et le chat.
  */
-import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { PAGE_SEO, breadcrumbJsonLd, organizationJsonLd } from '@/seo/meta';
@@ -14,6 +14,7 @@ import { Reveal } from '@/ui/Reveal';
 import { SeoHead } from '@/ui/SeoHead';
 import { SiteFooter } from '@/ui/SiteFooter';
 import { tokens } from '@/ui/tokens';
+import { Touchable } from '@/ui/Touchable';
 
 const CONTACT_EMAIL = 'medaifr1@gmail.com';
 
@@ -86,15 +87,16 @@ export default function ContactScreen() {
                 <View style={styles.cardBody}>
                   <Text style={styles.cardTitle}>{c.title}</Text>
                   <Text style={styles.cardText}>{c.text}</Text>
-                  <TouchableOpacity
+                  <Touchable
                     onPress={c.onPress}
                     accessibilityRole="button"
                     accessibilityLabel={c.cta}
+                    feedback="link"
                     style={styles.cardCta}
                   >
                     <Text style={styles.cardCtaText}>{c.cta}</Text>
                     <Icon name="arrowRight" size={14} color={tokens.colors.accentVivid} />
-                  </TouchableOpacity>
+                  </Touchable>
                 </View>
               </View>
             </Reveal>
@@ -124,7 +126,6 @@ const styles = StyleSheet.create({
     color: tokens.colors.accentDeep, // texte : accentVivid n’atteint pas 4,5:1 sur le fond ivoire
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
-    letterSpacing: tokens.tracking.capsWide,
     textTransform: 'none',
     marginBottom: tokens.space.sm,
   },

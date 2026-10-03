@@ -3,11 +3,12 @@
  * basculent librement entre les 3 chats. Le grand public ne voit pas ce sélecteur.
  * L'autorisation réelle reste vérifiée côté serveur (/api/chat → allowedChatbotsFor).
  */
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import type { ChatbotId } from '@/ai/chat/chatContext';
 import { Icon, type IconName } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
+import { Touchable } from '@/ui/Touchable';
 
 export const CHATBOT_META: Record<ChatbotId, { label: string; shortLabel: string; icon: IconName; description: string }> = {
   public: {
@@ -48,7 +49,7 @@ export function ChatbotSwitcher({
         const meta = CHATBOT_META[id];
         const active = id === value;
         return (
-          <TouchableOpacity
+          <Touchable
             key={id}
             style={[styles.pill, active && styles.pillActive]}
             onPress={() => onChange(id)}
@@ -63,7 +64,7 @@ export function ChatbotSwitcher({
               color={active ? tokens.colors.accent : tokens.colors.textMuted}
             />
             <Text style={[styles.pillText, active && styles.pillTextActive]}>{meta.shortLabel}</Text>
-          </TouchableOpacity>
+          </Touchable>
         );
       })}
     </View>

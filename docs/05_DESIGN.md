@@ -1,6 +1,6 @@
 # MedInfo AI — Design System v2
 
-Version 2.2 — 1er octobre 2026. Direction A « Bureau de référence », enrichie à la demande de Hugo (« trop blanc et uniformisé »), avec un accueil davantage orienté produit.
+Version 2.3 — 2 octobre 2026 (boutons et interactions, §5 bis). Direction A « Bureau de référence », enrichie à la demande de Hugo (« trop blanc et uniformisé »), avec un accueil davantage orienté produit.
 Source exécutable : `src/ui/tokens.ts`. Décisions : ADR-0038, ADR-0040 et ADR-0041. Web prioritaire ; variantes natives conservées.
 
 ## 1. Principes
@@ -73,6 +73,31 @@ Le titre et le contexte sont en haut à gauche, les actions de page en haut à d
 | Badge | Texte court, état non porté par la couleur seule ; pas de label médical inventé. |
 
 Les boutons d’icône ont un nom accessible et une infobulle web. Les cibles sont de 44 × 44 au minimum. Aucun contrôle flottant ne recouvre du contenu, sauf « Revenir en bas » du chat. Les actions équivalentes reprennent les mêmes libellés.
+
+## 5 bis. Boutons et états d’interaction (révision 2026-10)
+
+Un seul jeu de primitives ; aucun contrôle fait main ne réinvente une couleur de survol.
+
+| Primitive | Usage | Contrat |
+|---|---|---|
+| `Button` (`src/ui/Button.tsx`) | Toute action textuelle | Primaire bleu vif (ombre de contact 1 px) ; secondaire blanc, filet `borderControl`, libellé encre ; fantôme bleu ; danger contour rouge. Survol plus dense, appui encore plus dense (`accentVividPressed`) — jamais d’atténuation d’opacité. Désactivé neutre (fond `surfaceSunken`, libellé atténué, sans ombre). Chargement : couleur, libellé et taille conservés. `lg` = 48 px, `md` = 44 px, libellé Schibsted Grotesk demi-gras. `accessibilityRole="link"` quand le bouton ouvre une page ou une source. |
+| `Touchable` (`src/ui/Touchable.tsx`) | Ligne, carte, puce ou bouton composé | Remplace `TouchableOpacity` (interdit, test `interaction.test.ts`) : plus de flash à 20 %. Web : couche d’état CSS (`INTERACTION_CSS`, `src/ui/interaction.ts`) qui épouse l’arrondi — encre 5 % au survol, 10 % à l’appui ; `feedback="light"` sur fond sombre, `"link"` pour un lien textuel (souligné), `"none"` si le composant gère ses états. Natif : opacité 0,7 à l’appui. |
+| `Chip` / `ChipRow` (`src/ui/Chip.tsx`) | Choix et filtres | Pilule blanche à filet clair ; sélection = fond bleu très léger, filet et libellé accent + coche (jamais la couleur seule). `role` radio / checkbox / button et état annoncé. 36 px au pointeur fin, 44 px au doigt (`@media (pointer: coarse)`). |
+| `SearchField` (`src/ui/SearchField.tsx`) | Recherche | Un seul cadre (loupe, saisie, « Effacer » 44 px) ; le focus colore le cadre et pose l’anneau. |
+| `toolbarButtonStyles` (`src/ui/toolbarButton.ts`) | En-têtes d’écran (pays, Outils, plein écran, sources), petites actions sur un résultat | Même langage que le secondaire ; basculé = fond bleu très léger + accent, jamais un aplat plein. |
+| `composerButtonStyles` (`src/ui/chat/composerButton.ts`) | Barre du composer | Inchangé (révision du 2026-10-02). |
+
+Règles :
+- Une seule action principale par bloc ; les autres en secondaire (fin de station ECOS : « Repasser ce cas » principal, « Retour au dashboard » secondaire).
+- Libellé centré verticalement dans toute hauteur imposée : un `minHeight` sans `justifyContent: 'center'` (colonne) ou `alignItems: 'center'` (ligne) laissait le texte collé en haut.
+- Actions secondaires d’une ligne (renommer, supprimer) : `mi('reveal-host')` / `mi('reveal')` — repliées à largeur nulle et révélées au survol ou au focus clavier à la souris, toujours visibles au doigt ; jamais masquées aux lecteurs d’écran.
+- Contrôles compacts (segments, petites icônes) : `mi('touch44')` → 44 px sur écran tactile.
+- Champs : fond blanc et filet `borderStrong` (≥ 3:1), sans fond gris plein.
+- Liens textuels `<Link>` : soulignés au survol ; lien mis en forme de bouton : `buttonLinkProps()` (couche d’état ; `'light'` sur fond sombre).
+- Typographie des étiquettes : pas d’interlettrage sur un texte en casse normale (`tracking` réservé aux capitales) ; JetBrains Mono réservé aux valeurs techniques (minuteur), jamais aux étiquettes.
+- Outils HTML : mêmes filets (`--control-line`), ombre de contact et appui (`--vivid-pressed`) via `public/medinfo-ui.css` et les variables générées.
+
+Contrôle visuel local : `EXPO_PUBLIC_SUPABASE_URL=https://mock.supabase.co EXPO_PUBLIC_SUPABASE_ANON_KEY=mock npm run build` puis `node scripts/design/capture-ui.mjs <dossier>` (session simulée, écrans connectés compris, signalement des contrôles sans nom et des cibles < 44 px sur mobile tactile).
 
 ## 6. Contrat du chat
 
