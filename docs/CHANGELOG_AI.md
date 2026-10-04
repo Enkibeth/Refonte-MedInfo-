@@ -36,7 +36,8 @@ puis « aligner les outils sur le chat, enlever la barre du bas inutile » (capt
   navigation ☰ côté client ; même feuille depuis le chat.
 - Pages d'outils pour un robot sans JavaScript : 8 → ~300 mots, H1 présent ; articles de blog : titre, description, image,
   JSON-LD et texte propres à l'article dans le HTML servi.
-- Fumigation `smoke:node` 26/26 ; tests unitaires, lint, typecheck et `compliance:grep` au vert.
+- Fumigation `smoke:node` 28/28 (2 contrôles ajoutés : présentation publique d'un outil dans le HTML servi, `noindex`
+  des coquilles d'outils) ; tests unitaires, lint, typecheck et `compliance:grep` au vert.
 ### À arbitrer par Hugo
 Illustration d'équipe de l'en-tête (paraît générée par IA : animaux, icône vétérinaire) ; ECG animé en boucle ; règles
 robots pour l'entraînement des IA ; pages légales à mettre à jour sur le fond (refus avant traitement retiré par

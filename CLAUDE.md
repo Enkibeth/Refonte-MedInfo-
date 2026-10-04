@@ -172,7 +172,7 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
   de `public/robots.txt` restent alignés (test) ; (12) cron hebdo du blog = tâche cron hPanel
   vers l'URL publique (`scripts/hostinger/weekly-blog-cron.sh` ou `curl` direct). Hébergeur
   nommé dans les mentions légales : `src/deploy/hosting.ts` (LCEN art. 6-III ; région et
-  téléphone à compléter, jamais devinés). Fumigation : `npm run smoke:node` (26 vérifications,
+  téléphone à compléter, jamais devinés). Fumigation : `npm run smoke:node` (28 vérifications,
   nécessite un build).
 - **Fondations web (ADR-0042, 2026-10)** : (1) **CSP à empreintes** sur chaque document HTML
   (`server/lib/security.mjs`) — un script inline ajouté est couvert automatiquement, mais

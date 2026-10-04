@@ -266,6 +266,25 @@ await check('adresse inconnue → page 404 de marque (statut 404, noindex)', asy
   assert.match(html, /noindex/);
 });
 
+await check('page d’outil : présentation publique dans le HTML servi (H1, texte, carte de partage)', async () => {
+  const res = await fetch(`${base}/ecos`);
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  assert.match(html, /<h1[^>]*>Simulation ECOS<\/h1>/);
+  assert.match(html, /15 stations fictives/);
+  assert.match(html, /property="og:image" content="[^"]*\/social-card\.png"/);
+  assert.match(html, /name="robots" content="index, follow, max-image-preview:large/);
+  // Script de tête « session probable » couvert par la CSP à empreintes.
+  const csp = res.headers.get('content-security-policy') ?? '';
+  for (const hash of inlineScriptHashes(html)) assert.ok(csp.includes(hash), hash);
+});
+
+await check('coquilles d’outils autonomes jamais indexées seules', async () => {
+  for (const page of ['/cv-builder.html', '/partiel.html', '/presentation.html', '/article.html']) {
+    assert.match(await (await fetch(`${base}${page}`)).text(), /<meta name="robots" content="noindex, nofollow"/, page);
+  }
+});
+
 await check('page de débogage /_sitemap d’Expo absente en production', async () => {
   const res = await fetch(`${base}/_sitemap`);
   assert.equal(res.status, 404);

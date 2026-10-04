@@ -40,7 +40,7 @@ sert les fichiers statiques **et** exécute les routes API.
 | `server/index.mjs` | Le serveur : statiques, routes Expo, en-têtes de proxy, IP client, HSTS, redirection `www`, arrêt gracieux, journal d'accès. |
 | `server/lib/*.mjs` | Modules purs (cache, `.env`, proxy, écoute, diagnostic des clés Supabase `keycheck.mjs`) testés dans `tests/unit/hostinger-server.test.ts`. |
 | `scripts/hostinger/precompress.mjs` | Compression Brotli/gzip au build (7,1 Mo → 1,5 Mo servis). |
-| `scripts/hostinger/smoke.mjs` | Fumigation du serveur réel sur le build (`npm run smoke:node`, 26 vérifications). |
+| `scripts/hostinger/smoke.mjs` | Fumigation du serveur réel sur le build (`npm run smoke:node`, 28 vérifications). |
 | `scripts/hostinger/weekly-blog-cron.sh` | Déclencheur du cron hebdo du blog. |
 | `ecosystem.config.cjs` | Config PM2 — **uniquement** sur un VPS. |
 | `app/api/health+api.ts` | Smoke-test non secret : `GET /api/health` (`deployTarget: "hostinger"`). |
