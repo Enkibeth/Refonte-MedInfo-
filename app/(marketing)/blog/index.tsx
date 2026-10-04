@@ -65,10 +65,10 @@ export default function BlogScreen() {
         <MainContent style={styles.inner}>
           <Reveal>
             <Text style={styles.eyebrow}>Blog</Text>
-            <PageTitle style={styles.title}>Comprendre la santé, un article à la fois.</PageTitle>
+            <PageTitle style={styles.title}>Des articles pour comprendre la santé</PageTitle>
             <Text style={styles.lead}>
-              Prévention, recherche, idées reçues : des articles d'information générale, sourcés
-              et relus. Jamais un avis médical individuel.
+              Prévention, recherche, idées reçues : des articles d’information générale, avec leurs
+              sources. Ils ne remplacent pas un avis médical individuel.
             </Text>
           </Reveal>
 
@@ -122,7 +122,7 @@ export default function BlogScreen() {
                           {p.summary}
                         </Text>
                       ) : null}
-                      <Text style={styles.readMore}>Lire l'article →</Text>
+                      <Text style={styles.readMore}>Lire l’article</Text>
                     </View>
                   </Touchable>
                 </Reveal>

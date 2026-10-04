@@ -113,7 +113,7 @@ export function heroSummary(facts: HeroFacts): string {
     parts.push(`une conversation « ${truncateLabel(facts.lastConversationTitle, 48)} » à poursuivre`);
   }
   if (parts.length === 0) {
-    return 'Pose une question au chat médical ou ouvre un outil : tout est prêt.';
+    return 'Pose une question au chat médical ou ouvre l’un de tes outils.';
   }
   return `Tu as ${joinSentence(parts)}.`;
 }
@@ -242,7 +242,7 @@ export function buildRecentActivity(input: RecentActivityInput, limit = 6): Acti
     entries.push({
       key: `ecos-${a.id}`,
       feature: 'ecos',
-      title: truncateLabel(`ECOS — ${a.case_title}`),
+      title: truncateLabel(`ECOS : ${a.case_title}`),
       detail: a.score != null ? `${a.score}/20` : 'Évaluation enregistrée',
       timestamp: a.created_at,
       route: '/(chat)/ecos',
@@ -252,7 +252,7 @@ export function buildRecentActivity(input: RecentActivityInput, limit = 6): Acti
     entries.push({
       key: `revision-${p.id}`,
       feature: 'revision',
-      title: truncateLabel(`Planning — ${p.title}`),
+      title: truncateLabel(`Planning : ${p.title}`),
       detail: 'Plan mis à jour',
       timestamp: p.updated_at,
       route: '/(chat)/revision',
@@ -263,7 +263,7 @@ export function buildRecentActivity(input: RecentActivityInput, limit = 6): Acti
       key: `document-${d.id}`,
       feature: 'document',
       title: truncateLabel(
-        `${d.mode === 'translation' ? 'Traduction' : 'Analyse'} — ${d.source_name || 'Texte collé'}`,
+        `${d.mode === 'translation' ? 'Traduction' : 'Analyse'} : ${d.source_name || 'Texte collé'}`,
       ),
       detail: 'Analyse de document',
       timestamp: d.created_at,
@@ -274,7 +274,7 @@ export function buildRecentActivity(input: RecentActivityInput, limit = 6): Acti
     entries.push({
       key: `audio-${a.id}`,
       feature: 'audio',
-      title: truncateLabel(`Audio — ${a.title || 'Compte rendu'}`),
+      title: truncateLabel(`Audio : ${a.title || 'Compte rendu'}`),
       detail: 'Compte rendu de consultation',
       timestamp: a.created_at,
       route: '/(chat)/audio',
@@ -284,8 +284,8 @@ export function buildRecentActivity(input: RecentActivityInput, limit = 6): Acti
     entries.push({
       key: `presentation-${p.id}`,
       feature: 'presentation',
-      title: truncateLabel(`Présentation — ${p.title || 'Sans titre'}`),
-      detail: 'Deck mis à jour',
+      title: truncateLabel(`Présentation : ${p.title || 'Sans titre'}`),
+      detail: 'Présentation mise à jour',
       timestamp: p.updated_at,
       route: '/(chat)/presentation',
     });
@@ -294,7 +294,7 @@ export function buildRecentActivity(input: RecentActivityInput, limit = 6): Acti
     entries.push({
       key: `cv-${c.id}`,
       feature: 'cv-builder',
-      title: truncateLabel(`CV — ${c.title || 'Mon CV'}`),
+      title: truncateLabel(`CV : ${c.title || 'Mon CV'}`),
       detail: 'CV mis à jour',
       timestamp: c.updated_at,
       route: '/(chat)/cv-builder',
@@ -304,7 +304,7 @@ export function buildRecentActivity(input: RecentActivityInput, limit = 6): Acti
     entries.push({
       key: `article-${a.id}`,
       feature: 'article',
-      title: truncateLabel(`Article — ${a.title || 'Sans titre'}`),
+      title: truncateLabel(`Article : ${a.title || 'Sans titre'}`),
       detail: DOC_TYPE_SHORT[a.doc_type] ?? 'Manuscrit mis à jour',
       timestamp: a.updated_at,
       route: '/(chat)/article',

@@ -117,7 +117,7 @@ export default function RevisionScreen() {
             { name: 'Planning de révisions', path: PAGE_SEO.revision.path },
           ]),
           webApplicationJsonLd({
-            name: 'Planning de révisions — MedInfo AI',
+            name: 'Planning de révisions',
             description: PAGE_SEO.revision.description,
             path: PAGE_SEO.revision.path,
           }),

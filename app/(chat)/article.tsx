@@ -97,7 +97,7 @@ export default function ArticleWriterScreen() {
             { name: "Rédaction d'article médical", path: PAGE_SEO.article.path },
           ]),
           webApplicationJsonLd({
-            name: "Rédaction d'article médical — MedInfo AI",
+            name: 'Rédaction d’article médical',
             description: PAGE_SEO.article.description,
             path: PAGE_SEO.article.path,
           }),

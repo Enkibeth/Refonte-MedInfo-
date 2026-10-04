@@ -223,10 +223,10 @@ describe('buildRecentActivity — activité de tous les outils du rôle (D1)', (
       'cv-builder',
       'article',
     ]);
-    expect(entries[0].title).toBe('Traduction — compte-rendu.pdf');
-    expect(entries[1].title).toBe('Analyse — Texte collé');
-    expect(entries[2].title).toBe('Audio — Consultation Mme B.');
-    expect(entries[4].title).toBe('CV — Mon CV');
+    expect(entries[0].title).toBe('Traduction : compte-rendu.pdf');
+    expect(entries[1].title).toBe('Analyse : Texte collé');
+    expect(entries[2].title).toBe('Audio : Consultation Mme B.');
+    expect(entries[4].title).toBe('CV : Mon CV');
     expect(entries[5].detail).toBe('Cas clinique');
     expect(entries[0].route).toBe('/(chat)/document');
     expect(entries[5].route).toBe('/(chat)/article');

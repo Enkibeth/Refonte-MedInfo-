@@ -58,9 +58,10 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
   },
 ];
 
-export function SiteFooter() {
+/** @param landmark `false` quand le pied est rendu DANS le `<main>` d'un écran (cf. LandingHeader). */
+export function SiteFooter({ landmark = true }: { landmark?: boolean } = {}) {
   return (
-    <View style={styles.footer} role="contentinfo">
+    <View style={styles.footer} role={landmark ? 'contentinfo' : undefined}>
       <View style={styles.inner}>
         <View style={styles.brandBlock}>
           <Logo size="sm" />

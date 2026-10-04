@@ -68,7 +68,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     label: 'Document',
     emoji: '📄',
     icon: 'fileText',
-    description: 'Résumé patient d’un compte rendu ou d’une ordonnance.',
+    description: 'Résumé en langage clair d’un compte rendu ou d’une ordonnance.',
     personas: ['public'],
     primary: true,
   },
@@ -78,7 +78,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     label: 'ECOS',
     emoji: '🩺',
     icon: 'stethoscope',
-    description: 'Simulation patient ECOS + évaluation pédagogique.',
+    description: 'Simulation d’un patient ECOS et évaluation pédagogique.',
     personas: ['student'],
     primary: true,
   },
@@ -89,7 +89,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     emoji: '📊',
     icon: 'barChart',
     description:
-      'Analyse tes partiels : rang dans la promo, coefficients, points forts et simulateur.',
+      'Analyse des partiels : rang dans la promo, coefficients, points forts et simulateur.',
     personas: ['student'],
   },
   {
@@ -98,7 +98,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     label: 'Révisions',
     emoji: '🗓️',
     icon: 'calendarCheck',
-    description: 'Planifie tes révisions : charge quotidienne réaliste, suivi et jauge de risque.',
+    description: 'Planning de révisions : charge quotidienne réaliste, suivi et jauge de risque.',
     personas: ['student'],
     primary: true,
   },
@@ -118,7 +118,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     label: 'Présentations',
     emoji: '🖥️',
     icon: 'presentation',
-    description: 'Slides médicales prêtes pour Keynote (manuel ou IA) — export PPTX.',
+    description: 'Diapositives médicales, à la main ou avec l’IA, exportées en PPTX pour PowerPoint et Keynote.',
     personas: ['student', 'professional'],
     primary: true,
   },
@@ -128,7 +128,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     label: 'CV',
     emoji: '📋',
     icon: 'idCard',
-    description: 'Crée et améliore ton CV médical : éditeur, aperçu A4, relecture IA, export PDF.',
+    description: 'CV médical : éditeur, aperçu A4, relecture par l’IA et export PDF.',
     personas: ['student', 'professional'],
   },
   {
@@ -138,7 +138,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     emoji: '✒️',
     icon: 'penLine',
     description:
-      'Rédige ton article ou ta thèse : plan IMRaD, compteurs de caractères, bibliographie Vancouver, aides IA et contrôle d’originalité.',
+      'Rédaction d’article ou de thèse : plan IMRaD, compteurs de caractères, bibliographie Vancouver, aides IA et contrôle d’originalité.',
     personas: ['student', 'professional'],
   },
   {

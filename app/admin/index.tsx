@@ -1071,21 +1071,21 @@ const COST_PERSONA_LABELS: Record<string, string> = {
   // Features retirées (ADR-0037) : libellés conservés pour que l'HISTORIQUE des coûts
   // reste lisible (ai_interactions garde les lignes de ces anciens appels).
   pubmed_agent: 'Sous-agent PubMed (retiré)',
-  chat_researcher: 'Chat — agent chercheur (retiré)',
-  chat_fast: 'Chat — mode rapide (retiré)',
+  chat_researcher: 'Chat : agent chercheur (retiré)',
+  chat_fast: 'Chat : mode rapide (retiré)',
   analyze: 'Analyse de document',
-  ecos_simulate: 'ECOS — simulation',
-  ecos_evaluate: 'ECOS — évaluation',
+  ecos_simulate: 'ECOS : simulation',
+  ecos_evaluate: 'ECOS : évaluation',
   presentation_generate: 'Générateur de présentations',
-  cv_review: 'CV — relecture',
-  cv_import: 'CV — import',
-  article_assist: 'Article — aide',
-  article_reduce: 'Article — réduction',
-  article_originality: 'Article — originalité',
+  cv_review: 'CV : relecture',
+  cv_import: 'CV : import',
+  article_assist: 'Article : aide',
+  article_reduce: 'Article : réduction',
+  article_originality: 'Article : originalité',
   qcm_generate: 'QCM',
-  revision_plan_assist: 'Révisions — coup de pouce',
-  audio_diarize: 'Audio — diarisation',
-  audio_report: 'Audio — compte rendu',
+  revision_plan_assist: 'Révisions : coup de pouce',
+  audio_diarize: 'Audio : diarisation',
+  audio_report: 'Audio : compte rendu',
 };
 
 function costPersonaLabel(persona: string): string {

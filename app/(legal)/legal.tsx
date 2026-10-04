@@ -112,7 +112,7 @@ export default function LegalScreen() {
 
       {/* Protection des données — RGPD art. 13 (01_REGULATION §5) */}
       <Card style={styles.section}>
-        <Text style={styles.h2}>Données personnelles & confidentialité</Text>
+        <Text style={styles.h2}>Données personnelles et confidentialité</Text>
         <Text style={styles.body}>
           MedInfo AI suit un principe de minimisation : aucune donnée de santé identifiable
           n’est conservée. Les échanges du chat sont traités sans profil de santé attribuable

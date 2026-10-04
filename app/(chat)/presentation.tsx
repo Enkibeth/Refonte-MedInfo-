@@ -95,7 +95,7 @@ export default function PresentationScreen() {
             { name: 'Générateur de présentations', path: PAGE_SEO.presentation.path },
           ]),
           webApplicationJsonLd({
-            name: 'Générateur de présentations médicales — MedInfo AI',
+            name: 'Générateur de présentations médicales',
             description: PAGE_SEO.presentation.description,
             path: PAGE_SEO.presentation.path,
           }),

@@ -6,7 +6,8 @@
  * /sitemap.xml et les pages marketing.
  *
  * Conventions « grande tech » appliquées :
- *  - titre ≤ ~60 caractères, suffixe de marque unique (« — MedInfo AI ») ;
+ *  - titre ≤ ~60 caractères, suffixe de marque unique (« | MedInfo AI » : séparateur neutre,
+ *    sans tiret cadratin) ;
  *  - description ≤ ~160 caractères, orientée intention de recherche ;
  *  - URL canonique absolue sans slash final ;
  *  - données structurées schema.org (Organization, WebSite, FAQPage, BlogPosting,
@@ -24,8 +25,8 @@ export const SITE_NAME = 'MedInfo AI';
 export const DEFAULT_SITE_URL = 'https://medinfo-ai.com';
 
 export const DEFAULT_DESCRIPTION =
-  "Assistant IA d'information médicale en français : réponses sourcées (HAS, ANSM, PubMed), " +
-  'références citées, 3 chatbots pour le grand public, les étudiants et les professionnels de santé.';
+  'Assistant IA d’information médicale en français : trois chatbots qui citent leurs sources (HAS, ANSM, ' +
+  'PubMed), pour le grand public, les étudiants et les professionnels de santé.';
 
 /** Base absolue du site, sans slash final. */
 export function siteUrl(): string {
@@ -45,7 +46,7 @@ export function canonicalUrl(path: string): string {
 export function pageTitle(title: string): string {
   const t = title.trim();
   if (!t) return SITE_NAME;
-  return t.includes(SITE_NAME) ? t : `${t} — ${SITE_NAME}`;
+  return t.includes(SITE_NAME) ? t : `${t} | ${SITE_NAME}`;
 }
 
 // ─── Données structurées schema.org (JSON-LD) ───
@@ -55,19 +56,61 @@ export interface FaqItem {
   answer: string;
 }
 
-/** Image de partage social par défaut (public/og-image.png, copiée du logo). */
+/** Logo carré de la marque (public/og-image.png) : logo de la fiche Organization. */
 export function defaultOgImageUrl(): string {
   return canonicalUrl('/og-image.png');
+}
+
+/**
+ * Carte de partage par défaut : 1200 × 630 (ratio 1,91:1 attendu par Open Graph, LinkedIn,
+ * X/Twitter en grande carte), générée par `scripts/design/social-card.mjs` avec les polices,
+ * la palette et la photo d'accueil du site. Le logo carré seul s'affichait en vignette.
+ */
+export const SOCIAL_CARD = {
+  path: '/social-card.png',
+  width: 1200,
+  height: 630,
+  type: 'image/png',
+  alt: 'MedInfo AI : l’IA pour apprendre, des outils pour créer.',
+} as const;
+
+export function socialCardUrl(): string {
+  return canonicalUrl(SOCIAL_CARD.path);
+}
+
+/**
+ * Directives robots d'une page indexable : aperçu d'image en grand format (exigé par Google
+ * Discover), extraits et aperçus vidéo sans limite de longueur.
+ */
+export const INDEXABLE_ROBOTS = 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
+
+/**
+ * Identifiants stables des entités (graphe schema.org) : le site, l'article ou l'outil
+ * renvoient à LA même organisation au lieu d'en redéclarer une anonyme à chaque page.
+ */
+export function organizationId(): string {
+  return `${siteUrl()}/#organization`;
+}
+export function webSiteId(): string {
+  return `${siteUrl()}/#website`;
+}
+
+/** Référence courte à l'organisation (éditeur, auteur). */
+function organizationRef(): Record<string, unknown> {
+  return { '@type': 'Organization', '@id': organizationId(), name: SITE_NAME, url: `${siteUrl()}/` };
 }
 
 export function organizationJsonLd(): Record<string, unknown> {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
+    '@id': organizationId(),
     name: SITE_NAME,
     url: `${siteUrl()}/`,
     logo: defaultOgImageUrl(),
     description: DEFAULT_DESCRIPTION,
+    // Nommé publiquement sur la page À propos (app/(marketing)/a-propos.tsx).
+    founder: { '@type': 'Person', name: 'Hugo Bettembourg' },
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'customer support',
@@ -97,7 +140,7 @@ export function webApplicationJsonLd(app: {
     operatingSystem: 'Web',
     inLanguage: 'fr-FR',
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
-    publisher: { '@type': 'Organization', name: SITE_NAME, url: `${siteUrl()}/` },
+    publisher: organizationRef(),
   };
 }
 
@@ -105,9 +148,11 @@ export function webSiteJsonLd(): Record<string, unknown> {
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
+    '@id': webSiteId(),
     name: SITE_NAME,
     url: `${siteUrl()}/`,
     inLanguage: 'fr-FR',
+    publisher: { '@id': organizationId() },
   };
 }
 
@@ -129,22 +174,34 @@ export interface BlogPostingSeo {
   summary: string | null;
   coverImageUrl: string | null;
   publishedAt: string | null;
+  /** Dernière modification (`blog_posts.updated_at`) ; à défaut, la date de publication. */
+  updatedAt?: string | null;
   category: string | null;
 }
 
+/**
+ * Fiche BlogPosting. Le serveur produit la MÊME fiche dans le HTML servi aux robots sans
+ * JavaScript (server/lib/blog-prerender.mjs, comparaison dans tests/unit/blog-prerender.test.ts).
+ */
 export function blogPostingJsonLd(post: BlogPostingSeo): Record<string, unknown> {
+  const url = canonicalUrl(`/blog/${post.slug}`);
+  const coverImage = post.coverImageUrl && /^https?:\/\//i.test(post.coverImageUrl.trim()) ? post.coverImageUrl.trim() : null;
   const jsonLd: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
     headline: post.title,
-    url: canonicalUrl(`/blog/${post.slug}`),
+    url,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
     inLanguage: 'fr-FR',
-    publisher: { '@type': 'Organization', name: SITE_NAME, url: `${siteUrl()}/` },
-    author: { '@type': 'Organization', name: SITE_NAME },
+    // Image recommandée pour les résultats enrichis d'article : la couverture, sinon la carte du site.
+    image: coverImage ?? socialCardUrl(),
+    publisher: { ...organizationRef(), logo: { '@type': 'ImageObject', url: defaultOgImageUrl() } },
+    author: organizationRef(),
   };
   if (post.summary) jsonLd.description = post.summary;
-  if (post.coverImageUrl) jsonLd.image = post.coverImageUrl;
   if (post.publishedAt) jsonLd.datePublished = post.publishedAt;
+  const modified = post.updatedAt ?? post.publishedAt;
+  if (modified) jsonLd.dateModified = modified;
   if (post.category) jsonLd.articleSection = post.category;
   return jsonLd;
 }
@@ -174,42 +231,42 @@ export interface PageSeo {
 export const PAGE_SEO = {
   home: {
     path: '/',
-    title: 'MedInfo AI — Assistant IA médical : réponses sourcées',
+    title: 'MedInfo AI | Assistant IA d’information médicale',
     description:
-      'Posez vos questions de santé à une IA qui recherche les sources en direct (HAS, ANSM, ' +
-      'PubMed, sociétés savantes) et les cite. Essai gratuit sans inscription.',
+      'Posez vos questions de santé à une IA qui peut rechercher et citer ses sources (HAS, ANSM, ' +
+      'PubMed, sociétés savantes). Premier message gratuit, sans inscription.',
   },
   about: {
     path: '/a-propos',
-    title: 'À propos — notre mission et notre méthode',
+    title: 'À propos de MedInfo AI',
     description:
-      "MedInfo AI rend l'information médicale fiable et accessible : 3 chatbots spécialisés, " +
-      'sources officielles citées à chaque réponse. Découvrez notre démarche.',
+      'Créé par un étudiant en médecine, MedInfo AI propose trois chatbots d’information médicale ' +
+      'qui citent leurs sources et des outils pour étudiants et professionnels de santé.',
   },
   contact: {
     path: '/contact',
-    title: 'Contact — support, partenariats et données personnelles',
+    title: 'Contact et assistance',
     description:
-      "Contactez l'équipe MedInfo AI : support compte, presse et partenariats, exercice de vos " +
+      'Écrivez à MedInfo AI : aide sur votre compte, presse et partenariats, exercice de vos ' +
       'droits RGPD. Réponse sous 48 h ouvrées.',
   },
   blog: {
     path: '/blog',
-    title: 'Blog santé — articles sourcés et relus',
+    title: 'Blog santé : articles d’information médicale',
     description:
-      "Prévention, traitements, idées reçues : des articles d'information médicale générale, " +
-      'sourcés et relus, publiés chaque semaine par MedInfo AI.',
+      'Prévention, traitements, idées reçues : des articles d’information médicale générale, ' +
+      'avec leurs sources, publiés par MedInfo AI.',
   },
   pricing: {
     path: '/pricing',
-    title: 'Tarifs — offres grand public et étudiants',
+    title: 'Tarifs : offres grand public et étudiants',
     description:
       'Comparez les offres MedInfo AI : essai gratuit, abonnements grand public et étudiants. ' +
       'Les sources officielles (HAS, ANSM) restent gratuites pour tous.',
   },
   chat: {
     path: '/chat',
-    title: 'Chat santé IA — posez votre question, réponse sourcée',
+    title: 'Chat santé IA avec sources citées',
     description:
       'Chat IA médical en français : réponses claires appuyées sur des sources citées ' +
       '(HAS, ANSM, PubMed). Premier message gratuit, sans inscription.',
@@ -220,49 +277,49 @@ export const PAGE_SEO = {
   //    WebApplication — les écrans restent protégés par RoleGate côté produit. ──
   document: {
     path: '/document',
-    title: 'Analyse de document médical par IA — explication claire',
+    title: 'Analyse de document médical par IA',
     description:
       "Déposez un compte rendu, une ordonnance ou un résultat d'analyse : l'IA l'explique " +
       'en langage clair. Le document lui-même n’est jamais conservé.',
   },
   ecos: {
     path: '/ecos',
-    title: 'Simulation ECOS en ligne — patient virtuel et note sur 20',
+    title: 'Simulation ECOS en ligne avec patient virtuel',
     description:
       'Entraînez-vous aux ECOS avec un patient simulé par IA : cas fictifs par spécialité, ' +
       'évaluation sur grille, note sur 20 et historique de vos passages.',
   },
   revision: {
     path: '/revision',
-    title: 'Planning de révisions médecine — planificateur intelligent',
+    title: 'Planning de révisions en médecine',
     description:
       "Construisez un planning de révisions réaliste pour vos partiels ou l'EDN : charge " +
       'quotidienne calculée, redistribution automatique, jauge de risque.',
   },
   partiel: {
     path: '/partiel',
-    title: 'Analyse des partiels — classement de promo et statistiques',
+    title: 'Analyse des partiels et classement de promo',
     description:
       'Importez les notes de votre promo (Excel, CSV, PDF) : rang, coefficients, points forts ' +
       'par z-score, distribution réelle et simulateur. Calcul 100 % local, aucune note envoyée.',
   },
   audio: {
     path: '/audio',
-    title: 'Compte rendu de consultation par dictée vocale — IA',
+    title: 'Compte rendu de consultation par dictée vocale',
     description:
       'Dictez votre consultation : transcription puis compte rendu structuré par IA. Audio ' +
       'purgé sous 24 h, bibliothèque privée sécurisée, export PDF.',
   },
   presentation: {
     path: '/presentation',
-    title: 'Générateur de présentations médicales — export PowerPoint',
+    title: 'Générateur de présentations médicales (PPTX)',
     description:
-      "Créez des présentations médicales soignées, à la main ou avec l'IA, et exportez-les " +
-      'en PPTX compatible PowerPoint et Keynote. Historique cloud inclus.',
+      'Créez des présentations médicales à la main ou avec l’IA, puis exportez-les en PPTX ' +
+      'compatible PowerPoint et Keynote. Sauvegarde en ligne incluse.',
   },
   cvBuilder: {
     path: '/cv-builder',
-    title: 'Créateur de CV médical en ligne — modèle pro, export PDF',
+    title: 'Créateur de CV médical en ligne, export PDF',
     description:
       'Construisez un CV médical avec vos propres rubriques : aperçu A4 fidèle, ' +
       'relecture IA et export PDF au texte sélectionnable, lisible par les ' +
@@ -270,14 +327,14 @@ export const PAGE_SEO = {
   },
   article: {
     path: '/article',
-    title: "Rédaction d'article médical — IMRaD, citations Vancouver",
+    title: 'Rédaction d’article médical (IMRaD, Vancouver)',
     description:
       'Structurez votre manuscrit scientifique : gabarits IMRaD, compteurs par section, ' +
       'bibliographie DOI/PMID, citations Vancouver ou APA, export Word.',
   },
   scores: {
     path: '/scores',
-    title: 'Scores médicaux — calculateurs cliniques et interprétation',
+    title: 'Scores médicaux et calculateurs cliniques',
     description:
       'Calculez les scores médicaux courants (CHA₂DS₂-VASc, Glasgow, CURB-65, CKD-EPI, MELD…) : ' +
       'boutons interactifs, interprétation immédiate, recherche par nom ou par fonction.',
@@ -293,14 +350,14 @@ export const PAGE_SEO = {
   },
   cgu: {
     path: '/cgu',
-    title: "Conditions générales d'utilisation (CGU)",
+    title: 'Conditions générales d’utilisation (CGU)',
     description:
       "Les règles d'utilisation de MedInfo AI : information médicale générale, comptes et " +
       'rôles vérifiés, abonnements, responsabilités et bon usage du service.',
   },
   confidentialite: {
     path: '/confidentialite',
-    title: 'Politique de confidentialité et données personnelles (RGPD)',
+    title: 'Politique de confidentialité (RGPD)',
     description:
       'Quelles données MedInfo AI traite, pourquoi et combien de temps : historique de chat ' +
       'privé, documents jamais stockés, droits RGPD et contact.',

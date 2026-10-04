@@ -114,15 +114,16 @@ const INPUT_MIN_HEIGHT = 40;
 const INPUT_MAX_HEIGHT = 140;
 
 const DISCLAIMER: Record<ChatbotId, string> = {
-  public: 'Information générale — ne remplace pas un avis médical individuel.',
-  student: 'Support de révision — ne remplace pas les référentiels ni la pratique encadrée.',
-  professional: "Outil d'aide à la décision — la décision finale appartient au clinicien.",
+  public: 'Cette information générale ne remplace pas un avis médical individuel.',
+  student: 'Ce support de révision ne remplace ni les référentiels ni la pratique encadrée.',
+  // Synthèse documentaire, pas une aide à la décision clinique (INTENDED_PURPOSE, src/compliance/disclosures.ts).
+  professional: 'Synthèse documentaire : la décision clinique appartient au professionnel de santé.',
 };
 
 // Titre de l'état vide décliné par chatbot (le sous-titre vient de CHATBOT_META).
 const EMPTY_TITLE: Record<ChatbotId, string> = {
   public: 'Posez votre question santé',
-  student: 'Que veux-tu réviser aujourd’hui ?',
+  student: 'Que voulez-vous réviser aujourd’hui ?',
   professional: 'Quelle est votre question clinique ?',
 };
 const EMPTY_TITLE_NAMED: Record<ChatbotId, string> = {
@@ -405,9 +406,9 @@ const MessageRow = memo(function MessageRow({
 // qu'un outil : la recherche web du provider. La table reste indexée par nom pour rester
 // robuste aux variantes de nommage entre providers.
 const TOOL_STATUS_LABELS: Record<string, string> = {
-  web_search: 'Recherche de sources fiables…',
-  web_search_preview: 'Recherche de sources fiables…',
-  google_search: 'Recherche de sources fiables…',
+  web_search: 'Recherche sur Internet…',
+  web_search_preview: 'Recherche sur Internet…',
+  google_search: 'Recherche sur Internet…',
 };
 
 /** Compacte un texte d'appel d'outil pour la bulle de statut (une ligne courte). */
@@ -1341,7 +1342,7 @@ export default function ChatScreen() {
     if (hadThread) {
       showSwitchNotice(
         user
-          ? `Conversation précédente enregistrée dans l’historique — nouveau fil ${CHATBOT_META[next].label.toLowerCase()}.`
+          ? `Conversation précédente enregistrée dans l’historique. Nouveau fil ${CHATBOT_META[next].label.toLowerCase()}.`
           : `Nouveau fil ${CHATBOT_META[next].label.toLowerCase()}.`,
       );
     }
@@ -1395,7 +1396,7 @@ export default function ChatScreen() {
         // B5 : conversation issue d'un chatbot que ce compte ne peut plus utiliser —
         // le dire, plutôt que de poursuivre silencieusement avec le chatbot courant.
         showSwitchNotice(
-          `Cette conversation vient du chat ${CHATBOT_META[c.chatbot]?.label.toLowerCase() ?? c.chatbot}, non disponible avec votre rôle — la suite utilisera le chat ${CHATBOT_META[chatbotRef.current].label.toLowerCase()}.`,
+          `Cette conversation vient du chat ${CHATBOT_META[c.chatbot]?.label.toLowerCase() ?? c.chatbot}, qui n’est pas disponible avec votre rôle. La suite se fera avec le chat ${CHATBOT_META[chatbotRef.current].label.toLowerCase()}.`,
           9000,
         );
       }
@@ -1473,7 +1474,7 @@ export default function ChatScreen() {
             { name: 'Chat santé IA', path: PAGE_SEO.chat.path },
           ]),
           webApplicationJsonLd({
-            name: 'Chat santé IA — MedInfo AI',
+            name: 'Chat santé IA',
             description: PAGE_SEO.chat.description,
             path: PAGE_SEO.chat.path,
           }),
@@ -1686,7 +1687,7 @@ export default function ChatScreen() {
           <Icon name="bookOpen" size={15} color={tokens.colors.accentDeep} />
           <Text style={styles.guestBannerText} numberOfLines={2}>
             {guestUsed
-              ? 'Essai gratuit · Sources accessibles'
+              ? 'Essai gratuit utilisé · Les sources restent accessibles'
               : 'Testez MedInfo AI : envoyez votre premier message sans inscription.'}
           </Text>
           <View style={[styles.guestBadge, guestUsed && styles.guestBadgeUsed]}>

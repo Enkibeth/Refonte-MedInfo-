@@ -165,7 +165,7 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
     },
     [
       { min: 0, level: 'low', label: 'Peu probable', detail: 'Score 0 : forte probabilité d’absence de dépression.' },
-      { min: 1, level: 'high', label: 'Dépistage positif', detail: 'Score ≥ 1 : forte probabilité de dépression — évaluation approfondie (GDS-30 ou entretien).' },
+      { min: 1, level: 'high', label: 'Dépistage positif', detail: 'Score ≥ 1 : forte probabilité de dépression. Évaluation approfondie (GDS-30 ou entretien).' },
     ],
   ),
 
@@ -208,8 +208,8 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
     },
     [
       { min: 0, level: 'low', label: 'Pas de dépression', detail: 'Score 0–4 : absence de symptomatologie dépressive significative.' },
-      { min: 5, level: 'moderate', label: 'Dépression légère à modérée', detail: 'Score 5–9 : symptomatologie dépressive probable — évaluation clinique.' },
-      { min: 10, level: 'high', label: 'Dépression sévère', detail: 'Score 10–15 : symptomatologie dépressive marquée — prise en charge spécialisée.' },
+      { min: 5, level: 'moderate', label: 'Dépression légère à modérée', detail: 'Score 5–9 : symptomatologie dépressive probable. Évaluation clinique.' },
+      { min: 10, level: 'high', label: 'Dépression sévère', detail: 'Score 10–15 : symptomatologie dépressive marquée. Prise en charge spécialisée.' },
     ],
   ),
 
@@ -260,7 +260,7 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
     },
     [
       { min: 0, level: 'low', label: 'Autonome', detail: 'Score 0 : autonomie instrumentale conservée sur les 4 items.' },
-      { min: 1, level: 'moderate', label: 'Perte d’autonomie', detail: 'Score 1–2 : perte d’autonomie instrumentale — approfondir (dépistage cognitif).' },
+      { min: 1, level: 'moderate', label: 'Perte d’autonomie', detail: 'Score 1–2 : perte d’autonomie instrumentale. Approfondir (dépistage cognitif).' },
       { min: 3, level: 'high', label: 'Dépendance marquée', detail: 'Score 3–4 : dépendance instrumentale marquée.' },
     ],
   ),
@@ -294,7 +294,7 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
       }
       let interpretation: ScoreInterpretation;
       if (total >= 27) interpretation = { level: 'low', label: 'Normal', detail: 'Score ≥ 27/30 : performances cognitives normales.' };
-      else if (total >= 24) interpretation = { level: 'moderate', label: 'Troubles légers', detail: 'Score 24–26/30 : troubles cognitifs légers possibles — à recouper avec la clinique.' };
+      else if (total >= 24) interpretation = { level: 'moderate', label: 'Troubles légers', detail: 'Score 24–26/30 : troubles cognitifs légers possibles. À recouper avec la clinique.' };
       else if (total >= 18) interpretation = { level: 'high', label: 'Démence légère à modérée', detail: 'Score 18–23/30 : atteinte cognitive compatible avec une démence légère à modérée.' };
       else interpretation = { level: 'critical', label: 'Démence modérée à sévère', detail: 'Score < 18/30 : atteinte cognitive sévère.' };
       return { value: total, display: `${fmt(total)} / 30`, interpretation };
@@ -350,7 +350,7 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
   additiveScore(
     {
       id: 'mna-sf',
-      name: 'Mini Nutritional Assessment — forme courte (MNA-SF)',
+      name: 'Mini Nutritional Assessment, forme courte (MNA-SF)',
       acronym: 'MNA-SF',
       category: 'geriatrie',
       purpose:
@@ -423,8 +423,8 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
       reference: 'Rubenstein 2001. Score 0–14.',
     },
     [
-      { min: 0, level: 'high', label: 'Dénutrition', detail: 'Score 0–7 : dénutrition avérée — prise en charge nutritionnelle.' },
-      { min: 8, level: 'moderate', label: 'Risque de dénutrition', detail: 'Score 8–11 : risque de dénutrition — surveillance et conseils.' },
+      { min: 0, level: 'high', label: 'Dénutrition', detail: 'Score 0–7 : dénutrition avérée. Prise en charge nutritionnelle.' },
+      { min: 8, level: 'moderate', label: 'Risque de dénutrition', detail: 'Score 8–11 : risque de dénutrition. Surveillance et conseils.' },
       { min: 12, level: 'low', label: 'État nutritionnel normal', detail: 'Score 12–14 : état nutritionnel normal.' },
     ],
   ),
@@ -451,7 +451,7 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
         value: positive ? 1 : 0,
         display: positive ? 'Positif' : 'Négatif',
         interpretation: positive
-          ? { level: 'high', label: 'Confusion probable', detail: 'Critères CAM réunis : syndrome confusionnel probable — rechercher un facteur déclenchant (médicament, infection, globe, fécalome…).' }
+          ? { level: 'high', label: 'Confusion probable', detail: 'Critères CAM réunis : syndrome confusionnel probable. Rechercher un facteur déclenchant (médicament, infection, globe, fécalome…).' }
           : { level: 'low', label: 'Critères non réunis', detail: 'Les critères diagnostiques du delirium ne sont pas réunis.' },
       };
     },
@@ -473,15 +473,15 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
           id: 'level',
           label: 'Niveau de fragilité',
           options: [
-            { label: '1 — Très en forme', value: 1 },
-            { label: '2 — En forme', value: 2 },
-            { label: '3 — Se maintient bien', value: 3 },
-            { label: '4 — Vulnérable', value: 4 },
-            { label: '5 — Fragilité légère', value: 5 },
-            { label: '6 — Fragilité modérée', value: 6 },
-            { label: '7 — Fragilité sévère', value: 7 },
-            { label: '8 — Fragilité très sévère', value: 8 },
-            { label: '9 — En phase terminale', value: 9 },
+            { label: '1. Très en forme', value: 1 },
+            { label: '2. En forme', value: 2 },
+            { label: '3. Se maintient bien', value: 3 },
+            { label: '4. Vulnérable', value: 4 },
+            { label: '5. Fragilité légère', value: 5 },
+            { label: '6. Fragilité modérée', value: 6 },
+            { label: '7. Fragilité sévère', value: 7 },
+            { label: '8. Fragilité très sévère', value: 8 },
+            { label: '9. En phase terminale', value: 9 },
           ],
         },
       ],
@@ -490,8 +490,8 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
     [
       { min: 1, level: 'low', label: 'Robuste', detail: 'Niveaux 1–3 : personne en forme ou se maintenant bien.' },
       { min: 4, level: 'moderate', label: 'Vulnérable', detail: 'Niveau 4 : vulnérable (ralenti, symptômes limitant les activités).' },
-      { min: 5, level: 'high', label: 'Fragilité', detail: 'Niveaux 5–6 : fragilité légère à modérée — aide nécessaire pour certaines activités.' },
-      { min: 7, level: 'critical', label: 'Fragilité sévère', detail: 'Niveaux 7–9 : fragilité sévère à terminale — forte dépendance.' },
+      { min: 5, level: 'high', label: 'Fragilité', detail: 'Niveaux 5–6 : fragilité légère à modérée. Aide nécessaire pour certaines activités.' },
+      { min: 7, level: 'critical', label: 'Fragilité sévère', detail: 'Niveaux 7–9 : fragilité sévère à terminale. Forte dépendance.' },
     ],
     { format: (t) => `Niveau ${fmt(t)} / 9` },
   ),
@@ -515,7 +515,7 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
       let interpretation: ScoreInterpretation;
       if (t < 12) interpretation = { level: 'low', label: 'Normal', detail: 'Temps < 12 s : mobilité normale, risque de chute faible.' };
       else if (t < 20) interpretation = { level: 'moderate', label: 'Risque de chute', detail: 'Temps 12–19 s : risque de chute augmenté (seuil d’alerte ~ 14 s).' };
-      else interpretation = { level: 'high', label: 'Mobilité réduite', detail: 'Temps ≥ 20 s : mobilité fortement réduite — risque de chute élevé, évaluation approfondie.' };
+      else interpretation = { level: 'high', label: 'Mobilité réduite', detail: 'Temps ≥ 20 s : mobilité fortement réduite. Risque de chute élevé, évaluation approfondie.' };
       return { value: t, display: `${fmt(t, 1)} s`, interpretation };
     },
   },
@@ -550,10 +550,10 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
       reference: 'Bergstrom 1987. Score 6–23 (plus bas = plus à risque).',
     },
     [
-      { min: 6, level: 'critical', label: 'Risque très élevé', detail: 'Score ≤ 9 : risque très élevé d’escarre — prévention maximale.' },
+      { min: 6, level: 'critical', label: 'Risque très élevé', detail: 'Score ≤ 9 : risque très élevé d’escarre. Prévention maximale.' },
       { min: 10, level: 'high', label: 'Risque élevé', detail: 'Score 10–12 : risque élevé.' },
       { min: 13, level: 'moderate', label: 'Risque modéré', detail: 'Score 13–14 : risque modéré.' },
-      { min: 15, level: 'low', label: 'Risque faible', detail: 'Score 15–18 : risque faible (mais présent — rester vigilant).' },
+      { min: 15, level: 'low', label: 'Risque faible', detail: 'Score 15–18 : risque faible (mais présent, rester vigilant).' },
       { min: 19, level: 'low', label: 'Risque minime', detail: 'Score ≥ 19 : risque minime.' },
     ],
   ),
@@ -606,8 +606,8 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
     [
       { min: 0, level: 'low', label: 'Comorbidité faible', detail: 'Score 0 : comorbidité faible (survie à 10 ans estimée élevée).' },
       { min: 1, level: 'moderate', label: 'Comorbidité modérée', detail: 'Score 1–2 : comorbidité modérée.' },
-      { min: 3, level: 'high', label: 'Comorbidité élevée', detail: 'Score 3–4 : comorbidité élevée — pronostic à intégrer aux décisions.' },
-      { min: 5, level: 'critical', label: 'Comorbidité très élevée', detail: 'Score ≥ 5 : comorbidité très élevée — pronostic vital réservé.' },
+      { min: 3, level: 'high', label: 'Comorbidité élevée', detail: 'Score 3–4 : comorbidité élevée. Pronostic à intégrer aux décisions.' },
+      { min: 5, level: 'critical', label: 'Comorbidité très élevée', detail: 'Score ≥ 5 : comorbidité très élevée. Pronostic vital réservé.' },
     ],
   ),
 ];

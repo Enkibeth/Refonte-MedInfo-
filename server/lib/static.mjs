@@ -48,6 +48,7 @@ export const ASSET_PREFIXES = ['/vendor/', '/icons/'];
 export const ASSET_FILES = [
   '/favicon.ico',
   '/og-image.png',
+  '/social-card.png',
   '/medinfo-icons.svg',
   '/manifest.webmanifest',
 ];

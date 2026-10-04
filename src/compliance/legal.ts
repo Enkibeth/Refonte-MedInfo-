@@ -101,7 +101,7 @@ export const confidentialite: LegalDocument = {
     {
       heading: 'Principe : aucune donnée de santé identifiable',
       body: [
-        "MedInfo AI est conçu pour ne PAS collecter ni conserver de donnée de santé rattachable à une personne identifiée. La plateforme refuse de traiter les situations personnelles : un message décrivant des symptômes ou une situation individuelle est intercepté avant tout traitement et n'est pas conservé comme donnée de santé.",
+        "MedInfo AI est conçu pour ne pas collecter ni conserver de donnée de santé rattachable à une personne identifiée. La plateforme refuse de traiter les situations personnelles : un message décrivant des symptômes ou une situation individuelle est intercepté avant tout traitement et n'est pas conservé comme donnée de santé.",
         "Le contenu des conversations n'est pas associé à un profil de santé. Seules des métadonnées techniques non médicales (compteurs d'usage, journaux d'audit de sécurité sans contenu identifiable) sont conservées.",
       ],
     },
@@ -124,10 +124,10 @@ export const confidentialite: LegalDocument = {
     {
       heading: 'Sous-traitants et destinataires',
       body: [
-        "Supabase — hébergement de la base de données et authentification (UE).",
+        "Supabase : hébergement de la base de données et authentification (UE).",
         getHostingProvider().processorLine,
-        "Anthropic (Claude) et/ou OpenAI (GPT) — fournisseurs des modèles d'intelligence artificielle qui génèrent les réponses. Le système d'IA réellement servi est indiqué dans l'application.",
-        "Stripe — traitement des paiements pour les abonnés.",
+        "Anthropic (Claude) et/ou OpenAI (GPT) : fournisseurs des modèles d'intelligence artificielle qui génèrent les réponses. Le système d'IA réellement servi est indiqué dans l'application.",
+        "Stripe : traitement des paiements pour les abonnés.",
         "Ces prestataires agissent comme sous-traitants au sens de l'art. 28 RGPD, encadrés par des accords de traitement (DPA) et, lorsque le traitement a lieu hors UE, par des clauses contractuelles types.",
       ],
     },

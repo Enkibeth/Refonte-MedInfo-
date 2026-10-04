@@ -75,7 +75,7 @@ export default function DocumentScreen() {
             { name: 'Analyse de document', path: PAGE_SEO.document.path },
           ]),
           webApplicationJsonLd({
-            name: 'Analyse de document médical — MedInfo AI',
+            name: 'Analyse de document médical',
             description: PAGE_SEO.document.description,
             path: PAGE_SEO.document.path,
           }),
@@ -197,7 +197,7 @@ function DocumentScreenInner() {
     if (!canSubmit) return;
     setError(null);
     setAnalysis(null);
-    setResultLabel(mode === 'translation' ? `Traduction — ${targetLanguage.trim() || 'Français'}` : 'Résumé patient');
+    setResultLabel(mode === 'translation' ? `Traduction (${targetLanguage.trim() || 'Français'})` : 'Résumé patient');
     setLoading(true);
 
     try {
@@ -264,7 +264,7 @@ function DocumentScreenInner() {
     setAnalysis({ text, citations });
     setResultLabel(
       item.mode === 'translation'
-        ? `Traduction — ${item.target_language ?? ''} · ${item.source_name ?? 'Document'}`
+        ? `Traduction (${item.target_language ?? ''}) · ${item.source_name ?? 'Document'}`
         : `Résumé patient · ${item.source_name ?? 'Document'}`,
     );
     setHistoryOpen(false);

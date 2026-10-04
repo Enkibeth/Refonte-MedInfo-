@@ -62,7 +62,7 @@ export default function ScoresScreen() {
             { name: 'Scores médicaux', path: PAGE_SEO.scores.path },
           ]),
           webApplicationJsonLd({
-            name: 'Scores médicaux — MedInfo AI',
+            name: 'Scores médicaux',
             description: PAGE_SEO.scores.description,
             path: PAGE_SEO.scores.path,
           }),

@@ -57,8 +57,8 @@ export const NEURO_SCORES: ScoreDefinition[] = [
     },
     [
       { min: 0, level: 'low', label: 'Risque faible', detail: 'Score 0–3 : risque d’AVC à 2 j ≈ 1 %.' },
-      { min: 4, level: 'moderate', label: 'Risque modéré', detail: 'Score 4–5 : risque d’AVC à 2 j ≈ 4 % — bilan hospitalier rapide.' },
-      { min: 6, level: 'high', label: 'Risque élevé', detail: 'Score 6–7 : risque d’AVC à 2 j ≈ 8 % — hospitalisation urgente.' },
+      { min: 4, level: 'moderate', label: 'Risque modéré', detail: 'Score 4–5 : risque d’AVC à 2 j ≈ 4 %. Bilan hospitalier rapide.' },
+      { min: 6, level: 'high', label: 'Risque élevé', detail: 'Score 6–7 : risque d’AVC à 2 j ≈ 8 %. Hospitalisation urgente.' },
     ],
   ),
 
@@ -69,7 +69,7 @@ export const NEURO_SCORES: ScoreDefinition[] = [
       acronym: 'NIHSS',
       category: 'neuro',
       purpose:
-        "Quantifie la sévérité d'un AVC constitué (15 items) — décision de thrombolyse/thrombectomie et suivi de l'évolution.",
+        "Quantifie la sévérité d'un AVC constitué (15 items) : décision de thrombolyse/thrombectomie et suivi de l'évolution.",
       aliases: ['nihss', 'nih stroke scale', 'score avc', 'echelle avc'],
       keywords: [
         'AVC',
@@ -114,28 +114,28 @@ export const NEURO_SCORES: ScoreDefinition[] = [
           ['Partielle', 2],
           ['Complète', 3],
         ]),
-        nihssItem('armLeft', '5a. Motricité — membre supérieur gauche', [
+        nihssItem('armLeft', '5a. Motricité : membre supérieur gauche', [
           ['Pas de chute (10 s)', 0],
           ['Chute avant 10 s', 1],
           ['Effort contre pesanteur', 2],
           ['Pas d’effort contre pesanteur', 3],
           ['Aucun mouvement', 4],
         ]),
-        nihssItem('armRight', '5b. Motricité — membre supérieur droit', [
+        nihssItem('armRight', '5b. Motricité : membre supérieur droit', [
           ['Pas de chute (10 s)', 0],
           ['Chute avant 10 s', 1],
           ['Effort contre pesanteur', 2],
           ['Pas d’effort contre pesanteur', 3],
           ['Aucun mouvement', 4],
         ]),
-        nihssItem('legLeft', '6a. Motricité — membre inférieur gauche', [
+        nihssItem('legLeft', '6a. Motricité : membre inférieur gauche', [
           ['Pas de chute (5 s)', 0],
           ['Chute avant 5 s', 1],
           ['Effort contre pesanteur', 2],
           ['Pas d’effort contre pesanteur', 3],
           ['Aucun mouvement', 4],
         ]),
-        nihssItem('legRight', '6b. Motricité — membre inférieur droit', [
+        nihssItem('legRight', '6b. Motricité : membre inférieur droit', [
           ['Pas de chute (5 s)', 0],
           ['Chute avant 5 s', 1],
           ['Effort contre pesanteur', 2],
@@ -195,21 +195,21 @@ export const NEURO_SCORES: ScoreDefinition[] = [
           id: 'grade',
           label: 'Tableau clinique',
           options: [
-            { label: 'I — Asymptomatique ou céphalée minime', value: 1 },
-            { label: 'II — Céphalée sévère, raideur de nuque, sans déficit (hors paralysie de nerf crânien)', value: 2 },
-            { label: 'III — Somnolence, confusion, déficit focal léger', value: 3 },
-            { label: 'IV — Stupeur, hémiparésie modérée à sévère', value: 4 },
-            { label: 'V — Coma, rigidité de décérébration', value: 5 },
+            { label: 'I. Asymptomatique ou céphalée minime', value: 1 },
+            { label: 'II. Céphalée sévère, raideur de nuque, sans déficit (hors paralysie de nerf crânien)', value: 2 },
+            { label: 'III. Somnolence, confusion, déficit focal léger', value: 3 },
+            { label: 'IV. Stupeur, hémiparésie modérée à sévère', value: 4 },
+            { label: 'V. Coma, rigidité de décérébration', value: 5 },
           ],
         },
       ],
       reference: 'Hunt & Hess 1968. Grades I–V (pronostic péjoratif croissant).',
     },
     [
-      { min: 1, level: 'low', label: 'Grade I', detail: 'Asymptomatique ou céphalée minime — bon pronostic.' },
+      { min: 1, level: 'low', label: 'Grade I', detail: 'Asymptomatique ou céphalée minime : bon pronostic.' },
       { min: 2, level: 'moderate', label: 'Grade II', detail: 'Céphalée sévère et raideur méningée sans déficit.' },
       { min: 3, level: 'high', label: 'Grade III', detail: 'Troubles de vigilance, déficit focal léger.' },
-      { min: 4, level: 'critical', label: 'Grade IV–V', detail: 'Stupeur/coma, déficit sévère — pronostic réservé.' },
+      { min: 4, level: 'critical', label: 'Grade IV–V', detail: 'Stupeur/coma, déficit sévère : pronostic réservé.' },
     ],
     { format: (t) => `Grade ${['I', 'II', 'III', 'IV', 'V'][t - 1] ?? t}` },
   ),
@@ -230,13 +230,13 @@ export const NEURO_SCORES: ScoreDefinition[] = [
           id: 'grade',
           label: 'Niveau de handicap',
           options: [
-            { label: '0 — Aucun symptôme', value: 0 },
-            { label: '1 — Pas de handicap significatif malgré des symptômes', value: 1 },
-            { label: '2 — Handicap léger (autonome mais activités antérieures réduites)', value: 2 },
-            { label: '3 — Handicap modéré (aide nécessaire, marche seul)', value: 3 },
-            { label: '4 — Handicap modérément sévère (ne marche/ne subvient pas sans aide)', value: 4 },
-            { label: '5 — Handicap sévère (alité, incontinent, soins constants)', value: 5 },
-            { label: '6 — Décès', value: 6 },
+            { label: '0. Aucun symptôme', value: 0 },
+            { label: '1. Pas de handicap significatif malgré des symptômes', value: 1 },
+            { label: '2. Handicap léger (autonome mais activités antérieures réduites)', value: 2 },
+            { label: '3. Handicap modéré (aide nécessaire, marche seul)', value: 3 },
+            { label: '4. Handicap modérément sévère (ne marche/ne subvient pas sans aide)', value: 4 },
+            { label: '5. Handicap sévère (alité, incontinent, soins constants)', value: 5 },
+            { label: '6. Décès', value: 6 },
           ],
         },
       ],

@@ -67,8 +67,8 @@ describe('siteUrl / canonicalUrl', () => {
 
 describe('pageTitle', () => {
   it('ajoute le suffixe de marque une seule fois', () => {
-    expect(pageTitle('Contact')).toBe('Contact — MedInfo AI');
-    expect(pageTitle('MedInfo AI — Assistant IA médical')).toBe('MedInfo AI — Assistant IA médical');
+    expect(pageTitle('Contact')).toBe('Contact | MedInfo AI');
+    expect(pageTitle('MedInfo AI : assistant IA médical')).toBe('MedInfo AI : assistant IA médical');
     expect(pageTitle('  ')).toBe(SITE_NAME);
   });
 });
@@ -141,12 +141,16 @@ describe('JSON-LD', () => {
     expect(jsonLd.datePublished).toBe('2026-07-01T06:00:00Z');
     expect(jsonLd.articleSection).toBe('Prévention');
     expect('description' in jsonLd).toBe(false);
-    expect('image' in jsonLd).toBe(false);
+    // Sans couverture : la carte de partage du site (image recommandée pour les articles).
+    expect(jsonLd.image).toBe(`${DEFAULT_SITE_URL}/social-card.png`);
+    expect(jsonLd.dateModified).toBe(jsonLd.datePublished);
+    expect(jsonLd.mainEntityOfPage).toEqual({ '@type': 'WebPage', '@id': `${DEFAULT_SITE_URL}/blog/mon-article` });
+    expect((jsonLd.publisher as { '@id': string })['@id']).toBe(`${DEFAULT_SITE_URL}/#organization`);
   });
 
   it('WebApplication décrit un outil gratuit en français avec URL canonique', () => {
     const jsonLd = webApplicationJsonLd({
-      name: 'Simulation ECOS — MedInfo AI',
+      name: 'Simulation ECOS',
       description: 'Entraînement aux ECOS.',
       path: '/ecos',
     });

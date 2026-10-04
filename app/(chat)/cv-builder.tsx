@@ -56,7 +56,7 @@ function CvBuilderInner() {
         <PageTitle style={styles.title}>Créateur de CV</PageTitle>
         <Text style={styles.subtitle}>
           Construis ton CV avec tes propres rubriques, fais-le relire par l'IA (suggestions à
-          valider) et exporte un PDF dont le texte reste sélectionnable — donc lisible par les
+          valider) et exporte un PDF dont le texte reste sélectionnable, donc lisible par les
           logiciels de tri des hôpitaux. Création, édition et export illimités et gratuits.
         </Text>
       </View>
@@ -96,7 +96,7 @@ export default function CvBuilderScreen() {
             { name: 'Créateur de CV médical', path: PAGE_SEO.cvBuilder.path },
           ]),
           webApplicationJsonLd({
-            name: 'Créateur de CV médical — MedInfo AI',
+            name: 'Créateur de CV médical',
             description: PAGE_SEO.cvBuilder.description,
             path: PAGE_SEO.cvBuilder.path,
           }),

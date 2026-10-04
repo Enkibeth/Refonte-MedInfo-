@@ -67,7 +67,7 @@ export default function PartielScreen() {
             { name: 'Analyse des partiels', path: PAGE_SEO.partiel.path },
           ]),
           webApplicationJsonLd({
-            name: 'Analyse des partiels — MedInfo AI',
+            name: 'Analyse des partiels',
             description: PAGE_SEO.partiel.description,
             path: PAGE_SEO.partiel.path,
           }),

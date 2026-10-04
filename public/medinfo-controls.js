@@ -74,7 +74,7 @@ window.medinfoProgress = function (opts) {
   var slow = document.createElement('p');
   slow.className = 'mi-progress-slow';
   slow.hidden = true;
-  slow.textContent = 'Toujours en cours — les contenus détaillés prennent parfois plus longtemps. Tu peux rester sur la page.';
+  slow.textContent = 'Toujours en cours. Les contenus détaillés prennent parfois plus longtemps : tu peux rester sur la page.';
   root.append(head, track, list, slow);
 
   var lastActive = -1;

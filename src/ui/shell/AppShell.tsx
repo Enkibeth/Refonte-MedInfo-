@@ -233,7 +233,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (isAdmin) {
     accountEntries.push({
       key: 'admin',
-      label: 'Panel admin IA',
+      label: 'Administration IA',
       icon: 'settings',
       route: '/admin',
       match: '__admin__', // géré via le groupe de segments, pas le pathname
@@ -333,7 +333,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Pressable
             {...navLinkProps('/', () => router.push('/'))}
             accessibilityRole="link"
-            accessibilityLabel="MedInfo AI — accueil"
+            accessibilityLabel="MedInfo AI, accueil"
             style={[styles.logoRow, collapsed && styles.logoRowCollapsed]}
           >
             {/* Illustration de l'équipe (demande Hugo) — même pastille que le header
@@ -400,8 +400,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Text style={styles.privacyTitle}>Données protégées</Text>
             </View>
             <Text style={styles.privacyText}>
-              Tes contenus sont privés et isolés par compte. Les sources médicales restent
-              accessibles à tous.
+              Les contenus de chaque compte sont privés et isolés. Les sources médicales
+              restent accessibles à tous.
             </Text>
           </View>
         )}

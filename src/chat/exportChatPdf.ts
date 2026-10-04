@@ -28,7 +28,7 @@ export function exportChatToPdf({
     .map((m) =>
       m.role === 'user'
         ? `<div class="q"><div class="who">Question</div>${markdownToHtml(m.content)}</div>`
-        : `<div class="a"><div class="who">Réponse — ${escapeHtml(chatbotLabel)}</div>${markdownToHtml(assistantTextForExport(m.content))}</div>`,
+        : `<div class="a"><div class="who">Réponse · ${escapeHtml(chatbotLabel)}</div>${markdownToHtml(assistantTextForExport(m.content))}</div>`,
     )
     .join('\n');
 
@@ -53,10 +53,10 @@ export function exportChatToPdf({
 <body>
   <header>
     <h1>${escapeHtml(title)}</h1>
-    <div class="meta">MedInfo AI — ${escapeHtml(chatbotLabel)} — exporté le ${escapeHtml(date)}</div>
+    <div class="meta">MedInfo AI · ${escapeHtml(chatbotLabel)} · exporté le ${escapeHtml(date)}</div>
   </header>
   ${body}
-  <footer>Conversation générée avec une IA d'information en santé — ne remplace pas un avis médical individuel.</footer>
+  <footer>Conversation générée avec une IA d'information en santé. Elle ne remplace pas un avis médical individuel.</footer>
 </body></html>`);
   win.document.close();
   win.focus();

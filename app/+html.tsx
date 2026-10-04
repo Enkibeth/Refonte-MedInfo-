@@ -3,6 +3,7 @@ import type { PropsWithChildren } from 'react';
 import { CHIP_CSS } from '@/ui/Chip';
 import { INTERACTION_CSS } from '@/ui/interaction';
 import { SKIP_LINK_CSS } from '@/ui/landmarks';
+import { SESSION_HINT_CSS, SESSION_HINT_SCRIPT } from '@/ui/sessionHint';
 import { RESPONSIVE_CSS } from '@/ui/responsive';
 import { tokens } from '@/ui/tokens';
 
@@ -74,6 +75,8 @@ export default function Root({ children }: PropsWithChildren) {
 
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: baseStyle }} />
+        {/* Avant le premier affichage : « ce navigateur avait une session » (src/ui/sessionHint.ts). */}
+        <script dangerouslySetInnerHTML={{ __html: SESSION_HINT_SCRIPT }} />
       </head>
       <body>{children}</body>
     </html>
@@ -150,6 +153,7 @@ ${RESPONSIVE_CSS}
 ${INTERACTION_CSS}
 ${CHIP_CSS}
 ${SKIP_LINK_CSS}
+${SESSION_HINT_CSS}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;

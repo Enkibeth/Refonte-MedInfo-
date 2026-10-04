@@ -75,7 +75,7 @@ export function SourceCard({
       style={styles.sourceCard}
       onPress={() => onPress(source)}
       accessibilityRole="button"
-      accessibilityLabel={`Source ${source.id} : ${title} — voir le détail`}
+      accessibilityLabel={`Source ${source.id} : ${title}, voir le détail`}
     >
       <View style={styles.sourceHeader}>
         <View style={styles.sourceNumber}>

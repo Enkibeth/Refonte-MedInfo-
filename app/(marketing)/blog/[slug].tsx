@@ -85,7 +85,13 @@ export default function BlogArticleScreen() {
           description={post.summary ?? PAGE_SEO.blog.description}
           path={`/blog/${post.slug}`}
           image={post.cover_image_url}
+          imageAlt={post.title}
           type="article"
+          article={{
+            publishedTime: post.published_at,
+            modifiedTime: post.updated_at ?? post.published_at,
+            section: post.category,
+          }}
           jsonLd={[
             blogPostingJsonLd({
               slug: post.slug,
@@ -93,6 +99,7 @@ export default function BlogArticleScreen() {
               summary: post.summary,
               coverImageUrl: post.cover_image_url,
               publishedAt: post.published_at,
+              updatedAt: post.updated_at,
               category: post.category,
             }),
             breadcrumbJsonLd([

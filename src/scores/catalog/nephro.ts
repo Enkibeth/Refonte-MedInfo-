@@ -30,7 +30,7 @@ const incompleteResult = (msg: string): ReturnType<ScoreDefinition['compute']> =
 export const NEPHRO_SCORES: ScoreDefinition[] = [
   {
     id: 'ckd-epi',
-    name: 'DFG estimé — CKD-EPI 2021 (sans variable ethnique)',
+    name: 'DFG estimé (CKD-EPI 2021, sans variable ethnique)',
     acronym: 'CKD-EPI',
     category: 'nephro',
     purpose:
@@ -82,7 +82,7 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
 
   {
     id: 'cockcroft',
-    name: 'Clairance de la créatinine — Cockcroft-Gault',
+    name: 'Clairance de la créatinine (Cockcroft-Gault)',
     acronym: 'Cockcroft-Gault',
     category: 'nephro',
     purpose:
@@ -128,7 +128,7 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
 
   {
     id: 'mdrd',
-    name: 'DFG estimé — MDRD (4 variables, IDMS)',
+    name: 'DFG estimé (MDRD, 4 variables, IDMS)',
     acronym: 'MDRD',
     category: 'nephro',
     purpose:
@@ -184,7 +184,7 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
       const corr = ca + 0.02 * (40 - alb);
       let interpretation: ScoreInterpretation;
       if (corr < 2.2) interpretation = { level: 'moderate', label: 'Hypocalcémie', detail: 'Calcémie corrigée < 2,20 mmol/L : hypocalcémie.' };
-      else if (corr > 2.6) interpretation = { level: 'high', label: 'Hypercalcémie', detail: 'Calcémie corrigée > 2,60 mmol/L : hypercalcémie — rechercher la cause (PTH…).' };
+      else if (corr > 2.6) interpretation = { level: 'high', label: 'Hypercalcémie', detail: 'Calcémie corrigée > 2,60 mmol/L : hypercalcémie. Rechercher la cause (PTH…).' };
       else interpretation = { level: 'low', label: 'Normale', detail: 'Calcémie corrigée dans les normes (2,20–2,60 mmol/L).' };
       return { value: corr, display: `${fmt(corr, 2)} mmol/L`, interpretation };
     },
@@ -242,7 +242,7 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
       const ag = sodium - (chloride + bicarbonate);
       let interpretation: ScoreInterpretation;
       if (ag > 12) interpretation = { level: 'high', label: 'Trou anionique augmenté', detail: 'TA > 12 : acidose métabolique à TA élevé (acido-cétose, lactates, insuffisance rénale, toxiques).' };
-      else if (ag < 8) interpretation = { level: 'info', label: 'Trou anionique bas', detail: 'TA < 8 : rare — hypoalbuminémie, paraprotéine, erreur de mesure.' };
+      else if (ag < 8) interpretation = { level: 'info', label: 'Trou anionique bas', detail: 'TA < 8 : rare (hypoalbuminémie, paraprotéine, erreur de mesure).' };
       else interpretation = { level: 'low', label: 'Trou anionique normal', detail: 'TA 8–12 : si acidose, elle est à TA normal (hyperchlorémique : pertes digestives, ATR).' };
       return { value: ag, display: `${fmt(ag, 1)} mmol/L`, interpretation };
     },
@@ -309,9 +309,9 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
       }
       const fena = ((uNa * pCreat) / (pNa * uCreat)) * 100;
       let interpretation: ScoreInterpretation;
-      if (fena < 1) interpretation = { level: 'moderate', label: 'IRA fonctionnelle', detail: 'FeNa < 1 % : origine pré-rénale (fonctionnelle) — hypovolémie, bas débit. Restaurer la volémie.' };
+      if (fena < 1) interpretation = { level: 'moderate', label: 'IRA fonctionnelle', detail: 'FeNa < 1 % : origine pré-rénale (fonctionnelle : hypovolémie, bas débit). Restaurer la volémie.' };
       else if (fena > 2) interpretation = { level: 'high', label: 'IRA organique', detail: 'FeNa > 2 % : origine rénale (nécrose tubulaire aiguë).' };
-      else interpretation = { level: 'info', label: 'Zone intermédiaire', detail: 'FeNa 1–2 % : indéterminé — recouper avec la clinique et la FeUrée.' };
+      else interpretation = { level: 'info', label: 'Zone intermédiaire', detail: 'FeNa 1–2 % : indéterminé. Recouper avec la clinique et la FeUrée.' };
       return { value: fena, display: `${fmt(fena, 1)} %`, interpretation };
     },
   },
@@ -339,9 +339,9 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
       }
       const feurea = ((uUrea * pCreat) / (pUrea * uCreat)) * 100;
       let interpretation: ScoreInterpretation;
-      if (feurea < 35) interpretation = { level: 'moderate', label: 'IRA fonctionnelle', detail: 'FeUrée < 35 % : origine pré-rénale (fonctionnelle) — y compris sous diurétiques.' };
+      if (feurea < 35) interpretation = { level: 'moderate', label: 'IRA fonctionnelle', detail: 'FeUrée < 35 % : origine pré-rénale (fonctionnelle), y compris sous diurétiques.' };
       else if (feurea > 50) interpretation = { level: 'high', label: 'IRA organique', detail: 'FeUrée > 50 % : origine rénale (nécrose tubulaire aiguë).' };
-      else interpretation = { level: 'info', label: 'Zone intermédiaire', detail: 'FeUrée 35–50 % : indéterminé — recouper avec la clinique.' };
+      else interpretation = { level: 'info', label: 'Zone intermédiaire', detail: 'FeUrée 35–50 % : indéterminé. Recouper avec la clinique.' };
       return { value: feurea, display: `${fmt(feurea, 1)} %`, interpretation };
     },
   },
@@ -367,8 +367,8 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
       const measured = v.measuredPaco2;
       let interpretation: ScoreInterpretation;
       if (Number.isFinite(measured)) {
-        if (measured > expected + 2) interpretation = { level: 'high', label: 'Acidose respiratoire associée', detail: `PaCO₂ mesurée (${fmt(measured)} mmHg) > attendue (${fmt(expected)} ± 2) : hypoventilation — acidose respiratoire surajoutée.` };
-        else if (measured < expected - 2) interpretation = { level: 'high', label: 'Alcalose respiratoire associée', detail: `PaCO₂ mesurée (${fmt(measured)} mmHg) < attendue (${fmt(expected)} ± 2) : hyperventilation — alcalose respiratoire surajoutée.` };
+        if (measured > expected + 2) interpretation = { level: 'high', label: 'Acidose respiratoire associée', detail: `PaCO₂ mesurée (${fmt(measured)} mmHg) > attendue (${fmt(expected)} ± 2) : hypoventilation. Acidose respiratoire surajoutée.` };
+        else if (measured < expected - 2) interpretation = { level: 'high', label: 'Alcalose respiratoire associée', detail: `PaCO₂ mesurée (${fmt(measured)} mmHg) < attendue (${fmt(expected)} ± 2) : hyperventilation. Alcalose respiratoire surajoutée.` };
         else interpretation = { level: 'low', label: 'Compensation adéquate', detail: `PaCO₂ mesurée conforme à l’attendue (${fmt(expected)} ± 2 mmHg) : compensation respiratoire appropriée.` };
       } else {
         interpretation = { level: 'info', label: 'PaCO₂ attendue', detail: `PaCO₂ attendue ≈ ${fmt(expected)} ± 2 mmHg. Comparez à la PaCO₂ mesurée pour détecter un trouble respiratoire associé.` };

@@ -38,7 +38,7 @@ export const ANESTHESIE_SCORES: ScoreDefinition[] = [
     [
       { min: 0, level: 'low', label: 'Risque faible', detail: 'Score 0–1 : complication cardiaque majeure < 1 %.' },
       { min: 2, level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 2 : risque ≈ 7 %.' },
-      { min: 3, level: 'high', label: 'Risque élevé', detail: 'Score ≥ 3 : risque ≈ 11 % — optimisation et avis cardiologique.' },
+      { min: 3, level: 'high', label: 'Risque élevé', detail: 'Score ≥ 3 : risque ≈ 11 %. Optimisation et avis cardiologique.' },
     ],
   ),
 
@@ -62,8 +62,8 @@ export const ANESTHESIE_SCORES: ScoreDefinition[] = [
     },
     [
       { min: 0, level: 'low', label: 'Risque faible', detail: 'Score 0–1 : NVPO ≈ 10–20 %.' },
-      { min: 2, level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 2 : NVPO ≈ 40 % — envisager une prophylaxie.' },
-      { min: 3, level: 'high', label: 'Risque élevé', detail: 'Score 3–4 : NVPO ≈ 60–80 % — prophylaxie multimodale.' },
+      { min: 2, level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 2 : NVPO ≈ 40 %. Envisager une prophylaxie.' },
+      { min: 3, level: 'high', label: 'Risque élevé', detail: 'Score 3–4 : NVPO ≈ 60–80 %. Prophylaxie multimodale.' },
     ],
   ),
 
@@ -83,12 +83,12 @@ export const ANESTHESIE_SCORES: ScoreDefinition[] = [
           id: 'class',
           label: 'État physique',
           options: [
-            { label: 'I — Patient sain', value: 1 },
-            { label: 'II — Maladie systémique légère (HTA équilibrée, tabac, obésité, grossesse)', value: 2 },
-            { label: 'III — Maladie systémique sévère (diabète/HTA mal équilibrés, BPCO)', value: 3 },
-            { label: 'IV — Maladie sévère menaçant le pronostic vital', value: 4 },
-            { label: 'V — Moribond, survie improbable sans chirurgie', value: 5 },
-            { label: 'VI — Mort encéphalique (don d’organes)', value: 6 },
+            { label: 'I. Patient sain', value: 1 },
+            { label: 'II. Maladie systémique légère (HTA équilibrée, tabac, obésité, grossesse)', value: 2 },
+            { label: 'III. Maladie systémique sévère (diabète/HTA mal équilibrés, BPCO)', value: 3 },
+            { label: 'IV. Maladie sévère menaçant le pronostic vital', value: 4 },
+            { label: 'V. Moribond, survie improbable sans chirurgie', value: 5 },
+            { label: 'VI. Mort encéphalique (don d’organes)', value: 6 },
           ],
         },
       ],
@@ -122,10 +122,10 @@ export const ANESTHESIE_SCORES: ScoreDefinition[] = [
           id: 'class',
           label: 'Structures visibles (bouche ouverte, langue tirée)',
           options: [
-            { label: 'I — Voile, luette, piliers visibles', value: 1 },
-            { label: 'II — Voile et luette visibles', value: 2 },
-            { label: 'III — Voile et base de la luette', value: 3 },
-            { label: 'IV — Palais dur seulement (voile non visible)', value: 4 },
+            { label: 'I. Voile, luette, piliers visibles', value: 1 },
+            { label: 'II. Voile et luette visibles', value: 2 },
+            { label: 'III. Voile et base de la luette', value: 3 },
+            { label: 'IV. Palais dur seulement (voile non visible)', value: 4 },
           ],
         },
       ],
@@ -134,8 +134,8 @@ export const ANESTHESIE_SCORES: ScoreDefinition[] = [
     },
     [
       { min: 1, level: 'low', label: 'Classe I–II', detail: 'Intubation a priori non difficile sur ce critère.' },
-      { min: 3, level: 'moderate', label: 'Classe III', detail: 'Intubation potentiellement difficile — anticiper.' },
-      { min: 4, level: 'high', label: 'Classe IV', detail: 'Risque élevé d’intubation difficile — préparer une stratégie dédiée.' },
+      { min: 3, level: 'moderate', label: 'Classe III', detail: 'Intubation potentiellement difficile : anticiper.' },
+      { min: 4, level: 'high', label: 'Classe IV', detail: 'Risque élevé d’intubation difficile : préparer une stratégie dédiée.' },
     ],
     { format: (t) => `Classe ${ASA_ROMAN[t - 1] ?? t}` },
   ),
@@ -205,7 +205,7 @@ export const ANESTHESIE_SCORES: ScoreDefinition[] = [
       reference: 'Aldrete 1970/1995. Score 0–10. Sortie de SSPI généralement à ≥ 9.',
     },
     [
-      { min: 0, level: 'high', label: 'Surveillance poursuivie', detail: 'Score < 9 : critères de sortie non réunis — poursuivre la surveillance en SSPI.' },
+      { min: 0, level: 'high', label: 'Surveillance poursuivie', detail: 'Score < 9 : critères de sortie non réunis. Poursuivre la surveillance en SSPI.' },
       { min: 9, level: 'low', label: 'Sortie envisageable', detail: 'Score ≥ 9 : critères de sortie de SSPI réunis (selon protocole du service).' },
     ],
   ),

@@ -392,8 +392,11 @@ export default function DashboardScreen() {
   );
 
   // Visiteur non connecté : la Vue d’ensemble n’existe pas (essai = chat seul).
-  if (!loading && !session) return <Redirect href="/(chat)/chat" />;
-  if (!user) return null;
+  // Métadonnées posées AVANT tout retour anticipé : le pré-rendu (sans session) gardait
+  // sinon un titre vide et aucune directive noindex.
+  const seo = <SeoHead title="Vue d’ensemble" path="/dashboard" noindex />;
+  if (!loading && !session) return <>{seo}<Redirect href="/(chat)/chat" /></>;
+  if (!user) return seo;
 
   const tools = visibleFeatures(persona, { isAdmin });
   const activityLoading =
@@ -453,7 +456,7 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.screen}>
-      <SeoHead title="Vue d’ensemble" path="/dashboard" noindex />
+      {seo}
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[
@@ -509,7 +512,7 @@ export default function DashboardScreen() {
                 Mes outils
               </Text>
               <Text style={styles.sectionSubtitle}>
-                Tout ce que ton rôle débloque, au même endroit.
+                Les outils disponibles avec ton profil.
               </Text>
             </View>
             {/* Accès direct aux 3 chatbots (comptes étudiant/pro/admin) — le
@@ -656,8 +659,7 @@ export default function DashboardScreen() {
                 </View>
               ) : activity.length === 0 ? (
                 <Text style={styles.emptyText}>
-                  Ton activité apparaîtra ici dès ta première conversation ou ton premier outil
-                  utilisé.
+                  Tes conversations et tes travaux récents s’afficheront ici.
                 </Text>
               ) : (
                 activity.map((entry, i) => {

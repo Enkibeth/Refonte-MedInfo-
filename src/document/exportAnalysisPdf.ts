@@ -51,11 +51,11 @@ export function exportAnalysisToPdf({
 <body>
   <header>
     <h1>${escapeHtml(title)}</h1>
-    <div class="meta">MedInfo AI — exporté le ${escapeHtml(date)}</div>
+    <div class="meta">MedInfo AI · exporté le ${escapeHtml(date)}</div>
   </header>
   ${markdownToHtml(markdown)}
   ${citationsHtml}
-  <footer>Résultat produit par une IA d'information en santé — ne remplace pas une consultation médicale.</footer>
+  <footer>Résultat produit par une IA d'information en santé. Il ne remplace pas une consultation médicale.</footer>
 </body></html>`);
   win.document.close();
   win.focus();

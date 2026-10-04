@@ -15,9 +15,10 @@ export interface BlogPost {
   cover_image_url: string | null;
   content_md: string;
   published_at: string | null;
+  updated_at?: string | null;
 }
 
-const COLUMNS = 'id, slug, title, summary, category, cover_image_url, content_md, published_at';
+const COLUMNS = 'id, slug, title, summary, category, cover_image_url, content_md, published_at, updated_at';
 
 export async function listPublishedPosts(): Promise<BlogPost[]> {
   const supabase = getSupabaseClient();

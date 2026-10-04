@@ -55,7 +55,7 @@ export default function AudioScreen() {
             { name: 'Compte rendu de consultation', path: PAGE_SEO.audio.path },
           ]),
           webApplicationJsonLd({
-            name: 'Compte rendu de consultation — MedInfo AI',
+            name: 'Compte rendu de consultation',
             description: PAGE_SEO.audio.description,
             path: PAGE_SEO.audio.path,
           }),

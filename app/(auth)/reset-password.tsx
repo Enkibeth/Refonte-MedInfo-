@@ -59,7 +59,7 @@ export default function ResetPasswordScreen() {
         {done ? (
           <>
             <Text style={styles.body}>
-              Ton mot de passe a été mis à jour. Tu es connecté·e.
+              Votre mot de passe a été mis à jour et votre session est ouverte.
             </Text>
             <Button label="Continuer" onPress={finish} style={styles.submit} />
           </>
@@ -67,8 +67,8 @@ export default function ResetPasswordScreen() {
           <>
             <Text style={styles.body}>
               {passwordRecovery || user
-                ? 'Choisis un nouveau mot de passe (6 caractères minimum).'
-                : "Ouvre cette page depuis le lien reçu par email pour réinitialiser ton mot de passe."}
+                ? 'Choisissez un nouveau mot de passe (6 caractères minimum).'
+                : 'Ouvrez cette page depuis le lien reçu par e-mail pour réinitialiser votre mot de passe.'}
             </Text>
 
             <View style={styles.form}>
@@ -97,7 +97,7 @@ export default function ResetPasswordScreen() {
                   setConfirm(v);
                   setError(null);
                 }}
-                placeholder="Retape le mot de passe"
+                placeholder="Saisissez à nouveau le mot de passe"
                 placeholderTextColor={tokens.colors.textMuted}
                 secureTextEntry
                 style={[styles.input, mismatch && styles.inputError]}

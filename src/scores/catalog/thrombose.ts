@@ -40,7 +40,7 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
     [
       { min: -2, level: 'low', label: 'Probabilité faible', detail: 'Score ≤ 0 : prévalence de TVP ≈ 5 %. D-dimères recommandés.' },
       { min: 1, level: 'moderate', label: 'Probabilité intermédiaire', detail: 'Score 1–2 : prévalence ≈ 17 %.' },
-      { min: 3, level: 'high', label: 'Probabilité forte', detail: 'Score ≥ 3 : prévalence ≈ 53 % — écho-doppler veineux.' },
+      { min: 3, level: 'high', label: 'Probabilité forte', detail: 'Score ≥ 3 : prévalence ≈ 53 %. Écho-doppler veineux.' },
     ],
   ),
 
@@ -75,9 +75,9 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
       reference: 'Wells 2000. Dichotomisé : ≤ 4 = peu probable (→ D-dimères), > 4 = probable (→ angioscanner).',
     },
     [
-      { min: 0, level: 'low', label: 'Probabilité faible', detail: 'Score < 2 : probabilité faible — D-dimères en première intention.' },
+      { min: 0, level: 'low', label: 'Probabilité faible', detail: 'Score < 2 : probabilité faible. D-dimères en première intention.' },
       { min: 2, level: 'moderate', label: 'Probabilité intermédiaire', detail: 'Score 2–6 : probabilité intermédiaire.' },
-      { min: 6.5, level: 'high', label: 'Probabilité forte', detail: 'Score > 6 : probabilité forte — angioscanner sans attendre les D-dimères.' },
+      { min: 6.5, level: 'high', label: 'Probabilité forte', detail: 'Score > 6 : probabilité forte. Angioscanner sans attendre les D-dimères.' },
     ],
     { format: (t) => `${t.toString().replace('.', ',')} point${t > 1 ? 's' : ''}` },
   ),
@@ -161,7 +161,7 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
       reference: 'Aujesky 2005. Classes I ≤ 65, II 66–85, III 86–105, IV 106–125, V > 125.',
     },
     [
-      { min: 0, level: 'low', label: 'Classe I–II (faible)', detail: 'Score ≤ 85 : mortalité à 30 j faible (< 3,5 %) — ambulatoire envisageable.' },
+      { min: 0, level: 'low', label: 'Classe I–II (faible)', detail: 'Score ≤ 85 : mortalité à 30 j faible (< 3,5 %). Ambulatoire envisageable.' },
       { min: 86, level: 'moderate', label: 'Classe III (intermédiaire)', detail: 'Score 86–105 : risque intermédiaire.' },
       { min: 106, level: 'high', label: 'Classe IV (élevé)', detail: 'Score 106–125 : risque élevé.' },
       { min: 126, level: 'critical', label: 'Classe V (très élevé)', detail: 'Score > 125 : mortalité à 30 j très élevée (jusqu’à ~ 25 %).' },
@@ -189,8 +189,8 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
       reference: 'Jiménez 2010. Score 0 = faible risque.',
     },
     [
-      { min: 0, level: 'low', label: 'Faible risque', detail: 'Score 0 : mortalité à 30 j ≈ 1 % — ambulatoire envisageable (si pas de dysfonction VD).' },
-      { min: 1, level: 'high', label: 'Risque élevé', detail: 'Score ≥ 1 : mortalité à 30 j ≈ 11 % — hospitalisation.' },
+      { min: 0, level: 'low', label: 'Faible risque', detail: 'Score 0 : mortalité à 30 j ≈ 1 %. Ambulatoire envisageable (si pas de dysfonction VD).' },
+      { min: 1, level: 'high', label: 'Risque élevé', detail: 'Score ≥ 1 : mortalité à 30 j ≈ 11 %. Hospitalisation.' },
     ],
   ),
 
@@ -328,7 +328,7 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
     },
     [
       { min: 0, level: 'low', label: 'PERC négatif', detail: 'Aucun critère présent : embolie pulmonaire écartée sans D-dimères (si probabilité clinique faible).' },
-      { min: 1, level: 'moderate', label: 'PERC positif', detail: 'Au moins un critère présent : la règle ne permet pas d’exclure — poursuivre par les D-dimères.' },
+      { min: 1, level: 'moderate', label: 'PERC positif', detail: 'Au moins un critère présent : la règle ne permet pas d’exclure. Poursuivre par les D-dimères.' },
     ],
   ),
 ];

@@ -262,7 +262,7 @@ await check('adresse inconnue → page 404 de marque (statut 404, noindex)', asy
   assert.equal(res.status, 404);
   assert.match(res.headers.get('content-type') ?? '', /text\/html/);
   const html = await res.text();
-  assert.match(html, /<title[^>]*>Page introuvable — MedInfo AI<\/title>/);
+  assert.match(html, /<title[^>]*>Page introuvable \| MedInfo AI<\/title>/);
   assert.match(html, /noindex/);
 });
 

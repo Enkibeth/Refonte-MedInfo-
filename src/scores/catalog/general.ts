@@ -35,7 +35,7 @@ export const GENERAL_SCORES: ScoreDefinition[] = [
       const m = height / 100;
       const bmi = weight / (m * m);
       let interpretation: ScoreInterpretation;
-      if (bmi < 18.5) interpretation = { level: 'moderate', label: 'Insuffisance pondérale', detail: 'IMC < 18,5 : maigreur — rechercher une dénutrition.' };
+      if (bmi < 18.5) interpretation = { level: 'moderate', label: 'Insuffisance pondérale', detail: 'IMC < 18,5 : maigreur. Rechercher une dénutrition.' };
       else if (bmi < 25) interpretation = { level: 'low', label: 'Corpulence normale', detail: 'IMC 18,5–24,9 : corpulence normale.' };
       else if (bmi < 30) interpretation = { level: 'moderate', label: 'Surpoids', detail: 'IMC 25–29,9 : surpoids.' };
       else if (bmi < 35) interpretation = { level: 'high', label: 'Obésité classe I', detail: 'IMC 30–34,9 : obésité modérée.' };
@@ -179,8 +179,8 @@ export const GENERAL_SCORES: ScoreDefinition[] = [
       const total = (v.q1 ?? 0) + (v.q2 ?? 0) + (v.q3 ?? 0);
       const threshold = v.sex === 1 ? 3 : 4;
       let interpretation: ScoreInterpretation;
-      if (total >= 8) interpretation = { level: 'high', label: 'Consommation à risque élevé', detail: 'Score ≥ 8 : consommation à risque élevé — évaluer une dépendance (AUDIT complet).' };
-      else if (total >= threshold) interpretation = { level: 'moderate', label: 'Dépistage positif', detail: `Score ≥ ${threshold} : consommation à risque — proposer une évaluation et un accompagnement.` };
+      if (total >= 8) interpretation = { level: 'high', label: 'Consommation à risque élevé', detail: 'Score ≥ 8 : consommation à risque élevé. Évaluer une dépendance (AUDIT complet).' };
+      else if (total >= threshold) interpretation = { level: 'moderate', label: 'Dépistage positif', detail: `Score ≥ ${threshold} : consommation à risque. Proposer une évaluation et un accompagnement.` };
       else interpretation = { level: 'low', label: 'Dépistage négatif', detail: 'Consommation à faible risque selon l’AUDIT-C.' };
       return { value: total, display: `${fmt(total)} / 12`, interpretation };
     },
@@ -206,7 +206,7 @@ export const GENERAL_SCORES: ScoreDefinition[] = [
     },
     [
       { min: 0, level: 'low', label: 'Dépistage négatif', detail: 'Score 0–1 : dépistage négatif.' },
-      { min: 2, level: 'high', label: 'Dépistage positif', detail: 'Score ≥ 2 : forte suspicion de consommation problématique — approfondir (AUDIT, entretien).' },
+      { min: 2, level: 'high', label: 'Dépistage positif', detail: 'Score ≥ 2 : forte suspicion de consommation problématique. Approfondir (AUDIT, entretien).' },
     ],
   ),
 
@@ -285,7 +285,7 @@ export const GENERAL_SCORES: ScoreDefinition[] = [
     [
       { min: 0, level: 'low', label: 'Dépendance faible', detail: 'Score 0–2 : dépendance faible ou absente.' },
       { min: 3, level: 'moderate', label: 'Dépendance modérée', detail: 'Score 3–4 : dépendance modérée.' },
-      { min: 5, level: 'high', label: 'Dépendance forte', detail: 'Score 5–10 : dépendance forte à très forte — substituts nicotiniques / aide au sevrage recommandés.' },
+      { min: 5, level: 'high', label: 'Dépendance forte', detail: 'Score 5–10 : dépendance forte à très forte. Substituts nicotiniques / aide au sevrage recommandés.' },
     ],
   ),
 ];

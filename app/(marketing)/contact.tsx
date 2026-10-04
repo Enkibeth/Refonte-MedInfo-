@@ -38,8 +38,8 @@ export default function ContactScreen() {
     },
     {
       icon: 'fileText',
-      title: 'Support & partenariats',
-      text: "Un problème avec votre compte, une suggestion, une demande presse ou partenariat : écrivez-nous, nous répondons sous 48 h ouvrées.",
+      title: 'Assistance et partenariats',
+      text: 'Un problème avec votre compte, une suggestion, une demande de presse ou de partenariat : écrivez-nous, nous répondons sous 48 h ouvrées.',
       cta: CONTACT_EMAIL,
       onPress: () => void Linking.openURL(`mailto:${CONTACT_EMAIL}`),
     },
@@ -71,9 +71,9 @@ export default function ContactScreen() {
         <MainContent style={styles.inner}>
           <Reveal>
             <Text style={styles.eyebrow}>Contact</Text>
-            <PageTitle style={styles.title}>Parlons-en.</PageTitle>
+            <PageTitle style={styles.title}>Nous contacter</PageTitle>
             <Text style={styles.lead}>
-              Une question, une suggestion, un problème ? Choisissez le bon canal ci-dessous.
+              Choisissez ci-dessous le contact adapté à votre demande.
               En cas d'urgence médicale, composez le 15 (SAMU) ou le 112 : MedInfo AI n'est
               pas une plateforme d'urgence.
             </Text>

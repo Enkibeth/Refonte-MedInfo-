@@ -39,8 +39,8 @@ const REGION_PLACEHOLDER = '[À COMPLÉTER : région du serveur affichée dans h
 const HOSTINGER: HostingProvider = {
   name: 'Hostinger International Ltd.',
   address: '61 Lordou Vironos Street, 6023 Larnaca, Chypre',
-  sentence: `L'application web est hébergée par Hostinger International Ltd. (61 Lordou Vironos Street, 6023 Larnaca, Chypre) — serveur situé en ${REGION_PLACEHOLDER}.`,
-  processorLine: "Hostinger — hébergement applicatif et diffusion de l'interface.",
+  sentence: `L'application web est hébergée par Hostinger International Ltd. (61 Lordou Vironos Street, 6023 Larnaca, Chypre). Serveur situé en ${REGION_PLACEHOLDER}.`,
+  processorLine: "Hostinger : hébergement applicatif et diffusion de l'interface.",
 };
 
 /** Hébergeur de l'application. */

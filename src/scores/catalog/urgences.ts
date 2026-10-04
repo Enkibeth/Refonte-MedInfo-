@@ -65,8 +65,8 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
       caution: 'Un Glasgow ≤ 8 impose de protéger les voies aériennes (intubation).',
     },
     [
-      { min: 3, level: 'critical', label: 'Atteinte grave', detail: 'Score 3–8 : trouble de conscience grave / coma — protection des voies aériennes (intubation si ≤ 8).' },
-      { min: 9, level: 'moderate', label: 'Atteinte modérée', detail: 'Score 9–12 : atteinte de conscience modérée — surveillance neurologique rapprochée.' },
+      { min: 3, level: 'critical', label: 'Atteinte grave', detail: 'Score 3–8 : trouble de conscience grave / coma. Protection des voies aériennes (intubation si ≤ 8).' },
+      { min: 9, level: 'moderate', label: 'Atteinte modérée', detail: 'Score 9–12 : atteinte de conscience modérée. Surveillance neurologique rapprochée.' },
       { min: 13, level: 'low', label: 'Atteinte légère', detail: 'Score 13–15 : conscience peu ou pas altérée.' },
     ],
   ),
@@ -211,7 +211,7 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
       } else if (ratio <= 0.9) {
         interpretation = { level: 'moderate' as const, label: 'Limite', detail: 'Index 0,7–0,9 : surveiller, rechercher une cause d’instabilité.' };
       } else {
-        interpretation = { level: 'high' as const, label: 'Élevé', detail: 'Index > 0,9 : évoquer un choc / une hypovolémie occulte — réévaluation urgente.' };
+        interpretation = { level: 'high' as const, label: 'Élevé', detail: 'Index > 0,9 : évoquer un choc / une hypovolémie occulte. Réévaluation urgente.' };
       }
       return { value: ratio, display: fmt(ratio, 2), interpretation };
     },
@@ -231,7 +231,7 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
         {
           kind: 'choice',
           id: 'respiration',
-          label: 'Respiration — PaO₂/FiO₂ (mmHg)',
+          label: 'Respiration : PaO₂/FiO₂ (mmHg)',
           options: [
             { label: '≥ 400', value: 0 },
             { label: '< 400', value: 1 },
@@ -243,7 +243,7 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
         {
           kind: 'choice',
           id: 'coagulation',
-          label: 'Coagulation — plaquettes (×10³/µL)',
+          label: 'Coagulation : plaquettes (×10³/µL)',
           options: [
             { label: '≥ 150', value: 0 },
             { label: '< 150', value: 1 },
@@ -255,7 +255,7 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
         {
           kind: 'choice',
           id: 'liver',
-          label: 'Foie — bilirubine (µmol/L)',
+          label: 'Foie : bilirubine (µmol/L)',
           options: [
             { label: '< 20', value: 0 },
             { label: '20–32', value: 1 },
@@ -279,7 +279,7 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
         {
           kind: 'choice',
           id: 'cns',
-          label: 'Neurologique — Glasgow',
+          label: 'Neurologique : Glasgow',
           options: [
             { label: '15', value: 0 },
             { label: '13–14', value: 1 },
@@ -291,7 +291,7 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
         {
           kind: 'choice',
           id: 'renal',
-          label: 'Rénal — créatinine (µmol/L)',
+          label: 'Rénal : créatinine (µmol/L)',
           options: [
             { label: '< 110', value: 0 },
             { label: '110–170', value: 1 },
@@ -332,7 +332,7 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
     },
     [
       { min: 0, level: 'low', label: 'Pas de SIRS', detail: 'Moins de 2 critères : pas de SIRS.' },
-      { min: 2, level: 'moderate', label: 'SIRS présent', detail: '≥ 2 critères : SIRS — rechercher une cause (infectieuse ou non).' },
+      { min: 2, level: 'moderate', label: 'SIRS présent', detail: '≥ 2 critères : SIRS. Rechercher une cause (infectieuse ou non).' },
     ],
   ),
 ];

@@ -24,7 +24,7 @@ const VALUES: { icon: IconName; title: string; text: string }[] = [
   {
     icon: 'sparkles',
     title: 'Innovation',
-    text: "Une IA de dernière génération au service de l'information en santé : réponses sourcées, outils pour étudiants et professionnels.",
+    text: 'Des modèles d’IA récents au service de l’information en santé : réponses sourcées, outils pour étudiants et professionnels.',
   },
   {
     icon: 'shield',
@@ -34,7 +34,7 @@ const VALUES: { icon: IconName; title: string; text: string }[] = [
   {
     icon: 'refresh',
     title: 'Amélioration continue',
-    text: 'Un projet qui évolue avec les usages : outils, modèles et soin porté à l’expérience d’apprentissage et de travail.',
+    text: 'Le projet évolue avec l’usage : outils, modèles et ergonomie sont revus au fil des versions.',
   },
 ];
 
@@ -59,7 +59,7 @@ export default function AboutScreen() {
         <MainContent style={styles.inner}>
           <Reveal>
             <Text style={styles.eyebrow}>Qui sommes-nous</Text>
-            <PageTitle style={styles.title}>Pensé depuis les études de médecine.</PageTitle>
+            <PageTitle style={styles.title}>Un projet né pendant les études de médecine</PageTitle>
           </Reveal>
           <Reveal delay={tokens.motion.revealStagger}>
             <Text style={styles.lead}>
@@ -73,7 +73,7 @@ export default function AboutScreen() {
               Le chat fonctionne aujourd’hui avec GPT-6 Luna.
             </Text>
             <Text style={styles.paragraph}>
-              Trois assistants spécialisés accompagnent chacun à son niveau : le grand public
+              Trois assistants s’adressent chacun à un public : le grand public
               (explications sans jargon, analyse de document médical), les étudiants en santé
               (référentiels des Collèges EDN/R2C, simulation ECOS, planning de révisions,
               présentations, CV) et les professionnels (synthèses fondées sur les preuves,

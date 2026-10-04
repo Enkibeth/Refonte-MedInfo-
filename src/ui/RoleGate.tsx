@@ -9,7 +9,7 @@
  * L'autorisation réelle des routes IA reste dérivée du profil vérifié côté serveur.
  */
 import { useState, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Link } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
@@ -24,6 +24,9 @@ import { Icon } from '@/ui/icons';
 import { buttonLinkProps } from '@/ui/interaction';
 import { tokens } from '@/ui/tokens';
 import { PageTitle } from '@/ui/PageTitle';
+import { mi } from '@/ui/responsive';
+import { ToolPreview } from '@/ui/ToolPreview';
+import { TOOL_PAGES, type ToolPageId } from '@/seo/toolPages';
 
 const PERSONA_LABELS: Record<string, string> = {
   public: 'Grand public',
@@ -39,17 +42,34 @@ export function RoleGate({
   children: ReactNode;
 }) {
   const { persona, user, session, loading, bootDegraded } = useSession();
+  const preview = feature !== 'chat' && feature in TOOL_PAGES ? (feature as ToolPageId) : null;
+  const spinner = (
+    <View style={styles.center}>
+      <ActivityIndicator color={tokens.colors.accent} />
+    </View>
+  );
 
   // État d'authentification incomplet : amorçage en cours, ou session connue dont le
   // profil (persona) n'est pas encore appliqué — sans cette seconde condition, un étudiant
   // voyait brièvement « pas disponible pour ton rôle ». Borné : le profil est plafonné dans
   // le temps et retombe sur un profil neutre, la persona ne reste jamais nulle.
   if (loading || (session && !persona)) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={tokens.colors.accent} />
-      </View>
-    );
+    // Web, sans session connue (pré-rendu compris) : la présentation publique est rendue tout
+    // de suite, avec l'indicateur caché ; un navigateur qui avait une session voit l'inverse
+    // (règles de src/ui/sessionHint.ts, appliquées avant le premier affichage).
+    if (Platform.OS === 'web' && preview && !session) {
+      return (
+        <>
+          <View {...mi('gate-preview', 'gate-pending')} style={styles.fill}>
+            <ToolPreview feature={preview} />
+          </View>
+          <View {...mi('gate-loading')} style={styles.center}>
+            <ActivityIndicator color={tokens.colors.accent} />
+          </View>
+        </>
+      );
+    }
+    return spinner;
   }
 
   // Session pas encore récupérée alors que ce navigateur en avait une (cf. bootGuard) :
@@ -65,6 +85,16 @@ export function RoleGate({
   const isGuest = !session;
   if (isFeatureVisible(feature, persona, { isAdmin, isGuest })) {
     return <>{children}</>;
+  }
+
+  // Visiteur : présentation publique de l'outil, même arbre qu'au pré-rendu (pas de
+  // remontage, pas de saut) — seul l'indicateur de chargement disparaît.
+  if (isGuest && preview) {
+    return (
+      <View {...mi('gate-preview')} style={styles.fill}>
+        <ToolPreview feature={preview} />
+      </View>
+    );
   }
 
   return <RoleUnavailable feature={feature} persona={persona} guest={isGuest} />;
@@ -139,7 +169,7 @@ function RoleUnavailable({
         <Text style={styles.text}>
           {guest
             ? `Cet outil est réservé aux comptes MedInfo AI. Créez un compte gratuit pour y accéder.${meta ? ` ${meta.description}` : ''}`
-            : `Cet outil n’est pas disponible pour ton rôle actuel (${roleLabel}).${meta ? ` ${meta.description}` : ''}`}
+            : `Cet outil n’est pas disponible pour le rôle actuel (${roleLabel}).${meta ? ` ${meta.description}` : ''}`}
         </Text>
         <Link
           href={guest ? '/(auth)/sign-in?mode=signup' : '/(account)/choose-role'}
@@ -156,6 +186,7 @@ function RoleUnavailable({
 }
 
 const styles = StyleSheet.create({
+  fill: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.colors.background },
   container: {
     flex: 1,

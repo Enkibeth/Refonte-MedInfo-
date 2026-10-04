@@ -54,7 +54,7 @@ export const CARDIO_SCORES: ScoreDefinition[] = [
           ],
         },
       ],
-      reference: 'ESC 2020 — FA. Anticoagulation : homme ≥ 2, femme ≥ 3 (le sexe seul ne suffit pas).',
+      reference: 'ESC 2020 (FA). Anticoagulation : homme ≥ 2, femme ≥ 3 (le sexe seul ne suffit pas).',
       caution:
         'À croiser avec le risque hémorragique (HAS-BLED). Ne s’applique pas à la FA valvulaire (valve mécanique, RM serré).',
     },
@@ -101,7 +101,7 @@ export const CARDIO_SCORES: ScoreDefinition[] = [
     },
     [
       { min: 0, level: 'low', label: 'Risque non élevé', detail: 'Score 0–2 : risque hémorragique faible à modéré.' },
-      { min: 3, level: 'high', label: 'Risque élevé', detail: 'Score ≥ 3 : risque hémorragique élevé — corriger les facteurs modifiables et rapprocher la surveillance.' },
+      { min: 3, level: 'high', label: 'Risque élevé', detail: 'Score ≥ 3 : risque hémorragique élevé. Corriger les facteurs modifiables et rapprocher la surveillance.' },
     ],
   ),
 
@@ -137,8 +137,8 @@ export const CARDIO_SCORES: ScoreDefinition[] = [
     },
     [
       { min: 0, level: 'low', label: 'Risque faible', detail: 'Score 0–2 : risque d’événement à 14 j ≈ 5–8 %.' },
-      { min: 3, level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 3–4 : risque ≈ 13–20 % — stratégie invasive à discuter.' },
-      { min: 5, level: 'high', label: 'Risque élevé', detail: 'Score 5–7 : risque ≈ 26–41 % — stratégie invasive précoce.' },
+      { min: 3, level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 3–4 : risque ≈ 13–20 %. Stratégie invasive à discuter.' },
+      { min: 5, level: 'high', label: 'Risque élevé', detail: 'Score 5–7 : risque ≈ 26–41 %. Stratégie invasive précoce.' },
     ],
   ),
 
@@ -164,7 +164,7 @@ export const CARDIO_SCORES: ScoreDefinition[] = [
     [
       { min: 0, level: 'low', label: 'Risque faible', detail: 'Score 0 : risque annuel d’AVC ≈ 1,9 %.' },
       { min: 1, level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 1–2 : risque annuel ≈ 2,8–4 %.' },
-      { min: 3, level: 'high', label: 'Risque élevé', detail: 'Score ≥ 3 : risque annuel ≥ 5,9 % — anticoagulation.' },
+      { min: 3, level: 'high', label: 'Risque élevé', detail: 'Score ≥ 3 : risque annuel ≥ 5,9 %. Anticoagulation.' },
     ],
   ),
 
@@ -184,10 +184,10 @@ export const CARDIO_SCORES: ScoreDefinition[] = [
           id: 'class',
           label: 'Retentissement fonctionnel',
           options: [
-            { label: 'I — Aucune limitation', value: 1 },
-            { label: 'II — Dyspnée aux efforts importants', value: 2 },
-            { label: 'III — Dyspnée aux efforts modérés (limitation marquée)', value: 3 },
-            { label: 'IV — Dyspnée au moindre effort ou au repos', value: 4 },
+            { label: 'I. Aucune limitation', value: 1 },
+            { label: 'II. Dyspnée aux efforts importants', value: 2 },
+            { label: 'III. Dyspnée aux efforts modérés (limitation marquée)', value: 3 },
+            { label: 'IV. Dyspnée au moindre effort ou au repos', value: 4 },
           ],
         },
       ],
@@ -218,20 +218,20 @@ export const CARDIO_SCORES: ScoreDefinition[] = [
           id: 'class',
           label: 'Signes d’insuffisance cardiaque',
           options: [
-            { label: 'I — Aucun signe', value: 1 },
-            { label: 'II — Râles crépitants, B3, turgescence jugulaire', value: 2 },
-            { label: 'III — Œdème aigu du poumon', value: 3 },
-            { label: 'IV — Choc cardiogénique', value: 4 },
+            { label: 'I. Aucun signe', value: 1 },
+            { label: 'II. Râles crépitants, B3, turgescence jugulaire', value: 2 },
+            { label: 'III. Œdème aigu du poumon', value: 3 },
+            { label: 'IV. Choc cardiogénique', value: 4 },
           ],
         },
       ],
       reference: 'Killip & Kimball 1967. Mortalité hospitalière croissante (≈ 6 % → 80 %).',
     },
     [
-      { min: 1, level: 'low', label: 'Classe I', detail: 'Pas d’insuffisance cardiaque — mortalité hospitalière ≈ 6 %.' },
-      { min: 2, level: 'moderate', label: 'Classe II', detail: 'Insuffisance cardiaque modérée — mortalité ≈ 17 %.' },
-      { min: 3, level: 'high', label: 'Classe III', detail: 'Œdème aigu du poumon — mortalité ≈ 38 %.' },
-      { min: 4, level: 'critical', label: 'Classe IV', detail: 'Choc cardiogénique — mortalité ≈ 67–80 %.' },
+      { min: 1, level: 'low', label: 'Classe I', detail: 'Pas d’insuffisance cardiaque : mortalité hospitalière ≈ 6 %.' },
+      { min: 2, level: 'moderate', label: 'Classe II', detail: 'Insuffisance cardiaque modérée : mortalité ≈ 17 %.' },
+      { min: 3, level: 'high', label: 'Classe III', detail: 'Œdème aigu du poumon : mortalité ≈ 38 %.' },
+      { min: 4, level: 'critical', label: 'Classe IV', detail: 'Choc cardiogénique : mortalité ≈ 67–80 %.' },
     ],
     { format: (t) => `Classe Killip ${CARDIO_ROMAN[t - 1] ?? t}` },
   ),
@@ -301,9 +301,9 @@ export const CARDIO_SCORES: ScoreDefinition[] = [
       reference: 'Six 2008. 0–3 faible, 4–6 intermédiaire, 7–10 élevé.',
     },
     [
-      { min: 0, level: 'low', label: 'Risque faible', detail: 'Score 0–3 : événement cardiaque majeur à 6 sem ≈ 1,7 % — sortie souvent possible.' },
-      { min: 4, level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 4–6 : risque ≈ 12–17 % — observation / bilan.' },
-      { min: 7, level: 'high', label: 'Risque élevé', detail: 'Score 7–10 : risque ≈ 50 % — prise en charge cardiologique.' },
+      { min: 0, level: 'low', label: 'Risque faible', detail: 'Score 0–3 : événement cardiaque majeur à 6 sem ≈ 1,7 %. Sortie souvent possible.' },
+      { min: 4, level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 4–6 : risque ≈ 12–17 %. Observation / bilan.' },
+      { min: 7, level: 'high', label: 'Risque élevé', detail: 'Score 7–10 : risque ≈ 50 %. Prise en charge cardiologique.' },
     ],
   ),
 
@@ -360,9 +360,9 @@ export const CARDIO_SCORES: ScoreDefinition[] = [
       }
       const female = v.sex === 1;
       let interpretation: ScoreInterpretation;
-      if (qtc >= 500) interpretation = { level: 'critical', label: 'Allongement majeur', detail: 'QTc ≥ 500 ms : risque élevé de torsades de pointes — corriger les facteurs (kaliémie, magnésémie, médicaments).' };
-      else if (qtc > (female ? 470 : 450)) interpretation = { level: 'high', label: 'QTc allongé', detail: `QTc > ${female ? 470 : 450} ms : QT long — rechercher une cause (médicaments, ionogramme).` };
-      else if (qtc >= (female ? 450 : 430)) interpretation = { level: 'moderate', label: 'QTc limite', detail: 'QTc limite supérieur — surveillance.' };
+      if (qtc >= 500) interpretation = { level: 'critical', label: 'Allongement majeur', detail: 'QTc ≥ 500 ms : risque élevé de torsades de pointes. Corriger les facteurs (kaliémie, magnésémie, médicaments).' };
+      else if (qtc > (female ? 470 : 450)) interpretation = { level: 'high', label: 'QTc allongé', detail: `QTc > ${female ? 470 : 450} ms : QT long. Rechercher une cause (médicaments, ionogramme).` };
+      else if (qtc >= (female ? 450 : 430)) interpretation = { level: 'moderate', label: 'QTc limite', detail: 'QTc limite supérieur : surveillance.' };
       else interpretation = { level: 'low', label: 'QTc normal', detail: 'QTc dans les limites de la normale.' };
       return { value: qtc, display: `${fmt(qtc)} ms`, interpretation };
     },

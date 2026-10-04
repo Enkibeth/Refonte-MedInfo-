@@ -51,7 +51,7 @@ export const BILLING_PLANS: Record<BillingPlanId, BillingPlan> = {
   student_premium: {
     id: 'student_premium',
     persona: 'student',
-    label: 'Étudiant — Premium',
+    label: 'Étudiant Premium',
     priceLabel: '14,99 €/mois',
     priceEnvVar: 'STRIPE_PRICE_STUDENT_PREMIUM',
     perks: ['Messages illimités'],

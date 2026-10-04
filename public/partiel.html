@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Analyse des partiels</title>
+<!-- Coquille d'outil embarquée par l'application (route du même nom) : jamais indexée seule. -->
+<meta name="robots" content="noindex, nofollow" />
+<title>Analyse des partiels | MedInfo AI</title>
 <link rel="stylesheet" href="/vendor/fonts/fonts.css">
 <!-- Les 4 librairies (SheetJS, pdf.js, jsPDF, html2canvas) pèsent ~1,9 Mo et ne
      servent qu'à l'import du format choisi ou à l'export : elles sont chargées
@@ -1225,7 +1227,7 @@ async function extractRowsFromPdf(file,pdfjs){
   const pdf=await pdfjs.getDocument({data:buf}).promise;
   const allItems=[];let yOffset=0;
   for(let i=1;i<=pdf.numPages;i++){
-    setBusy(true,`Lecture du PDF — page ${i}/${pdf.numPages}…`);
+    setBusy(true,`Lecture du PDF : page ${i}/${pdf.numPages}…`);
     const page=await pdf.getPage(i);
     const vp=page.getViewport({scale:1});
     const tc=await page.getTextContent();
@@ -1392,7 +1394,7 @@ function renderSuggestions(){
     if(!q||(slot===0?S.stu1:S.stu2))return;
     const sugg=suggestIds(q,S.rows.map(r=>r.id),5);
     const btns=sugg.map(id=>`<button class="sugbtn mono" data-slot="${slot}" data-id="${esc(id)}">${esc(id)}</button>`).join('');
-    parts.push(`<div class="sug"><span class="lbl">${label} « ${esc(q)} » introuvable${sugg.length?' — proche :':'.'}</span>${btns}</div>`);
+    parts.push(`<div class="sug"><span class="lbl">${label} « ${esc(q)} » introuvable${sugg.length?'. Proche :':'.'}</span>${btns}</div>`);
   };
   mk(0,'Identifiant');
   if(S.compare)mk(1,'Comparaison');
@@ -1409,11 +1411,11 @@ function renderSettings(){
     S.sheetNames.forEach((n,i)=>{const o=document.createElement('option');o.value=i;o.textContent=n;if(i===S.sheetIdx)o.selected=true;sel.appendChild(o);});
   }
   const sel=$('idcolsel');sel.innerHTML='';
-  S.headers.forEach((h,i)=>{const o=document.createElement('option');o.value=i;o.textContent=`Col. ${i+1} — ${h||'(sans nom)'}`;if(i===S.idColIdx)o.selected=true;sel.appendChild(o);});
+  S.headers.forEach((h,i)=>{const o=document.createElement('option');o.value=i;o.textContent=`Col. ${i+1} · ${h||'(sans nom)'}`;if(i===S.idColIdx)o.selected=true;sel.appendChild(o);});
   document.querySelectorAll('#scaleseg button').forEach(b=>b.classList.toggle('on',Number(b.dataset.v)===S.scaleMax));
   document.querySelectorAll('#basisseg button').forEach(b=>b.classList.toggle('on',b.dataset.v===S.rankingBasis));
   $('basishint').innerHTML=S.rankingBasis==='complete'
-    ?`Seuls les étudiants notés sur les <b>${fi(S.overall?S.overall.counted:0)} épreuves incluses</b> sont classés — les moyennes comparées portent alors toutes sur les mêmes épreuves. <b>${fi(S.overall?S.overall.excluded:0)}</b> étudiant(s) écarté(s) du classement (leur moyenne reste affichée).`
+    ?`Seuls les étudiants notés sur les <b>${fi(S.overall?S.overall.counted:0)} épreuves incluses</b> sont classés : les moyennes comparées portent alors toutes sur les mêmes épreuves. <b>${fi(S.overall?S.overall.excluded:0)}</b> étudiant(s) écarté(s) du classement (leur moyenne reste affichée).`
     :`Tout étudiant ayant au moins une note incluse est classé : le classement <b>mélange</b> des moyennes portant sur un nombre d'épreuves différent. À n'utiliser que si ta scolarité classe ainsi.`;
   $('passinput').value=S.passMark;
   $('passinput').max=S.scaleMax;
@@ -1683,7 +1685,7 @@ function renderInsights(){
     +`<ul class="ilist"><li><span class="isub">Épreuves validées</span><span class="ival"><b>${fi(val.passed.length)}</b> / ${fi(val.graded)} notées</span></li>${failList}</ul>`
     +(val.failed.length>4?`<p class="iempty" style="margin:8px 0 0">+ ${fi(val.failed.length-4)} autre(s).</p>`:'')
     +(!val.failed.length&&val.graded?`<p class="iempty" style="margin:8px 0 0">Aucune épreuve sous le seuil.</p>`:'')
-    +(val.missing.length?`<p class="iempty" style="margin:8px 0 0">${fi(val.missing.length)} épreuve(s) non notée(s) — non comptée(s).</p>`:'')
+    +(val.missing.length?`<p class="iempty" style="margin:8px 0 0">${fi(val.missing.length)} épreuve(s) non notée(s), non comptée(s).</p>`:'')
     +`</div>`);
   const gap=(r.mean!=null&&o)?r.mean-o.median:null;
   cards.push(`<div class="icard info"><h4>Écart à la promo</h4><ul class="ilist">`
@@ -2079,7 +2081,7 @@ function sparkline(){
   const x=i=>PAD+(i/(pts.length-1))*(W-2*PAD);
   const y=v=>PAD+(1-v/100)*(H-2*PAD);
   const d=pts.map((e,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(e.pct).toFixed(1)}`).join(' ');
-  const dots=pts.map((e,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(e.pct).toFixed(1)}" r="3" fill="${SVGC.a1}"><title>${esc(e.label)} — centile ${fp(e.pct)}</title></circle>`).join('');
+  const dots=pts.map((e,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(e.pct).toFixed(1)}" r="3" fill="${SVGC.a1}"><title>${esc(e.label)} : centile ${fp(e.pct)}</title></circle>`).join('');
   return`<div class="spark"><div class="clabel" style="margin-bottom:8px">Centile dans la promo, session après session</div>`
     +`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Évolution du centile">`
     +`<line x1="${PAD}" x2="${W-PAD}" y1="${y(50)}" y2="${y(50)}" stroke="${SVGC.line}" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>`
@@ -2090,7 +2092,7 @@ function renderHistory(){
   const out=$('histout');
   out.innerHTML=(S.history.length
     ?trendLine()+`<div class="hist">${historyCards()}</div>`+sparkline()
-    :'<p class="iempty">Aucune session enregistrée. Le bouton ci-dessus mémorise <b>tes</b> résultats (moyenne, rang, tes notes) sur cet appareil — jamais les notes des autres étudiants, et rien n’est envoyé en ligne.</p>')
+    :'<p class="iempty">Aucune session enregistrée. Le bouton ci-dessus mémorise <b>tes</b> résultats (moyenne, rang, tes notes) sur cet appareil, jamais les notes des autres étudiants, et rien n’est envoyé en ligne.</p>')
   ;
   out.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>deleteEntry(b.dataset.del));
 }

@@ -301,7 +301,7 @@ export default function EcosScreen() {
             { name: 'Simulation ECOS', path: PAGE_SEO.ecos.path },
           ]),
           webApplicationJsonLd({
-            name: 'Simulation ECOS — MedInfo AI',
+            name: 'Simulation ECOS',
             description: PAGE_SEO.ecos.description,
             path: PAGE_SEO.ecos.path,
           }),
@@ -341,7 +341,7 @@ function EcosScreenInner() {
   const evalScore = viewedAttempt ? viewedAttempt.score : parseScoreFromEvaluation(evaluation);
   const evalCaseTitle = viewedAttempt ? viewedAttempt.case_title : selectedCase?.titre ?? '';
 
-  const evalTitle = () => `Évaluation ECOS — ${evalCaseTitle}`.trim();
+  const evalTitle = () => `Évaluation ECOS : ${evalCaseTitle}`.trim();
 
   async function copyEvaluation() {
     if (!evalMarkdown) return;
