@@ -47,7 +47,7 @@ const CATEGORY_BY_ID = new Map(CATEGORIES.map((c) => [c.id, c]));
 
 export function categoryMeta(id: ScoreCategory): CategoryMeta {
   const meta = CATEGORY_BY_ID.get(id);
-  if (!meta) throw new Error(`Catégorie de score inconnue : ${id}`);
+  if (!meta) throw new Error(`Catégorie de score inconnue : ${id}`);
   return meta;
 }
 

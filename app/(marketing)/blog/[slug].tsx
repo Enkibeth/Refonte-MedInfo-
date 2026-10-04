@@ -150,7 +150,7 @@ export default function BlogArticleScreen() {
             <View style={styles.missingCard}>
               <Text style={styles.missingTitle}>Article introuvable</Text>
               <Text style={styles.missingText}>
-                Cet article n'existe pas ou n'est plus publié.
+                Cet article n’existe pas ou n’est plus publié.
               </Text>
             </View>
           ) : (
@@ -180,7 +180,7 @@ export default function BlogArticleScreen() {
                       feedback="link"
                       onPress={() => scrollToSection(e.index)}
                       accessibilityRole="button"
-                      accessibilityLabel={`Aller à la section : ${e.heading}`}
+                      accessibilityLabel={`Aller à la section : ${e.heading}`}
                     >
                       <Text style={styles.tocIndex}>{String(i + 1).padStart(2, '0')}</Text>
                       <Text style={styles.tocText}>{e.heading}</Text>

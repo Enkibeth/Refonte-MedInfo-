@@ -207,7 +207,7 @@ export function BlogEditorModal({
       if (!res.ok) throw new Error(data.error ?? 'Échec.');
       changedRef.current = true;
       setPost({ ...post, status: publish ? 'published' : 'draft' });
-      setNotice(publish ? 'Article publié : visible sur le blog public.' : 'Article dépublié (brouillon).');
+      setNotice(publish ? 'Article publié : visible sur le blog public.' : 'Article dépublié (brouillon).');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Échec de la publication.');
     } finally {
@@ -227,7 +227,7 @@ export function BlogEditorModal({
     }
     if (!picked) {
       if (Platform.OS !== 'web') {
-        setError("L'import de fichier n'est disponible que sur le web : utilise l'option URL.");
+        setError("L’import de fichier n’est disponible que sur le web : utilise l’option URL.");
       }
       return;
     }
@@ -245,7 +245,7 @@ export function BlogEditorModal({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Échec de l'envoi.");
+      if (!res.ok) throw new Error(data.error ?? "Échec de l’envoi.");
       changedRef.current = true;
       if (target === 'cover') {
         // L'upload de couverture est persisté immédiatement côté serveur.
@@ -253,10 +253,10 @@ export function BlogEditorModal({
         setNotice('Photo de couverture remplacée.');
       } else {
         insertSnippet(`\n\n![Légende de l'image](${data.url})\n\n`);
-        setNotice("Image insérée dans l'article, pense à adapter la légende.");
+        setNotice("Image insérée dans l’article, pense à adapter la légende.");
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Échec de l'envoi de l'image.");
+      setError(e instanceof Error ? e.message : "Échec de l’envoi de l’image.");
     } finally {
       setUploading(false);
     }
@@ -289,7 +289,7 @@ export function BlogEditorModal({
       onPress: () =>
         insertSnippet('\n| Colonne 1 | Colonne 2 |\n| --- | --- |\n| valeur | valeur |\n'),
     },
-    { label: '— Séparateur', onPress: () => insertSnippet('\n---\n') },
+    { label: '― Séparateur', onPress: () => insertSnippet('\n---\n') },
     { label: '🔗 Lien', onPress: () => insertSnippet('[texte du lien](https://)') },
     { label: '🖼 Image (fichier)', onPress: () => void uploadImage('inline') },
     { label: '🖼 Image (URL)', onPress: () => insertSnippet('\n\n![Légende de l’image](https://)\n\n') },
@@ -304,7 +304,7 @@ export function BlogEditorModal({
             onPress={() => onClose(changedRef.current)}
             style={styles.closeBtn}
             accessibilityRole="button"
-            accessibilityLabel="Fermer l'éditeur"
+            accessibilityLabel="Fermer l’éditeur"
           >
             <Icon name="x" size={18} color={tokens.colors.textSubtle} />
           </Touchable>
@@ -409,7 +409,7 @@ export function BlogEditorModal({
                           }}
                           accessibilityRole="button"
                         >
-                          <Text style={styles.smallBtnDanger}>Retirer l'image</Text>
+                          <Text style={styles.smallBtnDanger}>Retirer l’image</Text>
                         </Touchable>
                       ) : null}
                     </View>
@@ -468,8 +468,8 @@ export function BlogEditorModal({
                   <View style={styles.fieldCard}>
                     <Text style={styles.fieldLabel}>Contenu (markdown)</Text>
                     <Text style={styles.fieldHint}>
-                      Les titres « ## » alimentent le sommaire cliquable de la page publique.
-                      Sélectionne du texte puis « Gras » pour l'entourer, ou place le curseur
+                      Les titres « ## » alimentent le sommaire cliquable de la page publique.
+                      Sélectionne du texte puis « Gras » pour l’entourer, ou place le curseur
                       pour insérer un bloc.
                     </Text>
                     <View style={styles.toolbar}>

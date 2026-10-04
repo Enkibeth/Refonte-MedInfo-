@@ -81,7 +81,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     emoji: '📊',
     icon: 'barChart',
     description:
-      'Analyse des partiels : rang dans la promo, coefficients, points forts et simulateur.',
+      'Analyse des partiels : rang dans la promo, coefficients, points forts et simulateur.',
     personas: ['student'],
   },
   {
@@ -90,7 +90,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     label: 'Révisions',
     emoji: '🗓️',
     icon: 'calendarCheck',
-    description: 'Planning de révisions : charge quotidienne réaliste, suivi et jauge de risque.',
+    description: 'Planning de révisions : charge quotidienne réaliste, suivi et jauge de risque.',
     personas: ['student'],
   },
   {
@@ -117,7 +117,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     label: 'CV',
     emoji: '📋',
     icon: 'idCard',
-    description: 'CV médical : éditeur, aperçu A4, relecture par l’IA et export PDF.',
+    description: 'CV médical : éditeur, aperçu A4, relecture par l’IA et export PDF.',
     personas: ['student', 'professional'],
   },
   {
@@ -127,7 +127,7 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     emoji: '✒️',
     icon: 'penLine',
     description:
-      'Rédaction d’article ou de thèse : plan IMRaD, compteurs de caractères, bibliographie Vancouver, aides IA et contrôle d’originalité.',
+      'Rédaction d’article ou de thèse : plan IMRaD, compteurs de caractères, bibliographie Vancouver, aides IA et contrôle d’originalité.',
     personas: ['student', 'professional'],
   },
   {

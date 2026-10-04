@@ -20,10 +20,10 @@ const incompleteResult = (msg: string): ReturnType<ScoreDefinition['compute']> =
 
 /** Interprétation MELD partagée (mortalité à 3 mois). */
 function meldInterpretation(meld: number): ScoreInterpretation {
-  if (meld < 10) return { level: 'low', label: 'Faible', detail: 'MELD < 10 : mortalité à 3 mois ≈ 2 %.' };
-  if (meld < 20) return { level: 'moderate', label: 'Intermédiaire', detail: 'MELD 10–19 : mortalité à 3 mois ≈ 6 %.' };
-  if (meld < 30) return { level: 'high', label: 'Élevé', detail: 'MELD 20–29 : mortalité à 3 mois ≈ 20 %. Avis transplantation.' };
-  return { level: 'critical', label: 'Très élevé', detail: 'MELD ≥ 30 : mortalité à 3 mois ≥ 50 %.' };
+  if (meld < 10) return { level: 'low', label: 'Faible', detail: 'MELD < 10 : mortalité à 3 mois ≈ 2 %.' };
+  if (meld < 20) return { level: 'moderate', label: 'Intermédiaire', detail: 'MELD 10–19 : mortalité à 3 mois ≈ 6 %.' };
+  if (meld < 30) return { level: 'high', label: 'Élevé', detail: 'MELD 20–29 : mortalité à 3 mois ≈ 20 %. Avis transplantation.' };
+  return { level: 'critical', label: 'Très élevé', detail: 'MELD ≥ 30 : mortalité à 3 mois ≥ 50 %.' };
 }
 
 /** MELD original (entier borné 6–40) à partir des valeurs FR. NaN si incomplet. */
@@ -63,7 +63,7 @@ export const HEPATO_SCORES: ScoreDefinition[] = [
       acronym: 'Child-Pugh',
       category: 'hepato',
       purpose:
-        "Évalue la gravité d'une cirrhose (classes A/B/C) : pronostic, opérabilité et adaptation de certains traitements.",
+        "Évalue la gravité d’une cirrhose (classes A/B/C) : pronostic, opérabilité et adaptation de certains traitements.",
       aliases: ['child pugh', 'child', 'child-pugh-turcotte', 'cirrhose score'],
       keywords: [
         'cirrhose',
@@ -129,9 +129,9 @@ export const HEPATO_SCORES: ScoreDefinition[] = [
       reference: 'Pugh 1973. A = 5–6, B = 7–9, C = 10–15.',
     },
     [
-      { min: 5, level: 'low', label: 'Classe A', detail: 'Score 5–6 : cirrhose compensée. Survie à 1 an ≈ 100 %.' },
-      { min: 7, level: 'moderate', label: 'Classe B', detail: 'Score 7–9 : atteinte fonctionnelle significative. Survie à 1 an ≈ 80 %.' },
-      { min: 10, level: 'high', label: 'Classe C', detail: 'Score 10–15 : cirrhose décompensée. Survie à 1 an ≈ 45 %, avis transplantation.' },
+      { min: 5, level: 'low', label: 'Classe A', detail: 'Score 5–6 : cirrhose compensée. Survie à 1 an ≈ 100 %.' },
+      { min: 7, level: 'moderate', label: 'Classe B', detail: 'Score 7–9 : atteinte fonctionnelle significative. Survie à 1 an ≈ 80 %.' },
+      { min: 10, level: 'high', label: 'Classe C', detail: 'Score 10–15 : cirrhose décompensée. Survie à 1 an ≈ 45 %, avis transplantation.' },
     ],
   ),
 
@@ -141,11 +141,11 @@ export const HEPATO_SCORES: ScoreDefinition[] = [
     acronym: 'MELD',
     category: 'hepato',
     purpose:
-      "Estime la mortalité à court terme d'une hépatopathie chronique et hiérarchise l'accès à la transplantation hépatique.",
+      "Estime la mortalité à court terme d’une hépatopathie chronique et hiérarchise l’accès à la transplantation hépatique.",
     aliases: ['meld', 'model end stage liver disease'],
     keywords: ['cirrhose', 'transplantation hépatique', 'greffe foie', 'insuffisance hépatique', 'pronostic', 'mortalité'],
     fields: MELD_FIELDS,
-    reference: 'Kamath 2001. Valeurs bornées (min 1 ; créat max 4 ; dialyse → créat = 4). Résultat 6–40.',
+    reference: 'Kamath 2001. Valeurs bornées (min 1 ; créat max 4 ; dialyse → créat = 4). Résultat 6–40.',
     compute: (v) => {
       const meld = computeMeld(v);
       if (!Number.isFinite(meld)) return incompleteResult('Renseignez bilirubine, INR et créatininémie.');
@@ -159,14 +159,14 @@ export const HEPATO_SCORES: ScoreDefinition[] = [
     acronym: 'MELD-Na',
     category: 'hepato',
     purpose:
-      "Affine le MELD en intégrant la natrémie : l'hyponatrémie aggrave le pronostic de la cirrhose.",
+      "Affine le MELD en intégrant la natrémie : l’hyponatrémie aggrave le pronostic de la cirrhose.",
     aliases: ['meld na', 'meldna', 'meld sodium'],
     keywords: ['cirrhose', 'transplantation hépatique', 'natrémie', 'hyponatrémie', 'pronostic', 'mortalité', 'greffe foie'],
     fields: [
       ...MELD_FIELDS,
       { kind: 'number', id: 'sodium', label: 'Natrémie', unit: 'mmol/L', min: 110, max: 160, placeholder: 'ex. 132' },
     ],
-    reference: 'Kim 2008 (UNOS). Correction appliquée si MELD > 11 ; natrémie bornée 125–137.',
+    reference: 'Kim 2008 (UNOS). Correction appliquée si MELD > 11 ; natrémie bornée 125–137.',
     compute: (v) => {
       const meld = computeMeld(v);
       const na = v.sodium;
@@ -189,7 +189,7 @@ export const HEPATO_SCORES: ScoreDefinition[] = [
     acronym: 'GBS',
     category: 'hepato',
     purpose:
-      "Évalue, avant endoscopie, le risque qu'une hémorragie digestive haute nécessite un geste (transfusion, hémostase) ; un score de 0 autorise une prise en charge ambulatoire.",
+      "Évalue, avant endoscopie, le risque qu’une hémorragie digestive haute nécessite un geste (transfusion, hémostase) ; un score de 0 autorise une prise en charge ambulatoire.",
     aliases: ['blatchford', 'glasgow blatchford', 'gbs', 'hemorragie digestive score'],
     keywords: [
       'hémorragie digestive',
@@ -285,9 +285,9 @@ export const HEPATO_SCORES: ScoreDefinition[] = [
       s += v.pulse + v.melena + v.syncope + v.hepatic + v.cardiac;
 
       let interpretation: ScoreInterpretation;
-      if (s === 0) interpretation = { level: 'low', label: 'Très faible risque', detail: 'Score 0 : geste très peu probable. Prise en charge ambulatoire envisageable.' };
-      else if (s < 6) interpretation = { level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 1–5 : hospitalisation et endoscopie recommandées.' };
-      else interpretation = { level: 'high', label: 'Risque élevé', detail: 'Score ≥ 6 : risque élevé de transfusion / geste hémostatique. Endoscopie rapide.' };
+      if (s === 0) interpretation = { level: 'low', label: 'Très faible risque', detail: 'Score 0 : geste très peu probable. Prise en charge ambulatoire envisageable.' };
+      else if (s < 6) interpretation = { level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 1–5 : hospitalisation et endoscopie recommandées.' };
+      else interpretation = { level: 'high', label: 'Risque élevé', detail: 'Score ≥ 6 : risque élevé de transfusion / geste hémostatique. Endoscopie rapide.' };
       return { value: s, display: `${fmt(s)} points`, interpretation };
     },
   },
@@ -298,7 +298,7 @@ export const HEPATO_SCORES: ScoreDefinition[] = [
     acronym: 'FIB-4',
     category: 'hepato',
     purpose:
-      "Estime, de façon non invasive, la probabilité de fibrose hépatique avancée (à partir de l'âge, des transaminases et des plaquettes).",
+      "Estime, de façon non invasive, la probabilité de fibrose hépatique avancée (à partir de l’âge, des transaminases et des plaquettes).",
     aliases: ['fib4', 'fib-4', 'fibrose 4', 'index fibrose'],
     keywords: ['fibrose', 'foie', 'stéatose', 'NASH', 'hépatite chronique', 'transaminases', 'cirrhose', 'plaquettes'],
     fields: [
@@ -315,9 +315,9 @@ export const HEPATO_SCORES: ScoreDefinition[] = [
       }
       const fib4 = (age * ast) / (platelets * Math.sqrt(alt));
       let interpretation: ScoreInterpretation;
-      if (fib4 < 1.45) interpretation = { level: 'low', label: 'Fibrose avancée improbable', detail: 'FIB-4 < 1,45 : fibrose avancée peu probable (excellente valeur prédictive négative).' };
-      else if (fib4 <= 3.25) interpretation = { level: 'moderate', label: 'Zone indéterminée', detail: 'FIB-4 1,45–3,25 : indéterminé. Évaluation complémentaire (élastométrie).' };
-      else interpretation = { level: 'high', label: 'Fibrose avancée probable', detail: 'FIB-4 > 3,25 : fibrose avancée probable. Avis hépatologique.' };
+      if (fib4 < 1.45) interpretation = { level: 'low', label: 'Fibrose avancée improbable', detail: 'FIB-4 < 1,45 : fibrose avancée peu probable (excellente valeur prédictive négative).' };
+      else if (fib4 <= 3.25) interpretation = { level: 'moderate', label: 'Zone indéterminée', detail: 'FIB-4 1,45–3,25 : indéterminé. Évaluation complémentaire (élastométrie).' };
+      else interpretation = { level: 'high', label: 'Fibrose avancée probable', detail: 'FIB-4 > 3,25 : fibrose avancée probable. Avis hépatologique.' };
       return { value: fib4, display: fmt(fib4, 2), interpretation };
     },
   },
@@ -328,7 +328,7 @@ export const HEPATO_SCORES: ScoreDefinition[] = [
     acronym: 'APRI',
     category: 'hepato',
     purpose:
-      "Marqueur non invasif simple de fibrose hépatique significative / cirrhose (utile là où l'élastométrie n'est pas disponible).",
+      "Marqueur non invasif simple de fibrose hépatique significative / cirrhose (utile là où l’élastométrie n’est pas disponible).",
     aliases: ['apri', 'ast platelet ratio', 'ratio asat plaquettes'],
     keywords: ['fibrose', 'cirrhose', 'foie', 'hépatite', 'transaminases', 'plaquettes', 'ASAT'],
     fields: [
@@ -336,7 +336,7 @@ export const HEPATO_SCORES: ScoreDefinition[] = [
       { kind: 'number', id: 'astUln', label: 'Limite supérieure normale ASAT', unit: 'UI/L', min: 10, max: 60, default: 40, placeholder: '40' },
       { kind: 'number', id: 'platelets', label: 'Plaquettes', unit: '10⁹/L', min: 10, max: 900, placeholder: 'ex. 150' },
     ],
-    reference: 'Wai 2003. < 0,5 exclut la fibrose significative ; > 1,5 l’évoque (> 2 : cirrhose).',
+    reference: 'Wai 2003. < 0,5 exclut la fibrose significative ; > 1,5 l’évoque (> 2 : cirrhose).',
     compute: (v) => {
       const { ast, astUln, platelets } = v;
       if (![ast, astUln, platelets].every(Number.isFinite) || platelets <= 0 || astUln <= 0) {
@@ -344,9 +344,9 @@ export const HEPATO_SCORES: ScoreDefinition[] = [
       }
       const apri = ((ast / astUln) * 100) / platelets;
       let interpretation: ScoreInterpretation;
-      if (apri < 0.5) interpretation = { level: 'low', label: 'Fibrose significative improbable', detail: 'APRI < 0,5 : fibrose significative peu probable.' };
-      else if (apri <= 1.5) interpretation = { level: 'moderate', label: 'Zone indéterminée', detail: 'APRI 0,5–1,5 : indéterminé. Évaluation complémentaire.' };
-      else interpretation = { level: 'high', label: 'Fibrose significative probable', detail: 'APRI > 1,5 : fibrose significative probable (> 2 : cirrhose).' };
+      if (apri < 0.5) interpretation = { level: 'low', label: 'Fibrose significative improbable', detail: 'APRI < 0,5 : fibrose significative peu probable.' };
+      else if (apri <= 1.5) interpretation = { level: 'moderate', label: 'Zone indéterminée', detail: 'APRI 0,5–1,5 : indéterminé. Évaluation complémentaire.' };
+      else interpretation = { level: 'high', label: 'Fibrose significative probable', detail: 'APRI > 1,5 : fibrose significative probable (> 2 : cirrhose).' };
       return { value: apri, display: fmt(apri, 2), interpretation };
     },
   },
@@ -357,7 +357,7 @@ export const HEPATO_SCORES: ScoreDefinition[] = [
     acronym: 'Maddrey (DF)',
     category: 'hepato',
     purpose:
-      "Évalue la gravité d'une hépatite alcoolique aiguë et l'indication d'une corticothérapie (seuil ≥ 32).",
+      "Évalue la gravité d’une hépatite alcoolique aiguë et l’indication d’une corticothérapie (seuil ≥ 32).",
     aliases: ['maddrey', 'fonction discriminante', 'discriminant function', 'hepatite alcoolique'],
     keywords: ['hépatite alcoolique', 'alcool', 'foie', 'corticoïdes', 'TP', 'bilirubine', 'gravité hépatique'],
     fields: [
@@ -365,7 +365,7 @@ export const HEPATO_SCORES: ScoreDefinition[] = [
       { kind: 'number', id: 'ptControl', label: 'Témoin', unit: 'sec', min: 8, max: 16, step: 0.1, default: 12, placeholder: '12' },
       { kind: 'number', id: 'bilirubin', label: 'Bilirubine totale', unit: 'µmol/L', min: 5, max: 900, placeholder: 'ex. 150' },
     ],
-    reference: 'Maddrey 1978. DF = 4,6 × (TP − témoin) + bilirubine(mg/dL). Seuil de gravité : ≥ 32.',
+    reference: 'Maddrey 1978. DF = 4,6 × (TP − témoin) + bilirubine(mg/dL). Seuil de gravité : ≥ 32.',
     compute: (v) => {
       const { ptPatient, ptControl, bilirubin } = v;
       if (![ptPatient, ptControl, bilirubin].every(Number.isFinite)) {
@@ -373,8 +373,8 @@ export const HEPATO_SCORES: ScoreDefinition[] = [
       }
       const df = 4.6 * (ptPatient - ptControl) + bilirubin * UMOL_TO_MGDL_BILI;
       let interpretation: ScoreInterpretation;
-      if (df >= 32) interpretation = { level: 'high', label: 'Hépatite alcoolique sévère', detail: 'DF ≥ 32 : forme sévère (mortalité à court terme élevée). Corticothérapie à discuter.' };
-      else interpretation = { level: 'low', label: 'Forme non sévère', detail: 'DF < 32 : hépatite alcoolique non sévère.' };
+      if (df >= 32) interpretation = { level: 'high', label: 'Hépatite alcoolique sévère', detail: 'DF ≥ 32 : forme sévère (mortalité à court terme élevée). Corticothérapie à discuter.' };
+      else interpretation = { level: 'low', label: 'Forme non sévère', detail: 'DF < 32 : hépatite alcoolique non sévère.' };
       return { value: df, display: fmt(df, 1), interpretation };
     },
   },
@@ -443,9 +443,9 @@ export const HEPATO_SCORES: ScoreDefinition[] = [
       reference: 'Rockall 1996. Score 0–11.',
     },
     [
-      { min: 0, level: 'low', label: 'Risque faible', detail: 'Score < 3 : faible risque de récidive et de mortalité.' },
-      { min: 3, level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 3–4 : risque intermédiaire.' },
-      { min: 5, level: 'high', label: 'Risque élevé', detail: 'Score ≥ 5 : risque élevé de récidive / mortalité. Surveillance rapprochée.' },
+      { min: 0, level: 'low', label: 'Risque faible', detail: 'Score < 3 : faible risque de récidive et de mortalité.' },
+      { min: 3, level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 3–4 : risque intermédiaire.' },
+      { min: 5, level: 'high', label: 'Risque élevé', detail: 'Score ≥ 5 : risque élevé de récidive / mortalité. Surveillance rapprochée.' },
     ],
   ),
 
@@ -456,7 +456,7 @@ export const HEPATO_SCORES: ScoreDefinition[] = [
       acronym: 'Alvarado',
       category: 'hepato',
       purpose:
-        "Estime la probabilité d'une appendicite aiguë devant une douleur de la fosse iliaque droite.",
+        "Estime la probabilité d’une appendicite aiguë devant une douleur de la fosse iliaque droite.",
       aliases: ['alvarado', 'mantrels', 'appendicite score'],
       keywords: ['appendicite', 'fosse iliaque droite', 'douleur abdominale', 'urgences', 'chirurgie', 'gastro'],
       fields: [
@@ -472,9 +472,9 @@ export const HEPATO_SCORES: ScoreDefinition[] = [
       reference: 'Alvarado 1986 (MANTRELS). Score 0–10.',
     },
     [
-      { min: 0, level: 'low', label: 'Peu probable', detail: 'Score 1–4 : appendicite peu probable.' },
-      { min: 5, level: 'moderate', label: 'Possible', detail: 'Score 5–6 : appendicite possible. Surveillance / imagerie.' },
-      { min: 7, level: 'high', label: 'Probable', detail: 'Score 7–10 : appendicite probable. Avis chirurgical.' },
+      { min: 0, level: 'low', label: 'Peu probable', detail: 'Score 1–4 : appendicite peu probable.' },
+      { min: 5, level: 'moderate', label: 'Possible', detail: 'Score 5–6 : appendicite possible. Surveillance / imagerie.' },
+      { min: 7, level: 'high', label: 'Probable', detail: 'Score 7–10 : appendicite probable. Avis chirurgical.' },
     ],
   ),
 ];

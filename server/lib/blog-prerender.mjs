@@ -23,7 +23,7 @@
 const SITE_NAME = 'MedInfo AI';
 /** Description de la liste du blog : PAGE_SEO.blog.description (src/seo/meta.ts, test). */
 const BLOG_DESCRIPTION =
-  'Prévention, traitements, idées reçues : des articles d’information médicale générale, ' +
+  'Prévention, traitements, idées reçues : des articles d’information médicale générale, ' +
   'avec leurs sources, publiés par MedInfo AI.';
 const INDEXABLE_ROBOTS = 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
 const SOCIAL_CARD = { path: '/social-card.png', width: 1200, height: 630, type: 'image/png', alt: 'MedInfo AI : l’IA pour apprendre, des outils pour créer.' };

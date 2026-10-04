@@ -22,7 +22,7 @@ export function LegalScreen({ document }: { document: LegalDocument }) {
       <View style={styles.card}>
         <Text style={styles.eyebrow}>Informations légales</Text>
         <Text role="heading" aria-level={1} style={styles.title}>{document.title}</Text>
-        <Text style={styles.updated}>Dernière mise à jour : {document.updatedAt}</Text>
+        <Text style={styles.updated}>Dernière mise à jour : {document.updatedAt}</Text>
         <Text style={styles.intro}>{document.intro}</Text>
 
         {document.sections.map((section) => (

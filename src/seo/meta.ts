@@ -25,7 +25,7 @@ export const SITE_NAME = 'MedInfo AI';
 export const DEFAULT_SITE_URL = 'https://medinfo-ai.com';
 
 export const DEFAULT_DESCRIPTION =
-  'Assistant IA d’information médicale en français : trois chatbots qui citent leurs sources (HAS, ANSM, ' +
+  'Assistant IA d’information médicale en français : trois chatbots qui citent leurs sources (HAS, ANSM, ' +
   'PubMed), pour le grand public, les étudiants et les professionnels de santé.';
 
 /** Base absolue du site, sans slash final. */
@@ -71,7 +71,7 @@ export const SOCIAL_CARD = {
   width: 1200,
   height: 630,
   type: 'image/png',
-  alt: 'MedInfo AI : l’IA pour apprendre, des outils pour créer.',
+  alt: 'MedInfo AI : l’IA pour apprendre, des outils pour créer.',
 } as const;
 
 export function socialCardUrl(): string {
@@ -247,28 +247,28 @@ export const PAGE_SEO = {
     path: '/contact',
     title: 'Contact et assistance',
     description:
-      'Écrivez à MedInfo AI : aide sur votre compte, presse et partenariats, exercice de vos ' +
+      'Écrivez à MedInfo AI : aide sur votre compte, presse et partenariats, exercice de vos ' +
       'droits RGPD. Réponse sous 48 h ouvrées.',
   },
   blog: {
     path: '/blog',
-    title: 'Blog santé : articles d’information médicale',
+    title: 'Blog santé : articles d’information médicale',
     description:
-      'Prévention, traitements, idées reçues : des articles d’information médicale générale, ' +
+      'Prévention, traitements, idées reçues : des articles d’information médicale générale, ' +
       'avec leurs sources, publiés par MedInfo AI.',
   },
   pricing: {
     path: '/pricing',
-    title: 'Tarifs : offres grand public et étudiants',
+    title: 'Tarifs : offres grand public et étudiants',
     description:
-      'Comparez les offres MedInfo AI : essai gratuit, abonnements grand public et étudiants. ' +
+      'Comparez les offres MedInfo AI : essai gratuit, abonnements grand public et étudiants. ' +
       'Les sources officielles (HAS, ANSM) restent gratuites pour tous.',
   },
   chat: {
     path: '/chat',
     title: 'Chat santé IA avec sources citées',
     description:
-      'Chat IA médical en français : réponses claires appuyées sur des sources citées ' +
+      'Chat IA médical en français : réponses claires appuyées sur des sources citées ' +
       '(HAS, ANSM, PubMed). Premier message gratuit, sans inscription.',
   },
 
@@ -279,35 +279,35 @@ export const PAGE_SEO = {
     path: '/document',
     title: 'Analyse de document médical par IA',
     description:
-      "Déposez un compte rendu, une ordonnance ou un résultat d'analyse : l'IA l'explique " +
+      "Déposez un compte rendu, une ordonnance ou un résultat d’analyse : l’IA l’explique " +
       'en langage clair. Le document lui-même n’est jamais conservé.',
   },
   ecos: {
     path: '/ecos',
     title: 'Simulation ECOS en ligne avec patient virtuel',
     description:
-      'Entraînez-vous aux ECOS avec un patient simulé par IA : cas fictifs par spécialité, ' +
+      'Entraînez-vous aux ECOS avec un patient simulé par IA : cas fictifs par spécialité, ' +
       'évaluation sur grille, note sur 20 et historique de vos passages.',
   },
   revision: {
     path: '/revision',
     title: 'Planning de révisions en médecine',
     description:
-      "Construisez un planning de révisions réaliste pour vos partiels ou l'EDN : charge " +
+      "Construisez un planning de révisions réaliste pour vos partiels ou l’EDN : charge " +
       'quotidienne calculée, redistribution automatique, jauge de risque.',
   },
   partiel: {
     path: '/partiel',
     title: 'Analyse des partiels et classement de promo',
     description:
-      'Importez les notes de votre promo (Excel, CSV, PDF) : rang, coefficients, points forts ' +
+      'Importez les notes de votre promo (Excel, CSV, PDF) : rang, coefficients, points forts ' +
       'par z-score, distribution réelle et simulateur. Calcul 100 % local, aucune note envoyée.',
   },
   audio: {
     path: '/audio',
     title: 'Compte rendu de consultation par dictée vocale',
     description:
-      'Dictez votre consultation : transcription puis compte rendu structuré par IA. Audio ' +
+      'Dictez votre consultation : transcription puis compte rendu structuré par IA. Audio ' +
       'purgé sous 24 h, bibliothèque privée sécurisée, export PDF.',
   },
   presentation: {
@@ -321,7 +321,7 @@ export const PAGE_SEO = {
     path: '/cv-builder',
     title: 'Créateur de CV médical en ligne, export PDF',
     description:
-      'Construisez un CV médical avec vos propres rubriques : aperçu A4 fidèle, ' +
+      'Construisez un CV médical avec vos propres rubriques : aperçu A4 fidèle, ' +
       'relecture IA et export PDF au texte sélectionnable, lisible par les ' +
       'logiciels de tri des hôpitaux.',
   },
@@ -329,14 +329,14 @@ export const PAGE_SEO = {
     path: '/article',
     title: 'Rédaction d’article médical (IMRaD, Vancouver)',
     description:
-      'Structurez votre manuscrit scientifique : gabarits IMRaD, compteurs par section, ' +
+      'Structurez votre manuscrit scientifique : gabarits IMRaD, compteurs par section, ' +
       'bibliographie DOI/PMID, citations Vancouver ou APA, export Word.',
   },
   scores: {
     path: '/scores',
     title: 'Scores médicaux et calculateurs cliniques',
     description:
-      'Calculez les scores médicaux courants (CHA₂DS₂-VASc, Glasgow, CURB-65, CKD-EPI, MELD…) : ' +
+      'Calculez les scores médicaux courants (CHA₂DS₂-VASc, Glasgow, CURB-65, CKD-EPI, MELD…) : ' +
       'boutons interactifs, interprétation immédiate, recherche par nom ou par fonction.',
   },
 
@@ -345,29 +345,29 @@ export const PAGE_SEO = {
     path: '/mentions-legales',
     title: 'Mentions légales',
     description:
-      'Éditeur, hébergement et contacts du site MedInfo AI : les informations prévues par ' +
-      "la loi pour la confiance dans l'économie numérique (LCEN).",
+      'Éditeur, hébergement et contacts du site MedInfo AI : les informations prévues par ' +
+      "la loi pour la confiance dans l’économie numérique (LCEN).",
   },
   cgu: {
     path: '/cgu',
     title: 'Conditions générales d’utilisation (CGU)',
     description:
-      "Les règles d'utilisation de MedInfo AI : information médicale générale, comptes et " +
+      "Les règles d’utilisation de MedInfo AI : information médicale générale, comptes et " +
       'rôles vérifiés, abonnements, responsabilités et bon usage du service.',
   },
   confidentialite: {
     path: '/confidentialite',
     title: 'Politique de confidentialité (RGPD)',
     description:
-      'Quelles données MedInfo AI traite, pourquoi et combien de temps : historique de chat ' +
+      'Quelles données MedInfo AI traite, pourquoi et combien de temps : historique de chat ' +
       'privé, documents jamais stockés, droits RGPD et contact.',
   },
   legal: {
     path: '/legal',
     title: 'Informations légales et conformité',
     description:
-      'Toutes les informations légales de MedInfo AI : mentions légales, CGU, politique de ' +
-      "confidentialité et engagement de transparence sur l'IA (AI Act).",
+      'Toutes les informations légales de MedInfo AI : mentions légales, CGU, politique de ' +
+      "confidentialité et engagement de transparence sur l’IA (AI Act).",
   },
 } as const satisfies Record<string, PageSeo>;
 

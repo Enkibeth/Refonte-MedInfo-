@@ -24,7 +24,7 @@ const VALUES: { icon: IconName; title: string; text: string }[] = [
   {
     icon: 'sparkles',
     title: 'Innovation',
-    text: 'Des modèles d’IA récents au service de l’information en santé : réponses sourcées, outils pour étudiants et professionnels.',
+    text: 'Des modèles d’IA récents au service de l’information en santé : réponses sourcées, outils pour étudiants et professionnels.',
   },
   {
     icon: 'shield',
@@ -34,7 +34,7 @@ const VALUES: { icon: IconName; title: string; text: string }[] = [
   {
     icon: 'refresh',
     title: 'Amélioration continue',
-    text: 'Le projet évolue avec l’usage : outils, modèles et ergonomie sont revus au fil des versions.',
+    text: 'Le projet évolue avec l’usage : outils, modèles et ergonomie sont revus au fil des versions.',
   },
 ];
 
@@ -64,16 +64,16 @@ export default function AboutScreen() {
           <Reveal delay={tokens.motion.revealStagger}>
             <Text style={styles.lead}>
               Créé par Hugo Bettembourg, étudiant en médecine, MedInfo AI part des besoins
-              concrets de la formation médicale : comprendre, réviser, retrouver les références
+              concrets de la formation médicale : comprendre, réviser, retrouver les références
               et produire des travaux structurés.
             </Text>
             <Text style={styles.paragraph}>
-              Le projet associe des modèles d’IA OpenAI et Anthropic à des outils dédiés :
+              Le projet associe des modèles d’IA OpenAI et Anthropic à des outils dédiés :
               simulation ECOS, planning de révisions, présentations, CV et rédaction d’articles.
               Le chat fonctionne aujourd’hui avec GPT-6 Luna.
             </Text>
             <Text style={styles.paragraph}>
-              Trois assistants s’adressent chacun à un public : le grand public
+              Trois assistants s’adressent chacun à un public : le grand public
               (explications sans jargon, analyse de document médical), les étudiants en santé
               (référentiels des Collèges EDN/R2C, simulation ECOS, planning de révisions,
               présentations, CV) et les professionnels (synthèses fondées sur les preuves,
@@ -81,7 +81,7 @@ export default function AboutScreen() {
             </Text>
             <Text style={styles.paragraph}>
               Les assistants peuvent rechercher des références médicales selon le mode choisi.
-              Les documents cités restent accessibles pour poursuivre la lecture : recommandations,
+              Les documents cités restent accessibles pour poursuivre la lecture : recommandations,
               référentiels et publications scientifiques.
             </Text>
             <Text style={styles.paragraph}>

@@ -311,7 +311,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       onPress={toggleCollapsed}
       accessibilityRole="button"
       accessibilityLabel={collapsed ? 'Déplier le menu latéral' : 'Replier le menu latéral'}
-      accessibilityHint="Raccourci : Ctrl ou Cmd + B"
+      accessibilityHint="Raccourci : Ctrl ou Cmd + B"
       style={({ hovered }: { hovered?: boolean }) => [
         styles.collapseButton,
         hovered && styles.collapseButtonHovered,

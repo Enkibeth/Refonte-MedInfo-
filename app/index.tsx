@@ -21,43 +21,43 @@ import { useWindowWidth } from '@/ui/useWindowWidth';
 
 const FAQ_ITEMS: FaqItem[] = [
   {
-    question: 'MedInfo AI est-il gratuit ?',
+    question: 'MedInfo AI est-il gratuit ?',
     answer:
-      'Oui pour commencer : le premier message est gratuit, sans inscription, sur les trois chatbots. ' +
-      'Un compte gratuit permet de continuer ; un abonnement lève seulement la limite de messages. ' +
+      'Oui pour commencer : le premier message est gratuit, sans inscription, sur les trois chatbots. ' +
+      'Un compte gratuit permet de continuer ; un abonnement lève seulement la limite de messages. ' +
       'Les sources officielles (HAS, ANSM…) restent gratuites pour tous.',
   },
   {
-    question: 'MedInfo AI remplace-t-il un médecin ou un pharmacien ?',
+    question: 'MedInfo AI remplace-t-il un médecin ou un pharmacien ?',
     answer:
-      "Non. MedInfo AI fournit de l'information médicale générale, jamais un diagnostic ni un avis " +
-      "individuel. En cas de symptôme inquiétant, consultez un professionnel de santé ; en cas d'urgence, " +
+      "Non. MedInfo AI fournit de l’information médicale générale, jamais un diagnostic ni un avis " +
+      "individuel. En cas de symptôme inquiétant, consultez un professionnel de santé ; en cas d’urgence, " +
       'composez le 15 (SAMU) ou le 112.',
   },
   {
-    question: 'D’où viennent les réponses ?',
+    question: 'D’où viennent les réponses ?',
     answer:
       "Selon le mode choisi, l’assistant peut rechercher sur Internet des recommandations et des publications médicales. " +
       'Les références citées permettent de consulter les documents d’origine. Vérifiez leur date, leur contexte et leur niveau de preuve.',
   },
   {
-    question: 'Quelle différence entre les trois chatbots ?',
+    question: 'Quelle différence entre les trois chatbots ?',
     answer:
-      'Le chat grand public explique sans jargon ; le chat étudiant s’appuie sur les référentiels des ' +
-      'Collèges (EDN/R2C) ; le chat professionnel propose une synthèse de la littérature et des recommandations. ' +
+      'Le chat grand public explique sans jargon ; le chat étudiant s’appuie sur les référentiels des ' +
+      'Collèges (EDN/R2C) ; le chat professionnel propose une synthèse de la littérature et des recommandations. ' +
       'Les comptes étudiants et professionnels vérifiés accèdent aux trois.',
   },
   {
-    question: 'Quels outils au-delà du chat ?',
+    question: 'Quels outils au-delà du chat ?',
     answer:
       'Analyse de document médical (grand public), simulation ECOS, planning de révisions et analyse ' +
       'des partiels (étudiants), compte rendu de consultation dicté (professionnels), générateur de ' +
       'présentations, créateur de CV, rédaction d’article et scores cliniques (étudiants et professionnels).',
   },
   {
-    question: 'Mes conversations sont-elles privées ?',
+    question: 'Mes conversations sont-elles privées ?',
     answer:
-      'Oui : votre historique de conversations n’est visible que par vous (isolation stricte par compte) ' +
+      'Oui : votre historique de conversations n’est visible que par vous (isolation stricte par compte) ' +
       'et vous pouvez l’exporter en PDF ou le supprimer. Les documents analysés ne sont jamais stockés.',
   },
 ];
@@ -104,7 +104,7 @@ export default function HomeScreen() {
                   <Text style={styles.kicker}>MedInfo AI · Information médicale générale</Text>
                 </View>
                 <Text {...mi('landing-headline')} accessibilityRole="header" aria-level={1} style={[styles.headline, !wide && styles.headlineCompact]}>L’IA pour apprendre.{'\n'}<Text style={styles.headlineAccent}>Des outils pour créer.</Text></Text>
-                <Text style={styles.subhead}>Trois assistants d’information médicale et des outils de travail : simulation ECOS, planning de révisions, présentations, CV et articles.</Text>
+                <Text style={styles.subhead}>Trois assistants d’information médicale et des outils de travail : simulation ECOS, planning de révisions, présentations, CV et articles.</Text>
                 <View style={styles.highlights}>
                   <Text style={styles.highlight}>3 assistants</Text>
                   <Text style={styles.highlight}>ECOS et révisions</Text>

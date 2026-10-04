@@ -80,14 +80,14 @@ export function AudioLibrary({ refreshToken }: { refreshToken: number }) {
       setEditingId(null);
       await load();
     } catch {
-      setError('Échec de l\'enregistrement.');
+      setError('Échec de l’enregistrement.');
     } finally {
       setBusyId(null);
     }
   }
 
   async function remove(doc: AudioDocument) {
-    if (Platform.OS === 'web' && typeof window !== 'undefined' && !window.confirm(`Supprimer « ${doc.title} » ?`)) return;
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && !window.confirm(`Supprimer « ${doc.title} » ?`)) return;
     setBusyId(doc.id);
     try {
       await deleteAudioDocument(doc);
@@ -123,7 +123,7 @@ export function AudioLibrary({ refreshToken }: { refreshToken: number }) {
       }
     } catch {
       // L'audio est purgé au bout de 24 h : on l'explique au lieu d'échouer en silence.
-      setError("Lecture impossible : l'audio a peut-être expiré (conservation 24 h).");
+      setError("Lecture impossible : l’audio a peut-être expiré (conservation 24 h).");
     }
   }
 
@@ -148,7 +148,7 @@ export function AudioLibrary({ refreshToken }: { refreshToken: number }) {
   if (docs.length === 0) {
     return (
       <View style={styles.center}>
-        <Text style={styles.muted}>Aucun document enregistré pour l'instant.</Text>
+        <Text style={styles.muted}>Aucun document enregistré pour l’instant.</Text>
         <Text style={styles.mutedSmall}>
           Génère une transcription ou un compte rendu, puis enregistre-le dans ta bibliothèque.
         </Text>

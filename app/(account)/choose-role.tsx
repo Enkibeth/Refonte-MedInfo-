@@ -49,7 +49,7 @@ export default function ChooseRoleScreen() {
     <Screen maxWidth={560}>
       <PageTitle style={styles.title}>Choisis ton rôle</PageTitle>
       <Text style={styles.body}>
-        Le rôle adapte ton expérience.{persona ? ` Rôle actuel : ${ROLES[persona].label}.` : ''}
+        Le rôle adapte ton expérience.{persona ? ` Rôle actuel : ${ROLES[persona].label}.` : ''}
       </Text>
 
       {/* Public */}

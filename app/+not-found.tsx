@@ -39,7 +39,7 @@ export default function NotFoundScreen() {
           <Text style={styles.eyebrow}>Erreur 404</Text>
           <PageTitle style={styles.title}>Page introuvable.</PageTitle>
           <Text style={styles.lead}>
-            Cette adresse ne mène à aucune page : le lien est peut-être incomplet, ou la page a été
+            Cette adresse ne mène à aucune page : le lien est peut-être incomplet, ou la page a été
             déplacée.
           </Text>
           <View style={styles.actions}>

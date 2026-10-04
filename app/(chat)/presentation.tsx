@@ -49,7 +49,7 @@ function PresentationInner() {
   return (
     <View style={styles.container}>
       <ToolScreenHeader feature="presentation" title="Générateur de présentations">
-        Construis tes slides médicales à la main ou avec un « médecin senior » IA, puis
+        Construis tes slides médicales à la main ou avec un « médecin senior » IA, puis
         exporte en PPTX prêt pour Keynote.
       </ToolScreenHeader>
 

@@ -31,15 +31,15 @@ export default function ContactScreen() {
   }[] = [
     {
       icon: 'messageCircle',
-      title: 'Une question santé ?',
-      text: "Le chat MedInfo AI répond à vos questions d'information générale, avec sources. Le premier message ne demande pas d'inscription.",
+      title: 'Une question santé ?',
+      text: "Le chat MedInfo AI répond à vos questions d’information générale, avec sources. Le premier message ne demande pas d’inscription.",
       cta: 'Ouvrir le chat',
       onPress: () => router.push('/(chat)/chat'),
     },
     {
       icon: 'fileText',
       title: 'Assistance et partenariats',
-      text: 'Un problème avec votre compte, une suggestion, une demande de presse ou de partenariat : écrivez-nous, nous répondons sous 48 h ouvrées.',
+      text: 'Un problème avec votre compte, une suggestion, une demande de presse ou de partenariat : écrivez-nous, nous répondons sous 48 h ouvrées.',
       cta: CONTACT_EMAIL,
       onPress: () => void Linking.openURL(`mailto:${CONTACT_EMAIL}`),
     },
@@ -74,8 +74,8 @@ export default function ContactScreen() {
             <PageTitle style={styles.title}>Nous contacter</PageTitle>
             <Text style={styles.lead}>
               Choisissez ci-dessous le contact adapté à votre demande.
-              En cas d'urgence médicale, composez le 15 (SAMU) ou le 112 : MedInfo AI n'est
-              pas une plateforme d'urgence.
+              En cas d’urgence médicale, composez le 15 (SAMU) ou le 112 : MedInfo AI n’est
+              pas une plateforme d’urgence.
             </Text>
           </Reveal>
 

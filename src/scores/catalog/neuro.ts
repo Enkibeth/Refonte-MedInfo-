@@ -17,7 +17,7 @@ export const NEURO_SCORES: ScoreDefinition[] = [
       acronym: 'ABCD²',
       category: 'neuro',
       purpose:
-        "Estime le risque d'AVC constitué dans les jours suivant un accident ischémique transitoire et aide à décider de l'urgence de la prise en charge.",
+        "Estime le risque d’AVC constitué dans les jours suivant un accident ischémique transitoire et aide à décider de l’urgence de la prise en charge.",
       aliases: ['abcd2', 'abcd²', 'abcd', 'score ait'],
       keywords: [
         'AIT',
@@ -53,12 +53,12 @@ export const NEURO_SCORES: ScoreDefinition[] = [
         yesNo('diabetes', 'Diabète', 1),
       ],
       reference: 'Johnston 2007. 0–3 faible, 4–5 modéré, 6–7 élevé.',
-      caution: 'Tout AIT est une urgence : l’ABCD² ne doit pas retarder le bilan (imagerie, avis neurovasculaire).',
+      caution: 'Tout AIT est une urgence : l’ABCD² ne doit pas retarder le bilan (imagerie, avis neurovasculaire).',
     },
     [
-      { min: 0, level: 'low', label: 'Risque faible', detail: 'Score 0–3 : risque d’AVC à 2 j ≈ 1 %.' },
-      { min: 4, level: 'moderate', label: 'Risque modéré', detail: 'Score 4–5 : risque d’AVC à 2 j ≈ 4 %. Bilan hospitalier rapide.' },
-      { min: 6, level: 'high', label: 'Risque élevé', detail: 'Score 6–7 : risque d’AVC à 2 j ≈ 8 %. Hospitalisation urgente.' },
+      { min: 0, level: 'low', label: 'Risque faible', detail: 'Score 0–3 : risque d’AVC à 2 j ≈ 1 %.' },
+      { min: 4, level: 'moderate', label: 'Risque modéré', detail: 'Score 4–5 : risque d’AVC à 2 j ≈ 4 %. Bilan hospitalier rapide.' },
+      { min: 6, level: 'high', label: 'Risque élevé', detail: 'Score 6–7 : risque d’AVC à 2 j ≈ 8 %. Hospitalisation urgente.' },
     ],
   ),
 
@@ -69,7 +69,7 @@ export const NEURO_SCORES: ScoreDefinition[] = [
       acronym: 'NIHSS',
       category: 'neuro',
       purpose:
-        "Quantifie la sévérité d'un AVC constitué (15 items) : décision de thrombolyse/thrombectomie et suivi de l'évolution.",
+        "Quantifie la sévérité d’un AVC constitué (15 items) : décision de thrombolyse/thrombectomie et suivi de l’évolution.",
       aliases: ['nihss', 'nih stroke scale', 'score avc', 'echelle avc'],
       keywords: [
         'AVC',
@@ -114,28 +114,28 @@ export const NEURO_SCORES: ScoreDefinition[] = [
           ['Partielle', 2],
           ['Complète', 3],
         ]),
-        nihssItem('armLeft', '5a. Motricité : membre supérieur gauche', [
+        nihssItem('armLeft', '5a. Motricité : membre supérieur gauche', [
           ['Pas de chute (10 s)', 0],
           ['Chute avant 10 s', 1],
           ['Effort contre pesanteur', 2],
           ['Pas d’effort contre pesanteur', 3],
           ['Aucun mouvement', 4],
         ]),
-        nihssItem('armRight', '5b. Motricité : membre supérieur droit', [
+        nihssItem('armRight', '5b. Motricité : membre supérieur droit', [
           ['Pas de chute (10 s)', 0],
           ['Chute avant 10 s', 1],
           ['Effort contre pesanteur', 2],
           ['Pas d’effort contre pesanteur', 3],
           ['Aucun mouvement', 4],
         ]),
-        nihssItem('legLeft', '6a. Motricité : membre inférieur gauche', [
+        nihssItem('legLeft', '6a. Motricité : membre inférieur gauche', [
           ['Pas de chute (5 s)', 0],
           ['Chute avant 5 s', 1],
           ['Effort contre pesanteur', 2],
           ['Pas d’effort contre pesanteur', 3],
           ['Aucun mouvement', 4],
         ]),
-        nihssItem('legRight', '6b. Motricité : membre inférieur droit', [
+        nihssItem('legRight', '6b. Motricité : membre inférieur droit', [
           ['Pas de chute (5 s)', 0],
           ['Chute avant 5 s', 1],
           ['Effort contre pesanteur', 2],
@@ -172,10 +172,10 @@ export const NEURO_SCORES: ScoreDefinition[] = [
       reference: 'Brott 1989. Score 0–42.',
     },
     [
-      { min: 0, level: 'low', label: 'Déficit absent à mineur', detail: 'Score 0–4 : AVC mineur (0 = pas de déficit détectable).' },
-      { min: 5, level: 'moderate', label: 'AVC modéré', detail: 'Score 5–15 : AVC modéré.' },
-      { min: 16, level: 'high', label: 'AVC modéré à sévère', detail: 'Score 16–20 : AVC modérément sévère.' },
-      { min: 21, level: 'critical', label: 'AVC sévère', detail: 'Score 21–42 : AVC sévère.' },
+      { min: 0, level: 'low', label: 'Déficit absent à mineur', detail: 'Score 0–4 : AVC mineur (0 = pas de déficit détectable).' },
+      { min: 5, level: 'moderate', label: 'AVC modéré', detail: 'Score 5–15 : AVC modéré.' },
+      { min: 16, level: 'high', label: 'AVC modéré à sévère', detail: 'Score 16–20 : AVC modérément sévère.' },
+      { min: 21, level: 'critical', label: 'AVC sévère', detail: 'Score 21–42 : AVC sévère.' },
     ],
   ),
 
@@ -186,7 +186,7 @@ export const NEURO_SCORES: ScoreDefinition[] = [
       acronym: 'Hunt & Hess',
       category: 'neuro',
       purpose:
-        "Cote la sévérité clinique d'une hémorragie méningée (rupture d'anévrisme) et son pronostic.",
+        "Cote la sévérité clinique d’une hémorragie méningée (rupture d’anévrisme) et son pronostic.",
       aliases: ['hunt hess', 'hunt et hess', 'hemorragie meningee', 'hemorragie sous arachnoidienne'],
       keywords: ['hémorragie méningée', 'hémorragie sous-arachnoïdienne', 'anévrisme', 'céphalée brutale', 'neurochirurgie', 'pronostic'],
       fields: [
@@ -206,10 +206,10 @@ export const NEURO_SCORES: ScoreDefinition[] = [
       reference: 'Hunt & Hess 1968. Grades I–V (pronostic péjoratif croissant).',
     },
     [
-      { min: 1, level: 'low', label: 'Grade I', detail: 'Asymptomatique ou céphalée minime : bon pronostic.' },
+      { min: 1, level: 'low', label: 'Grade I', detail: 'Asymptomatique ou céphalée minime : bon pronostic.' },
       { min: 2, level: 'moderate', label: 'Grade II', detail: 'Céphalée sévère et raideur méningée sans déficit.' },
       { min: 3, level: 'high', label: 'Grade III', detail: 'Troubles de vigilance, déficit focal léger.' },
-      { min: 4, level: 'critical', label: 'Grade IV–V', detail: 'Stupeur/coma, déficit sévère : pronostic réservé.' },
+      { min: 4, level: 'critical', label: 'Grade IV–V', detail: 'Stupeur/coma, déficit sévère : pronostic réservé.' },
     ],
     { format: (t) => `Grade ${['I', 'II', 'III', 'IV', 'V'][t - 1] ?? t}` },
   ),
@@ -243,8 +243,8 @@ export const NEURO_SCORES: ScoreDefinition[] = [
       reference: 'Rankin 1957 / van Swieten 1988. Score 0–6.',
     },
     [
-      { min: 0, level: 'low', label: 'Handicap absent à léger', detail: 'mRS 0–2 : autonomie conservée.' },
-      { min: 3, level: 'high', label: 'Handicap modéré à sévère', detail: 'mRS 3–5 : perte d’autonomie, aide nécessaire.' },
+      { min: 0, level: 'low', label: 'Handicap absent à léger', detail: 'mRS 0–2 : autonomie conservée.' },
+      { min: 3, level: 'high', label: 'Handicap modéré à sévère', detail: 'mRS 3–5 : perte d’autonomie, aide nécessaire.' },
       { min: 6, level: 'critical', label: 'Décès', detail: 'mRS 6.' },
     ],
     { format: (t) => `mRS ${fmtGrade(t)}` },
@@ -257,7 +257,7 @@ export const NEURO_SCORES: ScoreDefinition[] = [
       acronym: 'ICH',
       category: 'neuro',
       purpose:
-        "Estime la mortalité à 30 jours d'une hémorragie intraparenchymateuse spontanée.",
+        "Estime la mortalité à 30 jours d’une hémorragie intraparenchymateuse spontanée.",
       aliases: ['ich', 'ich score', 'hemorragie intracerebrale', 'hematome intraparenchymateux'],
       keywords: ['hémorragie cérébrale', 'hématome', 'AVC hémorragique', 'pronostic', 'mortalité', 'neurologie'],
       fields: [
@@ -276,12 +276,12 @@ export const NEURO_SCORES: ScoreDefinition[] = [
         yesNo('infratentorial', 'Origine infratentorielle', 1),
         yesNo('age', 'Âge ≥ 80 ans', 1),
       ],
-      reference: 'Hemphill 2001. Score 0–6 ; la mortalité à 30 j croît fortement avec le score.',
+      reference: 'Hemphill 2001. Score 0–6 ; la mortalité à 30 j croît fortement avec le score.',
     },
     [
-      { min: 0, level: 'low', label: 'Mortalité faible', detail: 'Score 0–1 : mortalité à 30 j ≈ 0–13 %.' },
-      { min: 2, level: 'high', label: 'Mortalité élevée', detail: 'Score 2–3 : mortalité à 30 j ≈ 26–72 %.' },
-      { min: 4, level: 'critical', label: 'Mortalité très élevée', detail: 'Score ≥ 4 : mortalité à 30 j ≈ 97–100 %.' },
+      { min: 0, level: 'low', label: 'Mortalité faible', detail: 'Score 0–1 : mortalité à 30 j ≈ 0–13 %.' },
+      { min: 2, level: 'high', label: 'Mortalité élevée', detail: 'Score 2–3 : mortalité à 30 j ≈ 26–72 %.' },
+      { min: 4, level: 'critical', label: 'Mortalité très élevée', detail: 'Score ≥ 4 : mortalité à 30 j ≈ 97–100 %.' },
     ],
   ),
 ];

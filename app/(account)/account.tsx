@@ -146,7 +146,7 @@ export default function AccountScreen() {
           <Text style={styles.sectionTitle}>Abonnement</Text>
           <Text style={styles.sectionText}>
             {isPaid
-              ? `Offre active : ${subscription?.plan} (${subscription?.status}).`
+              ? `Offre active : ${subscription?.plan} (${subscription?.status}).`
               : 'Offre gratuite. Les sources restent gratuites pour tous.'}
           </Text>
           <Link href="/(billing)/pricing" style={styles.inlineLink}>
@@ -159,8 +159,8 @@ export default function AccountScreen() {
         <Card style={styles.section}>
           <Text style={styles.sectionTitle}>Mes informations</Text>
           <Text style={styles.sectionText}>
-            Optionnel. Personnalise l'information générale du chat (registre, dépistages selon
-            l'âge/le sexe). Jamais utilisé pour un diagnostic ni un avis médical individuel.
+            Optionnel. Personnalise l’information générale du chat (registre, dépistages selon
+            l’âge/le sexe). Jamais utilisé pour un diagnostic ni un avis médical individuel.
           </Text>
           <PersonalInfoForm />
         </Card>
@@ -306,7 +306,7 @@ export default function AccountScreen() {
 
       <View style={styles.footer}>
         <Link href="/" style={styles.inlineLink}>
-          Retour à l'accueil
+          Retour à l’accueil
         </Link>
         <Link href="/(legal)/legal" style={styles.inlineLink}>
           Informations légales

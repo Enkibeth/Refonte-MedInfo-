@@ -224,7 +224,7 @@ function DocumentScreenInner() {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({})) as { error?: string };
-        throw new Error(err.error ?? 'Erreur lors de l\'analyse. Réessayez.');
+        throw new Error(err.error ?? 'Erreur lors de l’analyse. Réessayez.');
       }
 
       const reader = response.body?.getReader();
@@ -276,7 +276,7 @@ function DocumentScreenInner() {
   }
 
   function confirmDeleteHistory(id: string) {
-    const message = 'Supprimer cette analyse de votre historique ? Cette action est définitive.';
+    const message = 'Supprimer cette analyse de votre historique ? Cette action est définitive.';
     if (Platform.OS === 'web') {
       if (window.confirm(message)) void handleDeleteHistory(id);
     } else {
@@ -294,7 +294,7 @@ function DocumentScreenInner() {
       keyboardVerticalOffset={80}
     >
       <ToolScreenHeader feature="document" title="Analyse de document">
-        Importez un PDF, une photo ou collez le texte d'un compte rendu, d'une ordonnance ou de
+        Importez un PDF, une photo ou collez le texte d’un compte rendu, d’une ordonnance ou de
         résultats, pour un résumé patient clair ou une traduction.
       </ToolScreenHeader>
 
@@ -350,7 +350,7 @@ function DocumentScreenInner() {
               ))
             )}
             <Text style={styles.historyNote}>
-              Seul le résultat de l'analyse est conservé, jamais le document importé.
+              Seul le résultat de l’analyse est conservé, jamais le document importé.
             </Text>
           </View>
         ) : null}
@@ -446,7 +446,7 @@ function DocumentScreenInner() {
         />
 
         <Text style={styles.privacyNote}>
-          Le document importé n'est pas conservé : il est transmis à l'IA puis oublié. Seul le
+          Le document importé n’est pas conservé : il est transmis à l’IA puis oublié. Seul le
           résultat est enregistré dans votre historique.
         </Text>
 
@@ -496,8 +496,8 @@ function DocumentScreenInner() {
               <View style={styles.citations}>
                 <Text style={styles.citationsTitle}>Passages du document cités</Text>
                 <Text style={styles.citationsHint}>
-                  Chaque extrait ci-dessous provient mot pour mot de votre document : vous pouvez
-                  vérifier sur quoi s'appuie l'analyse.
+                  Chaque extrait ci-dessous provient mot pour mot de votre document : vous pouvez
+                  vérifier sur quoi s’appuie l’analyse.
                 </Text>
                 {analysis.citations.map((c, i) => {
                   const pages = citationPagesLabel(c);

@@ -13,7 +13,7 @@ export default function CguScreen() {
         jsonLd={[
           breadcrumbJsonLd([
             { name: 'Accueil', path: '/' },
-            { name: 'Conditions d\'utilisation', path: PAGE_SEO.cgu.path },
+            { name: 'Conditions d’utilisation', path: PAGE_SEO.cgu.path },
           ]),
         ]}
       />

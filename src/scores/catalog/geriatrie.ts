@@ -128,11 +128,11 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
           ],
         },
       ],
-      reference: 'Bellera 2012. Score 0–17. Seuil : ≤ 14 → évaluation gériatrique approfondie.',
+      reference: 'Bellera 2012. Score 0–17. Seuil : ≤ 14 → évaluation gériatrique approfondie.',
     },
     [
-      { min: 0, level: 'high', label: 'Dépistage positif', detail: 'Score ≤ 14 : évaluation gériatrique approfondie recommandée avant décision thérapeutique.' },
-      { min: 14.5, level: 'low', label: 'Dépistage négatif', detail: 'Score > 14 : pas d’altération majeure au dépistage.' },
+      { min: 0, level: 'high', label: 'Dépistage positif', detail: 'Score ≤ 14 : évaluation gériatrique approfondie recommandée avant décision thérapeutique.' },
+      { min: 14.5, level: 'low', label: 'Dépistage négatif', detail: 'Score > 14 : pas d’altération majeure au dépistage.' },
     ],
     { format: (t) => `${fmt(t, t % 1 === 0 ? 0 : 1)} / 17` },
   ),
@@ -144,7 +144,7 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
       acronym: 'mini-GDS',
       category: 'geriatrie',
       purpose:
-        "Dépistage rapide (4 questions) d'une dépression chez la personne âgée ; un score ≥ 1 impose une évaluation approfondie.",
+        "Dépistage rapide (4 questions) d’une dépression chez la personne âgée ; un score ≥ 1 impose une évaluation approfondie.",
       aliases: ['mini gds', 'mini-gds', 'minigds', 'gds 4', 'depression sujet age'],
       keywords: [
         'dépression',
@@ -156,16 +156,16 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
         'gériatrie',
       ],
       fields: [
-        yesNo('sad', 'Vous sentez-vous découragé(e) et triste ?', 1),
-        yesNo('empty', 'Avez-vous le sentiment que votre vie est vide ?', 1),
-        noYes('happy', 'Êtes-vous heureux(se) la plupart du temps ?', 1),
-        yesNo('hopeless', 'Avez-vous l’impression que votre situation est désespérée ?', 1),
+        yesNo('sad', 'Vous sentez-vous découragé(e) et triste ?', 1),
+        yesNo('empty', 'Avez-vous le sentiment que votre vie est vide ?', 1),
+        noYes('happy', 'Êtes-vous heureux(se) la plupart du temps ?', 1),
+        yesNo('hopeless', 'Avez-vous l’impression que votre situation est désespérée ?', 1),
       ],
-      reference: 'Clément 1997. Score 0–4. Seuil : ≥ 1.',
+      reference: 'Clément 1997. Score 0–4. Seuil : ≥ 1.',
     },
     [
-      { min: 0, level: 'low', label: 'Peu probable', detail: 'Score 0 : forte probabilité d’absence de dépression.' },
-      { min: 1, level: 'high', label: 'Dépistage positif', detail: 'Score ≥ 1 : forte probabilité de dépression. Évaluation approfondie (GDS-30 ou entretien).' },
+      { min: 0, level: 'low', label: 'Peu probable', detail: 'Score 0 : forte probabilité d’absence de dépression.' },
+      { min: 1, level: 'high', label: 'Dépistage positif', detail: 'Score ≥ 1 : forte probabilité de dépression. Évaluation approfondie (GDS-30 ou entretien).' },
     ],
   ),
 
@@ -176,7 +176,7 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
       acronym: 'GDS-15',
       category: 'geriatrie',
       purpose:
-        "Évalue la sévérité d'une symptomatologie dépressive chez la personne âgée (15 items oui/non).",
+        "Évalue la sévérité d’une symptomatologie dépressive chez la personne âgée (15 items oui/non).",
       aliases: ['gds', 'gds 15', 'gds-15', 'geriatric depression scale', 'echelle depression geriatrique'],
       keywords: [
         'dépression',
@@ -188,28 +188,28 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
         'échelle dépression',
       ],
       fields: [
-        noYes('satisfied', 'Êtes-vous satisfait(e) de votre vie ?', 1),
-        yesNo('dropped', 'Avez-vous abandonné beaucoup de vos activités et intérêts ?', 1),
-        yesNo('empty', 'Avez-vous le sentiment que votre vie est vide ?', 1),
-        yesNo('bored', 'Vous ennuyez-vous souvent ?', 1),
-        noYes('goodSpirits', 'Êtes-vous de bonne humeur la plupart du temps ?', 1),
-        yesNo('afraid', 'Craignez-vous qu’il vous arrive quelque chose de mauvais ?', 1),
-        noYes('happy', 'Êtes-vous heureux(se) la plupart du temps ?', 1),
-        yesNo('helpless', 'Vous sentez-vous souvent impuissant(e), sans recours ?', 1),
-        yesNo('stayHome', 'Préférez-vous rester chez vous plutôt que sortir ?', 1),
-        yesNo('memory', 'Avez-vous plus de problèmes de mémoire que la plupart des gens ?', 1),
-        noYes('wonderful', 'Pensez-vous qu’il est merveilleux de vivre à notre époque ?', 1),
-        yesNo('worthless', 'Vous sentez-vous plutôt inutile dans votre état actuel ?', 1),
-        noYes('energy', 'Vous sentez-vous plein(e) d’énergie ?', 1),
-        yesNo('desperate', 'Pensez-vous que votre situation est désespérée ?', 1),
-        yesNo('othersBetter', 'Pensez-vous que la plupart des gens sont mieux lotis que vous ?', 1),
+        noYes('satisfied', 'Êtes-vous satisfait(e) de votre vie ?', 1),
+        yesNo('dropped', 'Avez-vous abandonné beaucoup de vos activités et intérêts ?', 1),
+        yesNo('empty', 'Avez-vous le sentiment que votre vie est vide ?', 1),
+        yesNo('bored', 'Vous ennuyez-vous souvent ?', 1),
+        noYes('goodSpirits', 'Êtes-vous de bonne humeur la plupart du temps ?', 1),
+        yesNo('afraid', 'Craignez-vous qu’il vous arrive quelque chose de mauvais ?', 1),
+        noYes('happy', 'Êtes-vous heureux(se) la plupart du temps ?', 1),
+        yesNo('helpless', 'Vous sentez-vous souvent impuissant(e), sans recours ?', 1),
+        yesNo('stayHome', 'Préférez-vous rester chez vous plutôt que sortir ?', 1),
+        yesNo('memory', 'Avez-vous plus de problèmes de mémoire que la plupart des gens ?', 1),
+        noYes('wonderful', 'Pensez-vous qu’il est merveilleux de vivre à notre époque ?', 1),
+        yesNo('worthless', 'Vous sentez-vous plutôt inutile dans votre état actuel ?', 1),
+        noYes('energy', 'Vous sentez-vous plein(e) d’énergie ?', 1),
+        yesNo('desperate', 'Pensez-vous que votre situation est désespérée ?', 1),
+        yesNo('othersBetter', 'Pensez-vous que la plupart des gens sont mieux lotis que vous ?', 1),
       ],
-      reference: 'Yesavage / Sheikh 1986 (forme courte). Score 0–15. Seuil de dépression : ≥ 5.',
+      reference: 'Yesavage / Sheikh 1986 (forme courte). Score 0–15. Seuil de dépression : ≥ 5.',
     },
     [
-      { min: 0, level: 'low', label: 'Pas de dépression', detail: 'Score 0–4 : absence de symptomatologie dépressive significative.' },
-      { min: 5, level: 'moderate', label: 'Dépression légère à modérée', detail: 'Score 5–9 : symptomatologie dépressive probable. Évaluation clinique.' },
-      { min: 10, level: 'high', label: 'Dépression sévère', detail: 'Score 10–15 : symptomatologie dépressive marquée. Prise en charge spécialisée.' },
+      { min: 0, level: 'low', label: 'Pas de dépression', detail: 'Score 0–4 : absence de symptomatologie dépressive significative.' },
+      { min: 5, level: 'moderate', label: 'Dépression légère à modérée', detail: 'Score 5–9 : symptomatologie dépressive probable. Évaluation clinique.' },
+      { min: 10, level: 'high', label: 'Dépression sévère', detail: 'Score 10–15 : symptomatologie dépressive marquée. Prise en charge spécialisée.' },
     ],
   ),
 
@@ -220,7 +220,7 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
       acronym: 'ADL',
       category: 'geriatrie',
       purpose:
-        "Mesure l'autonomie pour les 6 activités de base de la vie quotidienne (toilette, habillage, WC, transferts, continence, alimentation).",
+        "Mesure l’autonomie pour les 6 activités de base de la vie quotidienne (toilette, habillage, WC, transferts, continence, alimentation).",
       aliases: ['adl', 'katz', 'activites vie quotidienne', 'autonomie de base'],
       keywords: ['autonomie', 'dépendance', 'personne âgée', 'toilette', 'habillage', 'transfert', 'continence', 'gériatrie'],
       fields: [
@@ -234,9 +234,9 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
       reference: 'Katz 1963. Score 0–6 (6 = autonome).',
     },
     [
-      { min: 0, level: 'high', label: 'Dépendance sévère', detail: 'Score 0–2 : dépendance sévère pour les activités de base.' },
-      { min: 3, level: 'moderate', label: 'Dépendance partielle', detail: 'Score 3–5 : dépendance partielle.' },
-      { min: 6, level: 'low', label: 'Autonome', detail: 'Score 6 : autonome pour toutes les activités de base.' },
+      { min: 0, level: 'high', label: 'Dépendance sévère', detail: 'Score 0–2 : dépendance sévère pour les activités de base.' },
+      { min: 3, level: 'moderate', label: 'Dépendance partielle', detail: 'Score 3–5 : dépendance partielle.' },
+      { min: 6, level: 'low', label: 'Autonome', detail: 'Score 6 : autonome pour toutes les activités de base.' },
     ],
   ),
 
@@ -247,7 +247,7 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
       acronym: 'IADL-4',
       category: 'geriatrie',
       purpose:
-        "Explore 4 activités instrumentales (téléphone, transports, médicaments, finances) : une perte d'autonomie oriente vers un dépistage cognitif.",
+        "Explore 4 activités instrumentales (téléphone, transports, médicaments, finances) : une perte d’autonomie oriente vers un dépistage cognitif.",
       aliases: ['iadl', 'lawton', 'iadl 4', 'activites instrumentales', 'barberger gateau'],
       keywords: ['autonomie', 'instrumentale', 'téléphone', 'médicaments', 'finances', 'transports', 'cognition', 'gériatrie'],
       fields: [
@@ -259,9 +259,9 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
       reference: 'Lawton 1969 / Barberger-Gateau 1992. Score 0–4 (0 = autonome).',
     },
     [
-      { min: 0, level: 'low', label: 'Autonome', detail: 'Score 0 : autonomie instrumentale conservée sur les 4 items.' },
-      { min: 1, level: 'moderate', label: 'Perte d’autonomie', detail: 'Score 1–2 : perte d’autonomie instrumentale. Approfondir (dépistage cognitif).' },
-      { min: 3, level: 'high', label: 'Dépendance marquée', detail: 'Score 3–4 : dépendance instrumentale marquée.' },
+      { min: 0, level: 'low', label: 'Autonome', detail: 'Score 0 : autonomie instrumentale conservée sur les 4 items.' },
+      { min: 1, level: 'moderate', label: 'Perte d’autonomie', detail: 'Score 1–2 : perte d’autonomie instrumentale. Approfondir (dépistage cognitif).' },
+      { min: 3, level: 'high', label: 'Dépendance marquée', detail: 'Score 3–4 : dépendance instrumentale marquée.' },
     ],
   ),
 
@@ -278,12 +278,12 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
       { kind: 'number', id: 'orientationTime', label: 'Orientation temporelle', unit: '/ 5', min: 0, max: 5, placeholder: '0–5' },
       { kind: 'number', id: 'orientationPlace', label: 'Orientation spatiale', unit: '/ 5', min: 0, max: 5, placeholder: '0–5' },
       { kind: 'number', id: 'registration', label: 'Apprentissage (3 mots)', unit: '/ 3', min: 0, max: 3, placeholder: '0–3' },
-      { kind: 'number', id: 'attention', label: 'Attention et calcul (100 − 7 ou « monde »)', unit: '/ 5', min: 0, max: 5, placeholder: '0–5' },
+      { kind: 'number', id: 'attention', label: 'Attention et calcul (100 − 7 ou « monde »)', unit: '/ 5', min: 0, max: 5, placeholder: '0–5' },
       { kind: 'number', id: 'recall', label: 'Rappel des 3 mots', unit: '/ 3', min: 0, max: 3, placeholder: '0–3' },
       { kind: 'number', id: 'language', label: 'Langage et praxies constructives', unit: '/ 9', min: 0, max: 9, placeholder: '0–9' },
     ],
     reference: 'Folstein 1975. Score /30. Interpréter selon le niveau socio-culturel.',
-    caution: 'Le seuil dépend du niveau d’études ; un MMSE normal n’exclut pas un trouble cognitif débutant.',
+    caution: 'Le seuil dépend du niveau d’études ; un MMSE normal n’exclut pas un trouble cognitif débutant.',
     compute: (v) => {
       const caps = { orientationTime: 5, orientationPlace: 5, registration: 3, attention: 5, recall: 3, language: 9 } as const;
       let total = 0;
@@ -293,10 +293,10 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
         total += Math.min(Math.max(x, 0), max);
       }
       let interpretation: ScoreInterpretation;
-      if (total >= 27) interpretation = { level: 'low', label: 'Normal', detail: 'Score ≥ 27/30 : performances cognitives normales.' };
-      else if (total >= 24) interpretation = { level: 'moderate', label: 'Troubles légers', detail: 'Score 24–26/30 : troubles cognitifs légers possibles. À recouper avec la clinique.' };
-      else if (total >= 18) interpretation = { level: 'high', label: 'Démence légère à modérée', detail: 'Score 18–23/30 : atteinte cognitive compatible avec une démence légère à modérée.' };
-      else interpretation = { level: 'critical', label: 'Démence modérée à sévère', detail: 'Score < 18/30 : atteinte cognitive sévère.' };
+      if (total >= 27) interpretation = { level: 'low', label: 'Normal', detail: 'Score ≥ 27/30 : performances cognitives normales.' };
+      else if (total >= 24) interpretation = { level: 'moderate', label: 'Troubles légers', detail: 'Score 24–26/30 : troubles cognitifs légers possibles. À recouper avec la clinique.' };
+      else if (total >= 18) interpretation = { level: 'high', label: 'Démence légère à modérée', detail: 'Score 18–23/30 : atteinte cognitive compatible avec une démence légère à modérée.' };
+      else interpretation = { level: 'critical', label: 'Démence modérée à sévère', detail: 'Score < 18/30 : atteinte cognitive sévère.' };
       return { value: total, display: `${fmt(total)} / 30`, interpretation };
     },
   },
@@ -307,7 +307,7 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
     acronym: 'MoCA',
     category: 'geriatrie',
     purpose:
-      "Test cognitif plus sensible que le MMSE pour les troubles cognitifs légers (/30, + 1 point si ≤ 12 ans d'études).",
+      "Test cognitif plus sensible que le MMSE pour les troubles cognitifs légers (/30, + 1 point si ≤ 12 ans d’études).",
     aliases: ['moca', 'montreal cognitive assessment'],
     keywords: ['cognition', 'trouble cognitif léger', 'MCI', 'mémoire', 'démence', 'gériatrie', 'dépistage cognitif'],
     fields: [
@@ -328,7 +328,7 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
         ],
       },
     ],
-    reference: 'Nasreddine 2005. Score /30. Seuil de normalité : ≥ 26.',
+    reference: 'Nasreddine 2005. Score /30. Seuil de normalité : ≥ 26.',
     compute: (v) => {
       const caps = { visuospatial: 5, naming: 3, attention: 6, language: 3, abstraction: 2, recall: 5, orientation: 6 } as const;
       let total = 0;
@@ -339,10 +339,10 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
       }
       total = Math.min(30, total + (v.education === 1 ? 1 : 0));
       let interpretation: ScoreInterpretation;
-      if (total >= 26) interpretation = { level: 'low', label: 'Normal', detail: 'Score ≥ 26/30 : performances cognitives normales.' };
-      else if (total >= 18) interpretation = { level: 'moderate', label: 'Troubles légers', detail: 'Score 18–25/30 : trouble cognitif léger possible.' };
-      else if (total >= 10) interpretation = { level: 'high', label: 'Troubles modérés', detail: 'Score 10–17/30 : atteinte cognitive modérée.' };
-      else interpretation = { level: 'critical', label: 'Troubles sévères', detail: 'Score < 10/30 : atteinte cognitive sévère.' };
+      if (total >= 26) interpretation = { level: 'low', label: 'Normal', detail: 'Score ≥ 26/30 : performances cognitives normales.' };
+      else if (total >= 18) interpretation = { level: 'moderate', label: 'Troubles légers', detail: 'Score 18–25/30 : trouble cognitif léger possible.' };
+      else if (total >= 10) interpretation = { level: 'high', label: 'Troubles modérés', detail: 'Score 10–17/30 : atteinte cognitive modérée.' };
+      else interpretation = { level: 'critical', label: 'Troubles sévères', detail: 'Score < 10/30 : atteinte cognitive sévère.' };
       return { value: total, display: `${fmt(total)} / 30`, interpretation };
     },
   },
@@ -423,9 +423,9 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
       reference: 'Rubenstein 2001. Score 0–14.',
     },
     [
-      { min: 0, level: 'high', label: 'Dénutrition', detail: 'Score 0–7 : dénutrition avérée. Prise en charge nutritionnelle.' },
-      { min: 8, level: 'moderate', label: 'Risque de dénutrition', detail: 'Score 8–11 : risque de dénutrition. Surveillance et conseils.' },
-      { min: 12, level: 'low', label: 'État nutritionnel normal', detail: 'Score 12–14 : état nutritionnel normal.' },
+      { min: 0, level: 'high', label: 'Dénutrition', detail: 'Score 0–7 : dénutrition avérée. Prise en charge nutritionnelle.' },
+      { min: 8, level: 'moderate', label: 'Risque de dénutrition', detail: 'Score 8–11 : risque de dénutrition. Surveillance et conseils.' },
+      { min: 12, level: 'low', label: 'État nutritionnel normal', detail: 'Score 12–14 : état nutritionnel normal.' },
     ],
   ),
 
@@ -435,7 +435,7 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
     acronym: 'CAM',
     category: 'geriatrie',
     purpose:
-      "Repère un syndrome confusionnel (delirium) selon un algorithme : début aigu/fluctuant ET inattention, ET (pensée désorganisée OU vigilance altérée).",
+      "Repère un syndrome confusionnel (delirium) selon un algorithme : début aigu/fluctuant ET inattention, ET (pensée désorganisée OU vigilance altérée).",
     aliases: ['cam', 'confusion assessment method', 'delirium', 'syndrome confusionnel'],
     keywords: ['confusion', 'delirium', 'syndrome confusionnel', 'désorientation', 'vigilance', 'personne âgée', 'gériatrie'],
     fields: [
@@ -451,7 +451,7 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
         value: positive ? 1 : 0,
         display: positive ? 'Positif' : 'Négatif',
         interpretation: positive
-          ? { level: 'high', label: 'Confusion probable', detail: 'Critères CAM réunis : syndrome confusionnel probable. Rechercher un facteur déclenchant (médicament, infection, globe, fécalome…).' }
+          ? { level: 'high', label: 'Confusion probable', detail: 'Critères CAM réunis : syndrome confusionnel probable. Rechercher un facteur déclenchant (médicament, infection, globe, fécalome…).' }
           : { level: 'low', label: 'Critères non réunis', detail: 'Les critères diagnostiques du delirium ne sont pas réunis.' },
       };
     },
@@ -488,10 +488,10 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
       reference: 'Rockwood 2005. Fragilité à partir de 5.',
     },
     [
-      { min: 1, level: 'low', label: 'Robuste', detail: 'Niveaux 1–3 : personne en forme ou se maintenant bien.' },
-      { min: 4, level: 'moderate', label: 'Vulnérable', detail: 'Niveau 4 : vulnérable (ralenti, symptômes limitant les activités).' },
-      { min: 5, level: 'high', label: 'Fragilité', detail: 'Niveaux 5–6 : fragilité légère à modérée. Aide nécessaire pour certaines activités.' },
-      { min: 7, level: 'critical', label: 'Fragilité sévère', detail: 'Niveaux 7–9 : fragilité sévère à terminale. Forte dépendance.' },
+      { min: 1, level: 'low', label: 'Robuste', detail: 'Niveaux 1–3 : personne en forme ou se maintenant bien.' },
+      { min: 4, level: 'moderate', label: 'Vulnérable', detail: 'Niveau 4 : vulnérable (ralenti, symptômes limitant les activités).' },
+      { min: 5, level: 'high', label: 'Fragilité', detail: 'Niveaux 5–6 : fragilité légère à modérée. Aide nécessaire pour certaines activités.' },
+      { min: 7, level: 'critical', label: 'Fragilité sévère', detail: 'Niveaux 7–9 : fragilité sévère à terminale. Forte dépendance.' },
     ],
     { format: (t) => `Niveau ${fmt(t)} / 9` },
   ),
@@ -502,20 +502,20 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
     acronym: 'TUG',
     category: 'geriatrie',
     purpose:
-      "Chronomètre le temps pour se lever, marcher 3 mètres, faire demi-tour et se rasseoir : dépiste le risque de chute.",
+      "Chronomètre le temps pour se lever, marcher 3 mètres, faire demi-tour et se rasseoir : dépiste le risque de chute.",
     aliases: ['timed up and go', 'tug', 'get up and go', 'risque de chute', 'test de marche'],
     keywords: ['chute', 'équilibre', 'marche', 'mobilité', 'personne âgée', 'risque de chute', 'gériatrie'],
     fields: [
       { kind: 'number', id: 'time', label: 'Temps réalisé', unit: 'secondes', min: 3, max: 120, step: 0.1, placeholder: 'ex. 14' },
     ],
-    reference: 'Podsiadlo 1991. ≥ 14 s : risque de chute augmenté ; ≥ 20 s : mobilité fortement réduite.',
+    reference: 'Podsiadlo 1991. ≥ 14 s : risque de chute augmenté ; ≥ 20 s : mobilité fortement réduite.',
     compute: (v) => {
       const t = v.time;
       if (!Number.isFinite(t) || t <= 0) return incompleteResult('Renseignez le temps réalisé.');
       let interpretation: ScoreInterpretation;
-      if (t < 12) interpretation = { level: 'low', label: 'Normal', detail: 'Temps < 12 s : mobilité normale, risque de chute faible.' };
-      else if (t < 20) interpretation = { level: 'moderate', label: 'Risque de chute', detail: 'Temps 12–19 s : risque de chute augmenté (seuil d’alerte ~ 14 s).' };
-      else interpretation = { level: 'high', label: 'Mobilité réduite', detail: 'Temps ≥ 20 s : mobilité fortement réduite. Risque de chute élevé, évaluation approfondie.' };
+      if (t < 12) interpretation = { level: 'low', label: 'Normal', detail: 'Temps < 12 s : mobilité normale, risque de chute faible.' };
+      else if (t < 20) interpretation = { level: 'moderate', label: 'Risque de chute', detail: 'Temps 12–19 s : risque de chute augmenté (seuil d’alerte ~ 14 s).' };
+      else interpretation = { level: 'high', label: 'Mobilité réduite', detail: 'Temps ≥ 20 s : mobilité fortement réduite. Risque de chute élevé, évaluation approfondie.' };
       return { value: t, display: `${fmt(t, 1)} s`, interpretation };
     },
   },
@@ -527,7 +527,7 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
       acronym: 'Braden',
       category: 'geriatrie',
       purpose:
-        "Évalue le risque de survenue d'escarre (6 sous-échelles) pour déclencher les mesures de prévention.",
+        "Évalue le risque de survenue d’escarre (6 sous-échelles) pour déclencher les mesures de prévention.",
       aliases: ['braden', 'escarre', 'risque escarre', 'pression'],
       keywords: ['escarre', 'prévention', 'alitement', 'plaie de pression', 'immobilité', 'peau', 'gériatrie'],
       fields: [
@@ -550,11 +550,11 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
       reference: 'Bergstrom 1987. Score 6–23 (plus bas = plus à risque).',
     },
     [
-      { min: 6, level: 'critical', label: 'Risque très élevé', detail: 'Score ≤ 9 : risque très élevé d’escarre. Prévention maximale.' },
-      { min: 10, level: 'high', label: 'Risque élevé', detail: 'Score 10–12 : risque élevé.' },
-      { min: 13, level: 'moderate', label: 'Risque modéré', detail: 'Score 13–14 : risque modéré.' },
-      { min: 15, level: 'low', label: 'Risque faible', detail: 'Score 15–18 : risque faible (mais présent, rester vigilant).' },
-      { min: 19, level: 'low', label: 'Risque minime', detail: 'Score ≥ 19 : risque minime.' },
+      { min: 6, level: 'critical', label: 'Risque très élevé', detail: 'Score ≤ 9 : risque très élevé d’escarre. Prévention maximale.' },
+      { min: 10, level: 'high', label: 'Risque élevé', detail: 'Score 10–12 : risque élevé.' },
+      { min: 13, level: 'moderate', label: 'Risque modéré', detail: 'Score 13–14 : risque modéré.' },
+      { min: 15, level: 'low', label: 'Risque faible', detail: 'Score 15–18 : risque faible (mais présent, rester vigilant).' },
+      { min: 19, level: 'low', label: 'Risque minime', detail: 'Score ≥ 19 : risque minime.' },
     ],
   ),
 
@@ -565,7 +565,7 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
       acronym: 'Charlson',
       category: 'geriatrie',
       purpose:
-        "Pondère les comorbidités (et l'âge) pour estimer le pronostic vital à moyen terme.",
+        "Pondère les comorbidités (et l’âge) pour estimer le pronostic vital à moyen terme.",
       aliases: ['charlson', 'comorbidite', 'index de comorbidite', 'comorbidity index'],
       keywords: ['comorbidité', 'pronostic', 'mortalité', 'survie', 'personne âgée', 'polypathologie', 'gériatrie', 'oncogériatrie'],
       fields: [
@@ -604,10 +604,10 @@ export const GERIATRIE_SCORES: ScoreDefinition[] = [
       reference: 'Charlson 1987. Un score plus élevé = pronostic vital plus réservé.',
     },
     [
-      { min: 0, level: 'low', label: 'Comorbidité faible', detail: 'Score 0 : comorbidité faible (survie à 10 ans estimée élevée).' },
-      { min: 1, level: 'moderate', label: 'Comorbidité modérée', detail: 'Score 1–2 : comorbidité modérée.' },
-      { min: 3, level: 'high', label: 'Comorbidité élevée', detail: 'Score 3–4 : comorbidité élevée. Pronostic à intégrer aux décisions.' },
-      { min: 5, level: 'critical', label: 'Comorbidité très élevée', detail: 'Score ≥ 5 : comorbidité très élevée. Pronostic vital réservé.' },
+      { min: 0, level: 'low', label: 'Comorbidité faible', detail: 'Score 0 : comorbidité faible (survie à 10 ans estimée élevée).' },
+      { min: 1, level: 'moderate', label: 'Comorbidité modérée', detail: 'Score 1–2 : comorbidité modérée.' },
+      { min: 3, level: 'high', label: 'Comorbidité élevée', detail: 'Score 3–4 : comorbidité élevée. Pronostic à intégrer aux décisions.' },
+      { min: 5, level: 'critical', label: 'Comorbidité très élevée', detail: 'Score ≥ 5 : comorbidité très élevée. Pronostic vital réservé.' },
     ],
   ),
 ];

@@ -476,7 +476,7 @@ export default function DashboardScreen() {
                 <Text style={styles.greetingText}>{greeting}</Text>
               </View>
               <Text style={styles.heroTitle} accessibilityRole="header" aria-level={1}>
-                Qu’est-ce qui compte aujourd’hui ?
+                Qu’est-ce qui compte aujourd’hui ?
               </Text>
               <Text style={styles.heroSubtitle}>{subtitle}</Text>
               {/* Mobile : deux boutons pleine largeur empilés (des largeurs inégales faisaient

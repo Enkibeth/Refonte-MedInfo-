@@ -108,7 +108,7 @@ export function DictationButton({
       setError(null);
     } catch {
       setState('idle');
-      flashError('Micro indisponible : vérifie les autorisations du navigateur.');
+      flashError('Micro indisponible : vérifie les autorisations du navigateur.');
     }
   }
 

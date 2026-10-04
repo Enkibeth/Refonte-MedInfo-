@@ -44,7 +44,7 @@ export function CountrySelector({
       {hideTrigger ? null : <Touchable
         onPress={() => setOpen(true)}
         accessibilityRole="button"
-        accessibilityLabel={current ? `Pays : ${current.name}` : 'Choisir le pays'}
+        accessibilityLabel={current ? `Pays : ${current.name}` : 'Choisir le pays'}
         aria-expanded={open}
         style={toolbarButtonStyles.button}
       >

@@ -81,7 +81,7 @@ function ScoresInner() {
   return (
     <View style={styles.container}>
       <ToolScreenHeader feature="scores" title="Scores médicaux">
-        {ALL_SCORES.length} scores et calculateurs cliniques : boutons interactifs et
+        {ALL_SCORES.length} scores et calculateurs cliniques : boutons interactifs et
         interprétation immédiate. Calcul privé, sur ton appareil.
       </ToolScreenHeader>
 
@@ -118,8 +118,8 @@ function ScoreBrowser({ onSelect }: { onSelect: (id: string) => void }) {
         returnKeyType="search"
       />
       <Text style={styles.searchHint}>
-        Nom oublié ? Décris ce que le score évalue (ex. « probabilité embolie pulmonaire »,
-        « clairance rénale »).
+        Nom oublié ? Décris ce que le score évalue (ex. « probabilité embolie pulmonaire »,
+        « clairance rénale »).
       </Text>
 
       {/* Chips de catégories */}
@@ -147,7 +147,7 @@ function ScoreBrowser({ onSelect }: { onSelect: (id: string) => void }) {
       {results.length === 0 ? (
         <View style={styles.empty}>
           <Icon name="search" size={26} color={tokens.colors.textMuted} />
-          <Text style={styles.emptyText}>Aucun score trouvé pour « {query} ».</Text>
+          <Text style={styles.emptyText}>Aucun score trouvé pour « {query} ».</Text>
           <Text style={styles.emptySub}>Essaie un autre mot-clé, un synonyme, ou l’indication clinique.</Text>
         </View>
       ) : (
@@ -299,7 +299,7 @@ function ScoreDetail({ def, onBack }: { def: ScoreDefinition; onBack: () => void
         <Text style={styles.resetLabel}>Réinitialiser</Text>
       </Pressable>
 
-      {def.reference ? <Text style={styles.meta}>Référence : {def.reference}</Text> : null}
+      {def.reference ? <Text style={styles.meta}>Référence : {def.reference}</Text> : null}
       {def.caution ? (
         <View style={styles.caution}>
           <Icon name="shield" size={15} color={tokens.colors.warningText} />

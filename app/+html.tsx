@@ -129,7 +129,7 @@ p, [dir="auto"] { text-wrap-style: pretty; }
 }
 
 /* Tracé ECG (accueil + hero du dashboard) : la ligne se dessine, tient, puis s'efface et
-   recommence — battement lent (cycle 9 s), discret. La réinitialisation du tracé a lieu
+   recommence, en battement lent (cycle 9 s) et discret. La réinitialisation du tracé a lieu
    pendant que la ligne est invisible. Retiré par erreur à la refonte 2026-09, rétabli. */
 @keyframes medinfo-ecg-draw {
   0%   { stroke-dashoffset: 1700; opacity: 1; }

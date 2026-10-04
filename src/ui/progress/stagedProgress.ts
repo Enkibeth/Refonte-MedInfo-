@@ -34,7 +34,7 @@ export interface ProgressPlan {
 }
 
 /** Message de patience : jamais de durée promise, seulement l'état. */
-export const SLOW_MESSAGE = 'Toujours en cours. Les contenus détaillés prennent parfois plus longtemps : tu peux rester sur la page.';
+export const SLOW_MESSAGE = 'Toujours en cours. Les contenus détaillés prennent parfois plus longtemps : tu peux rester sur la page.';
 
 /** Plafond de la barre : jamais pleine tant que la réponse n'est pas arrivée. */
 export const PROGRESS_CEILING = 0.94;

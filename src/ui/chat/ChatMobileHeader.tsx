@@ -90,7 +90,7 @@ export function ChatMobileHeader(props: ChatMobileHeaderProps) {
         disabled={!canPick || switchDisabled}
         // Un seul chatbot : simple libellé (le titre de page est porté par le h1 masqué).
         accessibilityRole={canPick ? 'button' : undefined}
-        accessibilityLabel={canPick ? `Chatbot : ${meta.label}. Changer de chatbot` : `Chat ${meta.label}`}
+        accessibilityLabel={canPick ? `Chatbot : ${meta.label}. Changer de chatbot` : `Chat ${meta.label}`}
         aria-expanded={canPick ? pickerOpen : undefined}
         style={({ pressed }: { pressed: boolean }) => [styles.titleButton, pressed && styles.pressed]}
       >

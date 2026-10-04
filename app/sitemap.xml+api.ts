@@ -21,15 +21,16 @@ async function fetchBlogEntries(): Promise<SitemapEntry[]> {
     });
     const { data, error } = await supabase
       .from('blog_posts')
-      .select('slug, published_at')
+      .select('slug, published_at, updated_at')
       .order('published_at', { ascending: false })
       .limit(500);
     if (error || !data) return [];
     return data
-      .filter((post): post is { slug: string; published_at: string | null } => Boolean(post.slug))
+      .filter((post): post is { slug: string; published_at: string | null; updated_at: string | null } => Boolean(post.slug))
       .map((post) => ({
         path: `/blog/${post.slug}`,
-        lastmod: post.published_at,
+        // Dernière modification réelle (article corrigé après publication), sinon la publication.
+        lastmod: post.updated_at ?? post.published_at,
         changefreq: 'monthly' as const,
         priority: 0.6,
       }));

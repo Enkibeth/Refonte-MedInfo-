@@ -23,7 +23,7 @@ function PartielInner() {
   return (
     <View style={styles.container}>
       <ToolScreenHeader feature="partiel" title="Analyse des partiels">
-        Importe les notes de ta promo (.xlsx, .csv, .pdf) : rang, coefficients, points forts et
+        Importe les notes de ta promo (.xlsx, .csv, .pdf) : rang, coefficients, points forts et
         simulateur. Calcul privé, sur ton appareil.
       </ToolScreenHeader>
 

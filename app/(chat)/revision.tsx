@@ -95,7 +95,7 @@ function newDraft(): { title: string; examType: ExamType; stored: StoredPlan } {
 
 const BOOST_INTENTS = [
   { key: 'optimize', label: 'Optimiser' },
-  { key: 'realistic', label: 'Réaliste ?' },
+  { key: 'realistic', label: 'Réaliste ?' },
   { key: 'rebalance', label: 'Rééquilibrer' },
   { key: 'reminders', label: 'Rappels espacés' },
 ] as const;
@@ -360,8 +360,8 @@ function RevisionScreenInner() {
       keyboardVerticalOffset={80}
     >
       <ToolScreenHeader feature="revision" title="Révisions">
-        Transforme ton programme en charge quotidienne réaliste. Le calcul est déterministe :
-        rien n'est inventé, tu vois tout de suite si tu es dans les temps.
+        Transforme ton programme en charge quotidienne réaliste. Le calcul est déterministe :
+        rien n’est inventé, tu vois tout de suite si tu es dans les temps.
       </ToolScreenHeader>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
@@ -433,8 +433,8 @@ function RevisionScreenInner() {
             />
           </Field>
 
-          <Text style={styles.fieldLabel}>Type d'examen</Text>
-          <ChipRow style={styles.examRow} label="Type d'examen">
+          <Text style={styles.fieldLabel}>Type d’examen</Text>
+          <ChipRow style={styles.examRow} label="Type d’examen">
             {EXAM_TYPES.map((t) => (
               <Chip
                 key={t}
@@ -453,8 +453,8 @@ function RevisionScreenInner() {
             <Field label="Début">
               <DateField label="Début" value={stored.startDate} onChange={(d) => patchStored({ startDate: d })} />
             </Field>
-            <Field label="Date d'examen">
-              <DateField label="Date d'examen" value={stored.examDate} onChange={(d) => patchStored({ examDate: d })} />
+            <Field label="Date d’examen">
+              <DateField label="Date d’examen" value={stored.examDate} onChange={(d) => patchStored({ examDate: d })} />
             </Field>
           </View>
 
@@ -502,7 +502,7 @@ function RevisionScreenInner() {
 
         {/* Blocs de travail */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Ce qu'il y a à réviser</Text>
+          <Text style={styles.cardTitle}>Ce qu’il y a à réviser</Text>
           {stored.resources.length === 0 ? (
             <Text style={styles.hint}>
               Ajoute tes matières/collèges avec leur volume (pages, chapitres, QCM). Le moteur
@@ -592,10 +592,10 @@ function RevisionScreenInner() {
             <PlanHealthGauge risk={result.risk} />
 
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Aujourd'hui</Text>
+              <Text style={styles.cardTitle}>Aujourd’hui</Text>
               {todayTasks.length === 0 ? (
                 <Text style={styles.hint}>
-                  Rien de planifié aujourd'hui {result.usableDaysCount === 0 ? '(plus de jour avant l\'examen)' : ''}.
+                  Rien de planifié aujourd’hui {result.usableDaysCount === 0 ? '(plus de jour avant l’examen)' : ''}.
                 </Text>
               ) : (
                 todayTasks.map((t, i) => (
@@ -624,15 +624,15 @@ function RevisionScreenInner() {
                 <DailyLoadBar key={load.date} load={load} maxMinutes={clean.dailyMaxMinutes} />
               ))}
               {result.dailyLoads.length === 0 ? (
-                <Text style={styles.hint}>Aucun jour disponible avant la date d'examen.</Text>
+                <Text style={styles.hint}>Aucun jour disponible avant la date d’examen.</Text>
               ) : null}
             </View>
 
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Coup de pouce IA</Text>
               <Text style={styles.hint}>
-                Conseils d'organisation à partir de TON plan. L'IA ne modifie rien et n'invente
-                aucun volume : tu restes décideur.
+                Conseils d’organisation à partir de TON plan. L’IA ne modifie rien et n’invente
+                aucun volume : tu restes décideur.
               </Text>
               <View style={styles.boostRow}>
                 {BOOST_INTENTS.map((b) => (
@@ -660,7 +660,7 @@ function RevisionScreenInner() {
         ) : null}
 
         <Text style={styles.footerNote}>
-          Outil d'organisation pédagogique. Il ne remplace ni les référentiels officiels ni la
+          Outil d’organisation pédagogique. Il ne remplace ni les référentiels officiels ni la
           pratique encadrée, et ne traite aucune donnée de santé.
         </Text>
       </ScrollView>

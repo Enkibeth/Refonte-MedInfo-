@@ -61,7 +61,7 @@ export function ToolPreview({ feature }: { feature: ToolPageId }) {
             ))}
           </View>
           <Text style={styles.audience}>
-            <Text style={styles.audienceLabel}>Accès : </Text>
+            <Text style={styles.audienceLabel}>Accès : </Text>
             {page.audience}
           </Text>
           {page.note ? <Text style={styles.note}>{page.note}</Text> : null}

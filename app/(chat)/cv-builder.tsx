@@ -49,7 +49,7 @@ function CvBuilderInner() {
   return (
     <View style={styles.container}>
       <ToolScreenHeader feature="cv-builder" title="Créateur de CV">
-        Construis ton CV avec tes propres rubriques, fais-le relire par l'IA (suggestions à
+        Construis ton CV avec tes propres rubriques, fais-le relire par l’IA (suggestions à
         valider) et exporte un PDF dont le texte reste sélectionnable, donc lisible par les
         logiciels de tri des hôpitaux. Création, édition et export illimités et gratuits.
       </ToolScreenHeader>

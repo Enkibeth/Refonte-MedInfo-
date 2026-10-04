@@ -127,7 +127,7 @@ export default function ResetPasswordScreen() {
       </Card>
       {/* Web : l'en-tête de pile est masqué (app/(auth)/_layout.tsx) — sortie explicite. */}
       <Link href="/" style={styles.homeLink}>
-        Retour à l'accueil
+        Retour à l’accueil
       </Link>
     </Screen>
   );

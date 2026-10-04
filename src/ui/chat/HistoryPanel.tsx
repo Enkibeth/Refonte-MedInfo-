@@ -159,11 +159,11 @@ export function ConversationList({
           </View>
         ) : conversations.length === 0 ? (
           <Text style={styles.empty}>
-            Aucune conversation enregistrée pour l'instant. Vos échanges apparaîtront ici,
+            Aucune conversation enregistrée pour l’instant. Vos échanges apparaîtront ici,
             classés automatiquement par thème.
           </Text>
         ) : filtered.length === 0 ? (
-          <Text style={styles.empty}>Aucune conversation ne correspond à « {query.trim()} ».</Text>
+          <Text style={styles.empty}>Aucune conversation ne correspond à « {query.trim()} ».</Text>
         ) : (
           grouped.map(([category, items]) => (
             <View key={category} style={styles.group}>
@@ -236,7 +236,7 @@ export function ConversationList({
                             onDelete(c.id);
                           }}
                           accessibilityRole="button"
-                          accessibilityLabel={`Confirmer la suppression de « ${c.title ?? 'Conversation'} »`}
+                          accessibilityLabel={`Confirmer la suppression de « ${c.title ?? 'Conversation'} »`}
                           style={styles.confirmDelete}
                         >
                           <Text style={styles.confirmDeleteText}>Supprimer</Text>
@@ -259,7 +259,7 @@ export function ConversationList({
                           <Touchable
                             onPress={() => startRename(c)}
                             accessibilityRole="button"
-                            accessibilityLabel={`Renommer « ${c.title ?? 'Conversation'} »`}
+                            accessibilityLabel={`Renommer « ${c.title ?? 'Conversation'} »`}
                             style={styles.iconAction}
                             {...mi('touch44')}
                           >
@@ -269,7 +269,7 @@ export function ConversationList({
                         <Touchable
                           onPress={() => setConfirmDeleteId(c.id)}
                           accessibilityRole="button"
-                          accessibilityLabel={`Supprimer « ${c.title ?? 'Conversation'} »`}
+                          accessibilityLabel={`Supprimer « ${c.title ?? 'Conversation'} »`}
                           style={styles.iconAction}
                           {...mi('touch44')}
                         >
@@ -343,7 +343,7 @@ export function HistoryPanel({
               <Touchable
                 onPress={onClose}
                 accessibilityRole="button"
-                accessibilityLabel="Fermer l'historique" {...(Platform.OS === 'web' ? { title: "Fermer l'historique" } : {})}
+                accessibilityLabel="Fermer l’historique" {...(Platform.OS === 'web' ? { title: "Fermer l’historique" } : {})}
                 style={styles.closeButton}
               >
                 <Icon name="x" size={18} color={tokens.colors.textMuted} />

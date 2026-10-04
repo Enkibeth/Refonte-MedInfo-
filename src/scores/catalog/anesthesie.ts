@@ -15,7 +15,7 @@ export const ANESTHESIE_SCORES: ScoreDefinition[] = [
       acronym: 'RCRI',
       category: 'anesthesie',
       purpose:
-        "Estime le risque de complication cardiaque majeure d'une chirurgie non cardiaque.",
+        "Estime le risque de complication cardiaque majeure d’une chirurgie non cardiaque.",
       aliases: ['rcri', 'lee', 'revised cardiac risk index', 'indice de lee'],
       keywords: [
         'risque cardiaque',
@@ -36,9 +36,9 @@ export const ANESTHESIE_SCORES: ScoreDefinition[] = [
       reference: 'Lee 1999. Classes I (0) à IV (≥ 3).',
     },
     [
-      { min: 0, level: 'low', label: 'Risque faible', detail: 'Score 0–1 : complication cardiaque majeure < 1 %.' },
-      { min: 2, level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 2 : risque ≈ 7 %.' },
-      { min: 3, level: 'high', label: 'Risque élevé', detail: 'Score ≥ 3 : risque ≈ 11 %. Optimisation et avis cardiologique.' },
+      { min: 0, level: 'low', label: 'Risque faible', detail: 'Score 0–1 : complication cardiaque majeure < 1 %.' },
+      { min: 2, level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 2 : risque ≈ 7 %.' },
+      { min: 3, level: 'high', label: 'Risque élevé', detail: 'Score ≥ 3 : risque ≈ 11 %. Optimisation et avis cardiologique.' },
     ],
   ),
 
@@ -61,9 +61,9 @@ export const ANESTHESIE_SCORES: ScoreDefinition[] = [
       reference: 'Apfel 1999. Risque de NVPO ≈ 10 / 20 / 40 / 60 / 80 % pour 0 / 1 / 2 / 3 / 4.',
     },
     [
-      { min: 0, level: 'low', label: 'Risque faible', detail: 'Score 0–1 : NVPO ≈ 10–20 %.' },
-      { min: 2, level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 2 : NVPO ≈ 40 %. Envisager une prophylaxie.' },
-      { min: 3, level: 'high', label: 'Risque élevé', detail: 'Score 3–4 : NVPO ≈ 60–80 %. Prophylaxie multimodale.' },
+      { min: 0, level: 'low', label: 'Risque faible', detail: 'Score 0–1 : NVPO ≈ 10–20 %.' },
+      { min: 2, level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 2 : NVPO ≈ 40 %. Envisager une prophylaxie.' },
+      { min: 3, level: 'high', label: 'Risque élevé', detail: 'Score 3–4 : NVPO ≈ 60–80 %. Prophylaxie multimodale.' },
     ],
   ),
 
@@ -74,7 +74,7 @@ export const ANESTHESIE_SCORES: ScoreDefinition[] = [
       acronym: 'ASA',
       category: 'anesthesie',
       purpose:
-        "Décrit l'état physique du patient avant l'anesthésie (I à VI) : communication du risque, jamais un calcul de mortalité en soi.",
+        "Décrit l’état physique du patient avant l’anesthésie (I à VI) : communication du risque, jamais un calcul de mortalité en soi.",
       aliases: ['asa', 'classification asa', 'score asa', 'american society anesthesiologists'],
       keywords: ['anesthésie', 'préopératoire', 'état physique', 'risque anesthésique', 'consultation anesthésie'],
       fields: [
@@ -92,8 +92,8 @@ export const ANESTHESIE_SCORES: ScoreDefinition[] = [
           ],
         },
       ],
-      reference: 'ASA Physical Status. Ajouter « U » en cas d’urgence (ex. ASA III-U).',
-      caution: 'Évaluation subjective de l’état physique : ce n’est pas un score de mortalité opératoire.',
+      reference: 'ASA Physical Status. Ajouter « U » en cas d’urgence (ex. ASA III-U).',
+      caution: 'Évaluation subjective de l’état physique : ce n’est pas un score de mortalité opératoire.',
     },
     [
       { min: 1, level: 'low', label: 'ASA I', detail: 'Patient sain.' },
@@ -113,7 +113,7 @@ export const ANESTHESIE_SCORES: ScoreDefinition[] = [
       acronym: 'Mallampati',
       category: 'anesthesie',
       purpose:
-        "Prédit la difficulté d'intubation à partir de la visibilité des structures oropharyngées, bouche grande ouverte.",
+        "Prédit la difficulté d’intubation à partir de la visibilité des structures oropharyngées, bouche grande ouverte.",
       aliases: ['mallampati', 'intubation difficile', 'classe mallampati'],
       keywords: ['intubation difficile', 'voies aériennes', 'anesthésie', 'oropharynx', 'ventilation'],
       fields: [
@@ -129,13 +129,13 @@ export const ANESTHESIE_SCORES: ScoreDefinition[] = [
           ],
         },
       ],
-      reference: 'Mallampati 1985 (modifié Samsoon). Classes III–IV : intubation potentiellement difficile.',
-      caution: 'Prédiction imparfaite : à combiner aux autres critères d’intubation difficile.',
+      reference: 'Mallampati 1985 (modifié Samsoon). Classes III–IV : intubation potentiellement difficile.',
+      caution: 'Prédiction imparfaite : à combiner aux autres critères d’intubation difficile.',
     },
     [
       { min: 1, level: 'low', label: 'Classe I–II', detail: 'Intubation a priori non difficile sur ce critère.' },
-      { min: 3, level: 'moderate', label: 'Classe III', detail: 'Intubation potentiellement difficile : anticiper.' },
-      { min: 4, level: 'high', label: 'Classe IV', detail: 'Risque élevé d’intubation difficile : préparer une stratégie dédiée.' },
+      { min: 3, level: 'moderate', label: 'Classe III', detail: 'Intubation potentiellement difficile : anticiper.' },
+      { min: 4, level: 'high', label: 'Classe IV', detail: 'Risque élevé d’intubation difficile : préparer une stratégie dédiée.' },
     ],
     { format: (t) => `Classe ${ASA_ROMAN[t - 1] ?? t}` },
   ),
@@ -147,7 +147,7 @@ export const ANESTHESIE_SCORES: ScoreDefinition[] = [
       acronym: 'Aldrete',
       category: 'anesthesie',
       purpose:
-        "Évalue l'aptitude d'un patient à quitter la salle de surveillance post-interventionnelle (SSPI).",
+        "Évalue l’aptitude d’un patient à quitter la salle de surveillance post-interventionnelle (SSPI).",
       aliases: ['aldrete', 'score de sortie sspi', 'salle de reveil'],
       keywords: ['salle de réveil', 'SSPI', 'post-opératoire', 'anesthésie', 'sortie', 'surveillance'],
       fields: [
@@ -205,8 +205,8 @@ export const ANESTHESIE_SCORES: ScoreDefinition[] = [
       reference: 'Aldrete 1970/1995. Score 0–10. Sortie de SSPI généralement à ≥ 9.',
     },
     [
-      { min: 0, level: 'high', label: 'Surveillance poursuivie', detail: 'Score < 9 : critères de sortie non réunis. Poursuivre la surveillance en SSPI.' },
-      { min: 9, level: 'low', label: 'Sortie envisageable', detail: 'Score ≥ 9 : critères de sortie de SSPI réunis (selon protocole du service).' },
+      { min: 0, level: 'high', label: 'Surveillance poursuivie', detail: 'Score < 9 : critères de sortie non réunis. Poursuivre la surveillance en SSPI.' },
+      { min: 9, level: 'low', label: 'Sortie envisageable', detail: 'Score ≥ 9 : critères de sortie de SSPI réunis (selon protocole du service).' },
     ],
   ),
 ];

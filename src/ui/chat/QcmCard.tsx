@@ -72,7 +72,7 @@ export function QcmLauncher({
       setRunKey((k) => k + 1);
       setState('ready');
     } catch {
-      setErrorMsg('Impossible de générer le QCM (connexion ?). Réessaie.');
+      setErrorMsg('Impossible de générer le QCM (connexion ?). Réessaie.');
       setState('error');
     }
   }

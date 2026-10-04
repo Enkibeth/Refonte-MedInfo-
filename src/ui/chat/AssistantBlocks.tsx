@@ -490,8 +490,8 @@ function CalcBlock({
     if (labels.length === 0) return;
     const text =
       labels.length === 1
-        ? `Calcule avec moi le score ${labels[0]} : pose-moi les questions item par item.`
-        : `Calcule avec moi les scores suivants : ${labels.join(', ')} : pose-moi les questions item par item pour chacun.`;
+        ? `Calcule avec moi le score ${labels[0]} : pose-moi les questions item par item.`
+        : `Calcule avec moi les scores suivants : ${labels.join(', ')} : pose-moi les questions item par item pour chacun.`;
     setSent(true);
     onSend(text);
   };
@@ -556,7 +556,7 @@ function ReflectionBlock({
         accessibilityRole="button"
       >
         <Icon name="bookOpen" size={15} color={tokens.colors.textMuted} />
-        <Text style={styles.reflectionToggleText}>Auto-réflexion de l'IA</Text>
+        <Text style={styles.reflectionToggleText}>Auto-réflexion de l’IA</Text>
         <View style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }}>
           <Icon name="chevronDown" size={15} color={tokens.colors.textMuted} />
         </View>

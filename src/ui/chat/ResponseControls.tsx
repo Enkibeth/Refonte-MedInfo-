@@ -41,7 +41,7 @@ const TOOLS: { id: ChatOutputTool; label: string; icon: IconName; description: s
     id: 'keypoints',
     label: 'Points clés',
     icon: 'bookOpen',
-    description: 'Un encadré « À retenir » synthétique en tête de réponse.',
+    description: 'Un encadré « À retenir » synthétique en tête de réponse.',
   },
   {
     id: 'comparison',
@@ -159,7 +159,7 @@ export function ResponseControls({
           onPress={() => setPanel('mode')}
           disabled={disabled}
           accessibilityRole="button"
-          accessibilityLabel={`Profondeur de la réponse : ${activeMode.label}`}
+          accessibilityLabel={`Profondeur de la réponse : ${activeMode.label}`}
           aria-pressed={mode !== 'standard'}
           style={({ pressed, hovered, focused }: { pressed: boolean; hovered?: boolean; focused?: boolean }) => [
             composerButtonStyles.button,

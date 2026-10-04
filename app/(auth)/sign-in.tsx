@@ -153,7 +153,7 @@ export default function SignInScreen() {
             ? 'Connectez-vous avec votre adresse e-mail, ou avec Google ou Apple.'
             : mode === 'signup'
               ? 'Choisissez une adresse e-mail et un mot de passe (6 caractères minimum), ou utilisez Google ou Apple.'
-              : 'Saisissez votre adresse e-mail : nous vous enverrons un lien pour définir un nouveau mot de passe.'}
+              : 'Saisissez votre adresse e-mail : nous vous enverrons un lien pour définir un nouveau mot de passe.'}
         </Text>
 
         {user ? (
@@ -225,7 +225,7 @@ export default function SignInScreen() {
                     onPress={() => switchMode('forgot')}
                     style={styles.linkTarget}
                   >
-                    <Text style={styles.forgotLink}>Mot de passe oublié ?</Text>
+                    <Text style={styles.forgotLink}>Mot de passe oublié ?</Text>
                   </Pressable>
                 ) : null}
               </View>
@@ -269,8 +269,8 @@ export default function SignInScreen() {
               style={styles.linkTarget}
             >
               <Text style={styles.toggleText}>{mode === 'signin'
-                ? 'Pas encore de compte ? Créer un compte'
-                : 'Déjà un compte ? Se connecter'}</Text>
+                ? 'Pas encore de compte ? Créer un compte'
+                : 'Déjà un compte ? Se connecter'}</Text>
             </Pressable>
           )}
         </View>

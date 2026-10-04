@@ -42,7 +42,7 @@ describe('relativeLabel — horodatage compact', () => {
   it('aujourd’hui → heure', () => {
     expect(relativeLabel(new Date(2026, 6, 13, 18, 20).toISOString(), now)).toBe('18:20');
   });
-  it('hier → « Hier »', () => {
+  it('hier → « Hier »', () => {
     expect(relativeLabel(new Date(2026, 6, 12, 9, 0).toISOString(), now)).toBe('Hier');
   });
   it('< 7 jours → jour de semaine', () => {
@@ -102,7 +102,7 @@ describe('heroSummary — sous-titre factuel du hero', () => {
         lastConversationTitle: null,
       }),
     ).toBe(
-      'Tu as 2 h 10 de révision planifiées aujourd’hui et un ECOS « Trouble du langage » à retravailler.',
+      'Tu as 2 h 10 de révision planifiées aujourd’hui et un ECOS « Trouble du langage » à retravailler.',
     );
   });
   it('sans aucune donnée → invitation neutre, aucun chiffre', () => {
@@ -116,7 +116,7 @@ describe('heroSummary — sous-titre factuel du hero', () => {
       lastEcosTitle: null,
       lastConversationTitle: 'Anticoagulation et FA',
     });
-    expect(out).toBe('Tu as une conversation « Anticoagulation et FA » à poursuivre.');
+    expect(out).toBe('Tu as une conversation « Anticoagulation et FA » à poursuivre.');
   });
 });
 
@@ -182,7 +182,7 @@ describe('buildRecentActivity — fusion multi-outils triée', () => {
     expect(entries[1].detail).toBe('Cardiologie');
   });
 
-  it('titre de conversation absent → libellé neutre ; score absent → mention sans note', () => {
+  it('titre de conversation absent → libellé neutre ; score absent → mention sans note', () => {
     const entries = buildRecentActivity({
       conversations: [{ id: 'c1', title: null, category: null, updated_at: '2026-07-12T09:00:00Z' }],
       ecosAttempts: [
@@ -223,10 +223,10 @@ describe('buildRecentActivity — activité de tous les outils du rôle (D1)', (
       'cv-builder',
       'article',
     ]);
-    expect(entries[0].title).toBe('Traduction : compte-rendu.pdf');
-    expect(entries[1].title).toBe('Analyse : Texte collé');
-    expect(entries[2].title).toBe('Audio : Consultation Mme B.');
-    expect(entries[4].title).toBe('CV : Mon CV');
+    expect(entries[0].title).toBe('Traduction : compte-rendu.pdf');
+    expect(entries[1].title).toBe('Analyse : Texte collé');
+    expect(entries[2].title).toBe('Audio : Consultation Mme B.');
+    expect(entries[4].title).toBe('CV : Mon CV');
     expect(entries[5].detail).toBe('Cas clinique');
     expect(entries[0].route).toBe('/(chat)/document');
     expect(entries[5].route).toBe('/(chat)/article');
@@ -248,7 +248,7 @@ describe('buildRecentActivity — activité de tous les outils du rôle (D1)', (
   });
 });
 
-describe('conversationsThisWeek — tuile « Cette semaine » (D2)', () => {
+describe('conversationsThisWeek — tuile « Cette semaine » (D2)', () => {
   const now = new Date('2026-07-14T12:00:00Z');
 
   it('compte les conversations actives dans les 7 derniers jours', () => {

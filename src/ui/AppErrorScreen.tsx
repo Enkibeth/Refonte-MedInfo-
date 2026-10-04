@@ -22,7 +22,7 @@ function goHome() {
 
 export function AppErrorScreen({ error, retry }: ErrorBoundaryProps) {
   useEffect(() => {
-    console.error('[medinfo] erreur d’affichage :', error);
+    console.error('[medinfo] erreur d’affichage :', error);
   }, [error]);
 
   return (
@@ -33,7 +33,7 @@ export function AppErrorScreen({ error, retry }: ErrorBoundaryProps) {
           Cette page n’a pas pu s’afficher.
         </Text>
         <Text style={styles.text}>
-          Le problème vient de notre côté. Réessayez : vos conversations et documents enregistrés
+          Le problème vient de notre côté. Réessayez : vos conversations et documents enregistrés
           ne sont pas affectés. Si l’erreur persiste, rechargez la page ou revenez à l’accueil.
         </Text>
         <View style={styles.actions}>

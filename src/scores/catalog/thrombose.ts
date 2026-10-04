@@ -35,12 +35,12 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
         yesNo('previousDvt', 'ATCD de TVP documentée', 1),
         yesNo('altDiagnosis', 'Diagnostic alternatif au moins aussi probable', -2),
       ],
-      reference: 'Wells 2003. Modèle à 3 niveaux. Dichotomisé : ≥ 2 = probable, < 2 = peu probable.',
+      reference: 'Wells 2003. Modèle à 3 niveaux. Dichotomisé : ≥ 2 = probable, < 2 = peu probable.',
     },
     [
-      { min: -2, level: 'low', label: 'Probabilité faible', detail: 'Score ≤ 0 : prévalence de TVP ≈ 5 %. D-dimères recommandés.' },
-      { min: 1, level: 'moderate', label: 'Probabilité intermédiaire', detail: 'Score 1–2 : prévalence ≈ 17 %.' },
-      { min: 3, level: 'high', label: 'Probabilité forte', detail: 'Score ≥ 3 : prévalence ≈ 53 %. Écho-doppler veineux.' },
+      { min: -2, level: 'low', label: 'Probabilité faible', detail: 'Score ≤ 0 : prévalence de TVP ≈ 5 %. D-dimères recommandés.' },
+      { min: 1, level: 'moderate', label: 'Probabilité intermédiaire', detail: 'Score 1–2 : prévalence ≈ 17 %.' },
+      { min: 3, level: 'high', label: 'Probabilité forte', detail: 'Score ≥ 3 : prévalence ≈ 53 %. Écho-doppler veineux.' },
     ],
   ),
 
@@ -51,7 +51,7 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
       acronym: 'Wells EP',
       category: 'thrombose',
       purpose:
-        "Estime la probabilité clinique d'embolie pulmonaire pour orienter D-dimères vs angioscanner.",
+        "Estime la probabilité clinique d’embolie pulmonaire pour orienter D-dimères vs angioscanner.",
       aliases: ['wells pe', 'wells ep', 'score de wells ep'],
       keywords: [
         'embolie pulmonaire',
@@ -72,12 +72,12 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
         yesNo('hemoptysis', 'Hémoptysie', 1),
         yesNo('malignancy', 'Cancer actif', 1),
       ],
-      reference: 'Wells 2000. Dichotomisé : ≤ 4 = peu probable (→ D-dimères), > 4 = probable (→ angioscanner).',
+      reference: 'Wells 2000. Dichotomisé : ≤ 4 = peu probable (→ D-dimères), > 4 = probable (→ angioscanner).',
     },
     [
-      { min: 0, level: 'low', label: 'Probabilité faible', detail: 'Score < 2 : probabilité faible. D-dimères en première intention.' },
-      { min: 2, level: 'moderate', label: 'Probabilité intermédiaire', detail: 'Score 2–6 : probabilité intermédiaire.' },
-      { min: 6.5, level: 'high', label: 'Probabilité forte', detail: 'Score > 6 : probabilité forte. Angioscanner sans attendre les D-dimères.' },
+      { min: 0, level: 'low', label: 'Probabilité faible', detail: 'Score < 2 : probabilité faible. D-dimères en première intention.' },
+      { min: 2, level: 'moderate', label: 'Probabilité intermédiaire', detail: 'Score 2–6 : probabilité intermédiaire.' },
+      { min: 6.5, level: 'high', label: 'Probabilité forte', detail: 'Score > 6 : probabilité forte. Angioscanner sans attendre les D-dimères.' },
     ],
     { format: (t) => `${t.toString().replace('.', ',')} point${t > 1 ? 's' : ''}` },
   ),
@@ -89,7 +89,7 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
       acronym: 'Genève révisé',
       category: 'thrombose',
       purpose:
-        "Alternative objective au score de Wells pour la probabilité clinique d'embolie pulmonaire (aucun jugement subjectif).",
+        "Alternative objective au score de Wells pour la probabilité clinique d’embolie pulmonaire (aucun jugement subjectif).",
       aliases: ['geneve', 'genève', 'geneva', 'score de geneve', 'geneve revise'],
       keywords: [
         'embolie pulmonaire',
@@ -121,9 +121,9 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
       reference: 'Le Gal 2006 (Genève révisé). Score 0–3 faible, 4–10 intermédiaire, ≥ 11 fort.',
     },
     [
-      { min: 0, level: 'low', label: 'Probabilité faible', detail: 'Score 0–3 : probabilité faible.' },
-      { min: 4, level: 'moderate', label: 'Probabilité intermédiaire', detail: 'Score 4–10 : probabilité intermédiaire.' },
-      { min: 11, level: 'high', label: 'Probabilité forte', detail: 'Score ≥ 11 : probabilité forte.' },
+      { min: 0, level: 'low', label: 'Probabilité faible', detail: 'Score 0–3 : probabilité faible.' },
+      { min: 4, level: 'moderate', label: 'Probabilité intermédiaire', detail: 'Score 4–10 : probabilité intermédiaire.' },
+      { min: 11, level: 'high', label: 'Probabilité forte', detail: 'Score ≥ 11 : probabilité forte.' },
     ],
   ),
 
@@ -134,7 +134,7 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
       acronym: 'PESI',
       category: 'thrombose',
       purpose:
-        "Estime la mortalité à 30 jours d'une embolie pulmonaire confirmée et identifie les patients à faible risque (candidats à une prise en charge ambulatoire).",
+        "Estime la mortalité à 30 jours d’une embolie pulmonaire confirmée et identifie les patients à faible risque (candidats à une prise en charge ambulatoire).",
       aliases: ['pesi', 'severity index embolie'],
       keywords: [
         'embolie pulmonaire',
@@ -161,10 +161,10 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
       reference: 'Aujesky 2005. Classes I ≤ 65, II 66–85, III 86–105, IV 106–125, V > 125.',
     },
     [
-      { min: 0, level: 'low', label: 'Classe I–II (faible)', detail: 'Score ≤ 85 : mortalité à 30 j faible (< 3,5 %). Ambulatoire envisageable.' },
-      { min: 86, level: 'moderate', label: 'Classe III (intermédiaire)', detail: 'Score 86–105 : risque intermédiaire.' },
-      { min: 106, level: 'high', label: 'Classe IV (élevé)', detail: 'Score 106–125 : risque élevé.' },
-      { min: 126, level: 'critical', label: 'Classe V (très élevé)', detail: 'Score > 125 : mortalité à 30 j très élevée (jusqu’à ~ 25 %).' },
+      { min: 0, level: 'low', label: 'Classe I–II (faible)', detail: 'Score ≤ 85 : mortalité à 30 j faible (< 3,5 %). Ambulatoire envisageable.' },
+      { min: 86, level: 'moderate', label: 'Classe III (intermédiaire)', detail: 'Score 86–105 : risque intermédiaire.' },
+      { min: 106, level: 'high', label: 'Classe IV (élevé)', detail: 'Score 106–125 : risque élevé.' },
+      { min: 126, level: 'critical', label: 'Classe V (très élevé)', detail: 'Score > 125 : mortalité à 30 j très élevée (jusqu’à ~ 25 %).' },
     ],
   ),
 
@@ -175,7 +175,7 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
       acronym: 'sPESI',
       category: 'thrombose',
       purpose:
-        "Version simplifiée du PESI : identifie les embolies pulmonaires à faible risque (score 0) éligibles à une prise en charge ambulatoire.",
+        "Version simplifiée du PESI : identifie les embolies pulmonaires à faible risque (score 0) éligibles à une prise en charge ambulatoire.",
       aliases: ['spesi', 'pesi simplifie'],
       keywords: ['embolie pulmonaire', 'EP', 'gravité', 'pronostic', 'ambulatoire', 'mortalité'],
       fields: [
@@ -189,8 +189,8 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
       reference: 'Jiménez 2010. Score 0 = faible risque.',
     },
     [
-      { min: 0, level: 'low', label: 'Faible risque', detail: 'Score 0 : mortalité à 30 j ≈ 1 %. Ambulatoire envisageable (si pas de dysfonction VD).' },
-      { min: 1, level: 'high', label: 'Risque élevé', detail: 'Score ≥ 1 : mortalité à 30 j ≈ 11 %. Hospitalisation.' },
+      { min: 0, level: 'low', label: 'Faible risque', detail: 'Score 0 : mortalité à 30 j ≈ 1 %. Ambulatoire envisageable (si pas de dysfonction VD).' },
+      { min: 1, level: 'high', label: 'Risque élevé', detail: 'Score ≥ 1 : mortalité à 30 j ≈ 11 %. Hospitalisation.' },
     ],
   ),
 
@@ -201,7 +201,7 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
       acronym: 'Padoue',
       category: 'thrombose',
       purpose:
-        "Évalue le risque de maladie thrombo-embolique veineuse chez le patient médical hospitalisé et l'indication de thromboprophylaxie.",
+        "Évalue le risque de maladie thrombo-embolique veineuse chez le patient médical hospitalisé et l’indication de thromboprophylaxie.",
       aliases: ['padua', 'padoue', 'padua prediction score'],
       keywords: [
         'thromboprophylaxie',
@@ -225,11 +225,11 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
         yesNo('obesity', 'Obésité (IMC ≥ 30)', 1),
         yesNo('hormonal', 'Traitement hormonal en cours', 1),
       ],
-      reference: 'Barbar 2010. Seuil : ≥ 4 = risque élevé.',
+      reference: 'Barbar 2010. Seuil : ≥ 4 = risque élevé.',
     },
     [
-      { min: 0, level: 'low', label: 'Risque faible', detail: 'Score < 4 : thromboprophylaxie non systématique.' },
-      { min: 4, level: 'high', label: 'Risque élevé', detail: 'Score ≥ 4 : thromboprophylaxie recommandée (sauf contre-indication).' },
+      { min: 0, level: 'low', label: 'Risque faible', detail: 'Score < 4 : thromboprophylaxie non systématique.' },
+      { min: 4, level: 'high', label: 'Risque élevé', detail: 'Score ≥ 4 : thromboprophylaxie recommandée (sauf contre-indication).' },
     ],
   ),
 
@@ -240,7 +240,7 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
       acronym: '4T',
       category: 'thrombose',
       purpose:
-        "Estime la probabilité d'une thrombopénie induite par l'héparine (TIH/HIT) devant une chute des plaquettes sous héparine.",
+        "Estime la probabilité d’une thrombopénie induite par l’héparine (TIH/HIT) devant une chute des plaquettes sous héparine.",
       aliases: ['4t', 'score 4t', 'hit', 'tih', 'thrombopenie heparine'],
       keywords: [
         'thrombopénie',
@@ -294,12 +294,12 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
         },
       ],
       reference: 'Lo 2006. 0–3 faible, 4–5 intermédiaire, 6–8 fort.',
-      caution: 'Un score faible (≤ 3) a une excellente valeur prédictive négative : la TIH est très peu probable.',
+      caution: 'Un score faible (≤ 3) a une excellente valeur prédictive négative : la TIH est très peu probable.',
     },
     [
-      { min: 0, level: 'low', label: 'Probabilité faible', detail: 'Score 0–3 : TIH très peu probable (poursuite de l’héparine possible).' },
-      { min: 4, level: 'moderate', label: 'Probabilité intermédiaire', detail: 'Score 4–5 : doser les anticorps anti-PF4, envisager un relais.' },
-      { min: 6, level: 'high', label: 'Probabilité forte', detail: 'Score 6–8 : arrêt de l’héparine + anticoagulant alternatif, sérologie anti-PF4.' },
+      { min: 0, level: 'low', label: 'Probabilité faible', detail: 'Score 0–3 : TIH très peu probable (poursuite de l’héparine possible).' },
+      { min: 4, level: 'moderate', label: 'Probabilité intermédiaire', detail: 'Score 4–5 : doser les anticorps anti-PF4, envisager un relais.' },
+      { min: 6, level: 'high', label: 'Probabilité forte', detail: 'Score 6–8 : arrêt de l’héparine + anticoagulant alternatif, sérologie anti-PF4.' },
     ],
   ),
 
@@ -310,7 +310,7 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
       acronym: 'PERC',
       category: 'thrombose',
       purpose:
-        "Chez un patient à faible probabilité clinique, permet d'écarter une embolie pulmonaire sans D-dimères si AUCUN des 8 critères n'est présent.",
+        "Chez un patient à faible probabilité clinique, permet d’écarter une embolie pulmonaire sans D-dimères si AUCUN des 8 critères n’est présent.",
       aliases: ['perc', 'perc rule', 'pulmonary embolism rule out'],
       keywords: ['embolie pulmonaire', 'EP', 'exclusion', 'd-dimères', 'faible probabilité', 'urgences', 'MTEV'],
       fields: [
@@ -327,8 +327,8 @@ export const THROMBOSE_SCORES: ScoreDefinition[] = [
       caution: 'La règle PERC ne s’applique QUE lorsque la probabilité clinique pré-test est faible.',
     },
     [
-      { min: 0, level: 'low', label: 'PERC négatif', detail: 'Aucun critère présent : embolie pulmonaire écartée sans D-dimères (si probabilité clinique faible).' },
-      { min: 1, level: 'moderate', label: 'PERC positif', detail: 'Au moins un critère présent : la règle ne permet pas d’exclure. Poursuivre par les D-dimères.' },
+      { min: 0, level: 'low', label: 'PERC négatif', detail: 'Aucun critère présent : embolie pulmonaire écartée sans D-dimères (si probabilité clinique faible).' },
+      { min: 1, level: 'moderate', label: 'PERC positif', detail: 'Au moins un critère présent : la règle ne permet pas d’exclure. Poursuivre par les D-dimères.' },
     ],
   ),
 ];
