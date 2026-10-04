@@ -38,6 +38,13 @@ puis « aligner les outils sur le chat, enlever la barre du bas inutile » (capt
   JSON-LD et texte propres à l'article dans le HTML servi.
 - Fumigation `smoke:node` 28/28 (2 contrôles ajoutés : présentation publique d'un outil dans le HTML servi, `noindex`
   des coquilles d'outils) ; tests unitaires, lint, typecheck et `compliance:grep` au vert.
+### Revue adversariale (corrigé avant livraison)
+- Audio en application native : sans la barre d'onglets, l'écran « disponible sur le web » n'avait plus aucune sortie.
+- `dateModified`/`article:modified_time`/`lastmod` antérieurs à la publication pour les articles de l'agent hebdo :
+  plus récente des deux dates, et `updated_at` posé à la publication.
+- Coquille d'article (servie quand le pré-rendu serveur est indisponible) : canonical et `og:url` en `/blog/[slug]` retirés.
+- Vue d'ensemble native : zone sûre du haut comptée deux fois.
+- Trouvé en vérification : les écrans d'onglets déjà visités gardaient `id="contenu"` (défaut hérité de l'ADR-0042).
 ### À arbitrer par Hugo
 Illustration d'équipe de l'en-tête (paraît générée par IA : animaux, icône vétérinaire) ; ECG animé en boucle ; règles
 robots pour l'entraînement des IA ; pages légales à mettre à jour sur le fond (refus avant traitement retiré par

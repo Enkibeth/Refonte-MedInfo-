@@ -180,6 +180,18 @@ export interface BlogPostingSeo {
 }
 
 /**
+ * Date de dernière modification d'un article : la plus récente de `updated_at` et `published_at`.
+ * Un article peut être publié APRÈS sa dernière écriture (agent hebdo : brouillon inséré, puis
+ * publié quelques minutes plus tard) : prendre `updated_at` seul donnait une modification
+ * antérieure à la publication. Même règle côté serveur (server/lib/blog-prerender.mjs).
+ */
+export function lastModified(publishedAt: string | null | undefined, updatedAt: string | null | undefined): string | null {
+  const dates = [publishedAt, updatedAt].filter((d): d is string => Boolean(d) && !Number.isNaN(Date.parse(String(d))));
+  if (!dates.length) return null;
+  return dates.reduce((a, b) => (Date.parse(b) > Date.parse(a) ? b : a));
+}
+
+/**
  * Fiche BlogPosting. Le serveur produit la MÊME fiche dans le HTML servi aux robots sans
  * JavaScript (server/lib/blog-prerender.mjs, comparaison dans tests/unit/blog-prerender.test.ts).
  */
@@ -200,7 +212,7 @@ export function blogPostingJsonLd(post: BlogPostingSeo): Record<string, unknown>
   };
   if (post.summary) jsonLd.description = post.summary;
   if (post.publishedAt) jsonLd.datePublished = post.publishedAt;
-  const modified = post.updatedAt ?? post.publishedAt;
+  const modified = lastModified(post.publishedAt, post.updatedAt);
   if (modified) jsonLd.dateModified = modified;
   if (post.category) jsonLd.articleSection = post.category;
   return jsonLd;

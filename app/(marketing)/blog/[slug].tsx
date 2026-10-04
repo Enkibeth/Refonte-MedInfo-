@@ -15,7 +15,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { getPostBySlug, type BlogPost } from '@/blog/posts';
 import { splitArticleSections } from '@/blog/toc';
-import { PAGE_SEO, blogPostingJsonLd, breadcrumbJsonLd } from '@/seo/meta';
+import { PAGE_SEO, blogPostingJsonLd, breadcrumbJsonLd, lastModified } from '@/seo/meta';
 import { LandingHeader } from '@/ui/LandingHeader';
 import { MainContent } from '@/ui/landmarks';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
@@ -89,7 +89,7 @@ export default function BlogArticleScreen() {
           type="article"
           article={{
             publishedTime: post.published_at,
-            modifiedTime: post.updated_at ?? post.published_at,
+            modifiedTime: lastModified(post.published_at, post.updated_at),
             section: post.category,
           }}
           jsonLd={[
@@ -115,11 +115,14 @@ export default function BlogArticleScreen() {
         <SeoHead title="Article introuvable" path={PAGE_SEO.blog.path} noindex />
       ) : (
         // Chargement (et pré-rendu, qui ne connaît pas l'article) : jamais de page sans
-        // titre — un <title> vide est une erreur d'accessibilité (WCAG 2.4.2).
+        // titre (WCAG 2.4.2), mais ni canonical ni og:url — au pré-rendu, le slug vaut
+        // littéralement « [slug] », et cette coquille est servie telle quelle quand le
+        // pré-rendu serveur du blog est indisponible (server/lib/blog-prerender.mjs).
         <SeoHead
           title={PAGE_SEO.blog.title}
           description={PAGE_SEO.blog.description}
           path={slug ? `/blog/${String(slug)}` : PAGE_SEO.blog.path}
+          canonical={false}
         />
       )}
       <LandingHeader />

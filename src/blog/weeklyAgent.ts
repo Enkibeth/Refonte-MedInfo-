@@ -357,6 +357,8 @@ export async function runWeeklyBlogAgent(force = false): Promise<WeeklyAgentResu
       cover_image_url: coverUrl,
       status: publish ? 'published' : 'draft',
       published_at: publish ? now : null,
+      // Dernière modification = cette mise à jour finale (sinon dateModified précédait la publication).
+      updated_at: now,
     })
     .eq('id', postId);
   if (error) {

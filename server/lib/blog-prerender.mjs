@@ -170,6 +170,13 @@ function formatDateFr(iso) {
   return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
 }
 
+/** Date de dernière modification : la plus récente des deux (même règle que `lastModified`, src/seo/meta.ts). */
+export function lastModified(publishedAt, updatedAt) {
+  const dates = [publishedAt, updatedAt].filter((d) => d && !Number.isNaN(Date.parse(String(d))));
+  if (!dates.length) return null;
+  return dates.reduce((a, b) => (Date.parse(b) > Date.parse(a) ? b : a));
+}
+
 /** JSON-LD BlogPosting d'un article (aligné sur `blogPostingJsonLd`, src/seo/meta.ts). */
 export function articleJsonLd(post, site) {
   const url = `${site}/blog/${post.slug}`;
@@ -186,7 +193,7 @@ export function articleJsonLd(post, site) {
   };
   if (post.summary) data.description = post.summary;
   if (post.published_at) data.datePublished = post.published_at;
-  const modified = post.updated_at ?? post.published_at;
+  const modified = lastModified(post.published_at, post.updated_at);
   if (modified) data.dateModified = modified;
   if (post.category) data.articleSection = post.category;
   return data;
@@ -286,7 +293,7 @@ export function renderArticleDocument(shell, post, site) {
     image: post.cover_image_url,
     imageAlt: post.title,
     type: 'article',
-    article: { publishedTime: post.published_at, modifiedTime: post.updated_at ?? post.published_at, section: post.category },
+    article: { publishedTime: post.published_at, modifiedTime: lastModified(post.published_at, post.updated_at), section: post.category },
     jsonLd: [
       articleJsonLd(post, site),
       breadcrumb(site, [

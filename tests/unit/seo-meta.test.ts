@@ -221,3 +221,12 @@ describe('sitemap', () => {
     expect(xml).toContain('a&amp;b');
   });
 });
+
+describe('coquille pré-rendue d’un article', () => {
+  it('n’annonce ni canonical ni og:url tant que l’article est inconnu (slug « [slug] » au pré-rendu)', () => {
+    const source = readFileSync('app/(marketing)/blog/[slug].tsx', 'utf8');
+    expect(source).toContain('canonical={false}');
+    const head = readFileSync('src/ui/SeoHead.tsx', 'utf8');
+    expect(head).toContain('{canonical ? <meta property="og:url" content={url} /> : null}');
+  });
+});

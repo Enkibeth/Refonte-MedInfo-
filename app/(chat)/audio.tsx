@@ -130,6 +130,8 @@ function AudioFeature() {
   if (Platform.OS !== 'web') {
     return (
       <View style={styles.container}>
+        {/* Seule sortie de l'écran depuis le retrait de la barre d'onglets du bas. */}
+        <ToolScreenHeader feature="audio" title="Audio médical" />
         <View style={styles.centeredBox}>
           <View style={styles.iconBadge}>
             <Icon name="monitor" size={26} color={tokens.colors.accentDeep} />

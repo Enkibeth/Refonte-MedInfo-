@@ -464,7 +464,14 @@ export default function DashboardScreen() {
         style={styles.scroll}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: desktopShell ? tokens.space.xl : Math.max(insets.top, tokens.space.lg) + tokens.space.sm },
+          // Sous 1 024 px, la barre compacte (ScreenNavBar) porte déjà la zone sûre du haut.
+          {
+            paddingTop: desktopShell
+              ? tokens.space.xl
+              : width >= tokens.layout.shell
+                ? Math.max(insets.top, tokens.space.lg) + tokens.space.sm // natif ≥ 1 024 px : pas de barre
+                : tokens.space.lg + tokens.space.sm,
+          },
         ]}
       >
         <View style={[styles.columns, wide && styles.columnsWide]}>

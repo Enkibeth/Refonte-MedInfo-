@@ -111,6 +111,8 @@ describe('navigation mobile sans barre d’onglets (demande Hugo 2026-10)', () =
       expect(read(`app/(chat)/${id}.tsx`), id).toContain('<ToolScreenHeader');
     }
     expect(read('app/(chat)/ecos.tsx')).toContain('<ScreenNavBar');
+    // Audio natif (« disponible sur le web ») : sans barre, l'écran n'avait plus aucune sortie.
+    expect(read('app/(chat)/audio.tsx').match(/<ToolScreenHeader/g)?.length).toBe(2);
     expect(read('app/(chat)/dashboard.tsx')).toContain('<ScreenNavBar');
   });
 });

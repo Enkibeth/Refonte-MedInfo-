@@ -8,6 +8,7 @@
  */
 import { createClient } from '@supabase/supabase-js';
 
+import { lastModified } from '@/seo/meta';
 import { STATIC_SITEMAP_ENTRIES, buildSitemapXml, type SitemapEntry } from '@/seo/sitemap';
 
 async function fetchBlogEntries(): Promise<SitemapEntry[]> {
@@ -30,7 +31,7 @@ async function fetchBlogEntries(): Promise<SitemapEntry[]> {
       .map((post) => ({
         path: `/blog/${post.slug}`,
         // Dernière modification réelle (article corrigé après publication), sinon la publication.
-        lastmod: post.updated_at ?? post.published_at,
+        lastmod: lastModified(post.published_at, post.updated_at),
         changefreq: 'monthly' as const,
         priority: 0.6,
       }));

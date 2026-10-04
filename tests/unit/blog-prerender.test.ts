@@ -81,6 +81,21 @@ describe('blog pré-rendu serveur : briques pures', () => {
     );
   });
 
+  it('dernière modification = la plus récente des deux dates (publication après l’écriture du brouillon)', () => {
+    const draftThenPublished = { ...POST, updated_at: '2026-09-28T06:00:10Z', published_at: '2026-09-28T06:04:30Z' };
+    const ld = articleJsonLd(draftThenPublished, DEFAULT_SITE_URL) as unknown as { dateModified: string; datePublished: string };
+    expect(ld.dateModified).toBe('2026-09-28T06:04:30Z');
+    expect(Date.parse(ld.dateModified)).toBeGreaterThanOrEqual(Date.parse(ld.datePublished));
+    expect(ld).toEqual(
+      blogPostingJsonLd({
+        slug: POST.slug, title: POST.title, summary: POST.summary, coverImageUrl: POST.cover_image_url,
+        publishedAt: draftThenPublished.published_at, updatedAt: draftThenPublished.updated_at, category: POST.category,
+      }),
+    );
+    const doc = renderArticleDocument(SHELL, draftThenPublished, DEFAULT_SITE_URL);
+    expect(doc).toContain('property="article:modified_time" content="2026-09-28T06:04:30Z"');
+  });
+
   it('même titre, même base de site et même titre de blog que le client', () => {
     expect(publicSiteUrl({})).toBe(DEFAULT_SITE_URL);
     expect(publicSiteUrl({ EXPO_PUBLIC_APP_URL: 'https://recette.example.org/' })).toBe('https://recette.example.org');

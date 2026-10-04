@@ -20,6 +20,7 @@ export function SeoHead({
   imageAlt,
   type = 'website',
   article,
+  canonical = true,
   noindex = false,
   jsonLd,
 }: {
@@ -35,6 +36,8 @@ export function SeoHead({
   type?: 'website' | 'article';
   /** Dates et rubrique d'un article (balises Open Graph `article:*`). */
   article?: { publishedTime?: string | null; modifiedTime?: string | null; section?: string | null };
+  /** false : ni `canonical` ni `og:url` (URL encore inconnue, ex. coquille pré-rendue d'un article). */
+  canonical?: boolean;
   /** true pour exclure la page des moteurs (auth, compte, admin…). */
   noindex?: boolean;
   /** Données structurées schema.org, injectées en JSON-LD. */
@@ -54,14 +57,14 @@ export function SeoHead({
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
       {noindex ? <meta name="robots" content="noindex, nofollow" /> : <meta name="robots" content={INDEXABLE_ROBOTS} />}
-      {noindex ? null : <link rel="canonical" href={url} />}
+      {noindex || !canonical ? null : <link rel="canonical" href={url} />}
 
       <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:locale" content="fr_FR" />
       <meta property="og:type" content={type} />
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
-      <meta property="og:url" content={url} />
+      {canonical ? <meta property="og:url" content={url} /> : null}
       <meta property="og:image" content={ogImage} />
       <meta property="og:image:alt" content={ogImageAlt} />
       {image ? null : <meta property="og:image:type" content={SOCIAL_CARD.type} />}
