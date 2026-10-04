@@ -145,17 +145,23 @@ describe('blog pré-rendu serveur : lecture Supabase', () => {
     expect(out?.html).not.toContain('rel="canonical"');
   });
 
-  it('Supabase en panne → null (la coquille d’origine est servie), rien en cache', async () => {
+  it('Supabase en panne → null (coquille d’origine), puis disjoncteur 30 s sans nouvel appel', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    let t = 0;
     const fetchImpl = fakeFetch(new Error('réseau'));
-    const prerender = createBlogPrerender(options(fetchImpl));
-    expect(await prerender.enrich({ page: '/(marketing)/blog/[slug]', pathname: '/blog/x', html: SHELL })).toBeNull();
-    expect(await prerender.enrich({ page: '/(marketing)/blog/[slug]', pathname: '/blog/x', html: SHELL })).toBeNull();
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    const prerender = createBlogPrerender(options(fetchImpl, () => t));
+    const request = { page: '/(marketing)/blog/[slug]', pathname: '/blog/x', html: SHELL };
+    expect(await prerender.enrich(request)).toBeNull();
+    t = 10_000;
+    expect(await prerender.enrich(request)).toBeNull();
+    expect(fetchImpl).toHaveBeenCalledTimes(1); // pas d'attente répétée pendant la panne
+    t = 31_000;
+    expect(await prerender.enrich(request)).toBeNull();
+    expect(fetchImpl).toHaveBeenCalledTimes(2); // nouvel essai après le délai
     warn.mockRestore();
   });
 
-  it('met en cache (5 min pour un article, 1 min pour un absent)', async () => {
+  it('met en cache (5 min pour un article, 30 s pour un absent)', async () => {
     let t = 0;
     const fetchImpl = fakeFetch([POST]);
     const prerender = createBlogPrerender(options(fetchImpl, () => t));

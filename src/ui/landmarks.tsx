@@ -27,16 +27,21 @@ import { tokens } from './tokens';
 /** Cible du lien d'évitement : portée par le `<main>` de l'écran affiché, et lui seul. */
 export const MAIN_CONTENT_ID = 'contenu';
 
-/** Zone de contenu principal d'un écran (`<main>` sur le web), cible du lien d'évitement. */
+/**
+ * Zone de contenu principal d'un écran (`<main>` sur le web), cible du lien d'évitement.
+ * `targetId={null}` : pas d'identifiant (écran d'onglet en arrière-plan). Un paramètre par défaut
+ * sur `nativeID` ne suffisait pas : `nativeID={undefined}` le réactivait, et chaque écran déjà
+ * visité gardait `id="contenu"` (cibles en double pour le lien d'évitement).
+ */
 export function MainContent({
   children,
-  nativeID = MAIN_CONTENT_ID,
+  targetId = MAIN_CONTENT_ID,
   ...props
-}: ViewProps & { children?: ReactNode }) {
+}: Omit<ViewProps, 'nativeID'> & { children?: ReactNode; targetId?: string | null }) {
   return (
     <View
       {...props}
-      nativeID={nativeID}
+      {...(targetId ? { nativeID: targetId } : null)}
       role="main"
       // Focalisable par programme (lien d'évitement), jamais dans l'ordre de tabulation.
       {...(Platform.OS === 'web' ? { tabIndex: -1 as const } : null)}
@@ -50,7 +55,7 @@ export function MainContent({
 function ScreenMain({ children }: { children: ReactNode }) {
   const focused = useIsFocused();
   return (
-    <MainContent style={styles.fill} nativeID={focused ? MAIN_CONTENT_ID : undefined}>
+    <MainContent style={styles.fill} targetId={focused ? MAIN_CONTENT_ID : null}>
       {children}
     </MainContent>
   );

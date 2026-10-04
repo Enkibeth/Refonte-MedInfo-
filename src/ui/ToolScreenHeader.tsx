@@ -1,10 +1,11 @@
 /**
  * En-tête commun des écrans d'outils (2026-10).
  *
- * - Téléphone (< 640 px) : la barre compacte du chat (☰ + icône + titre, src/ui/AppMobileHeader.tsx).
+ * - Téléphone et tablette (< 1 024 px) : la barre compacte du chat (☰ + icône + titre,
+ *   src/ui/AppMobileHeader.tsx).
  *   Ni bouton « Outils », ni paragraphe de présentation, ni barre d'onglets en bas : l'outil
  *   occupe tout l'écran (retour Hugo : le CV ne laissait qu'un « tout petit cadre »).
- * - Tablette et ordinateur : titre, présentation courte et menu « Outils » (masqué sous le
+ * - Ordinateur (≥ 1 024 px) : titre, présentation courte et menu « Outils » (masqué sous le
  *   shell desktop, dont la barre latérale porte la navigation).
  *
  * Web : les deux variantes sont dans le DOM et le CSS choisit selon la largeur (`mi`), comme le
@@ -23,7 +24,7 @@ import { useWindowWidth } from '@/ui/useWindowWidth';
 
 export function ToolScreenHeader({ feature, title, children }: { feature: AppFeatureId; title: string; children?: ReactNode }) {
   const width = useWindowWidth();
-  const compactBp = tokens.layout.compact;
+  const compactBp = tokens.layout.shell;
   const icon = getFeatureMeta(feature)?.icon;
 
   const bar = <AppMobileHeader title={title} icon={icon} />;

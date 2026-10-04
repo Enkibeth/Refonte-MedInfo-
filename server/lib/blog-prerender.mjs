@@ -329,15 +329,19 @@ export function renderBlogIndexDocument(shell, posts) {
 }
 
 /**
- * @param {{ supabaseUrl?: string; anonKey?: string; siteUrl: () => string; fetchImpl?: typeof fetch; now?: () => number; ttlMs?: number; missTtlMs?: number; timeoutMs?: number; maxEntries?: number }} options
+ * @param {{ supabaseUrl?: string; anonKey?: string; siteUrl: () => string; fetchImpl?: typeof fetch; now?: () => number; ttlMs?: number; missTtlMs?: number; timeoutMs?: number; backoffMs?: number; maxEntries?: number }} options
  */
 export function createBlogPrerender(options) {
   const { supabaseUrl, anonKey, siteUrl } = options;
   const fetchImpl = options.fetchImpl ?? globalThis.fetch;
   const now = options.now ?? Date.now;
   const ttlMs = options.ttlMs ?? 5 * 60_000;
-  const missTtlMs = options.missTtlMs ?? 60_000;
-  const timeoutMs = options.timeoutMs ?? 1500;
+  const missTtlMs = options.missTtlMs ?? 30_000;
+  const timeoutMs = options.timeoutMs ?? 1200;
+  // Disjoncteur : après un échec (Supabase lent ou injoignable), la coquille d'origine est
+  // servie aussitôt pendant `backoffMs` au lieu d'attendre le délai à chaque requête.
+  const backoffMs = options.backoffMs ?? 30_000;
+  let unavailableUntil = 0;
   const maxEntries = options.maxEntries ?? 300;
   /** @type {Map<string, { expires: number; value: any }>} */
   const cache = new Map();
@@ -378,7 +382,7 @@ export function createBlogPrerender(options) {
      * @returns {Promise<{ html: string; status: number } | null>}
      */
     async enrich({ page, pathname, html }) {
-      if (!enabled) return null;
+      if (!enabled || now() < unavailableUntil) return null;
       const site = siteUrl();
       try {
         if (page === ARTICLE_PAGE) {
@@ -404,6 +408,7 @@ export function createBlogPrerender(options) {
           return { html: renderBlogIndexDocument(html, rows), status: 200 };
         }
       } catch (error) {
+        unavailableUntil = now() + backoffMs;
         console.warn(`[medinfo] pré-rendu du blog indisponible (${pathname}) : ${error?.message ?? error}`);
       }
       return null;

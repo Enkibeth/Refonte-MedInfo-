@@ -1,7 +1,7 @@
 # MedInfo AI — Design System v2
 
-Version 2.3 — 2 octobre 2026 (boutons et interactions, §5 bis). Direction A « Bureau de référence », enrichie à la demande de Hugo (« trop blanc et uniformisé »), avec un accueil davantage orienté produit.
-Source exécutable : `src/ui/tokens.ts`. Décisions : ADR-0038, ADR-0040 et ADR-0041. Web prioritaire ; variantes natives conservées.
+Version 2.4, 4 octobre 2026 (écriture, typographie, navigation mobile sans barre du bas, §13). Direction A « Bureau de référence », enrichie à la demande de Hugo (« trop blanc et uniformisé »), avec un accueil davantage orienté produit.
+Source exécutable : `src/ui/tokens.ts`. Décisions : ADR-0038, ADR-0040, ADR-0041 et ADR-0043. Web prioritaire ; variantes natives conservées.
 
 ## 1. Principes
 
@@ -24,6 +24,8 @@ Une interface de lecture et de travail, plus chaleureuse. Papier ivoire, bleu br
 | Séparateur | border | #D8DFE7 |
 | Limite interactive | borderStrong | #7D8998 |
 | Avertissement | warningText / warningBackground | #80500C / #FBF1DD |
+| Succès | success / successBackground | #12744A / #E6F4EC (5,1:1) |
+| Champ enfoncé, désactivé | surfaceSunken | #DFE5EE (distinct de surfaceAlt) |
 
 Les audiences ont trois repères stables : sauge pour le public, lilas pour les étudiants, bleu pour les professionnels. Les pastilles d’outils reprennent les mêmes associations dans l’accueil, le dashboard et les menus via `featureTint`. Ces couleurs ne sont pas des statuts : les noms et icônes restent présents. Succès, erreur et avertissement conservent leurs tokens sémantiques dédiés, avec texte/icône. La section sources sombre est une composition éditoriale locale, pas un mode sombre global.
 
@@ -43,11 +45,13 @@ Expo web et les quatre outils HTML chargent la même feuille locale `public/vend
 | Section UI | 22 / 30 |
 | Sous-section | 18 / 26 |
 | Introduction | 17 / 27 |
+| Lecture longue (réponses, articles) | 16 / 26 (`type.reading`) |
+| Champ de saisie | 16 / 24 (`type.input`, jamais moins au doigt) |
 | Corps | 15 / 24 |
 | Contrôle | 14 / 20 |
 | Note | 13 / 20 |
 
-Un h1 par page, puis h2/h3 selon la structure. Pas de capitales systématiques. Aucun blocage de zoom ou de mise à l’échelle native. Les libellés peuvent passer à la ligne.
+Un h1 par page, puis h2/h3 selon la structure. Titre de page : serif en graisse normale (`PageTitle`, sans filet vertical) ; deux titres de même rang ont la même famille, la même taille et la même graisse. Paragraphes bornés à `layout.measure` (≈ 75 caractères). Titres équilibrés et paragraphes sans orphelin (`text-wrap-style`). Chiffres tabulaires pour les colonnes alignées (heures, scores). Pas de capitales systématiques. Aucun blocage de zoom ou de mise à l’échelle native. Les libellés peuvent passer à la ligne.
 
 ## 4. Composition
 
@@ -170,3 +174,17 @@ L’accueil met d’abord en avant les trois assistants, les ECOS/révisions et 
 Le long énoncé `INTENDED_PURPOSE` n’est plus recopié dans le bloc commercial de l’accueil. Il reste inchangé dans les CGU, mentions et informations légales. L’accueil conserve la disclosure IA canonique, le footer permanent et la FAQ avec 15/112. Pas de nouvelle promesse clinique, de certification inventée ni de garantie de fiabilité universelle. Les noms de modèles désignent une configuration par défaut de version, pas une garantie sur la configuration administrateur effective.
 
 Les 26 pages applicatives consomment les tokens directement ou via `LegalScreen`; le shell, le dashboard et les menus reprennent les surfaces et pastilles partagées. Les quatre outils autonomes chargent les tokens CSS et la même typographie. Ce constat est une vérification des fondations dans le code, **pas une recette visuelle exhaustive**. Les drapeaux, marques et thèmes de documents/export ne doivent pas être recolorés pour imiter le chrome de l’application.
+
+## 13. Écriture, typographie française et navigation mobile (ADR-0043)
+
+**Écriture.** Pas de tiret cadratin comme incise ou liaison dans un texte affiché : deux-points, virgule, point ou parenthèses (un « — » isolé reste permis comme valeur vide d’un tableau ; verrou `tests/unit/copy-typography.test.ts`). Pas de fragments en série (« Approfondir. Réviser. Comprendre. »), de formules creuses (« une nouvelle façon de… », « donnez forme à ») ni de triades décoratives : une phrase dit un fait du produit. Vouvoiement sur les pages publiques et l’authentification ; les outils étudiants peuvent tutoyer, jamais les deux sur une même surface. Typographie française : espace insécable avant « : » et dans « », espace fine insécable avant ? ! ; et apostrophe ’. Titres d’onglet : « Page | MedInfo AI », moins de 60 caractères.
+
+**Navigation mobile.** Aucune barre d’onglets en bas. Sous 1 024 px, chaque écran de l’espace porte la barre compacte du chat : ☰ à gauche, icône et titre au centre, une action éventuelle à droite. ☰ ouvre la feuille de navigation (outils du rôle, espace, compte, ressources) partagée avec le chat. L’outil occupe tout le reste de la hauteur ; la présentation courte d’un outil n’apparaît que sur ordinateur.
+
+| Brique | Usage |
+|---|---|
+| `ToolScreenHeader` (`src/ui/ToolScreenHeader.tsx`) | En-tête de tout écran d’outil : barre compacte < 1 024 px, titre + présentation + menu « Outils » au-delà |
+| `ScreenNavBar` (`src/ui/AppMobileHeader.tsx`) | Écran qui porte déjà son H1 (Vue d’ensemble, ECOS) : barre compacte sans titre de niveau 1 |
+| `NavigationSheet`, `MobileSheet`, `MenuSection`, `MenuRow` | Feuille en bas d’écran, identique au menu du chat |
+
+**Visiteurs.** Une page d’outil montre à un visiteur non connecté sa présentation publique (`src/ui/ToolPreview.tsx`, contenu `src/seo/toolPages.ts`) : en-tête et pied du site, ce que fait l’outil, pour qui, comment y accéder. Elle est rendue dès le pré-rendu ; un navigateur qui avait une session voit l’indicateur de chargement à la place (`src/ui/sessionHint.ts`).

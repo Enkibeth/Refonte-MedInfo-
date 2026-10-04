@@ -134,7 +134,8 @@ async function routeMock(context) {
 
 const report = [];
 try {
-  for (const width of [390, 1440]) {
+  // Largeurs : CAPTURE_WIDTHS=390,768,1440 (par défaut téléphone et ordinateur).
+  for (const width of (process.env.CAPTURE_WIDTHS ?? '390,1440').split(',').map(Number)) {
     for (const screen of SCREENS) {
       // Mobile = écran tactile (pointer: coarse) : les contrôles compacts y prennent 44 px.
       const mobile = width < 700;
