@@ -3,7 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Créateur de CV — MedInfo</title>
+<!-- Coquille d'outil embarquée par l'application (route du même nom) : jamais indexée seule. -->
+<meta name="robots" content="noindex, nofollow" />
+<title>Créateur de CV | MedInfo AI</title>
 <link rel="stylesheet" href="/vendor/fonts/fonts.css" />
 <!--
   Créateur de CV — page autonome (traitement 100 % client).
@@ -1932,16 +1934,16 @@
     if (key === 'assistanat-ch') {
       doc.theme.fontFamily = 'helvetica';
       doc.meta.title = 'CV candidature assistanat (Suisse)';
-      doc.header.headline = 'Médecin diplômé(e) — candidature au poste de médecin assistant(e).';
+      doc.header.headline = 'Médecin diplômé(e) : candidature au poste de médecin assistant(e).';
       doc.header.contacts[3] = normalizeContact({ icon: 'home', value: 'Ville, Suisse' });
       doc.header.contacts.push(normalizeContact({ icon: 'calendar', value: '01.01.1998' }));
       doc.sections = [
         S('Formation', 'main', 'entries', [
-          E('Diplôme d\'État de docteur en médecine', '20XX', 'Faculté de médecine — Ville'),
+          E('Diplôme d\'État de docteur en médecine', '20XX', 'Faculté de médecine, Ville'),
           E('Examen fédéral / reconnaissance MEBEKO', '20XX', 'Statut de la procédure'),
         ]),
         S('Expérience clinique', 'main', 'entries', [
-          E('Interne / médecin assistant(e)', 'de 20XX à 20XX', 'Service — Hôpital, Ville', [], [
+          E('Interne / médecin assistant(e)', 'de 20XX à 20XX', 'Service, Hôpital, Ville', [], [
             'Prise en charge des patients hospitalisés sous supervision.',
             'Gestes techniques réalisés en autonomie (à préciser).',
           ]),
@@ -1950,10 +1952,10 @@
           E('Attestation de formation aux gestes et soins d\'urgence (AFGSU 2)', '20XX', 'Organisme'),
         ]),
         S('Références', 'main', 'entries', [
-          E('Nom du référent', '', 'Fonction — Service, Hôpital', ['Téléphone, adresse électronique']),
+          E('Nom du référent', '', 'Fonction, Service, Hôpital', ['Téléphone, adresse électronique']),
         ]),
         S('Certificats', 'side', 'entries', [
-          E('Intitulé du certificat', '', 'Organisme — score ou niveau'),
+          E('Intitulé du certificat', '', 'Organisme, score ou niveau'),
         ]),
         S('Centres d\'intérêt', 'side', 'list', [E('À compléter')]),
         S('Langues', 'side', 'ratings', [
@@ -1967,26 +1969,26 @@
 
     if (key === 'academique') {
       doc.meta.title = 'CV académique / recherche';
-      doc.header.headline = 'Interne / chef(fe) de clinique — activité de recherche clinique.';
+      doc.header.headline = 'Interne / chef(fe) de clinique : activité de recherche clinique.';
       doc.sections = [
         S('Positions académiques', 'main', 'entries', [
-          E('Fonction occupée', 'de 20XX à 20XX', 'Laboratoire / service — Université'),
+          E('Fonction occupée', 'de 20XX à 20XX', 'Laboratoire / service, Université'),
         ]),
         S('Formation', 'main', 'entries', [
-          E('Master 2 recherche', '20XX', 'Mention — Université'),
-          E('Diplôme d\'État de docteur en médecine', '20XX', 'Faculté de médecine — Ville'),
+          E('Master 2 recherche', '20XX', 'Mention, Université'),
+          E('Diplôme d\'État de docteur en médecine', '20XX', 'Faculté de médecine, Ville'),
         ]),
         S('Publications', 'main', 'entries', [
           E('Auteurs. Titre de l\'article. Revue. Année;Vol(No):pages.', '', ''),
         ]),
         S('Communications', 'main', 'entries', [
-          E('Titre de la communication', '20XX', 'Congrès — Ville (orale / affichée)'),
+          E('Titre de la communication', '20XX', 'Congrès, Ville (orale / affichée)'),
         ]),
         S('Financements et distinctions', 'main', 'entries', [
           E('Intitulé du financement ou du prix', '20XX', 'Organisme'),
         ]),
         S('Enseignement', 'main', 'entries', [
-          E('Enseignement dispensé', 'de 20XX à 20XX', 'Université — volume horaire'),
+          E('Enseignement dispensé', 'de 20XX à 20XX', 'Université, volume horaire'),
         ]),
         S('Compétences méthodologiques', 'side', 'list', [
           E('Méthodologie d\'étude'), E('Statistiques (R)'), E('Rédaction scientifique'), E('Bonnes pratiques cliniques'),
@@ -2003,7 +2005,7 @@
     doc.header.headline = 'Étudiant(e) en Xe année de médecine à l\'Université de Ville.';
     doc.sections = [
       S('Expériences professionnelles', 'main', 'entries', [
-        E('Médecin stagiaire — externat de médecine', 'de sept. 20XX à juil. 20XX', 'CHU de Ville, France', [], [
+        E('Médecin stagiaire, externat de médecine', 'de sept. 20XX à juil. 20XX', 'CHU de Ville, France', [], [
           'Service de Cardiologie du Pr. Nom, 3 mois',
           'Service des Urgences du Pr. Nom, 3 mois',
         ]),
@@ -2011,16 +2013,16 @@
           ['Stage réalisé dans l\'équipe du Pr. Nom.']),
       ]),
       S('Formation', 'main', 'entries', [
-        E('Diplôme de formation approfondie en sciences médicales (DFASM)', 'de 20XX à 20XX', 'Faculté de médecine — Ville',
+        E('Diplôme de formation approfondie en sciences médicales (DFASM)', 'de 20XX à 20XX', 'Faculté de médecine, Ville',
           ['Obtention du diplôme : prévue en 20XX.']),
-        E('Diplôme de formation générale en sciences médicales (DFGSM)', 'de 20XX à 20XX', 'Faculté de médecine — Ville'),
-        E('Baccalauréat général', '20XX', 'Lycée — Ville'),
+        E('Diplôme de formation générale en sciences médicales (DFGSM)', 'de 20XX à 20XX', 'Faculté de médecine, Ville'),
+        E('Baccalauréat général', '20XX', 'Lycée, Ville'),
       ]),
       S('Expériences associatives et encadrement', 'main', 'entries', [
-        E('Fonction associative', 'de 20XX à 20XX', 'Association — Ville', [], ['Ce que tu as concrètement organisé ou encadré.']),
+        E('Fonction associative', 'de 20XX à 20XX', 'Association, Ville', [], ['Ce que tu as concrètement organisé ou encadré.']),
       ]),
       S('Certificats', 'side', 'entries', [
-        E('AFGSU 2', '', 'Organisme — niveau 2'),
+        E('AFGSU 2', '', 'Organisme, niveau 2'),
         E('Lecture critique d\'article en anglais', '', 'Score : XX %'),
       ]),
       S('Centres d\'intérêt', 'side', 'list', [E('À compléter'), E('À compléter')]),
@@ -2033,9 +2035,9 @@
   }
 
   var TEMPLATES = [
-    { key: 'etudiant-fr', label: 'CV étudiant en médecine (France)', hint: 'Formation, stages hospitaliers, associatif — bandeau latéral compétences et langues.' },
-    { key: 'assistanat-ch', label: 'CV candidature assistanat (Suisse)', hint: 'Formation, expérience clinique, langues et références — codes suisses.' },
-    { key: 'academique', label: 'CV académique / recherche', hint: 'Publications, communications, financements — pleine largeur, sans bandeau.' },
+    { key: 'etudiant-fr', label: 'CV étudiant en médecine (France)', hint: 'Formation, stages hospitaliers et associatif, avec un bandeau latéral pour les compétences et les langues.' },
+    { key: 'assistanat-ch', label: 'CV candidature assistanat (Suisse)', hint: 'Formation, expérience clinique, langues et références, selon les usages suisses.' },
+    { key: 'academique', label: 'CV académique / recherche', hint: 'Publications, communications et financements, en pleine largeur, sans bandeau.' },
   ];
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -2148,7 +2150,7 @@
       title: options.title || result.doc.meta.title || 'CV',
       author: result.doc.header.fullName || options.author || '',
       subject: 'Curriculum vitae',
-      creator: 'MedInfo AI — créateur de CV',
+      creator: 'MedInfo AI, créateur de CV',
     });
     for (var i = 0; i < result.pages.length; i++) {
       if (i > 0) pdf.addPage('a4', 'portrait');
@@ -2312,7 +2314,7 @@
     try {
       localStorage.setItem(LS_DOC + S.doc.meta.id, JSON.stringify({ doc: S.doc, serverId: S.serverId }));
     } catch (_) {
-      setStatus('Stockage local plein — supprime un CV enregistré.', 'err');
+      setStatus('Stockage local plein : supprime un CV enregistré.', 'err');
       return false;
     }
     var list = readIndex().filter(function (i) { return i.id !== S.doc.meta.id; });
@@ -3161,7 +3163,7 @@
         textInput(c.value, function (v) { c.value = v; commitLight('contact' + i); }, 'Valeur'),
         el('button', { class: 'btn btn-sm btn-danger', text: '✕', title: 'Supprimer', onclick: function () { h.contacts.splice(i, 1); commit(); } }),
       ]));
-      host.appendChild(field(null, textInput(c.href, function (v) { c.href = v; commitLight('href' + i); }, 'Lien cliquable (facultatif) — https://…')));
+      host.appendChild(field(null, textInput(c.href, function (v) { c.href = v; commitLight('href' + i); }, 'Lien cliquable facultatif (https://…)')));
     });
     host.appendChild(el('button', {
       class: 'btn btn-sm', text: '+ Ajouter un contact',
@@ -3230,7 +3232,7 @@
       host.appendChild(field(s.layout === 'list' ? 'Ligne' : 'Étiquette', textInput(e.title, function (v) { e.title = v; touch(); }, 'Ex. Échographie ciblée')));
     } else if (s.layout === 'ratings') {
       host.appendChild(field('Libellé', textInput(e.title, function (v) { e.title = v; touch(); }, 'Ex. Anglais')));
-      host.appendChild(field('Précision', textInput(e.organisation, function (v) { e.organisation = v; touch(); }, 'Ex. C1 — courant')));
+      host.appendChild(field('Précision', textInput(e.organisation, function (v) { e.organisation = v; touch(); }, 'Ex. C1, courant')));
       host.appendChild(field('Niveau (0 à 5)', rangeInput(typeof e.rating === 'number' ? e.rating : 0, 0, 5, 1, function (v) {
         e.rating = v; touch();
       }), 'Une jauge de 5 pastilles. 0 masque la jauge.'));
@@ -3241,7 +3243,7 @@
       host.appendChild(el('div', { class: 'row' }, [
         field('Dates', textInput(e.date, function (v) { e.date = v; touch(); }, 'Ex. 2024 – 2025')),
       ]));
-      host.appendChild(field('Structure / lieu', textInput(e.organisation, function (v) { e.organisation = v; touch(); }, 'Ex. CHU de Lyon — Service de cardiologie')));
+      host.appendChild(field('Structure / lieu', textInput(e.organisation, function (v) { e.organisation = v; touch(); }, 'Ex. CHU de Lyon, service de cardiologie')));
       host.appendChild(stringListEditor(e.description, 'Description', 'Paragraphe', touch, true));
       host.appendChild(el('div', { class: 'divider' }));
       host.appendChild(stringListEditor(e.bullets, 'Puces', 'Puce', touch, false));
@@ -3627,7 +3629,7 @@
       })
       .catch(function () {
         cloudInFlight = false;
-        setStatus('Réseau indisponible — le CV reste enregistré sur cet appareil.', 'err');
+        setStatus('Réseau indisponible : le CV reste enregistré sur cet appareil.', 'err');
         return false;
       });
   }
@@ -3797,7 +3799,7 @@
           if (!isDocEmpty() && !window.confirm('Remplacer le CV en cours par le CV importé ?')) return;
           saveLocal();
           closeModal();
-          replaceDocument(imported, 'CV importé — vérifie chaque rubrique.');
+          replaceDocument(imported, 'CV importé. Vérifie chaque rubrique.');
         })
         .catch(function () { stopProgress(); run.disabled = false; info.textContent = 'Réseau indisponible.'; });
     });
@@ -3826,7 +3828,7 @@
     var current = getPath(S.doc, sug.fieldPath);
     if (typeof current !== 'string') { node.textContent = 'Ce champ n\'existe plus.'; return; }
     if (current.trim() !== String(sug.originalText || '').trim()) {
-      node.textContent = 'Le texte a changé depuis la relecture — non appliqué.';
+      node.textContent = 'Le texte a changé depuis la relecture : correction non appliquée.';
       return;
     }
     setPath(S.doc, sug.fieldPath, sug.suggestedText);
@@ -3878,7 +3880,7 @@
         (report.blockingIssues || []).forEach(function (issue) {
           body.appendChild(el('div', { class: 'warn' + (issue.severity === 'high' ? ' err' : '') }, [
             el('div', {}, [
-              el('div', { style: { fontWeight: '700' }, text: issue.section + ' — ' + issue.message }),
+              el('div', { style: { fontWeight: '700' }, text: issue.section + ' : ' + issue.message }),
               el('div', { class: 'why', text: issue.suggestedAction }),
             ]),
           ]));
@@ -3918,7 +3920,7 @@
     var body = el('div', {}, [
       el('p', { text: 'Le CV occupe actuellement ' + current + ' page(s).' }),
       el('div', { class: 'field' }, [el('label', { text: 'Tenir en' }), target]),
-      el('p', { class: 'hint', text: 'L\'ajustement resserre d\'abord les espaces, puis l\'interligne, puis le corps du texte et les marges — sans jamais descendre sous des valeurs lisibles. Si ce n\'est pas possible, il le dit.' }),
+      el('p', { class: 'hint', text: 'L\'ajustement resserre d\'abord les espaces, puis l\'interligne, puis le corps du texte et les marges, sans jamais descendre sous des valeurs lisibles. Si ce n\'est pas possible, il le dit.' }),
       out,
     ]);
     var run = el('button', { class: 'btn btn-primary', text: 'Ajuster' });
@@ -4167,7 +4169,7 @@
     saveLocal();
     setZoomInitial();
     renderAll();
-    if (!loaded) setStatus('Modèle « CV étudiant en médecine » chargé — menu ⋯ pour en changer.');
+    if (!loaded) setStatus('Modèle « CV étudiant en médecine » chargé. Menu ⋯ pour en changer.');
   }
 
   function setZoomInitial() {

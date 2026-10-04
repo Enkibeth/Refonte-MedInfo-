@@ -87,10 +87,10 @@ export function exportDocumentToPdf({ title, createdAt, report, transcription }:
 <body>
   <header>
     <h1>${escapeHtml(title)}</h1>
-    <div class="meta">MedInfo AI — généré le ${escapeHtml(date)}</div>
+    <div class="meta">MedInfo AI · généré le ${escapeHtml(date)}</div>
   </header>
   ${bodyHtml}
-  <footer>Compte rendu généré par IA — à vérifier et valider par le professionnel de santé.</footer>
+  <footer>Compte rendu généré par IA, à vérifier et valider par le professionnel de santé.</footer>
 </body></html>`);
   win.document.close();
   win.focus();

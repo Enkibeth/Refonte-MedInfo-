@@ -496,20 +496,22 @@ const mdStyles = StyleSheet.create({
   listRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingLeft: 2 },
   bullet: {
     fontFamily: tokens.font.sans,
-    fontSize: tokens.type.body.fontSize,
-    lineHeight: tokens.type.body.lineHeight,
+    fontSize: tokens.type.reading.fontSize,
+    lineHeight: tokens.type.reading.lineHeight,
     width: 14,
   },
+  // Lecture longue (réponses, articles, analyses) : 16/26 (tokens.type.reading), la colonne
+  // de lecture revient vers ~80 caractères par ligne au lieu de ~95.
   listText: {
     flex: 1,
     fontFamily: tokens.font.sans,
-    fontSize: tokens.type.body.fontSize,
-    lineHeight: tokens.type.body.lineHeight,
+    fontSize: tokens.type.reading.fontSize,
+    lineHeight: tokens.type.reading.lineHeight,
   },
   paragraph: {
     fontFamily: tokens.font.sans,
-    fontSize: tokens.type.body.fontSize,
-    lineHeight: tokens.type.body.lineHeight,
+    fontSize: tokens.type.reading.fontSize,
+    lineHeight: tokens.type.reading.lineHeight,
   },
   spacer: { height: 6 },
   codeBlock: {
@@ -557,8 +559,8 @@ const inlineStyles = StyleSheet.create({
   // rendaient minuscule et agrandissaient la ligne qui le portait (interlignes irréguliers).
   footnote: {
     fontFamily: tokens.font.sans,
-    fontSize: tokens.type.body.fontSize,
-    lineHeight: tokens.type.body.lineHeight,
+    fontSize: tokens.type.reading.fontSize,
+    lineHeight: tokens.type.reading.lineHeight,
     fontWeight: tokens.weight.bold,
     color: tokens.colors.accent,
   },

@@ -1,10 +1,9 @@
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 
 import {
   APP_FEATURES,
-  TAB_BAR_MAX,
   isFeatureVisible,
-  tabBarFeatures,
   visibleFeatures,
   type AppFeatureId,
 } from '@/ai/routing/featureVisibility';
@@ -97,74 +96,23 @@ describe('featureVisibility — visiteur non connecté (essai sans inscription)'
   });
 });
 
-describe('tabBarFeatures — répartition barre du bas / panneau Outils (lisibilité mobile)', () => {
-  const split = (persona: 'public' | 'student' | 'professional' | null, isAdmin = false, isGuest = false) => {
-    const { bar, overflow } = tabBarFeatures(persona, { isAdmin, isGuest });
-    return { bar: bar.map((f) => f.id), overflow: overflow.map((f) => f.id) };
-  };
-
-  it('la barre ne dépasse jamais TAB_BAR_MAX entrées, quel que soit le rôle', () => {
-    for (const persona of ['public', 'student', 'professional', null] as const) {
-      expect(tabBarFeatures(persona).bar.length).toBeLessThanOrEqual(TAB_BAR_MAX);
+describe('navigation mobile sans barre d’onglets (demande Hugo 2026-10)', () => {
+  const read = (p: string) => readFileSync(p, 'utf8');
+  it('le groupe de l’espace ne dessine aucune barre d’onglets en bas', () => {
+    expect(read('app/(chat)/_layout.tsx')).toContain('tabBar={() => null}');
+  });
+  it('la feuille de navigation liste TOUS les outils visibles du rôle (rien de perdu)', () => {
+    const source = read('src/ui/AppMobileHeader.tsx');
+    expect(source).toContain('visibleFeatures(persona, { isAdmin, isGuest })');
+    expect(source).toContain('tools.map(');
+  });
+  it('chaque outil a un en-tête mobile compact ou une barre de navigation', () => {
+    for (const id of ['document', 'audio', 'revision', 'scores', 'partiel', 'presentation', 'article', 'cv-builder']) {
+      expect(read(`app/(chat)/${id}.tsx`), id).toContain('<ToolScreenHeader');
     }
-    expect(tabBarFeatures('public', { isAdmin: true }).bar.length).toBeLessThanOrEqual(TAB_BAR_MAX);
-  });
-
-  it('grand public : tout tient dans la barre, pas de panneau', () => {
-    expect(split('public')).toEqual({ bar: ['chat', 'document'], overflow: [] });
-  });
-
-  it('professionnel : 3 outils prioritaires + le reste dans le panneau', () => {
-    expect(split('professional')).toEqual({
-      bar: ['chat', 'audio', 'presentation'],
-      overflow: ['cv-builder', 'article', 'scores'],
-    });
-  });
-
-  it('étudiant : 3 outils prioritaires + le reste dans le panneau', () => {
-    expect(split('student')).toEqual({
-      bar: ['chat', 'ecos', 'revision'],
-      overflow: ['partiel', 'presentation', 'cv-builder', 'article', 'scores'],
-    });
-  });
-
-  it('admin : 3 prioritaires + le reste dans le panneau (rien de perdu)', () => {
-    const { bar, overflow } = split('public', true);
-    expect(bar).toEqual(['chat', 'document', 'ecos']);
-    expect([...bar, ...overflow].sort()).toEqual(APP_FEATURES.map((f) => f.id).sort());
-  });
-
-  it('barre + panneau = exactement les outils visibles du rôle (aucun doublon, aucun oubli)', () => {
-    for (const persona of ['public', 'student', 'professional'] as const) {
-      const { bar, overflow } = split(persona);
-      const all = [...bar, ...overflow];
-      expect(new Set(all).size).toBe(all.length);
-      expect(all.sort()).toEqual(visibleFeatures(persona).map((f) => f.id).sort());
-    }
-  });
-
-  it('visiteur non connecté : seul le chat, pas de panneau', () => {
-    expect(split(null, false, true)).toEqual({ bar: ['chat'], overflow: [] });
-  });
-
-  it("slot réservé (onglet Accueil) : la capacité se réduit d'autant", () => {
-    // Étudiant avec 1 slot réservé : 4 − 1 (Accueil) − 1 (Outils) = 2 outils en barre.
-    const { bar, overflow } = tabBarFeatures('student', {}, { reservedSlots: 1 });
-    expect(bar.map((f) => f.id)).toEqual(['chat', 'ecos']);
-    expect(bar.length + 1 + 1).toBeLessThanOrEqual(TAB_BAR_MAX + 1); // Accueil + Outils inclus
-    expect([...bar, ...overflow].map((f) => f.id).sort()).toEqual(
-      visibleFeatures('student').map((f) => f.id).sort(),
-    );
-  });
-
-  it('slot réservé mais tout tient : pas de panneau (public : Accueil + 2 outils)', () => {
-    const { bar, overflow } = tabBarFeatures('public', {}, { reservedSlots: 1 });
-    expect(bar.map((f) => f.id)).toEqual(['chat', 'document']);
-    expect(overflow).toEqual([]);
-  });
-
-  it('slots réservés extrêmes : la barre garde au moins un outil', () => {
-    const { bar } = tabBarFeatures('student', {}, { reservedSlots: 10 });
-    expect(bar.length).toBeGreaterThanOrEqual(1);
+    expect(read('app/(chat)/ecos.tsx')).toContain('<ScreenNavBar');
+    // Audio natif (« disponible sur le web ») : sans barre, l'écran n'avait plus aucune sortie.
+    expect(read('app/(chat)/audio.tsx').match(/<ToolScreenHeader/g)?.length).toBe(2);
+    expect(read('app/(chat)/dashboard.tsx')).toContain('<ScreenNavBar');
   });
 });

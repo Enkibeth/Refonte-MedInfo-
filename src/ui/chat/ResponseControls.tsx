@@ -41,7 +41,7 @@ const TOOLS: { id: ChatOutputTool; label: string; icon: IconName; description: s
     id: 'keypoints',
     label: 'Points clés',
     icon: 'bookOpen',
-    description: 'Un encadré « À retenir » synthétique en tête de réponse.',
+    description: 'Un encadré « À retenir » synthétique en tête de réponse.',
   },
   {
     id: 'comparison',
@@ -159,7 +159,7 @@ export function ResponseControls({
           onPress={() => setPanel('mode')}
           disabled={disabled}
           accessibilityRole="button"
-          accessibilityLabel={`Profondeur de la réponse : ${activeMode.label}`}
+          accessibilityLabel={`Profondeur de la réponse : ${activeMode.label}`}
           aria-pressed={mode !== 'standard'}
           style={({ pressed, hovered, focused }: { pressed: boolean; hovered?: boolean; focused?: boolean }) => [
             composerButtonStyles.button,
@@ -302,10 +302,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -2,
     right: -2,
-    minWidth: 16,
-    height: 16,
+    minWidth: 18,
+    height: 18,
     paddingHorizontal: 3,
-    borderRadius: 8,
+    borderRadius: 9,
     backgroundColor: tokens.colors.accentDeep,
     alignItems: 'center',
     justifyContent: 'center',
@@ -315,7 +315,9 @@ const styles = StyleSheet.create({
   countBadgeText: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.onAccent,
-    fontSize: 9,
+    // 11 px : plus petit cran autorisé (tokens.type.micro) ; 9 px était illisible.
+    fontSize: tokens.type.micro.fontSize,
+    lineHeight: 14,
     fontWeight: tokens.weight.bold,
   },
 

@@ -1,4 +1,3 @@
-import { PageTitle } from '@/ui/PageTitle';
 /**
  * Module CV Builder — outil étudiant + professionnel (personas student/professional).
  *
@@ -22,7 +21,7 @@ import { tokens } from '@/ui/tokens';
 import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
 import { RoleGate } from '@/ui/RoleGate';
-import { ToolsMenu } from '@/ui/ToolsMenu';
+import { ToolScreenHeader } from '@/ui/ToolScreenHeader';
 
 function CvBuilderInner() {
   const { session } = useSession();
@@ -49,17 +48,11 @@ function CvBuilderInner() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <ToolsMenu />
-        </View>
-        <PageTitle style={styles.title}>Créateur de CV</PageTitle>
-        <Text style={styles.subtitle}>
-          Construis ton CV avec tes propres rubriques, fais-le relire par l'IA (suggestions à
-          valider) et exporte un PDF dont le texte reste sélectionnable — donc lisible par les
-          logiciels de tri des hôpitaux. Création, édition et export illimités et gratuits.
-        </Text>
-      </View>
+      <ToolScreenHeader feature="cv-builder" title="Créateur de CV">
+        Construis ton CV avec tes propres rubriques, fais-le relire par l’IA (suggestions à
+        valider) et exporte un PDF dont le texte reste sélectionnable, donc lisible par les
+        logiciels de tri des hôpitaux. Création, édition et export illimités et gratuits.
+      </ToolScreenHeader>
 
       {Platform.OS === 'web' ? (
         <iframe
@@ -96,7 +89,7 @@ export default function CvBuilderScreen() {
             { name: 'Créateur de CV médical', path: PAGE_SEO.cvBuilder.path },
           ]),
           webApplicationJsonLd({
-            name: 'Créateur de CV médical — MedInfo AI',
+            name: 'Créateur de CV médical',
             description: PAGE_SEO.cvBuilder.description,
             path: PAGE_SEO.cvBuilder.path,
           }),

@@ -65,10 +65,10 @@ export default function BlogScreen() {
         <MainContent style={styles.inner}>
           <Reveal>
             <Text style={styles.eyebrow}>Blog</Text>
-            <PageTitle style={styles.title}>Comprendre la santé, un article à la fois.</PageTitle>
+            <PageTitle style={styles.title}>Des articles pour comprendre la santé</PageTitle>
             <Text style={styles.lead}>
-              Prévention, recherche, idées reçues : des articles d'information générale, sourcés
-              et relus. Jamais un avis médical individuel.
+              Prévention, recherche, idées reçues : des articles d’information générale, avec leurs
+              sources. Ils ne remplacent pas un avis médical individuel.
             </Text>
           </Reveal>
 
@@ -85,7 +85,7 @@ export default function BlogScreen() {
               <View style={styles.emptyCard}>
                 <Text style={styles.emptyTitle}>Les premiers articles arrivent bientôt</Text>
                 <Text style={styles.emptyText}>
-                  En attendant, posez vos questions directement au chat MedInfo AI : le premier
+                  En attendant, posez vos questions directement au chat MedInfo AI : le premier
                   message est sans inscription.
                 </Text>
               </View>
@@ -98,7 +98,7 @@ export default function BlogScreen() {
                     style={styles.card}
                     onPress={() => router.push(`/(marketing)/blog/${p.slug}` as never)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Lire l'article : ${p.title}`}
+                    accessibilityLabel={`Lire l’article : ${p.title}`}
                   >
                     {p.cover_image_url ? (
                       <Image source={{ uri: p.cover_image_url }} style={styles.cover} resizeMode="cover" />
@@ -122,7 +122,7 @@ export default function BlogScreen() {
                           {p.summary}
                         </Text>
                       ) : null}
-                      <Text style={styles.readMore}>Lire l'article →</Text>
+                      <Text style={styles.readMore}>Lire l’article</Text>
                     </View>
                   </Touchable>
                 </Reveal>

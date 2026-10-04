@@ -15,7 +15,7 @@ export const CHATBOT_META: Record<ChatbotId, { label: string; shortLabel: string
     label: 'Grand public',
     shortLabel: 'Public',
     icon: 'users',
-    description: 'Information santé claire, sourcée et rassurante',
+    description: 'Explications de santé sans jargon, avec leurs sources',
   },
   student: {
     label: 'Étudiant en santé',
@@ -27,7 +27,7 @@ export const CHATBOT_META: Record<ChatbotId, { label: string; shortLabel: string
     label: 'Professionnel de santé',
     shortLabel: 'Pro',
     icon: 'stethoscope',
-    description: 'Aide à la décision sourcée sur les recommandations en vigueur',
+    description: 'Synthèse des recommandations et de la littérature, avec leurs sources',
   },
 };
 

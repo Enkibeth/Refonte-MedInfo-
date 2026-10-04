@@ -114,21 +114,22 @@ const INPUT_MIN_HEIGHT = 40;
 const INPUT_MAX_HEIGHT = 140;
 
 const DISCLAIMER: Record<ChatbotId, string> = {
-  public: 'Information générale — ne remplace pas un avis médical individuel.',
-  student: 'Support de révision — ne remplace pas les référentiels ni la pratique encadrée.',
-  professional: "Outil d'aide à la décision — la décision finale appartient au clinicien.",
+  public: 'Cette information générale ne remplace pas un avis médical individuel.',
+  student: 'Ce support de révision ne remplace ni les référentiels ni la pratique encadrée.',
+  // Synthèse documentaire, pas une aide à la décision clinique (INTENDED_PURPOSE, src/compliance/disclosures.ts).
+  professional: 'Synthèse documentaire : la décision clinique appartient au professionnel de santé.',
 };
 
 // Titre de l'état vide décliné par chatbot (le sous-titre vient de CHATBOT_META).
 const EMPTY_TITLE: Record<ChatbotId, string> = {
   public: 'Posez votre question santé',
-  student: 'Que veux-tu réviser aujourd’hui ?',
-  professional: 'Quelle est votre question clinique ?',
+  student: 'Que voulez-vous réviser aujourd’hui ?',
+  professional: 'Quelle est votre question clinique ?',
 };
 const EMPTY_TITLE_NAMED: Record<ChatbotId, string> = {
-  public: 'comment puis-je vous aider ?',
-  student: 'que veux-tu réviser aujourd’hui ?',
-  professional: 'quelle est votre question clinique ?',
+  public: 'comment puis-je vous aider ?',
+  student: 'que veux-tu réviser aujourd’hui ?',
+  professional: 'quelle est votre question clinique ?',
 };
 
 // Sur desktop (pointeur précis), Entrée envoie le message et Maj+Entrée insère un
@@ -227,7 +228,7 @@ function StatusBubble({
           besoin de rester sur la page (et surtout pas de relancer). */}
       {waited >= LONG_WAIT_MS && phase !== 'recovering' ? (
         <Text style={styles.statusHint}>
-          {guest ? 'La réponse prend plus de temps. Gardez cet onglet ouvert : l’essai invité ne dispose pas d’historique.' : 'La réponse prend plus de temps. En cas de coupure, nous vérifierons si une réponse a été enregistrée dans cette conversation.'}
+          {guest ? 'La réponse prend plus de temps. Gardez cet onglet ouvert : l’essai invité ne dispose pas d’historique.' : 'La réponse prend plus de temps. En cas de coupure, nous vérifierons si une réponse a été enregistrée dans cette conversation.'}
         </Text>
       ) : null}
     </View>
@@ -405,9 +406,9 @@ const MessageRow = memo(function MessageRow({
 // qu'un outil : la recherche web du provider. La table reste indexée par nom pour rester
 // robuste aux variantes de nommage entre providers.
 const TOOL_STATUS_LABELS: Record<string, string> = {
-  web_search: 'Recherche de sources fiables…',
-  web_search_preview: 'Recherche de sources fiables…',
-  google_search: 'Recherche de sources fiables…',
+  web_search: 'Recherche sur Internet…',
+  web_search_preview: 'Recherche sur Internet…',
+  google_search: 'Recherche sur Internet…',
 };
 
 /** Compacte un texte d'appel d'outil pour la bulle de statut (une ligne courte). */
@@ -424,7 +425,7 @@ function truncateStatusDetail(text: string, max = 64): string {
 function toolLabelWithDetail(name: string, input: unknown): string {
   const args = (input ?? null) as { query?: unknown } | null;
   if (typeof args?.query === 'string' && args.query.trim()) {
-    return `Recherche : « ${truncateStatusDetail(args.query)} »`;
+    return `Recherche : « ${truncateStatusDetail(args.query)} »`;
   }
   return TOOL_STATUS_LABELS[name] ?? 'Recherche de sources fiables…';
 }
@@ -1341,7 +1342,7 @@ export default function ChatScreen() {
     if (hadThread) {
       showSwitchNotice(
         user
-          ? `Conversation précédente enregistrée dans l’historique — nouveau fil ${CHATBOT_META[next].label.toLowerCase()}.`
+          ? `Conversation précédente enregistrée dans l’historique. Nouveau fil ${CHATBOT_META[next].label.toLowerCase()}.`
           : `Nouveau fil ${CHATBOT_META[next].label.toLowerCase()}.`,
       );
     }
@@ -1395,7 +1396,7 @@ export default function ChatScreen() {
         // B5 : conversation issue d'un chatbot que ce compte ne peut plus utiliser —
         // le dire, plutôt que de poursuivre silencieusement avec le chatbot courant.
         showSwitchNotice(
-          `Cette conversation vient du chat ${CHATBOT_META[c.chatbot]?.label.toLowerCase() ?? c.chatbot}, non disponible avec votre rôle — la suite utilisera le chat ${CHATBOT_META[chatbotRef.current].label.toLowerCase()}.`,
+          `Cette conversation vient du chat ${CHATBOT_META[c.chatbot]?.label.toLowerCase() ?? c.chatbot}, qui n’est pas disponible avec votre rôle. La suite se fera avec le chat ${CHATBOT_META[chatbotRef.current].label.toLowerCase()}.`,
           9000,
         );
       }
@@ -1473,7 +1474,7 @@ export default function ChatScreen() {
             { name: 'Chat santé IA', path: PAGE_SEO.chat.path },
           ]),
           webApplicationJsonLd({
-            name: 'Chat santé IA — MedInfo AI',
+            name: 'Chat santé IA',
             description: PAGE_SEO.chat.description,
             path: PAGE_SEO.chat.path,
           }),
@@ -1686,8 +1687,8 @@ export default function ChatScreen() {
           <Icon name="bookOpen" size={15} color={tokens.colors.accentDeep} />
           <Text style={styles.guestBannerText} numberOfLines={2}>
             {guestUsed
-              ? 'Essai gratuit · Sources accessibles'
-              : 'Testez MedInfo AI : envoyez votre premier message sans inscription.'}
+              ? 'Essai gratuit utilisé · Les sources restent accessibles'
+              : 'Testez MedInfo AI : envoyez votre premier message sans inscription.'}
           </Text>
           <View style={[styles.guestBadge, guestUsed && styles.guestBadgeUsed]}>
             <Text style={[styles.guestBadgeText, guestUsed && styles.guestBadgeTextUsed]}>
@@ -1762,8 +1763,8 @@ export default function ChatScreen() {
                 <Icon name="bookOpen" size={13} color={tokens.colors.accentDeep} />
                 <Text style={styles.trialPillText}>
                   {guestUsed
-                    ? 'Essai utilisé (0/1) : créez un compte gratuit pour continuer'
-                    : 'Essai gratuit : 1 message sans inscription (1/1)'}
+                    ? 'Essai utilisé (0/1) : créez un compte gratuit pour continuer'
+                    : 'Essai gratuit : 1 message sans inscription (1/1)'}
                 </Text>
               </View>
             ) : null}
@@ -1821,7 +1822,7 @@ export default function ChatScreen() {
               startedAt={waitStartedAt}
               guest={isGuest}
             />
-            {foundSources.map(source => <Touchable key={source.url} accessibilityRole="link" accessibilityLabel={`Source trouvée : ${source.title}`} style={styles.messageActionButton} onPress={() => void Linking.openURL(source.url)}><Icon name="externalLink" size={tokens.size.iconSm} color={tokens.colors.accent} /><Text style={styles.messageActionText}>{source.title}</Text></Touchable>)}
+            {foundSources.map(source => <Touchable key={source.url} accessibilityRole="link" accessibilityLabel={`Source trouvée : ${source.title}`} style={styles.messageActionButton} onPress={() => void Linking.openURL(source.url)}><Icon name="externalLink" size={tokens.size.iconSm} color={tokens.colors.accent} /><Text style={styles.messageActionText}>{source.title}</Text></Touchable>)}
           </View>
         )}
 
@@ -1834,7 +1835,7 @@ export default function ChatScreen() {
                 style={styles.bridgeChip}
                 onPress={() => router.push('/(chat)/ecos' as never)}
                 accessibilityRole="link"
-                accessibilityLabel="S'entraîner sur un cas ECOS" {...(Platform.OS === 'web' ? { title: "S'entraîner sur un cas ECOS" } : {})}
+                accessibilityLabel="S’entraîner sur un cas ECOS" {...(Platform.OS === 'web' ? { title: "S’entraîner sur un cas ECOS" } : {})}
               >
                 <Icon name="stethoscope" size={14} color={tokens.colors.accentDeep} />
                 <Text style={styles.bridgeChipText}>S’entraîner (ECOS)</Text>
@@ -1863,9 +1864,9 @@ export default function ChatScreen() {
               const lastUser = reversed.find((m) => m.role === 'user');
               const parts: string[] = [];
               if (lastUser) {
-                parts.push(`Question de l'étudiant : ${messageText(lastUser).slice(0, 1500)}`);
+                parts.push(`Question de l’étudiant : ${messageText(lastUser).slice(0, 1500)}`);
               }
-              parts.push(`Réponse du cours : ${assistantTextForExport(lastAssistantText).slice(0, 3500)}`);
+              parts.push(`Réponse du cours : ${assistantTextForExport(lastAssistantText).slice(0, 3500)}`);
               return { context: parts.join('\n\n') };
             }}
           />
@@ -1917,7 +1918,7 @@ export default function ChatScreen() {
         {error && !recovering && errorKind === 'session' && (
           <View style={styles.errorBanner} accessibilityLiveRegion="polite">
             <Text style={styles.errorText}>
-              Votre session a expiré : reconnectez-vous pour continuer la conversation.
+              Votre session a expiré : reconnectez-vous pour continuer la conversation.
             </Text>
             <Button
               label="Se reconnecter"
@@ -1937,8 +1938,8 @@ export default function ChatScreen() {
           <View style={styles.errorBanner} accessibilityLiveRegion="polite">
             <Text style={styles.errorText}>
               {turnAttachmentRef.current
-                ? 'La réponse n’a pas pu être rédigée. Réessayez : votre question et votre document seront renvoyés.'
-                : 'La réponse n’a pas pu être rédigée. Réessayez : votre question sera renvoyée.'}
+                ? 'La réponse n’a pas pu être rédigée. Réessayez : votre question et votre document seront renvoyés.'
+                : 'La réponse n’a pas pu être rédigée. Réessayez : votre question sera renvoyée.'}
             </Text>
             <Button
               label="Réessayer"
@@ -1955,7 +1956,7 @@ export default function ChatScreen() {
         {error && !recovering && errorKind === 'generic' && (
           <View style={styles.errorBanner} accessibilityLiveRegion="polite">
             <Text style={styles.errorText}>
-              Une erreur est survenue ; la réponse a peut-être été interrompue.
+              Une erreur est survenue ; la réponse a peut-être été interrompue.
             </Text>
             <Button
               label="Réessayer"
@@ -1990,12 +1991,12 @@ export default function ChatScreen() {
           <View style={styles.docHint}>
             <Icon name="fileText" size={14} color={tokens.colors.accentDeep} />
             <Text style={styles.docHintText} numberOfLines={2}>
-              Long document ? L’outil Analyse de document résume comptes rendus et ordonnances.
+              Long document ? L’outil Analyse de document résume comptes rendus et ordonnances.
             </Text>
             <Touchable
               onPress={() => router.push('/(chat)/document' as never)}
               accessibilityRole="link"
-              accessibilityLabel="Ouvrir l'outil Analyse de document" {...(Platform.OS === 'web' ? { title: "Ouvrir l'outil Analyse de document" } : {})}
+              accessibilityLabel="Ouvrir l’outil Analyse de document" {...(Platform.OS === 'web' ? { title: "Ouvrir l’outil Analyse de document" } : {})}
               style={styles.docHintAction}
             >
               <Text style={styles.docHintActionText}>Ouvrir</Text>
@@ -2138,7 +2139,7 @@ export default function ChatScreen() {
             )}
           </View>
         </View>
-        <Text style={styles.disclaimer}>Système d’intelligence artificielle. {DISCLAIMER[chatbot]} En cas d’urgence : 15 ou 112.</Text>
+        <Text style={styles.disclaimer}>Système d’intelligence artificielle. {DISCLAIMER[chatbot]} En cas d’urgence : 15 ou 112.</Text>
       </View>
       </View>
       </View>
@@ -2468,7 +2469,9 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.h1.fontSize,
     lineHeight: tokens.type.h1.lineHeight,
     letterSpacing: tokens.type.h2.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    // Titre éditorial serif en graisse normale, comme les titres de page (le gras 700 en
+    // faisait un titre plus fort que le h1 de l'écran).
+    fontWeight: tokens.weight.regular,
     textAlign: 'left',
   },
   emptyText: {

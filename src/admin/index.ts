@@ -84,7 +84,7 @@ export const AI_FEATURES = [
   {
     key: 'chat_meta',
     emoji: '🏷️',
-    label: 'Chat — Titre & catégorie',
+    label: 'Chat : titre et catégorie',
     description: 'Nomme et classe automatiquement les conversations de l\'historique',
     apiRoute: '/api/chat-meta',
     promptKeys: ['chat_meta'],
@@ -102,7 +102,7 @@ export const AI_FEATURES = [
   {
     key: 'qcm_generate',
     emoji: '📝',
-    label: 'QCM — Génération type EDN',
+    label: 'QCM : génération type EDN',
     description: 'Génère à la demande un mini-examen de QCM/QCS type EDN sur le sujet du chat étudiant',
     apiRoute: '/api/qcm',
     promptKeys: ['qcm_generate'],
@@ -111,7 +111,7 @@ export const AI_FEATURES = [
   {
     key: 'ecos_simulate',
     emoji: '🩺',
-    label: 'ECOS — Simulation patient',
+    label: 'ECOS : simulation patient',
     description: 'IA joue le rôle du patient pendant la simulation ECOS',
     apiRoute: '/api/ecos',
     promptKeys: ['ecos_patient'],
@@ -120,7 +120,7 @@ export const AI_FEATURES = [
   {
     key: 'ecos_evaluate',
     emoji: '📊',
-    label: 'ECOS — Évaluation',
+    label: 'ECOS : évaluation',
     description: 'IA évalue l\'étudiant sur la grille de correction',
     apiRoute: '/api/ecos',
     promptKeys: ['ecos_evaluate'],
@@ -129,7 +129,7 @@ export const AI_FEATURES = [
   {
     key: 'audio_diarize',
     emoji: '🔊',
-    label: 'Audio — Diarisation',
+    label: 'Audio : diarisation',
     description: 'Identifie et labellise les locuteurs (Médecin / Patient)',
     apiRoute: '/api/transcribe',
     promptKeys: ['audio_diarize'],
@@ -138,7 +138,7 @@ export const AI_FEATURES = [
   {
     key: 'audio_report',
     emoji: '🎤',
-    label: 'Audio — Compte rendu',
+    label: 'Audio : compte rendu',
     description: 'Génère un compte rendu médical structuré depuis la transcription',
     apiRoute: '/api/transcribe',
     promptKeys: ['audio_report'],
@@ -147,7 +147,7 @@ export const AI_FEATURES = [
   {
     key: 'presentation_generate',
     emoji: '🖥️',
-    label: 'Présentations — Co-construction',
+    label: 'Présentations : co-construction',
     description: 'Médecin senior qui co-construit une présentation médicale (deck JSON) pour étudiants/pros',
     apiRoute: '/api/presentation',
     promptKeys: ['presentation_generate'],
@@ -156,7 +156,7 @@ export const AI_FEATURES = [
   {
     key: 'revision_plan_assist',
     emoji: '🗓️',
-    label: 'Révisions — Coup de pouce planning',
+    label: 'Révisions : coup de pouce planning',
     description: 'Propose des ajustements de planning (reprioriser, alléger, rappels) : pédagogique, jamais médical',
     apiRoute: '/api/revision',
     promptKeys: ['revision_plan_assist'],
@@ -165,7 +165,7 @@ export const AI_FEATURES = [
   {
     key: 'cv_review',
     emoji: '📋',
-    label: 'CV — Relecture IA',
+    label: 'CV : relecture IA',
     description: 'Relit un CV médical/pro et renvoie des suggestions (orthographe, style, cohérence) à valider, jamais de réécriture auto',
     apiRoute: '/api/cv',
     promptKeys: ['cv_review'],
@@ -174,7 +174,7 @@ export const AI_FEATURES = [
   {
     key: 'cv_import',
     emoji: '📥',
-    label: 'CV — Import (pré-remplissage)',
+    label: 'CV : import (pré-remplissage)',
     description: 'Structure le texte d\'un CV existant (PDF/Word) dans les champs de l\'éditeur, sans rien inventer',
     apiRoute: '/api/cv-import',
     promptKeys: ['cv_import'],
@@ -183,7 +183,7 @@ export const AI_FEATURES = [
   {
     key: 'article_assist',
     emoji: '✒️',
-    label: 'Article — Aide à la rédaction',
+    label: 'Article : aide à la rédaction',
     description:
       'Améliore une section de manuscrit médical (style scientifique, clarté, traduction, titres) ; n\'invente jamais un fait ni une référence',
     apiRoute: '/api/article',
@@ -193,7 +193,7 @@ export const AI_FEATURES = [
   {
     key: 'article_reduce',
     emoji: '✂️',
-    label: 'Article — Réduction de caractères',
+    label: 'Article : réduction de caractères',
     description:
       'Réduit une section à la limite imposée (caractères/mots) en préservant faits, chiffres et appels de citation',
     apiRoute: '/api/article',
@@ -203,7 +203,7 @@ export const AI_FEATURES = [
   {
     key: 'article_originality',
     emoji: '🔍',
-    label: 'Article — Contrôle d\'originalité',
+    label: 'Article : contrôle d\'originalité',
     description:
       'Repère les formulations trop proches de sources publiées (recherche web) et propose des reformulations ; indicatif, ne remplace pas un logiciel anti-plagiat',
     apiRoute: '/api/article',
@@ -213,7 +213,7 @@ export const AI_FEATURES = [
   {
     key: 'blog_generate',
     emoji: '📰',
-    label: 'Blog — Génération d\'article',
+    label: 'Blog : génération d\'article',
     description: 'Rédige un article santé innovant (titre, sommaire, sections) pour le blog public',
     apiRoute: '/api/admin/blog',
     promptKeys: ['blog_generate'],
@@ -222,7 +222,7 @@ export const AI_FEATURES = [
   {
     key: 'blog_topic',
     emoji: '🗓️',
-    label: 'Blog — Choix du sujet hebdo',
+    label: 'Blog : choix du sujet hebdo',
     description: 'Agent hebdomadaire : choisit le sujet de la semaine en évitant les doublons',
     apiRoute: '/api/cron/weekly-blog',
     promptKeys: ['blog_topic'],
@@ -231,7 +231,7 @@ export const AI_FEATURES = [
   {
     key: 'blog_fact_check',
     emoji: '🔬',
-    label: 'Blog — Vérification des faits et sources',
+    label: 'Blog : vérification des faits et sources',
     description: 'Agent hebdomadaire : vérifie les faits, chiffres et sources citées de l\'article (recherche web), rapport transmis au relecteur final',
     apiRoute: '/api/cron/weekly-blog',
     promptKeys: ['blog_fact_check'],
@@ -240,7 +240,7 @@ export const AI_FEATURES = [
   {
     key: 'blog_copyedit',
     emoji: '✍️',
-    label: 'Blog — Relecture rédactionnelle',
+    label: 'Blog : relecture rédactionnelle',
     description: 'Agent hebdomadaire : corrige orthographe, style et structure de l\'article (jamais les faits) avant la relecture finale',
     apiRoute: '/api/cron/weekly-blog',
     promptKeys: ['blog_copyedit'],
@@ -249,7 +249,7 @@ export const AI_FEATURES = [
   {
     key: 'blog_review',
     emoji: '🔎',
-    label: 'Blog — Relecture avant publication',
+    label: 'Blog : relecture avant publication',
     description: 'Agent hebdomadaire : relit l\'article (publish / revise / reject) avant publication automatique',
     apiRoute: '/api/cron/weekly-blog',
     promptKeys: ['blog_review'],

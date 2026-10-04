@@ -22,7 +22,7 @@ const SECTIONS: { title: string; pages: PageSeoKey[] }[] = [
 const USAGE_LIMITS = [
   'MedInfo AI fournit de l’information médicale générale, jamais un diagnostic ni un avis médical individuel.',
   'En cas d’urgence, composez le 15 (SAMU) ou le 112.',
-  'Les réponses du chat sont générées par une IA : vérifier la date, le contexte et le niveau de preuve des références citées.',
+  'Les réponses du chat sont générées par une IA : vérifier la date, le contexte et le niveau de preuve des références citées.',
 ];
 
 export function buildLlmsTxt(): string {

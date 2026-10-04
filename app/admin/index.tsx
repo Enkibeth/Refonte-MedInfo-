@@ -211,7 +211,7 @@ function ModelsTab({
       <Text style={tabStyles.intro}>
         Sélectionne le modèle IA et ses réglages (raisonnement, verbosité, température, recherche
         internet) pour chaque fonctionnalité. Les options affichées dépendent du modèle choisi. Les
-        changements s'appliquent immédiatement (cache 60 s).
+        changements s’appliquent immédiatement (cache 60 s).
       </Text>
 
       {AI_FEATURES.map((feature) => {
@@ -447,7 +447,7 @@ function PromptsTab({
   return (
     <ScrollView contentContainerStyle={tabStyles.content}>
       <Text style={tabStyles.intro}>
-        Édite les system prompts directement. Les modifications sont stockées dans Supabase et s'appliquent
+        Édite les system prompts directement. Les modifications sont stockées dans Supabase et s’appliquent
         immédiatement (cache 60 s). Le code source sert de valeur par défaut.
       </Text>
 
@@ -680,7 +680,7 @@ function EcosTab({ session }: { session: { access_token: string } | null }) {
       <ScrollView contentContainerStyle={tabStyles.content}>
         <Text style={tabStyles.intro}>
           {draft.id ? 'Édition du cas ECOS.' : 'Nouveau cas ECOS.'} Le slug est généré depuis le
-          titre s'il est laissé vide. Un cas non publié reste invisible des étudiants.
+          titre s’il est laissé vide. Un cas non publié reste invisible des étudiants.
         </Text>
 
         <EcosInput label="Titre" value={draft.title} onChangeText={(v) => field('title', v)} />
@@ -948,16 +948,16 @@ function BlogTab({ session }: { session: { access_token: string } | null }) {
   return (
     <ScrollView contentContainerStyle={tabStyles.content}>
       <Text style={tabStyles.intro}>
-        Génère un article santé complet (titre, chapeau, sections « ## » pour le sommaire
-        cliquable, image de couverture si la clé OpenAI est configurée). L'article arrive en
-        brouillon : ouvre-le avec « Modifier » pour le relire en aperçu, ajuster le texte et
+        Génère un article santé complet (titre, chapeau, sections « ## » pour le sommaire
+        cliquable, image de couverture si la clé OpenAI est configurée). L’article arrive en
+        brouillon : ouvre-le avec « Modifier » pour le relire en aperçu, ajuster le texte et
         les images (remplacer la couverture par une vraie photo, en insérer dans le corps),
-        puis publie-le : seuls les articles publiés sont visibles sur le blog public. Un
+        puis publie-le : seuls les articles publiés sont visibles sur le blog public. Un
         article reste modifiable après publication.
       </Text>
 
       <View style={blogStyles.generateCard}>
-        <Text style={blogStyles.generateLabel}>Sujet (optionnel, sinon l'IA choisit)</Text>
+        <Text style={blogStyles.generateLabel}>Sujet (optionnel, sinon l’IA choisit)</Text>
         <FieldInput
           style={blogStyles.topicInput}
           value={topic}
@@ -1040,7 +1040,7 @@ function BlogTab({ session }: { session: { access_token: string } | null }) {
         ))
       )}
       {!loading && posts.length === 0 ? (
-        <Text style={blogStyles.empty}>Aucun article pour l'instant : génère le premier !</Text>
+        <Text style={blogStyles.empty}>Aucun article pour l’instant : génère le premier !</Text>
       ) : null}
 
       {editingId && session?.access_token ? (
@@ -1071,21 +1071,21 @@ const COST_PERSONA_LABELS: Record<string, string> = {
   // Features retirées (ADR-0037) : libellés conservés pour que l'HISTORIQUE des coûts
   // reste lisible (ai_interactions garde les lignes de ces anciens appels).
   pubmed_agent: 'Sous-agent PubMed (retiré)',
-  chat_researcher: 'Chat — agent chercheur (retiré)',
-  chat_fast: 'Chat — mode rapide (retiré)',
+  chat_researcher: 'Chat : agent chercheur (retiré)',
+  chat_fast: 'Chat : mode rapide (retiré)',
   analyze: 'Analyse de document',
-  ecos_simulate: 'ECOS — simulation',
-  ecos_evaluate: 'ECOS — évaluation',
+  ecos_simulate: 'ECOS : simulation',
+  ecos_evaluate: 'ECOS : évaluation',
   presentation_generate: 'Générateur de présentations',
-  cv_review: 'CV — relecture',
-  cv_import: 'CV — import',
-  article_assist: 'Article — aide',
-  article_reduce: 'Article — réduction',
-  article_originality: 'Article — originalité',
+  cv_review: 'CV : relecture',
+  cv_import: 'CV : import',
+  article_assist: 'Article : aide',
+  article_reduce: 'Article : réduction',
+  article_originality: 'Article : originalité',
   qcm_generate: 'QCM',
-  revision_plan_assist: 'Révisions — coup de pouce',
-  audio_diarize: 'Audio — diarisation',
-  audio_report: 'Audio — compte rendu',
+  revision_plan_assist: 'Révisions : coup de pouce',
+  audio_diarize: 'Audio : diarisation',
+  audio_report: 'Audio : compte rendu',
 };
 
 function costPersonaLabel(persona: string): string {
@@ -1178,8 +1178,8 @@ function CostsTab({ session }: { session: { access_token: string } | null }) {
       <View style={costStyles.notice}>
         <Icon name="scale" size={15} color={tokens.colors.warningText} />
         <Text style={costStyles.noticeText}>
-          Les tokens sont réels ; le coût est une ESTIMATION à partir de prix indicatifs
-          (USD / million de tokens + facturation par appel de recherche web ; part cachée
+          Les tokens sont réels ; le coût est une ESTIMATION à partir de prix indicatifs
+          (USD / million de tokens + facturation par appel de recherche web ; part cachée
           tarifée ~10 %), à ajuster dans src/admin/cost.ts selon ta facturation.
         </Text>
       </View>
@@ -1215,7 +1215,7 @@ function CostsTab({ session }: { session: { access_token: string } | null }) {
             ) : null}
             {summary.hasUnpriced ? (
               <Text style={costStyles.unpriced}>
-                ⚠ Certains modèles n’ont pas de prix défini : total sous-estimé.
+                ⚠ Certains modèles n’ont pas de prix défini : total sous-estimé.
               </Text>
             ) : null}
           </View>

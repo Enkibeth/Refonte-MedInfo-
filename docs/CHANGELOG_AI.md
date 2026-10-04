@@ -2,6 +2,55 @@
 
 Journal des modifications par agents IA. Une entrée par PR.
 
+## [2026-10-04] – Claude (écriture sans tics d'IA, visuel affiné, SEO actuel, outils mobiles en plein écran)
+### Files modified
+- Écriture : textes visibles de `app/`, `src/ui`, `src/seo/meta.ts`, `src/scores/catalog/*` (ponctuation seule, vérifiée
+  par script), `src/ai/routing/featureVisibility.ts`, `src/dashboard/overview.ts`, `src/billing/plans.ts`,
+  `src/auth/AuthProvider.tsx`, exports PDF, outils `public/*.html` ; typographie française (espaces insécables,
+  apostrophes) sur 718 chaînes ; test `tests/unit/copy-typography.test.ts`
+- Visuel : `src/ui/tokens.ts` (`type.input/reading/ui`, `layout.measure`, succès #12744A, `surfaceSunken`, nuances mortes
+  retirées), `app/+html.tsx` (coupures, 16 px au doigt, theme-color, animations mortes retirées),
+  `src/ui/MedInfoThemeProvider.tsx` (thème de navigation), `PageTitle`, `MarkdownRenderer`, `LegalScreen`, `Button`,
+  champs, accueil, Vue d'ensemble, connexion, tarifs, ECOS ; suppression `HeroBackdrop`, `GrainOverlay`, `grain.ts`
+- Navigation mobile : `src/ui/MobileSheet.tsx`, `src/ui/AppMobileHeader.tsx`, `src/ui/ToolScreenHeader.tsx` (NOUVEAUX),
+  `src/ui/chat/ChatMobileHeader.tsx`, `app/(chat)/_layout.tsx` (plus de barre d'onglets), 8 écrans d'outils, ECOS,
+  Vue d'ensemble ; suppression `src/ui/AppTabBar.tsx` et `tabBarFeatures`
+- SEO : `src/seo/meta.ts` (titres, descriptions, graphe JSON-LD, carte de partage), `src/ui/SeoHead.tsx`,
+  `server/lib/blog-prerender.mjs` (NOUVEAU) + option `enrich` de `server/lib/html.mjs`, `src/seo/toolPages.ts`,
+  `src/ui/ToolPreview.tsx`, `src/ui/sessionHint.ts` (NOUVEAUX), `src/ui/RoleGate.tsx`, `public/social-card.png` +
+  `scripts/design/social-card.mjs`, `app/sitemap.xml+api.ts`, `noindex` des outils autonomes
+- Correctif hérité de l'ADR-0042 : `src/ui/landmarks.tsx` (les écrans d'onglets visités gardaient `id="contenu"`)
+- Tests : `tests/unit/blog-prerender.test.ts` (NOUVEAU), `copy-typography.test.ts` (NOUVEAU), mises à jour seo-meta,
+  feature-visibility, dashboard-overview, landing-editorial ; `scripts/design/capture-ui.mjs` (`CAPTURE_WIDTHS`)
+- Docs : ADR-0043, `docs/05_DESIGN.md` (v2.4, §13), `CLAUDE.md`
+### Purpose
+Demandes de Hugo : « côté visuel, couleur, typo, éviter les — qui font très IA ; la partie SEO, mettre au goût du jour »,
+puis « aligner les outils sur le chat, enlever la barre du bas inutile » (captures : le CV n'avait qu'un petit cadre).
+### Résultats mesurés (build de production local, session simulée)
+- Écriture : tirets cadratins de liaison visibles ~270 → **0** (verrou de test) ; titres d'onglet < 60 caractères.
+- Accessibilité (axe-core, 25 écrans × 2 largeurs) : **0** violation, un seul H1 et un seul `<main>` par écran ;
+  contraste du vert de succès 4,43 → 5,1:1.
+- Lighthouse mobile : Accessibilité et SEO **100** sur accueil, ECOS (visiteur), scores, blog, tarifs ; Best Practices 100
+  (blog 96 en local, Supabase factice).
+- Mobile 390 px : CV en plein écran, iframe 791 px de haut sur 844 (barre compacte 53 px, plus de barre du bas) ;
+  navigation ☰ côté client ; même feuille depuis le chat.
+- Pages d'outils pour un robot sans JavaScript : 8 → ~300 mots, H1 présent ; articles de blog : titre, description, image,
+  JSON-LD et texte propres à l'article dans le HTML servi.
+- Fumigation `smoke:node` 28/28 (2 contrôles ajoutés : présentation publique d'un outil dans le HTML servi, `noindex`
+  des coquilles d'outils) ; tests unitaires, lint, typecheck et `compliance:grep` au vert.
+### Revue adversariale (corrigé avant livraison)
+- Audio en application native : sans la barre d'onglets, l'écran « disponible sur le web » n'avait plus aucune sortie.
+- `dateModified`/`article:modified_time`/`lastmod` antérieurs à la publication pour les articles de l'agent hebdo :
+  plus récente des deux dates, et `updated_at` posé à la publication.
+- Coquille d'article (servie quand le pré-rendu serveur est indisponible) : canonical et `og:url` en `/blog/[slug]` retirés.
+- Vue d'ensemble native : zone sûre du haut comptée deux fois.
+- Trouvé en vérification : les écrans d'onglets déjà visités gardaient `id="contenu"` (défaut hérité de l'ADR-0042).
+### À arbitrer par Hugo
+Illustration d'équipe de l'en-tête (paraît générée par IA : animaux, icône vétérinaire) ; ECG animé en boucle ; règles
+robots pour l'entraînement des IA ; pages légales à mettre à jour sur le fond (refus avant traitement retiré par
+l'ADR-0024, données conservées, sous-traitant Google pour `chat_meta`, région Supabase) ; offres Étudiant et Étudiant
+Premium aux avantages identiques ; mention « relu par l'équipe » des articles publiés automatiquement par l'agent hebdo.
+
 ## [2026-10-03] – Claude (fondations web « site ultra propre » : sécurité HTTP, CSP, accessibilité structurelle, 3 boucles mesurées)
 ### Files modified
 - Serveur : `server/lib/security.mjs` (NOUVEAU, pur : en-têtes, CSP à empreintes), `server/lib/html.mjs` (NOUVEAU : coquilles

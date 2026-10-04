@@ -1,5 +1,4 @@
 import { FieldInput } from '@/ui/FieldInput';
-import { PageTitle } from '@/ui/PageTitle';
 /**
  * Analyse de document médical — version premium.
  * L'utilisateur colle un texte OU importe un fichier (PDF, photo JPEG/PNG/WebP, texte)
@@ -28,7 +27,7 @@ import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
-import { ToolsMenu } from '@/ui/ToolsMenu';
+import { ToolScreenHeader } from '@/ui/ToolScreenHeader';
 import { Button } from '@/ui/Button';
 import { Touchable } from '@/ui/Touchable';
 import {
@@ -75,7 +74,7 @@ export default function DocumentScreen() {
             { name: 'Analyse de document', path: PAGE_SEO.document.path },
           ]),
           webApplicationJsonLd({
-            name: 'Analyse de document médical — MedInfo AI',
+            name: 'Analyse de document médical',
             description: PAGE_SEO.document.description,
             path: PAGE_SEO.document.path,
           }),
@@ -197,7 +196,7 @@ function DocumentScreenInner() {
     if (!canSubmit) return;
     setError(null);
     setAnalysis(null);
-    setResultLabel(mode === 'translation' ? `Traduction — ${targetLanguage.trim() || 'Français'}` : 'Résumé patient');
+    setResultLabel(mode === 'translation' ? `Traduction (${targetLanguage.trim() || 'Français'})` : 'Résumé patient');
     setLoading(true);
 
     try {
@@ -225,7 +224,7 @@ function DocumentScreenInner() {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({})) as { error?: string };
-        throw new Error(err.error ?? 'Erreur lors de l\'analyse. Réessayez.');
+        throw new Error(err.error ?? 'Erreur lors de l’analyse. Réessayez.');
       }
 
       const reader = response.body?.getReader();
@@ -264,7 +263,7 @@ function DocumentScreenInner() {
     setAnalysis({ text, citations });
     setResultLabel(
       item.mode === 'translation'
-        ? `Traduction — ${item.target_language ?? ''} · ${item.source_name ?? 'Document'}`
+        ? `Traduction (${item.target_language ?? ''}) · ${item.source_name ?? 'Document'}`
         : `Résumé patient · ${item.source_name ?? 'Document'}`,
     );
     setHistoryOpen(false);
@@ -277,7 +276,7 @@ function DocumentScreenInner() {
   }
 
   function confirmDeleteHistory(id: string) {
-    const message = 'Supprimer cette analyse de votre historique ? Cette action est définitive.';
+    const message = 'Supprimer cette analyse de votre historique ? Cette action est définitive.';
     if (Platform.OS === 'web') {
       if (window.confirm(message)) void handleDeleteHistory(id);
     } else {
@@ -294,16 +293,10 @@ function DocumentScreenInner() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={80}
     >
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <ToolsMenu />
-        </View>
-        <PageTitle style={styles.title}>Analyse de document</PageTitle>
-        <Text style={styles.subtitle}>
-          Importez un PDF, une photo ou collez le texte d'un compte rendu, d'une ordonnance ou de
-          résultats, pour un résumé patient clair ou une traduction.
-        </Text>
-      </View>
+      <ToolScreenHeader feature="document" title="Analyse de document">
+        Importez un PDF, une photo ou collez le texte d’un compte rendu, d’une ordonnance ou de
+        résultats, pour un résumé patient clair ou une traduction.
+      </ToolScreenHeader>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {userId ? (
@@ -357,7 +350,7 @@ function DocumentScreenInner() {
               ))
             )}
             <Text style={styles.historyNote}>
-              Seul le résultat de l'analyse est conservé, jamais le document importé.
+              Seul le résultat de l’analyse est conservé, jamais le document importé.
             </Text>
           </View>
         ) : null}
@@ -453,7 +446,7 @@ function DocumentScreenInner() {
         />
 
         <Text style={styles.privacyNote}>
-          Le document importé n'est pas conservé : il est transmis à l'IA puis oublié. Seul le
+          Le document importé n’est pas conservé : il est transmis à l’IA puis oublié. Seul le
           résultat est enregistré dans votre historique.
         </Text>
 
@@ -503,8 +496,8 @@ function DocumentScreenInner() {
               <View style={styles.citations}>
                 <Text style={styles.citationsTitle}>Passages du document cités</Text>
                 <Text style={styles.citationsHint}>
-                  Chaque extrait ci-dessous provient mot pour mot de votre document : vous pouvez
-                  vérifier sur quoi s'appuie l'analyse.
+                  Chaque extrait ci-dessous provient mot pour mot de votre document : vous pouvez
+                  vérifier sur quoi s’appuie l’analyse.
                 </Text>
                 {analysis.citations.map((c, i) => {
                   const pages = citationPagesLabel(c);

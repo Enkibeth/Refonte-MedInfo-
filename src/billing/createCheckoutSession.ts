@@ -78,7 +78,7 @@ export async function createCheckoutSession(
 
   const data = (await response.json()) as { id?: string; url?: string };
   if (!data.id || !data.url) {
-    throw new Error('Stripe checkout : réponse inattendue (id/url manquant).');
+    throw new Error('Stripe checkout : réponse inattendue (id/url manquant).');
   }
 
   return { id: data.id, url: data.url };

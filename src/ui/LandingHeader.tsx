@@ -27,7 +27,12 @@ import { useWindowWidth } from '@/ui/useWindowWidth';
 
 type MenuEntry = { label: string; route: string };
 
-export function LandingHeader() {
+/**
+ * @param landmark `false` quand l'en-tête est rendu DANS le `<main>` d'un écran (présentation
+ *   publique d'un outil, src/ui/ToolPreview.tsx) : le repère `banner` est réservé au niveau
+ *   du document.
+ */
+export function LandingHeader({ landmark = true }: { landmark?: boolean } = {}) {
   const router = useRouter();
   const { user, persona } = useSession();
   const width = useWindowWidth();
@@ -82,7 +87,7 @@ export function LandingHeader() {
   }, [openMenu]);
 
   return (
-    <View style={styles.bar} role="banner">
+    <View style={styles.bar} role={landmark ? 'banner' : undefined}>
       {/* Fermeture au clic à l'extérieur : calque plein écran (web : position fixed)
           rendu SOUS la barre — les liens du header et le menu restent cliquables. */}
       {openMenu ? (
@@ -105,8 +110,9 @@ export function LandingHeader() {
             source={require('../../assets/brand/team-illustration-144.webp')}
             style={styles.teamBadge}
             resizeMode="cover"
-            accessibilityRole="image"
-            accessibilityLabel="L'équipe MedInfo AI"
+            // Décorative : le lien qui l'entoure porte déjà son nom (« Accueil MedInfo AI »).
+            alt=""
+            aria-hidden
           />
           <Logo size="sm" />
         </Pressable>
@@ -115,7 +121,7 @@ export function LandingHeader() {
           {web || !compact ? (
             <View {...mi(`ge${NAV_COMPACT_BREAKPOINT}`)}>
               <NavLink
-                label="Services"
+                label="Assistants"
                 chevron
                 expanded={openMenu === 'chatbots'}
                 active={openMenu === 'chatbots'}

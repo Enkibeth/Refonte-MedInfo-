@@ -77,3 +77,8 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="
 .mip-btn.mip-btn-primary:active:not(:disabled), .btn.btn-primary:active:not(:disabled), .btn.btn-accent:active:not(:disabled),
 .btn.pri:active:not(:disabled) { background:var(--vivid-pressed); border-color:var(--vivid-pressed); color:#fff; }
 .btn:disabled, .mip-btn:disabled { cursor:not-allowed; box-shadow:none; }
+
+/* Safari iOS agrandit la page au focus d'un champ de moins de 16 px : 16 px minimum au doigt (2026-10). */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), textarea, select { font-size: 16px !important; }
+}

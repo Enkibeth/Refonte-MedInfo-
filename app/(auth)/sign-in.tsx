@@ -90,7 +90,7 @@ export default function SignInScreen() {
       if (error) setErrorMessage(error);
       else
         setInfo(
-          'Si un compte existe pour cet email, un lien de réinitialisation vient d’être envoyé. Vérifie ta boîte mail et tes spams.',
+          'Si un compte existe pour cette adresse, un lien de réinitialisation vient d’être envoyé. Vérifiez votre boîte de réception et vos courriers indésirables.',
         );
       return;
     }
@@ -109,7 +109,7 @@ export default function SignInScreen() {
       else if (needsConfirmation) {
         setCanResendConfirmation(true);
         setInfo(
-          'Compte créé. Vérifie ta boîte mail et tes spams pour confirmer ton adresse. Tu peux renvoyer le mail si besoin.',
+          'Compte créé. Confirmez votre adresse grâce à l’e-mail envoyé (pensez aux courriers indésirables). Vous pouvez le renvoyer si besoin.',
         );
       } else setInfo('Compte créé et connecté.');
     }
@@ -122,7 +122,7 @@ export default function SignInScreen() {
     const { error } = await resendSignupConfirmation(email);
     setBusy(false);
     if (error) setErrorMessage(error);
-    else setInfo('Email de confirmation renvoyé. Vérifie ta boîte mail et tes spams.');
+    else setInfo('E-mail de confirmation renvoyé. Vérifiez votre boîte de réception et vos courriers indésirables.');
   }
 
   async function handleOAuth(provider: OAuthProvider) {
@@ -150,10 +150,10 @@ export default function SignInScreen() {
         <PageTitle style={styles.title}>{title}</PageTitle>
         <Text style={styles.body}>
           {mode === 'signin'
-            ? 'Connecte-toi avec ton email, ou via Google / Apple.'
+            ? 'Connectez-vous avec votre adresse e-mail, ou avec Google ou Apple.'
             : mode === 'signup'
-              ? 'Choisis un email et un mot de passe (6 caractères min.), ou utilise Google / Apple.'
-              : 'Saisis ton email : nous t’enverrons un lien pour définir un nouveau mot de passe.'}
+              ? 'Choisissez une adresse e-mail et un mot de passe (6 caractères minimum), ou utilisez Google ou Apple.'
+              : 'Saisissez votre adresse e-mail : nous vous enverrons un lien pour définir un nouveau mot de passe.'}
         </Text>
 
         {user ? (
@@ -188,7 +188,7 @@ export default function SignInScreen() {
 
             <View style={styles.separatorRow}>
               <View style={styles.separatorLine} />
-              <Text style={styles.separatorText}>ou par email</Text>
+              <Text style={styles.separatorText}>ou par e-mail</Text>
               <View style={styles.separatorLine} />
             </View>
           </>
@@ -196,7 +196,7 @@ export default function SignInScreen() {
 
         {/* Email (+ mot de passe hors mode oublié) */}
         <View style={styles.form}>
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.label}>Adresse e-mail</Text>
           <FieldInput
             accessibilityLabel="Adresse email"
             autoCapitalize="none"
@@ -225,7 +225,7 @@ export default function SignInScreen() {
                     onPress={() => switchMode('forgot')}
                     style={styles.linkTarget}
                   >
-                    <Text style={styles.forgotLink}>Mot de passe oublié ?</Text>
+                    <Text style={styles.forgotLink}>Mot de passe oublié ?</Text>
                   </Pressable>
                 ) : null}
               </View>
@@ -269,8 +269,8 @@ export default function SignInScreen() {
               style={styles.linkTarget}
             >
               <Text style={styles.toggleText}>{mode === 'signin'
-                ? 'Pas encore de compte ? Créer un compte'
-                : 'Déjà un compte ? Se connecter'}</Text>
+                ? 'Pas encore de compte ? Créer un compte'
+                : 'Déjà un compte ? Se connecter'}</Text>
             </Pressable>
           )}
         </View>
@@ -283,7 +283,7 @@ export default function SignInScreen() {
 
         {canResendConfirmation ? (
           <Button
-            label="Renvoyer l'email de confirmation"
+            label="Renvoyer l’e-mail de confirmation"
             variant="ghost"
             disabled={busy || loading || emailEmpty}
             onPress={handleResendConfirmation}
@@ -300,7 +300,7 @@ export default function SignInScreen() {
 
         <View style={styles.footer}>
           <Link href="/" style={styles.inlineLink}>
-            Retour à l'accueil
+            Retour à l’accueil
           </Link>
         </View>
       </Card>
@@ -314,7 +314,8 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  formCard: { borderWidth: 0, padding: 0 },
+  // Vraie carte (filet + marge intérieure) : sans elles, une dalle blanche collait aux champs.
+  formCard: { borderWidth: tokens.border.thin, borderColor: tokens.colors.border, padding: tokens.space.xl },
   logoWrap: { alignItems: 'flex-start', marginBottom: tokens.space.xl },
   title: {
     fontFamily: tokens.font.serif,
@@ -438,16 +439,17 @@ const styles = StyleSheet.create({
     marginTop: tokens.space.lg,
     borderRadius: tokens.radius.md,
     overflow: 'hidden',
-    backgroundColor: tokens.colors.warningBackground,
+    // Information réglementaire, pas un avertissement : même présentation que sur l'accueil.
+    backgroundColor: tokens.colors.transparent,
   },
   linkTarget: { minHeight: tokens.size.controlMd, justifyContent: 'center' },
-  noticeAccent: { width: 4, backgroundColor: tokens.colors.warningText },
+  noticeAccent: { width: tokens.border.accent, backgroundColor: tokens.colors.accent },
   noticeText: {
     flex: 1,
     fontFamily: tokens.font.sans,
-    color: tokens.colors.warningText,
-    fontSize: tokens.type.caption.fontSize,
-    lineHeight: 19,
-    padding: tokens.space.lg,
+    color: tokens.colors.textMuted,
+    ...tokens.type.caption,
+    paddingVertical: tokens.space.xs,
+    paddingHorizontal: tokens.space.md,
   },
 });

@@ -3,7 +3,6 @@ import { Tabs } from 'expo-router';
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
 import { isFeatureVisible, type AppFeatureId } from '@/ai/routing/featureVisibility';
-import { AppTabBar, type AppTabBarProps } from '@/ui/AppTabBar';
 import { screenMainLayout } from '@/ui/landmarks';
 
 /**
@@ -12,9 +11,10 @@ import { screenMainLayout } from '@/ui/landmarks';
  * navigation via `href: null` ; l'écran reste protégé par <RoleGate> en défense en
  * profondeur.
  *
- * Refonte lisibilité mobile 2026-07 : la barre du bas est un composant custom
- * (src/ui/AppTabBar.tsx) limité à TAB_BAR_MAX entrées — outils prioritaires du rôle
- * + bouton « Outils » ouvrant le panneau complet. Fini les 6-8 onglets écrasés.
+ * Pas de barre d'onglets en bas (demande Hugo 2026-10, après le chat en 2026-09) : sur
+ * téléphone, chaque écran a une barre compacte en haut dont le menu ☰ mène aux outils, à
+ * l'espace et au compte (src/ui/AppMobileHeader.tsx) ; sur ordinateur, la barre latérale du
+ * shell. L'outil occupe ainsi toute la hauteur de l'écran.
  */
 export default function ChatLayout() {
   const { persona, user, session, loading } = useSession();
@@ -33,9 +33,8 @@ export default function ChatLayout() {
       screenOptions={{ headerShown: false }}
       // Chaque écran dans un <main> ; la barre d'onglets reste hors du contenu (repères).
       screenLayout={screenMainLayout}
-      // Le type exact (BottomTabBarProps) vient d'une dépendance transitive ;
-      // on n'en consomme qu'un sous-ensemble stable (cf. AppTabBarProps).
-      tabBar={(props) => <AppTabBar {...(props as unknown as AppTabBarProps)} />}
+      // Aucune barre d'onglets : sans cette fonction, React Navigation dessinerait la sienne.
+      tabBar={() => null}
     >
       {/* Vue d’ensemble (refonte shell 2026-07) : accueil de l’espace connecté.
           Cachée aux visiteurs (essai = chat seul) ; l'écran redirige aussi de lui-même. */}

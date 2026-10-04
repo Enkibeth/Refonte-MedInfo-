@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     minWidth: 0,
     fontFamily: tokens.font.sans,
-    fontSize: tokens.type.body.fontSize,
+    fontSize: tokens.type.input.fontSize,
     color: tokens.colors.text,
     paddingVertical: 0,
     ...(Platform.select({ web: { outlineStyle: 'none' } as object, default: {} }) as object),

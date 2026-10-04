@@ -41,7 +41,7 @@ export default function PricingScreen() {
 
     const token = session?.access_token;
     if (!token) {
-      setErrorMessage('Connecte-toi (ou crée un compte gratuit) pour gérer ton abonnement.');
+      setErrorMessage('Connectez-vous ou créez un compte gratuit pour vous abonner.');
       setNeedsSignIn(true);
       return;
     }
@@ -84,21 +84,21 @@ export default function PricingScreen() {
       <LandingHeader />
       <MainContent style={styles.main}>
       <Screen maxWidth={640}>
-      <PageTitle style={styles.title}>Offres</PageTitle>
+      <PageTitle style={styles.title}>Tarifs</PageTitle>
 
       <View style={styles.sourcesBox}>
         <View style={styles.sourcesAccent} />
         <Text style={styles.sourcesText}>
-          Les références (HAS, ANSM…) restent gratuites et visibles pour tous, abonné ou non.
-          Un abonnement lève seulement la limite de messages et débloque des fonctions avancées.
+          Les références (HAS, ANSM…) restent gratuites et visibles pour tous, abonnés ou non.
+          Un abonnement lève seulement la limite de messages.
         </Text>
       </View>
 
       {!webBilling ? (
         <Card style={styles.section}>
           <Text style={styles.nativeText}>
-            La gestion de l'abonnement se fait sur le site web. L'application mobile donne accès à
-            ton compte déjà souscrit.
+            L’abonnement se gère sur le site web. L’application mobile donne accès à l’abonnement
+            déjà souscrit sur votre compte.
           </Text>
         </Card>
       ) : (
@@ -116,7 +116,7 @@ export default function PricingScreen() {
                 ))}
               </View>
               <Button
-                label="S'abonner"
+                label="S’abonner"
                 loading={loadingPlan === plan.id}
                 disabled={loadingPlan !== null}
                 onPress={() => handleSubscribe(plan.id)}
@@ -136,7 +136,7 @@ export default function PricingScreen() {
           <Text style={styles.errorText}>{errorMessage}</Text>
           {needsSignIn ? (
             <Button
-              label="Se connecter / Créer un compte"
+              label="Se connecter ou créer un compte"
               fullWidth={false}
               onPress={() => router.push('/(auth)/sign-in')}
               style={styles.errorAction}
@@ -180,10 +180,9 @@ const styles = StyleSheet.create({
   sourcesText: {
     flex: 1,
     fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
-    fontSize: tokens.type.label.fontSize,
-    lineHeight: 21,
-    fontWeight: tokens.weight.medium,
+    color: tokens.colors.text, // texte courant (en bleu, le paragraphe se lisait comme un lien)
+    ...tokens.type.label,
+    fontWeight: tokens.weight.regular,
     padding: tokens.space.lg,
   },
   section: { marginTop: tokens.space.sm },

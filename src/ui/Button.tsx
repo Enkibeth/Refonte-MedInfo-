@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     paddingVertical: tokens.space.sm,
   },
   labelMd: { fontSize: tokens.type.label.fontSize, lineHeight: tokens.type.label.lineHeight },
-  labelLg: { fontSize: 16, lineHeight: 22 },
+  labelLg: { fontSize: tokens.type.ui.fontSize, lineHeight: tokens.type.ui.lineHeight },
   labelDisabled: { color: tokens.colors.textMuted },
 });
 

@@ -72,7 +72,7 @@ export default function LegalScreen() {
         <Text style={styles.body}>{getAiDisclosure()}</Text>
         <Text style={[styles.body, styles.bodyMuted]}>
           Information délivrée au titre de l’article 50(1) du règlement (UE) 2024/1689 (EU AI
-          Act). Le système relève du « risque limité » : il ne réalise aucun acte médical.
+          Act). Le système relève du « risque limité » : il ne réalise aucun acte médical.
         </Text>
       </Card>
 
@@ -92,11 +92,11 @@ export default function LegalScreen() {
         <Text style={styles.h3}>Éditeur</Text>
         <Text style={styles.body}>
           Hugo Bettembourg{'\n'}
-          Statut juridique : {PENDING}{'\n'}
-          SIRET / RCS : {PENDING}{'\n'}
-          Adresse : {PENDING}{'\n'}
-          Contact : {PENDING}{'\n'}
-          Directeur de la publication : Hugo Bettembourg
+          Statut juridique : {PENDING}{'\n'}
+          SIRET / RCS : {PENDING}{'\n'}
+          Adresse : {PENDING}{'\n'}
+          Contact : {PENDING}{'\n'}
+          Directeur de la publication : Hugo Bettembourg
         </Text>
 
         <Text style={styles.h3}>Hébergeur</Text>
@@ -106,24 +106,24 @@ export default function LegalScreen() {
           {'\n'}
           {getHostingProvider().address}
           {'\n'}
-          Base de données et authentification : Supabase ({PENDING}, région UE).
+          Base de données et authentification : Supabase ({PENDING}, région UE).
         </Text>
       </Card>
 
       {/* Protection des données — RGPD art. 13 (01_REGULATION §5) */}
       <Card style={styles.section}>
-        <Text style={styles.h2}>Données personnelles & confidentialité</Text>
+        <Text style={styles.h2}>Données personnelles et confidentialité</Text>
         <Text style={styles.body}>
-          MedInfo AI suit un principe de minimisation : aucune donnée de santé identifiable
+          MedInfo AI suit un principe de minimisation : aucune donnée de santé identifiable
           n’est conservée. Les échanges du chat sont traités sans profil de santé attribuable
-          (mode « stateless anonyme », 01_REGULATION §5). Les seules données personnelles
+          (mode « stateless anonyme », 01_REGULATION §5). Les seules données personnelles
           traitées concernent le compte (email, rôle) et des compteurs techniques anonymisés.
         </Text>
         <Text style={styles.body}>
-          Sous-traitants : le ou les fournisseurs de modèles d’IA (Anthropic et/ou OpenAI) et
+          Sous-traitants : le ou les fournisseurs de modèles d’IA (Anthropic et/ou OpenAI) et
           Supabase, encadrés par un DPA et des clauses contractuelles types (art. 28 RGPD), avec
           résidence et transferts couverts par les garanties appropriées. Base légale, durées de
-          conservation détaillées et coordonnées du délégué à la protection des données :{' '}
+          conservation détaillées et coordonnées du délégué à la protection des données :{' '}
           {PENDING}.
         </Text>
         <Text style={[styles.body, styles.bodyMuted]}>

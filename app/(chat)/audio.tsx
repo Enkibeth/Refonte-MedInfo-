@@ -1,4 +1,3 @@
-import { PageTitle } from '@/ui/PageTitle';
 /**
  * Fonctionnalités audio — version premium.
  * Mode 1 : Transcription d'un enregistrement audio (consultation, dictée).
@@ -23,7 +22,7 @@ import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
-import { ToolsMenu } from '@/ui/ToolsMenu';
+import { ToolScreenHeader } from '@/ui/ToolScreenHeader';
 import { AudioLibrary } from '@/ui/AudioLibrary';
 import { Button } from '@/ui/Button';
 import { Touchable } from '@/ui/Touchable';
@@ -55,7 +54,7 @@ export default function AudioScreen() {
             { name: 'Compte rendu de consultation', path: PAGE_SEO.audio.path },
           ]),
           webApplicationJsonLd({
-            name: 'Compte rendu de consultation — MedInfo AI',
+            name: 'Compte rendu de consultation',
             description: PAGE_SEO.audio.description,
             path: PAGE_SEO.audio.path,
           }),
@@ -131,13 +130,15 @@ function AudioFeature() {
   if (Platform.OS !== 'web') {
     return (
       <View style={styles.container}>
+        {/* Seule sortie de l'écran depuis le retrait de la barre d'onglets du bas. */}
+        <ToolScreenHeader feature="audio" title="Audio médical" />
         <View style={styles.centeredBox}>
           <View style={styles.iconBadge}>
             <Icon name="monitor" size={26} color={tokens.colors.accentDeep} />
           </View>
           <Text style={styles.infoTitle}>Disponible sur le web</Text>
           <Text style={styles.infoText}>
-            L'enregistrement audio est actuellement disponible sur la version web de MedInfo.
+            L’enregistrement audio est actuellement disponible sur la version web de MedInfo.
             Connectez-vous depuis un navigateur pour utiliser cette fonctionnalité.
           </Text>
         </View>
@@ -183,7 +184,7 @@ function AudioFeature() {
         setDuration((d) => d + 1);
       }, 1000);
     } catch {
-      setError('Impossible d\'accéder au microphone. Vérifiez les permissions.');
+      setError('Impossible d’accéder au microphone. Vérifiez les permissions.');
     }
   }
 
@@ -231,7 +232,7 @@ function AudioFeature() {
         // elle, a réussi) : on le dit clairement au lieu d'afficher un résultat vide.
         else
           setError(
-            "Le compte rendu n'a pas pu être généré cette fois ; la transcription ci-dessous reste disponible. Relance un enregistrement pour réessayer.",
+            "Le compte rendu n’a pas pu être généré cette fois ; la transcription ci-dessous reste disponible. Relance un enregistrement pour réessayer.",
           );
       }
       setRecordState('done');
@@ -282,7 +283,7 @@ function AudioFeature() {
       setSaved(true);
       setLibraryRefresh((n) => n + 1);
     } catch {
-      setError('Échec de l\'enregistrement dans la bibliothèque.');
+      setError('Échec de l’enregistrement dans la bibliothèque.');
     } finally {
       setSaving(false);
     }
@@ -293,11 +294,8 @@ function AudioFeature() {
 
   return (
     <View style={styles.container}>
+      <ToolScreenHeader feature="audio" title="Audio médical" />
       <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <ToolsMenu />
-        </View>
-        <PageTitle style={styles.title}>Audio médical</PageTitle>
         <View style={styles.modeSwitcher}>
           <Touchable
             style={[styles.modeTab, tab === 'transcription' && styles.modeTabActive]}
@@ -341,7 +339,7 @@ function AudioFeature() {
           <Text style={styles.infoBoxText}>
             {mode === 'transcription'
               ? 'Enregistrez une consultation, une dictée ou une note vocale. Obtenez la transcription écrite complète.'
-              : 'Dictez vos observations cliniques. L\'IA génère un compte rendu médical structuré et professionnel.'}
+              : 'Dictez vos observations cliniques. L’IA génère un compte rendu médical structuré et professionnel.'}
           </Text>
         </View>
 
@@ -352,12 +350,12 @@ function AudioFeature() {
               style={styles.recordButton}
               onPress={startRecording}
               accessibilityRole="button"
-              accessibilityLabel="Démarrer l'enregistrement"
+              accessibilityLabel="Démarrer l’enregistrement"
             >
               <View style={styles.recordCircle}>
                 <Icon name="micVoice" size={36} color={tokens.colors.onAccent} />
               </View>
-              <Text style={styles.recordLabel}>Démarrer l'enregistrement</Text>
+              <Text style={styles.recordLabel}>Démarrer l’enregistrement</Text>
             </Touchable>
           )}
 
@@ -372,7 +370,7 @@ function AudioFeature() {
                 style={styles.stopButton}
                 onPress={stopRecording}
                 accessibilityRole="button"
-                accessibilityLabel="Arrêter l'enregistrement"
+                accessibilityLabel="Arrêter l’enregistrement"
               >
                 <View style={styles.stopCircle}>
                   <Icon name="stop" size={28} color={tokens.colors.onAccent} />
@@ -464,7 +462,7 @@ function AudioFeature() {
             <View style={styles.savedBox}>
               <View style={styles.savedRow}>
                 <Icon name="check" size={15} color={tokens.colors.success} />
-                <Text style={styles.savedText}>Enregistré dans « Mes documents ».</Text>
+                <Text style={styles.savedText}>Enregistré dans « Mes documents ».</Text>
               </View>
               <Touchable onPress={() => switchTab('library')} accessibilityRole="button">
                 <Text style={styles.savedLink}>Voir ma bibliothèque</Text>
@@ -481,7 +479,7 @@ function AudioFeature() {
         ) : null}
 
         <Text style={styles.retentionNote}>
-          L'audio est conservé 24h (réécoute) puis supprimé automatiquement. Vos transcriptions et
+          L’audio est conservé 24h (réécoute) puis supprimé automatiquement. Vos transcriptions et
           comptes rendus restent enregistrés tant que vous ne les supprimez pas.
         </Text>
       </ScrollView>

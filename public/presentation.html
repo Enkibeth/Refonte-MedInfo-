@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Générateur de présentations — MedInfo</title>
+<!-- Coquille d'outil embarquée par l'application (route du même nom) : jamais indexée seule. -->
+<meta name="robots" content="noindex, nofollow" />
+<title>Générateur de présentations | MedInfo AI</title>
 <link rel="stylesheet" href="/vendor/fonts/fonts.css" />
 <!-- pptxgenjs (UMD) → window.PptxGenJS -->
 <script src="/vendor/js/pptxgen.bundle.js"></script>
@@ -204,19 +206,19 @@ const FONTS_DEFAULT = { serif: "Georgia", sans: "Helvetica Neue" };
 
 const THEMES = {
   v1: {
-    meta: { id: "v1", name: "V1 — Ivoire / Bordeaux", mode: "light", description: "Éditorial scientifique sobre, esprit NEJM print." },
+    meta: { id: "v1", name: "V1 · Ivoire / Bordeaux", mode: "light", description: "Éditorial scientifique sobre, esprit NEJM print." },
     fonts: { ...FONTS_DEFAULT },
     c: { pageBg: "F8F6F0", ink: "1B2838", inkSecondary: "5A6470", inkMuted: "9CA5AF", accent: "8B1E2D", accentSoft: "C9A9A0", card: "EFEBE2", cardSoft: "F2EEE6", rule: "D8D2C5", white: "FFFFFF", onAccent: "FFFFFF" },
     section: { bg: "1B2838", ink: "F8F6F0", inkSecondary: "B8C2CE", inkMuted: "8090A0", accent: "B5485A", rule: "3A4A5C" },
   },
   v2: {
-    meta: { id: "v2", name: "V2 — Ivoire / Sarcelle (hero)", mode: "light", description: "Éditorial enrichi de patterns hero. Le plus polyvalent." },
+    meta: { id: "v2", name: "V2 · Ivoire / Sarcelle (hero)", mode: "light", description: "Éditorial enrichi de patterns hero. Le plus polyvalent." },
     fonts: { ...FONTS_DEFAULT },
     c: { pageBg: "F8F6F0", ink: "1B2838", inkSecondary: "5A6470", inkMuted: "9CA5AF", accent: "1B5E5E", accentSoft: "B5D4D2", card: "EFEBE2", cardSoft: "F2EEE6", rule: "D8D2C5", white: "FFFFFF", onAccent: "FFFFFF" },
     section: { bg: "1B2838", ink: "F8F6F0", inkSecondary: "B8C2CE", inkMuted: "8090A0", accent: "2A6F6F", rule: "3A4A5C" },
   },
   v3: {
-    meta: { id: "v3", name: "V3 — Sombre / Mandarine", mode: "dark", description: "Fond bleu nuit, accents mandarine. Conférence en salle obscure." },
+    meta: { id: "v3", name: "V3 · Sombre / Mandarine", mode: "dark", description: "Fond bleu nuit, accents mandarine. Conférence en salle obscure." },
     fonts: { ...FONTS_DEFAULT },
     c: { pageBg: "0F1A2A", ink: "F5F1E8", inkSecondary: "B8C2CE", inkMuted: "6B7A8A", accent: "E89B5C", accentSoft: "8B6F50", card: "1A2A3D", cardSoft: "223349", rule: "2C3E54", white: "F5F1E8", onAccent: "0F1A2A", inverted: "F5F1E8", inkOnLight: "0F1A2A" },
     section: { bg: "0B1422", ink: "F5F1E8", inkSecondary: "B8C2CE", inkMuted: "6B7A8A", accent: "E89B5C", rule: "2C3E54" },
@@ -233,7 +235,7 @@ const SLIDE_TYPES = {
     { key: "title", kind: "textarea", label: "Titre principal", placeholder: "Titre de la présentation" },
     { key: "subtitle", kind: "textarea", label: "Sous-titre", placeholder: "Une phrase qui situe le sujet" },
     { key: "typeLabel", kind: "text", label: "Type (bas droite)", placeholder: "Cas clinique · Recherche · Topo" },
-  ], blank: () => ({ type: "cover", kicker: "PRÉSENTATION MÉDICALE", title: "Titre de la présentation", subtitle: "Sous-titre — précision sur le sujet, le contexte ou la question traitée.", typeLabel: "Cas clinique · Recherche · Topo" }) },
+  ], blank: () => ({ type: "cover", kicker: "PRÉSENTATION MÉDICALE", title: "Titre de la présentation", subtitle: "Sous-titre : précision sur le sujet, le contexte ou la question traitée.", typeLabel: "Cas clinique · Recherche · Topo" }) },
   section: { label: "Intercalaire", hint: "Séparateur de partie : grand numéro, titre de section. Fond sombre.", fields: [
     { key: "numeral", kind: "text", label: "Numéro / chiffre romain", placeholder: "I" },
     { key: "title", kind: "textarea", label: "Titre de section", placeholder: "Cas clinique" },
@@ -243,7 +245,7 @@ const SLIDE_TYPES = {
     { key: "title", kind: "text", label: "Titre", placeholder: "Plan de la présentation" },
     { key: "subtitle", kind: "text", label: "Sous-titre (option.)", placeholder: "Trois temps clairs." },
     { key: "items", kind: "list", label: "Sections (une par ligne)" },
-  ], blank: () => ({ type: "agenda", title: "Plan de la présentation", subtitle: "Trois temps clairs. Un message principal par section.", items: ["Le cas — présentation et raisonnement", "Les données — ce que dit la littérature", "Synthèse — implications pratiques"] }) },
+  ], blank: () => ({ type: "agenda", title: "Plan de la présentation", subtitle: "Trois temps clairs. Un message principal par section.", items: ["Le cas : présentation et raisonnement", "Les données : ce que dit la littérature", "Synthèse : implications pratiques"] }) },
   bullets: { label: "Puces (action title)", hint: "Titre = conclusion de la slide. 3 à 6 puces denses.", fields: [
     { key: "label", kind: "text", label: "Étiquette de section", placeholder: "Cas · Examen" },
     { key: "title", kind: "textarea", label: "Titre (action title)", placeholder: "Ce que la slide démontre" },
@@ -308,7 +310,7 @@ const SLIDE_TYPES = {
   takeaway: { label: "À retenir / conclusion", hint: "Phrase manifeste + 3 points opérationnels (max 3).", fields: [
     { key: "headline", kind: "textarea", label: "Phrase de synthèse", placeholder: "L'idée à retenir en une ligne" },
     { key: "items", kind: "list", label: "Points (3 max)" },
-  ], blank: () => ({ type: "takeaway", headline: "Une phrase synthétique unique, percutante, qui résume tout le propos.", items: ["Premier point opérationnel pour la pratique.", "Deuxième élément de vigilance.", "Troisième idée — perspective ou question ouverte."] }) },
+  ], blank: () => ({ type: "takeaway", headline: "Une phrase synthétique unique, percutante, qui résume tout le propos.", items: ["Premier point opérationnel pour la pratique.", "Deuxième élément de vigilance.", "Troisième idée : perspective ou question ouverte."] }) },
   references: { label: "Références + contact", hint: "Références numérotées + carte contact. Dernière slide.", fields: [
     { key: "title", kind: "text", label: "Titre", placeholder: "Sources · contact · remerciements" },
     { key: "refs", kind: "list", label: "Références (une par ligne)" },
@@ -366,7 +368,7 @@ function makeContext(pres, theme, fonts, options) {
   ctx.footer = (s, idx, total, source) => {
     if (!options.showFooter) return;
     ctx.line(s, MARGIN, H - 0.45, W - 2 * MARGIN, 0, c.rule, 0.5);
-    if (source) s.addText("Source — " + source, { x: MARGIN, y: H - 0.4, w: W - 2 * MARGIN - 2, h: 0.25, fontFace: F.sans, fontSize: 8, color: c.inkMuted, italic: true, margin: 0 });
+    if (source) s.addText("Source : " + source, { x: MARGIN, y: H - 0.4, w: W - 2 * MARGIN - 2, h: 0.25, fontFace: F.sans, fontSize: 8, color: c.inkMuted, italic: true, margin: 0 });
     if (options.showSlideNumbers) s.addText(String(idx).padStart(2, "0") + " / " + String(total).padStart(2, "0"), { x: W - MARGIN - 2, y: H - 0.4, w: 2, h: 0.25, fontFace: F.sans, fontSize: 8, color: c.inkMuted, align: "right", charSpacing: 2, margin: 0 });
   };
   ctx.card = (s, x, y, w, h, fill) => ctx.rect(s, x, y, w, h, fill || c.card);
@@ -410,7 +412,7 @@ function rCover(ctx, s, slide, meta) {
   s.addText(slide.title || meta.title, { x: MARGIN, y: 2.3, w: 10.5, h: 2.3, fontFace: F.serif, fontSize: 46, color: c.ink, valign: "top", margin: 0 });
   s.addText(slide.subtitle || meta.subtitle || "", { x: MARGIN, y: 4.75, w: 9.5, h: 0.9, fontFace: F.serif, fontSize: 16, color: c.inkSecondary, italic: true, valign: "top", margin: 0 });
   ctx.line(s, MARGIN, 6.3, 4, 0, c.rule, 0.5);
-  s.addText([{ text: meta.author || "", options: { bold: true, breakLine: true } }, { text: meta.affiliation || "", options: { breakLine: true } }, { text: [meta.context, meta.date].filter(Boolean).join(" — "), options: { color: c.inkMuted } }], { x: MARGIN, y: 6.45, w: 7, h: 0.95, fontFace: F.sans, fontSize: 10, color: c.ink, valign: "top", paraSpaceAfter: 2, margin: 0 });
+  s.addText([{ text: meta.author || "", options: { bold: true, breakLine: true } }, { text: meta.affiliation || "", options: { breakLine: true } }, { text: [meta.context, meta.date].filter(Boolean).join(" · "), options: { color: c.inkMuted } }], { x: MARGIN, y: 6.45, w: 7, h: 0.95, fontFace: F.sans, fontSize: 10, color: c.ink, valign: "top", paraSpaceAfter: 2, margin: 0 });
   if (slide.typeLabel) s.addText([{ text: "TYPE DE PRÉSENTATION", options: { color: c.accent, bold: true, charSpacing: 4, breakLine: true } }, { text: slide.typeLabel, options: { color: c.inkSecondary } }], { x: W - MARGIN - 5, y: 6.45, w: 5, h: 0.95, fontFace: F.sans, fontSize: 9, align: "right", valign: "top", paraSpaceAfter: 4, margin: 0 });
 }
 function rSection(ctx, s, slide) {

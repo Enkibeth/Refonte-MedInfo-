@@ -1,4 +1,3 @@
-import { PageTitle } from '@/ui/PageTitle';
 /**
  * Module Rédaction d'article médical — outil étudiant + professionnel (ADR-0031).
  *
@@ -23,7 +22,7 @@ import { tokens } from '@/ui/tokens';
 import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
 import { RoleGate } from '@/ui/RoleGate';
-import { ToolsMenu } from '@/ui/ToolsMenu';
+import { ToolScreenHeader } from '@/ui/ToolScreenHeader';
 
 function ArticleWriterInner() {
   const { session } = useSession();
@@ -50,30 +49,24 @@ function ArticleWriterInner() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <ToolsMenu />
-        </View>
-        <PageTitle style={styles.title}>Rédaction d'article</PageTitle>
-        <Text style={styles.subtitle}>
-          Structure ton article, ta thèse ou ton abstract : compteurs de caractères,
-          bibliographie Vancouver, aides IA à la rédaction et contrôle d'originalité —
-          l'écriture, les compteurs et les exports sont gratuits.
-        </Text>
-      </View>
+      <ToolScreenHeader feature="article" title="Rédaction d’article">
+        Structure ton article, ta thèse ou ton abstract : compteurs de caractères,
+        bibliographie Vancouver, aides IA à la rédaction et contrôle d’originalité.
+        L’écriture, les compteurs et les exports sont gratuits.
+      </ToolScreenHeader>
 
       {Platform.OS === 'web' ? (
         <iframe
           ref={iframeRef}
           src="/article.html"
-          title="Rédaction d'article médical"
+          title="Rédaction d’article médical"
           onLoad={postToken}
           style={{ flex: 1, width: '100%', border: 'none', backgroundColor: tokens.colors.surface }}
         />
       ) : (
         <View style={styles.fallback}>
           <Text style={styles.fallbackText}>
-            L'outil de rédaction d'article (éditeur, compteurs, bibliographie, exports) est
+            L’outil de rédaction d’article (éditeur, compteurs, bibliographie, exports) est
             disponible sur la version web de MedInfo.
           </Text>
         </View>
@@ -94,10 +87,10 @@ export default function ArticleWriterScreen() {
         jsonLd={[
           breadcrumbJsonLd([
             { name: 'Accueil', path: '/' },
-            { name: "Rédaction d'article médical", path: PAGE_SEO.article.path },
+            { name: "Rédaction d’article médical", path: PAGE_SEO.article.path },
           ]),
           webApplicationJsonLd({
-            name: "Rédaction d'article médical — MedInfo AI",
+            name: 'Rédaction d’article médical',
             description: PAGE_SEO.article.description,
             path: PAGE_SEO.article.path,
           }),

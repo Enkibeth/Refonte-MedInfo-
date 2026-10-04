@@ -11,12 +11,9 @@ import { Platform } from 'react-native';
 // ── Rampe brute (ne pas consommer directement : passer par `tokens.colors`) ──
 const palette = {
   // Bleu — identité de marque 2026-07 : vif et jeune, décliné pour la profondeur
-  // et les fonds teintés.
+  // et les fonds teintés. (2026-10 : les nuances héritées du nuancier par défaut de
+  // Tailwind, blue500 à blue800, sont retirées : doublons ou valeurs sans usage.)
   blue950: '#141E4E', // bleu nuit — hero/footer, profondeur maximale
-  blue800: '#1E40AF', // profondeur, texte accent
-  blue600: '#2563EB', // primaire (CTA, header)
-  blue700: '#1D4ED8', // hover / actif du primaire
-  blue500: '#3B82F6', // nuance secondaire
   blue100: '#D9E6FF', // fond teinté discret
   blue50: '#EEF4FF',
 
@@ -30,7 +27,9 @@ const palette = {
   white: '#FFFFFF',
   neutral25: '#F8F7F3', // Papier ivoire : distingue la page des surfaces de lecture.
   neutral50: '#EDF1F7', // Navigation et surfaces secondaires bleu brume.
-  neutral100: '#EAEEF5',
+  // Champs enfoncés et états désactivés : distinct de neutral50 (ΔE 4,6 ; l'ancien #EAEEF5
+  // en était indiscernable, ΔE 1,1). textMuted y reste à 4,99:1.
+  neutral100: '#DFE5EE',
   neutral200: '#D8DFE7', // séparateurs non interactifs
   neutral250: '#C9D2DD', // filet des boutons secondaires au repos (le libellé identifie le bouton)
   neutral300: '#7D8998', // limites de contrôles : contraste > 3:1 sur blanc
@@ -39,7 +38,7 @@ const palette = {
   neutral900: '#142034', // encre principale
 
   // Sémantiques — désaturées pour rester sobres en contexte médical.
-  green600: '#157F50',
+  green600: '#12744A', // 5,1:1 sur green50 (l'ancien #157F50 n'atteignait que 4,43:1, sous AA)
   green50: '#E6F4EC',
   red600: '#C42233',
   red50: '#FBEAEC',
@@ -85,7 +84,7 @@ export const tokens = {
 
     // Accent bleu vif (refonte 2026-07)
     accent: palette.electric700, // texte/liens et contrôles : même famille que la primaire
-    accentStrong: palette.blue500, // nuance secondaire, jamais pour le texte courant
+    accentStrong: palette.electric600, // nuance secondaire, jamais pour le texte courant
     accentDeep: palette.electric700, // texte accent sur fond clair
     accentDarker: palette.blue950, // encre de marque historique
     accentSurface: palette.blue50, // fond teinté très léger
@@ -143,7 +142,7 @@ export const tokens = {
       rose: { fg: palette.clay700, bg: palette.clay50 },
       violet: { fg: palette.lilac700, bg: palette.lilac50 },
       teal: { fg: palette.sage700, bg: palette.sage50 },
-      indigo: { fg: palette.blue800, bg: palette.mist },
+      indigo: { fg: palette.electric800, bg: palette.mist },
       slate: { fg: palette.neutral700, bg: palette.neutral100 },
     },
   },
@@ -193,12 +192,17 @@ export const tokens = {
   // Échelle modulaire (~1.2). Letter-spacing négatif sur les grands titres = rendu « dessiné ».
   type: {
     landing: { fontSize: 60, lineHeight: 68, letterSpacing: -1.2 },
-    hero: { fontSize: 44, lineHeight: 52, letterSpacing: -0.6 }, // headline du hero landing uniquement
     display: { fontSize: 40, lineHeight: 46, letterSpacing: -0.8 },
     h1: { fontSize: 32, lineHeight: 40, letterSpacing: -0.5 },
     h2: { fontSize: 22, lineHeight: 30, letterSpacing: -0.3 },
     h3: { fontSize: 18, lineHeight: 26, letterSpacing: -0.2 },
     bodyLg: { fontSize: 17, lineHeight: 27, letterSpacing: 0 },
+    // Lecture longue (réponses du chat, articles) : 16 px ramène la colonne vers ~75 caractères.
+    reading: { fontSize: 16, lineHeight: 26, letterSpacing: 0 },
+    // Champs de saisie : jamais sous 16 px (Safari iOS zoome la page au focus en dessous).
+    input: { fontSize: 16, lineHeight: 24, letterSpacing: 0 },
+    // Libellés d'interface un cran au-dessus du corps (bouton lg, barre mobile).
+    ui: { fontSize: 16, lineHeight: 22, letterSpacing: 0 },
     body: { fontSize: 15, lineHeight: 24, letterSpacing: 0 },
     label: { fontSize: 14, lineHeight: 20, letterSpacing: 0 },
     caption: { fontSize: 13, lineHeight: 20, letterSpacing: 0 },
@@ -240,7 +244,9 @@ export const tokens = {
     ring: 32,
     stroke: 2,
   },
-  layout: { compact: 640, tablet: 768, shell: 1024, wide: 1280, sidebar: 224, rail: 72, reading: 760, page: 1200, form: 560, audience: 384, history: 256 },
+  // measure : largeur maximale d'un paragraphe (≈ 75 caractères à 15 px), distincte de la
+  // colonne de lecture qui peut porter tableaux et cartes.
+  layout: { compact: 640, tablet: 768, shell: 1024, wide: 1280, sidebar: 224, rail: 72, reading: 760, measure: 600, page: 1200, form: 560, audience: 384, history: 256 },
   border: { thin: 1, accent: 3 },
 
   // ── Élévation (ombres discrètes ; web only, ignorées proprement en natif) ───
@@ -270,7 +276,7 @@ export const tokens = {
       default: {},
     }) as object,
     lg: Platform.select({
-      web: { boxShadow: '0 4px 8px rgba(30, 64, 175, 0.06), 0 16px 40px -12px rgba(30, 64, 175, 0.18)' },
+      web: { boxShadow: '0 4px 8px rgba(0, 67, 176, 0.06), 0 16px 40px -12px rgba(0, 67, 176, 0.18)' },
       default: {},
     }) as object,
   },

@@ -9,8 +9,9 @@
  *   - pages publiques : `LandingHeader` (`banner` + `navigation`), `<MainContent>` autour du
  *     contenu, `SiteFooter` (`contentinfo`) — en-tête et pied restent HORS du `<main>` ;
  *   - espace connecté : chaque écran des groupes applicatifs est enveloppé par
- *     `screenMainLayout` (option `screenLayout` des navigateurs) ; barre d'onglets mobile et
- *     barre latérale du shell = `navigation`, barre supérieure du shell = `banner`.
+ *     `screenMainLayout` (option `screenLayout` des navigateurs) ; barre latérale du shell
+ *     = `navigation`, barre supérieure du shell = `banner` ; la barre compacte mobile est
+ *     dans le `<main>` de l'écran (comme celle du chat), sans rôle de repère.
  * Les écrans d'onglets déjà visités restent montés mais masqués (`display: none`) : leurs
  * `<main>` sont absents de l'arbre d'accessibilité. Seul l'écran au premier plan porte
  * l'identifiant cible (`#contenu`, jamais dupliqué) ; le lien d'évitement donne de toute façon
@@ -26,16 +27,21 @@ import { tokens } from './tokens';
 /** Cible du lien d'évitement : portée par le `<main>` de l'écran affiché, et lui seul. */
 export const MAIN_CONTENT_ID = 'contenu';
 
-/** Zone de contenu principal d'un écran (`<main>` sur le web), cible du lien d'évitement. */
+/**
+ * Zone de contenu principal d'un écran (`<main>` sur le web), cible du lien d'évitement.
+ * `targetId={null}` : pas d'identifiant (écran d'onglet en arrière-plan). Un paramètre par défaut
+ * sur `nativeID` ne suffisait pas : `nativeID={undefined}` le réactivait, et chaque écran déjà
+ * visité gardait `id="contenu"` (cibles en double pour le lien d'évitement).
+ */
 export function MainContent({
   children,
-  nativeID = MAIN_CONTENT_ID,
+  targetId = MAIN_CONTENT_ID,
   ...props
-}: ViewProps & { children?: ReactNode }) {
+}: Omit<ViewProps, 'nativeID'> & { children?: ReactNode; targetId?: string | null }) {
   return (
     <View
       {...props}
-      nativeID={nativeID}
+      {...(targetId ? { nativeID: targetId } : null)}
       role="main"
       // Focalisable par programme (lien d'évitement), jamais dans l'ordre de tabulation.
       {...(Platform.OS === 'web' ? { tabIndex: -1 as const } : null)}
@@ -49,7 +55,7 @@ export function MainContent({
 function ScreenMain({ children }: { children: ReactNode }) {
   const focused = useIsFocused();
   return (
-    <MainContent style={styles.fill} nativeID={focused ? MAIN_CONTENT_ID : undefined}>
+    <MainContent style={styles.fill} targetId={focused ? MAIN_CONTENT_ID : null}>
       {children}
     </MainContent>
   );

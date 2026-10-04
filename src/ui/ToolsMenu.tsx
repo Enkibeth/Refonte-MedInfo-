@@ -1,6 +1,6 @@
 /**
  * Menu déroulant de navigation entre outils (header) — alternative bien visible à
- * la barre d'onglets du bas. N'affiche QUE les outils du rôle courant
+ * la barre latérale et au menu ☰ mobile. N'affiche QUE les outils du rôle courant
  * (cf featureVisibility.ts) + Mon compte / Accueil (+ Admin si admin).
  */
 import { useState } from 'react';

@@ -4,8 +4,8 @@
  * écrans applicatifs sur DESKTOP WEB uniquement (≥ 1024 px, session ouverte).
  *
  * Partout ailleurs (mobile, natif, visiteur non connecté, pages publiques), le shell
- * est transparent : il rend ses enfants tels quels — la tab bar mobile
- * (src/ui/AppTabBar.tsx) et les en-têtes d'écran existants restent la navigation.
+ * est transparent : il rend ses enfants tels quels ; la barre compacte des écrans et
+ * son menu ☰ (src/ui/AppMobileHeader.tsx) portent la navigation.
  *
  * Couche d'ERGONOMIE uniquement : la sidebar consomme `visibleFeatures` (matrice
  * role-aware existante) et n'est jamais une barrière — l'autorisation réelle reste
@@ -36,7 +36,7 @@ import { tokens } from '@/ui/tokens';
 import { useWindowWidth } from '@/ui/useWindowWidth';
 import { useChatFocus } from '@/chat/focusMode';
 
-/** Largeur minimale (px) à partir de laquelle la sidebar remplace la tab bar. */
+/** Largeur minimale (px) à partir de laquelle la sidebar remplace la barre compacte mobile. */
 export const SHELL_BREAKPOINT = tokens.layout.shell;
 
 const SIDEBAR_WIDTH = tokens.layout.sidebar;
@@ -233,7 +233,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (isAdmin) {
     accountEntries.push({
       key: 'admin',
-      label: 'Panel admin IA',
+      label: 'Administration IA',
       icon: 'settings',
       route: '/admin',
       match: '__admin__', // géré via le groupe de segments, pas le pathname
@@ -311,7 +311,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       onPress={toggleCollapsed}
       accessibilityRole="button"
       accessibilityLabel={collapsed ? 'Déplier le menu latéral' : 'Replier le menu latéral'}
-      accessibilityHint="Raccourci : Ctrl ou Cmd + B"
+      accessibilityHint="Raccourci : Ctrl ou Cmd + B"
       style={({ hovered }: { hovered?: boolean }) => [
         styles.collapseButton,
         hovered && styles.collapseButtonHovered,
@@ -333,7 +333,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Pressable
             {...navLinkProps('/', () => router.push('/'))}
             accessibilityRole="link"
-            accessibilityLabel="MedInfo AI — accueil"
+            accessibilityLabel="MedInfo AI, accueil"
             style={[styles.logoRow, collapsed && styles.logoRowCollapsed]}
           >
             {/* Illustration de l'équipe (demande Hugo) — même pastille que le header
@@ -343,8 +343,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               source={require('../../../assets/brand/team-illustration-144.webp')}
               style={[styles.teamBadge, collapsed && styles.teamBadgeCollapsed]}
               resizeMode="cover"
-              accessibilityRole="image"
-              accessibilityLabel="L'équipe MedInfo AI"
+              // Décorative : le lien qui l'entoure porte déjà son nom (« MedInfo AI, accueil »).
+              alt=""
+              aria-hidden
             />
             {collapsed ? null : <Logo size="sm" />}
           </Pressable>
@@ -400,8 +401,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Text style={styles.privacyTitle}>Données protégées</Text>
             </View>
             <Text style={styles.privacyText}>
-              Tes contenus sont privés et isolés par compte. Les sources médicales restent
-              accessibles à tous.
+              Les contenus de chaque compte sont privés et isolés. Les sources médicales
+              restent accessibles à tous.
             </Text>
           </View>
         )}

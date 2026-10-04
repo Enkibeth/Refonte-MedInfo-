@@ -98,13 +98,16 @@ async function readPage(buildDir, page) {
  *   buildDir: string;
  *   headersFor: (html: string) => Record<string, string>;
  *   onUnsupported?: (reason: string) => void;
+ *   enrich?: (request: { page: string; pathname: string; html: string }) => Promise<{ html: string; status: number } | null>;
  * }} params
+ * `enrich` : document propre à l'URL (ex. métadonnées d'un article de blog, server/lib/blog-prerender.mjs),
+ * compressé à la volée ; `null` → coquille pré-rendue servie telle quelle.
  * @returns {(req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => Promise<boolean>}
  */
-export function createHtmlHandler({ buildDir, headersFor, onUnsupported }) {
+export function createHtmlHandler({ buildDir, headersFor, onUnsupported, enrich }) {
   /** @type {Promise<ReturnType<typeof analyzeManifest>> | null} */
   let routesPromise = null;
-  /** @type {Map<string, Promise<{ raw: Buffer; br: Buffer; gzip: Buffer; headers: Record<string, string> } | null>>} */
+  /** @type {Map<string, Promise<{ raw: Buffer; text: string; br: Buffer; gzip: Buffer; headers: Record<string, string> } | null>>} */
   const pages = new Map();
 
   function loadRoutes() {
@@ -129,7 +132,8 @@ export function createHtmlHandler({ buildDir, headersFor, onUnsupported }) {
             brotli(raw, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 } }),
             gzip(raw, { level: 9 }),
           ]);
-          return { raw, br, gzip: gz, headers: headersFor(raw.toString('utf8')) };
+          const text = raw.toString('utf8');
+          return { raw, text, br, gzip: gz, headers: headersFor(text) };
         })
         .catch((error) => {
           // Jamais d'échec mis en cache : la requête suivante réessaie ; celle-ci part chez Expo.
@@ -157,13 +161,30 @@ export function createHtmlHandler({ buildDir, headersFor, onUnsupported }) {
     if (!page) return false; // Fichier manquant : le moteur Expo répondra (et journalisera).
 
     const { encoding } = pickEncoding(req.headers['accept-encoding'], { br: true, gzip: true });
-    const body = encoding === 'br' ? page.br : encoding === 'gzip' ? page.gzip : page.raw;
+    const enriched = enrich && match.status === 200 ? await enrich({ page: match.page, pathname, html: page.text }) : null;
+    let body;
+    let status = match.status;
+    let headers = page.headers;
+    if (enriched) {
+      // Document propre à l'URL : compression rapide à la volée (quelques dizaines de Ko).
+      const raw = Buffer.from(enriched.html, 'utf8');
+      body =
+        encoding === 'br'
+          ? await brotli(raw, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 5 } })
+          : encoding === 'gzip'
+            ? await gzip(raw, { level: 6 })
+            : raw;
+      status = enriched.status;
+      headers = headersFor(enriched.html);
+    } else {
+      body = encoding === 'br' ? page.br : encoding === 'gzip' ? page.gzip : page.raw;
+    }
 
-    res.statusCode = match.status;
+    res.statusCode = status;
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', NO_STORE_CACHE_CONTROL);
     res.setHeader('Vary', 'Accept-Encoding');
-    for (const [name, value] of Object.entries(page.headers)) res.setHeader(name, value);
+    for (const [name, value] of Object.entries(headers)) res.setHeader(name, value);
     if (encoding) res.setHeader('Content-Encoding', encoding);
     res.setHeader('Content-Length', String(body.length));
     res.end(method === 'HEAD' ? undefined : body);

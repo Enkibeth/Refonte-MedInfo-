@@ -12,12 +12,12 @@ const UMOL_TO_MGDL = 1 / 88.4; // créatinine : µmol/L → mg/dL
 /** Interprétation KDIGO d'un DFG / clairance (mL/min[/1,73 m²]). */
 function renalInterpretation(gfr: number, normalized: boolean): ScoreInterpretation {
   const u = normalized ? 'mL/min/1,73 m²' : 'mL/min';
-  if (gfr >= 90) return { level: 'low', label: 'Fonction normale (G1)', detail: `DFG ≥ 90 ${u} : fonction rénale normale (à interpréter avec l’albuminurie).` };
-  if (gfr >= 60) return { level: 'low', label: 'Légèrement diminuée (G2)', detail: `DFG 60–89 ${u} : fonction légèrement diminuée.` };
-  if (gfr >= 45) return { level: 'moderate', label: 'IRC modérée (G3a)', detail: `DFG 45–59 ${u} : insuffisance rénale chronique modérée.` };
-  if (gfr >= 30) return { level: 'moderate', label: 'IRC modérée à sévère (G3b)', detail: `DFG 30–44 ${u} : adapter les posologies néphrotoxiques, avis néphrologique.` };
-  if (gfr >= 15) return { level: 'high', label: 'IRC sévère (G4)', detail: `DFG 15–29 ${u} : préparer la suppléance, avis néphrologique.` };
-  return { level: 'critical', label: 'IRC terminale (G5)', detail: `DFG < 15 ${u} : insuffisance rénale terminale.` };
+  if (gfr >= 90) return { level: 'low', label: 'Fonction normale (G1)', detail: `DFG ≥ 90 ${u} : fonction rénale normale (à interpréter avec l’albuminurie).` };
+  if (gfr >= 60) return { level: 'low', label: 'Légèrement diminuée (G2)', detail: `DFG 60–89 ${u} : fonction légèrement diminuée.` };
+  if (gfr >= 45) return { level: 'moderate', label: 'IRC modérée (G3a)', detail: `DFG 45–59 ${u} : insuffisance rénale chronique modérée.` };
+  if (gfr >= 30) return { level: 'moderate', label: 'IRC modérée à sévère (G3b)', detail: `DFG 30–44 ${u} : adapter les posologies néphrotoxiques, avis néphrologique.` };
+  if (gfr >= 15) return { level: 'high', label: 'IRC sévère (G4)', detail: `DFG 15–29 ${u} : préparer la suppléance, avis néphrologique.` };
+  return { level: 'critical', label: 'IRC terminale (G5)', detail: `DFG < 15 ${u} : insuffisance rénale terminale.` };
 }
 
 const incompleteResult = (msg: string): ReturnType<ScoreDefinition['compute']> => ({
@@ -30,11 +30,11 @@ const incompleteResult = (msg: string): ReturnType<ScoreDefinition['compute']> =
 export const NEPHRO_SCORES: ScoreDefinition[] = [
   {
     id: 'ckd-epi',
-    name: 'DFG estimé — CKD-EPI 2021 (sans variable ethnique)',
+    name: 'DFG estimé (CKD-EPI 2021, sans variable ethnique)',
     acronym: 'CKD-EPI',
     category: 'nephro',
     purpose:
-      "Estime le débit de filtration glomérulaire à partir de la créatininémie pour dépister et stader l'insuffisance rénale chronique.",
+      "Estime le débit de filtration glomérulaire à partir de la créatininémie pour dépister et stader l’insuffisance rénale chronique.",
     aliases: ['ckd epi', 'ckd-epi', 'dfg', 'débit de filtration glomérulaire', 'clairance créatinine estimée'],
     keywords: [
       'insuffisance rénale',
@@ -82,11 +82,11 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
 
   {
     id: 'cockcroft',
-    name: 'Clairance de la créatinine — Cockcroft-Gault',
+    name: 'Clairance de la créatinine (Cockcroft-Gault)',
     acronym: 'Cockcroft-Gault',
     category: 'nephro',
     purpose:
-      "Estime la clairance de la créatinine (non indexée à la surface corporelle) ; reste la référence pour l'adaptation posologique de nombreux médicaments (AOD, aminosides…).",
+      "Estime la clairance de la créatinine (non indexée à la surface corporelle) ; reste la référence pour l’adaptation posologique de nombreux médicaments (AOD, aminosides…).",
     aliases: ['cockcroft', 'cockroft', 'cockcroft gault', 'clairance créatinine'],
     keywords: [
       'clairance',
@@ -112,7 +112,7 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
       },
     ],
     reference: 'Cockcroft & Gault 1976. Clairance en mL/min (non indexée à 1,73 m²).',
-    caution: 'Peu fiable en cas d’obésité, de poids extrême ou de dénutrition ; préférer le poids ajusté si obésité.',
+    caution: 'Peu fiable en cas d’obésité, de poids extrême ou de dénutrition ; préférer le poids ajusté si obésité.',
     compute: (v) => {
       const creat = v.creat;
       const age = v.age;
@@ -128,11 +128,11 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
 
   {
     id: 'mdrd',
-    name: 'DFG estimé — MDRD (4 variables, IDMS)',
+    name: 'DFG estimé (MDRD, 4 variables, IDMS)',
     acronym: 'MDRD',
     category: 'nephro',
     purpose:
-      "Ancienne formule d'estimation du DFG à partir de la créatininémie ; largement remplacée par CKD-EPI mais encore rencontrée.",
+      "Ancienne formule d’estimation du DFG à partir de la créatininémie ; largement remplacée par CKD-EPI mais encore rencontrée.",
     aliases: ['mdrd', 'mdrd simplifié'],
     keywords: ['DFG', 'insuffisance rénale', 'créatinine', 'clairance', 'fonction rénale', 'néphrologie'],
     fields: [
@@ -167,7 +167,7 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
     acronym: 'Ca corrigée',
     category: 'nephro',
     purpose:
-      "Corrige la calcémie totale en fonction de l'albuminémie, pour ne pas méconnaître une hypo/hypercalcémie masquée par une anomalie de l'albumine.",
+      "Corrige la calcémie totale en fonction de l’albuminémie, pour ne pas méconnaître une hypo/hypercalcémie masquée par une anomalie de l’albumine.",
     aliases: ['calcemie corrigee', 'calcium corrigé', 'ca corrige'],
     keywords: ['calcémie', 'calcium', 'hypocalcémie', 'hypercalcémie', 'albumine', 'ionogramme'],
     fields: [
@@ -183,8 +183,8 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
       }
       const corr = ca + 0.02 * (40 - alb);
       let interpretation: ScoreInterpretation;
-      if (corr < 2.2) interpretation = { level: 'moderate', label: 'Hypocalcémie', detail: 'Calcémie corrigée < 2,20 mmol/L : hypocalcémie.' };
-      else if (corr > 2.6) interpretation = { level: 'high', label: 'Hypercalcémie', detail: 'Calcémie corrigée > 2,60 mmol/L : hypercalcémie — rechercher la cause (PTH…).' };
+      if (corr < 2.2) interpretation = { level: 'moderate', label: 'Hypocalcémie', detail: 'Calcémie corrigée < 2,20 mmol/L : hypocalcémie.' };
+      else if (corr > 2.6) interpretation = { level: 'high', label: 'Hypercalcémie', detail: 'Calcémie corrigée > 2,60 mmol/L : hypercalcémie. Rechercher la cause (PTH…).' };
       else interpretation = { level: 'low', label: 'Normale', detail: 'Calcémie corrigée dans les normes (2,20–2,60 mmol/L).' };
       return { value: corr, display: `${fmt(corr, 2)} mmol/L`, interpretation };
     },
@@ -196,7 +196,7 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
     acronym: 'Na corrigée',
     category: 'nephro',
     purpose:
-      "Corrige la natrémie mesurée en cas d'hyperglycémie (fausse hyponatrémie de transfert) pour évaluer la vraie natrémie.",
+      "Corrige la natrémie mesurée en cas d’hyperglycémie (fausse hyponatrémie de transfert) pour évaluer la vraie natrémie.",
     aliases: ['natremie corrigee', 'sodium corrigé', 'na corrige', 'hyponatremie hyperglycemie'],
     keywords: ['natrémie', 'sodium', 'hyponatrémie', 'hyperglycémie', 'glycémie', 'ionogramme'],
     fields: [
@@ -212,9 +212,9 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
       }
       const corr = na + 0.3 * (glc - 5.5);
       let interpretation: ScoreInterpretation;
-      if (corr < 135) interpretation = { level: 'moderate', label: 'Hyponatrémie vraie', detail: 'Natrémie corrigée < 135 mmol/L : hyponatrémie réelle.' };
-      else if (corr > 145) interpretation = { level: 'moderate', label: 'Hypernatrémie', detail: 'Natrémie corrigée > 145 mmol/L : hypernatrémie.' };
-      else interpretation = { level: 'low', label: 'Natrémie normale', detail: 'Natrémie corrigée normale : l’hyponatrémie mesurée était liée à l’hyperglycémie.' };
+      if (corr < 135) interpretation = { level: 'moderate', label: 'Hyponatrémie vraie', detail: 'Natrémie corrigée < 135 mmol/L : hyponatrémie réelle.' };
+      else if (corr > 145) interpretation = { level: 'moderate', label: 'Hypernatrémie', detail: 'Natrémie corrigée > 145 mmol/L : hypernatrémie.' };
+      else interpretation = { level: 'low', label: 'Natrémie normale', detail: 'Natrémie corrigée normale : l’hyponatrémie mesurée était liée à l’hyperglycémie.' };
       return { value: corr, display: `${fmt(corr, 1)} mmol/L`, interpretation };
     },
   },
@@ -225,7 +225,7 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
     acronym: 'TA / anion gap',
     category: 'nephro',
     purpose:
-      "Oriente le diagnostic d'une acidose métabolique (trou anionique augmenté vs normal).",
+      "Oriente le diagnostic d’une acidose métabolique (trou anionique augmenté vs normal).",
     aliases: ['trou anionique', 'anion gap', 'ta', 'acidose metabolique'],
     keywords: ['acidose', 'métabolique', 'ionogramme', 'bicarbonates', 'gaz du sang', 'chlore'],
     fields: [
@@ -241,9 +241,9 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
       }
       const ag = sodium - (chloride + bicarbonate);
       let interpretation: ScoreInterpretation;
-      if (ag > 12) interpretation = { level: 'high', label: 'Trou anionique augmenté', detail: 'TA > 12 : acidose métabolique à TA élevé (acido-cétose, lactates, insuffisance rénale, toxiques).' };
-      else if (ag < 8) interpretation = { level: 'info', label: 'Trou anionique bas', detail: 'TA < 8 : rare — hypoalbuminémie, paraprotéine, erreur de mesure.' };
-      else interpretation = { level: 'low', label: 'Trou anionique normal', detail: 'TA 8–12 : si acidose, elle est à TA normal (hyperchlorémique : pertes digestives, ATR).' };
+      if (ag > 12) interpretation = { level: 'high', label: 'Trou anionique augmenté', detail: 'TA > 12 : acidose métabolique à TA élevé (acido-cétose, lactates, insuffisance rénale, toxiques).' };
+      else if (ag < 8) interpretation = { level: 'info', label: 'Trou anionique bas', detail: 'TA < 8 : rare (hypoalbuminémie, paraprotéine, erreur de mesure).' };
+      else interpretation = { level: 'low', label: 'Trou anionique normal', detail: 'TA 8–12 : si acidose, elle est à TA normal (hyperchlorémique : pertes digestives, ATR).' };
       return { value: ag, display: `${fmt(ag, 1)} mmol/L`, interpretation };
     },
   },
@@ -254,7 +254,7 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
     acronym: 'Osm calculée',
     category: 'nephro',
     purpose:
-      "Estime l'osmolalité plasmatique ; sa comparaison à l'osmolalité mesurée révèle un trou osmolaire (intoxications aux alcools).",
+      "Estime l’osmolalité plasmatique ; sa comparaison à l’osmolalité mesurée révèle un trou osmolaire (intoxications aux alcools).",
     aliases: ['osmolalite', 'osmolarite', 'osmolalité plasmatique', 'trou osmolaire'],
     keywords: ['osmolalité', 'osmolarité', 'trou osmolaire', 'intoxication', 'éthylène glycol', 'ionogramme', 'natrémie'],
     fields: [
@@ -270,8 +270,8 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
       }
       const osm = 2 * sodium + glucose + urea;
       let interpretation: ScoreInterpretation;
-      if (osm > 295) interpretation = { level: 'moderate', label: 'Hyperosmolalité', detail: 'Osmolalité > 295 : déshydratation, hyperglycémie, hypernatrémie.' };
-      else if (osm < 275) interpretation = { level: 'moderate', label: 'Hypo-osmolalité', detail: 'Osmolalité < 275 : hyperhydratation, hyponatrémie hypotonique.' };
+      if (osm > 295) interpretation = { level: 'moderate', label: 'Hyperosmolalité', detail: 'Osmolalité > 295 : déshydratation, hyperglycémie, hypernatrémie.' };
+      else if (osm < 275) interpretation = { level: 'moderate', label: 'Hypo-osmolalité', detail: 'Osmolalité < 275 : hyperhydratation, hyponatrémie hypotonique.' };
       else interpretation = { level: 'low', label: 'Normale', detail: 'Osmolalité calculée dans les normes (275–295). Comparer à l’osmolalité mesurée (trou osmolaire).' };
       return { value: osm, display: `${fmt(osm)} mOsm/kg`, interpretation };
     },
@@ -283,7 +283,7 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
     acronym: 'FeNa',
     category: 'nephro',
     purpose:
-      "Distingue une insuffisance rénale aiguë fonctionnelle (pré-rénale) d'une nécrose tubulaire aiguë (organique).",
+      "Distingue une insuffisance rénale aiguë fonctionnelle (pré-rénale) d’une nécrose tubulaire aiguë (organique).",
     aliases: ['fena', 'fraction excretion sodium', 'excrétion sodium'],
     keywords: [
       'insuffisance rénale aiguë',
@@ -309,9 +309,9 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
       }
       const fena = ((uNa * pCreat) / (pNa * uCreat)) * 100;
       let interpretation: ScoreInterpretation;
-      if (fena < 1) interpretation = { level: 'moderate', label: 'IRA fonctionnelle', detail: 'FeNa < 1 % : origine pré-rénale (fonctionnelle) — hypovolémie, bas débit. Restaurer la volémie.' };
-      else if (fena > 2) interpretation = { level: 'high', label: 'IRA organique', detail: 'FeNa > 2 % : origine rénale (nécrose tubulaire aiguë).' };
-      else interpretation = { level: 'info', label: 'Zone intermédiaire', detail: 'FeNa 1–2 % : indéterminé — recouper avec la clinique et la FeUrée.' };
+      if (fena < 1) interpretation = { level: 'moderate', label: 'IRA fonctionnelle', detail: 'FeNa < 1 % : origine pré-rénale (fonctionnelle : hypovolémie, bas débit). Restaurer la volémie.' };
+      else if (fena > 2) interpretation = { level: 'high', label: 'IRA organique', detail: 'FeNa > 2 % : origine rénale (nécrose tubulaire aiguë).' };
+      else interpretation = { level: 'info', label: 'Zone intermédiaire', detail: 'FeNa 1–2 % : indéterminé. Recouper avec la clinique et la FeUrée.' };
       return { value: fena, display: `${fmt(fena, 1)} %`, interpretation };
     },
   },
@@ -322,7 +322,7 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
     acronym: 'FeUrée',
     category: 'nephro',
     purpose:
-      "Distingue une insuffisance rénale aiguë fonctionnelle d'une organique ; reste interprétable SOUS diurétiques (contrairement à la FeNa).",
+      "Distingue une insuffisance rénale aiguë fonctionnelle d’une organique ; reste interprétable SOUS diurétiques (contrairement à la FeNa).",
     aliases: ['feuree', 'fraction excretion uree', 'excretion uree'],
     keywords: ['insuffisance rénale aiguë', 'IRA', 'fonctionnelle', 'organique', 'diurétiques', 'urée urinaire', 'oligurie'],
     fields: [
@@ -339,9 +339,9 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
       }
       const feurea = ((uUrea * pCreat) / (pUrea * uCreat)) * 100;
       let interpretation: ScoreInterpretation;
-      if (feurea < 35) interpretation = { level: 'moderate', label: 'IRA fonctionnelle', detail: 'FeUrée < 35 % : origine pré-rénale (fonctionnelle) — y compris sous diurétiques.' };
-      else if (feurea > 50) interpretation = { level: 'high', label: 'IRA organique', detail: 'FeUrée > 50 % : origine rénale (nécrose tubulaire aiguë).' };
-      else interpretation = { level: 'info', label: 'Zone intermédiaire', detail: 'FeUrée 35–50 % : indéterminé — recouper avec la clinique.' };
+      if (feurea < 35) interpretation = { level: 'moderate', label: 'IRA fonctionnelle', detail: 'FeUrée < 35 % : origine pré-rénale (fonctionnelle), y compris sous diurétiques.' };
+      else if (feurea > 50) interpretation = { level: 'high', label: 'IRA organique', detail: 'FeUrée > 50 % : origine rénale (nécrose tubulaire aiguë).' };
+      else interpretation = { level: 'info', label: 'Zone intermédiaire', detail: 'FeUrée 35–50 % : indéterminé. Recouper avec la clinique.' };
       return { value: feurea, display: `${fmt(feurea, 1)} %`, interpretation };
     },
   },
@@ -352,7 +352,7 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
     acronym: 'Winter',
     category: 'nephro',
     purpose:
-      "Calcule la PaCO₂ attendue en réponse à une acidose métabolique ; l'écart avec la PaCO₂ mesurée révèle un trouble respiratoire associé.",
+      "Calcule la PaCO₂ attendue en réponse à une acidose métabolique ; l’écart avec la PaCO₂ mesurée révèle un trouble respiratoire associé.",
     aliases: ['winter', 'formule de winter', 'compensation acidose', 'paco2 attendue'],
     keywords: ['acidose métabolique', 'compensation', 'gaz du sang', 'PaCO2', 'bicarbonates', 'équilibre acido-basique'],
     fields: [
@@ -367,9 +367,9 @@ export const NEPHRO_SCORES: ScoreDefinition[] = [
       const measured = v.measuredPaco2;
       let interpretation: ScoreInterpretation;
       if (Number.isFinite(measured)) {
-        if (measured > expected + 2) interpretation = { level: 'high', label: 'Acidose respiratoire associée', detail: `PaCO₂ mesurée (${fmt(measured)} mmHg) > attendue (${fmt(expected)} ± 2) : hypoventilation — acidose respiratoire surajoutée.` };
-        else if (measured < expected - 2) interpretation = { level: 'high', label: 'Alcalose respiratoire associée', detail: `PaCO₂ mesurée (${fmt(measured)} mmHg) < attendue (${fmt(expected)} ± 2) : hyperventilation — alcalose respiratoire surajoutée.` };
-        else interpretation = { level: 'low', label: 'Compensation adéquate', detail: `PaCO₂ mesurée conforme à l’attendue (${fmt(expected)} ± 2 mmHg) : compensation respiratoire appropriée.` };
+        if (measured > expected + 2) interpretation = { level: 'high', label: 'Acidose respiratoire associée', detail: `PaCO₂ mesurée (${fmt(measured)} mmHg) > attendue (${fmt(expected)} ± 2) : hypoventilation. Acidose respiratoire surajoutée.` };
+        else if (measured < expected - 2) interpretation = { level: 'high', label: 'Alcalose respiratoire associée', detail: `PaCO₂ mesurée (${fmt(measured)} mmHg) < attendue (${fmt(expected)} ± 2) : hyperventilation. Alcalose respiratoire surajoutée.` };
+        else interpretation = { level: 'low', label: 'Compensation adéquate', detail: `PaCO₂ mesurée conforme à l’attendue (${fmt(expected)} ± 2 mmHg) : compensation respiratoire appropriée.` };
       } else {
         interpretation = { level: 'info', label: 'PaCO₂ attendue', detail: `PaCO₂ attendue ≈ ${fmt(expected)} ± 2 mmHg. Comparez à la PaCO₂ mesurée pour détecter un trouble respiratoire associé.` };
       }

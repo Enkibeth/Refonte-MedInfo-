@@ -19,7 +19,7 @@ export const GENERAL_SCORES: ScoreDefinition[] = [
     acronym: 'IMC',
     category: 'general',
     purpose:
-      "Rapporte le poids à la taille pour situer la corpulence (maigreur, surpoids, obésité) chez l'adulte.",
+      "Rapporte le poids à la taille pour situer la corpulence (maigreur, surpoids, obésité) chez l’adulte.",
     aliases: ['imc', 'bmi', 'indice masse corporelle', 'body mass index', 'corpulence'],
     keywords: ['poids', 'obésité', 'surpoids', 'maigreur', 'nutrition', 'corpulence', 'dénutrition'],
     fields: [
@@ -35,12 +35,12 @@ export const GENERAL_SCORES: ScoreDefinition[] = [
       const m = height / 100;
       const bmi = weight / (m * m);
       let interpretation: ScoreInterpretation;
-      if (bmi < 18.5) interpretation = { level: 'moderate', label: 'Insuffisance pondérale', detail: 'IMC < 18,5 : maigreur — rechercher une dénutrition.' };
-      else if (bmi < 25) interpretation = { level: 'low', label: 'Corpulence normale', detail: 'IMC 18,5–24,9 : corpulence normale.' };
-      else if (bmi < 30) interpretation = { level: 'moderate', label: 'Surpoids', detail: 'IMC 25–29,9 : surpoids.' };
-      else if (bmi < 35) interpretation = { level: 'high', label: 'Obésité classe I', detail: 'IMC 30–34,9 : obésité modérée.' };
-      else if (bmi < 40) interpretation = { level: 'high', label: 'Obésité classe II', detail: 'IMC 35–39,9 : obésité sévère.' };
-      else interpretation = { level: 'critical', label: 'Obésité classe III', detail: 'IMC ≥ 40 : obésité morbide.' };
+      if (bmi < 18.5) interpretation = { level: 'moderate', label: 'Insuffisance pondérale', detail: 'IMC < 18,5 : maigreur. Rechercher une dénutrition.' };
+      else if (bmi < 25) interpretation = { level: 'low', label: 'Corpulence normale', detail: 'IMC 18,5–24,9 : corpulence normale.' };
+      else if (bmi < 30) interpretation = { level: 'moderate', label: 'Surpoids', detail: 'IMC 25–29,9 : surpoids.' };
+      else if (bmi < 35) interpretation = { level: 'high', label: 'Obésité classe I', detail: 'IMC 30–34,9 : obésité modérée.' };
+      else if (bmi < 40) interpretation = { level: 'high', label: 'Obésité classe II', detail: 'IMC 35–39,9 : obésité sévère.' };
+      else interpretation = { level: 'critical', label: 'Obésité classe III', detail: 'IMC ≥ 40 : obésité morbide.' };
       return { value: bmi, display: `${fmt(bmi, 1)} kg/m²`, interpretation };
     },
   },
@@ -51,7 +51,7 @@ export const GENERAL_SCORES: ScoreDefinition[] = [
     acronym: 'SC / BSA',
     category: 'general',
     purpose:
-      "Estime la surface corporelle, utilisée pour l'adaptation de posologies (chimiothérapie, index cardiaque…).",
+      "Estime la surface corporelle, utilisée pour l’adaptation de posologies (chimiothérapie, index cardiaque…).",
     aliases: ['surface corporelle', 'bsa', 'mosteller', 'body surface area'],
     keywords: ['surface corporelle', 'posologie', 'chimiothérapie', 'index cardiaque', 'dose'],
     fields: [
@@ -79,7 +79,7 @@ export const GENERAL_SCORES: ScoreDefinition[] = [
     acronym: 'Ganzoni',
     category: 'general',
     purpose:
-      "Estime le déficit TOTAL en fer d'un patient (mg) à recharger, pour calculer la dose d'une supplémentation martiale (souvent par voie intraveineuse).",
+      "Estime le déficit TOTAL en fer d’un patient (mg) à recharger, pour calculer la dose d’une supplémentation martiale (souvent par voie intraveineuse).",
     aliases: ['ganzoni', 'deficit en fer', 'déficit martial', 'dose de fer', 'carence martiale', 'iron deficit'],
     keywords: [
       'fer',
@@ -101,7 +101,7 @@ export const GENERAL_SCORES: ScoreDefinition[] = [
     reference:
       'Ganzoni 1970. Déficit (mg) = poids × (Hb cible − Hb actuelle) × 2,4 + réserves (500 mg si ≥ 35 kg, sinon 15 mg/kg).',
     caution:
-      'Hémoglobine à saisir en g/dL. Estimation pour le calcul de dose (ferrothérapie IV) : vérifier bilan martial, cause du déficit et protocole du produit.',
+      'Hémoglobine à saisir en g/dL. Estimation pour le calcul de dose (ferrothérapie IV) : vérifier bilan martial, cause du déficit et protocole du produit.',
     compute: (v) => {
       const { weight, hbActual, hbTarget } = v;
       if (![weight, hbActual, hbTarget].every(Number.isFinite) || weight <= 0) {
@@ -112,7 +112,7 @@ export const GENERAL_SCORES: ScoreDefinition[] = [
       const deficit = weight * deltaHb * 2.4 + depot;
       const interpretation: ScoreInterpretation =
         deltaHb === 0
-          ? { level: 'info', label: 'Réserves seulement', detail: `Hb déjà ≥ cible : seule la reconstitution des réserves est estimée (${fmt(depot)} mg).` }
+          ? { level: 'info', label: 'Réserves seulement', detail: `Hb déjà ≥ cible : seule la reconstitution des réserves est estimée (${fmt(depot)} mg).` }
           : { level: 'info', label: 'Déficit en fer estimé', detail: `Déficit total ≈ ${fmt(deficit)} mg de fer à recharger (dont ${fmt(depot)} mg de réserves). Adapter à la ferrothérapie choisie (souvent IV).` };
       return { value: deficit, display: `${fmt(deficit)} mg`, interpretation };
     },
@@ -124,7 +124,7 @@ export const GENERAL_SCORES: ScoreDefinition[] = [
     acronym: 'AUDIT-C',
     category: 'general',
     purpose:
-      "Dépiste rapidement une consommation d'alcool à risque (3 questions). Seuil : homme ≥ 4, femme ≥ 3.",
+      "Dépiste rapidement une consommation d’alcool à risque (3 questions). Seuil : homme ≥ 4, femme ≥ 3.",
     aliases: ['audit c', 'audit-c', 'auditc', 'alcool dépistage'],
     keywords: ['alcool', 'addiction', 'consommation', 'dépistage', 'mésusage', 'dépendance'],
     fields: [
@@ -174,13 +174,13 @@ export const GENERAL_SCORES: ScoreDefinition[] = [
         ],
       },
     ],
-    reference: 'Bush 1998. Score 0–12. Seuil : homme ≥ 4, femme ≥ 3.',
+    reference: 'Bush 1998. Score 0–12. Seuil : homme ≥ 4, femme ≥ 3.',
     compute: (v) => {
       const total = (v.q1 ?? 0) + (v.q2 ?? 0) + (v.q3 ?? 0);
       const threshold = v.sex === 1 ? 3 : 4;
       let interpretation: ScoreInterpretation;
-      if (total >= 8) interpretation = { level: 'high', label: 'Consommation à risque élevé', detail: 'Score ≥ 8 : consommation à risque élevé — évaluer une dépendance (AUDIT complet).' };
-      else if (total >= threshold) interpretation = { level: 'moderate', label: 'Dépistage positif', detail: `Score ≥ ${threshold} : consommation à risque — proposer une évaluation et un accompagnement.` };
+      if (total >= 8) interpretation = { level: 'high', label: 'Consommation à risque élevé', detail: 'Score ≥ 8 : consommation à risque élevé. Évaluer une dépendance (AUDIT complet).' };
+      else if (total >= threshold) interpretation = { level: 'moderate', label: 'Dépistage positif', detail: `Score ≥ ${threshold} : consommation à risque. Proposer une évaluation et un accompagnement.` };
       else interpretation = { level: 'low', label: 'Dépistage négatif', detail: 'Consommation à faible risque selon l’AUDIT-C.' };
       return { value: total, display: `${fmt(total)} / 12`, interpretation };
     },
@@ -193,7 +193,7 @@ export const GENERAL_SCORES: ScoreDefinition[] = [
       acronym: 'CAGE',
       category: 'general',
       purpose:
-        "Repérage rapide (4 questions) d'une consommation d'alcool problématique / dépendance.",
+        "Repérage rapide (4 questions) d’une consommation d’alcool problématique / dépendance.",
       aliases: ['cage', 'cage alcool', 'deta'],
       keywords: ['alcool', 'addiction', 'dépendance', 'dépistage', 'mésusage'],
       fields: [
@@ -202,11 +202,11 @@ export const GENERAL_SCORES: ScoreDefinition[] = [
         yesNo('guilty', 'Culpabilité liée à la consommation (Guilty)', 1),
         yesNo('eyeOpener', 'Boire dès le matin pour tenir / se calmer (Eye-opener)', 1),
       ],
-      reference: 'Ewing 1984. Seuil de positivité : ≥ 2.',
+      reference: 'Ewing 1984. Seuil de positivité : ≥ 2.',
     },
     [
-      { min: 0, level: 'low', label: 'Dépistage négatif', detail: 'Score 0–1 : dépistage négatif.' },
-      { min: 2, level: 'high', label: 'Dépistage positif', detail: 'Score ≥ 2 : forte suspicion de consommation problématique — approfondir (AUDIT, entretien).' },
+      { min: 0, level: 'low', label: 'Dépistage négatif', detail: 'Score 0–1 : dépistage négatif.' },
+      { min: 2, level: 'high', label: 'Dépistage positif', detail: 'Score ≥ 2 : forte suspicion de consommation problématique. Approfondir (AUDIT, entretien).' },
     ],
   ),
 
@@ -217,7 +217,7 @@ export const GENERAL_SCORES: ScoreDefinition[] = [
       acronym: 'Fagerström',
       category: 'general',
       purpose:
-        "Évalue l'intensité de la dépendance physique à la nicotine pour adapter l'aide au sevrage.",
+        "Évalue l’intensité de la dépendance physique à la nicotine pour adapter l’aide au sevrage.",
       aliases: ['fagerstrom', 'ftnd', 'dependance nicotine', 'tabac dependance'],
       keywords: ['tabac', 'nicotine', 'dépendance', 'sevrage', 'addiction', 'cigarette', 'substituts'],
       fields: [
@@ -283,9 +283,9 @@ export const GENERAL_SCORES: ScoreDefinition[] = [
       reference: 'Heatherton 1991 (FTND). Score 0–10.',
     },
     [
-      { min: 0, level: 'low', label: 'Dépendance faible', detail: 'Score 0–2 : dépendance faible ou absente.' },
-      { min: 3, level: 'moderate', label: 'Dépendance modérée', detail: 'Score 3–4 : dépendance modérée.' },
-      { min: 5, level: 'high', label: 'Dépendance forte', detail: 'Score 5–10 : dépendance forte à très forte — substituts nicotiniques / aide au sevrage recommandés.' },
+      { min: 0, level: 'low', label: 'Dépendance faible', detail: 'Score 0–2 : dépendance faible ou absente.' },
+      { min: 3, level: 'moderate', label: 'Dépendance modérée', detail: 'Score 3–4 : dépendance modérée.' },
+      { min: 5, level: 'high', label: 'Dépendance forte', detail: 'Score 5–10 : dépendance forte à très forte. Substituts nicotiniques / aide au sevrage recommandés.' },
     ],
   ),
 ];

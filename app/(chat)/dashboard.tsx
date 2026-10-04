@@ -58,6 +58,7 @@ import { CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
 import { featureTint } from '@/ui/featureChips';
 import { Icon } from '@/ui/icons';
 import { SeoHead } from '@/ui/SeoHead';
+import { ScreenNavBar } from '@/ui/AppMobileHeader';
 import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 import { Skeleton } from '@/ui/Skeleton';
 import { tokens } from '@/ui/tokens';
@@ -392,8 +393,11 @@ export default function DashboardScreen() {
   );
 
   // Visiteur non connecté : la Vue d’ensemble n’existe pas (essai = chat seul).
-  if (!loading && !session) return <Redirect href="/(chat)/chat" />;
-  if (!user) return null;
+  // Métadonnées posées AVANT tout retour anticipé : le pré-rendu (sans session) gardait
+  // sinon un titre vide et aucune directive noindex.
+  const seo = <SeoHead title="Vue d’ensemble" path="/dashboard" noindex />;
+  if (!loading && !session) return <>{seo}<Redirect href="/(chat)/chat" /></>;
+  if (!user) return seo;
 
   const tools = visibleFeatures(persona, { isAdmin });
   const activityLoading =
@@ -453,12 +457,21 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.screen}>
-      <SeoHead title="Vue d’ensemble" path="/dashboard" noindex />
+      {seo}
+      {/* Téléphone et tablette : navigation de l'espace (la barre d'onglets du bas est retirée). */}
+      <ScreenNavBar title="MedInfo AI" icon="home" />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: desktopShell ? tokens.space.xl : Math.max(insets.top, tokens.space.lg) + tokens.space.sm },
+          // Sous 1 024 px, la barre compacte (ScreenNavBar) porte déjà la zone sûre du haut.
+          {
+            paddingTop: desktopShell
+              ? tokens.space.xl
+              : width >= tokens.layout.shell
+                ? Math.max(insets.top, tokens.space.lg) + tokens.space.sm // natif ≥ 1 024 px : pas de barre
+                : tokens.space.lg + tokens.space.sm,
+          },
         ]}
       >
         <View style={[styles.columns, wide && styles.columnsWide]}>
@@ -470,7 +483,7 @@ export default function DashboardScreen() {
                 <Text style={styles.greetingText}>{greeting}</Text>
               </View>
               <Text style={styles.heroTitle} accessibilityRole="header" aria-level={1}>
-                Qu’est-ce qui compte aujourd’hui ?
+                Qu’est-ce qui compte aujourd’hui ?
               </Text>
               <Text style={styles.heroSubtitle}>{subtitle}</Text>
               {/* Mobile : deux boutons pleine largeur empilés (des largeurs inégales faisaient
@@ -509,7 +522,7 @@ export default function DashboardScreen() {
                 Mes outils
               </Text>
               <Text style={styles.sectionSubtitle}>
-                Tout ce que ton rôle débloque, au même endroit.
+                Les outils disponibles avec ton profil.
               </Text>
             </View>
             {/* Accès direct aux 3 chatbots (comptes étudiant/pro/admin) — le
@@ -555,10 +568,12 @@ export default function DashboardScreen() {
                     <View style={[styles.toolChip, { backgroundColor: tint.bg }]}>
                       <Icon name={tool.icon} size={20} color={tint.fg} />
                     </View>
-                    <Text style={styles.toolTitle}>{tool.label}</Text>
-                    <Text style={styles.toolDescription} numberOfLines={2}>
-                      {tool.description}
-                    </Text>
+                    <View style={styles.toolText}>
+                      <Text style={styles.toolTitle}>{tool.label}</Text>
+                      <Text style={styles.toolDescription} numberOfLines={2}>
+                        {tool.description}
+                      </Text>
+                    </View>
                   </Pressable>
                 );
               })}
@@ -656,8 +671,7 @@ export default function DashboardScreen() {
                 </View>
               ) : activity.length === 0 ? (
                 <Text style={styles.emptyText}>
-                  Ton activité apparaîtra ici dès ta première conversation ou ton premier outil
-                  utilisé.
+                  Tes conversations et tes travaux récents s’afficheront ici.
                 </Text>
               ) : (
                 activity.map((entry, i) => {
@@ -747,7 +761,8 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.h1.fontSize,
     lineHeight: tokens.type.h1.lineHeight,
     letterSpacing: tokens.type.h1.letterSpacing,
-    fontWeight: tokens.weight.semibold,
+    // Même titre de page que partout (PageTitle) : serif en graisse normale.
+    fontWeight: tokens.weight.regular,
   },
   heroSubtitle: {
     fontFamily: tokens.font.sans,
@@ -811,8 +826,11 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.label.fontSize,
     lineHeight: tokens.type.label.lineHeight,
   },
+  // Grille sur deux colonnes dès que la place le permet (une colonne au téléphone) : 8 cartes
+  // pleine largeur pour une ligne de description faisaient une longue liste de gabarit.
   toolsGrid: {
-    flexDirection: 'column',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: tokens.space.md,
   },
   // Rangée d'accès direct aux 3 chatbots (étudiant / pro / admin).
@@ -846,8 +864,11 @@ const styles = StyleSheet.create({
   },
   toolCard: {
     flexGrow: 1,
-    flexBasis: 'auto',
-    maxWidth: '100%',
+    flexShrink: 1,
+    flexBasis: 280,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     backgroundColor: tokens.colors.surface,
     borderWidth: 1,
     borderColor: tokens.colors.border,
@@ -861,18 +882,19 @@ const styles = StyleSheet.create({
     borderColor: tokens.colors.borderStrong,
     ...tokens.elevation.md,
   },
-  toolChip: { minHeight: tokens.size.controlMd,
+  toolChip: {
     width: 40,
     height: 40,
     borderRadius: tokens.radius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  toolText: { flex: 1, minWidth: 0, gap: 2 },
   toolTitle: {
     fontFamily: tokens.font.display,
     color: tokens.colors.text,
-    fontSize: tokens.type.label.fontSize,
-    fontWeight: tokens.weight.bold,
+    ...tokens.type.label,
+    fontWeight: tokens.weight.semibold,
   },
   toolDescription: {
     fontFamily: tokens.font.sans,
@@ -906,12 +928,12 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
   },
+  // Même niveau que « Mes outils » (sectionTitle) : deux titres voisins de même rang.
   railTitle: {
-    fontFamily: tokens.font.display,
+    fontFamily: tokens.font.serif,
     color: tokens.colors.text,
-    fontSize: tokens.type.h3.fontSize,
-    letterSpacing: tokens.type.h3.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    ...tokens.type.h2,
+    fontWeight: tokens.weight.semibold,
   },
   objectiveRow: {
     flexDirection: 'row',
@@ -998,7 +1020,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: tokens.colors.border,
   },
-  activityChip: { minHeight: tokens.size.controlMd,
+  activityChip: {
     width: 32,
     height: 32,
     borderRadius: tokens.radius.sm,
@@ -1021,5 +1043,6 @@ const styles = StyleSheet.create({
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
     fontSize: tokens.type.micro.fontSize,
+    fontVariant: ['tabular-nums'],
   },
 });

@@ -30,6 +30,7 @@ import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
+import { ScreenNavBar } from '@/ui/AppMobileHeader';
 import { DictationButton } from '@/ui/DictationButton';
 import { COMPOSER_ICON_SIZE, composerButtonStyles } from '@/ui/chat/composerButton';
 import { Button } from '@/ui/Button';
@@ -160,7 +161,7 @@ function ScorePill({ score, prefix }: { score: number | null; prefix?: string })
   if (score === null) {
     return (
       <View style={[dashStyles.scorePill, dashStyles.scorePillEmpty]}>
-        <Text style={dashStyles.scorePillEmptyText}>{prefix ?? ''}—/20</Text>
+        <Text style={dashStyles.scorePillEmptyText}>{prefix ?? ''}sans note</Text>
       </View>
     );
   }
@@ -224,7 +225,7 @@ function CaseCard({
       <View style={caseStyles.cardFooter}>
         {done && summary ? (
           <>
-            <ScorePill score={summary.best} prefix="Meilleure : " />
+            <ScorePill score={summary.best} prefix="Meilleure : " />
             <Text style={caseStyles.cardMeta}>
               {summary.attempts} {summary.attempts > 1 ? 'passages' : 'passage'}
               {summary.last !== null ? ` · dernière ${formatScore(summary.last)}/20` : ''}
@@ -301,14 +302,17 @@ export default function EcosScreen() {
             { name: 'Simulation ECOS', path: PAGE_SEO.ecos.path },
           ]),
           webApplicationJsonLd({
-            name: 'Simulation ECOS — MedInfo AI',
+            name: 'Simulation ECOS',
             description: PAGE_SEO.ecos.description,
             path: PAGE_SEO.ecos.path,
           }),
         ]}
       />
       <RoleGate feature="ecos">
-        <EcosScreenInner />
+        <View style={styles.screen}>
+          <ScreenNavBar title="Simulation ECOS" icon="stethoscope" />
+          <EcosScreenInner />
+        </View>
       </RoleGate>
     </>
   );
@@ -341,7 +345,7 @@ function EcosScreenInner() {
   const evalScore = viewedAttempt ? viewedAttempt.score : parseScoreFromEvaluation(evaluation);
   const evalCaseTitle = viewedAttempt ? viewedAttempt.case_title : selectedCase?.titre ?? '';
 
-  const evalTitle = () => `Évaluation ECOS — ${evalCaseTitle}`.trim();
+  const evalTitle = () => `Évaluation ECOS : ${evalCaseTitle}`.trim();
 
   async function copyEvaluation() {
     if (!evalMarkdown) return;
@@ -397,7 +401,7 @@ function EcosScreenInner() {
           <Text style={styles.gateTitle}>Réservé aux étudiants</Text>
           <Text style={styles.gateText}>
             Le module ECOS est conçu pour les étudiants en santé. Changez votre profil en
-            « Étudiant en santé » pour y accéder.
+            « Étudiant en santé » pour y accéder.
           </Text>
           <Link href="/(account)/choose-role" style={styles.gateLink} {...buttonLinkProps()}>
             Gérer mon profil
@@ -436,7 +440,7 @@ function EcosScreenInner() {
     if (!viewedAttempt) return;
     const ok =
       typeof window !== 'undefined' && typeof window.confirm === 'function'
-        ? window.confirm('Supprimer ce passage de ton historique ? La note et l’évaluation seront perdues.')
+        ? window.confirm('Supprimer ce passage de ton historique ? La note et l’évaluation seront perdues.')
         : true;
     if (!ok) return;
     try {
@@ -452,7 +456,7 @@ function EcosScreenInner() {
     setPhase('simulation');
     setMessages([{
       role: 'assistant',
-      content: '*[L\'examinateur entre dans la salle]* Bonjour, vous pouvez commencer.',
+      content: '*[L’examinateur entre dans la salle]* Bonjour, vous pouvez commencer.',
     }]);
   }
 
@@ -546,7 +550,7 @@ function EcosScreenInner() {
     const ok =
       typeof window !== 'undefined' && typeof window.confirm === 'function'
         ? window.confirm(
-            "Terminer la simulation et lancer l'évaluation ? Tu ne pourras plus échanger avec le patient.",
+            "Terminer la simulation et lancer l’évaluation ? Tu ne pourras plus échanger avec le patient.",
           )
         : true;
     if (ok) void finishEcos();
@@ -582,7 +586,7 @@ function EcosScreenInner() {
     // Le cadre d'évaluation complet (sections + format de note « **Note : X/20** »)
     // vient du prompt serveur `ecos_evaluate` (promptStore, éditable panel admin) ;
     // on n'envoie ici que le contexte de la station.
-    const evalSystemPrompt = `Contexte : station ECOS « ${selectedCase.titre} » (${selectedCase.specialite}). L'étudiant vient de terminer la simulation ; évalue sa performance à partir de la grille de correction fournie.`;
+    const evalSystemPrompt = `Contexte : station ECOS « ${selectedCase.titre} » (${selectedCase.specialite}). L’étudiant vient de terminer la simulation ; évalue sa performance à partir de la grille de correction fournie.`;
 
     try {
       const res = await fetch('/api/ecos', {
@@ -600,7 +604,7 @@ function EcosScreenInner() {
         }),
       });
 
-      if (!res.ok) throw new Error('Erreur d\'évaluation.');
+      if (!res.ok) throw new Error('Erreur d’évaluation.');
       const data = await res.json() as { evaluation?: string };
       const text = data.evaluation ?? 'Évaluation non disponible.';
       setEvaluation(text);
@@ -623,7 +627,7 @@ function EcosScreenInner() {
         }
       }
     } catch {
-      setEvaluation('Une erreur est survenue lors de l\'évaluation.');
+      setEvaluation('Une erreur est survenue lors de l’évaluation.');
     } finally {
       setEvalLoading(false);
     }
@@ -651,7 +655,7 @@ function EcosScreenInner() {
             Dashboard ECOS
           </Text>
           <Text style={styles.selectionSubtitle}>
-            Entraîne-toi sur des stations fictives avec un patient joué par l'IA, suis tes notes
+            Entraîne-toi sur des stations fictives avec un patient joué par l’IA, suis tes notes
             et repère les thèmes à retravailler.
           </Text>
         </View>
@@ -682,8 +686,9 @@ function EcosScreenInner() {
               />
               <StatTile
                 label="Note globale"
-                value={stats.averageScore !== null ? formatScore(stats.averageScore) : '—'}
-                suffix="/20"
+                // Pas encore de note : un mot plutôt qu'un grand tiret (« —/20 »).
+                value={stats.averageScore !== null ? formatScore(stats.averageScore) : 'Aucune'}
+                suffix={stats.averageScore !== null ? '/20' : undefined}
                 valueColor={
                   stats.averageScore !== null
                     ? toneColors(scoreTone(stats.averageScore)).fg
@@ -693,8 +698,8 @@ function EcosScreenInner() {
               />
               <StatTile
                 label="Meilleure note"
-                value={stats.bestScore !== null ? formatScore(stats.bestScore) : '—'}
-                suffix="/20"
+                value={stats.bestScore !== null ? formatScore(stats.bestScore) : 'Aucune'}
+                suffix={stats.bestScore !== null ? '/20' : undefined}
                 valueColor={
                   stats.bestScore !== null ? toneColors(scoreTone(stats.bestScore)).fg : undefined
                 }
@@ -822,7 +827,7 @@ function EcosScreenInner() {
                       style={[dashStyles.historyRow, index > 0 && dashStyles.historyRowBorder]}
                       onPress={() => openAttempt(attempt)}
                       accessibilityRole="button"
-                      accessibilityLabel={`Voir l'évaluation de ${attempt.case_title}`}
+                      accessibilityLabel={`Voir l’évaluation de ${attempt.case_title}`}
                     >
                       <ScorePill score={attempt.score} />
                       <View style={dashStyles.historyInfo}>
@@ -868,7 +873,7 @@ function EcosScreenInner() {
         <View style={styles.prepInfo}>
           <View style={styles.prepInfoItem}>
             <Icon name="clock" size={18} color={tokens.colors.accentDeep} />
-            <Text style={styles.prepInfoText}>Durée : {selectedCase.duree} min</Text>
+            <Text style={styles.prepInfoText}>Durée : {selectedCase.duree} min</Text>
           </View>
           <View style={styles.prepInfoItem}>
             <Icon name="fileText" size={18} color={tokens.colors.accentDeep} />
@@ -876,7 +881,7 @@ function EcosScreenInner() {
           </View>
           <View style={styles.prepInfoItem}>
             <Icon name="bookOpen" size={18} color={tokens.colors.accentDeep} />
-            <Text style={styles.prepInfoText}>Le patient est joué par l'IA</Text>
+            <Text style={styles.prepInfoText}>Le patient est joué par l’IA</Text>
           </View>
         </View>
 
@@ -1021,7 +1026,7 @@ function EcosScreenInner() {
 
             {saveError && (
               <Text style={dashStyles.saveErrorText}>
-                Ce passage n'a pas pu être enregistré dans ton historique (connexion ?). La note
+                Ce passage n’a pas pu être enregistré dans ton historique (connexion ?). La note
                 reste affichée ci-dessous.
               </Text>
             )}
@@ -1031,7 +1036,7 @@ function EcosScreenInner() {
                 <Touchable
                   onPress={() => void copyEvaluation()}
                   accessibilityRole="button"
-                  accessibilityLabel="Copier l'évaluation"
+                  accessibilityLabel="Copier l’évaluation"
                   style={styles.evalAction}
                 >
                   <Text style={styles.evalActionText}>{copied ? 'Copié ✓' : 'Copier'}</Text>
@@ -1040,7 +1045,7 @@ function EcosScreenInner() {
                   <Touchable
                     onPress={handleExportEval}
                     accessibilityRole="button"
-                    accessibilityLabel="Exporter l'évaluation en PDF"
+                    accessibilityLabel="Exporter l’évaluation en PDF"
                     style={styles.evalAction}
                   >
                     <Text style={styles.evalActionText}>Export PDF</Text>
@@ -1050,7 +1055,7 @@ function EcosScreenInner() {
                   <Touchable
                     onPress={() => void removeViewedAttempt()}
                     accessibilityRole="button"
-                    accessibilityLabel="Supprimer ce passage de l'historique"
+                    accessibilityLabel="Supprimer ce passage de l’historique"
                     style={styles.evalAction}
                   >
                     <Text style={[styles.evalActionText, { color: tokens.colors.danger }]}>
@@ -1083,6 +1088,7 @@ function EcosScreenInner() {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
   container: { flex: 1, backgroundColor: tokens.colors.background },
 
   // Selection
@@ -1406,6 +1412,7 @@ const dashStyles = StyleSheet.create({
     textTransform: 'none',
   },
   statValue: {
+    fontVariant: ['tabular-nums'],
     fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h1.fontSize,

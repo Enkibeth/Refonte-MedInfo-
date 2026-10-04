@@ -13,7 +13,7 @@ function files(directory: string): string[] {
 describe('accueil orienté produit, cadre préservé', () => {
   it('met en avant les usages sans recopier le long énoncé juridique', () => {
     expect(home).toContain('L’IA pour apprendre.');
-    expect(home).toContain('ECOS & révisions');
+    expect(home).toContain('ECOS et révisions');
     expect(home).not.toContain('INTENDED_PURPOSE');
     expect(home).toContain('{getAiDisclosure()}');
     expect(home).toContain('<SiteFooter />');
@@ -72,7 +72,7 @@ describe('couverture des fondations du thème', () => {
     }
     expect(read('src/ui/LegalScreen.tsx')).toContain('tokens.colors.background');
     expect(read('src/ui/shell/AppShell.tsx')).toContain('tokens.colors.surfaceAlt');
-    expect(read('src/ui/AppTabBar.tsx')).toContain('featureTint');
+    expect(read('src/ui/AppMobileHeader.tsx')).toContain('featureTint');
     expect(read('app/(chat)/dashboard.tsx')).toContain('featureTint');
   });
 });

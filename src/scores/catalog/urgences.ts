@@ -12,7 +12,7 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
       acronym: 'GCS',
       category: 'urgences',
       purpose:
-        "Quantifie l'état de conscience (ouverture des yeux, réponse verbale, réponse motrice) pour suivre une atteinte neurologique.",
+        "Quantifie l’état de conscience (ouverture des yeux, réponse verbale, réponse motrice) pour suivre une atteinte neurologique.",
       aliases: ['glasgow', 'gcs', 'coma', 'echelle de glasgow', 'score de glasgow'],
       keywords: [
         'conscience',
@@ -65,9 +65,9 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
       caution: 'Un Glasgow ≤ 8 impose de protéger les voies aériennes (intubation).',
     },
     [
-      { min: 3, level: 'critical', label: 'Atteinte grave', detail: 'Score 3–8 : trouble de conscience grave / coma — protection des voies aériennes (intubation si ≤ 8).' },
-      { min: 9, level: 'moderate', label: 'Atteinte modérée', detail: 'Score 9–12 : atteinte de conscience modérée — surveillance neurologique rapprochée.' },
-      { min: 13, level: 'low', label: 'Atteinte légère', detail: 'Score 13–15 : conscience peu ou pas altérée.' },
+      { min: 3, level: 'critical', label: 'Atteinte grave', detail: 'Score 3–8 : trouble de conscience grave / coma. Protection des voies aériennes (intubation si ≤ 8).' },
+      { min: 9, level: 'moderate', label: 'Atteinte modérée', detail: 'Score 9–12 : atteinte de conscience modérée. Surveillance neurologique rapprochée.' },
+      { min: 13, level: 'low', label: 'Atteinte légère', detail: 'Score 13–15 : conscience peu ou pas altérée.' },
     ],
   ),
 
@@ -78,7 +78,7 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
       acronym: 'NEWS2',
       category: 'urgences',
       purpose:
-        "Détecte précocement la détérioration clinique d'un patient hospitalisé à partir de 7 paramètres vitaux.",
+        "Détecte précocement la détérioration clinique d’un patient hospitalisé à partir de 7 paramètres vitaux.",
       aliases: ['news', 'news2', 'early warning score'],
       keywords: [
         'paramètres vitaux',
@@ -173,9 +173,9 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
       caution: 'Un seul paramètre coté 3 justifie déjà une réévaluation médicale urgente, même si le total est bas.',
     },
     [
-      { min: 0, level: 'low', label: 'Risque faible', detail: 'Score 0–4 : surveillance de routine (rester attentif à tout paramètre coté 3).' },
-      { min: 5, level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 5–6 : réévaluation médicale urgente, surveillance rapprochée.' },
-      { min: 7, level: 'high', label: 'Risque élevé', detail: 'Score ≥ 7 : réponse en urgence, envisager les soins critiques.' },
+      { min: 0, level: 'low', label: 'Risque faible', detail: 'Score 0–4 : surveillance de routine (rester attentif à tout paramètre coté 3).' },
+      { min: 5, level: 'moderate', label: 'Risque intermédiaire', detail: 'Score 5–6 : réévaluation médicale urgente, surveillance rapprochée.' },
+      { min: 7, level: 'high', label: 'Risque élevé', detail: 'Score ≥ 7 : réponse en urgence, envisager les soins critiques.' },
     ],
   ),
 
@@ -185,14 +185,14 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
     acronym: 'Shock index',
     category: 'urgences',
     purpose:
-      "Rapport fréquence cardiaque / pression artérielle systolique : repère une hypovolémie ou un choc débutant que des constantes prises isolément peuvent masquer.",
+      "Rapport fréquence cardiaque / pression artérielle systolique : repère une hypovolémie ou un choc débutant que des constantes prises isolément peuvent masquer.",
     aliases: ['index de choc', 'shock index', 'indice de choc'],
     keywords: ['choc', 'hypovolémie', 'hémorragie', 'fréquence cardiaque', 'pression artérielle', 'tachycardie'],
     fields: [
       { kind: 'number', id: 'hr', label: 'Fréquence cardiaque', unit: '/min', min: 20, max: 250, placeholder: 'ex. 110' },
       { kind: 'number', id: 'sbp', label: 'Pression artérielle systolique', unit: 'mmHg', min: 40, max: 260, placeholder: 'ex. 100' },
     ],
-    reference: 'Allgöwer & Burri 1967. Normale 0,5–0,7 ; ≥ 0,9 péjoratif.',
+    reference: 'Allgöwer & Burri 1967. Normale 0,5–0,7 ; ≥ 0,9 péjoratif.',
     compute: (v) => {
       const hr = v.hr;
       const sbp = v.sbp;
@@ -207,11 +207,11 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
       const ratio = hr / sbp;
       let interpretation;
       if (ratio < 0.7) {
-        interpretation = { level: 'low' as const, label: 'Normal', detail: 'Index 0,5–0,7 : hémodynamique rassurante.' };
+        interpretation = { level: 'low' as const, label: 'Normal', detail: 'Index 0,5–0,7 : hémodynamique rassurante.' };
       } else if (ratio <= 0.9) {
-        interpretation = { level: 'moderate' as const, label: 'Limite', detail: 'Index 0,7–0,9 : surveiller, rechercher une cause d’instabilité.' };
+        interpretation = { level: 'moderate' as const, label: 'Limite', detail: 'Index 0,7–0,9 : surveiller, rechercher une cause d’instabilité.' };
       } else {
-        interpretation = { level: 'high' as const, label: 'Élevé', detail: 'Index > 0,9 : évoquer un choc / une hypovolémie occulte — réévaluation urgente.' };
+        interpretation = { level: 'high' as const, label: 'Élevé', detail: 'Index > 0,9 : évoquer un choc / une hypovolémie occulte. Réévaluation urgente.' };
       }
       return { value: ratio, display: fmt(ratio, 2), interpretation };
     },
@@ -224,14 +224,14 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
       acronym: 'SOFA',
       category: 'urgences',
       purpose:
-        "Quantifie la défaillance de 6 organes en réanimation ; une hausse ≥ 2 points sur un terrain infectieux définit le sepsis (Sepsis-3).",
+        "Quantifie la défaillance de 6 organes en réanimation ; une hausse ≥ 2 points sur un terrain infectieux définit le sepsis (Sepsis-3).",
       aliases: ['sofa', 'sequential organ failure', 'defaillance multiviscerale'],
       keywords: ['sepsis', 'réanimation', 'défaillance d’organe', 'gravité', 'mortalité', 'choc septique', 'pronostic'],
       fields: [
         {
           kind: 'choice',
           id: 'respiration',
-          label: 'Respiration — PaO₂/FiO₂ (mmHg)',
+          label: 'Respiration : PaO₂/FiO₂ (mmHg)',
           options: [
             { label: '≥ 400', value: 0 },
             { label: '< 400', value: 1 },
@@ -243,7 +243,7 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
         {
           kind: 'choice',
           id: 'coagulation',
-          label: 'Coagulation — plaquettes (×10³/µL)',
+          label: 'Coagulation : plaquettes (×10³/µL)',
           options: [
             { label: '≥ 150', value: 0 },
             { label: '< 150', value: 1 },
@@ -255,7 +255,7 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
         {
           kind: 'choice',
           id: 'liver',
-          label: 'Foie — bilirubine (µmol/L)',
+          label: 'Foie : bilirubine (µmol/L)',
           options: [
             { label: '< 20', value: 0 },
             { label: '20–32', value: 1 },
@@ -279,7 +279,7 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
         {
           kind: 'choice',
           id: 'cns',
-          label: 'Neurologique — Glasgow',
+          label: 'Neurologique : Glasgow',
           options: [
             { label: '15', value: 0 },
             { label: '13–14', value: 1 },
@@ -291,7 +291,7 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
         {
           kind: 'choice',
           id: 'renal',
-          label: 'Rénal — créatinine (µmol/L)',
+          label: 'Rénal : créatinine (µmol/L)',
           options: [
             { label: '< 110', value: 0 },
             { label: '110–170', value: 1 },
@@ -304,10 +304,10 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
       reference: 'Vincent 1996 / Sepsis-3. Score 0–24. Sepsis = hausse ≥ 2 sur infection.',
     },
     [
-      { min: 0, level: 'low', label: 'Défaillance faible', detail: 'Score 0–6 : mortalité globalement < 10 %.' },
-      { min: 7, level: 'moderate', label: 'Défaillance modérée', detail: 'Score 7–9 : mortalité ≈ 15–20 %.' },
-      { min: 10, level: 'high', label: 'Défaillance sévère', detail: 'Score 10–12 : mortalité ≈ 40–50 %.' },
-      { min: 13, level: 'critical', label: 'Défaillance très sévère', detail: 'Score ≥ 13 : mortalité > 50 %.' },
+      { min: 0, level: 'low', label: 'Défaillance faible', detail: 'Score 0–6 : mortalité globalement < 10 %.' },
+      { min: 7, level: 'moderate', label: 'Défaillance modérée', detail: 'Score 7–9 : mortalité ≈ 15–20 %.' },
+      { min: 10, level: 'high', label: 'Défaillance sévère', detail: 'Score 10–12 : mortalité ≈ 40–50 %.' },
+      { min: 13, level: 'critical', label: 'Défaillance très sévère', detail: 'Score ≥ 13 : mortalité > 50 %.' },
     ],
   ),
 
@@ -318,7 +318,7 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
       acronym: 'SIRS',
       category: 'urgences',
       purpose:
-        "Repère un syndrome de réponse inflammatoire systémique (≥ 2 critères) ; sensible mais peu spécifique.",
+        "Repère un syndrome de réponse inflammatoire systémique (≥ 2 critères) ; sensible mais peu spécifique.",
       aliases: ['sirs', 'reponse inflammatoire systemique', 'syndrome inflammatoire'],
       keywords: ['sepsis', 'infection', 'inflammation', 'fièvre', 'tachycardie', 'urgences'],
       fields: [
@@ -327,12 +327,12 @@ export const URGENCES_SCORES: ScoreDefinition[] = [
         yesNo('rr', 'Fréquence respiratoire > 20/min (ou PaCO₂ < 32 mmHg)', 1),
         yesNo('wbc', 'Leucocytes > 12 000 ou < 4 000 /mm³ (ou > 10 % formes jeunes)', 1),
       ],
-      reference: 'Bone 1992. Seuil : ≥ 2 critères.',
-      caution: 'Peu spécifique : un SIRS peut être non infectieux (pancréatite, brûlure, chirurgie).',
+      reference: 'Bone 1992. Seuil : ≥ 2 critères.',
+      caution: 'Peu spécifique : un SIRS peut être non infectieux (pancréatite, brûlure, chirurgie).',
     },
     [
-      { min: 0, level: 'low', label: 'Pas de SIRS', detail: 'Moins de 2 critères : pas de SIRS.' },
-      { min: 2, level: 'moderate', label: 'SIRS présent', detail: '≥ 2 critères : SIRS — rechercher une cause (infectieuse ou non).' },
+      { min: 0, level: 'low', label: 'Pas de SIRS', detail: 'Moins de 2 critères : pas de SIRS.' },
+      { min: 2, level: 'moderate', label: 'SIRS présent', detail: '≥ 2 critères : SIRS. Rechercher une cause (infectieuse ou non).' },
     ],
   ),
 ];

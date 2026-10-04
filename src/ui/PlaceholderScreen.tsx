@@ -18,7 +18,7 @@ export function PlaceholderScreen({ title, description }: PlaceholderScreenProps
       <Card>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.description}>{description}</Text>
-        <Button label="Retour à l'accueil" variant="secondary" onPress={() => router.push('/')} />
+        <Button label="Retour à l’accueil" variant="secondary" onPress={() => router.push('/')} />
       </Card>
     </Screen>
   );

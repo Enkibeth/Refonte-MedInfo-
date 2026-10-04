@@ -30,7 +30,7 @@ export function DateField({
         backgroundColor: tokens.colors.surface,
         padding: `0 ${tokens.space.md}px`,
         fontFamily: tokens.font.sans,
-        fontSize: tokens.type.body.fontSize,
+        fontSize: tokens.type.input.fontSize,
         color: tokens.colors.text,
         width: '100%',
       }}

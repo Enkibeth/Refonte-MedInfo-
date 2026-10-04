@@ -40,6 +40,7 @@ import {
   withRawHeader,
   withoutRawHeaders,
 } from './lib/proxy.mjs';
+import { createBlogPrerender, publicSiteUrl } from './lib/blog-prerender.mjs';
 import { createHtmlHandler } from './lib/html.mjs';
 import {
   BASE_SECURITY_HEADERS,
@@ -144,10 +145,20 @@ export function createServer() {
     },
   });
 
+  // Blog : métadonnées et texte des articles dans le HTML servi, pour les aperçus de liens et
+  // les robots qui n'exécutent pas JavaScript (server/lib/blog-prerender.mjs). Clé ANON :
+  // la RLS ne montre que les articles publiés. Sans configuration Supabase : inactif.
+  const blogPrerender = createBlogPrerender({
+    supabaseUrl: process.env.SUPABASE_URL ?? process.env.EXPO_PUBLIC_SUPABASE_URL,
+    anonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+    siteUrl: () => publicSiteUrl(process.env),
+  });
+
   // Coquilles HTML d'Expo servies compressées, avec `charset` et CSP (server/lib/html.mjs).
   const serveHtml = createHtmlHandler({
     buildDir: BUILD_DIR,
     headersFor: documentHeaders,
+    enrich: blogPrerender.enabled ? blogPrerender.enrich : undefined,
     onUnsupported: (reason) =>
       console.warn(`[medinfo] pages HTML servies par le moteur Expo (sans compression ni CSP) : ${reason}.`),
   });

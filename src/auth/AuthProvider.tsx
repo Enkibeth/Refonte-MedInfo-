@@ -63,18 +63,18 @@ export function toFriendlyAuthError(raw: unknown): string {
     m.includes('typeerror') ||
     m.includes('fetch')
   ) {
-    return "Service d'authentification momentanément injoignable. Vérifie ta connexion et réessaie.";
+    return 'Service d’authentification momentanément injoignable. Vérifiez votre connexion et réessayez.';
   }
-  if (m.includes('invalid login credentials')) return 'Email ou mot de passe incorrect.';
-  if (m.includes('email not confirmed')) return 'Email non confirmé. Vérifie ta boîte mail (et les spams).';
-  if (m.includes('user already registered')) return 'Un compte existe déjà avec cet email. Connecte-toi.';
+  if (m.includes('invalid login credentials')) return 'Adresse e-mail ou mot de passe incorrect.';
+  if (m.includes('email not confirmed')) return 'Adresse e-mail non confirmée. Vérifiez votre boîte de réception (et les courriers indésirables).';
+  if (m.includes('user already registered')) return 'Un compte existe déjà avec cette adresse. Connectez-vous.';
   if (m.includes('password should be') || m.includes('at least 6')) return 'Mot de passe trop court (6 caractères minimum).';
   if (m.includes('provider is not enabled') || m.includes('unsupported provider')) {
-    return "Cette méthode de connexion n'est pas encore activée. Utilise l'email pour le moment.";
+    return 'Cette méthode de connexion n’est pas encore activée. Utilisez l’adresse e-mail pour le moment.';
   }
-  if (m.includes('rate limit') || m.includes('too many')) return 'Trop de tentatives. Patiente un instant avant de réessayer.';
+  if (m.includes('rate limit') || m.includes('too many')) return 'Trop de tentatives. Patientez un instant avant de réessayer.';
   if (m.includes('for security purposes') || m.includes('seconds')) return message; // délai d'envoi email : message Supabase déjà lisible
-  return message || 'Une erreur est survenue. Réessaie.';
+  return message || 'Une erreur est survenue. Réessayez.';
 }
 
 /** Statut de vérification du rôle actif (profiles.status). */
