@@ -4,8 +4,8 @@
  * écrans applicatifs sur DESKTOP WEB uniquement (≥ 1024 px, session ouverte).
  *
  * Partout ailleurs (mobile, natif, visiteur non connecté, pages publiques), le shell
- * est transparent : il rend ses enfants tels quels — la tab bar mobile
- * (src/ui/AppTabBar.tsx) et les en-têtes d'écran existants restent la navigation.
+ * est transparent : il rend ses enfants tels quels ; la barre compacte des écrans et
+ * son menu ☰ (src/ui/AppMobileHeader.tsx) portent la navigation.
  *
  * Couche d'ERGONOMIE uniquement : la sidebar consomme `visibleFeatures` (matrice
  * role-aware existante) et n'est jamais une barrière — l'autorisation réelle reste
@@ -36,7 +36,7 @@ import { tokens } from '@/ui/tokens';
 import { useWindowWidth } from '@/ui/useWindowWidth';
 import { useChatFocus } from '@/chat/focusMode';
 
-/** Largeur minimale (px) à partir de laquelle la sidebar remplace la tab bar. */
+/** Largeur minimale (px) à partir de laquelle la sidebar remplace la barre compacte mobile. */
 export const SHELL_BREAKPOINT = tokens.layout.shell;
 
 const SIDEBAR_WIDTH = tokens.layout.sidebar;
@@ -343,8 +343,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               source={require('../../../assets/brand/team-illustration-144.webp')}
               style={[styles.teamBadge, collapsed && styles.teamBadgeCollapsed]}
               resizeMode="cover"
-              accessibilityRole="image"
-              accessibilityLabel="L'équipe MedInfo AI"
+              // Décorative : le lien qui l'entoure porte déjà son nom (« MedInfo AI, accueil »).
+              alt=""
+              aria-hidden
             />
             {collapsed ? null : <Logo size="sm" />}
           </Pressable>

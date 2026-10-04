@@ -314,7 +314,8 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  formCard: { borderWidth: 0, padding: 0 },
+  // Vraie carte (filet + marge intérieure) : sans elles, une dalle blanche collait aux champs.
+  formCard: { borderWidth: tokens.border.thin, borderColor: tokens.colors.border, padding: tokens.space.xl },
   logoWrap: { alignItems: 'flex-start', marginBottom: tokens.space.xl },
   title: {
     fontFamily: tokens.font.serif,
@@ -438,16 +439,17 @@ const styles = StyleSheet.create({
     marginTop: tokens.space.lg,
     borderRadius: tokens.radius.md,
     overflow: 'hidden',
-    backgroundColor: tokens.colors.warningBackground,
+    // Information réglementaire, pas un avertissement : même présentation que sur l'accueil.
+    backgroundColor: tokens.colors.transparent,
   },
   linkTarget: { minHeight: tokens.size.controlMd, justifyContent: 'center' },
-  noticeAccent: { width: 4, backgroundColor: tokens.colors.warningText },
+  noticeAccent: { width: tokens.border.accent, backgroundColor: tokens.colors.accent },
   noticeText: {
     flex: 1,
     fontFamily: tokens.font.sans,
-    color: tokens.colors.warningText,
-    fontSize: tokens.type.caption.fontSize,
-    lineHeight: 19,
-    padding: tokens.space.lg,
+    color: tokens.colors.textMuted,
+    ...tokens.type.caption,
+    paddingVertical: tokens.space.xs,
+    paddingHorizontal: tokens.space.md,
   },
 });

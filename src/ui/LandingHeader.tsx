@@ -110,8 +110,9 @@ export function LandingHeader({ landmark = true }: { landmark?: boolean } = {}) 
             source={require('../../assets/brand/team-illustration-144.webp')}
             style={styles.teamBadge}
             resizeMode="cover"
-            accessibilityRole="image"
-            accessibilityLabel="L'équipe MedInfo AI"
+            // Décorative : le lien qui l'entoure porte déjà son nom (« Accueil MedInfo AI »).
+            alt=""
+            aria-hidden
           />
           <Logo size="sm" />
         </Pressable>

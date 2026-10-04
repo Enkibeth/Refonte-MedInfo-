@@ -1,8 +1,7 @@
 import { tokens } from './tokens';
 
 /**
- * Tracé ECG animé de la page d'accueil — implémentation WEB (SVG inline, même approche que
- * `HeroBackdrop.web.tsx`). Variante claire : trait couleur d'accent sur fond clair, pour la
+ * Tracé ECG animé de la page d'accueil — implémentation WEB (SVG inline). Variante claire : trait couleur d'accent sur fond clair, pour la
  * direction éditoriale de la refonte 2026-09. Animation `.medinfo-ecg-path` (keyframes dans
  * app/+html.tsx), coupée sous prefers-reduced-motion. Aucun état ni dépendance à la fenêtre :
  * rendu identique au pré-rendu et au client (pas de risque d'hydratation).

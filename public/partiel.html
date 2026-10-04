@@ -308,6 +308,12 @@ tr.me:hover{background:var(--a1m);}
   .kval{font-size:40px;}
   .radar-wrap{width:120px;height:120px;}
 }
+/* 2026-10 : la police à chasse fixe est réservée aux VALEURS (notes, rangs, z-scores,
+   identifiants) ; étiquettes, boutons et messages passent dans la police du site, 12 px au
+   minimum (le style « terminal » en capitales espacées faisait gabarit générique). */
+.dropzone .hint,.dz-cta,.notice,.ex summary,.errbox,.warnbox,.bfsub,.btn,.lbtn,.sug .lbl,.sugbtn,.ptitle,.clabel,.seg button,.rnav a,.hclabel,.klabel,.ksub,.badge,.ptrow,.icard h4{font-family:var(--sans);}
+.dropzone .hint,.dz-cta,.notice,.ex summary,.bfsub,.btn,.lbtn,.sug .lbl,.sugbtn,.ptitle,.clabel,.seg button,.rnav a,.hclabel,.klabel,.ksub,.badge,.ptrow,.icard h4,.warnbox{font-size:12px;}
+.dz-cta,.ex summary,.bfsub,.ptitle,.clabel,.hclabel,.klabel,.badge,.ptrow,.icard h4{letter-spacing:.04em;}
 </style>
 <link rel="stylesheet" href="/medinfo-tokens.css" />
 <link rel="stylesheet" href="/medinfo-ui.css" />

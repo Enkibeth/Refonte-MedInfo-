@@ -43,11 +43,6 @@ export interface AppFeatureMeta {
   description: string;
   /** Personas qui voient la feature (hors admin, qui voit tout). */
   personas: Persona[];
-  /**
-   * Candidate aux onglets de la barre du bas quand le rôle a trop d'outils
-   * (au-delà de TAB_BAR_MAX, les non-prioritaires basculent dans le panneau « Outils »).
-   */
-  primary?: boolean;
 }
 
 /** Registre des fonctionnalités exposées dans l'app + leur audience. */
@@ -60,7 +55,6 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     icon: 'messageCircle',
     description: 'Information santé claire et sourcée (HAS, ANSM…).',
     personas: ['public', 'student', 'professional'],
-    primary: true,
   },
   {
     id: 'document',
@@ -70,7 +64,6 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     icon: 'fileText',
     description: 'Résumé en langage clair d’un compte rendu ou d’une ordonnance.',
     personas: ['public'],
-    primary: true,
   },
   {
     id: 'ecos',
@@ -80,7 +73,6 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     icon: 'stethoscope',
     description: 'Simulation d’un patient ECOS et évaluation pédagogique.',
     personas: ['student'],
-    primary: true,
   },
   {
     id: 'partiel',
@@ -100,7 +92,6 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     icon: 'calendarCheck',
     description: 'Planning de révisions : charge quotidienne réaliste, suivi et jauge de risque.',
     personas: ['student'],
-    primary: true,
   },
   {
     id: 'audio',
@@ -110,7 +101,6 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     icon: 'micVoice',
     description: 'Compte rendu structuré d’une consultation dictée.',
     personas: ['professional'],
-    primary: true,
   },
   {
     id: 'presentation',
@@ -120,7 +110,6 @@ export const APP_FEATURES: AppFeatureMeta[] = [
     icon: 'presentation',
     description: 'Diapositives médicales, à la main ou avec l’IA, exportées en PPTX pour PowerPoint et Keynote.',
     personas: ['student', 'professional'],
-    primary: true,
   },
   {
     id: 'cv-builder',
@@ -190,53 +179,4 @@ export function visibleFeatures(
   ctx: VisibilityContext = {},
 ): AppFeatureMeta[] {
   return APP_FEATURES.filter((f) => isFeatureVisible(f.id, persona, ctx));
-}
-
-/**
- * Nombre maximal d'onglets dans la barre du bas (lisibilité mobile).
- * Au-delà, la barre affiche les outils prioritaires + un bouton « Outils »
- * qui ouvre le panneau complet (cf. src/ui/AppTabBar.tsx).
- */
-export const TAB_BAR_MAX = 4;
-
-export interface TabBarSplit {
-  /** Onglets affichés dans la barre du bas (≤ TAB_BAR_MAX, slots réservés déduits). */
-  bar: AppFeatureMeta[];
-  /** Outils restants, accessibles via le panneau « Outils » (vide → pas de bouton). */
-  overflow: AppFeatureMeta[];
-}
-
-export interface TabBarOptions {
-  /**
-   * Emplacements pris par des entrées hors registre d'outils (ex. l'onglet
-   * « Accueil » vers la Vue d'ensemble, refonte shell 2026-07) — déduits de la
-   * capacité de la barre AVANT répartition.
-   */
-  reservedSlots?: number;
-}
-
-/**
- * Répartition des outils visibles entre la barre du bas et le panneau « Outils ».
- * Si tout tient (≤ TAB_BAR_MAX − réservés), pas de panneau. Sinon : outils
- * prioritaires (`primary`, complétés dans l'ordre si besoin) + bouton « Outils ».
- */
-export function tabBarFeatures(
-  persona: Persona | null | undefined,
-  ctx: VisibilityContext = {},
-  options: TabBarOptions = {},
-): TabBarSplit {
-  const reserved = Math.max(0, options.reservedSlots ?? 0);
-  const capacity = Math.max(1, TAB_BAR_MAX - reserved);
-  const visible = visibleFeatures(persona, ctx);
-  if (visible.length <= capacity) return { bar: visible, overflow: [] };
-
-  const slots = Math.max(1, capacity - 1); // une place réservée au bouton « Outils »
-  const bar = visible.filter((f) => f.primary).slice(0, slots);
-  // Complète avec les premiers outils visibles si trop peu de prioritaires.
-  for (const f of visible) {
-    if (bar.length >= slots) break;
-    if (!bar.includes(f)) bar.push(f);
-  }
-  const overflow = visible.filter((f) => !bar.includes(f));
-  return { bar, overflow };
 }

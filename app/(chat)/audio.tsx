@@ -1,4 +1,3 @@
-import { PageTitle } from '@/ui/PageTitle';
 /**
  * Fonctionnalités audio — version premium.
  * Mode 1 : Transcription d'un enregistrement audio (consultation, dictée).
@@ -23,7 +22,7 @@ import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
-import { ToolsMenu } from '@/ui/ToolsMenu';
+import { ToolScreenHeader } from '@/ui/ToolScreenHeader';
 import { AudioLibrary } from '@/ui/AudioLibrary';
 import { Button } from '@/ui/Button';
 import { Touchable } from '@/ui/Touchable';
@@ -293,11 +292,8 @@ function AudioFeature() {
 
   return (
     <View style={styles.container}>
+      <ToolScreenHeader feature="audio" title="Audio médical" />
       <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <ToolsMenu />
-        </View>
-        <PageTitle style={styles.title}>Audio médical</PageTitle>
         <View style={styles.modeSwitcher}>
           <Touchable
             style={[styles.modeTab, tab === 'transcription' && styles.modeTabActive]}

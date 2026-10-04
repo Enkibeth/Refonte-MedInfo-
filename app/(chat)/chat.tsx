@@ -2469,7 +2469,9 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.h1.fontSize,
     lineHeight: tokens.type.h1.lineHeight,
     letterSpacing: tokens.type.h2.letterSpacing,
-    fontWeight: tokens.weight.bold,
+    // Titre éditorial serif en graisse normale, comme les titres de page (le gras 700 en
+    // faisait un titre plus fort que le h1 de l'écran).
+    fontWeight: tokens.weight.regular,
     textAlign: 'left',
   },
   emptyText: {

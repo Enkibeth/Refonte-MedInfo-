@@ -8,6 +8,6 @@ export const FieldInput = forwardRef<TextInput, TextInputProps>(function FieldIn
   return <TextInput ref={ref} {...props} onFocus={event => { setFocused(true); onFocus?.(event); }} onBlur={event => { setFocused(false); onBlur?.(event); }} placeholderTextColor={props.placeholderTextColor ?? tokens.colors.textMuted} style={[styles.field, style, focused && styles.focus]} />;
 });
 const styles = StyleSheet.create({
-  field: { minHeight: tokens.size.controlMd, borderWidth: tokens.border.thin, borderRadius: tokens.radius.sm, borderColor: tokens.colors.borderStrong, color: tokens.colors.text, backgroundColor: tokens.colors.surface, fontFamily: tokens.font.sans, fontSize: tokens.type.body.fontSize, paddingHorizontal: tokens.space.md, paddingVertical: tokens.space.sm },
+  field: { minHeight: tokens.size.controlMd, borderWidth: tokens.border.thin, borderRadius: tokens.radius.sm, borderColor: tokens.colors.borderStrong, color: tokens.colors.text, backgroundColor: tokens.colors.surface, fontFamily: tokens.font.sans, fontSize: tokens.type.input.fontSize, paddingHorizontal: tokens.space.md, paddingVertical: tokens.space.sm },
   focus: { borderColor: tokens.colors.accent, ...tokens.focus.ring },
 });

@@ -1,5 +1,4 @@
 import { FieldInput } from '@/ui/FieldInput';
-import { PageTitle } from '@/ui/PageTitle';
 /**
  * Analyse de document médical — version premium.
  * L'utilisateur colle un texte OU importe un fichier (PDF, photo JPEG/PNG/WebP, texte)
@@ -28,7 +27,7 @@ import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
-import { ToolsMenu } from '@/ui/ToolsMenu';
+import { ToolScreenHeader } from '@/ui/ToolScreenHeader';
 import { Button } from '@/ui/Button';
 import { Touchable } from '@/ui/Touchable';
 import {
@@ -294,16 +293,10 @@ function DocumentScreenInner() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={80}
     >
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <ToolsMenu />
-        </View>
-        <PageTitle style={styles.title}>Analyse de document</PageTitle>
-        <Text style={styles.subtitle}>
-          Importez un PDF, une photo ou collez le texte d'un compte rendu, d'une ordonnance ou de
-          résultats, pour un résumé patient clair ou une traduction.
-        </Text>
-      </View>
+      <ToolScreenHeader feature="document" title="Analyse de document">
+        Importez un PDF, une photo ou collez le texte d'un compte rendu, d'une ordonnance ou de
+        résultats, pour un résumé patient clair ou une traduction.
+      </ToolScreenHeader>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {userId ? (

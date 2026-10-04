@@ -72,7 +72,7 @@ describe('couverture des fondations du thème', () => {
     }
     expect(read('src/ui/LegalScreen.tsx')).toContain('tokens.colors.background');
     expect(read('src/ui/shell/AppShell.tsx')).toContain('tokens.colors.surfaceAlt');
-    expect(read('src/ui/AppTabBar.tsx')).toContain('featureTint');
+    expect(read('src/ui/AppMobileHeader.tsx')).toContain('featureTint');
     expect(read('app/(chat)/dashboard.tsx')).toContain('featureTint');
   });
 });

@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.h1.fontSize,
     lineHeight: tokens.type.h1.lineHeight,
     letterSpacing: tokens.type.h1.letterSpacing,
-    fontWeight: tokens.weight.semibold,
+    fontWeight: tokens.weight.regular, // titre de page : même graisse que PageTitle
     marginBottom: tokens.space.sm,
   },
   updated: {
@@ -103,12 +103,12 @@ const styles = StyleSheet.create({
   heading: {
     fontFamily: tokens.font.display,
     color: tokens.colors.text,
-    fontSize: tokens.type.h3.fontSize,
-    letterSpacing: tokens.type.h3.letterSpacing,
+    ...tokens.type.h3,
     fontWeight: tokens.weight.semibold,
     marginBottom: tokens.space.sm,
   },
   paragraph: {
+    maxWidth: tokens.layout.measure, // ≈ 75 caractères par ligne (83 à 95 auparavant)
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
     fontSize: tokens.type.body.fontSize,

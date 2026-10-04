@@ -165,12 +165,12 @@ export default function HomeScreen() {
                   <LandingPhoto photo="work" sizes="(min-width: 1024px) 360px, (min-width: 640px) calc(100vw - 72px), calc(100vw - 56px)" />
                 </View>
               </View>
-              <View {...mi('landing-tools')} style={[styles.toolList, wide && styles.toolColumns]}>{features.map((f, i) => {
+              <View {...mi('landing-tools')} style={[styles.toolList, wide && styles.toolColumns]}>{features.map((f) => {
                 const tint = featureTint(f.id);
                 return <Pressable {...mi('landing-tool')} key={f.id} accessibilityRole="link" accessibilityLabel={f.label} onPress={() => router.push(f.route as never)} style={({ hovered, focused }: { hovered?: boolean; focused?: boolean }) => [styles.tool, wide && styles.toolWide, hovered && styles.rowHover, focused && tokens.focus.ring]}>
                   <View style={[styles.toolIcon, { backgroundColor: tint.bg }]}><Icon name={f.icon} size={tokens.size.iconMd} color={tint.fg} /></View>
                   <View style={styles.toolContent}><Text style={styles.toolTitle}>{f.label}</Text><Text style={styles.body}>{f.description}</Text></View>
-                  <View style={styles.toolEnd}><Text style={styles.index} aria-hidden>{String(i + 1).padStart(2, '0')}</Text><Icon name="arrowRight" size={tokens.size.iconSm} color={tokens.colors.accent} /></View>
+                  <Icon name="arrowRight" size={tokens.size.iconSm} color={tokens.colors.accent} />
                 </Pressable>;
               })}</View>
             </View>
@@ -186,8 +186,7 @@ export default function HomeScreen() {
                 <LandingPhoto photo="sources" />
               </View>
               <View style={styles.trustList}>
-                {TRUST_ITEMS.map(([title, text], i) => <View key={title} style={styles.trustRow}>
-                  <Text style={[styles.index, styles.trustAccent]} aria-hidden>{String(i + 1).padStart(2, '0')}</Text>
+                {TRUST_ITEMS.map(([title, text]) => <View key={title} style={styles.trustRow}>
                   <Text accessibilityRole="header" aria-level={3} style={[styles.toolTitle, styles.trustTitle]}>{title}</Text>
                   <Text style={[styles.body, styles.trustBody]}>{text}</Text>
                 </View>)}
@@ -233,7 +232,8 @@ const styles = StyleSheet.create({
   headlineAccent: { color: tokens.colors.accent, fontStyle: 'italic' },
   subhead: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, ...tokens.type.bodyLg, maxWidth: tokens.layout.form },
   highlights: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.sm },
-  highlight: { fontFamily: tokens.font.display, color: tokens.colors.accent, ...tokens.type.caption, backgroundColor: tokens.colors.surface, paddingHorizontal: tokens.space.md, paddingVertical: tokens.space.sm, borderRadius: tokens.radius.md },
+  // Repères non interactifs : texte encre sur filet neutre (en bleu sur fond blanc, ils se lisaient comme des liens).
+  highlight: { fontFamily: tokens.font.display, color: tokens.colors.textSubtle, ...tokens.type.caption, borderWidth: tokens.border.thin, borderColor: tokens.colors.borderControl, paddingHorizontal: tokens.space.md, paddingVertical: tokens.space.xs, borderRadius: tokens.radius.md },
   heroActions: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.md },
   actionsCompact: { flexDirection: 'column', alignItems: 'stretch' },
   meta: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, ...tokens.type.caption },
@@ -267,10 +267,8 @@ const styles = StyleSheet.create({
   tool: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.md, paddingVertical: tokens.space.xl, paddingHorizontal: tokens.space.xs, borderTopWidth: tokens.border.thin, borderTopColor: tokens.colors.border, minHeight: tokens.size.controlMd, ...tokens.motion.transitionWeb },
   toolWide: { width: '48%' },
   toolIcon: { width: tokens.size.iconButton, height: tokens.size.iconButton, alignItems: 'center', justifyContent: 'center', borderRadius: tokens.radius.md, flexShrink: 0 },
-  toolEnd: { gap: tokens.space.md, alignItems: 'center' },
   toolContent: { flex: 1, gap: tokens.space.xs },
   toolTitle: { fontFamily: tokens.font.display, color: tokens.colors.text, ...tokens.type.h3, fontWeight: tokens.weight.medium },
-  index: { fontFamily: tokens.font.mono, color: tokens.colors.textMuted, ...tokens.type.caption },
   rowHover: { backgroundColor: tokens.colors.surfaceAlt },
   trust: { gap: tokens.space['2xl'] },
   trustWide: { flexDirection: 'row', gap: tokens.space['4xl'] },
@@ -286,6 +284,7 @@ const styles = StyleSheet.create({
   faqQuestion: { flexDirection: 'row', alignItems: 'flex-start', gap: tokens.space.md },
   faqQuestionWide: { flex: 1 },
   faqQuestionText: { flex: 1 },
-  faqNumber: { fontFamily: tokens.font.mono, color: tokens.colors.accent, ...tokens.type.caption, paddingTop: tokens.space.xs },
-  faqAnswerWide: { flex: 2 },
+  // Numéro de question (ADR-0040) en chiffres tabulaires du corps : la police à chasse fixe reste réservée aux valeurs techniques.
+  faqNumber: { fontFamily: tokens.font.sans, fontVariant: ['tabular-nums'], fontWeight: tokens.weight.semibold, color: tokens.colors.accent, ...tokens.type.caption, paddingTop: tokens.space.xs },
+  faqAnswerWide: { flex: 2, maxWidth: tokens.layout.measure },
 });

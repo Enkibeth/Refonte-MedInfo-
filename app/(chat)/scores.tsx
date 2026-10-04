@@ -1,6 +1,5 @@
 import { FieldInput } from '@/ui/FieldInput';
 import { Chip } from '@/ui/Chip';
-import { PageTitle } from '@/ui/PageTitle';
 import { SearchField } from '@/ui/SearchField';
 /**
  * Scores médicaux — calculateurs cliniques interactifs (persona étudiant + pro).
@@ -18,7 +17,7 @@ import { tokens } from '@/ui/tokens';
 import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
 import { RoleGate } from '@/ui/RoleGate';
-import { ToolsMenu } from '@/ui/ToolsMenu';
+import { ToolScreenHeader } from '@/ui/ToolScreenHeader';
 import {
   ALL_SCORES,
   CATEGORIES,
@@ -81,16 +80,10 @@ function ScoresInner() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <ToolsMenu />
-        </View>
-        <PageTitle style={styles.title}>Scores médicaux</PageTitle>
-        <Text style={styles.subtitle}>
-          {ALL_SCORES.length} scores et calculateurs cliniques : boutons interactifs et
-          interprétation immédiate. Calcul privé, sur ton appareil.
-        </Text>
-      </View>
+      <ToolScreenHeader feature="scores" title="Scores médicaux">
+        {ALL_SCORES.length} scores et calculateurs cliniques : boutons interactifs et
+        interprétation immédiate. Calcul privé, sur ton appareil.
+      </ToolScreenHeader>
 
       {selected ? (
         <ScoreDetail key={selected.id} def={selected} onBack={() => setSelectedId(null)} />
@@ -452,7 +445,7 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.bold,
     color: tokens.colors.textMuted,
   },
-  resultValue: { fontFamily: tokens.font.display, fontSize: tokens.type.display.fontSize, letterSpacing: tokens.type.display.letterSpacing, fontWeight: tokens.weight.bold, color: tokens.colors.text, marginTop: 2 },
+  resultValue: { fontVariant: ['tabular-nums'], fontFamily: tokens.font.display, fontSize: tokens.type.display.fontSize, letterSpacing: tokens.type.display.letterSpacing, fontWeight: tokens.weight.bold, color: tokens.colors.text, marginTop: 2 },
   badge: { paddingHorizontal: tokens.space.md, paddingVertical: 6, borderRadius: tokens.radius.pill },
   badgeText: { fontFamily: tokens.font.sans, fontSize: tokens.type.caption.fontSize, fontWeight: tokens.weight.bold },
   resultDetail: { fontFamily: tokens.font.sans, fontSize: tokens.type.label.fontSize, color: tokens.colors.textSubtle, lineHeight: 21, marginTop: tokens.space.md },

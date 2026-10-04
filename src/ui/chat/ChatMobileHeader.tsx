@@ -14,17 +14,16 @@
  *
  * Pure ergonomie : l'autorisation des chatbots reste serveur (allowedChatbotsFor).
  */
-import { Children, Fragment, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { ChatbotId } from '@/ai/chat/chatContext';
 import { getCountry, type CountryCode } from '@/ai/chat/country';
 import { CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
-import { CountryFlag } from '@/ui/chat/CountryFlag';
 import { CountrySelector } from '@/ui/chat/CountrySelector';
-import { Icon, type IconName } from '@/ui/icons';
-import { ToolsMenu } from '@/ui/ToolsMenu';
+import { Icon } from '@/ui/icons';
+import { HeaderIconButton as IconButton, MenuRow, MenuSection, MobileSheet, sheetStyles } from '@/ui/MobileSheet';
+import { NavigationSheet } from '@/ui/AppMobileHeader';
 import { tokens } from '@/ui/tokens';
 
 export interface ChatMobileHeaderProps {
@@ -57,7 +56,6 @@ export function ChatMobileHeader(props: ChatMobileHeaderProps) {
 
   const meta = CHATBOT_META[chatbot];
   const canPick = chatbots.length > 1;
-  const insets = useSafeAreaInsets();
 
   // Action à lancer APRÈS la fermeture de la feuille (pays, outils, historique ouvrent
   // chacun leur propre fenêtre). Sur iOS natif, une fenêtre ne peut pas s'ouvrir pendant
@@ -80,12 +78,12 @@ export function ChatMobileHeader(props: ChatMobileHeaderProps) {
   };
 
   return (
-    <View style={[styles.bar, { paddingTop: tokens.space.xs + topInset }]}>
+    <View style={[sheetStyles.bar, { paddingTop: tokens.space.xs + topInset }]}>
       {/* Titre de page pour les lecteurs d'écran (l'en-tête d'ordinateur, qui le porte, est masqué ici). */}
-      <Text style={styles.srOnly} accessibilityRole="header" aria-level={1}>
+      <Text style={sheetStyles.srOnly} accessibilityRole="header" aria-level={1}>
         Chat {meta.label.toLowerCase()}
       </Text>
-      <IconButton icon="menu" label="Menu du chat" onPress={() => setMenuOpen(true)} />
+      <IconButton icon="menu" label="Menu du chat" expanded={menuOpen} onPress={() => setMenuOpen(true)} />
 
       <Pressable
         onPress={() => canPick && setPickerOpen(true)}
@@ -106,7 +104,7 @@ export function ChatMobileHeader(props: ChatMobileHeaderProps) {
       {onNew ? (
         <IconButton icon="plus" label="Nouvelle conversation" onPress={onNew} />
       ) : (
-        <View style={styles.iconSlot} />
+        <View style={sheetStyles.iconSlot} />
       )}
 
       {/* ── Choix du chatbot ── */}
@@ -143,19 +141,7 @@ export function ChatMobileHeader(props: ChatMobileHeaderProps) {
       </Modal>
 
       {/* ── Menu (feuille en bas d'écran) ── */}
-      <Modal
-        visible={menuOpen}
-        transparent
-        animationType="none"
-        onRequestClose={() => setMenuOpen(false)}
-        onDismiss={runAfterClose}
-      >
-        <Pressable style={styles.sheetBackdrop} onPress={() => setMenuOpen(false)}>
-          <Pressable
-            style={[styles.sheet, { paddingBottom: tokens.space['2xl'] + insets.bottom }]}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <View style={styles.grabber} />
+      <MobileSheet visible={menuOpen} onClose={() => setMenuOpen(false)} onDismiss={runAfterClose} label="Menu du chat">
             <MenuSection title="Conversation">
               {props.onHistory ? (
                 <MenuRow icon="clock" label="Historique des conversations" onPress={() => closeMenuThen(() => props.onHistory?.())} />
@@ -191,9 +177,7 @@ export function ChatMobileHeader(props: ChatMobileHeaderProps) {
                 onPress={() => closeMenuThen(() => setToolsOpen(true))}
               />
             </MenuSection>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      </MobileSheet>
 
       <CountrySelector
         value={props.country}
@@ -202,90 +186,14 @@ export function ChatMobileHeader(props: ChatMobileHeaderProps) {
         onOpenChange={setCountryOpen}
         hideTrigger
       />
-      <ToolsMenu open={toolsOpen} onOpenChange={setToolsOpen} hideTrigger />
+      <NavigationSheet visible={toolsOpen} onClose={() => setToolsOpen(false)} />
     </View>
-  );
-}
-
-function IconButton({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      {...(Platform.OS === 'web' ? { title: label } : {})}
-      style={({ pressed }: { pressed: boolean }) => [styles.iconSlot, styles.iconButton, pressed && styles.pressed]}
-    >
-      <Icon name={icon} size={22} color={tokens.colors.text} />
-    </Pressable>
-  );
-}
-
-function MenuSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.sectionCard}>
-        {/* Filet entre deux lignes (aligné sur le texte, comme les listes iOS). */}
-        {Children.toArray(children).map((child, i) => (
-          <Fragment key={i}>
-            {i > 0 ? <View style={styles.separator} /> : null}
-            {child}
-          </Fragment>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-function MenuRow({
-  icon,
-  label,
-  value,
-  valueFlag,
-  chevron,
-  onPress,
-}: {
-  icon: IconName;
-  label: string;
-  value?: string;
-  valueFlag?: CountryCode | null;
-  chevron?: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={value ? `${label} : ${value}` : label}
-      style={({ pressed }: { pressed: boolean }) => [styles.row, pressed && styles.rowPressed]}
-    >
-      <Icon name={icon} size={19} color={tokens.colors.accentDeep} />
-      <Text style={styles.rowLabel} numberOfLines={1}>{label}</Text>
-      {valueFlag ? <CountryFlag code={valueFlag} size={15} /> : null}
-      {value ? <Text style={styles.rowValue} numberOfLines={1}>{value}</Text> : null}
-      {chevron ? <Icon name="chevronRight" size={16} color={tokens.colors.textMuted} /> : null}
-    </Pressable>
   );
 }
 
 const ICON_SLOT = 44;
 
 const styles = StyleSheet.create({
-  bar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: tokens.space.xs,
-    paddingBottom: tokens.space.xs,
-    backgroundColor: tokens.colors.surface,
-    borderBottomWidth: 1,
-    borderColor: tokens.colors.border,
-  },
-  iconSlot: { width: ICON_SLOT, height: ICON_SLOT },
-  // Masqué à l'écran, lu par les lecteurs d'écran.
-  srOnly: { position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0 },
-  iconButton: { alignItems: 'center', justifyContent: 'center', borderRadius: tokens.radius.pill },
   pressed: { opacity: 0.6 },
   titleButton: {
     flexShrink: 1,
@@ -327,48 +235,4 @@ const styles = StyleSheet.create({
   pickerLabelActive: { color: tokens.colors.accentDeep },
   pickerHint: { fontFamily: tokens.font.sans, fontSize: tokens.type.caption.fontSize, lineHeight: 18, color: tokens.colors.textMuted },
 
-  sheetBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.32)', justifyContent: 'flex-end' },
-  sheet: {
-    backgroundColor: tokens.colors.background,
-    borderTopLeftRadius: tokens.radius.xl,
-    borderTopRightRadius: tokens.radius.xl,
-    paddingHorizontal: tokens.space.md,
-    paddingTop: tokens.space.sm,
-    gap: tokens.space.md,
-    ...tokens.elevation.lg,
-  },
-  grabber: {
-    alignSelf: 'center',
-    width: 40,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: tokens.colors.borderStrong,
-    marginBottom: tokens.space.xs,
-  },
-  section: { gap: tokens.space.xs },
-  sectionTitle: {
-    fontFamily: tokens.font.sans,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.semibold,
-    color: tokens.colors.textMuted,
-    paddingHorizontal: tokens.space.sm,
-  },
-  sectionCard: {
-    backgroundColor: tokens.colors.surface,
-    borderRadius: tokens.radius.lg,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    overflow: 'hidden',
-  },
-  row: {
-    minHeight: 50,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: tokens.space.md,
-    paddingHorizontal: tokens.space.md,
-  },
-  separator: { height: StyleSheet.hairlineWidth, backgroundColor: tokens.colors.border, marginLeft: tokens.space.md + 19 + tokens.space.md },
-  rowPressed: { backgroundColor: tokens.colors.surfaceAlt },
-  rowLabel: { flex: 1, fontFamily: tokens.font.sans, fontSize: 16, color: tokens.colors.text },
-  rowValue: { fontFamily: tokens.font.sans, fontSize: 15, color: tokens.colors.textMuted, maxWidth: 140 },
 });

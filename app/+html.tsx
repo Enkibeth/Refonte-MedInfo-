@@ -60,7 +60,9 @@ export default function Root({ children }: PropsWithChildren) {
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no" />
-        <meta name="theme-color" content={tokens.colors.accentVivid} />
+        {/* Blanc, comme l'en-tête du site et la barre compacte : un aplat bleu vif au-dessus d'un
+            en-tête blanc créait une rupture dans la barre d'adresse mobile et l'app installée. */}
+        <meta name="theme-color" content={tokens.colors.surface} />
         {/* Thème clair uniquement : sans cette déclaration, le mode sombre du système
             assombrit les champs et barres de défilement natifs sur un fond ivoire. */}
         <meta name="color-scheme" content="light" />
@@ -94,7 +96,7 @@ input, textarea, select { accent-color: ${tokens.colors.accent}; }
 
 html, body { background-color: ${tokens.colors.background}; }
 /* Hauteur dynamique (dvh) : sur Safari mobile, la barre d'outils du navigateur ne
-   recouvre plus le contenu → la barre d'onglets du bas reste entièrement visible.
+   recouvre plus le contenu → le bas des écrans (saisie du chat) reste entièrement visible.
    overflow-x masqué : un token très long (URL) ne crée plus de défilement horizontal
    qui décalait le header (bouton « Sources » coupé). */
 html, body, #root { height: 100%; }
@@ -114,14 +116,16 @@ body { overflow-x: hidden; }
 *::-webkit-scrollbar-thumb { background-color: ${tokens.colors.borderStrong}; border-radius: 999px; }
 *::-webkit-scrollbar-thumb:hover { background-color: ${tokens.colors.textMuted}; }
 
-/* Mouvement (design system §4). Courbes partagées avec tokens.motion.easing.
-   L'entrée par défaut : fade + remontée 8 px, easing « standard ». */
-@keyframes medinfo-reveal {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.medinfo-reveal {
-  animation: medinfo-reveal ${tokens.motion.duration.base}ms cubic-bezier(0.16, 1, 0.3, 1) both;
+/* Coupures de ligne (2026-10) : titres équilibrés, paragraphes sans mot orphelin.
+   Propriété longue text-wrap-style : le raccourci text-wrap écraserait le white-space:nowrap
+   que react-native-web pose pour numberOfLines. Ignorée sans dommage par les navigateurs
+   qui ne la connaissent pas. */
+h1, h2, h3, h4, [role="heading"] { text-wrap-style: balance; }
+p, [dir="auto"] { text-wrap-style: pretty; }
+/* Safari iOS agrandit la page au focus d'un champ de moins de 16 px (et la laisse agrandie) :
+   16 px minimum au doigt, sur tous les champs de l'application. Le zoom n'est jamais bloqué. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), textarea, select { font-size: 16px !important; }
 }
 
 /* Tracé ECG (accueil + hero du dashboard) : la ligne se dessine, tient, puis s'efface et
@@ -139,16 +143,6 @@ body { overflow-x: hidden; }
   animation: medinfo-ecg-draw 9000ms cubic-bezier(0.4, 0, 0.2, 1) 300ms infinite;
 }
 
-/* Lumière du hero du dashboard qui « respire » lentement (une seule source). */
-@keyframes medinfo-hero-breathe {
-  0%, 100% { opacity: 0.82; transform: scale(1); }
-  50%      { opacity: 1;    transform: scale(1.06); }
-}
-.medinfo-hero-glow {
-  transform-origin: 16% -6%;
-  animation: medinfo-hero-breathe 14000ms cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  will-change: opacity, transform;
-}
 ${RESPONSIVE_CSS}
 ${INTERACTION_CSS}
 ${CHIP_CSS}
@@ -161,9 +155,6 @@ ${SESSION_HINT_CSS}
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
-  .medinfo-reveal { animation: none !important; }
   .medinfo-ecg-path { animation: none !important; stroke-dasharray: none; }
-  .medinfo-hero-glow { animation: none !important; transform: none !important; }
-  .medinfo-shimmer { animation: none !important; }
 }
 `;

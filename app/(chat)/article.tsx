@@ -1,4 +1,3 @@
-import { PageTitle } from '@/ui/PageTitle';
 /**
  * Module Rédaction d'article médical — outil étudiant + professionnel (ADR-0031).
  *
@@ -23,7 +22,7 @@ import { tokens } from '@/ui/tokens';
 import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
 import { RoleGate } from '@/ui/RoleGate';
-import { ToolsMenu } from '@/ui/ToolsMenu';
+import { ToolScreenHeader } from '@/ui/ToolScreenHeader';
 
 function ArticleWriterInner() {
   const { session } = useSession();
@@ -50,17 +49,11 @@ function ArticleWriterInner() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <ToolsMenu />
-        </View>
-        <PageTitle style={styles.title}>Rédaction d'article</PageTitle>
-        <Text style={styles.subtitle}>
-          Structure ton article, ta thèse ou ton abstract : compteurs de caractères,
-          bibliographie Vancouver, aides IA à la rédaction et contrôle d'originalité —
-          l'écriture, les compteurs et les exports sont gratuits.
-        </Text>
-      </View>
+      <ToolScreenHeader feature="article" title="Rédaction d’article">
+        Structure ton article, ta thèse ou ton abstract : compteurs de caractères,
+        bibliographie Vancouver, aides IA à la rédaction et contrôle d'originalité —
+        l'écriture, les compteurs et les exports sont gratuits.
+      </ToolScreenHeader>
 
       {Platform.OS === 'web' ? (
         <iframe

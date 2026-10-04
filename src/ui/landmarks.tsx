@@ -9,8 +9,9 @@
  *   - pages publiques : `LandingHeader` (`banner` + `navigation`), `<MainContent>` autour du
  *     contenu, `SiteFooter` (`contentinfo`) — en-tête et pied restent HORS du `<main>` ;
  *   - espace connecté : chaque écran des groupes applicatifs est enveloppé par
- *     `screenMainLayout` (option `screenLayout` des navigateurs) ; barre d'onglets mobile et
- *     barre latérale du shell = `navigation`, barre supérieure du shell = `banner`.
+ *     `screenMainLayout` (option `screenLayout` des navigateurs) ; barre latérale du shell
+ *     = `navigation`, barre supérieure du shell = `banner` ; la barre compacte mobile est
+ *     dans le `<main>` de l'écran (comme celle du chat), sans rôle de repère.
  * Les écrans d'onglets déjà visités restent montés mais masqués (`display: none`) : leurs
  * `<main>` sont absents de l'arbre d'accessibilité. Seul l'écran au premier plan porte
  * l'identifiant cible (`#contenu`, jamais dupliqué) ; le lien d'évitement donne de toute façon

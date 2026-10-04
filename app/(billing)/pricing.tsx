@@ -180,10 +180,9 @@ const styles = StyleSheet.create({
   sourcesText: {
     flex: 1,
     fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
-    fontSize: tokens.type.label.fontSize,
-    lineHeight: 21,
-    fontWeight: tokens.weight.medium,
+    color: tokens.colors.text, // texte courant (en bleu, le paragraphe se lisait comme un lien)
+    ...tokens.type.label,
+    fontWeight: tokens.weight.regular,
     padding: tokens.space.lg,
   },
   section: { marginTop: tokens.space.sm },

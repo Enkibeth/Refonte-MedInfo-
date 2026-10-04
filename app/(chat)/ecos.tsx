@@ -30,6 +30,7 @@ import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
+import { ScreenNavBar } from '@/ui/AppMobileHeader';
 import { DictationButton } from '@/ui/DictationButton';
 import { COMPOSER_ICON_SIZE, composerButtonStyles } from '@/ui/chat/composerButton';
 import { Button } from '@/ui/Button';
@@ -160,7 +161,7 @@ function ScorePill({ score, prefix }: { score: number | null; prefix?: string })
   if (score === null) {
     return (
       <View style={[dashStyles.scorePill, dashStyles.scorePillEmpty]}>
-        <Text style={dashStyles.scorePillEmptyText}>{prefix ?? ''}—/20</Text>
+        <Text style={dashStyles.scorePillEmptyText}>{prefix ?? ''}sans note</Text>
       </View>
     );
   }
@@ -308,7 +309,10 @@ export default function EcosScreen() {
         ]}
       />
       <RoleGate feature="ecos">
-        <EcosScreenInner />
+        <View style={styles.screen}>
+          <ScreenNavBar title="Simulation ECOS" icon="stethoscope" />
+          <EcosScreenInner />
+        </View>
       </RoleGate>
     </>
   );
@@ -682,8 +686,9 @@ function EcosScreenInner() {
               />
               <StatTile
                 label="Note globale"
-                value={stats.averageScore !== null ? formatScore(stats.averageScore) : '—'}
-                suffix="/20"
+                // Pas encore de note : un mot plutôt qu'un grand tiret (« —/20 »).
+                value={stats.averageScore !== null ? formatScore(stats.averageScore) : 'Aucune'}
+                suffix={stats.averageScore !== null ? '/20' : undefined}
                 valueColor={
                   stats.averageScore !== null
                     ? toneColors(scoreTone(stats.averageScore)).fg
@@ -693,8 +698,8 @@ function EcosScreenInner() {
               />
               <StatTile
                 label="Meilleure note"
-                value={stats.bestScore !== null ? formatScore(stats.bestScore) : '—'}
-                suffix="/20"
+                value={stats.bestScore !== null ? formatScore(stats.bestScore) : 'Aucune'}
+                suffix={stats.bestScore !== null ? '/20' : undefined}
                 valueColor={
                   stats.bestScore !== null ? toneColors(scoreTone(stats.bestScore)).fg : undefined
                 }
@@ -1083,6 +1088,7 @@ function EcosScreenInner() {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
   container: { flex: 1, backgroundColor: tokens.colors.background },
 
   // Selection
@@ -1406,6 +1412,7 @@ const dashStyles = StyleSheet.create({
     textTransform: 'none',
   },
   statValue: {
+    fontVariant: ['tabular-nums'],
     fontFamily: tokens.font.display,
     color: tokens.colors.text,
     fontSize: tokens.type.h1.fontSize,

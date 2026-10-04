@@ -1,4 +1,3 @@
-import { PageTitle } from '@/ui/PageTitle';
 /**
  * Analyse des partiels (v3) — outil étudiant (persona student).
  *
@@ -18,21 +17,15 @@ import { tokens } from '@/ui/tokens';
 import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
 import { RoleGate } from '@/ui/RoleGate';
-import { ToolsMenu } from '@/ui/ToolsMenu';
+import { ToolScreenHeader } from '@/ui/ToolScreenHeader';
 
 function PartielInner() {
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <ToolsMenu />
-        </View>
-        <PageTitle style={styles.title}>Analyse des partiels</PageTitle>
-        <Text style={styles.subtitle}>
-          Importe les notes de ta promo (.xlsx, .csv, .pdf) : rang, coefficients, points forts et
-          simulateur. Calcul privé, sur ton appareil.
-        </Text>
-      </View>
+      <ToolScreenHeader feature="partiel" title="Analyse des partiels">
+        Importe les notes de ta promo (.xlsx, .csv, .pdf) : rang, coefficients, points forts et
+        simulateur. Calcul privé, sur ton appareil.
+      </ToolScreenHeader>
 
       {Platform.OS === 'web' ? (
         <iframe

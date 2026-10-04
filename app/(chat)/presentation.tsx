@@ -1,4 +1,3 @@
-import { PageTitle } from '@/ui/PageTitle';
 /**
  * Générateur de présentations — outil étudiant + professionnel (personas student/professional).
  *
@@ -19,7 +18,7 @@ import { tokens } from '@/ui/tokens';
 import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
 import { RoleGate } from '@/ui/RoleGate';
-import { ToolsMenu } from '@/ui/ToolsMenu';
+import { ToolScreenHeader } from '@/ui/ToolScreenHeader';
 
 function PresentationInner() {
   const { session } = useSession();
@@ -49,16 +48,10 @@ function PresentationInner() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <ToolsMenu />
-        </View>
-        <PageTitle style={styles.title}>Générateur de présentations</PageTitle>
-        <Text style={styles.subtitle}>
-          Construis tes slides médicales à la main ou avec un « médecin senior » IA, puis
-          exporte en PPTX prêt pour Keynote.
-        </Text>
-      </View>
+      <ToolScreenHeader feature="presentation" title="Générateur de présentations">
+        Construis tes slides médicales à la main ou avec un « médecin senior » IA, puis
+        exporte en PPTX prêt pour Keynote.
+      </ToolScreenHeader>
 
       {Platform.OS === 'web' ? (
         <iframe

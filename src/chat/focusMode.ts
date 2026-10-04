@@ -3,8 +3,8 @@ import { useSyncExternalStore } from 'react';
 /**
  * Mode plein écran du chat (demande Hugo 2026-09) : seul le fil et la saisie restent,
  * texte à la taille de l'app Messages d'Apple (17 px). Un petit magasin partagé, car
- * l'écran de chat, la barre d'onglets (AppTabBar) et le shell desktop (AppShell) doivent
- * tous réagir. La préférence est mémorisée localement (`medinfo:chatFocus`) ; elle n'est
+ * l'écran de chat et le shell desktop (AppShell) doivent
+ * réagir. La préférence est mémorisée localement (`medinfo:chatFocus`) ; elle n'est
  * relue qu'après le montage du chat (jamais au pré-rendu : pas d'erreur d'hydratation).
  */
 const STORAGE_KEY = 'medinfo:chatFocus';

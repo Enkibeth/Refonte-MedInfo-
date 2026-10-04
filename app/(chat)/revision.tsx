@@ -1,5 +1,4 @@
 import { FieldInput } from '@/ui/FieldInput';
-import { PageTitle } from '@/ui/PageTitle';
 /**
  * Dashboard de révision étudiant (ADR-0027).
  *
@@ -26,7 +25,7 @@ import { tokens } from '@/ui/tokens';
 import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
 import { RoleGate } from '@/ui/RoleGate';
-import { ToolsMenu } from '@/ui/ToolsMenu';
+import { ToolScreenHeader } from '@/ui/ToolScreenHeader';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { DateField } from '@/ui/revision/DateField';
 import { Chip, ChipRow } from '@/ui/Chip';
@@ -360,16 +359,10 @@ function RevisionScreenInner() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={80}
     >
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <ToolsMenu />
-        </View>
-        <PageTitle style={styles.title}>Révisions</PageTitle>
-        <Text style={styles.subtitle}>
-          Transforme ton programme en charge quotidienne réaliste. Le calcul est déterministe :
-          rien n'est inventé, tu vois tout de suite si tu es dans les temps.
-        </Text>
-      </View>
+      <ToolScreenHeader feature="revision" title="Révisions">
+        Transforme ton programme en charge quotidienne réaliste. Le calcul est déterministe :
+        rien n'est inventé, tu vois tout de suite si tu es dans les temps.
+      </ToolScreenHeader>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {/* Mes plans */}

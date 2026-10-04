@@ -2,7 +2,7 @@
  * Teinte de pastille par outil (refonte shell 2026-07, principe « dashboard »).
  *
  * Chaque outil porte une couleur douce stable dans toute l'app (cartes du
- * dashboard, panneau « Outils » de la tab bar, menu d'outils, activité récente) :
+ * dashboard, menu ☰ mobile, menu d'outils, activité récente) :
  * repère visuel immédiat, jamais l'unique porteur d'information (icône + libellé
  * toujours présents — cf. 05_DESIGN §8).
  *
