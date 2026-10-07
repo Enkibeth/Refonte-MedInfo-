@@ -1,71 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
-import {
-  elapsedLabel,
-  inFlightAssistant,
-  summarizeChatProgress,
-  toolNameOfPart,
-  CHAT_PROGRESS_LABELS,
-} from '@/ai/chat/progress';
-
-describe('toolNameOfPart', () => {
-  it('extrait le nom d’un part `tool-<name>`', () => {
-    expect(toolNameOfPart({ type: 'tool-europe_pmc_search' })).toBe('europe_pmc_search');
-    expect(toolNameOfPart({ type: 'tool-verify_source_links' })).toBe('verify_source_links');
-  });
-
-  it('extrait le nom d’un part `dynamic-tool` via toolName', () => {
-    expect(toolNameOfPart({ type: 'dynamic-tool', toolName: 'web_search' })).toBe('web_search');
-  });
-
-  it('renvoie null pour un part non-outil ou malformé', () => {
-    expect(toolNameOfPart({ type: 'text' })).toBeNull();
-    expect(toolNameOfPart({ type: 'tool-' })).toBeNull();
-    expect(toolNameOfPart({ type: 'dynamic-tool' })).toBeNull();
-    expect(toolNameOfPart({})).toBeNull();
-  });
-});
-
-describe('summarizeChatProgress', () => {
-  it('renvoie une trace vide hors tableau ou sans outil', () => {
-    expect(summarizeChatProgress(null)).toEqual([]);
-    expect(summarizeChatProgress([{ type: 'text', text: 'coucou' }])).toEqual([]);
-  });
-
-  it('ordonne par première apparition et compte les appels par outil', () => {
-    // Le chat n'a plus qu'un outil (la recherche web du provider, ADR-0037) ; le module
-    // reste générique et doit continuer à ordonner/compter n'importe quel nom d'outil.
-    const parts = [
-      { type: 'tool-web_search' },
-      { type: 'text', text: '...' },
-      { type: 'tool-autre_outil' },
-      { type: 'tool-autre_outil' },
-    ];
-    const steps = summarizeChatProgress(parts);
-    expect(steps.map((s) => s.tool)).toEqual(['web_search', 'autre_outil']);
-    expect(steps.find((s) => s.tool === 'autre_outil')?.count).toBe(2);
-    expect(steps.find((s) => s.tool === 'web_search')?.count).toBe(1);
-  });
-
-  it('mappe vers des libellés lisibles, repli sur le nom brut si outil inconnu', () => {
-    const steps = summarizeChatProgress([
-      { type: 'tool-web_search' },
-      { type: 'tool-outil_inconnu' },
-    ]);
-    expect(steps[0].label).toBe(CHAT_PROGRESS_LABELS.web_search);
-    expect(steps[1].label).toBe('outil_inconnu');
-  });
-
-  it('gère les parts `dynamic-tool` (web_search exécuté par le provider)', () => {
-    const steps = summarizeChatProgress([
-      { type: 'dynamic-tool', toolName: 'web_search' },
-      { type: 'dynamic-tool', toolName: 'web_search' },
-    ]);
-    expect(steps).toHaveLength(1);
-    expect(steps[0].count).toBe(2);
-    expect(steps[0].label).toBe(CHAT_PROGRESS_LABELS.web_search);
-  });
-});
+import { elapsedLabel, inFlightAssistant } from '@/ai/chat/progress';
+import { buildResearchTimeline } from '@/ai/chat/researchTimeline';
 
 describe('inFlightAssistant — la trace ne doit jamais être celle du tour précédent', () => {
   const user = (text: string) => ({ role: 'user', parts: [{ type: 'text', text }] });
@@ -84,7 +20,10 @@ describe('inFlightAssistant — la trace ne doit jamais être celle du tour pré
     // d'avant s'affichait pendant l'attente, puis basculait d'un coup.
     const messages = [user('q1'), assistant(['web_search', 'verify_source_links']), user('q2')];
     expect(inFlightAssistant(messages)).toBeNull();
-    expect(summarizeChatProgress(inFlightAssistant(messages)?.parts)).toEqual([]);
+    // Rien du tour précédent : seule l'analyse de la NOUVELLE question est en cours.
+    const view = buildResearchTimeline(inFlightAssistant(messages)?.parts);
+    expect(view.steps.map((s) => s.title)).toEqual(['Analyse de la question']);
+    expect(view.searchCount).toBe(0);
   });
 
   it('supporte un fil vide ou une entrée invalide', () => {
