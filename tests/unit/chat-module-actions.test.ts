@@ -10,8 +10,10 @@ import {
   isolateModuleActionMarkers,
   mergeModuleActions,
   moduleActionCard,
+  coerceClientCapabilities,
   moduleActionCounts,
   moduleActionToolsFor,
+  moduleToolsForRequest,
   parseModuleActionMarker,
   scoreIdForCalc,
   stripInterfaceComments,
@@ -227,6 +229,53 @@ describe('cartes d’action : mesure', () => {
     expect(moduleActionCounts(text)).toEqual({ 'carte:ecos': 1, 'carte:scores': 1 });
     expect(moduleActionCounts('Pas de carte.')).toEqual({});
     expect(JSON.stringify(moduleActionCounts(text))).not.toContain('Cardio');
+  });
+});
+
+describe('cartes d’action : robustesse (incident iPhone 2026-10)', () => {
+  it('marqueur à la typographie « corrigée » par le modèle : toujours une carte, jamais du texte', () => {
+    for (const marker of ['<!--OUTIL:cv-builder—>', '<!--OUTIL:cv-builder–>', '<!--OUTIL:cv-builder→', '<!—OUTIL:cv-builder—>', '<!--OUTIL:cv-builder ⟶']) {
+      expect(parseModuleActionMarker(marker), marker).toEqual({ tool: 'cv-builder', param: null });
+      expect(isModuleActionMarkerLine(marker), marker).toBe(true);
+      expect(stripInterfaceComments(`Texte ${marker} fin`), marker).toBe('Texte  fin');
+    }
+    expect(parseModuleActionMarker('<!--OUTIL:scores|CURB-65—>')).toEqual({ tool: 'scores', param: 'CURB-65' });
+  });
+
+  it('cas réel : réponse CV du chatbot pro, carte en fin de réponse', () => {
+    const text =
+      "Oui. Envoie ton CV actuel et précise le type de poste visé. Je peux retravailler la structure et la mise en valeur de ton parcours médical.\n\n<!--OUTIL:cv-builder-->";
+    const { blocks } = parseAssistantMessage(text);
+    expect(blocks.map((b) => b.type)).toEqual(['body', 'actions']);
+    expect(assistantTextForExport(text)).not.toContain('OUTIL');
+  });
+
+  it('cas réel : CURB-65, puce CALC et carte sur le même score', () => {
+    const text =
+      'Triage avec les seules informations disponibles : red flags non renseignés.\n\n<!--CALC:curb65-->\n<!--OUTIL:scores|CURB-65-->\n\nPOINTS CLÉS\n- Confusion, urée, fréquence respiratoire.';
+    const types = parseAssistantMessage(text).blocks.map((b) => b.type);
+    expect(types).toContain('calc');
+    expect(types).toContain('actions');
+  });
+
+  it('requête d’un onglet resté sur l’ancien code (sans capacité) : aucune consigne de cartes', () => {
+    const base = { persona: 'professional' as const, isAdmin: false, verified: true };
+    expect(moduleToolsForRequest({ ...base, capabilities: undefined })).toEqual([]);
+    expect(buildModuleActionsSection(moduleToolsForRequest({ ...base, capabilities: undefined }))).toBe('');
+    expect(moduleToolsForRequest({ ...base, capabilities: ['module-actions'] })).toContain('scores');
+    expect(moduleToolsForRequest({ persona: 'student', isAdmin: false, verified: false, capabilities: ['module-actions'] })).toEqual([]);
+  });
+
+  it('capacités du client : seules les valeurs connues, jamais un droit', () => {
+    expect(coerceClientCapabilities(['module-actions', 'admin'])).toEqual(['module-actions']);
+    expect(coerceClientCapabilities('module-actions')).toEqual([]);
+    expect(coerceClientCapabilities(undefined)).toEqual([]);
+  });
+
+  it('consigne : score nommé d’emblée, outil CV plutôt que le CV collé dans le chat', () => {
+    const section = buildModuleActionsSection(['scores', 'cv-builder']);
+    expect(section).toMatch(/nomme-le dès la première phrase/);
+    expect(section).toMatch(/plutôt que de demander de coller ou d'envoyer le CV/);
   });
 });
 

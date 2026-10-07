@@ -16,7 +16,7 @@ export const EMPTY_STREAMING_BODY: StreamingBody = { source: '', chunks: [], pen
 
 // Marqueurs d'interface sur leur propre ligne (scores suggérés, cartes d'outil — ADR-0044) :
 // la suite est rendue d'un bloc, par le parseur structuré, une fois la réponse complète.
-const INTERFACE_MARKER_START = /^<!--\s*(?:CALC|OUTIL)\s*:/i;
+const INTERFACE_MARKER_START = /^<!(?:--|—|–|-)\s*(?:CALC|OUTIL)\s*:/i;
 const NUMBERED_LINE = /^\d+[.)]\s+\S/;
 
 /**
@@ -129,7 +129,7 @@ export function visibleStreamingTail(pending: string): string {
   // Blocs qui n'ont de sens qu'une fois fermés : rien à partir de leur première ligne.
   let lineStart = 0;
   for (const line of pending.split('\n')) {
-    if (/^\s*(?:\||```|~~~|<!--)/.test(line)) {
+    if (/^\s*(?:\||```|~~~|<!(?:--|—|–))/.test(line)) {
       end = lineStart;
       break;
     }
@@ -145,6 +145,7 @@ export function visibleStreamingTail(pending: string): string {
     (isSectionHeadingPrefix(last) ||
       isStudentFollowupMarkerPrefix(last) ||
       '<!--'.startsWith(last) ||
+      /^<!—$/.test(last) ||
       /^(?:#{1,6}|`+|~+|[-*+•]|\d+[.)]?)$/.test(last))
   ) {
     end = Math.min(end, lastStart);
@@ -173,9 +174,10 @@ export function visibleStreamingTail(pending: string): string {
   }
   // Marqueur d'interface glissé en milieu de ligne (« … <!--OUTIL:ecos-->») : rien de lui ne
   // s'affiche, ni pendant qu'il arrive (« <!--OUTI », « <!- ») ni une fois fermé (retiré au rendu).
-  const comment = visible.lastIndexOf('<!--');
-  if (comment >= 0 && !visible.includes('-->', comment)) cut = Math.min(cut, comment);
-  const commentStart = visible.match(/<!?-?$/);
+  let comment = -1;
+  for (const m of visible.matchAll(/<!(?:--|—|–)/g)) comment = m.index ?? comment;
+  if (comment >= 0 && !/(?:>|→|⟶)/.test(visible.slice(comment))) cut = Math.min(cut, comment);
+  const commentStart = visible.match(/<!?[-—–]?$/);
   if (commentStart) cut = Math.min(cut, commentStart.index!);
   return visible.slice(0, cut);
 }

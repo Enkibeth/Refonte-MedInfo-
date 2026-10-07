@@ -41,6 +41,7 @@ import {
   withoutRawHeaders,
 } from './lib/proxy.mjs';
 import { createBlogPrerender, publicSiteUrl } from './lib/blog-prerender.mjs';
+import { BUILD_HEADER, readBuildId } from './lib/build-id.mjs';
 import { createHtmlHandler } from './lib/html.mjs';
 import {
   BASE_SECURITY_HEADERS,
@@ -136,6 +137,10 @@ export function createServer() {
   /** @param {string} html */
   const documentHeaders = (html) =>
     cspHeader ? { [cspHeader]: buildCsp({ scriptHashes: inlineScriptHashes(html), connectExtra }) } : {};
+
+  // Version servie (empreinte du bundle d'entrée) : annoncée sur les réponses d'API pour que
+  // les onglets restés sur l'ancien code proposent de recharger (server/lib/build-id.mjs).
+  const buildId = readBuildId(CLIENT_DIR);
 
   const serveStatic = createStaticHandler({
     root: CLIENT_DIR,
@@ -288,6 +293,7 @@ export function createServer() {
         // d'une réponse d'API par le CDN, jamais de mise en tampon d'un flux par le proxy.
         res.setHeader('Cache-Control', NO_STORE_CACHE_CONTROL);
         res.setHeader('X-Accel-Buffering', 'no');
+        if (buildId) res.setHeader(BUILD_HEADER, buildId);
       }
 
       if (accessLog) {

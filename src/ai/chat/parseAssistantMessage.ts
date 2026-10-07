@@ -185,7 +185,9 @@ export function isUppercaseHeading(line: string): boolean {
   return /^[A-ZÀ-ÖØ-Þ0-9\s'’\-—–:,.()&/!?%]+$/.test(t);
 }
 
-const CALC_RE = /<!--\s*CALC:([a-z0-9_,\s]+)\s*-->/i;
+// Ouverture/fermeture tolérantes à une typographie « corrigée » par le modèle (`—>`, `→`),
+// comme les marqueurs d'outil (moduleActions.ts) : un marqueur n'est jamais affiché.
+const CALC_RE = /<!(?:--|—|–|-)\s*CALC:([a-z0-9_,\s]+?)\s*(?:--|—|–|-)?\s*(?:>|→|⟶)/i;
 const SRC_LINE_RE = /^SRC(\d+)\s*::\s*(.+)$/;
 const BADGE_RE = /^\[(OFFICIEL|GUIDELINE|ÉTUDE|ETUDE|RCP)\]\s*/i;
 const URL_RE = /^https?:\/\/\S+$/;

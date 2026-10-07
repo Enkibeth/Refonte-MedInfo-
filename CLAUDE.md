@@ -175,6 +175,13 @@ scope: Documentation de reprise pour agents IA (Claude Code / Codex)
   nommé dans les mentions légales : `src/deploy/hosting.ts` (LCEN art. 6-III ; région et
   téléphone à compléter, jamais devinés). Fumigation : `npm run smoke:node` (28 vérifications,
   nécessite un build).
+- **Décalage de versions client/serveur (incident 2026-10-07, ADR-0044)** : un onglet chargé
+  AVANT un déploiement garde l'ancien code face au nouveau serveur (courant sur iPhone). Toute
+  évolution du FORMAT des réponses du chat (nouveau marqueur, nouvelle section) doit être
+  conditionnée à une capacité déclarée par le client (`capabilities` dans le body de `/api/chat`,
+  `coerceClientCapabilities`) ; le serveur annonce sa version (`X-MedInfo-Build`, empreinte du
+  bundle d'entrée, `server/lib/build-id.mjs`) et le chat propose de recharger
+  (`src/chat/appVersion.ts`, bandeau « Une nouvelle version de MedInfo est en ligne »).
 - **Fondations web (ADR-0042, 2026-10)** : (1) **CSP à empreintes** sur chaque document HTML
   (`server/lib/security.mjs`) — un script inline ajouté est couvert automatiquement, mais
   `eval`/`new Function` sont bloqués (Zod tourne en `jitless`, `app/_layout.tsx`) et tout

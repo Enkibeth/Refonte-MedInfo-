@@ -163,3 +163,22 @@ describe('menu des commandes « / »', () => {
   });
 });
 
+describe('cas réels de l’incident iPhone (2026-10)', () => {
+  it('CV : la carte s’affiche, le marqueur jamais (même déformé)', () => {
+    for (const close of ['-->', '—>']) {
+      const text = `Je peux retravailler la mise en valeur de ton parcours médical.\n\n<!--OUTIL:cv-builder${close}`;
+      const html = render(text, false, handlers(['cv-builder']));
+      expect(visibleText(html), close).toContain('Construire mon CV');
+      expect(visibleText(html), close).not.toMatch(/OUTIL|<!/);
+    }
+  });
+
+  it('CURB-65 : une seule entrée (la puce qui ouvre le calculateur), pas de carte en double', () => {
+    const text = 'Le score adapté est le CURB-65.\n\n<!--CALC:curb65-->\n<!--OUTIL:scores|CURB-65-->\n';
+    const html = render(text, false, handlers(['scores']));
+    expect(html).toContain('Calculer CURB-65 dans l’outil Scores');
+    expect(html).not.toContain('module-action-card');
+    expect(visibleText(html)).not.toMatch(/OUTIL|<!--/);
+  });
+});
+

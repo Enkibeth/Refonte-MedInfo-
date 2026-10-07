@@ -84,7 +84,7 @@ const SPECS: ModuleActionSpec[] = [
     tool: 'scores',
     param: 'score',
     promptHint:
-      "calculer un score clinique avec un calculateur déterministe (critères figés, sans IA). Paramètre : le nom du score (ex. CHA2DS2-VASc). Si ta réponse contient déjà une ligne <!--CALC:…-->, n'ajoute pas cette carte.",
+      "calculer un score clinique avec un calculateur déterministe (critères figés, sans IA). Paramètre : le nom du score (ex. CHA2DS2-VASc). Quand on te demande quel score utiliser, nomme-le dès la première phrase. Si ta réponse contient déjà une ligne <!--CALC:…-->, n'ajoute pas cette carte.",
     title: (p) => (p ? `Calculer${NBSP}: ${p}` : 'Calculer un score clinique'),
     description: 'Calculateur déterministe, sans IA\u00a0: critères figés et interprétation immédiate.',
   },
@@ -113,7 +113,8 @@ const SPECS: ModuleActionSpec[] = [
   {
     tool: 'cv-builder',
     param: 'none',
-    promptHint: 'créer ou relire un CV médical.',
+    promptHint:
+      "créer, importer (PDF ou Word) et relire un CV médical, puis l'exporter en PDF. Propose cet outil plutôt que de demander de coller ou d'envoyer le CV dans la conversation (données personnelles).",
     title: () => 'Construire mon CV',
     description: 'Éditeur, aperçu A4, relecture et export PDF lisible par les logiciels de tri.',
   },
@@ -145,18 +146,32 @@ export function isModuleActionTool(value: unknown): value is ModuleActionTool {
 
 // ── Marqueur ──────────────────────────────────────────────────────────────────
 
+/**
+ * Ouverture et fermeture d'un commentaire d'interface, TOLÉRANTES : un modèle « corrige »
+ * parfois la typographie (`<!—`, `—>`, `–>`, `→`). Un marqueur déformé doit rester un
+ * marqueur, jamais du texte affiché.
+ */
+const OPEN = '<!(?:--|—|–|-)';
+const CLOSE = '(?:--|—|–|-)?\\s*(?:>|→|⟶)';
 /** Marqueur complet sur sa ligne : `<!--OUTIL:id-->` ou `<!--OUTIL:id|paramètre-->`. */
-const MARKER_RE = /^\s*<!--\s*OUTIL\s*:\s*([a-z-]+)\s*(?:\|([^<>]*?))?\s*-->\s*$/i;
+const MARKER_RE = new RegExp(`^\\s*${OPEN}\\s*OUTIL\\s*:\\s*([a-z]+(?:-[a-z]+)*)\\s*(?:\\|([^<>→⟶]*?))?\\s*${CLOSE}\\s*$`, 'i');
 /** Début d'un marqueur (streaming : la ligne est retenue jusqu'à sa fermeture). */
-export const MODULE_ACTION_MARKER_START = /^<!--\s*OUTIL\s*:/i;
+export const MODULE_ACTION_MARKER_START = new RegExp(`^${OPEN}\\s*OUTIL\\s*:`, 'i');
+/** Fin d'un marqueur (ou de tout commentaire d'interface) en fin de ligne. */
+const MARKER_END_RE = new RegExp(`${CLOSE}\\s*$`);
+/** Commentaire d'interface complet, n'importe où dans un texte. */
+const INTERFACE_COMMENT_RE = new RegExp(`${OPEN}[\\s\\S]*?${CLOSE}`, 'g');
+/** Marqueur d'outil complet glissé dans une ligne. */
+const INLINE_MARKER_RE = new RegExp(`[^\\S\\n]*(${OPEN}\\s*OUTIL\\s*:[^<>\\n→⟶]*?${CLOSE})[^\\S\\n]*`, 'gi');
 
 /** Nettoie un paramètre : une ligne, sans balisage, borné. Vide → null. */
 export function cleanModuleActionParam(raw: string | null | undefined): string | null {
   if (typeof raw !== 'string') return null;
   const text = raw
     .replace(/[\r\n\t]+/g, ' ')
-    .replace(/[<>`*_#[\]{}|]/g, '')
+    .replace(/[<>`*_#[\]{}|→⟶]/g, '')
     .replace(/\s{2,}/g, ' ')
+    .replace(/[\s\-—–]+$/, '')
     .trim()
     .slice(0, MODULE_ACTION_PARAM_MAX)
     .trim();
@@ -178,7 +193,7 @@ export function parseModuleActionMarker(line: string): ChatModuleAction | null {
 
 /** La ligne est-elle un marqueur d'outil (valide ou non) ? Un marqueur n'est jamais du contenu. */
 export function isModuleActionMarkerLine(line: string): boolean {
-  return MODULE_ACTION_MARKER_START.test(line.trim()) && /-->\s*$/.test(line);
+  return MODULE_ACTION_MARKER_START.test(line.trim()) && MARKER_END_RE.test(line);
 }
 
 /**
@@ -186,7 +201,7 @@ export function isModuleActionMarkerLine(line: string): boolean {
  * sa propre ligne, pour que le parseur en fasse une carte. Le texte qui l'entoure est conservé.
  */
 export function isolateModuleActionMarkers(text: string): string {
-  return text.replace(/[^\S\n]*(<!--\s*OUTIL\s*:[^<>\n]*?-->)[^\S\n]*/gi, (match, marker: string, offset: number, all: string) => {
+  return text.replace(INLINE_MARKER_RE, (match, marker: string, offset: number, all: string) => {
     const before = offset > 0 && all[offset - 1] !== '\n' ? '\n' : '';
     const end = offset + match.length;
     const after = end < all.length && all[end] !== '\n' ? '\n' : '';
@@ -196,7 +211,7 @@ export function isolateModuleActionMarkers(text: string): string {
 
 /** Retire tout commentaire HTML d'un markdown affiché (un marqueur n'est jamais du contenu). */
 export function stripInterfaceComments(markdown: string): string {
-  return markdown.replace(/<!--[\s\S]*?-->/g, '');
+  return markdown.replace(INTERFACE_COMMENT_RE, '');
 }
 
 /** Ajoute des actions à une liste existante : dédoublonnées (outil + paramètre), bornées. */
@@ -233,6 +248,23 @@ export function moduleActionCounts(text: string): Record<string, number> {
   return counts;
 }
 
+// ── Capacités du client (anti-décalage de versions) ──────────────────────────
+
+/**
+ * Capacités que l'écran du chat déclare dans le body de /api/chat. Un onglet chargé AVANT un
+ * déploiement exécute l'ancien code : il ne sait pas afficher les cartes et montrerait les
+ * marqueurs en clair (constaté sur iPhone, 2026-10). Le serveur n'envoie donc la consigne des
+ * cartes qu'à un client qui la déclare : un ancien onglet n'en reçoit simplement aucune.
+ */
+export type ClientCapability = 'module-actions';
+const CLIENT_CAPABILITIES: ClientCapability[] = ['module-actions'];
+
+/** Capacités déclarées par le client, bornées aux valeurs connues (jamais un droit). */
+export function coerceClientCapabilities(value: unknown): ClientCapability[] {
+  if (!Array.isArray(value)) return [];
+  return CLIENT_CAPABILITIES.filter((c) => value.includes(c));
+}
+
 // ── Cloisonnement ─────────────────────────────────────────────────────────────
 
 export interface ModuleActionAudience {
@@ -249,6 +281,21 @@ export function moduleActionToolsFor(audience: ModuleActionAudience): ModuleActi
   return MODULE_ACTION_TOOLS.filter((tool) =>
     isFeatureVisible(tool, audience.persona, { isAdmin: audience.isAdmin }),
   );
+}
+
+/**
+ * Outils à proposer au modèle pour UNE requête de /api/chat : rien si le client ne déclare
+ * pas savoir afficher les cartes (onglet resté sur un ancien code), sinon les outils de la
+ * persona VÉRIFIÉE (jamais du body) ; un appel anonyme n'en reçoit aucun.
+ */
+export function moduleToolsForRequest(input: {
+  capabilities: unknown;
+  persona: Persona | null;
+  isAdmin: boolean;
+  verified: boolean;
+}): ModuleActionTool[] {
+  if (!coerceClientCapabilities(input.capabilities).includes('module-actions')) return [];
+  return moduleActionToolsFor({ persona: input.persona, isAdmin: input.isAdmin, isGuest: !input.verified });
 }
 
 // ── Consigne au modèle ────────────────────────────────────────────────────────
