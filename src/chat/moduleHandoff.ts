@@ -11,6 +11,7 @@
  *
  * ⚠️ Module PUR (pas de React) : tests/unit/chat-module-handoff.test.ts.
  */
+import type { ChatbotId } from '@/ai/chat/chatContext';
 import type { ChatModuleAction } from '@/ai/chat/moduleActions';
 
 /** Fichier du navigateur (File) sans dépendre des types DOM côté serveur/tests. */
@@ -25,10 +26,25 @@ export type ModuleHandoff =
   | { tool: 'partiel'; file: HandoffFile }
   | { tool: 'scores'; query: string }
   | { tool: 'ecos'; query: string }
-  | { tool: 'presentation'; topic: string };
+  | { tool: 'presentation'; topic: string; brief?: string }
+  // Retour d'un outil vers le chat : message PRÉ-REMPLI dans une nouvelle conversation,
+  // jamais envoyé sans que l'utilisateur l'ait relu.
+  | { tool: 'chat'; text: string; chatbot: ChatbotId; source: string };
 
 export type HandoffTool = ModuleHandoff['tool'];
 export type HandoffFor<T extends HandoffTool> = Extract<ModuleHandoff, { tool: T }>;
+
+/** Longueur maximale d'un message pré-rempli dans le chat par un outil. */
+export const CHAT_HANDOFF_MAX_CHARS = 6000;
+/** Longueur maximale d'une synthèse transmise au générateur de présentations. */
+export const PRESENTATION_BRIEF_MAX_CHARS = 6000;
+
+/** Message d'un outil pour le chat, nettoyé et borné ; null si vide. */
+export function chatHandoffText(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const text = raw.replace(/\r\n/g, '\n').trim().slice(0, CHAT_HANDOFF_MAX_CHARS).trim();
+  return text || null;
+}
 
 /** Durée de validité d'une demande non reprise. */
 export const HANDOFF_TTL_MS = 60_000;

@@ -13,13 +13,16 @@
  *
  * Relais du chat (ADR-0044) : un relevé de notes choisi dans le chat n'est pas envoyé à
  * l'IA ; il est transmis ICI, à la page embarquée (même origine, postMessage), comme un
- * fichier choisi à la main — il ne quitte toujours pas l'appareil.
+ * fichier choisi à la main — il ne quitte toujours pas l'appareil. Dans l'autre sens, la
+ * page peut préparer pour le chat un message ne contenant que les résultats de l'étudiant
+ * (`chatBriefing`, bloc @partiel-logic) : il s'ouvre pré-rempli, jamais envoyé d'office.
  */
 import { useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { useModuleHandoff } from '@/chat/useModuleHandoff';
-import type { HandoffFile } from '@/chat/moduleHandoff';
+import { chatHandoffText, offerHandoff, type HandoffFile } from '@/chat/moduleHandoff';
 
 import { tokens } from '@/ui/tokens';
 import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
@@ -30,6 +33,7 @@ import { ToolScreenHeader } from '@/ui/ToolScreenHeader';
 const PAGE_PATH = '/partiel.html';
 
 function PartielInner() {
+  const router = useRouter();
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const readyRef = useRef(false);
   const pendingFileRef = useRef<HandoffFile | null>(null);
@@ -67,14 +71,20 @@ function PartielInner() {
     if (Platform.OS !== 'web') return;
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin || event.source !== iframeRef.current?.contentWindow) return;
-      if ((event.data as { type?: string } | null)?.type === 'medinfo:partiel-ready') {
+      const data = event.data as { type?: string; text?: unknown } | null;
+      if (data?.type === 'medinfo:partiel-ready') {
         readyRef.current = true;
         deliver();
+      } else if (data?.type === 'medinfo:ask-chat') {
+        const text = chatHandoffText(data.text);
+        if (!text) return;
+        offerHandoff({ tool: 'chat', text, chatbot: 'student', source: 'Partiels' });
+        router.push('/(chat)/chat' as never);
       }
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [deliver]);
+  }, [deliver, router]);
 
   return (
     <View style={styles.container}>

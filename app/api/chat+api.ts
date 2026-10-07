@@ -55,7 +55,7 @@ import {
   shouldDisableWebSearch,
 } from '@/ai/chat/responseMode';
 import { buildOutputToolsSection, coerceChatOutputTools } from '@/ai/chat/outputTools';
-import { buildModuleActionsSection, moduleActionToolsFor } from '@/ai/chat/moduleActions';
+import { buildModuleActionsSection, moduleActionCounts, moduleActionToolsFor } from '@/ai/chat/moduleActions';
 import { appendAttachmentToModelMessages, coerceChatAttachment } from '@/ai/chat/attachment';
 import { buildPriorAttachmentSection, sanitizeChatHistory } from '@/ai/chat/modelHistory';
 import { isConversationalTurn, latestUserText } from '@/ai/chat/turnKind';
@@ -254,6 +254,9 @@ export async function POST(request: Request): Promise<Response> {
       // d'outil (jamais les arguments). `tool_calls` alimente la facturation des
       // recherches web dans l'onglet Coûts (src/admin/cost.ts). Migration 0034.
       const metrics = summarizeSteps(steps);
+      // Cartes d'outil proposées dans la réponse (ADR-0044) : `carte:<outil>`, noms seuls.
+      // Seule la recherche web est facturée dans l'onglet Coûts : ces clés n'y comptent pas.
+      const toolCalls = { ...(metrics?.toolCalls ?? {}), ...moduleActionCounts(fullText) };
       await logInteraction({
         persona: chatbot,
         model_used: runtime.modelId,
@@ -266,7 +269,7 @@ export async function POST(request: Request): Promise<Response> {
         cached_tokens_in: usage?.inputTokenDetails?.cacheReadTokens ?? usage?.cachedInputTokens,
         latency_ms: Date.now() - startMs,
         steps: metrics?.steps,
-        tool_calls: metrics?.toolCalls,
+        tool_calls: Object.keys(toolCalls).length > 0 ? toolCalls : metrics?.toolCalls,
         refusal_triggered: false,
         guardrail_layer: 'none',
         intent_category: 'general_info',

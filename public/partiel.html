@@ -37,6 +37,8 @@ main{padding:24px 0 96px;}
 .dropzone .hint{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.02em;}
 .dz-cta{margin-top:6px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;background:var(--ink);color:#fff;padding:9px 18px;border-radius:var(--r-sm);}
 .dropzone input{display:none;}
+.chatbridge{grid-column:1/-1;}
+.chatbridge .btn{margin-top:10px;}
 .notice{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin:14px 0 0;letter-spacing:.02em;}
 .notice b{color:var(--ink2);font-weight:500;}
 
@@ -1139,6 +1141,53 @@ function parseWeights(raw,subjects){
   return out;
 }
 
+/* ---------- 10. Passerelle vers le chat (ADR-0044) ----------
+   Message que l'étudiant peut envoyer au chat pour construire un plan d'action. Il ne
+   contient QUE ses propres résultats : jamais son identifiant, jamais le nom du fichier,
+   jamais la note d'un autre étudiant. Les agrégats de la promo (moyenne, médiane, écart en σ,
+   rang) ne figurent que si au moins CHAT_K_MIN étudiants y contribuent : sur une promo de
+   deux, la moyenne et ma note suffiraient à retrouver la note de l'autre. */
+const CHAT_K_MIN=5;
+const CHAT_MAX_SUBJECTS=25;
+const CHAT_MAX_CHARS=6000;
+const frNum=(x,d)=>(typeof x==='number'&&Number.isFinite(x))?x.toFixed(d==null?2:d).replace('.',','):null;
+function chatBriefing(o){
+  const scale=o&&o.scaleMax>0?o.scaleMax:20;
+  const ins=(o&&o.insights||[]).filter(i=>typeof i.grade==='number'&&Number.isFinite(i.grade));
+  if(!o||typeof o.mean!=='number'||!Number.isFinite(o.mean)||!ins.length)return null;
+  const lines=[];
+  const total=o.total||0;
+  lines.push(`Voici mes résultats de partiels, calculés par l'outil Partiels de MedInfo (mes notes uniquement${total>=CHAT_K_MIN?`, promo de ${total} étudiants classés`:''}) :`);
+  let head=`- Moyenne : ${frNum(o.mean)}/${scale}`;
+  if(o.ranked&&total>=CHAT_K_MIN&&typeof o.rank==='number'){
+    head+=` ; rang ${o.rank} sur ${total}`;
+    if(typeof o.pct==='number')head+=` (centile ${Math.round(o.pct)})`;
+    if(typeof o.promoMedian==='number')head+=` ; médiane de la promo : ${frNum(o.promoMedian)}`;
+  }else if(o.counted&&o.n<o.counted){
+    head+=` ; hors classement (moyenne sur ${o.n} épreuve(s) sur ${o.counted})`;
+  }
+  lines.push(head+'.');
+  lines.push(`- Épreuve par épreuve (ma note${ins.some(i=>i.n>=CHAT_K_MIN)?' ; moyenne de la promo ; écart à la promo en σ':''}) :`);
+  for(const i of ins.slice(0,CHAT_MAX_SUBJECTS)){
+    const agg=i.n>=CHAT_K_MIN&&typeof i.mean==='number'
+      ?` (promo ${frNum(i.mean)}${typeof i.z==='number'&&Number.isFinite(i.z)?` ; ${i.z>=0?'+':'−'}${frNum(Math.abs(i.z))} σ`:''})`:'';
+    lines.push(`  - ${String(i.subject).replace(/[\r\n]+/g,' ').slice(0,80)} : ${frNum(i.grade)}${agg}`);
+  }
+  if(ins.length>CHAT_MAX_SUBJECTS)lines.push(`  - … et ${ins.length-CHAT_MAX_SUBJECTS} autre(s) épreuve(s).`);
+  const rated=ins.filter(i=>i.n>=CHAT_K_MIN&&typeof i.z==='number'&&Number.isFinite(i.z));
+  const sw=strengthsAndWeaknesses(rated,3);
+  const strong=sw.strengths.filter(i=>i.z>0).map(i=>i.subject);
+  const weak=sw.weaknesses.filter(i=>i.z<0).map(i=>i.subject);
+  if(strong.length)lines.push(`- Points forts par rapport à la promo : ${strong.join(', ')}.`);
+  if(weak.length)lines.push(`- À retravailler par rapport à la promo : ${weak.join(', ')}.`);
+  const failed=(o.validation&&o.validation.failed)||[];
+  if(failed.length)lines.push(`- Sous le seuil de ${frNum(o.passMark,1)} : ${failed.map(f=>`${f.subject} (${frNum(f.grade)})`).join(', ')}.`);
+  lines.push('');
+  lines.push("Aide-moi à construire un plan d'action concret pour la prochaine session : priorités par épreuve, méthode de travail adaptée à chacune et répartition de mon temps. Appuie-toi sur ces chiffres sans les recalculer et sans en inventer d'autres.");
+  const text=lines.join('\n');
+  return text.length>CHAT_MAX_CHARS?text.slice(0,CHAT_MAX_CHARS):text;
+}
+
 if(typeof module!=='undefined'&&module.exports){
   module.exports={
     // parsing
@@ -1161,6 +1210,8 @@ if(typeof module!=='undefined'&&module.exports){
     // export & suivi
     csvCell,toCsv,HISTORY_MAX,subjectsSignature,buildHistoryEntry,upsertHistory,
     parseHistory,historyTrend,parseWeights,
+    // passerelle vers le chat
+    CHAT_K_MIN,chatBriefing,
   };
 }
 /* @partiel-logic:end */
@@ -1700,7 +1751,27 @@ function renderInsights(){
     +`<li><span class="isub">Écart</span><span class="ival ${gap==null?'':(gap>=0?'zpos':'zneg')}"><b>${gap==null?'—':(gap>=0?'+':'−')+fm(Math.abs(gap))}</b> pt</span></li>`
     +`<li><span class="isub">Étudiants derrière toi</span><span class="ival">${r.pct!=null?fi(Math.round(r.pct*r.total/100)):'—'} / ${fi(r.total)}</span></li>`
     +`</ul></div>`);
-  box.innerHTML=cards.join('');
+  box.innerHTML=cards.join('')+chatBridgeHtml();
+}
+/* Passerelle vers le chat (ADR-0044) : seulement dans l'app (page embarquée). L'étudiant
+   relit le message dans le chat avant de l'envoyer. */
+const EMBEDDED=(()=>{try{return window.parent!==window;}catch(e){return false;}})();
+function currentBriefing(){
+  if(!S.stu1)return null;
+  const r=overallOf(S.stu1);
+  const o=S.overall.stats;
+  return chatBriefing({
+    mean:r.mean,n:r.n,counted:S.overall.counted,rank:r.rank,pct:r.pct,total:r.total,ranked:r.ranked,
+    promoMedian:o?o.median:null,scaleMax:S.scaleMax,passMark:S.passMark,
+    insights:subjectInsights(S.stu1,S.overall.inc,S.subStats,S.weights),
+    validation:validationSummary(S.stu1,S.overall.inc,S.passMark),
+  });
+}
+function chatBridgeHtml(){
+  if(!EMBEDDED||!currentBriefing())return '';
+  return `<div class="icard info chatbridge"><h4>Et maintenant&nbsp;?</h4>`
+    +`<p class="iempty">Le chat peut transformer ces chiffres en plan d'action. Seuls tes résultats et des moyennes de promo (au moins ${CHAT_K_MIN}&nbsp;étudiants) sont transmis, jamais les notes des autres&nbsp;: tu relis le message avant de l'envoyer.</p>`
+    +`<button class="btn pri" type="button" id="btnaskchat">Construire mon plan avec le chat</button></div>`;
 }
 
 /* ---------- Simulateur ---------- */
@@ -2209,6 +2280,12 @@ try{if(window.parent!==window)window.parent.postMessage({type:'medinfo:partiel-r
   window.addEventListener('dragover',e=>e.preventDefault());
   window.addEventListener('drop',e=>e.preventDefault());
 })();
+$('block-insights').addEventListener('click',e=>{
+  if(!e.target.closest('#btnaskchat'))return;
+  const text=currentBriefing();
+  if(!text)return;
+  try{window.parent.postMessage({type:'medinfo:ask-chat',text},location.origin);}catch(err){}
+});
 $('btnreload').addEventListener('click',reset);
 $('btnsettings').addEventListener('click',()=>{S.settingsOpen=!S.settingsOpen;renderBar();renderSettings();});
 $('btncompare').addEventListener('click',()=>{

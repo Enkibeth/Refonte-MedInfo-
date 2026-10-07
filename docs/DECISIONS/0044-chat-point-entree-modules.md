@@ -5,7 +5,7 @@ status: Accepted
 date: 2026-10-07
 owner: Hugo Bettembourg
 linked_to: [ADR-0024, ADR-0034, ADR-0035, ADR-0037, ADR-0018, 01_REGULATION]
-scope: Niveaux 1 et 2 validés par Hugo ; le niveau 3 (outils exécutés côté serveur) reste NON décidé.
+scope: Niveaux 1 et 2 validés par Hugo, puis second lot décidé sur délégation (« prends des décisions et rends mon idée vraiment utile ») ; le niveau 3 (outils exécutés côté serveur) reste NON décidé.
 ```
 
 ## Contexte
@@ -93,20 +93,69 @@ Dans la même réponse, le modèle peut écrire une ligne-marqueur invisible :
   fait 1 200 à 2 240 caractères selon le rôle, soit environ 330 à 620 tokens d'entrée (estimation
   à 3,6 caractères par token), moins de 0,0001 $ par message au tarif de gpt-6-luna.
 
-### Puces CALC (chatbot professionnel)
+### Puces CALC (chatbot professionnel) — décision : le calculateur d'abord
 
-Les puces `<!--CALC:…-->` envoient toujours « Calcule avec moi… » au chat, comportement
-conservé. Elles proposent désormais aussi le **même score dans l'outil Scores**, calculé de façon
-déterministe et sans IA (`scoreIdForCalc`). 21 des 27 identifiants CALC correspondent à un score
-du catalogue ; les autres (GRACE, PSI, Apgar, Bishop, mMRC, CAT) restent sans lien.
+Un score suggéré par `<!--CALC:…-->` qui existe dans le calculateur s'ouvre **directement** dans
+l'outil Scores (critères figés, calcul déterministe, sans arithmétique du modèle) :
+`scoreIdForCalc`. 21 des 27 identifiants CALC sont dans le catalogue. Seuls les six autres
+(GRACE, PSI, Apgar, Bishop, mMRC, CAT) gardent « Calcule avec moi… », à cocher puis envoyer.
+Sans accès à l'outil Scores, tous les scores gardent ce comportement historique.
+
+Motif : un score calculé par le modèle à partir de valeurs tapées en texte libre est le cas le
+plus fragile du point de vue clinique comme réglementaire, et un outil sans IA fait le même
+calcul.
+
+### Second lot (décisions du 2026-10-07)
+
+Hugo a délégué les arbitrages : « prends des décisions et rends mon idée vraiment utile ».
+L'idée de départ est un chat qui « sait tout faire ». Ce qui manquait pour qu'elle le devienne
+sans agent : le **retour** de l'outil vers le chat, un **chemin rapide** pour qui sait ce qu'il
+veut, et la **reprise d'une réponse** dans un outil. Toujours sans appel LLM ni étape ajoutés.
+
+1. **Aller-retour outil → chat.** Un relais `chat` (`src/chat/moduleHandoff.ts`) ouvre une
+   nouvelle conversation sur le chatbot étudiant avec un message **pré-rempli**, jamais envoyé
+   d'office. Un bandeau dit d'où il vient.
+   - **Partiels → « Construire mon plan avec le chat ».** `chatBriefing` (bloc @partiel-logic,
+     testé) ne transmet que les résultats de l'étudiant : moyenne, rang, notes, écarts à la
+     promo, forces et faiblesses. Jamais son identifiant, jamais le nom du fichier, jamais la
+     note d'un autre. Les agrégats de promo (moyenne, médiane, σ, rang) n'apparaissent que si au
+     moins 5 étudiants y contribuent : sur une promo de deux, moyenne et note suffiraient à
+     retrouver la note de l'autre. Le message demande au modèle de ne rien recalculer.
+   - **ECOS → « Retravailler avec le chat ».** `src/ecos/chatDebrief.ts` reprend la station
+     (fictive), la note et l'évaluation, et demande un débriefing actif (éléments manqués, puis
+     3 questions de contrôle). La transcription de la simulation n'est jamais reprise.
+   - La consigne du modèle dit de s'appuyer sur ces chiffres sans les recalculer et de proposer
+     l'outil de l'étape suivante (planning de révisions après un plan d'action) : la boucle
+     Partiels → chat → Révisions se ferme d'elle-même.
+2. **Commandes « / » dans le composeur** (`src/ai/chat/slashCommands.ts`, `SlashMenu`).
+   - Exemples : `/ecos cardiologie`, `/score HAS-BLED`, `/partiels`,
+     `/présentation insuffisance cardiaque`.
+   - La commande ouvre l'outil immédiatement, **sans appel au modèle** : même relais et même
+     paramètre borné qu'une carte.
+   - Seuls les outils du rôle sont proposés. Accents et casse sont ignorés, et des alias
+     existent (`/notes`, `/slides`…).
+   - Navigation au clavier (↑/↓, Entrée, Tab, Échap). Une saisie qui n'est pas une commande
+     reste un message ordinaire. Une astuce dans l'état vide montre deux exemples du rôle.
+3. **« En faire une présentation » sous une réponse** (étudiant et pro). Le générateur reçoit
+   la question comme sujet et la réponse en texte propre, sources comprises (6 000 caractères au
+   plus, sous la limite de 8 000 de `/api/presentation`). Le tout est pré-rempli en mode IA ;
+   rien n'est généré sans clic, et le deck en cours n'est jamais écrasé.
+4. **Glisser-déposer un fichier sur le chat** (web), même tri que le sélecteur. Les écouteurs
+   ne sont posés que si le chat est l'écran affiché (`useIsFocused`) : l'onglet reste monté sous
+   les autres outils, et un fichier lâché ailleurs ne doit pas atterrir dans le chat.
+5. **Mesure.** Les cartes proposées sont comptées dans `ai_interactions.tool_calls` sous des clés
+   `carte:<outil>` (`moduleActionCounts`) : noms seuls, jamais le paramètre. L'onglet Coûts ne
+   facture que la recherche web, ces clés n'y comptent donc pas. Les clics ne sont pas mesurés :
+   ils se passent côté client.
 
 ## Conséquences
 
 **Ce qu'on gagne.**
 - Les modules deviennent accessibles depuis la conversation, à latence et coût d'appel
-  inchangés (même appel, aucune étape).
-- La fuite des CSV de promo vers le modèle est fermée.
-- Pour les scores, un chemin déterministe remplace l'arithmétique du modèle.
+  inchangés (même appel, aucune étape), et la conversation reçoit en retour ce que les outils
+  ont calculé.
+- La fuite des CSV de promo vers le modèle est fermée (sélecteur, glisser-déposer, texte collé).
+- Pour les scores du catalogue, le calcul déterministe remplace l'arithmétique du modèle.
 
 **Ce qu'on assume.**
 - La reconnaissance d'un PDF ne repose que sur son nom. Un relevé PDF mal nommé reste joignable
@@ -116,8 +165,11 @@ du catalogue ; les autres (GRACE, PSI, Apgar, Bishop, mMRC, CAT) restent sans li
 - La pertinence des cartes dépend du modèle. Elle n'est pas encore mesurée.
 - Les pièces jointes restent web seulement (pas de sélecteur natif) ; les cartes fonctionnent
   partout.
-- « Calcule avec moi » (CALC) fait toujours calculer le score par le modèle. À arbitrer :
-  basculer ces puces vers l'outil Scores seul.
+- « Calcule avec moi » reste pour les six scores absents du catalogue. Les ajouter au
+  calculateur supprimerait ce dernier calcul par le modèle.
+- Le message envoyé par Partiels ou ECOS contient des résultats personnels (pédagogiques) que
+  l'étudiant choisit d'envoyer après les avoir relus. Il est archivé dans l'historique du chat
+  comme tout message.
 
 **Aucune couche de régulation n'est modifiée :** disclosure, autorisation persona serveur,
 cloisonnement des chatbots, RLS. Il n'y a ni migration, ni nouvelle feature IA admin, ni appel
@@ -125,13 +177,19 @@ LLM ajouté.
 
 ## Suivi
 
-- Mesurer la fréquence et la pertinence des cartes, par exemple en comptant les marqueurs dans
-  `onFinish` de `/api/chat`, sans contenu. Le niveau 3 n'est à envisager que si les données
+- Lire `carte:<outil>` dans `ai_interactions.tool_calls` après quelques semaines : quels outils
+  le modèle propose, et à quelle fréquence. Le niveau 3 n'est à envisager que si les données
   montrent qu'on veut le résultat **dans** la conversation.
 - **Niveau 3 (non décidé)** : de vrais outils serveur, limités aux calculs déterministes en
   lecture seule (moteur de scores, planificateur de révisions). Il ajouterait une étape (environ
   15 s) sur les seuls tours concernés et demande un ADR qui amende l'ADR-0037. Pour les scores
   calculés sur des valeurs de patient, il faut aussi l'arbitrage réglementaire de Hugo.
-- Vérification : tests `chat-module-actions`, `chat-module-actions-render`, `chat-grade-sheet`
-  et `chat-module-handoff`. Fumigation navigateur `scripts/dev/partiel-smoke.mjs` §21 : le relais
-  depuis le chat donne les mêmes moyenne et rang qu'un import manuel, avec la CSP de production.
+- Vérification, tests unitaires : `chat-module-actions`, `chat-module-actions-render`,
+  `chat-grade-sheet`, `chat-module-handoff`, `chat-slash-commands`, `partiel-chat-briefing` et
+  `ecos-chat-debrief`.
+- Vérification, fumigations navigateur :
+  - `scripts/dev/partiel-smoke.mjs` §21 : le relais donne les mêmes moyenne et rang qu'un import
+    manuel, avec la CSP de production ;
+  - `scripts/dev/chat-hub-smoke.mjs` (nouveau, session étudiante simulée) : parcours complet A à
+    G, 23 contrôles, aucun appel au modèle pour un relevé ou une commande, aucun identifiant
+    étudiant dans le message préparé par Partiels.

@@ -10,8 +10,9 @@
  * autonome l'ajoute en `Authorization: Bearer …` pour le mode IA. RoleGate conservé en
  * défense en profondeur (l'autorisation réelle reste serveur — serverPersona).
  *
- * Carte d'action du chat (ADR-0044) : un sujet proposé par le chat est transmis à la page
- * embarquée, qui le pré-remplit dans le mode IA. Rien n'est généré sans clic.
+ * Carte d'action du chat (ADR-0044) : un sujet proposé par le chat (et, depuis « En faire une
+ * présentation », la réponse elle-même) est transmis à la page embarquée, qui le pré-remplit
+ * dans le mode IA. Rien n'est généré sans clic.
  */
 import { useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
@@ -29,16 +30,16 @@ function PresentationInner() {
   const token = session?.access_token ?? null;
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const readyRef = useRef(false);
-  const pendingTopicRef = useRef<string | null>(null);
+  const pendingSeedRef = useRef<{ topic: string; brief?: string } | null>(null);
 
   // Sujet venu du chat : envoyé APRÈS le token (même file de messages), une fois la page
   // embarquée prête — elle le signale en demandant le token.
   const postSeed = useCallback(() => {
-    const topic = pendingTopicRef.current;
+    const seed = pendingSeedRef.current;
     const win = iframeRef.current?.contentWindow;
-    if (!topic || !win || !readyRef.current) return;
-    pendingTopicRef.current = null;
-    win.postMessage({ type: 'medinfo:presentation-seed', topic }, window.location.origin);
+    if (!seed || !win || !readyRef.current) return;
+    pendingSeedRef.current = null;
+    win.postMessage({ type: 'medinfo:presentation-seed', topic: seed.topic, brief: seed.brief }, window.location.origin);
   }, []);
 
   // Transmet le token à l'iframe (même origine). La page autonome s'en sert pour
@@ -54,7 +55,7 @@ function PresentationInner() {
   useModuleHandoff(
     'presentation',
     (handoff) => {
-      pendingTopicRef.current = handoff.topic;
+      pendingSeedRef.current = { topic: handoff.topic, brief: handoff.brief };
       postSeed();
     },
     Platform.OS === 'web',

@@ -9,7 +9,8 @@
  *   - QUESTIONS_PATIENT → formulaire 3 questions à choix multiples (1 envoi groupé) ;
  *   - INTERACTION → propositions à cocher (format public et pro), envoi groupé ;
  *   - AUTO-RÉFLEXION → carte repliable discrète ;
- *   - <!--CALC:…--> → scores cliniques à cocher, envoi groupé (+ lien vers le calculateur) ;
+ *   - <!--CALC:…--> → score du catalogue : ouverture directe de l'outil Scores ; autres scores
+ *     à cocher, envoi groupé (ADR-0044) ;
  *   - <!--OUTIL:…--> → cartes « ouvrir l'outil » (ADR-0044) : la navigation vient de l'écran,
  *     chaque carte est re-filtrée par la visibilité du rôle (jamais d'outil hors périmètre) ;
  *   - [1] + [2] + [3] (étudiant) → propositions à cocher, envoi groupé.
@@ -474,6 +475,13 @@ const CALC_LABELS: Record<string, string> = {
   cat: 'CAT',
 };
 
+/**
+ * Scores suggérés par le chatbot pro. Décision ADR-0044 : un score présent dans le
+ * calculateur s'ouvre DIRECTEMENT dans l'outil Scores (critères figés, calcul déterministe,
+ * sans que le modèle fasse l'arithmétique). Seuls les scores absents du catalogue (GRACE,
+ * PSI, Apgar…) gardent la proposition « calcule avec moi » dans la conversation, à cocher
+ * puis envoyer. Sans accès à l'outil, tous les scores gardent ce comportement.
+ */
 function CalcBlock({
   ids,
   onSend,
@@ -487,6 +495,8 @@ function CalcBlock({
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sent, setSent] = useState(false);
+  const toolIds = moduleActions?.canOpen('scores') ? ids.filter((id) => scoreIdForCalc(id)) : [];
+  const chatIds = ids.filter((id) => !toolIds.includes(id));
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -498,73 +508,67 @@ function CalcBlock({
   };
 
   const submit = () => {
-    const labels = ids.filter((id) => selected.has(id)).map((id) => CALC_LABELS[id] ?? id.toUpperCase());
+    const labels = chatIds.filter((id) => selected.has(id)).map((id) => CALC_LABELS[id] ?? id.toUpperCase());
     if (labels.length === 0) return;
     const text =
       labels.length === 1
-        ? `Calcule avec moi le score ${labels[0]} : pose-moi les questions item par item.`
-        : `Calcule avec moi les scores suivants : ${labels.join(', ')} : pose-moi les questions item par item pour chacun.`;
+        ? `Calcule avec moi le score ${labels[0]} : pose-moi les questions item par item.`
+        : `Calcule avec moi les scores suivants : ${labels.join(', ')} : pose-moi les questions item par item pour chacun.`;
     setSent(true);
     onSend(text);
   };
 
   return (
     <View style={styles.calcWrapper}>
-      <Text style={styles.blockLabel}>Scores cliniques suggérés</Text>
-      <View style={styles.optionsRow}>
-        {ids.map((id) => {
-          const label = CALC_LABELS[id] ?? id.toUpperCase();
-          const checked = selected.has(id);
-          return (
-            <Touchable
-              key={id}
-              style={[styles.calcChip, checked && styles.calcChipSelected]}
-              onPress={() => toggle(id)}
-              disabled={disabled || sent}
-              accessibilityRole="checkbox"
-              aria-checked={checked}
-            >
-              <CheckToggle checked={checked} />
-              <Icon name="calculator" size={14} color={tokens.colors.accentDeep} />
-              <Text style={styles.calcChipText}>{label}</Text>
-            </Touchable>
-          );
-        })}
-      </View>
-      <SendSelectionButton count={selected.size} sent={sent} disabled={disabled} onPress={submit} />
-      <CalcToolLinks ids={ids} moduleActions={moduleActions} />
-    </View>
-  );
-}
-
-/**
- * Même score, calculé par l'outil Scores : critères figés et calcul déterministe, sans que
- * l'IA ne fasse l'arithmétique (ADR-0044). Seulement pour les scores du catalogue, et si
- * l'outil est ouvert à ce rôle.
- */
-function CalcToolLinks({ ids, moduleActions }: { ids: string[]; moduleActions?: ModuleActionsHandlers }) {
-  if (!moduleActions || !moduleActions.canOpen('scores')) return null;
-  const linked = ids.filter((id) => scoreIdForCalc(id));
-  if (linked.length === 0) return null;
-  return (
-    <View style={styles.calcToolRow}>
-      <Text style={styles.calcToolLabel}>Calcul déterministe, sans IA, dans l’outil Scores{'\u00a0'}:</Text>
-      {linked.map((id) => {
-        const label = CALC_LABELS[id] ?? id.toUpperCase();
-        return (
-          <Touchable
-            key={id}
-            feedback="link"
-            style={styles.calcToolLink}
-            onPress={() => moduleActions.onOpen({ tool: 'scores', param: scoreIdForCalc(id) })}
-            accessibilityRole="link"
-            accessibilityLabel={`Ouvrir ${label} dans l'outil Scores`}
-          >
-            <Icon name="calculator" size={13} color={tokens.colors.accentDeep} />
-            <Text style={styles.calcToolLinkText}>{label}</Text>
-          </Touchable>
-        );
-      })}
+      {toolIds.length > 0 && moduleActions ? (
+        <>
+          <Text style={styles.blockLabel}>Scores suggérés · calcul déterministe, sans IA</Text>
+          <View style={styles.optionsRow}>
+            {toolIds.map((id) => {
+              const label = CALC_LABELS[id] ?? id.toUpperCase();
+              return (
+                <Touchable
+                  key={id}
+                  style={styles.calcToolChip}
+                  onPress={() => moduleActions.onOpen({ tool: 'scores', param: scoreIdForCalc(id) })}
+                  accessibilityRole="link"
+                  accessibilityLabel={`Calculer ${label} dans l'outil Scores`}
+                >
+                  <Icon name="calculator" size={14} color={tokens.colors.accentDeep} />
+                  <Text style={styles.calcChipText}>{label}</Text>
+                  <Icon name="arrowRight" size={13} color={tokens.colors.accentDeep} />
+                </Touchable>
+              );
+            })}
+          </View>
+        </>
+      ) : null}
+      {chatIds.length > 0 ? (
+        <>
+          <Text style={styles.blockLabel}>{toolIds.length > 0 ? 'À calculer avec le chat' : 'Scores cliniques suggérés'}</Text>
+          <View style={styles.optionsRow}>
+            {chatIds.map((id) => {
+              const label = CALC_LABELS[id] ?? id.toUpperCase();
+              const checked = selected.has(id);
+              return (
+                <Touchable
+                  key={id}
+                  style={[styles.calcChip, checked && styles.calcChipSelected]}
+                  onPress={() => toggle(id)}
+                  disabled={disabled || sent}
+                  accessibilityRole="checkbox"
+                  aria-checked={checked}
+                >
+                  <CheckToggle checked={checked} />
+                  <Icon name="calculator" size={14} color={tokens.colors.accentDeep} />
+                  <Text style={styles.calcChipText}>{label}</Text>
+                </Touchable>
+              );
+            })}
+          </View>
+          <SendSelectionButton count={selected.size} sent={sent} disabled={disabled} onPress={submit} />
+        </>
+      ) : null}
     </View>
   );
 }
@@ -985,19 +989,17 @@ const styles = StyleSheet.create({
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
   },
-  calcToolRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: tokens.space.sm },
-  calcToolLabel: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textSubtle,
-    fontSize: tokens.type.caption.fontSize,
-  },
-  calcToolLink: { minHeight: 32, flexDirection: 'row', alignItems: 'center', gap: 4 },
-  calcToolLinkText: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.semibold,
-    textDecorationLine: 'underline',
+  calcToolChip: {
+    minHeight: tokens.size.controlMd,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.xs,
+    borderRadius: tokens.radius.pill,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    backgroundColor: tokens.colors.surface,
+    paddingHorizontal: tokens.space.md,
+    ...tokens.motion.transitionWeb,
   },
 
   deepeningWrapper: { gap: tokens.space.sm, marginTop: tokens.space.xs },

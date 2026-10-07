@@ -2,6 +2,51 @@
 
 Journal des modifications par agents IA. Une entrée par PR.
 
+## [2026-10-07] – Claude (chat point d'entrée des modules, second lot : aller-retour, commandes « / », passerelles)
+### Files modified
+- Puces CALC : `src/ui/chat/AssistantBlocks.tsx`. Un score du catalogue s'ouvre directement dans
+  l'outil Scores ; « calcule avec moi » ne reste que pour les scores absents.
+- Aller-retour outil → chat :
+  - `src/chat/moduleHandoff.ts` : relais `chat`, `chatHandoffText`, synthèse de présentation ;
+  - `public/partiel.html` : `chatBriefing` dans le bloc @partiel-logic, bouton « Construire mon
+    plan avec le chat » ;
+  - `app/(chat)/partiel.tsx` : message `medinfo:ask-chat` ;
+  - `src/ecos/chatDebrief.ts` (NOUVEAU) et `app/(chat)/ecos.tsx` : bouton « Retravailler avec le
+    chat » ;
+  - `app/(chat)/chat.tsx` : message pré-rempli dans une nouvelle conversation, bandeau de
+    provenance.
+- Commandes « / » : `src/ai/chat/slashCommands.ts` et `src/ui/chat/SlashMenu.tsx` (NOUVEAUX),
+  `app/(chat)/chat.tsx` (menu, clavier, astuce de l'état vide).
+- Passerelle « En faire une présentation » : `app/(chat)/chat.tsx`,
+  `app/(chat)/presentation.tsx`, `public/presentation.html` (synthèse pré-remplie).
+- Glisser-déposer : `app/(chat)/chat.tsx` (tri commun `handlePickedFile`, `useIsFocused`).
+- Mesure : `moduleActionCounts` (`src/ai/chat/moduleActions.ts`), `app/api/chat+api.ts`
+  (`carte:<outil>` dans `tool_calls`). Consigne : règle « résultats transmis par un outil ».
+- Tests (NOUVEAUX) : `chat-slash-commands`, `partiel-chat-briefing`, `ecos-chat-debrief`. Mises à
+  jour : `chat-module-actions`, `chat-module-actions-render`. Fumigation
+  `scripts/dev/chat-hub-smoke.mjs` (NOUVEAU).
+- Docs : ADR-0044 (CALC tranché, second lot), `CLAUDE.md`, `docs/04_CHATBOT.md` §12.
+### Purpose
+Hugo : « prends des décisions et rends mon idée vraiment utile ». Pour que le chat donne
+l'impression de tout savoir faire sans redevenir un agent, il manquait trois choses : le
+**retour** des outils vers le chat (plan d'action après les partiels, débriefing après l'ECOS),
+un **chemin rapide** déterministe (« / ») et la **reprise d'une réponse** dans un outil
+(présentation). Toujours aucun appel LLM ni aucune étape ajoutés.
+### Vérification
+- Typecheck, lint, `compliance:grep` au vert ; tests unitaires : 81 fichiers, 1 086 tests.
+- Fumigations Chromium (build de production sur un Supabase factice) :
+  - `chat-hub-smoke` : 23/23. Un relevé de notes et une commande ne déclenchent aucun appel à
+    `/api/chat`. Le message préparé par Partiels donne « Moyenne : 13,33/20 ; rang 1 sur 11 »
+    sans aucun identifiant étudiant. Le marqueur n'est jamais affiché, et la présentation reçoit
+    sujet et synthèse sans génération.
+  - `chat-smoke` (parcours existant) : sans régression.
+  - `partiel-smoke` : tous les contrôles passent.
+  - `smoke:node` : 28/28.
+- Captures 390 et 1280 px relues : menu « / », cartes, carte « relevé de notes ». Les libellés
+  du menu ont été raccourcis après la première capture, car ils étaient tronqués sur téléphone.
+- Non vérifié : le comportement réel du modèle (fréquence et pertinence des cartes). C'est à lire
+  dans `tool_calls` en production.
+
 ## [2026-10-07] – Claude (chat point d'entrée des modules : cartes d'action + tri des pièces jointes)
 ### Files modified
 - Modules purs (NOUVEAUX) :

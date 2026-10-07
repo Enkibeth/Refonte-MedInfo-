@@ -14,6 +14,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import type { ModuleActionTool } from '@/ai/chat/moduleActions';
 import { AssistantBlocks, type ModuleActionsHandlers } from '@/ui/chat/AssistantBlocks';
 import { GradeFileCard, gradeCardMessage, type GradeCardKind } from '@/ui/chat/GradeFileCard';
+import { SlashMenu } from '@/ui/chat/SlashMenu';
+import { moduleActionToolsFor } from '@/ai/chat/moduleActions';
+import { slashSuggestions } from '@/ai/chat/slashCommands';
 
 function handlers(allowed: ModuleActionTool[]): ModuleActionsHandlers {
   return { canOpen: (tool) => allowed.includes(tool), onOpen: () => {} };
@@ -92,19 +95,25 @@ describe('cartes d’outil : rendu', () => {
   });
 });
 
-describe('puces CALC : lien vers le calculateur déterministe', () => {
+describe('puces CALC : décision ADR-0044, le calculateur d’abord', () => {
   const calc = 'Évaluer le risque thromboembolique.\n\n<!--CALC:chads,grace-->\n';
 
-  it('lien pour un score du catalogue, si l’outil Scores est ouvert au rôle', () => {
+  it('score du catalogue : ouverture directe de l’outil ; score absent : « calcule avec moi »', () => {
     const html = render(calc, false, handlers(['scores']));
-    expect(html).toContain('dans l&#x27;outil Scores');
-    expect(visibleText(html)).toContain('Calcul déterministe, sans IA');
-    // GRACE n'est pas dans le catalogue : pas de lien pour lui.
-    expect(html).not.toMatch(/Ouvrir GRACE dans/);
+    const text = visibleText(html);
+    expect(html).toContain('Calculer CHA₂DS₂-VASc dans l&#x27;outil Scores');
+    expect(text).toContain('calcul déterministe, sans IA');
+    // GRACE n'est pas dans le catalogue : il reste à cocher pour le calcul avec le chat.
+    expect(text).toContain('À calculer avec le chat');
+    expect(html).toMatch(/role="checkbox"[^>]*>[\s\S]*?GRACE/);
+    expect(html).not.toMatch(/role="checkbox"[^>]*>[\s\S]*?CHA₂DS₂-VASc[\s\S]*?GRACE/);
   });
 
-  it('aucun lien sans accès à l’outil', () => {
-    expect(visibleText(render(calc, false, handlers([])))).not.toContain('Calcul déterministe');
+  it('sans accès à l’outil : comportement historique pour tous les scores', () => {
+    const text = visibleText(render(calc, false, handlers([])));
+    expect(text).not.toContain('sans IA');
+    expect(text).toContain('Scores cliniques suggérés');
+    expect(text).toContain('CHA₂DS₂-VASc');
   });
 });
 
@@ -136,3 +145,21 @@ describe('carte « relevé de notes » du composeur', () => {
     expect(without).toContain('Collez seulement les informations utiles');
   });
 });
+
+describe('menu des commandes « / »', () => {
+  it('liste les outils du rôle, marque la suggestion active', () => {
+    const suggestions = slashSuggestions('/', moduleActionToolsFor({ persona: 'professional' }));
+    const html = renderToStaticMarkup(createElement(SlashMenu, { suggestions, activeIndex: 1, onPick: () => {} }));
+    const text = visibleText(html);
+    expect(text).toContain('/score');
+    expect(text).toContain('Score clinique');
+    expect(text).toContain('/audio');
+    expect(text).not.toContain('/ecos');
+    expect(html.match(/aria-selected="true"/g)).toHaveLength(1);
+  });
+
+  it('rien à afficher sans suggestion', () => {
+    expect(renderToStaticMarkup(createElement(SlashMenu, { suggestions: [], activeIndex: 0, onPick: () => {} }))).toBe('');
+  });
+});
+

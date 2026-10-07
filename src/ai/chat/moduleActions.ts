@@ -213,6 +213,25 @@ export function mergeModuleActions(
   return out;
 }
 
+/**
+ * Cartes proposées dans une réponse, par outil (instrumentation, ADR-0044) : clés
+ * `carte:<outil>`, rangées avec les décomptes d'outils de `ai_interactions.tool_calls`.
+ * Des NOMS seulement, jamais le paramètre ni le texte ; un outil inconnu n'est pas compté.
+ */
+export function moduleActionCounts(text: string): Record<string, number> {
+  const counts: Record<string, number> = {};
+  const seen = new Set<string>();
+  for (const line of isolateModuleActionMarkers(text).split('\n')) {
+    const action = parseModuleActionMarker(line);
+    if (!action) continue;
+    const key = `${action.tool}|${(action.param ?? '').toLowerCase()}`;
+    if (seen.has(key) || seen.size >= MODULE_ACTIONS_MAX) continue;
+    seen.add(key);
+    counts[`carte:${action.tool}`] = (counts[`carte:${action.tool}`] ?? 0) + 1;
+  }
+  return counts;
+}
+
 // ── Cloisonnement ─────────────────────────────────────────────────────────────
 
 export interface ModuleActionAudience {
@@ -254,7 +273,11 @@ export function buildModuleActionsSection(tools: ModuleActionTool[]): string {
     `réponds toujours à la demande (brièvement si elle porte seulement sur l'outil), la carte complète ` +
     `ta réponse sans la remplacer ; n'écris jamais que tu as ouvert ou exécuté un outil ni un résultat ` +
     `qu'il aurait produit : l'utilisateur décide de l'ouvrir ; le paramètre ne contient jamais de donnée ` +
-    `personnelle, de nom ni de valeur de patient ; n'utilise que les identifiants listés.`
+    `personnelle, de nom ni de valeur de patient ; n'utilise que les identifiants listés.\n` +
+    `Résultats transmis par un outil : quand le message reprend des chiffres calculés par un outil ` +
+    `MedInfo (résultats de partiels, évaluation d'une station ECOS), appuie-toi sur eux sans les ` +
+    `recalculer ni en inventer d'autres, et propose s'il y a lieu l'outil de l'étape suivante (par ` +
+    `exemple le planning de révisions après un plan d'action).`
   );
 }
 

@@ -1,0 +1,293 @@
+/**
+ * Fumigation navigateur du chat comme point d'entrée des modules (ADR-0044) — HORS CI, opt-in.
+ *
+ * Rejoue dans Chromium, avec une session ÉTUDIANTE factice, ce qu'aucun test unitaire ne voit :
+ * le câblage entre l'écran du chat et les outils.
+ *   A. relevé de notes choisi dans le chat → jamais envoyé à /api/chat → analysé par Partiels ;
+ *   B. Partiels → « Construire mon plan avec le chat » → chat pré-rempli SANS identifiant ;
+ *   C. commande « /ecos cardiologie » → ECOS filtré, sans appel au modèle ;
+ *   D. carte d'action d'une réponse → outil Scores sur le bon score, marqueur jamais affiché ;
+ *   E. « En faire une présentation » → générateur pré-rempli avec la réponse ;
+ *   F. glisser-déposer d'un relevé et relevé collé → même tri ;
+ *   G. évaluation ECOS → « Retravailler avec le chat ».
+ *
+ * Aucun appel réel : Supabase et /api/chat sont simulés DANS le navigateur ; le serveur local
+ * tourne sans aucune clé.
+ *
+ * Prérequis (Playwright n'est pas une dépendance du dépôt) :
+ *   EXPO_PUBLIC_SUPABASE_URL=https://fakeproj.supabase.co EXPO_PUBLIC_SUPABASE_ANON_KEY=fake npm run build
+ *   npm i --no-save playwright-core
+ *   node scripts/dev/chat-hub-smoke.mjs
+ *
+ * Variables d'environnement : CHROMIUM_PATH, PLAYWRIGHT_CORE (cf. chat-smoke.mjs).
+ */
+import { spawn } from 'node:child_process';
+import fs from 'node:fs';
+import net from 'node:net';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const { chromium } = await import(process.env.PLAYWRIGHT_CORE || 'playwright-core');
+
+const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const SUPA_HOST = 'fakeproj.supabase.co';
+const SUPA = `https://${SUPA_HOST}`;
+
+const jsDir = path.join(REPO, 'dist/client/_expo/static/js/web');
+const bundles = fs.existsSync(jsDir) ? fs.readdirSync(jsDir).filter((f) => f.endsWith('.js')) : [];
+if (!bundles.some((f) => fs.readFileSync(path.join(jsDir, f), 'utf8').includes(SUPA_HOST))) {
+  console.error(
+    `Build absent ou construit pour un vrai projet Supabase. Reconstruire d'abord :\n` +
+      `  EXPO_PUBLIC_SUPABASE_URL=${SUPA} EXPO_PUBLIC_SUPABASE_ANON_KEY=fake npm run build`,
+  );
+  process.exit(2);
+}
+const CHROMIUM = process.env.CHROMIUM_PATH || [
+  '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+  '/opt/pw-browsers/chromium/chrome-linux/chrome',
+  '/usr/bin/chromium',
+  '/usr/bin/google-chrome',
+].find((c) => fs.existsSync(c));
+if (!CHROMIUM) {
+  console.error('Chromium introuvable : définis CHROMIUM_PATH.');
+  process.exit(2);
+}
+
+// ── Serveur local sans clé ────────────────────────────────────────────────────
+const port = await new Promise((resolve) => {
+  const probe = net.createServer().listen(0, '127.0.0.1', () => {
+    const { port: free } = probe.address();
+    probe.close(() => resolve(free));
+  });
+});
+const BASE = `http://127.0.0.1:${port}`;
+const server = spawn(process.execPath, ['server/index.mjs'], {
+  cwd: REPO,
+  env: { PATH: process.env.PATH, HOME: process.env.HOME, NODE_ENV: 'production', PORT: String(port), HOST: '127.0.0.1', ACCESS_LOG: 'off' },
+  stdio: 'ignore',
+});
+process.on('exit', () => server.kill());
+for (let i = 0; ; i++) {
+  try {
+    if ((await fetch(`${BASE}/api/health`)).ok) break;
+  } catch {
+    /* pas encore prêt */
+  }
+  if (i > 100) throw new Error('le serveur local ne démarre pas');
+  await new Promise((r) => setTimeout(r, 100));
+}
+
+// ── Session étudiante factice + Supabase simulé ───────────────────────────────
+const USER_ID = 'e7e7e7e7-0000-4000-8000-000000000001';
+const b64url = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+const exp = Math.floor(Date.now() / 1000) + 3600;
+const user = {
+  id: USER_ID, aud: 'authenticated', role: 'authenticated', email: 'etudiant@example.test',
+  app_metadata: { provider: 'email' }, user_metadata: {}, created_at: '2026-01-01T00:00:00Z',
+};
+const session = {
+  access_token: `${b64url({ alg: 'HS256', typ: 'JWT' })}.${b64url({ sub: USER_ID, exp, role: 'authenticated', aud: 'authenticated' })}.sig`,
+  token_type: 'bearer', expires_in: 3600, expires_at: exp, refresh_token: 'refresh-test', user,
+};
+const ecosData = JSON.parse(fs.readFileSync(path.join(REPO, 'data/ecos-cases.json'), 'utf8'));
+const ECOS_CASES = ecosData.cases.map((c, i) => ({ id: `0e0e0e0e-0000-4000-8000-${String(i).padStart(12, '0')}`, ...c }));
+const ATTEMPT = {
+  id: 'a7a7a7a7-0000-4000-8000-000000000001',
+  case_slug: ECOS_CASES[0].slug,
+  case_title: ECOS_CASES[0].title,
+  specialty: ECOS_CASES[0].specialty,
+  score: 11.5,
+  evaluation: '**Note : 11,5/20**\n\n- Interrogatoire incomplet : antécédents familiaux non demandés.',
+  created_at: '2026-10-01T10:00:00Z',
+};
+let conversations = 0;
+async function supabaseRoute(route) {
+  const req = route.request();
+  const url = new URL(req.url());
+  const method = req.method();
+  const json = (status, body) =>
+    route.fulfill({ status, contentType: 'application/json', body: body === undefined ? '' : JSON.stringify(body) });
+  if (url.pathname.startsWith('/auth/v1/user')) return json(200, user);
+  if (url.pathname.startsWith('/auth/v1/token')) return json(200, session);
+  if (url.pathname === '/rest/v1/profiles') {
+    return json(200, {
+      persona: 'student', status: 'verified', verified_personas: ['public', 'student'],
+      first_name: null, last_name: null, age: null, sex: null, chat_country: null,
+    });
+  }
+  if (url.pathname === '/rest/v1/chat_conversations' && method === 'POST') {
+    return json(201, { id: `c0c0c0c0-0000-4000-8000-${String(++conversations).padStart(12, '0')}` });
+  }
+  if (url.pathname === '/rest/v1/ecos_cases') return json(200, ECOS_CASES);
+  if (url.pathname === '/rest/v1/ecos_attempts') return json(200, method === 'GET' ? [ATTEMPT] : undefined);
+  return json(200, method === 'GET' ? [] : undefined);
+}
+
+// ── /api/chat simulé ──────────────────────────────────────────────────────────
+const sse = (chunks) => chunks.map((c) => `data: ${typeof c === 'string' ? c : JSON.stringify(c)}\n\n`).join('');
+const TEXT = (t) => sse([{ type: 'start' }, { type: 'start-step' }, { type: 'text-start', id: 'x' }, { type: 'text-delta', id: 'x', delta: t },
+  { type: 'text-end', id: 'x' }, { type: 'finish-step' }, { type: 'finish', finishReason: 'stop' }, '[DONE]']);
+const queue = [];
+const requests = [];
+async function chatRoute(route) {
+  requests.push(JSON.parse(route.request().postData() || '{}'));
+  const next = queue.shift();
+  if (!next) return route.fulfill({ status: 500, body: 'aucune réponse programmée' });
+  await route.fulfill({ status: 200, headers: { 'content-type': 'text/event-stream', 'x-vercel-ai-ui-message-stream': 'v1' }, body: next });
+}
+
+// Promo synthétique (12 étudiants, mêmes chiffres que partiel-smoke.mjs).
+const PROMO = [
+  ['Numéro étudiant', 'Anatomie', 'Biochimie', 'Physiologie'],
+  ['28710001', '4', '18', '10'], ['28710002', '6', '17', '11'], ['28710003', '6', '16', '12'],
+  ['28710004', '7', '16', '9'], ['28710005', '7,5', '15', '13'], ['28710006', '8', '15', '8'],
+  ['28710007', '8', '14', '14'], ['28710008', '9', '14', '10'], ['28710009', '10', '13', '11'],
+  ['28710010', '11', '12', 'ABS'], ['28710011', '12', '11', '15'], ['28710012', '14', '10', '16'],
+].map((r) => r.join(';')).join('\n');
+
+const fails = [];
+const ok = (cond, label, extra = '') => {
+  console.log(cond ? '  ✓' : '  ✗', label, cond ? '' : extra);
+  if (!cond) fails.push(label);
+};
+
+const browser = await chromium.launch({ executablePath: CHROMIUM });
+try {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  await context.addInitScript(([key, value]) => localStorage.setItem(key, value), ['sb-fakeproj-auth-token', JSON.stringify(session)]);
+  const page = await context.newPage();
+  const pageErrors = [];
+  page.on('pageerror', (e) => pageErrors.push(String(e)));
+  await page.route(`${SUPA}/**`, supabaseRoute);
+  await page.route('**/api/chat', chatRoute);
+  await page.route('**/api/chat-meta', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
+
+  const input = page.locator('textarea').first();
+  const openChat = async () => {
+    await page.goto(`${BASE}/chat`, { waitUntil: 'networkidle' });
+    await page.getByRole('button', { name: 'Joindre un document' }).waitFor({ timeout: 20_000 });
+  };
+  const frameOf = (suffix) => page.frames().find((f) => f.url().endsWith(suffix));
+
+  console.log('A — relevé de notes joint au chat → outil Partiels');
+  await openChat();
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Joindre un document' }).click();
+  const fc = await chooser;
+  ok((await fc.element().getAttribute('accept')).includes('.xlsx'), 'tableurs proposés au sélecteur (outil Partiels ouvert)');
+  await fc.setFiles({ name: 'promo-S5.csv', mimeType: 'text/csv', buffer: Buffer.from(PROMO) });
+  const gradeCard = page.getByTestId('grade-file-card');
+  await gradeCard.waitFor({ timeout: 5_000 });
+  ok((await gradeCard.textContent()).includes('n’est pas envoyé à l’IA'), 'carte : le relevé n’est pas joint au message');
+  ok(!(await page.getByRole('button', { name: 'Retirer le document' }).isVisible()), 'aucune pièce jointe dans le composeur');
+  await page.getByRole('button', { name: 'Analyser dans l’outil Partiels' }).click();
+  await page.waitForURL('**/partiel', { timeout: 10_000 });
+  await page.waitForFunction(() => [...document.querySelectorAll('iframe')].some((f) => f.src.endsWith('/partiel.html')));
+  let partiel;
+  for (let i = 0; i < 50 && !partiel; i++) {
+    partiel = frameOf('/partiel.html');
+    if (!partiel) await page.waitForTimeout(100);
+  }
+  await partiel.waitForSelector('#bar:not([hidden])', { timeout: 15_000 });
+  ok(/12 étudiants/.test(await partiel.textContent('#bfsub')), 'Partiels a reçu et analysé le fichier (12 étudiants)');
+  ok(requests.length === 0, 'aucun appel à /api/chat : le relevé n’a jamais quitté le navigateur');
+
+  console.log('B — Partiels → chat pré-rempli');
+  await partiel.fill('#idinput', '28710012');
+  await partiel.waitForSelector('#btnaskchat', { timeout: 5_000 });
+  await partiel.click('#btnaskchat');
+  await page.waitForURL('**/chat', { timeout: 10_000 });
+  await page.waitForFunction(() => (document.querySelector('textarea')?.value || '').includes('Moyenne'), null, { timeout: 10_000 });
+  const briefing = await input.inputValue();
+  // 11 classés sur 12 : 28710010 a une absence, la base « notes complètes » l'écarte du rang.
+  ok(briefing.includes('Moyenne : 13,33/20 ; rang 1 sur 11'), 'message pré-rempli avec ma moyenne et mon rang', briefing.slice(0, 200));
+  ok(!/2871\d{4}/.test(briefing), 'aucun identifiant étudiant dans le message (ni le mien ni ceux des autres)');
+  ok(await page.getByText('Message préparé par l’outil Partiels', { exact: false }).isVisible(), 'bandeau : message à relire avant envoi');
+  ok(requests.length === 0, 'rien envoyé d’office');
+
+  console.log('C — commande « /ecos cardiologie »');
+  await input.fill('/ec');
+  await page.getByTestId('slash-menu').waitFor({ timeout: 5_000 });
+  ok((await page.getByTestId('slash-menu').textContent()).includes('/ecos'), 'menu « / » : la commande /ecos est proposée');
+  await input.fill('/ecos cardiologie');
+  await input.press('Enter');
+  await page.waitForURL('**/ecos', { timeout: 10_000 });
+  const search = page.getByPlaceholder('Rechercher un cas, un thème…');
+  await search.waitFor({ timeout: 10_000 });
+  await page.waitForFunction(() => [...document.querySelectorAll('input')].some((i) => i.value === 'cardiologie'), null, { timeout: 5_000 }).catch(() => {});
+  ok((await search.inputValue()) === 'cardiologie', 'ECOS ouvert et filtré sur la spécialité', await search.inputValue());
+  ok(requests.length === 0, 'aucun appel au modèle pour une commande');
+
+  const askWithCard = async () => {
+    await openChat();
+    queue.push(TEXT('Le score de référence est le CHA₂DS₂-VASc.\n\n<!--OUTIL:scores|CHA2DS2-VASc-->\n'));
+    await input.fill('Comment évaluer le risque embolique dans la FA ?');
+    await page.getByRole('button', { name: 'Envoyer le message' }).click();
+    await page.getByTestId('module-action-card').waitFor({ timeout: 10_000 });
+  };
+
+  console.log('D — carte d’action dans une réponse');
+  await askWithCard();
+  const card = page.getByTestId('module-action-card');
+  ok((await card.textContent()).includes('Calculer'), 'carte « Calculer : CHA2DS2-VASc » affichée');
+  ok(!(await page.locator('body').textContent()).includes('OUTIL'), 'le marqueur n’est jamais affiché');
+
+  console.log('E — « En faire une présentation »');
+  const bridge = page.getByRole('link', { name: 'En faire une présentation' });
+  ok(await bridge.isVisible(), 'passerelle visible sous la réponse');
+  await bridge.click();
+  await page.waitForURL('**/presentation', { timeout: 10_000 });
+  let deck;
+  let draft = '';
+  for (let i = 0; i < 80 && !draft; i++) {
+    deck = frameOf('/presentation.html');
+    const active = deck ? await deck.$eval('.mip-tab.is-active', (t) => t.textContent).catch(() => '') : '';
+    if (active === 'Mode IA') draft = await deck.$eval('.mip-textarea', (t) => t.value).catch(() => '');
+    if (!draft) await page.waitForTimeout(100);
+  }
+  ok(draft.includes('risque embolique') && draft.includes('CHA₂DS₂-VASc'), 'générateur pré-rempli : sujet + synthèse de la réponse', draft.slice(0, 160));
+  ok(requests.length === 1, 'aucun appel au modèle de plus (rien généré sans clic)');
+
+  console.log('D bis — clic sur la carte → outil Scores');
+  await askWithCard();
+  await page.getByTestId('module-action-card').click();
+  await page.waitForURL('**/scores', { timeout: 10_000 });
+  await page.getByText('Tous les scores').waitFor({ timeout: 10_000 });
+  ok(await page.getByText('CHA₂DS₂-VASc', { exact: false }).first().isVisible(), 'Scores ouvert directement sur CHA₂DS₂-VASc');
+
+  console.log('F — glisser-déposer et relevé collé');
+  await openChat();
+  await page.evaluate((csv) => {
+    const dt = new DataTransfer();
+    dt.items.add(new File([csv], 'promo.csv', { type: 'text/csv' }));
+    for (const type of ['dragenter', 'dragover', 'drop']) {
+      window.dispatchEvent(new DragEvent(type, { dataTransfer: dt, bubbles: true, cancelable: true }));
+    }
+  }, PROMO);
+  await gradeCard.waitFor({ timeout: 5_000 });
+  ok(true, 'fichier déposé sur le chat : relevé repéré, carte Partiels');
+  await page.getByRole('button', { name: 'Fermer' }).click();
+  await input.fill(PROMO);
+  await gradeCard.waitFor({ timeout: 5_000 });
+  ok((await gradeCard.textContent()).includes('Ce texte ressemble à un relevé de notes'), 'relevé collé : suggestion Partiels');
+
+  console.log('G — évaluation ECOS → « Retravailler avec le chat »');
+  await page.goto(`${BASE}/ecos`, { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: `Voir l’évaluation de ${ATTEMPT.case_title}` }).first().click();
+  await page.getByRole('button', { name: 'Retravailler avec le chat' }).click();
+  await page.waitForURL('**/chat', { timeout: 10_000 });
+  await page.waitForFunction(() => (document.querySelector('textarea')?.value || '').includes('station ECOS'), null, { timeout: 10_000 });
+  const debrief = await input.inputValue();
+  ok(debrief.includes(ATTEMPT.case_title) && debrief.includes('antécédents familiaux'), 'débriefing pré-rempli (station + évaluation)');
+
+  ok(pageErrors.length === 0, `aucune erreur JavaScript${pageErrors.length ? ` : ${pageErrors.join(' | ')}` : ''}`);
+} finally {
+  await browser.close();
+  server.kill();
+}
+
+if (fails.length) {
+  console.error(`\n${fails.length} échec(s) : ${fails.join(' | ')}`);
+  process.exit(1);
+}
+console.log('\nParcours chat ↔ outils OK');

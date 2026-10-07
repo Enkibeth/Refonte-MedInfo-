@@ -17,7 +17,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
@@ -52,6 +52,8 @@ import {
   type CaseAttemptSummary,
 } from '@/ecos/dashboard';
 import { useModuleHandoff } from '@/chat/useModuleHandoff';
+import { offerHandoff } from '@/chat/moduleHandoff';
+import { ecosDebriefMessage } from '@/ecos/chatDebrief';
 import {
   listAttempts,
   saveAttempt,
@@ -322,6 +324,7 @@ export default function EcosScreen() {
 
 function EcosScreenInner() {
   const { persona, user } = useSession();
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>('selection');
   const [selectedCase, setSelectedCase] = useState<EcosCase | null>(null);
   const [cases, setCases] = useState<EcosCase[]>([]);
@@ -1008,6 +1011,21 @@ function EcosScreenInner() {
     const replayCase = viewedAttempt
       ? cases.find((c) => c.id === viewedAttempt.case_slug) ?? null
       : null;
+    // Passerelle vers le chat (ADR-0044) : débriefing guidé de CETTE station, pré-rempli
+    // dans une nouvelle conversation du chatbot étudiant (relu avant envoi).
+    const debrief = evalLoading
+      ? null
+      : ecosDebriefMessage({
+          title: evalCaseTitle,
+          specialty: viewedAttempt ? viewedAttempt.specialty : selectedCase?.specialite ?? null,
+          score: evalScore,
+          evaluation: evalMarkdown,
+        });
+    const openDebrief = () => {
+      if (!debrief) return;
+      offerHandoff({ tool: 'chat', text: debrief, chatbot: 'student', source: 'ECOS' });
+      router.push('/(chat)/chat' as never);
+    };
 
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.evalContent}>
@@ -1086,6 +1104,9 @@ function EcosScreenInner() {
 
         {/* Une seule action principale : repasser le cas s'il existe, sinon revenir. */}
         <View style={styles.resultActions}>
+          {debrief ? (
+            <Button label="Retravailler avec le chat" variant="secondary" onPress={openDebrief} />
+          ) : null}
           {replayCase && <Button label="Repasser ce cas" onPress={() => selectCase(replayCase)} />}
           <Button
             label="Retour au dashboard"

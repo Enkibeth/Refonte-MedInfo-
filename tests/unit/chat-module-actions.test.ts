@@ -10,6 +10,7 @@ import {
   isolateModuleActionMarkers,
   mergeModuleActions,
   moduleActionCard,
+  moduleActionCounts,
   moduleActionToolsFor,
   parseModuleActionMarker,
   scoreIdForCalc,
@@ -112,6 +113,7 @@ describe('cartes d’action : consigne au modèle', () => {
     expect(section).toMatch(/au plus 2 lignes OUTIL/);
     expect(section).toMatch(/jamais que tu as ouvert ou exécuté/);
     expect(section).toMatch(/jamais de donnée personnelle/);
+    expect(section).toMatch(/sans les recalculer ni en inventer/);
   });
 
   it('Partiels : interdit de demander les notes de la promo dans la conversation', () => {
@@ -218,3 +220,13 @@ describe('cartes d’action : réponse complète et flux', () => {
     expect(isolateModuleActionMarkers('a <!--OUTIL:ecos--> b')).toBe('a\n<!--OUTIL:ecos-->\nb');
   });
 });
+
+describe('cartes d’action : mesure', () => {
+  it('compte les cartes proposées par outil, noms seuls, dédoublonnées et bornées', () => {
+    const text = 'a <!--OUTIL:ecos|Cardio--> b\n<!--OUTIL:ecos|cardio-->\n<!--OUTIL:scores|HAS-BLED-->\n<!--OUTIL:inconnu-->';
+    expect(moduleActionCounts(text)).toEqual({ 'carte:ecos': 1, 'carte:scores': 1 });
+    expect(moduleActionCounts('Pas de carte.')).toEqual({});
+    expect(JSON.stringify(moduleActionCounts(text))).not.toContain('Cardio');
+  });
+});
+

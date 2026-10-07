@@ -311,5 +311,14 @@ LLM par réponse (ADR-0037).
 - **Tri des pièces jointes.** Avant tout envoi, un relevé de notes de promotion (données de
   tiers) est repéré sans IA (`src/chat/gradeSheet.ts`). Il est confié à l'outil Partiels, qui
   calcule sur l'appareil, au lieu d'être joint au message.
-- **Puces CALC.** Elles proposent aussi le même score dans l'outil Scores, calculé sans IA.
+- **Puces CALC.** Un score du catalogue s'ouvre directement dans l'outil Scores, calculé sans
+  IA. « Calcule avec moi » ne reste que pour les six scores absents du catalogue.
+- **Aller-retour.** Partiels et ECOS préparent un message pour le chat : le plan d'action à
+  partir des résultats, ou le débriefing d'une station. Il s'ouvre pré-rempli dans une nouvelle
+  conversation et l'utilisateur le relit avant envoi. La consigne demande de s'appuyer sur ces
+  chiffres sans les recalculer.
+- **Commandes « / ».** `/ecos cardiologie`, `/score HAS-BLED`, `/partiels`… ouvrent l'outil
+  sans appel au modèle.
+- **« En faire une présentation ».** La réponse sert de synthèse au générateur, pré-remplie en
+  mode IA ; rien n'est généré sans clic.
 
