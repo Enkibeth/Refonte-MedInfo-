@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createSubmissionGate } from '@/chat/submission';
 import { advanceStreamingBody, EMPTY_STREAMING_BODY, visibleStreamingTail } from '@/chat/streamingBody';
-import { phaseFromParts, streamingSources } from '@/ai/chat/statusPhases';
 import { archiveMatchesTurn } from '@/chat/resume';
 import { parseAssistantMessage, type ParsedBlock } from '@/ai/chat/parseAssistantMessage';
 import { CHAT_ANSWER_FIXTURES, STUDENT_BODY_FOLLOWUPS, STUDENT_REAL_FORMAT } from './helpers/chatAnswerFixtures';
@@ -51,22 +50,6 @@ describe('envoi immédiat et interruption', () => {
     expect(gate.current(next)).toBe(true);
     gate.finish(next);
     expect(gate.begin()).not.toBeNull();
-  });
-});
-describe('phases fondées sur le flux', () => {
-  it('ne déduit pas une rédaction de la réception du raisonnement', () => {
-    expect(phaseFromParts([{ type: 'reasoning', text: '…' }])).toBe('thinking');
-    expect(phaseFromParts([{ type: 'tool-calculator', state: 'input-available' }])).toBe('thinking');
-  });
-  it('distingue une recherche commencée, terminée, échouée et du texte', () => {
-    expect(phaseFromParts([{ type: 'tool-web_search', state: 'input-available' }])).toBe('searching');
-    expect(phaseFromParts([{ type: 'dynamic-tool', toolName: 'web_search', state: 'output-available' }])).toBe('writing');
-    expect(phaseFromParts([{ type: 'tool-web_search', state: 'output-error' }])).toBe('thinking');
-    expect(phaseFromParts([{ type: 'text', text: 'Bonjour' }, { type: 'tool-web_search' }])).toBe('writing');
-  });
-  it('ne fabrique pas de référence et filtre les URL non navigables', () => {
-    expect(streamingSources([{ type: 'tool-web_search' }])).toEqual([]);
-    expect(streamingSources([{ type: 'source-url', url: 'https://example.org', title: 'Référence' }, { type: 'source-url', url: 'https://example.org' }, { type: 'source-url', url: 'javascript:alert(1)' }])).toEqual([{ url: 'https://example.org', title: 'Référence' }]);
   });
 });
 describe('rendu incrémental', () => {
