@@ -9,7 +9,10 @@
  *   - QUESTIONS_PATIENT → formulaire 3 questions à choix multiples (1 envoi groupé) ;
  *   - INTERACTION → propositions à cocher (format public et pro), envoi groupé ;
  *   - AUTO-RÉFLEXION → carte repliable discrète ;
- *   - <!--CALC:…--> → scores cliniques à cocher, envoi groupé ;
+ *   - <!--CALC:…--> → score du catalogue : ouverture directe de l'outil Scores ; autres scores
+ *     à cocher, envoi groupé (ADR-0044) ;
+ *   - <!--OUTIL:…--> → cartes « ouvrir l'outil » (ADR-0044) : la navigation vient de l'écran,
+ *     chaque carte est re-filtrée par la visibilité du rôle (jamais d'outil hors périmètre) ;
  *   - [1] + [2] + [3] (étudiant) → propositions à cocher, envoi groupé.
  *
  * Les blocs de propositions (approfondissements / interaction / calc / relances étudiant)
@@ -31,7 +34,15 @@ import {
   domainOfUrl,
   type SourceBadge,
 } from '@/ai/chat/parseAssistantMessage';
+import {
+  moduleActionCard,
+  scoreIdForCalc,
+  stripInterfaceComments,
+  type ChatModuleAction,
+  type ModuleActionTool,
+} from '@/ai/chat/moduleActions';
 import { createFootnoteRegistry, MarkdownRenderer, type FootnoteRegistry } from '@/ui/MarkdownRenderer';
+import { featureTint } from '@/ui/featureChips';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
 import { Button } from '@/ui/Button';
@@ -464,17 +475,28 @@ const CALC_LABELS: Record<string, string> = {
   cat: 'CAT',
 };
 
+/**
+ * Scores suggérés par le chatbot pro. Décision ADR-0044 : un score présent dans le
+ * calculateur s'ouvre DIRECTEMENT dans l'outil Scores (critères figés, calcul déterministe,
+ * sans que le modèle fasse l'arithmétique). Seuls les scores absents du catalogue (GRACE,
+ * PSI, Apgar…) gardent la proposition « calcule avec moi » dans la conversation, à cocher
+ * puis envoyer. Sans accès à l'outil, tous les scores gardent ce comportement.
+ */
 function CalcBlock({
   ids,
   onSend,
   disabled,
+  moduleActions,
 }: {
   ids: string[];
   onSend: (text: string) => void;
   disabled: boolean;
+  moduleActions?: ModuleActionsHandlers;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sent, setSent] = useState(false);
+  const toolIds = moduleActions?.canOpen('scores') ? ids.filter((id) => scoreIdForCalc(id)) : [];
+  const chatIds = ids.filter((id) => !toolIds.includes(id));
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -486,40 +508,118 @@ function CalcBlock({
   };
 
   const submit = () => {
-    const labels = ids.filter((id) => selected.has(id)).map((id) => CALC_LABELS[id] ?? id.toUpperCase());
+    const labels = chatIds.filter((id) => selected.has(id)).map((id) => CALC_LABELS[id] ?? id.toUpperCase());
     if (labels.length === 0) return;
     const text =
       labels.length === 1
-        ? `Calcule avec moi le score ${labels[0]} : pose-moi les questions item par item.`
-        : `Calcule avec moi les scores suivants : ${labels.join(', ')} : pose-moi les questions item par item pour chacun.`;
+        ? `Calcule avec moi le score ${labels[0]} : pose-moi les questions item par item.`
+        : `Calcule avec moi les scores suivants : ${labels.join(', ')} : pose-moi les questions item par item pour chacun.`;
     setSent(true);
     onSend(text);
   };
 
   return (
     <View style={styles.calcWrapper}>
-      <Text style={styles.blockLabel}>Scores cliniques suggérés</Text>
-      <View style={styles.optionsRow}>
-        {ids.map((id) => {
-          const label = CALC_LABELS[id] ?? id.toUpperCase();
-          const checked = selected.has(id);
-          return (
-            <Touchable
-              key={id}
-              style={[styles.calcChip, checked && styles.calcChipSelected]}
-              onPress={() => toggle(id)}
-              disabled={disabled || sent}
-              accessibilityRole="checkbox"
-              aria-checked={checked}
-            >
-              <CheckToggle checked={checked} />
-              <Icon name="calculator" size={14} color={tokens.colors.accentDeep} />
-              <Text style={styles.calcChipText}>{label}</Text>
-            </Touchable>
-          );
-        })}
-      </View>
-      <SendSelectionButton count={selected.size} sent={sent} disabled={disabled} onPress={submit} />
+      {toolIds.length > 0 && moduleActions ? (
+        <>
+          <Text style={styles.blockLabel}>Scores suggérés · calcul déterministe, sans IA</Text>
+          <View style={styles.optionsRow}>
+            {toolIds.map((id) => {
+              const label = CALC_LABELS[id] ?? id.toUpperCase();
+              return (
+                <Touchable
+                  key={id}
+                  style={styles.calcToolChip}
+                  onPress={() => moduleActions.onOpen({ tool: 'scores', param: scoreIdForCalc(id) })}
+                  accessibilityRole="link"
+                  accessibilityLabel={`Calculer ${label} dans l’outil Scores`}
+                >
+                  <Icon name="calculator" size={14} color={tokens.colors.accentDeep} />
+                  <Text style={styles.calcChipText}>{label}</Text>
+                  <Icon name="arrowRight" size={13} color={tokens.colors.accentDeep} />
+                </Touchable>
+              );
+            })}
+          </View>
+        </>
+      ) : null}
+      {chatIds.length > 0 ? (
+        <>
+          <Text style={styles.blockLabel}>{toolIds.length > 0 ? 'À calculer avec le chat' : 'Scores cliniques suggérés'}</Text>
+          <View style={styles.optionsRow}>
+            {chatIds.map((id) => {
+              const label = CALC_LABELS[id] ?? id.toUpperCase();
+              const checked = selected.has(id);
+              return (
+                <Touchable
+                  key={id}
+                  style={[styles.calcChip, checked && styles.calcChipSelected]}
+                  onPress={() => toggle(id)}
+                  disabled={disabled || sent}
+                  accessibilityRole="checkbox"
+                  aria-checked={checked}
+                >
+                  <CheckToggle checked={checked} />
+                  <Icon name="calculator" size={14} color={tokens.colors.accentDeep} />
+                  <Text style={styles.calcChipText}>{label}</Text>
+                </Touchable>
+              );
+            })}
+          </View>
+          <SendSelectionButton count={selected.size} sent={sent} disabled={disabled} onPress={submit} />
+        </>
+      ) : null}
+    </View>
+  );
+}
+
+// ── Cartes « ouvrir l'outil » (<!--OUTIL:…-->, ADR-0044) ─────────────────────
+
+/** Fourni par l'écran du chat : qui peut ouvrir quoi, et comment naviguer. */
+export interface ModuleActionsHandlers {
+  canOpen: (tool: ModuleActionTool) => boolean;
+  onOpen: (action: ChatModuleAction) => void;
+}
+
+function ModuleActionsBlock({
+  actions,
+  moduleActions,
+}: {
+  actions: ChatModuleAction[];
+  moduleActions: ModuleActionsHandlers;
+}) {
+  const visible = actions.filter((a) => moduleActions.canOpen(a.tool));
+  if (visible.length === 0) return null;
+  return (
+    <View style={styles.actionsWrapper}>
+      {visible.map((action) => {
+        const card = moduleActionCard(action);
+        const tint = featureTint(card.tool);
+        return (
+          <Touchable
+            key={`${card.tool}|${card.param ?? ''}`}
+            style={styles.actionCard}
+            onPress={() => moduleActions.onOpen(action)}
+            accessibilityRole="link"
+            accessibilityLabel={`${card.title}. ${card.description} Ouvrir l’outil.`}
+            testID="module-action-card"
+          >
+            <View style={[styles.actionIcon, { backgroundColor: tint.bg }]}>
+              <Icon name={card.icon} size={18} color={tint.fg} />
+            </View>
+            <View style={styles.actionTextBlock}>
+              <Text style={styles.actionTitle} numberOfLines={2}>
+                {card.title}
+              </Text>
+              <Text style={styles.actionDescription}>{card.description}</Text>
+            </View>
+            <View style={styles.actionCta}>
+              <Text style={styles.actionCtaText}>Ouvrir</Text>
+              <Icon name="arrowRight" size={14} color={tokens.colors.accentDeep} />
+            </View>
+          </Touchable>
+        );
+      })}
     </View>
   );
 }
@@ -589,7 +689,8 @@ const BodyBlock = memo(function BodyBlock({
 }) {
   // (SRCx) → appels de note en exposant, APRÈS le découpage en sections : un titre
   // MAJUSCULES contenant une référence resterait sinon non détecté (¹ hors classe).
-  const sections = useMemo(() => splitBodySections(markdown), [markdown]);
+  // Un marqueur d'interface glissé dans le texte n'est jamais affiché (sa carte est rendue à part).
+  const sections = useMemo(() => splitBodySections(stripInterfaceComments(markdown)), [markdown]);
   const onCitationPress = useCitationResolver(sources, onOpenSource);
   return (
     <View style={styles.bodyWrapper}>
@@ -619,12 +720,15 @@ export function AssistantBlocks({
   disabled,
   onOpenSource,
   streaming = false,
+  moduleActions,
 }: {
   text: string;
   onSend: (text: string) => void;
   disabled: boolean;
   onOpenSource: (s: ParsedSource) => void;
   streaming?: boolean;
+  /** Absent : aucune carte d'outil n'est rendue (et pas de lien vers le calculateur). */
+  moduleActions?: ModuleActionsHandlers;
 }) {
   const incrementalRef = useRef(streaming);
   if (streaming) incrementalRef.current = true;
@@ -692,7 +796,13 @@ export function AssistantBlocks({
               />
             );
           case 'calc':
-            return <CalcBlock key={i} ids={block.ids} onSend={onSend} disabled={disabled} />;
+            return (
+              <CalcBlock key={i} ids={block.ids} onSend={onSend} disabled={disabled} moduleActions={moduleActions} />
+            );
+          case 'actions':
+            return moduleActions ? (
+              <ModuleActionsBlock key={i} actions={block.actions} moduleActions={moduleActions} />
+            ) : null;
           case 'followups':
             return <FollowupsBlock key={i} questions={block.questions} onSend={onSend} disabled={disabled} />;
           default:
@@ -836,6 +946,60 @@ const styles = StyleSheet.create({
   checkboxChecked: {
     borderColor: tokens.colors.accent,
     backgroundColor: tokens.colors.accent,
+  },
+
+  actionsWrapper: { gap: tokens.space.sm, marginTop: tokens.space.xs },
+  actionCard: {
+    minHeight: tokens.size.controlMd,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.md,
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    backgroundColor: tokens.colors.surface,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.md,
+    ...tokens.motion.transitionWeb,
+  },
+  actionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: tokens.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionTextBlock: { flex: 1, gap: 2 },
+  actionTitle: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.text,
+    fontSize: tokens.type.label.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  actionDescription: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textSubtle,
+    fontSize: tokens.type.caption.fontSize,
+    lineHeight: 17,
+  },
+  actionCta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  actionCtaText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  calcToolChip: {
+    minHeight: tokens.size.controlMd,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.xs,
+    borderRadius: tokens.radius.pill,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    backgroundColor: tokens.colors.surface,
+    paddingHorizontal: tokens.space.md,
+    ...tokens.motion.transitionWeb,
   },
 
   deepeningWrapper: { gap: tokens.space.sm, marginTop: tokens.space.xs },

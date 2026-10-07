@@ -9,6 +9,10 @@
  * Le token de session est transmis à l'iframe (même origine) par postMessage : la page
  * autonome l'ajoute en `Authorization: Bearer …` pour le mode IA. RoleGate conservé en
  * défense en profondeur (l'autorisation réelle reste serveur — serverPersona).
+ *
+ * Carte d'action du chat (ADR-0044) : un sujet proposé par le chat (et, depuis « En faire une
+ * présentation », la réponse elle-même) est transmis à la page embarquée, qui le pré-remplit
+ * dans le mode IA. Rien n'est généré sans clic.
  */
 import { useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
@@ -19,11 +23,24 @@ import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
 import { RoleGate } from '@/ui/RoleGate';
 import { ToolScreenHeader } from '@/ui/ToolScreenHeader';
+import { useModuleHandoff } from '@/chat/useModuleHandoff';
 
 function PresentationInner() {
   const { session } = useSession();
   const token = session?.access_token ?? null;
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const readyRef = useRef(false);
+  const pendingSeedRef = useRef<{ topic: string; brief?: string } | null>(null);
+
+  // Sujet venu du chat : envoyé APRÈS le token (même file de messages), une fois la page
+  // embarquée prête — elle le signale en demandant le token.
+  const postSeed = useCallback(() => {
+    const seed = pendingSeedRef.current;
+    const win = iframeRef.current?.contentWindow;
+    if (!seed || !win || !readyRef.current) return;
+    pendingSeedRef.current = null;
+    win.postMessage({ type: 'medinfo:presentation-seed', topic: seed.topic, brief: seed.brief }, window.location.origin);
+  }, []);
 
   // Transmet le token à l'iframe (même origine). La page autonome s'en sert pour
   // authentifier le mode IA ; elle peut aussi le redemander au chargement.
@@ -32,7 +49,17 @@ function PresentationInner() {
     const win = iframeRef.current?.contentWindow;
     if (!win) return;
     win.postMessage({ type: 'medinfo:auth', token }, window.location.origin);
-  }, [token]);
+    postSeed();
+  }, [token, postSeed]);
+
+  useModuleHandoff(
+    'presentation',
+    (handoff) => {
+      pendingSeedRef.current = { topic: handoff.topic, brief: handoff.brief };
+      postSeed();
+    },
+    Platform.OS === 'web',
+  );
 
   useEffect(() => {
     if (Platform.OS !== 'web') return;
@@ -40,7 +67,10 @@ function PresentationInner() {
     // La page autonome demande le token dès qu'elle est prête (course de chargement).
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
-      if ((event.data as { type?: string } | null)?.type === 'medinfo:auth-request') postToken();
+      if ((event.data as { type?: string } | null)?.type === 'medinfo:auth-request') {
+        readyRef.current = true;
+        postToken();
+      }
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
@@ -58,7 +88,10 @@ function PresentationInner() {
           ref={iframeRef}
           src="/presentation.html"
           title="Générateur de présentations"
-          onLoad={postToken}
+          onLoad={() => {
+            readyRef.current = true;
+            postToken();
+          }}
           style={{ flex: 1, width: '100%', border: 'none', backgroundColor: tokens.colors.surface }}
         />
       ) : (

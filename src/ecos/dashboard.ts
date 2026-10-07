@@ -102,14 +102,15 @@ export function filterCases<T extends FilterableCase>(
   filters: DashboardFilters,
   summaries: Map<string, CaseAttemptSummary>,
 ): T[] {
-  const query = filters.query.trim().toLowerCase();
+  // Casse et accents ignorés : « geriatrie » retrouve « Gériatrie ».
+  const query = foldText(filters.query);
   return cases.filter((c) => {
     if (filters.theme && themeOf(c) !== filters.theme) return false;
     const done = (summaries.get(c.id)?.attempts ?? 0) > 0;
     if (filters.status === 'todo' && done) return false;
     if (filters.status === 'done' && !done) return false;
     if (query) {
-      const haystack = `${c.titre} ${c.specialite} ${c.consigneCandidat}`.toLowerCase();
+      const haystack = foldText(`${c.titre} ${c.specialite} ${c.consigneCandidat}`);
       if (!haystack.includes(query)) return false;
     }
     return true;
@@ -134,6 +135,28 @@ export function groupCasesByTheme<T extends { specialite: string }>(
   return [...groups.entries()]
     .sort(([a], [b]) => a.localeCompare(b, 'fr'))
     .map(([theme, list]) => ({ theme, cases: list }));
+}
+
+function foldText(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
+/**
+ * Demande venue du chat (carte d'action, ADR-0044 : « Cardiologie », « gériatrie ») → filtres
+ * du tableau de bord : le thème quand la demande le nomme exactement (casse et accents
+ * ignorés), sinon une recherche texte. Les thèmes sont souvent composés (« Cardiologie ·
+ * Urgences ») : la recherche retrouve alors TOUTES les stations de la spécialité, là où
+ * retenir le premier thème qui la contient en masquerait d'autres.
+ */
+export function filtersForRequest(request: string, themes: string[]): { theme: string | null; query: string } {
+  const wanted = foldText(request);
+  if (!wanted) return { theme: null, query: '' };
+  const exact = themes.find((t) => foldText(t) === wanted);
+  return exact ? { theme: exact, query: '' } : { theme: null, query: request.trim() };
 }
 
 /** Thèmes distincts (pour la rangée de filtres), triés alphabétiquement (fr). */

@@ -25,7 +25,7 @@ import {
   type TextInputKeyPressEventData,
   type ViewStyle,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, isTextUIPart } from 'ai';
@@ -34,6 +34,23 @@ import type { UIMessage } from 'ai';
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
 import { isFeatureVisible } from '@/ai/routing/featureVisibility';
+import {
+  moduleActionCard,
+  moduleActionToolsFor,
+  type ChatModuleAction,
+  type ModuleActionTool,
+} from '@/ai/chat/moduleActions';
+import {
+  parseSlashCommand,
+  slashCompletion,
+  slashExamples,
+  slashSuggestions,
+  splitSlashInput,
+  type SlashCommandSpec,
+} from '@/ai/chat/slashCommands';
+import { classifyChatFile, GRADE_SNIFF_BYTES, isSniffableTextFile, looksLikeGradeTable } from '@/chat/gradeSheet';
+import { handoffForAction, offerHandoff, PRESENTATION_BRIEF_MAX_CHARS } from '@/chat/moduleHandoff';
+import { useModuleHandoff } from '@/chat/useModuleHandoff';
 import type { ChatbotId } from '@/ai/chat/chatContext';
 import {
   assistantTextForExport,
@@ -70,7 +87,9 @@ import { Reveal } from '@/ui/Reveal';
 import { Touchable } from '@/ui/Touchable';
 import { toolbarButtonStyles, toolbarContentColor } from '@/ui/toolbarButton';
 import { useReducedMotion } from '@/ui/useReducedMotion';
-import { AssistantBlocks, SourcesBlock } from '@/ui/chat/AssistantBlocks';
+import { AssistantBlocks, SourcesBlock, type ModuleActionsHandlers } from '@/ui/chat/AssistantBlocks';
+import { GradeFileCard, type GradeCardKind } from '@/ui/chat/GradeFileCard';
+import { SlashMenu } from '@/ui/chat/SlashMenu';
 import { QcmLauncher } from '@/ui/chat/QcmCard';
 import { ChatbotSwitcher, CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
 import { ConversationList, HistoryPanel } from '@/ui/chat/HistoryPanel';
@@ -338,6 +357,7 @@ const MessageRow = memo(function MessageRow({
   streaming,
   onRegenerate,
   onExport,
+  moduleActions,
 }: {
   message: UIMessage;
   onSend: (text: string) => void;
@@ -347,6 +367,7 @@ const MessageRow = memo(function MessageRow({
   streaming: boolean;
   onRegenerate: () => void;
   onExport: (message: UIMessage) => void;
+  moduleActions: ModuleActionsHandlers;
 }) {
   const isUser = message.role === 'user';
   const text = messageText(message);
@@ -376,6 +397,7 @@ const MessageRow = memo(function MessageRow({
         disabled={disabled}
         streaming={streaming}
         onOpenSource={onOpenSource}
+        moduleActions={moduleActions}
       />
       {!streamingThisMessage ? (
         <MessageActions
@@ -407,6 +429,16 @@ function guessAttachmentMediaType(name: string, declared: string): string {
     txt: 'text/plain',
   };
   return map[ext] ?? '';
+}
+
+/** Tableurs proposés au choix du fichier quand l'outil Partiels est ouvert (ADR-0044). */
+const SPREADSHEET_ACCEPT = '.xlsx,.xls,.xlsm,.ods';
+
+/** Fichier de notes repéré au choix de la pièce jointe : jamais joint d'office au message. */
+interface GradeOffer {
+  file: File;
+  kind: Exclude<GradeCardKind, 'pasted'>;
+  rows: number | null;
 }
 
 // ── Écran principal ────────────────────────────────────────────────────────────
@@ -456,6 +488,10 @@ export default function ChatScreen() {
   // Pièce jointe : réservée aux comptes vérifiés étudiant/pro (+ admin), web only
   // (extraction/lecture du fichier côté navigateur). Le serveur regarde la persona.
   const canAttach = Platform.OS === 'web' && !!session && canSwitch;
+  // Outil Partiels ouvert à ce rôle : les fichiers de notes lui sont confiés, jamais à l'IA
+  // (ADR-0044). Sans lui, un relevé de notes est seulement refusé, avec l'explication. Web
+  // seulement : l'outil n'existe pas dans l'app native (et `File` non plus).
+  const canUsePartiel = Platform.OS === 'web' && !!session && isFeatureVisible('partiel', persona, { isAdmin });
   // Mémorisé : la liste sert de dépendance à openConversation (sinon recréé à chaque rendu).
   const availableChatbots = useMemo<ChatbotId[]>(
     () => (canSwitch || isGuest ? ALL_CHATBOTS : ['public']),
@@ -571,6 +607,8 @@ export default function ChatScreen() {
   // Pièce jointe (document) — réservé aux comptes vérifiés étudiant/pro (+ admin), web only.
   const [attachment, setAttachment] = useState<ChatAttachment | null>(null);
   const [attachError, setAttachError] = useState<string | null>(null);
+  const [gradeOffer, setGradeOffer] = useState<GradeOffer | null>(null);
+  const [pasteHintDismissed, setPasteHintDismissed] = useState(false);
   // Pièce jointe du DERNIER tour envoyé (mémoire de l'onglet seulement, jamais stockée) :
   // « Réessayer » et « Régénérer » rejouent ce tour document compris. Avant, le document
   // quittait la mémoire dès l'envoi : un réessai ne transmettait plus que son nom et le
@@ -761,14 +799,106 @@ export default function ChatScreen() {
   const isLoading = preparing || status === 'streaming' || status === 'submitted';
   const canSend = !isLoading && (input.trim().length > 0 || !!attachment) && !guestLocked;
 
+  // Relevé de notes COLLÉ dans la saisie (copie depuis l'ENT ou Excel, ADR-0044) : envoyé, il
+  // partirait au modèle avec les notes des autres étudiants. Repérage sans IA, borné aux
+  // saisies longues et multilignes ; simple suggestion, l'envoi reste possible.
+  const pastedGradeTable = useMemo(
+    () =>
+      canUsePartiel && input.length > 200 && (input.match(/\n/g)?.length ?? 0) >= 6
+        ? looksLikeGradeTable(input)
+        : null,
+    [canUsePartiel, input],
+  );
+  useEffect(() => {
+    if (!input) setPasteHintDismissed(false);
+  }, [input]);
+  const showPasteGradeHint = !!pastedGradeTable && !pasteHintDismissed && !gradeOffer;
+
   // C4 : un long texte collé dans le chat public ressemble à un document (compte
   // rendu, ordonnance…) — l'outil Analyse de document est fait pour ça.
   const showDocHint =
     chatbot === 'public' &&
     !docHintDismissed &&
+    !gradeOffer &&
+    !showPasteGradeHint &&
     isFeatureVisible('document', persona, { isAdmin }) &&
     !isGuest &&
     (input.length > 1500 || (input.match(/\n/g)?.length ?? 0) > 12);
+
+  // Cartes d'action des réponses (ADR-0044) : même règle de visibilité que la navigation,
+  // et l'outil reçoit son paramètre (score, spécialité, sujet) par un relais en mémoire.
+  const canOpenModule = useCallback(
+    (tool: ModuleActionTool) => !isGuest && isFeatureVisible(tool, persona, { isAdmin }),
+    [isGuest, persona, isAdmin],
+  );
+  const openModule = useCallback(
+    (action: ChatModuleAction) => {
+      const handoff = handoffForAction(action);
+      if (handoff) offerHandoff(handoff);
+      router.push(moduleActionCard(action).route as never);
+    },
+    [router],
+  );
+  const moduleActions = useMemo<ModuleActionsHandlers>(
+    () => ({ canOpen: canOpenModule, onOpen: openModule }),
+    [canOpenModule, openModule],
+  );
+
+  // Commandes « / » (ADR-0044) : lanceur d'outils déterministe, sans appel au modèle. Mêmes
+  // outils que les cartes (rôle du compte connecté), même ouverture (`openModule`).
+  const slashTools = useMemo<ModuleActionTool[]>(
+    () => (session ? moduleActionToolsFor({ persona, isAdmin, isGuest }) : []),
+    [session, persona, isAdmin, isGuest],
+  );
+  const inputRef = useRef<TextInput>(null);
+  const [slashIndex, setSlashIndex] = useState(0);
+  const [slashClosedFor, setSlashClosedFor] = useState<string | null>(null);
+  const slashMenu = useMemo(
+    () => (slashClosedFor === input ? [] : slashSuggestions(input, slashTools)),
+    [input, slashTools, slashClosedFor],
+  );
+  const activeSlash = Math.min(slashIndex, Math.max(0, slashMenu.length - 1));
+  useEffect(() => {
+    setSlashIndex(0);
+  }, [input]);
+  const runSlash = (action: ChatModuleAction) => {
+    setInput('');
+    setInputHeight(INPUT_MIN_HEIGHT);
+    openModule(action);
+  };
+  const pickSlash = (spec: SlashCommandSpec) => {
+    if (spec.argHint) {
+      setInput(slashCompletion(spec));
+      inputRef.current?.focus();
+    } else {
+      runSlash({ tool: spec.tool, param: null });
+    }
+  };
+
+  // Réponse → présentation (ADR-0044) : sujet = la question posée, synthèse = la réponse en
+  // texte propre (sources comprises). Information générale produite par le chat lui-même.
+  const openAnswerAsPresentation = () => {
+    const answer = lastAssistant ? assistantTextForExport(messageText(lastAssistant)) : '';
+    if (!answer.trim()) return;
+    const lastUser = [...messages].reverse().find((m) => m.role === 'user');
+    const question = (lastUser ? messageText(lastUser) : '').replace(/\n?Pièce jointe : [^\n]*$/, '');
+    const topic = question.replace(/\s+/g, ' ').trim().slice(0, 200) || 'Synthèse du chat';
+    offerHandoff({ tool: 'presentation', topic, brief: answer.slice(0, PRESENTATION_BRIEF_MAX_CHARS) });
+    router.push('/(chat)/presentation' as never);
+  };
+
+  // Fichier de notes → outil Partiels : le fichier reste un objet du navigateur, jamais téléversé.
+  const openGradeFileInPartiel = (file: File) => {
+    offerHandoff({ tool: 'partiel', file });
+    setGradeOffer(null);
+    router.push('/(chat)/partiel' as never);
+  };
+  const openPastedGradesInPartiel = () => {
+    const file = new File([input], 'notes-collees.csv', { type: 'text/csv' });
+    setInput('');
+    setInputHeight(INPUT_MIN_HEIGHT);
+    openGradeFileInPartiel(file);
+  };
 
   // ── Auto-scroll du fil (fluidité type ChatGPT) ─────────────────────────────────
   // Le fil suit la réponse pendant le streaming tant que l'utilisateur est en bas ;
@@ -1173,6 +1303,17 @@ export default function ChatScreen() {
   }, [sendMessage, user, isGuest, guestUsed, recovering, scrollToBottom]);
 
   const handleSend = () => {
+    // Commande « / » complète (« /ecos cardiologie ») : l'outil s'ouvre, rien n'est envoyé au
+    // modèle. Commande encore partielle (« /ec ») : la suggestion active est appliquée.
+    const command = parseSlashCommand(input, slashTools);
+    if (command) {
+      runSlash(command);
+      return;
+    }
+    if (slashMenu.length > 0 && !splitSlashInput(input)?.hasSpace) {
+      pickSlash(slashMenu[activeSlash]);
+      return;
+    }
     if (!canSend) return;
     const text = input;
     setInput('');
@@ -1182,6 +1323,27 @@ export default function ChatScreen() {
 
   // Entrée = envoyer sur desktop (Maj+Entrée = nouvelle ligne) ; sans effet sur tactile.
   const handleInputKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
+    // Menu « / » ouvert : ↑/↓ choisissent, Tab applique, Échap ferme (Entrée passe par l'envoi).
+    if (slashMenu.length > 0) {
+      const key = e.nativeEvent.key;
+      const prevent = () => (e as unknown as { preventDefault?: () => void }).preventDefault?.();
+      if (key === 'ArrowDown' || key === 'ArrowUp') {
+        prevent();
+        const step = key === 'ArrowDown' ? 1 : -1;
+        setSlashIndex((activeSlash + step + slashMenu.length) % slashMenu.length);
+        return;
+      }
+      if (key === 'Tab') {
+        prevent();
+        pickSlash(slashMenu[activeSlash]);
+        return;
+      }
+      if (key === 'Escape') {
+        prevent();
+        setSlashClosedFor(input);
+        return;
+      }
+    }
     if (!ENTER_SENDS) return;
     const native = e.nativeEvent as TextInputKeyPressEventData & { shiftKey?: boolean };
     const shift = native.shiftKey ?? (e as unknown as { shiftKey?: boolean }).shiftKey ?? false;
@@ -1191,41 +1353,131 @@ export default function ChatScreen() {
     }
   };
 
-  // Sélection d'un document (web only) : input DOM éphémère → lecture base64 côté client.
-  // Le fichier ne quitte l'appareil qu'au moment de l'envoi (body de /api/chat) et n'est
-  // jamais stocké côté serveur (seule la réponse est archivée).
+  // Lecture base64 côté client d'un document accepté par le chat. Le fichier ne quitte
+  // l'appareil qu'au moment de l'envoi (body de /api/chat) et n'est jamais stocké côté serveur
+  // (seule la réponse est archivée).
+  const attachFile = (file: File, mediaType: string) => {
+    if (file.size > ATTACHMENT_MAX_BYTES) {
+      setAttachError('Fichier trop volumineux (maximum 6 Mo).');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      const base64 = result.includes(',') ? result.slice(result.indexOf(',') + 1) : '';
+      if (!base64) {
+        setAttachError('Lecture du fichier impossible.');
+        return;
+      }
+      setAttachment({ name: file.name || 'Document', mediaType, dataBase64: base64 });
+    };
+    reader.onerror = () => setAttachError('Lecture du fichier impossible.');
+    reader.readAsDataURL(file);
+  };
+
+  // TRI SANS IA avant tout envoi (ADR-0044) : un relevé de notes de promotion n'est jamais
+  // joint au message, il est proposé à l'outil Partiels, qui calcule sur l'appareil. Commun
+  // au sélecteur de fichier et au glisser-déposer.
+  const handlePickedFile = async (file: File) => {
+    setAttachError(null);
+    setGradeOffer(null);
+    let textSample: string | null = null;
+    if (isSniffableTextFile(file.name, file.type)) {
+      try {
+        textSample = await file.slice(0, GRADE_SNIFF_BYTES).text();
+      } catch {
+        textSample = null;
+      }
+    }
+    const verdict = classifyChatFile({ name: file.name, mediaType: file.type, textSample });
+    // Un relevé de notes texte est TOUJOURS retenu ; tableur et PDF suspect ne le sont que
+    // si l'outil Partiels peut les recevoir.
+    if (verdict === 'grade-table' || (canUsePartiel && verdict !== 'other')) {
+      setAttachment(null);
+      setGradeOffer({
+        file,
+        kind: verdict as GradeOffer['kind'],
+        rows: verdict === 'grade-table' && textSample ? looksLikeGradeTable(textSample)?.rows ?? null : null,
+      });
+      return;
+    }
+    const mediaType = guessAttachmentMediaType(file.name, file.type);
+    if (!mediaType || verdict === 'spreadsheet') {
+      setAttachError('Format non pris en charge (PDF, image ou texte).');
+      return;
+    }
+    attachFile(file, mediaType);
+  };
+
+  // Sélection d'un document (web only) : input DOM éphémère, puis tri ci-dessus.
   const pickAttachment = () => {
     if (typeof document === 'undefined') return;
     setAttachError(null);
+    setGradeOffer(null);
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = ATTACHMENT_ACCEPT;
+    input.accept = canUsePartiel ? `${ATTACHMENT_ACCEPT},${SPREADSHEET_ACCEPT}` : ATTACHMENT_ACCEPT;
     input.onchange = () => {
       const file = input.files && input.files[0];
-      if (!file) return;
-      if (file.size > ATTACHMENT_MAX_BYTES) {
-        setAttachError('Fichier trop volumineux (maximum 6 Mo).');
-        return;
-      }
-      const mediaType = guessAttachmentMediaType(file.name, file.type);
-      if (!mediaType) {
-        setAttachError('Format non pris en charge (PDF, image ou texte).');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = typeof reader.result === 'string' ? reader.result : '';
-        const base64 = result.includes(',') ? result.slice(result.indexOf(',') + 1) : '';
-        if (!base64) {
-          setAttachError('Lecture du fichier impossible.');
-          return;
-        }
-        setAttachment({ name: file.name || 'Document', mediaType, dataBase64: base64 });
-      };
-      reader.onerror = () => setAttachError('Lecture du fichier impossible.');
-      reader.readAsDataURL(file);
+      if (file) void handlePickedFile(file);
     };
     input.click();
+  };
+
+  // Glisser-déposer un fichier sur le chat (web, ADR-0044) : même tri que le sélecteur.
+  // Écouteurs posés seulement quand le chat est l'écran affiché : l'onglet reste monté sous
+  // les autres outils, et un fichier lâché sur un autre écran ne doit pas atterrir ici.
+  const chatFocused = useIsFocused();
+  const [dragActive, setDragActive] = useState(false);
+  const pickedFileRef = useRef(handlePickedFile);
+  pickedFileRef.current = handlePickedFile;
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !canAttach || !chatFocused) return;
+    let depth = 0;
+    const hasFiles = (e: DragEvent) => Array.from(e.dataTransfer?.types ?? []).includes('Files');
+    const onEnter = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      depth += 1;
+      setDragActive(true);
+    };
+    const onOver = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    };
+    const onLeave = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) setDragActive(false);
+    };
+    const onDrop = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      depth = 0;
+      setDragActive(false);
+      const file = e.dataTransfer?.files?.[0];
+      if (file) void pickedFileRef.current(file);
+    };
+    window.addEventListener('dragenter', onEnter);
+    window.addEventListener('dragover', onOver);
+    window.addEventListener('dragleave', onLeave);
+    window.addEventListener('drop', onDrop);
+    return () => {
+      window.removeEventListener('dragenter', onEnter);
+      window.removeEventListener('dragover', onOver);
+      window.removeEventListener('dragleave', onLeave);
+      window.removeEventListener('drop', onDrop);
+      setDragActive(false);
+    };
+  }, [canAttach, chatFocused]);
+
+  // PDF repéré à son seul nom : l'utilisateur a vu l'avertissement et choisit de le joindre.
+  const attachGradeOfferAnyway = () => {
+    if (!gradeOffer) return;
+    const { file } = gradeOffer;
+    setGradeOffer(null);
+    attachFile(file, guessAttachmentMediaType(file.name, file.type) || 'application/pdf');
   };
 
   // Arrêt volontaire de la génération : on n'attend plus la réponse (pas de reprise
@@ -1385,6 +1637,23 @@ export default function ChatScreen() {
       void refreshConversations();
     },
     [refreshConversations],
+  );
+
+  // Retour d'un outil vers le chat (ADR-0044 : Partiels, ECOS) : nouvelle conversation sur le
+  // chatbot demandé, message PRÉ-REMPLI que l'utilisateur relit avant de l'envoyer. Attend
+  // la session : avant, la liste des chatbots autorisés n'est pas encore connue.
+  useModuleHandoff(
+    'chat',
+    (handoff) => {
+      startNewConversation(availableChatbots.includes(handoff.chatbot) ? handoff.chatbot : undefined);
+      setAttachment(null);
+      setGradeOffer(null);
+      setInput(handoff.text);
+      setInputHeight(INPUT_MAX_HEIGHT);
+      showSwitchNotice(`Message préparé par l’outil ${handoff.source}\u00a0: relis-le, puis envoie-le.`, 9000);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    },
+    !authLoading && !!session,
   );
 
   const exportResponse = useCallback((message: UIMessage) => {
@@ -1743,6 +2012,13 @@ export default function ChatScreen() {
                 </Touchable>
               ))}
             </Pressable>
+            {slashExamples(slashTools).length > 0 ? (
+              <Text style={styles.slashTip}>
+                {/* Registre du chatbot : tutoiement pour le chat étudiant, vouvoiement ailleurs. */}
+                Astuce{'\u00a0'}: {chatbot === 'student' ? 'tape' : 'tapez'} «{'\u00a0'}/{'\u00a0'}» pour ouvrir un outil sans quitter le chat (
+                {slashExamples(slashTools).join(', ')}).
+              </Text>
+            ) : null}
           </Reveal>
         ) : null}
 
@@ -1757,6 +2033,7 @@ export default function ChatScreen() {
               isLastAssistant={m.role === 'assistant' && m.id === lastAssistant?.id}
               onRegenerate={handleRegenerate}
               onExport={exportResponse}
+              moduleActions={moduleActions}
             />
           </View>
         ))}
@@ -1771,11 +2048,25 @@ export default function ChatScreen() {
           </View>
         )}
 
-        {/* ── Passerelles étudiant : prolonger la révision avec les outils du rôle ── */}
-        {chatbot === 'student' && !isLoading && lastAssistant && user ? (
+        {/* ── Passerelles : prolonger la réponse avec les outils du rôle (ADR-0044) ──
+            « En faire une présentation » transmet la synthèse (texte propre, sources
+            comprises) au générateur, qui la pré-remplit en mode IA ; rien n'est généré
+            sans clic. ECOS et Révisions restent propres au chat étudiant. */}
+        {!isLoading && lastAssistant && user && (canOpenModule('presentation') || chatbot === 'student') ? (
           <View style={styles.bridgeRow}>
             <Text style={styles.bridgeLabel}>Continuer avec</Text>
-            {isFeatureVisible('ecos', persona, { isAdmin }) ? (
+            {canOpenModule('presentation') ? (
+              <Touchable
+                style={styles.bridgeChip}
+                onPress={openAnswerAsPresentation}
+                accessibilityRole="link"
+                accessibilityLabel="En faire une présentation" {...(Platform.OS === 'web' ? { title: 'En faire une présentation' } : {})}
+              >
+                <Icon name="presentation" size={14} color={tokens.colors.accentDeep} />
+                <Text style={styles.bridgeChipText}>En faire une présentation</Text>
+              </Touchable>
+            ) : null}
+            {chatbot === 'student' && isFeatureVisible('ecos', persona, { isAdmin }) ? (
               <Touchable
                 style={styles.bridgeChip}
                 onPress={() => router.push('/(chat)/ecos' as never)}
@@ -1786,7 +2077,7 @@ export default function ChatScreen() {
                 <Text style={styles.bridgeChipText}>S’entraîner (ECOS)</Text>
               </Touchable>
             ) : null}
-            {isFeatureVisible('revision', persona, { isAdmin }) ? (
+            {chatbot === 'student' && isFeatureVisible('revision', persona, { isAdmin }) ? (
               <Touchable
                 style={styles.bridgeChip}
                 onPress={() => router.push('/(chat)/revision' as never)}
@@ -1932,6 +2223,27 @@ export default function ChatScreen() {
 
       {/* ── Composer (zone de saisie unifiée : texte + dictée + envoi/stop) ── */}
       <View style={[styles.composerZone, isGuest && { paddingBottom: tokens.space.sm + insets.bottom }]}>
+        <SlashMenu suggestions={slashMenu} activeIndex={activeSlash} onPick={pickSlash} compact={compactHeader} />
+        {gradeOffer ? (
+          <GradeFileCard
+            kind={gradeOffer.kind}
+            name={gradeOffer.file.name || null}
+            rows={gradeOffer.rows}
+            canUsePartiel={canUsePartiel}
+            onOpenPartiel={() => openGradeFileInPartiel(gradeOffer.file)}
+            onAttachAnyway={gradeOffer.kind === 'grade-pdf-name' ? attachGradeOfferAnyway : undefined}
+            onDismiss={() => setGradeOffer(null)}
+          />
+        ) : showPasteGradeHint ? (
+          <GradeFileCard
+            kind="pasted"
+            name={null}
+            rows={pastedGradeTable?.rows ?? null}
+            canUsePartiel={canUsePartiel}
+            onOpenPartiel={openPastedGradesInPartiel}
+            onDismiss={() => setPasteHintDismissed(true)}
+          />
+        ) : null}
         {showDocHint ? (
           <View style={styles.docHint}>
             <Icon name="fileText" size={14} color={tokens.colors.accentDeep} />
@@ -1975,6 +2287,7 @@ export default function ChatScreen() {
         {attachError ? <Text style={styles.attachError}>{attachError}</Text> : null}
         <View style={[styles.composer, inputFocused && styles.composerFocused]}>
           <TextInput
+            ref={inputRef}
             style={[styles.input, focus && styles.inputFocusMode, { height: inputHeight }]}
             accessibilityLabel="Votre question" {...(Platform.OS === 'web' ? { title: 'Votre question' } : {})}
             value={input}
@@ -2094,6 +2407,17 @@ export default function ChatScreen() {
         source={detailSource}
         onClose={() => setDetailSource(null)}
       />
+      {dragActive ? (
+        <View pointerEvents="none" style={styles.dropOverlay} testID="chat-drop-overlay">
+          <View style={styles.dropCard}>
+            <Icon name="paperclip" size={22} color={tokens.colors.accentDeep} />
+            <Text style={styles.dropTitle}>{chatbot === 'student' ? 'Dépose ton fichier' : 'Déposez votre fichier'}</Text>
+            <Text style={styles.dropText}>
+              PDF, image ou texte{canUsePartiel ? ', ou relevé de notes (confié à l’outil Partiels, jamais à l’IA)' : ''}.
+            </Text>
+          </View>
+        </View>
+      ) : null}
     </KeyboardAvoidingView>
   );
 }
@@ -2390,6 +2714,49 @@ const styles = StyleSheet.create({
     ...tokens.motion.transitionWeb,
   },
 
+  dropOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: tokens.space.lg,
+    backgroundColor: 'rgba(247, 249, 252, 0.88)',
+    zIndex: 50,
+  },
+  dropCard: {
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    maxWidth: 420,
+    borderRadius: tokens.radius.lg,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: tokens.colors.accent,
+    backgroundColor: tokens.colors.surface,
+    paddingHorizontal: tokens.space.xl,
+    paddingVertical: tokens.space.lg,
+  },
+  dropTitle: {
+    fontFamily: tokens.font.serif,
+    color: tokens.colors.text,
+    fontSize: tokens.type.h3.fontSize,
+    fontWeight: tokens.weight.semibold,
+  },
+  dropText: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textSubtle,
+    fontSize: tokens.type.caption.fontSize,
+    textAlign: 'center',
+  },
+  slashTip: {
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.textMuted,
+    fontSize: tokens.type.caption.fontSize,
+    textAlign: 'center',
+    marginTop: tokens.space.md,
+  },
   emptyState: {
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.xl,

@@ -2,6 +2,126 @@
 
 Journal des modifications par agents IA. Une entrée par PR.
 
+## [2026-10-07] – Claude (chat point d'entrée des modules : 3 boucles de vérification par compte, fusion de la PR #169)
+### Files modified
+- Fusion de `main` (PR #169, déroulé « Étapes » dérivé du flux) : aucun conflit.
+- `src/ai/chat/moduleActions.ts` : textes de carte neutres, apostrophes typographiques, espace
+  insécable avant « : ».
+- `app/(chat)/chat.tsx` : astuce « / » et zone de dépôt au registre du chatbot ; tri Partiels
+  limité au web.
+- `src/ui/chat/AssistantBlocks.tsx` : libellés accessibles avec apostrophe typographique.
+- Tests : `tests/unit/chat-hub-personas.test.ts` (NOUVEAU, matrice visiteur, grand public,
+  étudiant, pro, admin) ; mises à jour des tests de cartes et de commandes.
+- `scripts/dev/chat-hub-smoke.mjs` : 5 états de compte, flux réaliste de la PR #169, pro sur le
+  chat étudiant, captures 390 px facultatives (`SMOKE_SHOTS`).
+- Docs : ADR-0044 (tableau par compte), `CLAUDE.md`.
+### Purpose
+Demande de Hugo : boucler 3 fois pour vérifier que les ajouts sont adaptés à l'état du compte
+(grand public, étudiant, professionnel) et intégrer la PR #169 avant de fusionner.
+### Résultat des boucles
+- Boucle 1, relecture par compte : textes de carte qui tutoyaient dans les chats au vouvoiement,
+  corrigés ; fumigation étendue au pro, au grand public et au visiteur.
+- Boucle 2, mobile, flux réel et cas limites : flux de la PR #169, pro sur le chat étudiant,
+  admin, captures 390 px. Le tri Partiels pouvait se déclencher dans l'app native, où l'outil
+  n'existe pas : limité au web.
+- Boucle 3, revue critique : rien de bloquant. Toutes les écoutes `postMessage` vérifient
+  l'origine et la fenêtre source ; aucune donnée utilisateur n'est injectée en HTML ; rien n'est
+  envoyé sans clic.
+### Vérification
+- Typecheck, lint, `compliance:grep` au vert ; tests unitaires : 83 fichiers, 1 108 tests.
+- Fumigations Chromium : `chat-hub-smoke` 54/54 (5 états de compte), `chat-smoke` et
+  `partiel-smoke` sans régression, `smoke:node` 28/28.
+
+## [2026-10-07] – Claude (chat point d'entrée des modules, second lot : aller-retour, commandes « / », passerelles)
+### Files modified
+- Puces CALC : `src/ui/chat/AssistantBlocks.tsx`. Un score du catalogue s'ouvre directement dans
+  l'outil Scores ; « calcule avec moi » ne reste que pour les scores absents.
+- Aller-retour outil → chat :
+  - `src/chat/moduleHandoff.ts` : relais `chat`, `chatHandoffText`, synthèse de présentation ;
+  - `public/partiel.html` : `chatBriefing` dans le bloc @partiel-logic, bouton « Construire mon
+    plan avec le chat » ;
+  - `app/(chat)/partiel.tsx` : message `medinfo:ask-chat` ;
+  - `src/ecos/chatDebrief.ts` (NOUVEAU) et `app/(chat)/ecos.tsx` : bouton « Retravailler avec le
+    chat » ;
+  - `app/(chat)/chat.tsx` : message pré-rempli dans une nouvelle conversation, bandeau de
+    provenance.
+- Commandes « / » : `src/ai/chat/slashCommands.ts` et `src/ui/chat/SlashMenu.tsx` (NOUVEAUX),
+  `app/(chat)/chat.tsx` (menu, clavier, astuce de l'état vide).
+- Passerelle « En faire une présentation » : `app/(chat)/chat.tsx`,
+  `app/(chat)/presentation.tsx`, `public/presentation.html` (synthèse pré-remplie).
+- Glisser-déposer : `app/(chat)/chat.tsx` (tri commun `handlePickedFile`, `useIsFocused`).
+- Mesure : `moduleActionCounts` (`src/ai/chat/moduleActions.ts`), `app/api/chat+api.ts`
+  (`carte:<outil>` dans `tool_calls`). Consigne : règle « résultats transmis par un outil ».
+- Tests (NOUVEAUX) : `chat-slash-commands`, `partiel-chat-briefing`, `ecos-chat-debrief`. Mises à
+  jour : `chat-module-actions`, `chat-module-actions-render`. Fumigation
+  `scripts/dev/chat-hub-smoke.mjs` (NOUVEAU).
+- Docs : ADR-0044 (CALC tranché, second lot), `CLAUDE.md`, `docs/04_CHATBOT.md` §12.
+### Purpose
+Hugo : « prends des décisions et rends mon idée vraiment utile ». Pour que le chat donne
+l'impression de tout savoir faire sans redevenir un agent, il manquait trois choses : le
+**retour** des outils vers le chat (plan d'action après les partiels, débriefing après l'ECOS),
+un **chemin rapide** déterministe (« / ») et la **reprise d'une réponse** dans un outil
+(présentation). Toujours aucun appel LLM ni aucune étape ajoutés.
+### Vérification
+- Typecheck, lint, `compliance:grep` au vert ; tests unitaires : 81 fichiers, 1 086 tests.
+- Fumigations Chromium (build de production sur un Supabase factice) :
+  - `chat-hub-smoke` : 23/23. Un relevé de notes et une commande ne déclenchent aucun appel à
+    `/api/chat`. Le message préparé par Partiels donne « Moyenne : 13,33/20 ; rang 1 sur 11 »
+    sans aucun identifiant étudiant. Le marqueur n'est jamais affiché, et la présentation reçoit
+    sujet et synthèse sans génération.
+  - `chat-smoke` (parcours existant) : sans régression.
+  - `partiel-smoke` : tous les contrôles passent.
+  - `smoke:node` : 28/28.
+- Captures 390 et 1280 px relues : menu « / », cartes, carte « relevé de notes ». Les libellés
+  du menu ont été raccourcis après la première capture, car ils étaient tronqués sur téléphone.
+- Non vérifié : le comportement réel du modèle (fréquence et pertinence des cartes). C'est à lire
+  dans `tool_calls` en production.
+
+## [2026-10-07] – Claude (chat point d'entrée des modules : cartes d'action + tri des pièces jointes)
+### Files modified
+- Modules purs (NOUVEAUX) :
+  - `src/ai/chat/moduleActions.ts` : marqueur `<!--OUTIL:…-->`, consigne par persona, cartes,
+    correspondance CALC → Scores ;
+  - `src/chat/gradeSheet.ts` : tri sans IA des fichiers de notes ;
+  - `src/chat/moduleHandoff.ts` et `src/chat/useModuleHandoff.ts` : relais en mémoire vers les outils.
+- Chat :
+  - `app/api/chat+api.ts` : section OUTILS d'après la persona vérifiée ;
+  - `src/ai/chat/parseAssistantMessage.ts` : bloc `actions`, export sans marqueur ;
+  - `src/chat/streamingBody.ts` : report du marqueur, commentaire en cours masqué ;
+  - `src/ui/chat/AssistantBlocks.tsx` : `ModuleActionsBlock`, lien CALC vers Scores, commentaires
+    retirés du corps ;
+  - `src/ui/chat/GradeFileCard.tsx` (NOUVEAU) ;
+  - `app/(chat)/chat.tsx` : tri au choix du fichier, tableurs acceptés si Partiels est ouvert,
+    relevé collé, cartes.
+- Outils récepteurs :
+  - `app/(chat)/partiel.tsx` et `public/partiel.html` : fichier reçu par `postMessage`, signal
+    `medinfo:partiel-ready` ;
+  - `app/(chat)/scores.tsx` et `src/scores/search.ts` : `findScoreForRequest` ;
+  - `app/(chat)/ecos.tsx` et `src/ecos/dashboard.ts` : `filtersForRequest`, recherche insensible
+    aux accents ;
+  - `app/(chat)/presentation.tsx` et `public/presentation.html` : sujet pré-rempli en mode IA,
+    deck en cours enregistré ou confirmation.
+- Tests (NOUVEAUX) : `chat-module-actions`, `chat-module-actions-render`, `chat-grade-sheet`,
+  `chat-module-handoff`. Fumigation `scripts/dev/partiel-smoke.mjs` §21 (relais depuis le chat).
+- Docs : ADR-0044, `CLAUDE.md`, `docs/04_CHATBOT.md` §12.
+### Purpose
+Question de Hugo : « faire de MedInfo un chatbot capable d'appeler tous les modules depuis le
+chat, exemple j'envoie mes notes de partiels et il utilise l'outil ». Réponse retenue (niveaux 1
+et 2 validés par Hugo) : le chat oriente vers les outils sans rien exécuter. Il n'y a ni boucle
+d'outils (ADR-0037), ni donnée de tiers envoyée au modèle. Le chat inlinait jusque-là les
+`.csv` joints, ce qui envoyait un CSV de promo au fournisseur du modèle : c'est corrigé.
+### Vérification
+- Typecheck, lint, `compliance:grep` au vert ; tests unitaires : 78 fichiers, 1 064 tests.
+- Fumigation Chromium avec la CSP de production :
+  - `partiel-smoke` : tous les contrôles passent. Un fichier transmis par le chat donne les mêmes
+    moyenne et rang (13,33, rang 1) qu'un import manuel, et un message sans vrai fichier est
+    ignoré.
+  - Présentation (essai ponctuel) : sujet pré-rempli en mode IA sans génération, confirmation
+    avant de remplacer un deck non enregistré, message d'une autre fenêtre ignoré.
+- Non vérifié de bout en bout : le parcours connecté complet (chat → carte → outil) et la
+  fréquence réelle des cartes produites par le modèle. Il faut un compte de recette et la
+  production.
+
 ## [2026-10-04] – Claude (écriture sans tics d'IA, visuel affiné, SEO actuel, outils mobiles en plein écran)
 ### Files modified
 - Écriture : textes visibles de `app/`, `src/ui`, `src/seo/meta.ts`, `src/scores/catalog/*` (ponctuation seule, vérifiée

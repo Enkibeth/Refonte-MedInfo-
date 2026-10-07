@@ -196,6 +196,8 @@ window.addEventListener("message", (event) => {
   if (event.origin !== window.location.origin) return;
   const data = event.data || {};
   if (data.type === "medinfo:auth") onTokenReceived(data.token || null);
+  // Sujet proposé par le chat de MedInfo (ADR-0044) : pré-remplit le mode IA.
+  if (data.type === "medinfo:presentation-seed" && event.source === window.parent) seedFromChat(data.topic, data.brief);
 });
 // Demande le token dès le chargement (course parent/iframe).
 try { window.parent.postMessage({ type: "medinfo:auth-request" }, window.location.origin); } catch (e) {}
@@ -928,6 +930,30 @@ function newDeck() {
   state.aiHistory = []; state.deckId = null; state.sel = 0; state.libraryOpen = false;
   lastSavedContent = currentContent(); // un deck vierge n'est pas sauvegardé tant qu'il n'est pas édité
   setSaveStatus("idle"); render();
+}
+/* Sujet transmis par le chat (ADR-0044). Rien n'est généré sans clic : le sujet est seulement
+   pré-rempli dans le mode IA. Le deck en cours n'est jamais écrasé : enregistré s'il a changé
+   (il reste dans « Mes présentations »), puis remplacé par un deck vierge ; s'il ne peut pas
+   être enregistré, l'utilisateur confirme ou garde son travail. */
+async function seedFromChat(topic, brief) {
+  const subject = String(topic || "").replace(/\s+/g, " ").trim().slice(0, 200);
+  if (!subject) return;
+  // Synthèse du chat (« En faire une présentation ») : bornée sous la limite d'un message
+  // de l'API (8 000 caractères), en-tête compris.
+  const synthesis = typeof brief === "string" ? brief.trim().slice(0, 6000) : "";
+  const pristine = !state.deckId && currentContent() === lastSavedContent;
+  if (!pristine) {
+    if (isDirty()) await saveDeck();
+    if (currentContent() !== lastSavedContent && !confirm("Ta présentation en cours n'est pas enregistrée. La remplacer par une nouvelle présentation sur ce sujet ?")) return;
+    newDeck();
+  }
+  state.tab = "ia";
+  aiDraft = synthesis
+    ? "Génère une première version d'une présentation sur\u00a0: " + subject + "\nAppuie-toi sur cette synthèse du chat MedInfo (sources comprises), sans inventer de donnée\u00a0:\n\n" + synthesis
+    : "Génère une première version d'une présentation sur\u00a0: " + subject + ".";
+  render();
+  const ta = app.querySelector(".mip-textarea");
+  if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
 }
 function onTokenReceived(token) {
   authToken = token || null;

@@ -17,7 +17,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
@@ -44,12 +44,16 @@ import {
   computeEcosStats,
   summarizeAttemptsByCase,
   filterCases,
+  filtersForRequest,
   groupCasesByTheme,
   listThemes,
   type AttemptLite,
   type StatusFilter,
   type CaseAttemptSummary,
 } from '@/ecos/dashboard';
+import { useModuleHandoff } from '@/chat/useModuleHandoff';
+import { offerHandoff } from '@/chat/moduleHandoff';
+import { ecosDebriefMessage } from '@/ecos/chatDebrief';
 import {
   listAttempts,
   saveAttempt,
@@ -320,6 +324,7 @@ export default function EcosScreen() {
 
 function EcosScreenInner() {
   const { persona, user } = useSession();
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>('selection');
   const [selectedCase, setSelectedCase] = useState<EcosCase | null>(null);
   const [cases, setCases] = useState<EcosCase[]>([]);
@@ -390,6 +395,19 @@ function EcosScreenInner() {
   useEffect(() => {
     if (canUseEcos) loadDashboard();
   }, [canUseEcos, loadDashboard]);
+
+  // Carte d'action du chat (ADR-0044, « Station ECOS : Cardiologie ») : filtres du tableau
+  // de bord préréglés, une fois les stations chargées (le thème doit exister pour être choisi).
+  const [chatRequest, setChatRequest] = useState<string | null>(null);
+  useModuleHandoff('ecos', (handoff) => setChatRequest(handoff.query), canUseEcos);
+  useEffect(() => {
+    if (chatRequest === null || casesLoading) return;
+    const next = filtersForRequest(chatRequest, listThemes(cases));
+    setThemeFilter(next.theme);
+    setQuery(next.query);
+    setStatusFilter('all');
+    setChatRequest(null);
+  }, [chatRequest, casesLoading, cases]);
 
   if (!canUseEcos) {
     return (
@@ -993,6 +1011,21 @@ function EcosScreenInner() {
     const replayCase = viewedAttempt
       ? cases.find((c) => c.id === viewedAttempt.case_slug) ?? null
       : null;
+    // Passerelle vers le chat (ADR-0044) : débriefing guidé de CETTE station, pré-rempli
+    // dans une nouvelle conversation du chatbot étudiant (relu avant envoi).
+    const debrief = evalLoading
+      ? null
+      : ecosDebriefMessage({
+          title: evalCaseTitle,
+          specialty: viewedAttempt ? viewedAttempt.specialty : selectedCase?.specialite ?? null,
+          score: evalScore,
+          evaluation: evalMarkdown,
+        });
+    const openDebrief = () => {
+      if (!debrief) return;
+      offerHandoff({ tool: 'chat', text: debrief, chatbot: 'student', source: 'ECOS' });
+      router.push('/(chat)/chat' as never);
+    };
 
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.evalContent}>
@@ -1071,6 +1104,9 @@ function EcosScreenInner() {
 
         {/* Une seule action principale : repasser le cas s'il existe, sinon revenir. */}
         <View style={styles.resultActions}>
+          {debrief ? (
+            <Button label="Retravailler avec le chat" variant="secondary" onPress={openDebrief} />
+          ) : null}
           {replayCase && <Button label="Repasser ce cas" onPress={() => selectCase(replayCase)} />}
           <Button
             label="Retour au dashboard"

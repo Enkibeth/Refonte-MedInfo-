@@ -10,8 +10,19 @@
  *
  * L'en-tête de page vit ici (côté natif) : la page embarquée n'en a plus, pour éviter
  * le double titre sous le shell applicatif.
+ *
+ * Relais du chat (ADR-0044) : un relevé de notes choisi dans le chat n'est pas envoyé à
+ * l'IA ; il est transmis ICI, à la page embarquée (même origine, postMessage), comme un
+ * fichier choisi à la main — il ne quitte toujours pas l'appareil. Dans l'autre sens, la
+ * page peut préparer pour le chat un message ne contenant que les résultats de l'étudiant
+ * (`chatBriefing`, bloc @partiel-logic) : il s'ouvre pré-rempli, jamais envoyé d'office.
  */
+import { useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
+import { useRouter } from 'expo-router';
+
+import { useModuleHandoff } from '@/chat/useModuleHandoff';
+import { chatHandoffText, offerHandoff, type HandoffFile } from '@/chat/moduleHandoff';
 
 import { tokens } from '@/ui/tokens';
 import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
@@ -19,7 +30,62 @@ import { SeoHead } from '@/ui/SeoHead';
 import { RoleGate } from '@/ui/RoleGate';
 import { ToolScreenHeader } from '@/ui/ToolScreenHeader';
 
+const PAGE_PATH = '/partiel.html';
+
 function PartielInner() {
+  const router = useRouter();
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const readyRef = useRef(false);
+  const pendingFileRef = useRef<HandoffFile | null>(null);
+
+  // La page embarquée est prête quand son script a tourné : signal explicite de sa part,
+  // `load` de l'iframe, ou document déjà complet (iframe chargée avant l'hydratation).
+  const frameReady = useCallback(() => {
+    if (readyRef.current) return true;
+    try {
+      const doc = iframeRef.current?.contentDocument;
+      return !!doc && doc.readyState === 'complete' && doc.location.pathname.endsWith(PAGE_PATH);
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const deliver = useCallback(() => {
+    const file = pendingFileRef.current;
+    const win = iframeRef.current?.contentWindow;
+    if (!file || !win || !frameReady()) return;
+    pendingFileRef.current = null;
+    win.postMessage({ type: 'medinfo:partiel-file', file }, window.location.origin);
+  }, [frameReady]);
+
+  useModuleHandoff(
+    'partiel',
+    (handoff) => {
+      pendingFileRef.current = handoff.file;
+      deliver();
+    },
+    Platform.OS === 'web',
+  );
+
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || event.source !== iframeRef.current?.contentWindow) return;
+      const data = event.data as { type?: string; text?: unknown } | null;
+      if (data?.type === 'medinfo:partiel-ready') {
+        readyRef.current = true;
+        deliver();
+      } else if (data?.type === 'medinfo:ask-chat') {
+        const text = chatHandoffText(data.text);
+        if (!text) return;
+        offerHandoff({ tool: 'chat', text, chatbot: 'student', source: 'Partiels' });
+        router.push('/(chat)/chat' as never);
+      }
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [deliver, router]);
+
   return (
     <View style={styles.container}>
       <ToolScreenHeader feature="partiel" title="Analyse des partiels">
@@ -29,8 +95,13 @@ function PartielInner() {
 
       {Platform.OS === 'web' ? (
         <iframe
-          src="/partiel.html"
+          ref={iframeRef}
+          src={PAGE_PATH}
           title="Analyse des partiels"
+          onLoad={() => {
+            readyRef.current = true;
+            deliver();
+          }}
           style={{ flex: 1, width: '100%', border: 'none', backgroundColor: tokens.colors.surface }}
         />
       ) : (

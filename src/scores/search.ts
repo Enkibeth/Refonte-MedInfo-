@@ -73,6 +73,27 @@ function tokenStrength(item: IndexedScore, tok: string): number {
   return 0;
 }
 
+/**
+ * Score désigné par une demande venue du chat (carte d'action, ADR-0044) : identifiant,
+ * sigle, nom ou alias exacts (aux indices, accents et tirets près), sinon résultat UNIQUE
+ * de la recherche. Null quand plusieurs scores conviennent : l'écran pré-remplit alors la
+ * recherche au lieu d'ouvrir un score au hasard.
+ */
+export function findScoreForRequest(query: string): ScoreDefinition | null {
+  const q = normalize(query);
+  if (!q) return null;
+  const id = query.trim().toLowerCase();
+  const byId = ALL_SCORES.find((s) => s.id === id);
+  if (byId) return byId;
+  const compact = q.replace(/ /g, '');
+  const named = ALL_SCORES.find((s) =>
+    [s.acronym, s.name, ...(s.aliases ?? [])].some((label) => label && normalize(label).replace(/ /g, '') === compact),
+  );
+  if (named) return named;
+  const results = searchScores(query);
+  return results.length === 1 ? results[0] : null;
+}
+
 export interface SearchOptions {
   /** Restreint à une catégorie (chips de navigation). */
   category?: ScoreCategory;
