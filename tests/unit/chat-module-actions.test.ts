@@ -128,7 +128,7 @@ describe('cartes d’action : contenu affiché', () => {
     expect(card.title).toBe('Station ECOS : Cardiologie');
     expect(card.route).toBe('/(chat)/ecos');
     expect(card.icon).toBe('stethoscope');
-    expect(moduleActionCard({ tool: 'ecos', param: null }).title).toBe("S'entraîner sur une station ECOS");
+    expect(moduleActionCard({ tool: 'ecos', param: null }).title).toBe('S’entraîner sur une station ECOS');
   });
 
   it('aucun tiret cadratin dans les textes de carte', () => {

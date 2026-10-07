@@ -489,8 +489,9 @@ export default function ChatScreen() {
   // (extraction/lecture du fichier côté navigateur). Le serveur regarde la persona.
   const canAttach = Platform.OS === 'web' && !!session && canSwitch;
   // Outil Partiels ouvert à ce rôle : les fichiers de notes lui sont confiés, jamais à l'IA
-  // (ADR-0044). Sans lui, un relevé de notes est seulement refusé, avec l'explication.
-  const canUsePartiel = !!session && isFeatureVisible('partiel', persona, { isAdmin });
+  // (ADR-0044). Sans lui, un relevé de notes est seulement refusé, avec l'explication. Web
+  // seulement : l'outil n'existe pas dans l'app native (et `File` non plus).
+  const canUsePartiel = Platform.OS === 'web' && !!session && isFeatureVisible('partiel', persona, { isAdmin });
   // Mémorisé : la liste sert de dépendance à openConversation (sinon recréé à chaque rendu).
   const availableChatbots = useMemo<ChatbotId[]>(
     () => (canSwitch || isGuest ? ALL_CHATBOTS : ['public']),

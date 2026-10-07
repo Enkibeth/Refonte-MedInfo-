@@ -64,7 +64,7 @@ describe('commandes « / » : suggestions', () => {
   it('complétion et libellé', () => {
     const [ecos] = slashCommandsFor(['ecos']);
     expect(slashCompletion(ecos)).toBe('/ecos ');
-    expect(slashLabel(ecos)).toBe("S'entraîner sur une station ECOS");
+    expect(slashLabel(ecos)).toBe('S’entraîner sur une station ECOS');
   });
 
   it('chaque outil ouvrable depuis le chat a sa commande', () => {

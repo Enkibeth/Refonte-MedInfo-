@@ -26,7 +26,8 @@
  *   npm i --no-save playwright-core
  *   node scripts/dev/chat-hub-smoke.mjs
  *
- * Variables d'environnement : CHROMIUM_PATH, PLAYWRIGHT_CORE (cf. chat-smoke.mjs).
+ * Variables d'environnement : CHROMIUM_PATH, PLAYWRIGHT_CORE (cf. chat-smoke.mjs) ;
+ *   SMOKE_SHOTS=dossier   captures 390 px de chaque compte (contrôle visuel, facultatif).
  */
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -92,10 +93,14 @@ const user = {
   id: USER_ID, aud: 'authenticated', role: 'authenticated', email: 'etudiant@example.test',
   app_metadata: { provider: 'email' }, user_metadata: {}, created_at: '2026-01-01T00:00:00Z',
 };
-const session = {
-  access_token: `${b64url({ alg: 'HS256', typ: 'JWT' })}.${b64url({ sub: USER_ID, exp, role: 'authenticated', aud: 'authenticated' })}.sig`,
-  token_type: 'bearer', expires_in: 3600, expires_at: exp, refresh_token: 'refresh-test', user,
-};
+const makeSession = (id) => ({
+  access_token: `${b64url({ alg: 'HS256', typ: 'JWT' })}.${b64url({ sub: id, exp, role: 'authenticated', aud: 'authenticated' })}.sig`,
+  token_type: 'bearer', expires_in: 3600, expires_at: exp, refresh_token: 'refresh-test', user: { ...user, id },
+});
+const session = makeSession(USER_ID);
+// Compte admin : identifiant lu dans src/admin/index.ts (session locale FACTICE, aucun accès réel).
+const ADMIN_ID = fs.readFileSync(path.join(REPO, 'src/admin/index.ts'), 'utf8').match(/'([0-9a-f-]{36})'/)[1];
+const SHOTS = process.env.SMOKE_SHOTS || null;
 const ecosData = JSON.parse(fs.readFileSync(path.join(REPO, 'data/ecos-cases.json'), 'utf8'));
 const ECOS_CASES = ecosData.cases.map((c, i) => ({ id: `0e0e0e0e-0000-4000-8000-${String(i).padStart(12, '0')}`, ...c }));
 const ATTEMPT = {
@@ -111,8 +116,10 @@ const PROFILES = {
   student: { persona: 'student', verified_personas: ['public', 'student'] },
   professional: { persona: 'professional', verified_personas: ['public', 'professional'] },
   public: { persona: 'public', verified_personas: ['public'] },
+  admin: { persona: 'public', verified_personas: ['public'] },
 };
 let account = 'student';
+let currentSession = session;
 let conversations = 0;
 async function supabaseRoute(route) {
   const req = route.request();
@@ -120,8 +127,8 @@ async function supabaseRoute(route) {
   const method = req.method();
   const json = (status, body) =>
     route.fulfill({ status, contentType: 'application/json', body: body === undefined ? '' : JSON.stringify(body) });
-  if (url.pathname.startsWith('/auth/v1/user')) return json(200, user);
-  if (url.pathname.startsWith('/auth/v1/token')) return json(200, session);
+  if (url.pathname.startsWith('/auth/v1/user')) return json(200, currentSession.user);
+  if (url.pathname.startsWith('/auth/v1/token')) return json(200, currentSession);
   if (url.pathname === '/rest/v1/profiles') {
     return json(200, {
       ...PROFILES[account], status: 'verified',
@@ -140,6 +147,18 @@ async function supabaseRoute(route) {
 const sse = (chunks) => chunks.map((c) => `data: ${typeof c === 'string' ? c : JSON.stringify(c)}\n\n`).join('');
 const TEXT = (t) => sse([{ type: 'start' }, { type: 'start-step' }, { type: 'text-start', id: 'x' }, { type: 'text-delta', id: 'x', delta: t },
   { type: 'text-end', id: 'x' }, { type: 'finish-step' }, { type: 'finish', finishReason: 'stop' }, '[DONE]']);
+// Flux réaliste depuis la PR #169 : résumé de réflexion, recherche web du provider (action
+// et pages), sources citées, puis la réponse avec ses marqueurs d'interface.
+const RICH = (t) => sse([
+  { type: 'start' }, { type: 'start-step' },
+  { type: 'reasoning-start', id: 'r1' }, { type: 'reasoning-delta', id: 'r1', delta: '**Choisir le score adapté**\n\nComparer HAS-BLED et ORBIT.' }, { type: 'reasoning-end', id: 'r1' },
+  { type: 'tool-input-start', toolCallId: 'ws1', toolName: 'web_search', providerExecuted: true },
+  { type: 'tool-input-available', toolCallId: 'ws1', toolName: 'web_search', input: {}, providerExecuted: true },
+  { type: 'tool-output-available', toolCallId: 'ws1', providerExecuted: true, output: { action: { type: 'search', query: 'HAS-BLED ESC 2024' }, sources: [{ type: 'url', url: 'https://www.escardio.org/guidelines' }] } },
+  { type: 'source-url', sourceId: 's1', url: 'https://www.escardio.org/guidelines', title: 'ESC 2024' },
+  { type: 'text-start', id: 'x' }, { type: 'text-delta', id: 'x', delta: t }, { type: 'text-end', id: 'x' },
+  { type: 'finish-step' }, { type: 'finish', finishReason: 'stop' }, '[DONE]',
+]);
 const queue = [];
 const requests = [];
 async function chatRoute(route) {
@@ -170,9 +189,11 @@ const pageErrors = [];
 /** Nouvelle page pour un état de compte (session factice, sauf visiteur). */
 async function pageFor(kind, viewport = { width: 1280, height: 900 }) {
   account = kind === 'guest' ? 'public' : kind;
-  const context = await browser.newContext({ viewport });
+  currentSession = kind === 'admin' ? makeSession(ADMIN_ID) : session;
+  const mobile = viewport.width < 700;
+  const context = await browser.newContext({ viewport, isMobile: mobile, hasTouch: mobile });
   if (kind !== 'guest') {
-    await context.addInitScript(([key, value]) => localStorage.setItem(key, value), ['sb-fakeproj-auth-token', JSON.stringify(session)]);
+    await context.addInitScript(([key, value]) => localStorage.setItem(key, value), ['sb-fakeproj-auth-token', JSON.stringify(currentSession)]);
   }
   const page = await context.newPage();
   page.on('pageerror', (e) => pageErrors.push(`${kind}: ${String(e)}`));
@@ -364,7 +385,7 @@ try {
   const proCards = await pro.getByTestId('module-action-card').allTextContents();
   // \s couvre l'espace insécable de « Calculer : HAS-BLED ».
   ok(proCards.length === 1 && /Calculer\s:\sHAS-BLED/.test(proCards[0]), 'carte Scores seule (la carte ECOS est filtrée)', JSON.stringify(proCards));
-  ok(await pro.getByRole('link', { name: 'Calculer HAS-BLED dans l\'outil Scores' }).isVisible(), 'CALC : HAS-BLED ouvre le calculateur');
+  ok(await pro.getByRole('link', { name: 'Calculer HAS-BLED dans l’outil Scores' }).isVisible(), 'CALC : HAS-BLED ouvre le calculateur');
   ok(proText.includes('À calculer avec le chat') && proText.includes('GRACE'), 'CALC : GRACE (hors catalogue) reste « avec le chat »');
   ok(await pro.getByRole('link', { name: 'En faire une présentation' }).isVisible(), 'passerelle présentation visible');
   ok(!(await pro.getByRole('link', { name: 'S’entraîner sur un cas ECOS' }).isVisible()), 'aucune passerelle ECOS');
@@ -416,6 +437,53 @@ try {
   await guest.getByText('Réponse.', { exact: true }).waitFor({ timeout: 10_000 });
   ok(requests.length === before + 1 && (await guest.getByTestId('module-action-card').count()) === 0, 'carte jamais affichée à un visiteur');
   await guest.context().close();
+
+  // ── ADMIN ───────────────────────────────────────────────────────────────────
+  console.log('\n══ ADMIN ══');
+  const admin = await pageFor('admin');
+  await openChatAs(admin, 'student');
+  await admin.locator('textarea').first().fill('/');
+  const adminItems = await admin.getByRole('menuitem').count();
+  ok(adminItems === 9, `menu « / » : les 9 outils (${adminItems})`);
+  await admin.context().close();
+
+  // ── FLUX RÉEL (PR #169) + PRO SUR LE CHAT ÉTUDIANT ─────────────────────────
+  console.log('\n══ FLUX RÉALISTE (PR #169) ══');
+  const rich = await pageFor('professional');
+  await openChatAs(rich, 'professional');
+  await rich.getByRole('tab', { name: 'Étudiant' }).click().catch(() => rich.getByText('Étudiant', { exact: true }).first().click());
+  queue.push(RICH('Le HAS-BLED reste la référence (SRC1).\n\n<!--OUTIL:scores|HAS-BLED-->\n<!--OUTIL:ecos|Cardiologie-->\n\nSOURCES\nSRC1 :: [GUIDELINE] ESC :: ESC :: Fibrillation atriale :: 2024\nhttps://www.escardio.org/guidelines\n'));
+  await sendMessage(rich, 'Quel score de risque hémorragique ?');
+  await rich.getByTestId('module-action-card').first().waitFor({ timeout: 10_000 });
+  const richText = await bodyText(rich);
+  ok(/Étapes/.test(richText), 'déroulé « Étapes » de la PR #169 présent avec les cartes');
+  ok((await rich.getByTestId('module-action-card').count()) === 1, 'pro sur le chat étudiant : toujours SES outils (carte ECOS filtrée)');
+  ok(!richText.includes('OUTIL') && !richText.includes('<!--'), 'aucun marqueur, ni dans la réponse ni dans le déroulé');
+  ok(!(await rich.getByRole('link', { name: 'S’entraîner sur un cas ECOS' }).isVisible()), 'chat étudiant ouvert par un pro : pas de passerelle ECOS');
+  ok(await rich.getByRole('link', { name: 'En faire une présentation' }).isVisible(), 'passerelle présentation présente');
+  ok(requests.at(-1).chatbot === 'student', 'requête : chatbot étudiant');
+  await rich.context().close();
+
+  // ── CAPTURES MOBILES (facultatif) ──────────────────────────────────────────
+  if (SHOTS) {
+    fs.mkdirSync(SHOTS, { recursive: true });
+    for (const kind of ['student', 'professional', 'public']) {
+      const m = await pageFor(kind, { width: 390, height: 844 });
+      await openChatAs(m, kind);
+      await m.screenshot({ path: path.join(SHOTS, `${kind}-vide.png`) });
+      await m.locator('textarea').first().fill('/');
+      await m.waitForTimeout(200);
+      await m.screenshot({ path: path.join(SHOTS, `${kind}-commandes.png`) });
+      await m.locator('textarea').first().fill('');
+      queue.push(RICH('Réponse simulée.\n\n<!--OUTIL:scores|HAS-BLED-->\n<!--OUTIL:document-->\n<!--OUTIL:ecos|Cardiologie-->\n'));
+      await sendMessage(m, 'Question de démonstration');
+      await m.getByText('Réponse simulée.').waitFor({ timeout: 10_000 });
+      await m.waitForTimeout(300);
+      await m.screenshot({ path: path.join(SHOTS, `${kind}-cartes.png`) });
+      await m.context().close();
+    }
+    console.log(`  (captures dans ${SHOTS})`);
+  }
 
   ok(pageErrors.length === 0, `aucune erreur JavaScript${pageErrors.length ? ` : ${pageErrors.join(' | ')}` : ''}`);
 } finally {

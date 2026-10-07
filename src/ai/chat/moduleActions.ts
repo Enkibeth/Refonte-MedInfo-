@@ -70,14 +70,14 @@ const SPECS: ModuleActionSpec[] = [
     promptHint:
       "analyser des résultats de partiels (rang, moyenne pondérée, simulateur). Les notes restent sur l'appareil de l'utilisateur : ne demande JAMAIS de coller les notes d'une promotion dans la conversation, propose cet outil (ou de joindre le fichier, qui lui sera transmis sans passer par toi).",
     title: () => 'Analyser mes partiels',
-    description: "Rang, moyenne pondérée et simulateur. Les notes restent sur l'appareil.",
+    description: "Rang, moyenne pondérée et simulateur. Les notes restent sur l’appareil.",
   },
   {
     tool: 'ecos',
     param: 'specialty',
     promptHint:
       "s'entraîner sur une station ECOS (patient simulé puis évaluation notée). Paramètre : la spécialité ou le thème (ex. Cardiologie).",
-    title: (p) => (p ? `Station ECOS${NBSP}: ${p}` : "S'entraîner sur une station ECOS"),
+    title: (p) => (p ? `Station ECOS${NBSP}: ${p}` : "S’entraîner sur une station ECOS"),
     description: 'Patient simulé, puis évaluation notée sur 20.',
   },
   {
@@ -86,14 +86,14 @@ const SPECS: ModuleActionSpec[] = [
     promptHint:
       "calculer un score clinique avec un calculateur déterministe (critères figés, sans IA). Paramètre : le nom du score (ex. CHA2DS2-VASc). Si ta réponse contient déjà une ligne <!--CALC:…-->, n'ajoute pas cette carte.",
     title: (p) => (p ? `Calculer${NBSP}: ${p}` : 'Calculer un score clinique'),
-    description: 'Calculateur déterministe, sans IA : critères figés et interprétation immédiate.',
+    description: 'Calculateur déterministe, sans IA\u00a0: critères figés et interprétation immédiate.',
   },
   {
     tool: 'revision',
     param: 'none',
     promptHint: 'construire un planning de révisions réaliste jusqu’à un examen.',
     title: () => 'Planifier mes révisions',
-    description: "Charge quotidienne réaliste jusqu'à l'examen, suivi et jauge de risque.",
+    description: "Charge quotidienne réaliste jusqu’à l’examen, suivi et jauge de risque.",
   },
   {
     tool: 'presentation',
@@ -123,7 +123,7 @@ const SPECS: ModuleActionSpec[] = [
     promptHint:
       "faire expliquer en langage clair un document médical que l'utilisateur possède (compte rendu, ordonnance, résultats).",
     title: () => 'Analyser un document',
-    description: "Résumé en langage clair d'un compte rendu ou d'une ordonnance.",
+    description: "Résumé en langage clair d’un compte rendu ou d’une ordonnance.",
   },
   {
     tool: 'audio',

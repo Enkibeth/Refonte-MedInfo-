@@ -532,7 +532,7 @@ function CalcBlock({
                   style={styles.calcToolChip}
                   onPress={() => moduleActions.onOpen({ tool: 'scores', param: scoreIdForCalc(id) })}
                   accessibilityRole="link"
-                  accessibilityLabel={`Calculer ${label} dans l'outil Scores`}
+                  accessibilityLabel={`Calculer ${label} dans l’outil Scores`}
                 >
                   <Icon name="calculator" size={14} color={tokens.colors.accentDeep} />
                   <Text style={styles.calcChipText}>{label}</Text>
@@ -601,7 +601,7 @@ function ModuleActionsBlock({
             style={styles.actionCard}
             onPress={() => moduleActions.onOpen(action)}
             accessibilityRole="link"
-            accessibilityLabel={`${card.title}. ${card.description} Ouvrir l'outil.`}
+            accessibilityLabel={`${card.title}. ${card.description} Ouvrir l’outil.`}
             testID="module-action-card"
           >
             <View style={[styles.actionIcon, { backgroundColor: tint.bg }]}>

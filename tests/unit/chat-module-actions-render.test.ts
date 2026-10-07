@@ -101,7 +101,7 @@ describe('puces CALC : décision ADR-0044, le calculateur d’abord', () => {
   it('score du catalogue : ouverture directe de l’outil ; score absent : « calcule avec moi »', () => {
     const html = render(calc, false, handlers(['scores']));
     const text = visibleText(html);
-    expect(html).toContain('Calculer CHA₂DS₂-VASc dans l&#x27;outil Scores');
+    expect(html).toContain('Calculer CHA₂DS₂-VASc dans l’outil Scores');
     expect(text).toContain('calcul déterministe, sans IA');
     // GRACE n'est pas dans le catalogue : il reste à cocher pour le calcul avec le chat.
     expect(text).toContain('À calculer avec le chat');
