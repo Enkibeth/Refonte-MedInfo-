@@ -57,7 +57,7 @@ import {
   shouldDisableWebSearch,
 } from '@/ai/chat/responseMode';
 import { buildOutputToolsSection, coerceChatOutputTools } from '@/ai/chat/outputTools';
-import { buildModuleActionsSection, moduleActionCounts, moduleActionToolsFor } from '@/ai/chat/moduleActions';
+import { buildModuleActionsSection, moduleActionCounts, moduleToolsForRequest } from '@/ai/chat/moduleActions';
 import { appendAttachmentToModelMessages, coerceChatAttachment } from '@/ai/chat/attachment';
 import { buildPriorAttachmentSection, sanitizeChatHistory } from '@/ai/chat/modelHistory';
 import { isConversationalTurn, latestUserText } from '@/ai/chat/turnKind';
@@ -95,6 +95,7 @@ export async function POST(request: Request): Promise<Response> {
     regenerate?: unknown;
     responseMode?: unknown;
     tools?: unknown;
+    capabilities?: unknown;
   };
   try {
     body = await request.json();
@@ -207,11 +208,14 @@ export async function POST(request: Request): Promise<Response> {
     buildPriorAttachmentSection(history, { attachedName: hasAttachment && attachment ? attachment.name : null });
   // Cartes d'action (ADR-0044) : le modèle peut PROPOSER d'ouvrir un outil de l'app, dans
   // cette même réponse (aucun appel ni aucune étape en plus). La liste vient de la persona
-  // VÉRIFIÉE, jamais du body ; un visiteur n'en reçoit aucune.
-  const moduleTools = moduleActionToolsFor({
+  // VÉRIFIÉE, jamais du body ; un visiteur n'en reçoit aucune. Seul un client qui DÉCLARE
+  // savoir les afficher reçoit la consigne : un onglet resté sur l'ancien code (chargé avant
+  // un déploiement) montrerait sinon les marqueurs en clair.
+  const moduleTools = moduleToolsForRequest({
+    capabilities: body.capabilities,
     persona: resolution.persona,
     isAdmin,
-    isGuest: !resolution.verified,
+    verified: resolution.verified,
   });
   const system = conversational
     ? coreSystem

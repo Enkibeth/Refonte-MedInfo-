@@ -50,6 +50,7 @@ import {
 } from '@/ai/chat/slashCommands';
 import { classifyChatFile, GRADE_SNIFF_BYTES, isSniffableTextFile, looksLikeGradeTable } from '@/chat/gradeSheet';
 import { handoffForAction, offerHandoff, PRESENTATION_BRIEF_MAX_CHARS } from '@/chat/moduleHandoff';
+import { BUILD_HEADER, isStaleBuild, runningBuildId } from '@/chat/appVersion';
 import { useModuleHandoff } from '@/chat/useModuleHandoff';
 import type { ChatbotId } from '@/ai/chat/chatContext';
 import {
@@ -689,10 +690,18 @@ export default function ChatScreen() {
   // au lieu d'en ajouter une seconde (sinon la conversation rouverte montre les deux).
   const regenerateRef = useRef(false);
 
+  // Onglet chargé avant un déploiement (ADR-0044) : le serveur annonce la version qu'il sert,
+  // on propose de recharger plutôt que de laisser l'ancien code face au nouveau serveur.
+  const [updateAvailable, setUpdateAvailable] = useState(false);
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: '/api/chat',
+        fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+          const response = await fetch(input, init);
+          if (isStaleBuild(response.headers.get(BUILD_HEADER), runningBuildId())) setUpdateAvailable(true);
+          return response;
+        },
         headers: (): Record<string, string> =>
           tokenRef.current ? { Authorization: `Bearer ${tokenRef.current}` } : {},
         body: () => ({
@@ -708,6 +717,8 @@ export default function ChatScreen() {
           // même si la page est suspendue pendant le streaming (voir /api/chat).
           conversationId: conversationIdRef.current ?? undefined,
           regenerate: regenerateRef.current || undefined,
+          // Ce code sait afficher les cartes d'outil : le serveur peut en demander au modèle.
+          capabilities: ['module-actions'],
         }),
       }),
     [],
@@ -2223,6 +2234,25 @@ export default function ChatScreen() {
 
       {/* ── Composer (zone de saisie unifiée : texte + dictée + envoi/stop) ── */}
       <View style={[styles.composerZone, isGuest && { paddingBottom: tokens.space.sm + insets.bottom }]}>
+        {updateAvailable && !isLoading ? (
+          <View style={styles.updateBanner} testID="update-banner" accessibilityRole="alert">
+            <Icon name="refresh" size={14} color={tokens.colors.accentDeep} />
+            <Text style={styles.updateText}>
+              Une nouvelle version de MedInfo est en ligne. Rechargez la page pour en profiter.
+            </Text>
+            <Touchable
+              onPress={() => {
+                if (typeof window !== 'undefined') window.location.reload();
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Recharger la page"
+              style={styles.docHintAction}
+              feedback="light"
+            >
+              <Text style={styles.docHintActionText}>Recharger</Text>
+            </Touchable>
+          </View>
+        ) : null}
         <SlashMenu suggestions={slashMenu} activeIndex={activeSlash} onPick={pickSlash} compact={compactHeader} />
         {gradeOffer ? (
           <GradeFileCard
@@ -2714,6 +2744,24 @@ const styles = StyleSheet.create({
     ...tokens.motion.transitionWeb,
   },
 
+  updateBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    borderRadius: tokens.radius.md,
+    borderWidth: 1,
+    borderColor: tokens.colors.accentSurfaceStrong,
+    backgroundColor: tokens.colors.accentSurface,
+    paddingHorizontal: tokens.space.md,
+    paddingVertical: tokens.space.sm,
+  },
+  updateText: {
+    flex: 1,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.accentDeep,
+    fontSize: tokens.type.caption.fontSize,
+    lineHeight: 18,
+  },
   dropOverlay: {
     position: 'absolute',
     top: 0,

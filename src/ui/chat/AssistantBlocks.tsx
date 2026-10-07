@@ -43,6 +43,7 @@ import {
 } from '@/ai/chat/moduleActions';
 import { createFootnoteRegistry, MarkdownRenderer, type FootnoteRegistry } from '@/ui/MarkdownRenderer';
 import { featureTint } from '@/ui/featureChips';
+import { calcScoreIds, withoutCalcDuplicates } from '@/chat/cardDedupe';
 import { Icon } from '@/ui/icons';
 import { tokens } from '@/ui/tokens';
 import { Button } from '@/ui/Button';
@@ -584,11 +585,14 @@ export interface ModuleActionsHandlers {
 function ModuleActionsBlock({
   actions,
   moduleActions,
+  coveredScores,
 }: {
   actions: ChatModuleAction[];
   moduleActions: ModuleActionsHandlers;
+  /** Scores déjà proposés par une puce CALC de la même réponse (pas de doublon). */
+  coveredScores: Set<string>;
 }) {
-  const visible = actions.filter((a) => moduleActions.canOpen(a.tool));
+  const visible = withoutCalcDuplicates(actions, coveredScores).filter((a) => moduleActions.canOpen(a.tool));
   if (visible.length === 0) return null;
   return (
     <View style={styles.actionsWrapper}>
@@ -748,6 +752,13 @@ export function AssistantBlocks({
   bodyRef.current = body;
   const structuredText = streaming ? '' : incremental ? body.deferred ?? text : text;
   const parsed = useMemo(() => parseAssistantMessage(structuredText), [structuredText]);
+  // Scores déjà ouverts par une puce CALC (calculateur accessible) : leur carte Scores serait
+  // un doublon.
+  const canOpenScores = !!moduleActions?.canOpen('scores');
+  const coveredScores = useMemo(
+    () => (canOpenScores ? calcScoreIds(parsed.blocks.flatMap((b) => (b.type === 'calc' ? b.ids : []))) : new Set<string>()),
+    [parsed, canOpenScores],
+  );
   const tail = streaming ? visibleStreamingTail(body.pending) : '';
 
   return (
@@ -801,7 +812,7 @@ export function AssistantBlocks({
             );
           case 'actions':
             return moduleActions ? (
-              <ModuleActionsBlock key={i} actions={block.actions} moduleActions={moduleActions} />
+              <ModuleActionsBlock key={i} actions={block.actions} moduleActions={moduleActions} coveredScores={coveredScores} />
             ) : null;
           case 'followups':
             return <FollowupsBlock key={i} questions={block.questions} onSend={onSend} disabled={disabled} />;

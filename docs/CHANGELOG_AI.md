@@ -2,6 +2,32 @@
 
 Journal des modifications par agents IA. Une entrée par PR.
 
+## [2026-10-07] – Claude (correctif : marqueurs de cartes affichés en clair sur un onglet ancien)
+### Files modified
+- `server/lib/build-id.mjs` (NOUVEAU), `server/index.mjs` : en-tête `X-MedInfo-Build` sur les
+  réponses d'API.
+- `src/chat/appVersion.ts` (NOUVEAU), `app/(chat)/chat.tsx` : capacité `module-actions` dans la
+  requête, comparaison des versions, bandeau « Recharger ».
+- `src/ai/chat/moduleActions.ts` : `coerceClientCapabilities`, `moduleToolsForRequest`, marqueurs
+  tolérants (`—>`, `→`, `<!—`), consigne (score nommé d'emblée, outil CV).
+- `app/api/chat+api.ts` : consigne des cartes seulement pour un client qui la déclare.
+- `src/ai/chat/parseAssistantMessage.ts`, `src/chat/streamingBody.ts` : CALC et flux tolérants.
+- `src/chat/cardDedupe.ts` (NOUVEAU), `src/ui/chat/AssistantBlocks.tsx` : pas de carte Scores en
+  double d'une puce CALC.
+- Tests : `app-version` et `chat-card-dedupe` (NOUVEAUX) ; cas réels de l'incident dans
+  `chat-module-actions` et `chat-module-actions-render`. `scripts/dev/chat-hub-smoke.mjs` :
+  capacité déclarée, bandeau de version, dédoublonnage.
+- Docs : ADR-0044 (addendum), `CLAUDE.md` (point de vigilance).
+### Purpose
+Captures iPhone de Hugo : `<!--OUTIL:cv-builder-->` et `<!--OUTIL:scores|CURB-65-->` affichés en
+clair. Cause vérifiée sur le site en ligne : l'onglet avait été chargé avant le déploiement,
+donc ancien code client face au nouveau serveur.
+### Vérification
+- Typecheck, lint, `compliance:grep` au vert ; tests unitaires : 85 fichiers, 1 121 tests.
+- Fumigations Chromium : `chat-hub-smoke` 58/58 (dont le serveur qui annonce sa version, aucun
+  bandeau à version égale, bandeau si la version servie change, et HAS-BLED dédoublonné avec la
+  puce CALC). `chat-smoke` et `partiel-smoke` sans régression ; `smoke:node` 28/28.
+
 ## [2026-10-07] – Claude (chat point d'entrée des modules : 3 boucles de vérification par compte, fusion de la PR #169)
 ### Files modified
 - Fusion de `main` (PR #169, déroulé « Étapes » dérivé du flux) : aucun conflit.

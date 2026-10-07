@@ -161,11 +161,16 @@ const RICH = (t) => sse([
 ]);
 const queue = [];
 const requests = [];
+// Version annoncée par le « serveur » simulé (en-tête X-MedInfo-Build) : null = la même que
+// celle du bundle exécuté (aucun bandeau attendu), sinon une autre empreinte.
+let announcedBuild = null;
 async function chatRoute(route) {
   requests.push(JSON.parse(route.request().postData() || '{}'));
   const next = queue.shift();
   if (!next) return route.fulfill({ status: 500, body: 'aucune réponse programmée' });
-  await route.fulfill({ status: 200, headers: { 'content-type': 'text/event-stream', 'x-vercel-ai-ui-message-stream': 'v1' }, body: next });
+  const headers = { 'content-type': 'text/event-stream', 'x-vercel-ai-ui-message-stream': 'v1' };
+  if (announcedBuild) headers['x-medinfo-build'] = announcedBuild;
+  await route.fulfill({ status: 200, headers, body: next });
 }
 
 // Promo synthétique (12 étudiants, mêmes chiffres que partiel-smoke.mjs).
@@ -315,6 +320,22 @@ try {
   ok(draft.includes('risque embolique') && draft.includes('CHA₂DS₂-VASc'), 'générateur pré-rempli : sujet + synthèse de la réponse', draft.slice(0, 160));
   ok(requests.length === 1, 'aucun appel au modèle de plus (rien généré sans clic)');
 
+  ok(JSON.stringify(requests.at(-1).capabilities) === '["module-actions"]', 'requête : le client déclare savoir afficher les cartes');
+
+  console.log('D ter — onglet resté sur une ancienne version');
+  await openChat();
+  const served = await fetch(`${BASE}/api/health`).then((r) => r.headers.get('x-medinfo-build'));
+  const running = await page.evaluate(() => (document.querySelector('script[src*="/_expo/static/js/web/entry-"]')?.getAttribute('src') || '').match(/entry-([0-9a-f]+)\.js/)?.[1] ?? null);
+  ok(!!served && served === running, `le serveur annonce la version qu’il sert (${served})`);
+  ok(!(await page.getByTestId('update-banner').isVisible()), 'même version : aucun bandeau');
+  announcedBuild = 'deadbeefdeadbeef';
+  queue.push(TEXT('Réponse après déploiement.'));
+  await sendMessage(page, 'Une autre question');
+  await page.getByText('Réponse après déploiement.').waitFor({ timeout: 10_000 });
+  await page.getByTestId('update-banner').waitFor({ timeout: 5_000 });
+  ok((await page.getByTestId('update-banner').textContent()).includes('Rechargez la page'), 'nouvelle version servie : bandeau « Recharger »');
+  announcedBuild = null;
+
   console.log('D bis — clic sur la carte → outil Scores');
   await askWithCard();
   await page.getByTestId('module-action-card').click();
@@ -378,13 +399,15 @@ try {
   await sendMessage(pro, '/ecos cardiologie');
   await pro.getByText('Réponse ordinaire.').waitFor({ timeout: 10_000 });
   ok(requests.length === before + 1 && pro.url().endsWith('/chat'), '« /ecos » n’est pas une commande pour un pro : simple message');
-  queue.push(TEXT('Score adapté.\n\n<!--OUTIL:ecos|Cardiologie-->\n<!--OUTIL:scores|HAS-BLED-->\n<!--CALC:hasbled,grace-->\n'));
+  // ECOS : hors du rôle ; HAS-BLED : déjà ouvert par la puce CALC (doublon retiré) ;
+  // CHA₂DS₂-VASc : seule carte attendue.
+  queue.push(TEXT('Score adapté.\n\n<!--OUTIL:ecos|Cardiologie-->\n<!--OUTIL:scores|HAS-BLED-->\n<!--OUTIL:scores|CHA2DS2-VASc-->\n<!--CALC:hasbled,grace-->\n'));
   await sendMessage(pro, 'Risque hémorragique sous AVK ?');
   await pro.getByTestId('module-action-card').first().waitFor({ timeout: 10_000 });
   const proText = await bodyText(pro);
   const proCards = await pro.getByTestId('module-action-card').allTextContents();
-  // \s couvre l'espace insécable de « Calculer : HAS-BLED ».
-  ok(proCards.length === 1 && /Calculer\s:\sHAS-BLED/.test(proCards[0]), 'carte Scores seule (la carte ECOS est filtrée)', JSON.stringify(proCards));
+  // \s couvre l'espace insécable de « Calculer : … ».
+  ok(proCards.length === 1 && /Calculer\sCHA2DS2-VASc/.test(proCards[0].replace(/\s:\s/, ' ')), 'une seule carte : ECOS filtré, HAS-BLED dédoublonné avec la puce CALC', JSON.stringify(proCards));
   ok(await pro.getByRole('link', { name: 'Calculer HAS-BLED dans l’outil Scores' }).isVisible(), 'CALC : HAS-BLED ouvre le calculateur');
   ok(proText.includes('À calculer avec le chat') && proText.includes('GRACE'), 'CALC : GRACE (hors catalogue) reste « avec le chat »');
   ok(await pro.getByRole('link', { name: 'En faire une présentation' }).isVisible(), 'passerelle présentation visible');

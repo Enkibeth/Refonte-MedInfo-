@@ -216,3 +216,38 @@ LLM ajouté.
 - Cas limite assumé : une saisie commençant par une commande exacte (« /score de Glasgow chez
   l'enfant ? ») ouvre l'outil au lieu d'envoyer une question. Une saisie qui ne correspond à
   aucune commande reste un message.
+
+## Addendum — incident du 2026-10-07 : marqueurs affichés en clair sur iPhone
+
+**Constat (captures de Hugo, juste après la fusion de la PR #170) :**
+- `<!--OUTIL:cv-builder-->` et `<!--OUTIL:scores|CURB-65-->` s'affichaient en clair sous les
+  réponses ;
+- la puce CURB-65 avait l'ancienne interface (case à cocher puis « Calcule avec moi »).
+
+**Cause (vérifiée sur le site en ligne) :** le bundle servi contenait bien le nouveau code (cartes,
+commandes « / », puces vers Scores). L'onglet Safari, lui, avait été chargé **avant** le
+déploiement : ancien code client face au nouveau serveur, qui demandait déjà des cartes au
+modèle. Ce décalage se reproduit à chaque déploiement pour tout onglet resté ouvert, ce qui est
+courant sur iPhone.
+
+**Correctifs :**
+1. **Capacité déclarée.** Le chat envoie `capabilities: ['module-actions']`. Le serveur n'ajoute la
+   consigne des cartes que pour un client qui la déclare (`moduleToolsForRequest`, testé). Un
+   onglet ancien ne reçoit simplement aucun marqueur.
+2. **Version annoncée.** Le serveur ajoute `X-MedInfo-Build` (empreinte du bundle d'entrée,
+   `server/lib/build-id.mjs`) à ses réponses d'API. Le chat la compare à celle du bundle qu'il
+   exécute (`src/chat/appVersion.ts`). Si elles diffèrent, un bandeau « Une nouvelle version de
+   MedInfo est en ligne » propose de recharger.
+3. **Marqueurs tolérants.** Un modèle peut « corriger » la typographie (`—>`, `→`, `<!—`) ; le
+   marqueur reste un marqueur et n'est jamais affiché. Même tolérance pour `<!--CALC:…-->`.
+4. **Pas de doublon.** Une carte Scores qui désigne un score déjà proposé par une puce CALC est
+   retirée (`src/chat/cardDedupe.ts`) : avec CURB-65, la puce seule ouvre le calculateur.
+5. **Consigne.** À la question « quel score utiliser », le modèle nomme le score dès la première
+   phrase. Pour un CV, il propose l'outil CV (import PDF ou Word, relecture, export) plutôt que de
+   faire coller le CV dans la conversation.
+
+**Limite :** les onglets déjà ouverts sur la version de la PR #170 ne déclarent pas encore la
+capacité et n'ont pas le bandeau. Ils n'afficheront plus de cartes jusqu'au prochain
+rechargement, mais aucun marqueur en clair non plus. À partir de ce correctif, chaque déploiement
+suivant est signalé par le bandeau.
+
