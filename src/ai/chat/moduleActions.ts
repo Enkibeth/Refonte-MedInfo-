@@ -59,8 +59,9 @@ const NBSP = ' ';
 
 /**
  * Registre des cartes. L'ordre est celui de la consigne envoyée au modèle. Les textes de
- * carte suivent le registre de l'outil : « tu » pour les outils étudiant/pro, « vous » pour
- * l'outil grand public.
+ * carte sont NEUTRES (ni « tu » ni « vous ») : une même carte apparaît dans le chat étudiant
+ * (tutoiement) et dans les chats grand public et pro (vouvoiement). Titres à la première
+ * personne (« mes partiels »), la voix de l'utilisateur, valable partout.
  */
 const SPECS: ModuleActionSpec[] = [
   {
@@ -69,7 +70,7 @@ const SPECS: ModuleActionSpec[] = [
     promptHint:
       "analyser des résultats de partiels (rang, moyenne pondérée, simulateur). Les notes restent sur l'appareil de l'utilisateur : ne demande JAMAIS de coller les notes d'une promotion dans la conversation, propose cet outil (ou de joindre le fichier, qui lui sera transmis sans passer par toi).",
     title: () => 'Analyser mes partiels',
-    description: 'Rang, moyenne pondérée et simulateur. Les notes restent sur ton appareil.',
+    description: "Rang, moyenne pondérée et simulateur. Les notes restent sur l'appareil.",
   },
   {
     tool: 'ecos',
@@ -100,7 +101,7 @@ const SPECS: ModuleActionSpec[] = [
     promptHint:
       'créer une présentation (diapositives, export PPTX). Paramètre : le sujet en une ligne.',
     title: (p) => (p ? `Présentation${NBSP}: ${p}` : 'Créer une présentation'),
-    description: 'Le sujet est pré-rempli dans le mode IA : tu lances la génération quand tu veux.',
+    description: 'Sujet pré-rempli dans le mode IA, génération au clic. Export PPTX.',
   },
   {
     tool: 'article',
@@ -121,7 +122,7 @@ const SPECS: ModuleActionSpec[] = [
     param: 'none',
     promptHint:
       "faire expliquer en langage clair un document médical que l'utilisateur possède (compte rendu, ordonnance, résultats).",
-    title: () => 'Analyser votre document',
+    title: () => 'Analyser un document',
     description: "Résumé en langage clair d'un compte rendu ou d'une ordonnance.",
   },
   {

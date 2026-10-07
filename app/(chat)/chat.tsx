@@ -2013,7 +2013,8 @@ export default function ChatScreen() {
             </Pressable>
             {slashExamples(slashTools).length > 0 ? (
               <Text style={styles.slashTip}>
-                Astuce{'\u00a0'}: tape «{'\u00a0'}/{'\u00a0'}» pour ouvrir un outil sans quitter le chat (
+                {/* Registre du chatbot : tutoiement pour le chat étudiant, vouvoiement ailleurs. */}
+                Astuce{'\u00a0'}: {chatbot === 'student' ? 'tape' : 'tapez'} «{'\u00a0'}/{'\u00a0'}» pour ouvrir un outil sans quitter le chat (
                 {slashExamples(slashTools).join(', ')}).
               </Text>
             ) : null}
@@ -2409,7 +2410,7 @@ export default function ChatScreen() {
         <View pointerEvents="none" style={styles.dropOverlay} testID="chat-drop-overlay">
           <View style={styles.dropCard}>
             <Icon name="paperclip" size={22} color={tokens.colors.accentDeep} />
-            <Text style={styles.dropTitle}>Dépose ton fichier</Text>
+            <Text style={styles.dropTitle}>{chatbot === 'student' ? 'Dépose ton fichier' : 'Déposez votre fichier'}</Text>
             <Text style={styles.dropText}>
               PDF, image ou texte{canUsePartiel ? ', ou relevé de notes (confié à l’outil Partiels, jamais à l’IA)' : ''}.
             </Text>

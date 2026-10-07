@@ -1,8 +1,10 @@
 /**
  * Fumigation navigateur du chat comme point d'entrée des modules (ADR-0044) — HORS CI, opt-in.
  *
- * Rejoue dans Chromium, avec une session ÉTUDIANTE factice, ce qu'aucun test unitaire ne voit :
- * le câblage entre l'écran du chat et les outils.
+ * Rejoue dans Chromium, pour CHAQUE état de compte (étudiant, professionnel, grand public,
+ * visiteur), ce qu'aucun test unitaire ne voit : le câblage entre l'écran du chat et les
+ * outils, et le fait que chacun ne voit que ce qui lui revient.
+ * Étudiant :
  *   A. relevé de notes choisi dans le chat → jamais envoyé à /api/chat → analysé par Partiels ;
  *   B. Partiels → « Construire mon plan avec le chat » → chat pré-rempli SANS identifiant ;
  *   C. commande « /ecos cardiologie » → ECOS filtré, sans appel au modèle ;
@@ -10,6 +12,11 @@
  *   E. « En faire une présentation » → générateur pré-rempli avec la réponse ;
  *   F. glisser-déposer d'un relevé et relevé collé → même tri ;
  *   G. évaluation ECOS → « Retravailler avec le chat ».
+ * Professionnel : relevé de notes refusé sans Partiels, PDF ordinaire joint, commandes et
+ * cartes limitées à ses outils (jamais ECOS ni Partiels), puces CALC vers Scores, passerelle
+ * présentation sans ECOS/Révisions.
+ * Grand public : pas de pièce jointe ni de dépôt, seule la commande /document, seule la carte
+ * Document, aucune passerelle. Visiteur : aucune commande, aucune carte.
  *
  * Aucun appel réel : Supabase et /api/chat sont simulés DANS le navigateur ; le serveur local
  * tourne sans aucune clé.
@@ -100,6 +107,12 @@ const ATTEMPT = {
   evaluation: '**Note : 11,5/20**\n\n- Interrogatoire incomplet : antécédents familiaux non demandés.',
   created_at: '2026-10-01T10:00:00Z',
 };
+const PROFILES = {
+  student: { persona: 'student', verified_personas: ['public', 'student'] },
+  professional: { persona: 'professional', verified_personas: ['public', 'professional'] },
+  public: { persona: 'public', verified_personas: ['public'] },
+};
+let account = 'student';
 let conversations = 0;
 async function supabaseRoute(route) {
   const req = route.request();
@@ -111,7 +124,7 @@ async function supabaseRoute(route) {
   if (url.pathname.startsWith('/auth/v1/token')) return json(200, session);
   if (url.pathname === '/rest/v1/profiles') {
     return json(200, {
-      persona: 'student', status: 'verified', verified_personas: ['public', 'student'],
+      ...PROFILES[account], status: 'verified',
       first_name: null, last_name: null, age: null, sex: null, chat_country: null,
     });
   }
@@ -152,21 +165,54 @@ const ok = (cond, label, extra = '') => {
 };
 
 const browser = await chromium.launch({ executablePath: CHROMIUM });
-try {
-  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-  await context.addInitScript(([key, value]) => localStorage.setItem(key, value), ['sb-fakeproj-auth-token', JSON.stringify(session)]);
+const pageErrors = [];
+
+/** Nouvelle page pour un état de compte (session factice, sauf visiteur). */
+async function pageFor(kind, viewport = { width: 1280, height: 900 }) {
+  account = kind === 'guest' ? 'public' : kind;
+  const context = await browser.newContext({ viewport });
+  if (kind !== 'guest') {
+    await context.addInitScript(([key, value]) => localStorage.setItem(key, value), ['sb-fakeproj-auth-token', JSON.stringify(session)]);
+  }
   const page = await context.newPage();
-  const pageErrors = [];
-  page.on('pageerror', (e) => pageErrors.push(String(e)));
+  page.on('pageerror', (e) => pageErrors.push(`${kind}: ${String(e)}`));
   await page.route(`${SUPA}/**`, supabaseRoute);
   await page.route('**/api/chat', chatRoute);
   await page.route('**/api/chat-meta', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
+  return page;
+}
 
-  const input = page.locator('textarea').first();
-  const openChat = async () => {
-    await page.goto(`${BASE}/chat`, { waitUntil: 'networkidle' });
+/** Chat prêt : profil chargé (signal propre à chaque compte). */
+async function openChatAs(page, kind) {
+  await page.goto(`${BASE}/chat`, { waitUntil: 'networkidle' });
+  if (kind === 'student' || kind === 'professional') {
     await page.getByRole('button', { name: 'Joindre un document' }).waitFor({ timeout: 20_000 });
-  };
+  } else if (kind === 'public') {
+    await page.getByText('pour ouvrir un outil sans quitter le chat', { exact: false }).waitFor({ timeout: 20_000 });
+  } else {
+    await page.getByText('Essai gratuit', { exact: false }).first().waitFor({ timeout: 20_000 });
+  }
+}
+
+const bodyText = (page) => page.locator('body').textContent();
+const sendMessage = async (page, text) => {
+  await page.locator('textarea').first().fill(text);
+  await page.getByRole('button', { name: 'Envoyer le message' }).click();
+};
+const dropFile = (page, name, content) =>
+  page.evaluate(([n, csv]) => {
+    const dt = new DataTransfer();
+    dt.items.add(new File([csv], n, { type: 'text/csv' }));
+    for (const type of ['dragenter', 'dragover', 'drop']) {
+      window.dispatchEvent(new DragEvent(type, { dataTransfer: dt, bubbles: true, cancelable: true }));
+    }
+  }, [name, content]);
+
+try {
+  console.log('\n══ ÉTUDIANT ══');
+  const page = await pageFor('student');
+  const input = page.locator('textarea').first();
+  const openChat = () => openChatAs(page, 'student');
   const frameOf = (suffix) => page.frames().find((f) => f.url().endsWith(suffix));
 
   console.log('A — relevé de notes joint au chat → outil Partiels');
@@ -279,6 +325,97 @@ try {
   await page.waitForFunction(() => (document.querySelector('textarea')?.value || '').includes('station ECOS'), null, { timeout: 10_000 });
   const debrief = await input.inputValue();
   ok(debrief.includes(ATTEMPT.case_title) && debrief.includes('antécédents familiaux'), 'débriefing pré-rempli (station + évaluation)');
+
+  await page.context().close();
+
+  // ── PROFESSIONNEL ──────────────────────────────────────────────────────────
+  console.log('\n══ PROFESSIONNEL ══');
+  const pro = await pageFor('professional');
+  await openChatAs(pro, 'professional');
+  let before = requests.length;
+  const proChooser = pro.waitForEvent('filechooser');
+  await pro.getByRole('button', { name: 'Joindre un document' }).click();
+  const proFc = await proChooser;
+  ok(!(await proFc.element().getAttribute('accept')).includes('.xlsx'), 'pas de tableur au sélecteur (pas d’outil Partiels)');
+  await proFc.setFiles({ name: 'promo.csv', mimeType: 'text/csv', buffer: Buffer.from(PROMO) });
+  await pro.getByTestId('grade-file-card').waitFor({ timeout: 5_000 });
+  const proCard = await pro.getByTestId('grade-file-card').textContent();
+  ok(proCard.includes('Collez seulement') && !proCard.includes('Analyser dans Partiels'), 'relevé refusé, vouvoiement, sans bouton Partiels');
+  ok(!(await pro.getByRole('button', { name: 'Retirer le document' }).isVisible()), 'relevé jamais joint');
+  await pro.getByRole('button', { name: 'Fermer' }).click();
+  const pdfChooser = pro.waitForEvent('filechooser');
+  await pro.getByRole('button', { name: 'Joindre un document' }).click();
+  await (await pdfChooser).setFiles({ name: 'Resultats_S5.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF') });
+  await pro.getByRole('button', { name: 'Retirer le document' }).waitFor({ timeout: 5_000 });
+  ok(true, 'PDF au nom évocateur : joint normalement (pas de Partiels pour ce compte)');
+  await pro.getByRole('button', { name: 'Retirer le document' }).click();
+  await pro.locator('textarea').first().fill('/');
+  const proMenu = await pro.getByTestId('slash-menu').textContent();
+  ok(proMenu.includes('/score') && proMenu.includes('/audio') && proMenu.includes('/présentation'), 'menu « / » : ses outils (score, présentation, audio…)');
+  ok(!proMenu.includes('/ecos') && !proMenu.includes('/partiels') && !proMenu.includes('/révisions'), 'menu « / » : jamais ECOS, Partiels ni Révisions');
+  queue.push(TEXT('Réponse ordinaire.'));
+  await sendMessage(pro, '/ecos cardiologie');
+  await pro.getByText('Réponse ordinaire.').waitFor({ timeout: 10_000 });
+  ok(requests.length === before + 1 && pro.url().endsWith('/chat'), '« /ecos » n’est pas une commande pour un pro : simple message');
+  queue.push(TEXT('Score adapté.\n\n<!--OUTIL:ecos|Cardiologie-->\n<!--OUTIL:scores|HAS-BLED-->\n<!--CALC:hasbled,grace-->\n'));
+  await sendMessage(pro, 'Risque hémorragique sous AVK ?');
+  await pro.getByTestId('module-action-card').first().waitFor({ timeout: 10_000 });
+  const proText = await bodyText(pro);
+  const proCards = await pro.getByTestId('module-action-card').allTextContents();
+  // \s couvre l'espace insécable de « Calculer : HAS-BLED ».
+  ok(proCards.length === 1 && /Calculer\s:\sHAS-BLED/.test(proCards[0]), 'carte Scores seule (la carte ECOS est filtrée)', JSON.stringify(proCards));
+  ok(await pro.getByRole('link', { name: 'Calculer HAS-BLED dans l\'outil Scores' }).isVisible(), 'CALC : HAS-BLED ouvre le calculateur');
+  ok(proText.includes('À calculer avec le chat') && proText.includes('GRACE'), 'CALC : GRACE (hors catalogue) reste « avec le chat »');
+  ok(await pro.getByRole('link', { name: 'En faire une présentation' }).isVisible(), 'passerelle présentation visible');
+  ok(!(await pro.getByRole('link', { name: 'S’entraîner sur un cas ECOS' }).isVisible()), 'aucune passerelle ECOS');
+  ok(!proText.includes('OUTIL') && !proText.includes('<!--'), 'aucun marqueur affiché');
+  await dropFile(pro, 'promo.csv', PROMO);
+  await pro.getByTestId('grade-file-card').waitFor({ timeout: 5_000 });
+  ok(true, 'dépôt d’un relevé : même refus');
+  await pro.context().close();
+
+  // ── GRAND PUBLIC ───────────────────────────────────────────────────────────
+  console.log('\n══ GRAND PUBLIC ══');
+  const pub = await pageFor('public');
+  await openChatAs(pub, 'public');
+  let pubText = await bodyText(pub);
+  ok(pubText.includes('tapez') && pubText.includes('/document'), 'astuce au vouvoiement, avec /document seulement');
+  ok(!(await pub.getByRole('button', { name: 'Joindre un document' }).isVisible()), 'pas de pièce jointe');
+  await pub.locator('textarea').first().fill('/');
+  const pubMenu = await pub.getByTestId('slash-menu').textContent();
+  ok(pubMenu.includes('/document') && !pubMenu.includes('/score') && !pubMenu.includes('/ecos'), 'menu « / » : /document seulement');
+  await pub.locator('textarea').first().fill('');
+  await dropFile(pub, 'promo.csv', PROMO);
+  await pub.waitForTimeout(400);
+  ok(!(await pub.getByTestId('grade-file-card').isVisible()) && !(await pub.getByTestId('chat-drop-overlay').isVisible()), 'dépôt de fichier sans effet');
+  await pub.locator('textarea').first().fill(PROMO);
+  await pub.waitForTimeout(300);
+  ok(!(await pub.getByTestId('grade-file-card').isVisible()), 'texte collé : pas de suggestion Partiels');
+  queue.push(TEXT('Votre compte rendu peut être expliqué.\n\n<!--OUTIL:document-->\n<!--OUTIL:ecos|Cardio-->\n'));
+  await sendMessage(pub, 'Que veut dire mon compte rendu d’IRM ?');
+  await pub.getByTestId('module-action-card').first().waitFor({ timeout: 10_000 });
+  pubText = await bodyText(pub);
+  ok((await pub.getByTestId('module-action-card').count()) === 1 && pubText.includes('Analyser un document'), 'carte Document seule');
+  ok(!(await pub.getByRole('link', { name: 'En faire une présentation' }).isVisible()), 'aucune passerelle');
+  await pub.getByTestId('module-action-card').click();
+  await pub.waitForURL('**/document', { timeout: 10_000 });
+  ok(true, 'carte Document → outil Analyse de document');
+  await pub.context().close();
+
+  // ── VISITEUR ───────────────────────────────────────────────────────────────
+  console.log('\n══ VISITEUR ══');
+  const guest = await pageFor('guest');
+  await openChatAs(guest, 'guest');
+  ok(!(await bodyText(guest)).includes('pour ouvrir un outil'), 'aucune astuce « / »');
+  await guest.locator('textarea').first().fill('/');
+  await guest.waitForTimeout(300);
+  ok(!(await guest.getByTestId('slash-menu').isVisible()), 'aucun menu « / »');
+  before = requests.length;
+  queue.push(TEXT('Réponse.\n\n<!--OUTIL:document-->\n'));
+  await sendMessage(guest, 'Bonjour, une question santé');
+  await guest.getByText('Réponse.', { exact: true }).waitFor({ timeout: 10_000 });
+  ok(requests.length === before + 1 && (await guest.getByTestId('module-action-card').count()) === 0, 'carte jamais affichée à un visiteur');
+  await guest.context().close();
 
   ok(pageErrors.length === 0, `aucune erreur JavaScript${pageErrors.length ? ` : ${pageErrors.join(' | ')}` : ''}`);
 } finally {
