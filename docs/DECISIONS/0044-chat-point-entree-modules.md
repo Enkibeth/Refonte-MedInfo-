@@ -190,6 +190,29 @@ LLM ajouté.
 - Vérification, fumigations navigateur :
   - `scripts/dev/partiel-smoke.mjs` §21 : le relais donne les mêmes moyenne et rang qu'un import
     manuel, avec la CSP de production ;
-  - `scripts/dev/chat-hub-smoke.mjs` (nouveau, session étudiante simulée) : parcours complet A à
-    G, 23 contrôles, aucun appel au modèle pour un relevé ou une commande, aucun identifiant
-    étudiant dans le message préparé par Partiels.
+  - `scripts/dev/chat-hub-smoke.mjs` (nouveau) : parcours par état de compte, 54 contrôles,
+    aucun appel au modèle pour un relevé ou une commande, aucun identifiant étudiant dans le
+    message préparé par Partiels.
+
+### Vérification par état de compte (3 boucles, après fusion de la PR #169)
+
+| Compte | Cartes et commandes « / » | Pièces jointes et relevés | Passerelles |
+|---|---|---|---|
+| Visiteur | aucune ; la consigne n'est pas envoyée au modèle | aucune pièce jointe | aucune |
+| Grand public | Document seulement (`/document`) | aucune pièce jointe ni dépôt (comme avant) ; texte collé sans suggestion | aucune |
+| Étudiant | ses 7 outils | relevé confié à Partiels (sélecteur, dépôt, texte collé) | présentation, ECOS, révisions ; Partiels et ECOS vers le chat |
+| Professionnel | score, présentation, article, CV, audio ; jamais ECOS, Partiels ni Révisions, même sur le chat étudiant | relevé refusé avec explication au vouvoiement ; PDF ordinaire joint | présentation seulement ; CALC vers Scores |
+| Admin | les 9 outils | comme l'étudiant | toutes |
+
+- Les textes des cartes sont neutres (ni « tu » ni « vous ») : une même carte apparaît dans le
+  chat étudiant (tutoiement) et dans les chats grand public et pro (vouvoiement). L'astuce « / »
+  et la zone de dépôt suivent le registre du chatbot.
+- Test unitaire `tests/unit/chat-hub-personas.test.ts` : pour chaque compte, outils des cartes =
+  outils des commandes = navigation du rôle, et la consigne du modèle se limite à ces outils.
+- La PR #169 (déroulé « Étapes » dérivé du flux) cohabite avec les cartes. Un flux réaliste
+  (réflexion, recherche web, sources citées) a été rejoué, sans aucun marqueur affiché.
+- Le tri Partiels est limité au web : l'outil, comme l'objet `File`, n'existe pas dans l'app
+  native.
+- Cas limite assumé : une saisie commençant par une commande exacte (« /score de Glasgow chez
+  l'enfant ? ») ouvre l'outil au lieu d'envoyer une question. Une saisie qui ne correspond à
+  aucune commande reste un message.

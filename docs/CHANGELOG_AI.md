@@ -2,6 +2,36 @@
 
 Journal des modifications par agents IA. Une entrée par PR.
 
+## [2026-10-07] – Claude (chat point d'entrée des modules : 3 boucles de vérification par compte, fusion de la PR #169)
+### Files modified
+- Fusion de `main` (PR #169, déroulé « Étapes » dérivé du flux) : aucun conflit.
+- `src/ai/chat/moduleActions.ts` : textes de carte neutres, apostrophes typographiques, espace
+  insécable avant « : ».
+- `app/(chat)/chat.tsx` : astuce « / » et zone de dépôt au registre du chatbot ; tri Partiels
+  limité au web.
+- `src/ui/chat/AssistantBlocks.tsx` : libellés accessibles avec apostrophe typographique.
+- Tests : `tests/unit/chat-hub-personas.test.ts` (NOUVEAU, matrice visiteur, grand public,
+  étudiant, pro, admin) ; mises à jour des tests de cartes et de commandes.
+- `scripts/dev/chat-hub-smoke.mjs` : 5 états de compte, flux réaliste de la PR #169, pro sur le
+  chat étudiant, captures 390 px facultatives (`SMOKE_SHOTS`).
+- Docs : ADR-0044 (tableau par compte), `CLAUDE.md`.
+### Purpose
+Demande de Hugo : boucler 3 fois pour vérifier que les ajouts sont adaptés à l'état du compte
+(grand public, étudiant, professionnel) et intégrer la PR #169 avant de fusionner.
+### Résultat des boucles
+- Boucle 1, relecture par compte : textes de carte qui tutoyaient dans les chats au vouvoiement,
+  corrigés ; fumigation étendue au pro, au grand public et au visiteur.
+- Boucle 2, mobile, flux réel et cas limites : flux de la PR #169, pro sur le chat étudiant,
+  admin, captures 390 px. Le tri Partiels pouvait se déclencher dans l'app native, où l'outil
+  n'existe pas : limité au web.
+- Boucle 3, revue critique : rien de bloquant. Toutes les écoutes `postMessage` vérifient
+  l'origine et la fenêtre source ; aucune donnée utilisateur n'est injectée en HTML ; rien n'est
+  envoyé sans clic.
+### Vérification
+- Typecheck, lint, `compliance:grep` au vert ; tests unitaires : 83 fichiers, 1 108 tests.
+- Fumigations Chromium : `chat-hub-smoke` 54/54 (5 états de compte), `chat-smoke` et
+  `partiel-smoke` sans régression, `smoke:node` 28/28.
+
 ## [2026-10-07] – Claude (chat point d'entrée des modules, second lot : aller-retour, commandes « / », passerelles)
 ### Files modified
 - Puces CALC : `src/ui/chat/AssistantBlocks.tsx`. Un score du catalogue s'ouvre directement dans
