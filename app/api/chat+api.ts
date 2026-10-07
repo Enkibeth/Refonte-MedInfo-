@@ -12,8 +12,10 @@
  * Ce qui a été RETIRÉ (ADR-0037), et pourquoi : chaque élément ajoutait des appels LLM
  * en série, et la latence était linéaire dans leur nombre (~15-18 s par étape mesurées en
  * prod) — split orchestrateur/rédacteur, boucle agentique multi-étapes, outils serveur
- * Europe PMC / ClinicalTrials.gov / plan_research / verify_source_links, sous-agent PubMed,
- * timeline « Étapes ». La qualité des sources repose désormais sur la recherche web du
+ * Europe PMC / ClinicalTrials.gov / plan_research / verify_source_links, sous-agent PubMed.
+ * La timeline « Étapes » est revenue en 2026-10, dérivée du flux de CET appel (réflexion,
+ * recherches web du provider, sources citées — src/ai/chat/researchTimeline.ts) : zéro
+ * appel supplémentaire. La qualité des sources repose désormais sur la recherche web du
  * provider (un seul aller-retour) et sur les exigences des prompts produit eux-mêmes.
  *
  * Ce qui RESTE : autorisation persona serveur, essai invité, pièce jointe, archivage
@@ -187,6 +189,8 @@ export async function POST(request: Request): Promise<Response> {
       ...(modeRuntime.capReasoningEffort ? { capReasoningEffort: modeRuntime.capReasoningEffort } : {}),
       verbosity: modeRuntime.verbosity,
       ...(modeRuntime.maxOutputTokens != null ? { maxOutputTokens: modeRuntime.maxOutputTokens } : {}),
+      // Résumés de réflexion → étape « Réflexion » du déroulé affiché pendant l'attente.
+      reasoningSummary: true,
     }),
   ]);
 
@@ -287,5 +291,11 @@ export async function POST(request: Request): Promise<Response> {
   // En-têtes anti-tampon : le flux traverse le proxy (et le CDN) de l'hébergeur. Battement
   // de cœur : une réflexion longue (mode Approfondi) n'émet rien pendant plus d'une minute,
   // et aucun intermédiaire ne doit prendre ce silence pour une connexion morte.
-  return withSseHeartbeat(result.toUIMessageStreamResponse({ headers: STREAMING_RESPONSE_HEADERS }));
+  //
+  // `sendSources` : les sources CITÉES par le modèle (annotations url_citation) rejoignent le
+  // flux — le déroulé des étapes en affiche le nombre. Le texte de la réponse reste la seule
+  // chose archivée et renvoyée au modèle (modelHistory.ts) : ni ces parts ni la réflexion.
+  return withSseHeartbeat(
+    result.toUIMessageStreamResponse({ headers: STREAMING_RESPONSE_HEADERS, sendSources: true }),
+  );
 }

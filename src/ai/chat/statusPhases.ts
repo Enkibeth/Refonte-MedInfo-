@@ -83,28 +83,3 @@ export function monotonicProgress(previous: number, phase: ChatPhase): number {
   const next = chatPhaseView(phase).progress;
   return next > previous ? next : previous;
 }
-
-type PhasePart = { type: string; text?: string; toolName?: string; state?: string; url?: string; title?: string };
-const WEB_TOOLS = new Set(['web_search', 'web_search_preview', 'google_search']);
-
-/** Un statut transport « streaming » peut ne contenir que du raisonnement. */
-export function phaseFromParts(parts: readonly PhasePart[] = []): ChatPhase {
-  if (parts.some(p => p.type === 'text' && p.text?.trim())) return 'writing';
-  for (let i = parts.length - 1; i >= 0; i--) {
-    const p = parts[i];
-    const name = p.type === 'dynamic-tool' ? p.toolName : p.type.replace(/^tool-/, '');
-    if (!name || !WEB_TOOLS.has(name) || p.state === 'output-error' || p.state === 'output-denied') continue;
-    return p.state === 'output-available' ? 'writing' : 'searching';
-  }
-  return parts.some(p => p.type === 'source-url') ? 'searching' : 'thinking';
-}
-
-/** Ne retourne que des références effectivement reçues, jamais des domaines présumés. */
-export function streamingSources(parts: readonly PhasePart[] = []): { url: string; title: string }[] {
-  const seen = new Set<string>();
-  return parts.flatMap(p => {
-    if (p.type !== 'source-url' || !p.url || !/^https?:\/\//i.test(p.url) || seen.has(p.url)) return [];
-    seen.add(p.url);
-    return [{ url: p.url, title: p.title?.trim() || p.url }];
-  });
-}

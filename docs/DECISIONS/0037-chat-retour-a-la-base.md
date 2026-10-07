@@ -325,3 +325,32 @@ produire.
 - Surveiller la chute des `tokens_in` sur les conversations longues.
 - `/api/analyze` et `/api/ecos` diffusent du texte brut, sans battement possible sans changer
   leur protocole. Le risque est faible tant qu'ils commencent à écrire en moins d'une minute.
+
+## Addendum 2026-10 — retour du déroulé vertical des étapes
+
+Demande Hugo : revoir, pendant l'attente, où en est le modèle et quelles sources il consulte.
+L'anneau à trois phases ne le disait pas.
+
+Le déroulé revient **sans revenir sur la décision** : toujours UN appel LLM, aucun outil
+serveur. Il est dérivé de ce que CET appel diffuse déjà (`src/ai/chat/researchTimeline.ts`,
+pur, testé `tests/unit/chat-research-timeline.test.ts` ; rendu `src/ui/chat/ResearchTimeline.tsx`) :
+
+- résumés de réflexion du modèle, demandés via `reasoningSummary: 'auto'` (override
+  `reasoningSummary` de `featureRuntime`, OpenAI à réflexion seulement). Vérifié sur l'API
+  réelle avec gpt-6-luna, efforts `none` à `high`. Les résumés arrivent en **anglais** : on
+  affiche leur intertitre tel quel plutôt que de le traduire ou de l'inventer ;
+- recherches web du provider : requêtes exactes (`action.query/queries`), page ouverte
+  (`openPage`), motif cherché dans une page (`findInPage`), URL consultées (`sources`, inclus
+  d'office par le SDK). La requête n'est connue qu'**à la fin** de l'action : pendant qu'elle
+  tourne, libellé générique « Recherche sur Internet… » ;
+- sources citées : `sendSources: true` sur la réponse UI ; seul leur nombre est affiché ;
+- début de la rédaction.
+
+Pendant l'attente, le déroulé est vivant ; dès le premier mot, il se replie en une pastille
+« Étapes · N recherches · M pages consultées » au-dessus de la réponse. Une réponse rechargée
+depuis l'historique n'a pas de pastille (seul le texte est archivé). Rien de tout cela ne
+repart vers le modèle : `sanitizeChatHistory` ne transmet que le texte.
+
+À surveiller : coût et latence éventuels des résumés de réflexion (non mesurés), et volume
+du corps des requêtes client (les parts de réflexion chiffrées sont renvoyées par `useChat`
+puis jetées côté serveur).

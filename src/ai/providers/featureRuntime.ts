@@ -49,6 +49,13 @@ export interface FeatureRuntimeOverrides {
   verbosity?: Verbosity | null;
   webSearch?: boolean;
   maxOutputTokens?: number;
+  /**
+   * Demander au provider les RÉSUMÉS de réflexion (OpenAI `reasoningSummary: 'auto'`) :
+   * ils alimentent le déroulé des étapes du chat (src/ai/chat/researchTimeline.ts). Sans
+   * effet hors OpenAI (la réflexion Claude est déjà diffusée) ni sur un modèle sans
+   * réflexion. Vérifié en réel sur gpt-6-luna, efforts `none` à `high` (2026-10).
+   */
+  reasoningSummary?: boolean;
 }
 
 const REASONING_EFFORT_ORDER: Record<ReasoningEffort, number> = {
@@ -254,6 +261,7 @@ export function resolveFeatureRuntime(
       oai.reasoningEffort = openaiReasoningEffort(settings.modelId, settings.reasoningEffort);
     }
     if (caps.verbosity && settings.verbosity) oai.textVerbosity = settings.verbosity;
+    if (overrides.reasoningSummary && caps.reasoning) oai.reasoningSummary = 'auto';
     if (Object.keys(oai).length > 0) providerOptions.openai = oai;
 
     if (caps.webSearch && settings.webSearch) {

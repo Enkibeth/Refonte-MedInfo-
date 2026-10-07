@@ -109,6 +109,26 @@ describe('OpenAI GPT-6 Luna — requête réellement émise (API Responses)', ()
     expect(body.max_output_tokens).toBeGreaterThanOrEqual(25_000); // recommandation OpenAI
   });
 
+  it('chat : résumés de réflexion demandés (déroulé des étapes), quel que soit l\'effort', async () => {
+    const { body } = await openaiBody(
+      settings({ modelId: 'gpt-6-luna', provider: 'openai', ...CHAT }),
+      { capReasoningEffort: 'minimal', reasoningSummary: true },
+    );
+    // Vérifié sur l'API réelle (2026-10) : accepté de `none` à `high` sur gpt-6-luna.
+    expect(body.reasoning).toEqual({ effort: 'none', summary: 'auto' });
+    expect(body.include).toContain('web_search_call.action.sources');
+  });
+
+  it('résumés de réflexion : jamais demandés hors option, ni à un modèle sans réflexion', async () => {
+    const plain = await openaiBody(settings({ modelId: 'gpt-6-luna', provider: 'openai', ...CHAT }));
+    expect(plain.body.reasoning).not.toHaveProperty('summary');
+    const noReasoning = await openaiBody(
+      settings({ modelId: 'gpt-4o-mini', provider: 'openai' }),
+      { reasoningSummary: true },
+    );
+    expect(noReasoning.body.reasoning).toBeUndefined();
+  });
+
   it('mode Rapide : effort none, verbosité low, aucun outil, budget inchangé (aucune réflexion à réserver)', async () => {
     const { body } = await openaiBody(
       settings({ modelId: 'gpt-6-luna', provider: 'openai', ...CHAT }),

@@ -20,7 +20,6 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Linking,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   type TextInputKeyPressEventData,
@@ -103,13 +102,13 @@ import {
   LONG_WAIT_MS,
   elapsedLabel,
   inFlightAssistant,
-  summarizeChatProgress,
-  type ChatProgressStep,
 } from '@/ai/chat/progress';
+import { buildResearchTimeline, hasResearchTrace, type ResearchTimelineView } from '@/ai/chat/researchTimeline';
+import { ResearchStepsToggle, ResearchTimeline } from '@/ui/chat/ResearchTimeline';
 import { coerceChatOutputTools, type ChatOutputTool } from '@/ai/chat/outputTools';
 import { shouldReplaceWithArchived, archiveMatchesTurn, turnOutcome } from '@/chat/resume';
 import { createSubmissionGate } from '@/chat/submission';
-import { chatPhaseLabel, phaseFromParts, streamingSources, type ChatPhase } from '@/ai/chat/statusPhases';
+import { chatPhaseLabel } from '@/ai/chat/statusPhases';
 import { ChatStatusRing } from '@/ui/chat/ChatStatusRing';
 import {
   ATTACHMENT_ACCEPT,
@@ -209,24 +208,23 @@ const PENDING_A11Y = {
 const STOP_GUARD_MS = 500;
 
 /**
- * Bloc de statut affiché tant que la réponse n'a pas commencé à s'écrire : l'anneau
- * (ChatStatusRing) porte la phase en cours — raisonnement → recherche sur Internet →
- * rédaction — et le compteur d'attente.
+ * Bloc de statut affiché tant que la réponse n'a pas commencé à s'écrire : le DÉROULÉ
+ * vertical des étapes réellement franchies (analyse, réflexion, recherches avec leurs
+ * requêtes exactes, pages consultées — src/ai/chat/researchTimeline.ts) et le compteur
+ * d'attente. Reprise après coupure : l'anneau (ChatStatusRing), il n'y a pas d'étape à montrer.
  */
 function StatusBubble({
-  phase,
-  toolLabel,
+  recovering,
+  timeline,
   startedAt,
   guest,
 }: {
-  phase: ChatPhase;
+  recovering: boolean;
+  timeline: ResearchTimelineView;
   guest: boolean;
-  toolLabel?: string | null;
   /** Horodatage du début d'attente : alimente le compteur de secondes. */
   startedAt?: number | null;
 }) {
-  const label = chatPhaseLabel(phase, toolLabel);
-
   // Compteur de secondes : une attente CHIFFRÉE se supporte bien mieux qu'un spinner
   // muet — l'utilisateur voit que ça avance et sait à quoi s'en tenir.
   const [now, setNow] = useState(() => Date.now());
@@ -238,42 +236,28 @@ function StatusBubble({
   const waited = startedAt ? now - startedAt : 0;
   const elapsed = elapsedLabel(waited);
 
+  if (recovering) {
+    return <ChatStatusRing phase="recovering" label={chatPhaseLabel('recovering')} elapsed={elapsed} />;
+  }
+  const active = [...timeline.steps].reverse().find((s) => s.status === 'active');
   return (
     <View>
-      {/* L'anneau porte lui-même la live region : les lecteurs d'écran sont informés des
-          changements de phase (raisonnement → recherche → rédaction) sans focus manuel. */}
-      <ChatStatusRing phase={phase} label={label} elapsed={elapsed} />
+      <Text style={styles.statusHeader}>
+        Réponse en préparation{elapsed ? ` · ${elapsed}` : ''}
+      </Text>
+      {/* Région polie masquée : seule l'étape EN COURS est annoncée aux lecteurs d'écran
+          (ni le compteur de secondes ni le déroulé entier, relus à chaque fragment). */}
+      <Text style={styles.srOnly} accessibilityLiveRegion="polite" {...(Platform.OS === 'web' ? { role: 'status' } : {})}>
+        {active ? active.title : ''}
+      </Text>
+      <ResearchTimeline view={timeline} />
       {/* Attente longue : la génération va au bout côté serveur, l'utilisateur n'a pas
           besoin de rester sur la page (et surtout pas de relancer). */}
-      {waited >= LONG_WAIT_MS && phase !== 'recovering' ? (
+      {waited >= LONG_WAIT_MS ? (
         <Text style={styles.statusHint}>
           {guest ? 'La réponse prend plus de temps. Gardez cet onglet ouvert : l’essai invité ne dispose pas d’historique.' : 'La réponse prend plus de temps. En cas de coupure, nous vérifierons si une réponse a été enregistrée dans cette conversation.'}
         </Text>
       ) : null}
-    </View>
-  );
-}
-
-/**
- * Trace de progression du workflow evidence-first (latence PERÇUE, audit 2026-07, item H) :
- * au lieu d'une seule ligne qui « tourne », l'utilisateur voit les étapes déjà franchies
- * s'empiler (recherche → lecture → vérification), ce qui rend l'attente légitime et donne
- * un sentiment d'avancement. Données déjà présentes dans le flux (parts d'appel d'outil) —
- * aucun appel réseau ajouté. La phase en cours reste affichée par la bulle de statut.
- */
-function ProgressTrace({ steps }: { steps: ChatProgressStep[] }) {
-  if (steps.length === 0) return null;
-  return (
-    <View style={styles.progressTrace} accessibilityLabel="Étapes de recherche effectuées" {...(Platform.OS === 'web' ? { title: 'Étapes de recherche effectuées' } : {})}>
-      {steps.map((s, i) => (
-        <View key={`${s.tool}-${i}`} style={styles.progressRow}>
-          <Icon name="check" size={12} color={tokens.colors.success} />
-          <Text style={styles.progressText}>
-            {s.label}
-            {s.count > 1 ? ` (${s.count})` : ''}
-          </Text>
-        </View>
-      ))}
     </View>
   );
 }
@@ -400,8 +384,13 @@ const MessageRow = memo(function MessageRow({
     );
   }
   const streamingThisMessage = streaming;
+  // Trace de la génération (réflexion, recherches, pages consultées) : présente dans les
+  // parts du flux pour les réponses de cette session, absente d'une réponse rechargée
+  // depuis l'historique (qui n'archive que le texte).
+  const timeline = buildResearchTimeline(message.parts, { finished: !streaming });
   return (
     <View testID="assistant-message" style={styles.assistantRow}>
+      {hasResearchTrace(timeline) ? <ResearchStepsToggle view={timeline} /> : null}
       <AssistantBlocks
         text={text}
         onSend={onSend}
@@ -423,46 +412,6 @@ const MessageRow = memo(function MessageRow({
     </View>
   );
 });
-
-// Libellé de statut par outil. Depuis le retour à la base (ADR-0037), le chat n'a plus
-// qu'un outil : la recherche web du provider. La table reste indexée par nom pour rester
-// robuste aux variantes de nommage entre providers.
-const TOOL_STATUS_LABELS: Record<string, string> = {
-  web_search: 'Recherche sur Internet…',
-  web_search_preview: 'Recherche sur Internet…',
-  google_search: 'Recherche sur Internet…',
-};
-
-/** Compacte un texte d'appel d'outil pour la bulle de statut (une ligne courte). */
-function truncateStatusDetail(text: string, max = 64): string {
-  const clean = text.replace(/\s+/g, ' ').trim();
-  return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean;
-}
-
-/**
- * Libellé dynamique depuis les arguments de l'appel d'outil (latence perçue) : montrer la
- * requête réellement cherchée rend l'attente légitime. Arguments potentiellement partiels
- * pendant le streaming → repli systématique sur le libellé générique de l'outil.
- */
-function toolLabelWithDetail(name: string, input: unknown): string {
-  const args = (input ?? null) as { query?: unknown } | null;
-  if (typeof args?.query === 'string' && args.query.trim()) {
-    return `Recherche : « ${truncateStatusDetail(args.query)} »`;
-  }
-  return TOOL_STATUS_LABELS[name] ?? 'Recherche de sources fiables…';
-}
-
-/** Libellé du DERNIER outil appelé dans le message assistant en cours, sinon null. */
-function activeToolLabel(message: UIMessage | undefined): string | null {
-  const parts = message?.parts ?? [];
-  for (let i = parts.length - 1; i >= 0; i--) {
-    const p = parts[i] as { type?: string; toolName?: string; input?: unknown };
-    const t = p.type ?? '';
-    const name = t === 'dynamic-tool' ? p.toolName : t.startsWith('tool-') ? t.slice(5) : null;
-    if (name) return toolLabelWithDetail(name, p.input);
-  }
-  return null;
-}
 
 /** Type MIME d'un fichier joint (déclaré par le navigateur, sinon déduit de l'extension). */
 function guessAttachmentMediaType(name: string, declared: string): string {
@@ -1277,8 +1226,10 @@ export default function ChatScreen() {
   }, [recovering]);
   // Un seul appel LLM (ADR-0037) : la réponse est en réflexion, puis en recherche web si
   // le provider en déclenche une, puis en rédaction dès le premier fragment de texte.
-  const phase: ChatPhase = preparing ? 'thinking' : phaseFromParts(activeAssistant?.parts);
-  const foundSources = useMemo(() => streamingSources(activeAssistant?.parts), [activeAssistant]);
+  const liveTimeline = useMemo(
+    () => buildResearchTimeline(preparing ? [] : activeAssistant?.parts),
+    [activeAssistant, preparing],
+  );
 
   // Fin de réponse annoncée aux lecteurs d'écran (région polie, masquée à l'écran) : le texte
   // diffusé fragment par fragment n'est volontairement PAS lu au fil de l'eau (il submergerait
@@ -2086,18 +2037,12 @@ export default function ChatScreen() {
         ))}
         {(showStatus || recovering) && (
           <View style={styles.statusStack}>
-            {/* Trace des étapes déjà franchies, dérivée des parts d'outil du message
-                en cours (recherche web du provider). */}
-            {!recovering ? (
-              <ProgressTrace steps={summarizeChatProgress(activeAssistant?.parts)} />
-            ) : null}
             <StatusBubble
-              phase={recovering ? 'recovering' : phase}
-              toolLabel={activeToolLabel(activeAssistant)}
+              recovering={recovering}
+              timeline={liveTimeline}
               startedAt={waitStartedAt}
               guest={isGuest}
             />
-            {foundSources.map(source => <Touchable key={source.url} accessibilityRole="link" accessibilityLabel={`Source trouvée : ${source.title}`} style={styles.messageActionButton} onPress={() => void Linking.openURL(source.url)}><Icon name="externalLink" size={tokens.size.iconSm} color={tokens.colors.accent} /><Text style={styles.messageActionText}>{source.title}</Text></Touchable>)}
           </View>
         )}
 
@@ -2918,18 +2863,13 @@ const styles = StyleSheet.create({
   },
   messageActionTextDone: { color: tokens.colors.success },
 
-  statusStack: { alignSelf: 'flex-start', gap: tokens.space.xs },
-  progressTrace: {
-    alignSelf: 'flex-start',
-    gap: tokens.space.xs,
-    paddingHorizontal: tokens.space.sm,
-  },
-  progressRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.xs },
-  progressText: {
+  statusStack: { alignSelf: 'stretch', gap: tokens.space.xs },
+  statusHeader: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.medium,
+    marginBottom: tokens.space.xs,
   },
   statusHint: {
     fontFamily: tokens.font.sans,
