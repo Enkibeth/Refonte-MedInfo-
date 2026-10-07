@@ -18,12 +18,14 @@ import { PAGE_SEO, breadcrumbJsonLd, webApplicationJsonLd } from '@/seo/meta';
 import { SeoHead } from '@/ui/SeoHead';
 import { RoleGate } from '@/ui/RoleGate';
 import { ToolScreenHeader } from '@/ui/ToolScreenHeader';
+import { useModuleHandoff } from '@/chat/useModuleHandoff';
 import {
   ALL_SCORES,
   CATEGORIES,
   categoryMeta,
   getScore,
   searchScores,
+  findScoreForRequest,
   type RiskLevel,
   type ScoreCategory,
   type ScoreDefinition,
@@ -77,6 +79,15 @@ export default function ScoresScreen() {
 function ScoresInner() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = selectedId ? getScore(selectedId) : undefined;
+  // Demande du chat (ADR-0044) : le score nommé s'ouvre directement ; une demande ambiguë
+  // pré-remplit la recherche plutôt que d'ouvrir un score au hasard. `key` remonte la liste
+  // pour qu'une nouvelle demande remplace la recherche en cours.
+  const [browserSeed, setBrowserSeed] = useState<{ query: string; key: number }>({ query: '', key: 0 });
+  useModuleHandoff('scores', (handoff) => {
+    const match = findScoreForRequest(handoff.query);
+    setSelectedId(match ? match.id : null);
+    if (!match) setBrowserSeed((prev) => ({ query: handoff.query, key: prev.key + 1 }));
+  });
 
   return (
     <View style={styles.container}>
@@ -88,7 +99,7 @@ function ScoresInner() {
       {selected ? (
         <ScoreDetail key={selected.id} def={selected} onBack={() => setSelectedId(null)} />
       ) : (
-        <ScoreBrowser onSelect={setSelectedId} />
+        <ScoreBrowser key={browserSeed.key} initialQuery={browserSeed.query} onSelect={setSelectedId} />
       )}
     </View>
   );
@@ -96,8 +107,8 @@ function ScoresInner() {
 
 // ── Navigation / recherche ─────────────────────────────────────────────────────
 
-function ScoreBrowser({ onSelect }: { onSelect: (id: string) => void }) {
-  const [query, setQuery] = useState('');
+function ScoreBrowser({ onSelect, initialQuery = '' }: { onSelect: (id: string) => void; initialQuery?: string }) {
+  const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState<ScoreCategory | 'all'>('all');
 
   const results = useMemo(

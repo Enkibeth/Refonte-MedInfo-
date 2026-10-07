@@ -19,6 +19,10 @@
  * Ce qui RESTE : autorisation persona serveur, essai invité, pièce jointe, archivage
  * serveur (résilience hors-ligne) et instrumentation des coûts.
  *
+ * Cartes d'action (2026-10, ADR-0044) : la consigne liste les outils de l'app que CET
+ * utilisateur peut ouvrir ; le modèle peut en proposer un par une ligne-marqueur que
+ * l'interface rend en carte. Aucun outil n'est exécuté ici : toujours un seul appel.
+ *
  * ⚠️  CONVENTION : le modèle utilisé (feature key: "chat") est configurable depuis le
  * panel admin (app/admin/index.tsx). Si tu ajoutes une étape IA ici, déclare-la dans
  * src/admin/index.ts AI_FEATURES.
@@ -51,6 +55,7 @@ import {
   shouldDisableWebSearch,
 } from '@/ai/chat/responseMode';
 import { buildOutputToolsSection, coerceChatOutputTools } from '@/ai/chat/outputTools';
+import { buildModuleActionsSection, moduleActionToolsFor } from '@/ai/chat/moduleActions';
 import { appendAttachmentToModelMessages, coerceChatAttachment } from '@/ai/chat/attachment';
 import { buildPriorAttachmentSection, sanitizeChatHistory } from '@/ai/chat/modelHistory';
 import { isConversationalTurn, latestUserText } from '@/ai/chat/turnKind';
@@ -159,11 +164,10 @@ export async function POST(request: Request): Promise<Response> {
   // Pièce jointe : réservée aux comptes vérifiés étudiant/pro (+ admin). Le body ne donne
   // AUCUN droit : la garde est dérivée de la persona serveur. Le document est transmis au
   // modèle multimodal puis OUBLIÉ (jamais stocké).
+  const isAdmin = resolution.verified && !!resolution.userId && isAdminUserId(resolution.userId);
   const canAttach =
     resolution.verified &&
-    (resolution.persona === 'student' ||
-      resolution.persona === 'professional' ||
-      (!!resolution.userId && isAdminUserId(resolution.userId)));
+    (resolution.persona === 'student' || resolution.persona === 'professional' || isAdmin);
   const hasAttachment = Boolean(attachment && canAttach);
   const conversational = !hasAttachment && isConversationalTurn(latestUserText(history));
 
@@ -197,9 +201,17 @@ export async function POST(request: Request): Promise<Response> {
   const coreSystem =
     `${template}${buildUserContextSection(personalInfo)}${buildCountryContextSection(country)}` +
     buildPriorAttachmentSection(history, { attachedName: hasAttachment && attachment ? attachment.name : null });
+  // Cartes d'action (ADR-0044) : le modèle peut PROPOSER d'ouvrir un outil de l'app, dans
+  // cette même réponse (aucun appel ni aucune étape en plus). La liste vient de la persona
+  // VÉRIFIÉE, jamais du body ; un visiteur n'en reçoit aucune.
+  const moduleTools = moduleActionToolsFor({
+    persona: resolution.persona,
+    isAdmin,
+    isGuest: !resolution.verified,
+  });
   const system = conversational
     ? coreSystem
-    : `${coreSystem}${buildPharmacologySection(chatbot)}${buildResponseModeSection(responseMode)}${buildOutputToolsSection(outputTools)}`;
+    : `${coreSystem}${buildPharmacologySection(chatbot)}${buildResponseModeSection(responseMode)}${buildOutputToolsSection(outputTools)}${buildModuleActionsSection(moduleTools)}`;
 
   // Résilience hors-ligne (2026-06) : la réponse est archivée CÔTÉ SERVEUR en fin de
   // génération (et non par le client) — la propriété de la conversation est vérifiée

@@ -2184,6 +2184,17 @@ async function exportPdf(){
 
 /* ---------- Événements ---------- */
 $('fi').addEventListener('change',e=>handleFile(e.target.files&&e.target.files[0]));
+/* Fichier confié par le chat de MedInfo (ADR-0044) : un relevé de notes n'y est jamais
+   envoyé à l'IA, il arrive ici comme un fichier choisi à la main. Même origine, fenêtre
+   parente, vrai fichier — tout autre message est ignoré. */
+window.addEventListener('message',e=>{
+  if(e.origin!==location.origin||e.source!==window.parent||e.source===window)return;
+  const d=e.data||{};
+  if(d.type!=='medinfo:partiel-file')return;
+  const f=d.file;
+  if(f&&typeof f.name==='string'&&typeof f.arrayBuffer==='function')handleFile(f);
+});
+try{if(window.parent!==window)window.parent.postMessage({type:'medinfo:partiel-ready'},location.origin);}catch(e){}
 (function(){
   const dz=$('dz');
   const stop=e=>{e.preventDefault();e.stopPropagation();};

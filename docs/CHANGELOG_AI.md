@@ -2,6 +2,51 @@
 
 Journal des modifications par agents IA. Une entrée par PR.
 
+## [2026-10-07] – Claude (chat point d'entrée des modules : cartes d'action + tri des pièces jointes)
+### Files modified
+- Modules purs (NOUVEAUX) :
+  - `src/ai/chat/moduleActions.ts` : marqueur `<!--OUTIL:…-->`, consigne par persona, cartes,
+    correspondance CALC → Scores ;
+  - `src/chat/gradeSheet.ts` : tri sans IA des fichiers de notes ;
+  - `src/chat/moduleHandoff.ts` et `src/chat/useModuleHandoff.ts` : relais en mémoire vers les outils.
+- Chat :
+  - `app/api/chat+api.ts` : section OUTILS d'après la persona vérifiée ;
+  - `src/ai/chat/parseAssistantMessage.ts` : bloc `actions`, export sans marqueur ;
+  - `src/chat/streamingBody.ts` : report du marqueur, commentaire en cours masqué ;
+  - `src/ui/chat/AssistantBlocks.tsx` : `ModuleActionsBlock`, lien CALC vers Scores, commentaires
+    retirés du corps ;
+  - `src/ui/chat/GradeFileCard.tsx` (NOUVEAU) ;
+  - `app/(chat)/chat.tsx` : tri au choix du fichier, tableurs acceptés si Partiels est ouvert,
+    relevé collé, cartes.
+- Outils récepteurs :
+  - `app/(chat)/partiel.tsx` et `public/partiel.html` : fichier reçu par `postMessage`, signal
+    `medinfo:partiel-ready` ;
+  - `app/(chat)/scores.tsx` et `src/scores/search.ts` : `findScoreForRequest` ;
+  - `app/(chat)/ecos.tsx` et `src/ecos/dashboard.ts` : `filtersForRequest`, recherche insensible
+    aux accents ;
+  - `app/(chat)/presentation.tsx` et `public/presentation.html` : sujet pré-rempli en mode IA,
+    deck en cours enregistré ou confirmation.
+- Tests (NOUVEAUX) : `chat-module-actions`, `chat-module-actions-render`, `chat-grade-sheet`,
+  `chat-module-handoff`. Fumigation `scripts/dev/partiel-smoke.mjs` §21 (relais depuis le chat).
+- Docs : ADR-0044, `CLAUDE.md`, `docs/04_CHATBOT.md` §12.
+### Purpose
+Question de Hugo : « faire de MedInfo un chatbot capable d'appeler tous les modules depuis le
+chat, exemple j'envoie mes notes de partiels et il utilise l'outil ». Réponse retenue (niveaux 1
+et 2 validés par Hugo) : le chat oriente vers les outils sans rien exécuter. Il n'y a ni boucle
+d'outils (ADR-0037), ni donnée de tiers envoyée au modèle. Le chat inlinait jusque-là les
+`.csv` joints, ce qui envoyait un CSV de promo au fournisseur du modèle : c'est corrigé.
+### Vérification
+- Typecheck, lint, `compliance:grep` au vert ; tests unitaires : 78 fichiers, 1 064 tests.
+- Fumigation Chromium avec la CSP de production :
+  - `partiel-smoke` : tous les contrôles passent. Un fichier transmis par le chat donne les mêmes
+    moyenne et rang (13,33, rang 1) qu'un import manuel, et un message sans vrai fichier est
+    ignoré.
+  - Présentation (essai ponctuel) : sujet pré-rempli en mode IA sans génération, confirmation
+    avant de remplacer un deck non enregistré, message d'une autre fenêtre ignoré.
+- Non vérifié de bout en bout : le parcours connecté complet (chat → carte → outil) et la
+  fréquence réelle des cartes produites par le modèle. Il faut un compte de recette et la
+  production.
+
 ## [2026-10-04] – Claude (écriture sans tics d'IA, visuel affiné, SEO actuel, outils mobiles en plein écran)
 ### Files modified
 - Écriture : textes visibles de `app/`, `src/ui`, `src/seo/meta.ts`, `src/scores/catalog/*` (ponctuation seule, vérifiée

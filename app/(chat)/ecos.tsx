@@ -44,12 +44,14 @@ import {
   computeEcosStats,
   summarizeAttemptsByCase,
   filterCases,
+  filtersForRequest,
   groupCasesByTheme,
   listThemes,
   type AttemptLite,
   type StatusFilter,
   type CaseAttemptSummary,
 } from '@/ecos/dashboard';
+import { useModuleHandoff } from '@/chat/useModuleHandoff';
 import {
   listAttempts,
   saveAttempt,
@@ -390,6 +392,19 @@ function EcosScreenInner() {
   useEffect(() => {
     if (canUseEcos) loadDashboard();
   }, [canUseEcos, loadDashboard]);
+
+  // Carte d'action du chat (ADR-0044, « Station ECOS : Cardiologie ») : filtres du tableau
+  // de bord préréglés, une fois les stations chargées (le thème doit exister pour être choisi).
+  const [chatRequest, setChatRequest] = useState<string | null>(null);
+  useModuleHandoff('ecos', (handoff) => setChatRequest(handoff.query), canUseEcos);
+  useEffect(() => {
+    if (chatRequest === null || casesLoading) return;
+    const next = filtersForRequest(chatRequest, listThemes(cases));
+    setThemeFilter(next.theme);
+    setQuery(next.query);
+    setStatusFilter('all');
+    setChatRequest(null);
+  }, [chatRequest, casesLoading, cases]);
 
   if (!canUseEcos) {
     return (

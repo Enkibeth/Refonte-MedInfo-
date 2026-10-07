@@ -35,6 +35,9 @@ import type { UIMessage } from 'ai';
 import { useSession } from '@/auth/AuthProvider';
 import { isAdminUserId } from '@/admin/index';
 import { isFeatureVisible } from '@/ai/routing/featureVisibility';
+import { moduleActionCard, type ChatModuleAction, type ModuleActionTool } from '@/ai/chat/moduleActions';
+import { classifyChatFile, GRADE_SNIFF_BYTES, isSniffableTextFile, looksLikeGradeTable } from '@/chat/gradeSheet';
+import { handoffForAction, offerHandoff } from '@/chat/moduleHandoff';
 import type { ChatbotId } from '@/ai/chat/chatContext';
 import {
   assistantTextForExport,
@@ -71,7 +74,8 @@ import { Reveal } from '@/ui/Reveal';
 import { Touchable } from '@/ui/Touchable';
 import { toolbarButtonStyles, toolbarContentColor } from '@/ui/toolbarButton';
 import { useReducedMotion } from '@/ui/useReducedMotion';
-import { AssistantBlocks, SourcesBlock } from '@/ui/chat/AssistantBlocks';
+import { AssistantBlocks, SourcesBlock, type ModuleActionsHandlers } from '@/ui/chat/AssistantBlocks';
+import { GradeFileCard, type GradeCardKind } from '@/ui/chat/GradeFileCard';
 import { QcmLauncher } from '@/ui/chat/QcmCard';
 import { ChatbotSwitcher, CHATBOT_META } from '@/ui/chat/ChatbotSwitcher';
 import { ConversationList, HistoryPanel } from '@/ui/chat/HistoryPanel';
@@ -354,6 +358,7 @@ const MessageRow = memo(function MessageRow({
   streaming,
   onRegenerate,
   onExport,
+  moduleActions,
 }: {
   message: UIMessage;
   onSend: (text: string) => void;
@@ -363,6 +368,7 @@ const MessageRow = memo(function MessageRow({
   streaming: boolean;
   onRegenerate: () => void;
   onExport: (message: UIMessage) => void;
+  moduleActions: ModuleActionsHandlers;
 }) {
   const isUser = message.role === 'user';
   const text = messageText(message);
@@ -387,6 +393,7 @@ const MessageRow = memo(function MessageRow({
         disabled={disabled}
         streaming={streaming}
         onOpenSource={onOpenSource}
+        moduleActions={moduleActions}
       />
       {!streamingThisMessage ? (
         <MessageActions
@@ -460,6 +467,16 @@ function guessAttachmentMediaType(name: string, declared: string): string {
   return map[ext] ?? '';
 }
 
+/** Tableurs proposés au choix du fichier quand l'outil Partiels est ouvert (ADR-0044). */
+const SPREADSHEET_ACCEPT = '.xlsx,.xls,.xlsm,.ods';
+
+/** Fichier de notes repéré au choix de la pièce jointe : jamais joint d'office au message. */
+interface GradeOffer {
+  file: File;
+  kind: Exclude<GradeCardKind, 'pasted'>;
+  rows: number | null;
+}
+
 // ── Écran principal ────────────────────────────────────────────────────────────
 
 export default function ChatScreen() {
@@ -507,6 +524,9 @@ export default function ChatScreen() {
   // Pièce jointe : réservée aux comptes vérifiés étudiant/pro (+ admin), web only
   // (extraction/lecture du fichier côté navigateur). Le serveur regarde la persona.
   const canAttach = Platform.OS === 'web' && !!session && canSwitch;
+  // Outil Partiels ouvert à ce rôle : les fichiers de notes lui sont confiés, jamais à l'IA
+  // (ADR-0044). Sans lui, un relevé de notes est seulement refusé, avec l'explication.
+  const canUsePartiel = !!session && isFeatureVisible('partiel', persona, { isAdmin });
   // Mémorisé : la liste sert de dépendance à openConversation (sinon recréé à chaque rendu).
   const availableChatbots = useMemo<ChatbotId[]>(
     () => (canSwitch || isGuest ? ALL_CHATBOTS : ['public']),
@@ -622,6 +642,8 @@ export default function ChatScreen() {
   // Pièce jointe (document) — réservé aux comptes vérifiés étudiant/pro (+ admin), web only.
   const [attachment, setAttachment] = useState<ChatAttachment | null>(null);
   const [attachError, setAttachError] = useState<string | null>(null);
+  const [gradeOffer, setGradeOffer] = useState<GradeOffer | null>(null);
+  const [pasteHintDismissed, setPasteHintDismissed] = useState(false);
   // Pièce jointe du DERNIER tour envoyé (mémoire de l'onglet seulement, jamais stockée) :
   // « Réessayer » et « Régénérer » rejouent ce tour document compris. Avant, le document
   // quittait la mémoire dès l'envoi : un réessai ne transmettait plus que son nom et le
@@ -812,14 +834,63 @@ export default function ChatScreen() {
   const isLoading = preparing || status === 'streaming' || status === 'submitted';
   const canSend = !isLoading && (input.trim().length > 0 || !!attachment) && !guestLocked;
 
+  // Relevé de notes COLLÉ dans la saisie (copie depuis l'ENT ou Excel, ADR-0044) : envoyé, il
+  // partirait au modèle avec les notes des autres étudiants. Repérage sans IA, borné aux
+  // saisies longues et multilignes ; simple suggestion, l'envoi reste possible.
+  const pastedGradeTable = useMemo(
+    () =>
+      canUsePartiel && input.length > 200 && (input.match(/\n/g)?.length ?? 0) >= 6
+        ? looksLikeGradeTable(input)
+        : null,
+    [canUsePartiel, input],
+  );
+  useEffect(() => {
+    if (!input) setPasteHintDismissed(false);
+  }, [input]);
+  const showPasteGradeHint = !!pastedGradeTable && !pasteHintDismissed && !gradeOffer;
+
   // C4 : un long texte collé dans le chat public ressemble à un document (compte
   // rendu, ordonnance…) — l'outil Analyse de document est fait pour ça.
   const showDocHint =
     chatbot === 'public' &&
     !docHintDismissed &&
+    !gradeOffer &&
+    !showPasteGradeHint &&
     isFeatureVisible('document', persona, { isAdmin }) &&
     !isGuest &&
     (input.length > 1500 || (input.match(/\n/g)?.length ?? 0) > 12);
+
+  // Cartes d'action des réponses (ADR-0044) : même règle de visibilité que la navigation,
+  // et l'outil reçoit son paramètre (score, spécialité, sujet) par un relais en mémoire.
+  const canOpenModule = useCallback(
+    (tool: ModuleActionTool) => !isGuest && isFeatureVisible(tool, persona, { isAdmin }),
+    [isGuest, persona, isAdmin],
+  );
+  const openModule = useCallback(
+    (action: ChatModuleAction) => {
+      const handoff = handoffForAction(action);
+      if (handoff) offerHandoff(handoff);
+      router.push(moduleActionCard(action).route as never);
+    },
+    [router],
+  );
+  const moduleActions = useMemo<ModuleActionsHandlers>(
+    () => ({ canOpen: canOpenModule, onOpen: openModule }),
+    [canOpenModule, openModule],
+  );
+
+  // Fichier de notes → outil Partiels : le fichier reste un objet du navigateur, jamais téléversé.
+  const openGradeFileInPartiel = (file: File) => {
+    offerHandoff({ tool: 'partiel', file });
+    setGradeOffer(null);
+    router.push('/(chat)/partiel' as never);
+  };
+  const openPastedGradesInPartiel = () => {
+    const file = new File([input], 'notes-collees.csv', { type: 'text/csv' });
+    setInput('');
+    setInputHeight(INPUT_MIN_HEIGHT);
+    openGradeFileInPartiel(file);
+  };
 
   // ── Auto-scroll du fil (fluidité type ChatGPT) ─────────────────────────────────
   // Le fil suit la réponse pendant le streaming tant que l'utilisateur est en bas ;
@@ -1240,41 +1311,77 @@ export default function ChatScreen() {
     }
   };
 
-  // Sélection d'un document (web only) : input DOM éphémère → lecture base64 côté client.
-  // Le fichier ne quitte l'appareil qu'au moment de l'envoi (body de /api/chat) et n'est
-  // jamais stocké côté serveur (seule la réponse est archivée).
+  // Lecture base64 côté client d'un document accepté par le chat. Le fichier ne quitte
+  // l'appareil qu'au moment de l'envoi (body de /api/chat) et n'est jamais stocké côté serveur
+  // (seule la réponse est archivée).
+  const attachFile = (file: File, mediaType: string) => {
+    if (file.size > ATTACHMENT_MAX_BYTES) {
+      setAttachError('Fichier trop volumineux (maximum 6 Mo).');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      const base64 = result.includes(',') ? result.slice(result.indexOf(',') + 1) : '';
+      if (!base64) {
+        setAttachError('Lecture du fichier impossible.');
+        return;
+      }
+      setAttachment({ name: file.name || 'Document', mediaType, dataBase64: base64 });
+    };
+    reader.onerror = () => setAttachError('Lecture du fichier impossible.');
+    reader.readAsDataURL(file);
+  };
+
+  // Sélection d'un document (web only) : input DOM éphémère, puis TRI SANS IA avant tout
+  // envoi (ADR-0044) — un relevé de notes de promotion n'est jamais joint au message : il
+  // est proposé à l'outil Partiels, qui calcule sur l'appareil.
   const pickAttachment = () => {
     if (typeof document === 'undefined') return;
     setAttachError(null);
+    setGradeOffer(null);
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = ATTACHMENT_ACCEPT;
-    input.onchange = () => {
+    input.accept = canUsePartiel ? `${ATTACHMENT_ACCEPT},${SPREADSHEET_ACCEPT}` : ATTACHMENT_ACCEPT;
+    input.onchange = async () => {
       const file = input.files && input.files[0];
       if (!file) return;
-      if (file.size > ATTACHMENT_MAX_BYTES) {
-        setAttachError('Fichier trop volumineux (maximum 6 Mo).');
+      let textSample: string | null = null;
+      if (isSniffableTextFile(file.name, file.type)) {
+        try {
+          textSample = await file.slice(0, GRADE_SNIFF_BYTES).text();
+        } catch {
+          textSample = null;
+        }
+      }
+      const verdict = classifyChatFile({ name: file.name, mediaType: file.type, textSample });
+      // Un relevé de notes texte est TOUJOURS retenu ; tableur et PDF suspect ne le sont que
+      // si l'outil Partiels peut les recevoir.
+      if (verdict === 'grade-table' || (canUsePartiel && verdict !== 'other')) {
+        setAttachment(null);
+        setGradeOffer({
+          file,
+          kind: verdict as GradeOffer['kind'],
+          rows: verdict === 'grade-table' && textSample ? looksLikeGradeTable(textSample)?.rows ?? null : null,
+        });
         return;
       }
       const mediaType = guessAttachmentMediaType(file.name, file.type);
-      if (!mediaType) {
+      if (!mediaType || verdict === 'spreadsheet') {
         setAttachError('Format non pris en charge (PDF, image ou texte).');
         return;
       }
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = typeof reader.result === 'string' ? reader.result : '';
-        const base64 = result.includes(',') ? result.slice(result.indexOf(',') + 1) : '';
-        if (!base64) {
-          setAttachError('Lecture du fichier impossible.');
-          return;
-        }
-        setAttachment({ name: file.name || 'Document', mediaType, dataBase64: base64 });
-      };
-      reader.onerror = () => setAttachError('Lecture du fichier impossible.');
-      reader.readAsDataURL(file);
+      attachFile(file, mediaType);
     };
     input.click();
+  };
+
+  // PDF repéré à son seul nom : l'utilisateur a vu l'avertissement et choisit de le joindre.
+  const attachGradeOfferAnyway = () => {
+    if (!gradeOffer) return;
+    const { file } = gradeOffer;
+    setGradeOffer(null);
+    attachFile(file, guessAttachmentMediaType(file.name, file.type) || 'application/pdf');
   };
 
   // Arrêt volontaire de la génération : on n'attend plus la réponse (pas de reprise
@@ -1806,6 +1913,7 @@ export default function ChatScreen() {
               isLastAssistant={m.role === 'assistant' && m.id === lastAssistant?.id}
               onRegenerate={handleRegenerate}
               onExport={exportResponse}
+              moduleActions={moduleActions}
             />
           </View>
         ))}
@@ -1987,6 +2095,26 @@ export default function ChatScreen() {
 
       {/* ── Composer (zone de saisie unifiée : texte + dictée + envoi/stop) ── */}
       <View style={[styles.composerZone, isGuest && { paddingBottom: tokens.space.sm + insets.bottom }]}>
+        {gradeOffer ? (
+          <GradeFileCard
+            kind={gradeOffer.kind}
+            name={gradeOffer.file.name || null}
+            rows={gradeOffer.rows}
+            canUsePartiel={canUsePartiel}
+            onOpenPartiel={() => openGradeFileInPartiel(gradeOffer.file)}
+            onAttachAnyway={gradeOffer.kind === 'grade-pdf-name' ? attachGradeOfferAnyway : undefined}
+            onDismiss={() => setGradeOffer(null)}
+          />
+        ) : showPasteGradeHint ? (
+          <GradeFileCard
+            kind="pasted"
+            name={null}
+            rows={pastedGradeTable?.rows ?? null}
+            canUsePartiel={canUsePartiel}
+            onOpenPartiel={openPastedGradesInPartiel}
+            onDismiss={() => setPasteHintDismissed(true)}
+          />
+        ) : null}
         {showDocHint ? (
           <View style={styles.docHint}>
             <Icon name="fileText" size={14} color={tokens.colors.accentDeep} />

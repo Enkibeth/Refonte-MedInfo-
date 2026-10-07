@@ -40,8 +40,17 @@ if (!CHROMIUM) {
 }
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.woff': 'font/woff' };
 
+// Page parente minimale qui embarque l'outil comme l'écran app/(chat)/partiel.tsx : sert au
+// contrôle du relais depuis le chat (ADR-0044), qui passe par postMessage.
+const RELAY_PARENT = '<!doctype html><meta charset="utf-8"><title>Relais</title><iframe id="f" src="/partiel.html" style="width:1200px;height:800px;border:0"></iframe>';
+
 const server = http.createServer((req, res) => {
   if (req.url.startsWith('/favicon')) { res.writeHead(204); res.end(); return; }
+  if (req.url === '/__relay.html') {
+    res.writeHead(200, { 'content-type': 'text/html', 'content-security-policy': buildCsp({ scriptHashes: [] }) });
+    res.end(RELAY_PARENT);
+    return;
+  }
   const p = path.join(ROOT, decodeURIComponent(req.url.split('?')[0]));
   if (!p.startsWith(ROOT) || !fs.existsSync(p) || fs.statSync(p).isDirectory()) {
     res.writeHead(404); res.end('nope'); return;
@@ -417,7 +426,37 @@ const scanMsg = await page.textContent('#errbox .errbox');
 ok(/texte sélectionnable|OCR/.test(scanMsg), 'message explicite pour un PDF scanné', scanMsg.trim());
 ok(await page.isHidden('#bar'), 'aucune analyse fantôme après un PDF illisible');
 
-console.log('\n[21] Console');
+console.log('\n[21] Relais depuis le chat (ADR-0044)');
+// Le chat ne joint pas un relevé de notes au message : il le confie à l'outil, comme un
+// fichier choisi à la main. La page signale qu'elle est prête, puis reçoit le fichier.
+const relay = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+relay.on('pageerror', (e) => consoleErrors.push('relais pageerror: ' + e.message));
+await relay.addInitScript(() => {
+  window.__partielReady = false;
+  window.addEventListener('message', (e) => { if (e.data && e.data.type === 'medinfo:partiel-ready') window.__partielReady = true; });
+});
+await relay.goto(`http://127.0.0.1:${port}/__relay.html`, { waitUntil: 'load' });
+const signalled = await relay.waitForFunction(() => window.__partielReady === true, null, { timeout: 5000 }).then(() => true, () => false);
+ok(signalled, 'la page embarquée signale qu’elle est prête');
+const frame = relay.frames().find((f) => f.url().endsWith('/partiel.html'));
+// Message mal formé (pas de fichier) : ignoré, aucune erreur.
+await relay.evaluate(() => document.getElementById('f').contentWindow.postMessage({ type: 'medinfo:partiel-file', file: 'pas un fichier' }, location.origin));
+await relay.waitForTimeout(300);
+ok(await frame.isHidden('#bar'), 'message sans vrai fichier ignoré');
+await relay.evaluate((text) => {
+  const file = new File([text], 'notes-collees.csv', { type: 'text/csv' });
+  document.getElementById('f').contentWindow.postMessage({ type: 'medinfo:partiel-file', file }, location.origin);
+}, csv);
+await frame.waitForSelector('#bar:not([hidden])', { timeout: 10000 });
+const relaySub = await frame.textContent('#bfsub');
+ok(/12 étudiants/.test(relaySub) && /3 épreuves/.test(relaySub), 'fichier du chat analysé comme un import manuel', relaySub);
+await frame.fill('#idinput', '28710012');
+await relay.waitForTimeout(200);
+const relayK = await frame.$$eval('#block-hero .kval', (els) => els.map((e) => e.textContent.trim()));
+ok(relayK[0].startsWith('13,33') && relayK[1].startsWith('1'), 'mêmes moyenne et rang qu’à l’import manuel', JSON.stringify(relayK));
+await relay.close();
+
+console.log('\n[22] Console');
 ok(httpErrors.length === 0, 'aucune ressource manquante', JSON.stringify(httpErrors));
 ok(consoleErrors.length === 0, 'aucune erreur console', JSON.stringify(consoleErrors.slice(0, 4)));
 

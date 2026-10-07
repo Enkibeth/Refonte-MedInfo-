@@ -293,3 +293,23 @@ Bouton en-tête : icône + compteur de sources de la réponse courante. Clic →
 ## 11. Versioning des prompts
 
 Modif → nouvelle version semver. Jamais d'édition silencieuse : chaque version passe regression + eval avant déploiement. Prompt actif par persona référencé dans `src/ai/prompts/index.ts`. Changement de prompt actif = ADR.
+
+---
+
+## 12. Cartes d'action et tri des pièces jointes (2026-10, ADR-0044)
+
+Le chat sert de point d'entrée vers les modules **sans rien exécuter** : il reste un seul appel
+LLM par réponse (ADR-0037).
+
+- **Cartes d'action.** Dans sa réponse, le modèle peut écrire `<!--OUTIL:id-->` ou
+  `<!--OUTIL:id|paramètre-->` sur une ligne seule. L'interface en fait une carte « Ouvrir ».
+  - La consigne (`buildModuleActionsSection`) ne liste que les outils de la persona vérifiée
+    côté serveur.
+  - Au plus 2 cartes, aucune pour une simple question de connaissances.
+  - Le modèle ne prétend jamais avoir exécuté l'outil.
+  - Le paramètre (spécialité, nom de score, sujet) ne contient jamais de donnée de patient.
+- **Tri des pièces jointes.** Avant tout envoi, un relevé de notes de promotion (données de
+  tiers) est repéré sans IA (`src/chat/gradeSheet.ts`). Il est confié à l'outil Partiels, qui
+  calcule sur l'appareil, au lieu d'être joint au message.
+- **Puces CALC.** Elles proposent aussi le même score dans l'outil Scores, calculé sans IA.
+

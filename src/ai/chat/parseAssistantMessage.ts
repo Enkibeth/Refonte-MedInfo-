@@ -9,12 +9,20 @@
  *   - INTERACTION        → boutons d'action `[Option]` (public) ou `Question ? [A]+[B]+[C]` (pro) ;
  *   - AUTO-RÉFLEXION     → carte repliable de fin de réponse ;
  *   - <!--CALC:ids-->    → puces de scores cliniques suggérés ;
+ *   - <!--OUTIL:id|…-->  → cartes « ouvrir l'outil » (ADR-0044, cf. moduleActions.ts) ;
  *   - étudiant           → 3 questions numérotées + ligne `[1] + [2] + [3]` → 3 boutons.
  *
  * Module PUR (aucune dépendance UI/réseau) : testé dans tests/unit/parse-assistant-message.test.ts.
  * Tolérant au streaming : un texte partiel produit simplement des blocs partiels.
  */
 import { replaceDiagramsWithText } from '@/ai/chat/diagram';
+import {
+  isModuleActionMarkerLine,
+  isolateModuleActionMarkers,
+  mergeModuleActions,
+  parseModuleActionMarker,
+  type ChatModuleAction,
+} from '@/ai/chat/moduleActions';
 
 export type SourceBadge = 'OFFICIEL' | 'GUIDELINE' | 'ÉTUDE' | 'RCP';
 
@@ -99,6 +107,7 @@ export type ParsedBlock =
   | { type: 'interaction'; groups: InteractionGroup[] }
   | { type: 'reflection'; markdown: string }
   | { type: 'calc'; ids: string[] }
+  | { type: 'actions'; actions: ChatModuleAction[] }
   | { type: 'followups'; questions: string[] };
 
 export interface ParsedAssistantMessage {
@@ -370,7 +379,7 @@ export function parseAssistantMessage(text: string): ParsedAssistantMessage {
   const blocks: ParsedBlock[] = [];
   const allSources: ParsedSource[] = [];
 
-  let rawLines = text.replace(/\r\n/g, '\n').split('\n');
+  let rawLines = isolateModuleActionMarkers(text.replace(/\r\n/g, '\n')).split('\n');
   // Relances étudiantes extraites du texte ENTIER avant le découpage en sections : le prompt
   // étudiant v4 les place APRÈS la section SOURCES, qui les avalait (boutons jamais affichés).
   const followups = extractStudentFollowups(rawLines);
@@ -437,6 +446,21 @@ export function parseAssistantMessage(text: string): ParsedAssistantMessage {
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean);
       if (ids.length > 0) blocks.push({ type: 'calc', ids });
+      continue;
+    }
+
+    // Carte d'action (ADR-0044) — ligne-marqueur autonome, où qu'elle apparaisse. Les
+    // marqueurs consécutifs forment UNE rangée de cartes ; un marqueur invalide (outil
+    // inconnu) est retiré sans rien afficher : jamais de balise brute à l'écran.
+    if (isModuleActionMarkerLine(line)) {
+      flushSection();
+      flushBody();
+      const action = parseModuleActionMarker(line);
+      if (action) {
+        const last = blocks[blocks.length - 1];
+        if (last && last.type === 'actions') last.actions = mergeModuleActions(last.actions, [action]);
+        else blocks.push({ type: 'actions', actions: [action] });
+      }
       continue;
     }
 
@@ -538,7 +562,7 @@ function superscriptOfSourceId(id: string): string {
  * et l'export PDF : le corps avec les références inline en exposant, la section
  * SOURCES en légende numérotée lisible (badge, libellé, année, URL), l'auto-réflexion
  * conservée sous son titre. Les blocs purement interactifs (propositions à cocher,
- * formulaire QUESTIONS_PATIENT, marqueurs CALC, relances étudiant) sont omis :
+ * formulaire QUESTIONS_PATIENT, marqueurs CALC, cartes d'outil, relances étudiant) sont omis :
  * ce sont des affordances d'interface, pas du contenu.
  */
 export function assistantTextForExport(text: string): string {
@@ -563,7 +587,7 @@ export function assistantTextForExport(text: string): string {
     } else if (block.type === 'reflection') {
       parts.push(`Auto-réflexion\n${formatInlineCitations(block.markdown)}`);
     }
-    // deepening / questionsPatient / interaction / calc / followups : omis (interactifs).
+    // deepening / questionsPatient / interaction / calc / actions / followups : omis (interactifs).
   }
 
   return parts.join('\n\n').trim();
