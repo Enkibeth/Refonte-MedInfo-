@@ -1,3 +1,4 @@
+import { boundRequestBody } from '@/server/requestBody';
 /**
  * Route API webhook Stripe — POST /api/stripe/webhook (06_BILLING §6 — ADR-0012).
  *
@@ -18,6 +19,9 @@ function json(payload: unknown, status: number): Response {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const boundedBody = await boundRequestBody(request);
+  if (boundedBody instanceof Response) return boundedBody;
+  request = boundedBody;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   const url = process.env.SUPABASE_URL ?? process.env.EXPO_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

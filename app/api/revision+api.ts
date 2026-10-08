@@ -1,3 +1,4 @@
+import { boundRequestBody } from '@/server/requestBody';
 /**
  * POST /api/revision — Coup de pouce IA du dashboard de révision (ADR-0027, phase 2).
  *
@@ -25,6 +26,9 @@ import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
 import { buildRevisionContext, coerceBoostRequest, intentInstruction } from '@/revision/ai/revisionPrompt';
 
 export async function POST(request: Request): Promise<Response> {
+  const boundedBody = await boundRequestBody(request);
+  if (boundedBody instanceof Response) return boundedBody;
+  request = boundedBody;
   // Quota technique (réutilise le compteur étudiant) — aucune donnée de plan stockée.
   const rateLimit = await checkChatRateLimit(request, 'student');
   if (!rateLimit.allowed) {

@@ -14,6 +14,7 @@ const USER_B = '22222222-2222-2222-2222-222222222222';
 
 let db: RlsHarness;
 let convA: string;
+let convB: string;
 let msgA: string;
 
 beforeAll(async () => {
@@ -32,6 +33,11 @@ beforeAll(async () => {
       [USER_A],
     );
     convA = conv.rows[0].id;
+    const other = await q(
+      "INSERT INTO chat_conversations (user_id, chatbot) VALUES ($1, 'public') RETURNING id",
+      [USER_B],
+    );
+    convB = other.rows[0].id;
     const msg = await q(
       "INSERT INTO chat_messages (conversation_id, user_id, role, content) VALUES ($1, $2, 'user', 'Bonjour') RETURNING id",
       [convA, USER_A],
@@ -88,6 +94,11 @@ describe('chat_conversations — isolation own-row', () => {
 });
 
 describe('chat_messages — isolation own-row', () => {
+  it('user A cannot move an owned message into user B’s conversation', async () => {
+    await expect(db.asUser(USER_A, (q) =>
+      q('UPDATE chat_messages SET conversation_id = $1 WHERE id = $2', [convB, msgA]),
+    )).rejects.toThrow();
+  });
   it('user A écrit un message dans SA conversation', async () => {
     const { rows } = await db.asUser(USER_A, (q) =>
       q(

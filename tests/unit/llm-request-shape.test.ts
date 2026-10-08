@@ -155,9 +155,7 @@ describe('OpenAI GPT-6 Luna — requête réellement émise (API Responses)', ()
     expect(body).not.toHaveProperty('max_output_tokens');
   });
 
-  it("témoin : SANS forceReasoning, le SDK installé jette l'effort de GPT-6 (raison d'être du contournement)", async () => {
-    // Si ce test casse après une mise à jour de @ai-sdk/openai, c'est que le SDK reconnaît
-    // désormais GPT-6 : `openaiNeedsForcedReasoning` peut alors être retiré.
+  it('le SDK corrigé reconnaît désormais GPT-6 sans forceReasoning', async () => {
     const { calls, fetch } = captureFetch();
     const provider = createOpenAI({ apiKey: 'sk-test', fetch });
     await generateText({
@@ -167,8 +165,8 @@ describe('OpenAI GPT-6 Luna — requête réellement émise (API Responses)', ()
       maxRetries: 0,
       providerOptions: { openai: { reasoningEffort: 'none' } },
     }).catch(() => undefined);
-    expect(calls[0].body.reasoning).toBeUndefined();
-    expect(calls[0].body.input[0]).toMatchObject({ role: 'system' });
+    expect(calls[0].body.reasoning).toMatchObject({ effort: 'none' });
+    expect(calls[0].body.input[0]).toMatchObject({ role: 'developer' });
   });
 
   it('garde anti-régression : le chat actuel (gpt-5.6-luna) émet la même requête qu\'avant', async () => {

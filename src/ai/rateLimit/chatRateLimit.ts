@@ -13,12 +13,13 @@ import { resolveEntitlement } from '@/billing/entitlements';
 const DAILY_LIMITS: Record<Persona, number> = {
   public: 10,
   student: 20,
-  // Pro post-MVP : non activé ; conserver une valeur technique non utilisée par la route MVP.
-  professional: 0,
+  professional: 30,
 };
+const PAID_DAILY_LIMITS: Record<Persona, number> = { public: 200, student: 300, professional: 500 };
 
 const IP_FALLBACK = 'unknown-ip';
 const memoryCounters = new Map<string, number>();
+let memoryWindowDate = '';
 
 export interface ChatRateLimitResult {
   allowed: boolean;
@@ -39,7 +40,7 @@ interface IncrementUsageCounterRow {
 }
 
 function getServiceClient(): SupabaseClient | null {
-  const url = process.env.SUPABASE_URL;
+  const url = process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !serviceKey) return null;
@@ -79,7 +80,7 @@ function clientIp(request: Request): string {
 }
 
 /**
- * Abonnement actif → quota de messages illimité (06_BILLING §1). Le paywall ne lève QUE le
+ * Abonnement actif → volume étendu, plafonné contre les abus (ADR-0045). Le paywall ne lève QUE le
  * volume : il ne touche jamais l'accès aux sources (06_BILLING §5). Lecture service_role.
  * Tolérante aux erreurs (table absente / env partiel) → repli sur le quota gratuit.
  */
@@ -96,13 +97,13 @@ async function hasUnlimitedMessages(supabase: SupabaseClient, userId: string): P
   }
 }
 
-function unlimitedResult(identityType: 'user' | 'ip', windowDate: string): ChatRateLimitResult {
+function unavailableResult(identityType: 'user' | 'ip', windowDate: string, dailyLimit: number): ChatRateLimitResult {
   return {
-    allowed: true,
-    status: 'ok',
-    dailyCount: 0,
-    dailyLimit: Number.MAX_SAFE_INTEGER,
-    remaining: Number.MAX_SAFE_INTEGER,
+    allowed: false,
+    status: 'limited',
+    dailyCount: dailyLimit + 1,
+    dailyLimit,
+    remaining: 0,
     resetAt: resetAtUtc(windowDate),
     identityType,
   };
@@ -115,7 +116,17 @@ function incrementInMemory(params: {
   windowDate: string;
   identityType: 'user' | 'ip';
 }): ChatRateLimitResult {
+  if (process.env.NODE_ENV === 'production') {
+    return unavailableResult(params.identityType, params.windowDate, params.dailyLimit);
+  }
+  if (memoryWindowDate !== params.windowDate) {
+    memoryCounters.clear();
+    memoryWindowDate = params.windowDate;
+  }
   const key = `${params.windowDate}:${params.persona}:${params.counterKey}`;
+  if (!memoryCounters.has(key) && memoryCounters.size >= 10_000) {
+    return unavailableResult(params.identityType, params.windowDate, params.dailyLimit);
+  }
   const dailyCount = (memoryCounters.get(key) ?? 0) + 1;
   memoryCounters.set(key, dailyCount);
 
@@ -130,22 +141,27 @@ function incrementInMemory(params: {
   };
 }
 
-export async function checkChatRateLimit(request: Request, persona: Persona): Promise<ChatRateLimitResult> {
-  const dailyLimit = DAILY_LIMITS[persona];
+export async function checkChatRateLimit(
+  request: Request,
+  persona: Persona,
+  options: { scope?: 'chat' | 'chat-meta' | 'audio' } = {},
+): Promise<ChatRateLimitResult> {
+  let dailyLimit = DAILY_LIMITS[persona];
   const windowDate = todayUtc();
   const supabase = getServiceClient();
   const userId = supabase ? await resolveVerifiedUserId(request, supabase) : null;
   const identityType: 'user' | 'ip' = userId ? 'user' : 'ip';
   const ipHash = userId ? null : hashIdentifier(clientIp(request));
-  const counterKey = userId ? `user:${userId}` : `ip:${ipHash}`;
+  const identityKey = userId ? `user:${userId}` : `ip:${ipHash}`;
+  const counterKey = options.scope ? `${options.scope}:${identityKey}` : identityKey;
 
   if (!supabase) {
     return incrementInMemory({ counterKey, persona, dailyLimit, windowDate, identityType });
   }
 
-  // Abonné payant actif → pas de décompte de quota (messages illimités, 06_BILLING §1).
+  // Paid accounts retain the anti-abuse ceiling documented in 03_SECURITY §3.
   if (userId && (await hasUnlimitedMessages(supabase, userId))) {
-    return unlimitedResult(identityType, windowDate);
+    dailyLimit = PAID_DAILY_LIMITS[persona];
   }
 
   return incrementPersisted(supabase, {
@@ -196,15 +212,21 @@ async function incrementPersisted(
   },
 ): Promise<ChatRateLimitResult> {
   const { counterKey, identityType, userId, ipHash, persona, dailyLimit, windowDate } = params;
-  const { data, error } = await supabase.rpc('increment_usage_counter', {
-    p_counter_key: counterKey,
-    p_identity_type: identityType,
-    p_user_id: userId,
-    p_ip_hash: ipHash,
-    p_persona: persona,
-    p_window_date: windowDate,
-    p_daily_limit: dailyLimit,
-  });
+  let result;
+  try {
+    result = await supabase.rpc('increment_usage_counter', {
+      p_counter_key: counterKey,
+      p_identity_type: identityType,
+      p_user_id: userId,
+      p_ip_hash: ipHash,
+      p_persona: persona,
+      p_window_date: windowDate,
+      p_daily_limit: dailyLimit,
+    });
+  } catch {
+    return unavailableResult(identityType, windowDate, dailyLimit);
+  }
+  const { data, error } = result;
 
   if (error) {
     console.error('[checkChatRateLimit] Supabase RPC failed:', error.message);
@@ -246,4 +268,5 @@ async function incrementPersisted(
 
 export function __resetChatRateLimitForTests(): void {
   memoryCounters.clear();
+  memoryWindowDate = '';
 }

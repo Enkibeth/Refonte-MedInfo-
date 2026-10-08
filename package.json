@@ -31,20 +31,25 @@
     "compliance": "npm run compliance:grep && npm run test:rls && npm run validate:rag",
     "precompress": "node scripts/hostinger/precompress.mjs",
     "smoke:node": "node scripts/hostinger/smoke.mjs",
-    "setup:rls:ubuntu": "bash scripts/dev/install-rls-postgres-ubuntu.sh"
+    "setup:rls:ubuntu": "bash scripts/dev/install-rls-postgres-ubuntu.sh",
+    "prebuild": "node scripts/security/metro-image-size.mjs"
   },
   "engines": {
     "node": "22.x"
   },
   "overrides": {
-    "uuid": "^11"
+    "uuid": "^11",
+    "decode-uri-component": "0.5.0",
+    "metro": {
+      "image-size": "2.0.4"
+    }
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.81",
     "@ai-sdk/google": "^3.0.80",
     "@ai-sdk/openai": "^3.0.67",
     "@ai-sdk/react": "^3.0.197",
-    "@supabase/supabase-js": "^2.107.0",
+    "@supabase/supabase-js": "2.107.0",
     "ai": "^6.0.195",
     "expo": "~56.0.8",
     "expo-audio": "~56.0.11",

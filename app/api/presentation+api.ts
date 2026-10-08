@@ -1,3 +1,4 @@
+import { boundRequestBody } from '@/server/requestBody';
 /**
  * POST /api/presentation — Mode IA du générateur de présentations médicales.
  *
@@ -49,6 +50,9 @@ function coerceMessages(raw: unknown): PresentationMessage[] {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const boundedBody = await boundRequestBody(request);
+  if (boundedBody instanceof Response) return boundedBody;
+  request = boundedBody;
   // Quota technique (réutilise le compteur étudiant) — aucune donnée de message stockée.
   const rateLimit = await checkChatRateLimit(request, 'student');
   if (!rateLimit.allowed) {

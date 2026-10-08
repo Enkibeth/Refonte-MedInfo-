@@ -17,7 +17,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm install
+      - run: npm ci
       - run: npm run typecheck
       # Règles des hooks React (eslint.config.mjs) : un hook conditionnel ou une dépendance
       # oubliée casse un écran sans erreur de type.

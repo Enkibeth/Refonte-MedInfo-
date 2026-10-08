@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+const { createClient } = vi.hoisted(() => ({ createClient: vi.fn() }));
+vi.mock('@supabase/supabase-js', () => ({ createClient }));
 
 import {
   __resetChatRateLimitForTests,
@@ -17,9 +19,40 @@ function requestFromIp(ip: string): Request {
 afterEach(() => {
   __resetChatRateLimitForTests();
   vi.unstubAllEnvs();
+  vi.clearAllMocks();
 });
 
 describe('chat rate-limit — free MVP', () => {
+  it('fails closed in production when no persistent quota backend is configured', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('SUPABASE_URL', '');
+    vi.stubEnv('EXPO_PUBLIC_SUPABASE_URL', '');
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', '');
+    expect((await checkChatRateLimit(requestFromIp('203.0.113.10'), 'public')).allowed).toBe(false);
+    expect((await checkGuestChatQuota(requestFromIp('203.0.113.10'))).allowed).toBe(false);
+  });
+  it('paid professional accounts are still counted with the anti-abuse ceiling', async () => {
+    vi.stubEnv('SUPABASE_URL', '');
+    vi.stubEnv('EXPO_PUBLIC_SUPABASE_URL', 'https://test.supabase.co');
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'server-test-key');
+    const rpc = vi.fn(async () => ({ data: [{ allowed: true, daily_count: 1, daily_limit: 500, remaining: 499, reset_at: 'tomorrow' }], error: null }));
+    const db = {
+      auth: { getUser: vi.fn(async () => ({ data: { user: { id: 'account' } }, error: null })) },
+      from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { status: 'active', plan: 'student' } }) }) }) }),
+      rpc,
+    };
+    createClient.mockReturnValue(db);
+    const result = await checkChatRateLimit(new Request('https://app.test', { headers: { authorization: 'Bearer test' } }), 'professional', { scope: 'chat' });
+    expect(createClient).toHaveBeenCalledWith('https://test.supabase.co', 'server-test-key', expect.anything());
+    expect(rpc).toHaveBeenCalledWith('increment_usage_counter', expect.objectContaining({ p_daily_limit: 500, p_counter_key: 'chat:user:account' }));
+    expect(result.dailyCount).toBe(1);
+  });
+  it('a rejected RPC promise denies the request rather than enabling a memory fallback', async () => {
+    vi.stubEnv('SUPABASE_URL', 'https://test.supabase.co');
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'server-test-key');
+    createClient.mockReturnValue({ rpc: vi.fn(async () => { throw new Error('offline'); }) });
+    expect((await checkGuestChatQuota(requestFromIp('203.0.113.10'))).allowed).toBe(false);
+  });
   it('public free : le 11e message du même jour renvoie limited (429 côté handler)', async () => {
     vi.stubEnv('SUPABASE_URL', '');
     vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', '');

@@ -1,3 +1,4 @@
+import { boundRequestBody } from '@/server/requestBody';
 /**
  * POST /api/analyze — Analyse ou traduction de document médical (streaming).
  *
@@ -136,6 +137,9 @@ async function parseInput(request: Request): Promise<DocumentInput | Response> {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const boundedBody = await boundRequestBody(request, 16 * 1024 * 1024);
+  if (boundedBody instanceof Response) return boundedBody;
+  request = boundedBody;
   const rateLimit = await checkChatRateLimit(request, 'public');
   if (!rateLimit.allowed) {
     return Response.json({ error: 'Limite de requêtes atteinte.' }, { status: 429 });

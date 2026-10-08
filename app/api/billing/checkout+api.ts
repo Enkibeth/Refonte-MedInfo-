@@ -1,3 +1,4 @@
+import { boundRequestBody } from '@/server/requestBody';
 /**
  * Route API Checkout — POST /api/billing/checkout (06_BILLING §3, §4 — ADR-0012).
  *
@@ -20,6 +21,9 @@ function json(payload: unknown, status: number): Response {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const boundedBody = await boundRequestBody(request);
+  if (boundedBody instanceof Response) return boundedBody;
+  request = boundedBody;
   const url = process.env.SUPABASE_URL ?? process.env.EXPO_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;

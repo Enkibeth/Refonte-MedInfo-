@@ -1,3 +1,4 @@
+import { boundRequestBody } from '@/server/requestBody';
 /**
  * Route API chat — POST /api/chat (Expo Router API route, web).
  *
@@ -34,7 +35,7 @@ import { streamText, convertToModelMessages } from 'ai';
 import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { resolveChatPersona } from '@/ai/routing/serverPersona';
-import { checkGuestChatQuota } from '@/ai/rateLimit/chatRateLimit';
+import { checkChatRateLimit, checkGuestChatQuota } from '@/ai/rateLimit/chatRateLimit';
 import { logInteraction } from '@/ai/logging/logInteraction';
 import { summarizeSteps } from '@/ai/logging/stepMetrics';
 import { coerceConversationId, saveAssistantMessageServer } from '@/chat/serverHistory';
@@ -83,6 +84,9 @@ export function allowedChatbotsFor(
 export const GUEST_TRIAL_MAX_USER_MESSAGES = 1;
 
 export async function POST(request: Request): Promise<Response> {
+  const boundedBody = await boundRequestBody(request, 10 * 1024 * 1024);
+  if (boundedBody instanceof Response) return boundedBody;
+  request = boundedBody;
   const startMs = Date.now();
 
   let body: {
@@ -109,6 +113,12 @@ export async function POST(request: Request): Promise<Response> {
   // tour (46k → 228k tokens d'entrée mesurés), ni rôle `system` ou part `file` fournis par
   // le client (src/ai/chat/modelHistory.ts).
   const history = sanitizeChatHistory(uiMessages);
+  if (history.length > 100 || history.reduce((sum, m) => sum + m.parts[0].text.length, 0) > 120_000) {
+    return Response.json({ error: 'Conversation trop volumineuse. Ouvrez une nouvelle conversation.' }, { status: 413 });
+  }
+  if (!history.some((m) => m.role === 'user')) {
+    return Response.json({ error: 'Message utilisateur requis.' }, { status: 400 });
+  }
   const personalInfo = coercePersonalInfo(body.personalInfo);
   const country = coerceCountry(body.country);
 
@@ -121,7 +131,7 @@ export async function POST(request: Request): Promise<Response> {
   // une conversation anonyme en rejouant la requête avec un historique plus long.
   if (!resolution.verified) {
     const userMessageCount = uiMessages.filter(
-      (m) => (m as { role?: unknown }).role === 'user',
+      (m) => m !== null && typeof m === 'object' && (m as { role?: unknown }).role === 'user',
     ).length;
     if (userMessageCount > GUEST_TRIAL_MAX_USER_MESSAGES) {
       return new Response(
@@ -145,6 +155,11 @@ export async function POST(request: Request): Promise<Response> {
         }),
         { status: 401, headers: { 'content-type': 'application/json' } },
       );
+    }
+  } else {
+    const quota = await checkChatRateLimit(request, resolution.persona, { scope: 'chat' });
+    if (!quota.allowed) {
+      return Response.json({ error: 'Limite de messages atteinte pour aujourd’hui.' }, { status: 429 });
     }
   }
 

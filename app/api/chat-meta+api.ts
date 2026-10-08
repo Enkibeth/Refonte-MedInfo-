@@ -1,3 +1,4 @@
+import { boundRequestBody } from '@/server/requestBody';
 /**
  * Route API chat-meta — POST /api/chat-meta.
  * Génère le TITRE et la CATÉGORIE d'une conversation pour l'historique des chats,
@@ -15,6 +16,7 @@ import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { resolveVerifiedUserId } from '@/auth/serverIdentity';
 import { createServerSupabaseClient } from '@/db/serverSupabase';
 import { logFeatureUsage } from '@/ai/logging/logFeatureUsage';
+import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
 
 export const CHAT_CATEGORIES = [
   'Symptômes',
@@ -35,6 +37,9 @@ const metaSchema = z.object({
 });
 
 export async function POST(request: Request): Promise<Response> {
+  const boundedBody = await boundRequestBody(request);
+  if (boundedBody instanceof Response) return boundedBody;
+  request = boundedBody;
   let body: { userText?: unknown; assistantText?: unknown };
   try {
     body = await request.json();
@@ -46,6 +51,8 @@ export async function POST(request: Request): Promise<Response> {
   const supabase = createServerSupabaseClient();
   const userId = supabase ? await resolveVerifiedUserId(request, supabase) : null;
   if (!userId) return Response.json({ error: 'Non authentifié.' }, { status: 401 });
+  const quota = await checkChatRateLimit(request, 'public', { scope: 'chat-meta' });
+  if (!quota.allowed) return Response.json({ error: 'Limite de requêtes atteinte.' }, { status: 429 });
 
   const userText = typeof body.userText === 'string' ? body.userText.slice(0, 2000) : '';
   const assistantText = typeof body.assistantText === 'string' ? body.assistantText.slice(0, 2000) : '';

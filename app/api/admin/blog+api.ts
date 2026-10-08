@@ -1,3 +1,4 @@
+import { boundRequestBody } from '@/server/requestBody';
 /**
  * GET    /api/admin/blog — liste TOUS les articles (brouillons compris) ;
  *                          `?id=<uuid>` renvoie un article complet (content_md inclus),
@@ -61,6 +62,10 @@ export async function GET(request: Request): Promise<Response> {
 export async function POST(request: Request): Promise<Response> {
   const auth = await requireAdmin(request);
   if (!auth.ok) return auth.response;
+
+  const boundedBody = await boundRequestBody(request);
+  if (boundedBody instanceof Response) return boundedBody;
+  request = boundedBody;
 
   let body: {
     action?: string;
