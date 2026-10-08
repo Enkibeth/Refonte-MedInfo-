@@ -1,3 +1,4 @@
+import { boundRequestBody } from '@/server/requestBody';
 /**
  * GET  /api/admin/config — Retourne models + prompts actuels (DB + defaults).
  * POST /api/admin/config — Met à jour un model ou un prompt.
@@ -55,6 +56,10 @@ export async function GET(request: Request): Promise<Response> {
 export async function POST(request: Request): Promise<Response> {
   const auth = await requireAdmin(request);
   if (!auth.ok) return auth.response;
+
+  const boundedBody = await boundRequestBody(request);
+  if (boundedBody instanceof Response) return boundedBody;
+  request = boundedBody;
 
   let body: {
     type?: string;

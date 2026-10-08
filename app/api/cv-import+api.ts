@@ -1,3 +1,4 @@
+import { boundRequestBody } from '@/server/requestBody';
 /**
  * POST /api/cv-import — Import d'un CV existant → pré-remplissage structuré (ADR-0028).
  *
@@ -70,6 +71,9 @@ const importSchema = z.object({
 });
 
 export async function POST(request: Request): Promise<Response> {
+  const boundedBody = await boundRequestBody(request);
+  if (boundedBody instanceof Response) return boundedBody;
+  request = boundedBody;
   const rateLimit = await checkChatRateLimit(request, 'student');
   if (!rateLimit.allowed) {
     return Response.json({ error: 'Limite d\'imports atteinte pour aujourd\'hui.' }, { status: 429 });

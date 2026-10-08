@@ -1,3 +1,4 @@
+import { boundRequestBody } from '@/server/requestBody';
 /**
  * POST /api/cv — Relecture IA d'un CV (module CV Builder, ADR-0028).
  *
@@ -65,6 +66,9 @@ const reviewSchema = z.object({
 });
 
 export async function POST(request: Request): Promise<Response> {
+  const boundedBody = await boundRequestBody(request);
+  if (boundedBody instanceof Response) return boundedBody;
+  request = boundedBody;
   // Quota technique (réutilise le compteur étudiant) — aucune donnée de CV stockée ici.
   const rateLimit = await checkChatRateLimit(request, 'student');
   if (!rateLimit.allowed) {

@@ -1,3 +1,4 @@
+import { boundRequestBody } from '@/server/requestBody';
 /**
  * CRUD de l'historique cloud des articles (table `article_documents`, ADR-0031).
  *
@@ -72,6 +73,9 @@ export async function GET(request: Request): Promise<Response> {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const boundedBody = await boundRequestBody(request);
+  if (boundedBody instanceof Response) return boundedBody;
+  request = boundedBody;
   const auth = await authenticate(request);
   if ('response' in auth) return auth.response;
 

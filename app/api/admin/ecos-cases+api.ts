@@ -1,3 +1,4 @@
+import { boundRequestBody } from '@/server/requestBody';
 /**
  * GET    /api/admin/ecos-cases — liste TOUS les cas ECOS (publiés + brouillons).
  * POST   /api/admin/ecos-cases — crée/met à jour un cas, ou bascule la publication.
@@ -49,6 +50,10 @@ export async function GET(request: Request): Promise<Response> {
 export async function POST(request: Request): Promise<Response> {
   const auth = await requireAdmin(request);
   if (!auth.ok) return auth.response;
+
+  const boundedBody = await boundRequestBody(request);
+  if (boundedBody instanceof Response) return boundedBody;
+  request = boundedBody;
 
   let body: {
     action?: string;

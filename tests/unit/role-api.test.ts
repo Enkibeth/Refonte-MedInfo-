@@ -37,7 +37,9 @@ beforeEach(() => {
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-test';
   delete process.env.ANNUAIRE_SANTE_API_KEY;
 
-  getUser.mockResolvedValue({ data: { user: { id: 'user-123' } }, error: null });
+  getUser.mockResolvedValue({ data: { user: {
+    id: 'user-123', email: 'a@etu.univ-paris.fr', email_confirmed_at: '2026-01-01',
+  } }, error: null });
   // Lecture de l'ensemble des rôles déjà vérifiés (multi-rôles, migration 0016).
   maybeSingle.mockResolvedValue({ data: { verified_personas: ['public'] }, error: null });
   selectEq.mockReturnValue({ maybeSingle });
@@ -246,5 +248,24 @@ describe('POST /api/role — edge cases et anti-usurpation', () => {
         verified_personas: expect.arrayContaining(['public', 'student']),
       }),
     );
+  });
+  it('rejette une adresse académique appartenant à un autre compte', async () => {
+    const { POST } = await importRoute();
+    const response = await POST(roleRequest({ persona: 'student', email: 'other@etu.univ-paris.fr' }));
+    expect(response.status).toBe(422);
+    expect(update).not.toHaveBeenCalled();
+  });
+  it('rejette une adresse académique non confirmée', async () => {
+    getUser.mockResolvedValue({ data: { user: { id: 'user-123', email: 'a@etu.univ-paris.fr' } }, error: null });
+    const { POST } = await importRoute();
+    expect((await POST(roleRequest({ persona: 'student', email: 'a@etu.univ-paris.fr' }))).status).toBe(422);
+    expect(update).not.toHaveBeenCalled();
+  });
+  it('ne permet jamais le bypass développement en production', async () => {
+    process.env.NODE_ENV = 'production';
+    process.env.BYPASS_ROLE_VERIFICATION = 'true';
+    const { POST } = await importRoute();
+    expect((await POST(roleRequest({ persona: 'student', email: 'a@gmail.com' }))).status).toBe(422);
+    expect(update).not.toHaveBeenCalled();
   });
 });

@@ -1,3 +1,4 @@
+import { boundRequestBody } from '@/server/requestBody';
 /**
  * POST /api/qcm — Génération d'un mini-examen de QCM/QCS type EDN à la demande.
  *
@@ -61,6 +62,9 @@ type Body = {
 };
 
 export async function POST(request: Request): Promise<Response> {
+  const boundedBody = await boundRequestBody(request);
+  if (boundedBody instanceof Response) return boundedBody;
+  request = boundedBody;
   // Quota technique (réutilise le compteur étudiant) — aucun contenu stocké.
   const rateLimit = await checkChatRateLimit(request, 'student');
   if (!rateLimit.allowed) {

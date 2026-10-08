@@ -70,7 +70,7 @@ export default function ChooseRoleScreen() {
         <Text style={styles.roleTitle}>{ROLES.student.label}</Text>
         <Text style={styles.roleDesc}>{ROLES.student.description}</Text>
         <FieldInput
-          accessibilityLabel="Email étudiant"
+          accessibilityLabel="Adresse académique confirmée du compte"
           autoCapitalize="none"
           inputMode="email"
           keyboardType="email-address"
@@ -78,7 +78,7 @@ export default function ChooseRoleScreen() {
             setEmail(v);
             setError(null);
           }}
-          placeholder="prenom@etu.univ-...fr"
+          placeholder="Adresse académique confirmée de ce compte"
           placeholderTextColor={tokens.colors.textMuted}
           style={styles.input}
           value={email}

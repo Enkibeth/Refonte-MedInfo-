@@ -67,11 +67,13 @@ Un chatbot LLM sans rate limit = facture OpenAI explosée par un seul abuseur. L
 | Tier | Limite |
 |---|---|
 | Public free | 10 msg/jour |
-| Public payant | illimité (soft cap anti-abus ~200/jour) |
+| Public payant | 200 appels/jour maximum (anti-abus) |
 | Étudiant free | 20 msg/jour |
-| Étudiant payant | illimité (soft cap ~300/jour) |
-| Pro free | Post-MVP uniquement — non activé |
-| Pro payant | Post-MVP uniquement — non activé |
+| Étudiant payant | 300 appels/jour maximum (anti-abus) |
+| Pro free | 30 appels/jour |
+| Pro payant | 500 appels/jour maximum (anti-abus) |
+
+Depuis ADR-0045, chat connecté, métadonnées et audio ont des compteurs distincts (`chat:`, `chat-meta:`, `audio:`), selon la persona vérifiée ; ECOS/analyse conservent leur compteur existant. Essai chat invité : 5 appels/IP/jour. Un compteur indisponible bloque les appels en production ; la mémoire est réservée au développement. Ces plafonds techniques ne modifient pas les décisions réglementaires sur les fonctionnalités pro.
 
 Implémenté côté routes API + compteur Supabase (table `usage_counters`, reset quotidien). Cap dur global par IP pour les non-authentifiés (anti-scraping) ; l'IP est celle ajoutée par le proxy de l'hébergeur (entrée de DROITE de `X-Forwarded-For`, `server/index.mjs`), jamais une valeur fournie par le client (ADR-0038).
 

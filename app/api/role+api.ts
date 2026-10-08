@@ -1,3 +1,4 @@
+import { boundRequestBody } from '@/server/requestBody';
 /**
  * Route API rôle — POST /api/role (ADR-0011).
  * Vérifie puis attribue le persona côté SERVEUR (service_role) : le client ne peut jamais
@@ -29,6 +30,10 @@ export async function POST(request: Request): Promise<Response> {
 
   const token = (request.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
   if (!token) return json({ error: 'Non authentifié.' }, 401);
+
+  const boundedBody = await boundRequestBody(request);
+  if (boundedBody instanceof Response) return boundedBody;
+  request = boundedBody;
 
   let body: { persona?: unknown; email?: unknown; rpps?: unknown };
   try {
@@ -82,7 +87,7 @@ export async function POST(request: Request): Promise<Response> {
   // ── Bypass développement ────────────────────────────────────────────────────
   // BYPASS_ROLE_VERIFICATION=true dans .env désactive toutes les vérifications.
   // NE JAMAIS activer en production. Utile pour les tests et le staging.
-  const devBypass = process.env.BYPASS_ROLE_VERIFICATION === 'true';
+  const devBypass = process.env.NODE_ENV !== 'production' && process.env.BYPASS_ROLE_VERIFICATION === 'true';
 
   // Vérification selon le rôle.
   let status: 'unverified' | 'verified' = 'unverified';
@@ -95,6 +100,12 @@ export async function POST(request: Request): Promise<Response> {
     const email = typeof body.email === 'string' ? body.email : '';
     if (!devBypass && !isAcademicEmail(email)) {
       return json({ error: 'Email étudiant non reconnu (domaine académique requis).' }, 422);
+    }
+    // The supplied email is a claim, never proof of mailbox ownership. Supabase
+    // Auth must confirm this exact academic address before a new student grant.
+    const verifiedEmail = userData.user.email?.trim().toLowerCase();
+    if (!devBypass && (!userData.user.email_confirmed_at || verifiedEmail !== email.trim().toLowerCase())) {
+      return json({ error: 'Connectez-vous avec cette adresse académique et confirmez-la avant de vérifier le statut étudiant.' }, 422);
     }
     status = 'verified';
     method = 'academic_email';

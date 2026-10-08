@@ -1,3 +1,4 @@
+import { boundRequestBody } from '@/server/requestBody';
 /**
  * POST /api/article — Aides IA du module « Rédaction d'article médical » (ADR-0031).
  *
@@ -99,6 +100,9 @@ type Body = {
 };
 
 export async function POST(request: Request): Promise<Response> {
+  const boundedBody = await boundRequestBody(request);
+  if (boundedBody instanceof Response) return boundedBody;
+  request = boundedBody;
   // Quota technique (réutilise le compteur étudiant) — aucun contenu stocké ici.
   const rateLimit = await checkChatRateLimit(request, 'student');
   if (!rateLimit.allowed) {

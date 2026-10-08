@@ -18,7 +18,7 @@ export interface SubscriptionRecord {
 
 export interface Entitlement {
   tier: 'free' | 'paid';
-  /** true = quota de messages illimité (le rate-limit est court-circuité côté serveur). */
+  /** Paid volume entitlement; a separate server anti-abuse ceiling still applies. */
   unlimitedMessages: boolean;
 }
 

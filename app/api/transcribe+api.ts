@@ -13,10 +13,25 @@ import { getRuntimeForFeature } from '@/ai/providers/featureRuntime';
 import { logFeatureUsage } from '@/ai/logging/logFeatureUsage';
 import { getPromptTemplate } from '@/ai/prompts/promptStore';
 import { sanitizeMedicalReport } from '@/ai/audio/sanitizeReport';
+import { resolveChatPersona } from '@/ai/routing/serverPersona';
+import { checkChatRateLimit } from '@/ai/rateLimit/chatRateLimit';
+import { isAdminUserId } from '@/admin/index';
+import { boundRequestBody } from '@/server/requestBody';
 
 const MAX_SIZE_BYTES = 25 * 1024 * 1024;
 
 export async function POST(request: Request): Promise<Response> {
+  const resolution = await resolveChatPersona(request, null);
+  if (!resolution.verified || !resolution.userId) {
+    return Response.json({ error: 'Non authentifié.' }, { status: 401 });
+  }
+  const quota = await checkChatRateLimit(request, resolution.persona, { scope: 'audio' });
+  if (!quota.allowed) {
+    return Response.json({ error: 'Limite de transcriptions atteinte pour aujourd’hui.' }, { status: 429 });
+  }
+  const bounded = await boundRequestBody(request, MAX_SIZE_BYTES + 1024 * 1024);
+  if (bounded instanceof Response) return bounded;
+  request = bounded;
   const openaiKey = process.env.OPENAI_API_KEY;
   if (!openaiKey) {
     return Response.json(
@@ -35,8 +50,15 @@ export async function POST(request: Request): Promise<Response> {
 
   const audioEntry = incomingFormData.get('audio');
   const mode = (incomingFormData.get('mode') as string | null) ?? 'transcription';
+  if (!['raw', 'dictation', 'transcription', 'report'].includes(mode)) {
+    return Response.json({ error: 'Mode de transcription invalide.' }, { status: 400 });
+  }
+  if (mode !== 'raw' && mode !== 'dictation' &&
+      resolution.persona !== 'professional' && !isAdminUserId(resolution.userId)) {
+    return Response.json({ error: 'Ce mode audio est réservé aux comptes professionnels.' }, { status: 403 });
+  }
 
-  if (!audioEntry || !(audioEntry instanceof Blob)) {
+  if (!audioEntry || !(audioEntry instanceof Blob) || audioEntry.size === 0) {
     return Response.json({ error: 'Champ "audio" manquant.' }, { status: 400 });
   }
 
@@ -62,8 +84,7 @@ export async function POST(request: Request): Promise<Response> {
     });
 
     if (!whisperRes.ok) {
-      const err = await whisperRes.text();
-      console.error('Whisper error:', err);
+      console.error('Whisper error:', whisperRes.status);
       return Response.json({ error: 'Échec de la transcription audio.' }, { status: 502 });
     }
 

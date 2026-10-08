@@ -2,6 +2,34 @@
 
 Journal des modifications par agents IA. Une entrée par PR.
 
+## [2026-10-08] — Codex (vulnérabilités : API, rôles, RLS et dépendances)
+
+### Files modified
+- API POST (`app/api/`), rôle étudiant, libellé de vérification, quotas IA, helper `src/server/requestBody.ts`.
+- `package.json`, lockfile, workflow compliance, adaptateur `scripts/security/metro-image-size.mjs`.
+- Migration `20261008194112_security_parent_ownership_and_extension_schema.sql` ; tests API, corps de requête, quotas, Metro, rôle et RLS.
+- ADR-0045, `03_SECURITY.md`, rapport `SECURITY_AUDIT_2026-10-08.md` et ce journal.
+
+### Purpose
+Corriger les accès IA sans authentification/quota, les corps non bornés, la preuve étudiante
+déclarative et le changement de parent inter-comptes ; mettre à jour les dépendances sans
+rétrograder Expo. La migration Supabase est appliquée et testée en transactions annulées.
+
+### Impact réglementaire
+`none` : restrictions d'accès et de consommation uniquement, aucune nouvelle fonction médicale
+ni modification des prompts. Ne résout pas les couches retirées par ADR-0024.
+
+### Vérification et limites
+Typecheck/lint/compliance-grep/RAG passent ; 1 148 tests unitaires, 29 chat/RAG, build web et
+28/28 fumigations Node. Suite RLS intégrale à valider en CI (Postgres indisponible localement).
+Audit npm 35 → 15 paquets signalés, 0 critique ; deux avis racines sans correctif publié.
+Protection des mots de passe divulgués à activer dans Supabase Auth ; hosting non accessible
+par les outils Hostinger exposés. Détails et limites dans le rapport.
+
+### Rollback
+Revert de la PR et nouveau build. Conserver les restrictions RLS indépendamment du code ;
+rollback du schéma d'extension documenté dans le rapport si réellement nécessaire.
+
 ## [2026-10-07] – Claude (correctif : marqueurs de cartes affichés en clair sur un onglet ancien)
 ### Files modified
 - `server/lib/build-id.mjs` (NOUVEAU), `server/index.mjs` : en-tête `X-MedInfo-Build` sur les
