@@ -12,7 +12,10 @@ Journal des modifications par agents IA. Une entrée par PR.
 Les chatbots posaient des questions au lieu de répondre (grand public : 100 % des premières
 réponses mesurées = questionnaire seul) et ne tranchaient pas. Réponse de fond dès le premier
 message, questions en fin de réponse, conduite recommandée explicite, trame pathologie
-complète (épidémiologie → prévention).
+complète (épidémiologie → prévention). Deux boucles de vérification sur 13 questions réelles
+(gpt-6-luna) : le chat pro ajoute une règle de SPÉCIFICITÉ CLINIQUE (scores, DCI, schémas
+chiffrés et sourcés), une abstention bornée à la valeur introuvable et une INTERACTION
+facultative (voir l'addendum de l'ADR-0046).
 
 ### Impact réglementaire
 `low` : aucune couche de sécurité retirée (sentinelles, 15/112, pas de diagnostic certain ni de

@@ -36,6 +36,28 @@ Modification des trois prompts produit, sans changement de code ni de modèle :
 Invariants figés par `tests/unit/chat-prompts-answer-first.test.ts` (absence du verrou,
 présence de la trame, titres compatibles avec `parseAssistantMessage`).
 
+## Addendum 2026-10-10 — deux boucles de vérification sur sorties réelles
+
+Banc de 13 questions (7 pro, 3 étudiant, 3 public) sur gpt-6-luna, assemblage du `system`
+identique à `/api/chat` (mode Classique). Boucle 1 : plus de questionnaire seul, mais le chat
+pro restait VAGUE (« un score validé », « aucune posologie ne peut être proposée », triage
+« indéterminé », ancienneté d'ESC 2019 mise en avant) et ignorait la trame ; INTERACTION
+obligatoire = 5-6 questions en fin de réponse. Causes : règle d'abstention lue comme globale,
+triage imposé même sans cas, seuil de fraîcheur, INTERACTION obligatoire. Corrections pro :
+règle SPÉCIFICITÉ CLINIQUE (scores nommés avec seuils, DCI + schéma usuel de l'adulte sourcé,
+branches au lieu de « données manquantes »), abstention bornée à la VALEUR introuvable,
+triage seulement si un cas est décrit, recommandation en vigueur = référence quelle que soit sa
+date (ancienneté signalée dans AUTO-REFLEXION seulement), trame à intitulés exacts,
+INTERACTION facultative (≤ 2 questions décisionnelles), « Conduite recommandée » même sans
+indication (situation la plus fréquente d'abord). Étudiant : démarche de clinicien, jamais de
+conseils grand public. Public : trame complète dès qu'une maladie est nommée, références
+`(SRCx)` sans crochets ni lien dans le corps.
+
+Boucle 2 : pro → trame 6-7/7 sur les questions de pathologie, « Conduite recommandée » 4/4,
+3 questions de fin (approfondissements) au lieu de 5-6, schémas AOD chiffrés et justes
+(apixaban 10 mg ×2 7 j puis 5 mg ×2 ; rivaroxaban 15 mg ×2 21 j puis 20 mg ; ≥ 3 mois).
+Latence pro ~25-35 s (contre ~20-27 s) pour des réponses plus complètes.
+
 ## Conservé
 
 Signes sentinelles et orientation 15/112 en tête, pas de diagnostic certain, pas de posologie

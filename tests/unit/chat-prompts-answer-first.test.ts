@@ -74,4 +74,32 @@ describe('prompts du chat — répondre d’abord', () => {
     expect(PROFESSIONAL_PROMPT_V2).toMatch(/TRAME PATHOLOGIE/);
     expect(PROFESSIONAL_PROMPT_V2).toMatch(/au minimum de niveau 2 et suit la TRAME PATHOLOGIE/);
   });
+
+  it('professionnel : spécificité clinique (nommer, chiffrer) sans renoncer à l’abstention ciblée', () => {
+    expect(PROFESSIONAL_PROMPT_V2).toMatch(/SPÉCIFICITÉ CLINIQUE — RÈGLE PRIORITAIRE/);
+    expect(PROFESSIONAL_PROMPT_V2).toMatch(/Ne jamais écrire qu’aucune posologie ou stratégie ne peut être proposée/);
+    expect(PROFESSIONAL_PROMPT_V2).toMatch(/applique la règle d’abstention à CETTE valeur uniquement/);
+    // L'abstention reste en place : une valeur introuvable n'est jamais inventée.
+    expect(PROFESSIONAL_PROMPT_V2).toMatch(/RÈGLE D’ABSTENTION/);
+    expect(PROFESSIONAL_PROMPT_V2).toMatch(/« Le choix dépend de l’indication » n’est jamais une conduite recommandée/);
+  });
+
+  it('professionnel : triage « indéterminé » proscrit, INTERACTION facultative et bornée', () => {
+    expect(PROFESSIONAL_PROMPT_V2).not.toMatch(/Toujours expliciter le triage clinique à partir des seules données fournies/);
+    expect(PROFESSIONAL_PROMPT_V2).not.toMatch(/INTERACTION\s+Section obligatoire/);
+    expect(PROFESSIONAL_PROMPT_V2).not.toMatch(/^- données critiques manquantes$/m);
+    expect(PROFESSIONAL_PROMPT_V2).toMatch(/Section FACULTATIVE/);
+    expect(PROFESSIONAL_PROMPT_V2).toMatch(/Au plus 2 questions/);
+    for (const h of ['DÉFINITION ET ÉPIDÉMIOLOGIE', 'PHYSIOPATHOLOGIE', 'DIAGNOSTIC POSITIF', 'DIAGNOSTICS DIFFÉRENTIELS', 'ÉVOLUTION ET COMPLICATIONS', 'PRISE EN CHARGE', 'PRÉVENTION ET SUIVI']) {
+      expect(PROFESSIONAL_PROMPT_V2).toMatch(new RegExp(`^- ${h}( :|$)`, 'm'));
+    }
+  });
+
+  it('étudiant : démarche de clinicien, jamais des conseils grand public', () => {
+    expect(STUDENT_PROMPT_V4).toMatch(/Tu t'adresses à un futur médecin, jamais à un patient ou à un parent/);
+  });
+
+  it('grand public : références inline en (SRCx), jamais de lien dans le corps', () => {
+    expect(PUBLIC_PROMPT_V3).toMatch(/les références s'écrivent \(SRC1\) ou \(SRC1, SRC2\) : jamais entre crochets/);
+  });
 });
