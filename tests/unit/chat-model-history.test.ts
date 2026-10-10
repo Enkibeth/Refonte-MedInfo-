@@ -10,7 +10,7 @@ import { describe, it, expect } from 'vitest';
 import { convertToModelMessages, generateText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 
-import { buildPriorAttachmentSection, sanitizeChatHistory } from '@/ai/chat/modelHistory';
+import { buildPriorAttachmentSection, fitHistoryToBudget, sanitizeChatHistory } from '@/ai/chat/modelHistory';
 import { mentionedAttachmentName, mentionsAttachment, withAttachmentMarker } from '@/ai/chat/attachment';
 
 /** Tour complet tel que le client le renvoie : réflexion + recherche web + texte. */
@@ -88,6 +88,34 @@ describe('sanitizeChatHistory — le texte de la conversation, rien d’autre', 
     expect(sanitizeChatHistory('x')).toEqual([]);
     const history = sanitizeChatHistory([null, 42, { role: 'tool', parts: [] }, { role: 'user', content: 'Ancien format' }]);
     expect(history).toEqual([{ id: 'message-3', role: 'user', parts: [{ type: 'text', text: 'Ancien format' }] }]);
+  });
+});
+
+describe('fitHistoryToBudget — on oublie les plus anciens au lieu de bloquer', () => {
+  const msg = (id: string, role: 'user' | 'assistant', len: number) => ({
+    id, role, parts: [{ type: 'text' as const, text: 'x'.repeat(len) }],
+  });
+
+  it('historique dans le budget : rendu intact', () => {
+    const h = [msg('1', 'user', 10), msg('2', 'assistant', 10), msg('3', 'user', 10)];
+    expect(fitHistoryToBudget(h, { maxChars: 100 })).toEqual(h);
+  });
+
+  it('hors budget : garde les plus récents, en commençant par une question', () => {
+    const h = [msg('1', 'user', 40), msg('2', 'assistant', 40), msg('3', 'user', 40), msg('4', 'assistant', 40), msg('5', 'user', 10)];
+    // 10 + 40 + 40 = 90 ≤ 100 → 3, 4, 5 (le 2 ferait 130).
+    expect(fitHistoryToBudget(h, { maxChars: 100 })!.map((m) => m.id)).toEqual(['3', '4', '5']);
+    // 10 + 40 = 50 ≤ 60 → 4, 5, mais une réponse orpheline est retirée : la question 5 seule.
+    expect(fitHistoryToBudget(h, { maxChars: 60 })!.map((m) => m.id)).toEqual(['5']);
+  });
+
+  it('plafond en nombre de messages', () => {
+    const h = Array.from({ length: 7 }, (_, i) => msg(String(i), i % 2 ? 'assistant' : 'user', 1));
+    expect(fitHistoryToBudget(h, { maxMessages: 3, maxChars: 1000 })!.map((m) => m.id)).toEqual(['4', '5', '6']);
+  });
+
+  it('dernier message à lui seul trop gros : null (refus explicite)', () => {
+    expect(fitHistoryToBudget([msg('1', 'user', 10), msg('2', 'user', 101)], { maxChars: 100 })).toBeNull();
   });
 });
 

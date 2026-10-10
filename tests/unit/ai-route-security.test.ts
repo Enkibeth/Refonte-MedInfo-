@@ -7,6 +7,7 @@ vi.mock('@/ai/rateLimit/chatRateLimit', () => ({ checkChatRateLimit: quota, chec
 vi.mock('@/ai/providers/featureRuntime', () => ({ getRuntimeForFeature: runtime }));
 vi.mock('@/ai/prompts/promptStore', () => ({ getPromptTemplate: prompt }));
 import { POST as chat } from '../../app/api/chat+api';
+import { CHAT_HISTORY_MAX_CHARS } from '@/ai/chat/modelHistory';
 import { POST as ecos } from '../../app/api/ecos+api';
 
 function jsonRequest(body: unknown) {
@@ -28,9 +29,18 @@ describe('paid AI calls reject unauthorized/oversized input before provider acce
     expect(prompt).not.toHaveBeenCalled();
   });
   it('rejects excessive model context before auth or provider access', async () => {
-    const res = await chat(jsonRequest({ messages: [{ role: 'user', content: 'x'.repeat(120_001) }] }));
+    const res = await chat(jsonRequest({ messages: [{ role: 'user', content: 'x'.repeat(CHAT_HISTORY_MAX_CHARS + 1) }] }));
     expect(res.status).toBe(413);
     expect(persona).not.toHaveBeenCalled();
+    expect(runtime).not.toHaveBeenCalled();
+  });
+  it('a long conversation is trimmed, not refused (older turns forgotten)', async () => {
+    const long = 'y'.repeat(60_000);
+    const messages = Array.from({ length: 12 }, (_, i) => ({ role: i % 2 ? 'assistant' : 'user', content: long }));
+    messages.push({ role: 'user', content: 'dernière question' });
+    const res = await chat(jsonRequest({ messages }));
+    // Passe la borne de taille et atteint le contrôle de quota (refusé dans ce test).
+    expect(res.status).toBe(429);
     expect(runtime).not.toHaveBeenCalled();
   });
   it('refuses anonymous ECOS calls', async () => {

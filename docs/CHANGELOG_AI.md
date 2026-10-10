@@ -2,6 +2,20 @@
 
 Journal des modifications par agents IA. Une entrée par PR.
 
+## [2026-10-10] — Claude Code (chat : budget de réponse 16 000 tokens, historique découpé au lieu de refusé)
+
+### Files modified
+- `src/ai/chat/responseMode.ts` (`CHAT_ANSWER_TOKEN_BUDGET`), `src/ai/chat/modelHistory.ts` (`fitHistoryToBudget`), `app/api/chat+api.ts`.
+- Tests `chat-response-mode`, `chat-model-history`, `ai-route-security` ; addendum ADR-0046 ; `CLAUDE.md`.
+
+### Purpose
+Aucune réponse du chat coupée avant 16 000 tokens (Approfondi et Rapide étaient à 4 096 / 3 000),
+et une longue conversation n'est plus refusée en 413 : les échanges les plus anciens sont oubliés.
+
+### Impact réglementaire
+`none` : budget de sortie et taille d'historique uniquement ; la borne de coût par requête de
+l'ADR-0045 est conservée (240 000 caractères, 100 messages) ; plafond invité inchangé.
+
 ## [2026-10-10] — Claude Code (chat : répondre d'abord, prise de position, trame pathologie)
 
 ### Files modified

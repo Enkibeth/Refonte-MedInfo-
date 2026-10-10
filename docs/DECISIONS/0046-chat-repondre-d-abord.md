@@ -58,6 +58,22 @@ Boucle 2 : pro → trame 6-7/7 sur les questions de pathologie, « Conduite reco
 (apixaban 10 mg ×2 7 j puis 5 mg ×2 ; rivaroxaban 15 mg ×2 21 j puis 20 mg ; ≥ 3 mois).
 Latence pro ~25-35 s (contre ~20-27 s) pour des réponses plus complètes.
 
+## Addendum 2026-10-10 (2) — plus de réponse ni de conversation coupée
+
+Décision Hugo : « aucune limite, au moins 10-15 000 tokens ».
+- Budget de RÉPONSE `CHAT_ANSWER_TOKEN_BUDGET = 16 000` (`src/ai/chat/responseMode.ts`) pour
+  Approfondi et Rapide (auparavant 4 096 et 3 000), réserve de réflexion en plus. Classique ne
+  fixe toujours aucun plafond (128 000 pour gpt-6-luna). Les zones de coupure réelles étaient
+  l'Approfondi grand public (4 096 + 4 096 de réserve) et le Rapide (3 000) ; l'Approfondi
+  pro/étudiant disposait déjà de 32 768 au total. Mesure réelle (Approfondi) : 12 900 et
+  14 100 tokens de sortie, ~18 000 caractères, `finish = stop`, en 2,5 min environ.
+- Historique : l'ADR-0045 REFUSAIT la requête au-delà de 120 000 caractères (413). Avec les
+  réponses longues, une conversation pro se bloquait en quelques échanges. Désormais
+  `fitHistoryToBudget` (`src/ai/chat/modelHistory.ts`) garde les messages les plus récents dans
+  un budget de 240 000 caractères / 100 messages : la conversation continue, les échanges les
+  plus anciens sont oubliés par le modèle. Refus seulement si le dernier message seul dépasse.
+  Le plafond d'essai invité compte toujours les messages BRUTS du client (non contournable).
+
 ## Conservé
 
 Signes sentinelles et orientation 15/112 en tête, pas de diagnostic certain, pas de posologie

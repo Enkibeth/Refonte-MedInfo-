@@ -60,6 +60,17 @@ export interface ResponseModeRuntime {
 }
 
 /**
+ * Budget de la RÉPONSE visible du chat quand un mode en fixe un (Rapide, Approfondi), en
+ * tokens — la réserve de réflexion s'y ajoute au bord (`featureRuntime`). Décision Hugo
+ * (2026-10) : « aucune limite, au moins 10-15 000 ». Avant, Approfondi était plafonné à 4 096
+ * et Rapide à 3 000 : les réponses longues demandées par la trame pathologie (ADR-0046)
+ * risquaient d'être coupées. Le budget borne le PIRE cas, pas la longueur habituelle (qui
+ * vient du prompt et de la verbosité) : il ne coûte rien tant qu'il n'est pas atteint. Le mode
+ * Classique ne fixe aucun plafond (celui du modèle s'applique : 128 000 pour gpt-6-luna).
+ */
+export const CHAT_ANSWER_TOKEN_BUDGET = 16_000;
+
+/**
  * Mappe (mode, chatbot) → surcharges runtime.
  *
  * Grand public : `standard` conserve le plafond historique `minimal` (ancrage factuel
@@ -80,15 +91,15 @@ export function responseModeRuntime(
     return {
       reasoningEffort: 'minimal',
       verbosity: 'low',
-      maxOutputTokens: 3000,
+      maxOutputTokens: CHAT_ANSWER_TOKEN_BUDGET,
       webSearch: false,
     };
   }
 
   if (mode === 'deep') {
     return isPublic
-      ? { capReasoningEffort: 'medium', verbosity: 'high', maxOutputTokens: 4096 }
-      : { reasoningEffort: 'high', verbosity: 'high', maxOutputTokens: 4096 };
+      ? { capReasoningEffort: 'medium', verbosity: 'high', maxOutputTokens: CHAT_ANSWER_TOKEN_BUDGET }
+      : { reasoningEffort: 'high', verbosity: 'high', maxOutputTokens: CHAT_ANSWER_TOKEN_BUDGET };
   }
 
   // standard : config admin telle quelle, à un détail près — le grand public reste

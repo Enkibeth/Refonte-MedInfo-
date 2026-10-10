@@ -60,7 +60,7 @@ import {
 import { buildOutputToolsSection, coerceChatOutputTools } from '@/ai/chat/outputTools';
 import { buildModuleActionsSection, moduleActionCounts, moduleToolsForRequest } from '@/ai/chat/moduleActions';
 import { appendAttachmentToModelMessages, coerceChatAttachment } from '@/ai/chat/attachment';
-import { buildPriorAttachmentSection, sanitizeChatHistory } from '@/ai/chat/modelHistory';
+import { buildPriorAttachmentSection, fitHistoryToBudget, sanitizeChatHistory } from '@/ai/chat/modelHistory';
 import { isConversationalTurn, latestUserText } from '@/ai/chat/turnKind';
 import { isAdminUserId } from '@/admin/index';
 import type { Persona } from '@/ai/prompts/_schema';
@@ -112,12 +112,16 @@ export async function POST(request: Request): Promise<Response> {
   // réflexion ni recherches web des tours précédents, rejouées sinon par OpenAI à chaque
   // tour (46k → 228k tokens d'entrée mesurés), ni rôle `system` ou part `file` fournis par
   // le client (src/ai/chat/modelHistory.ts).
-  const history = sanitizeChatHistory(uiMessages);
-  if (history.length > 100 || history.reduce((sum, m) => sum + m.parts[0].text.length, 0) > 120_000) {
-    return Response.json({ error: 'Conversation trop volumineuse. Ouvrez une nouvelle conversation.' }, { status: 413 });
-  }
-  if (!history.some((m) => m.role === 'user')) {
+  const fullHistory = sanitizeChatHistory(uiMessages);
+  if (!fullHistory.some((m) => m.role === 'user')) {
     return Response.json({ error: 'Message utilisateur requis.' }, { status: 400 });
+  }
+  // Borne de coût par requête (ADR-0045) : les échanges les plus anciens sont oubliés au lieu
+  // de bloquer la conversation (réponses longues, ADR-0046). Refus seulement si le dernier
+  // message, à lui seul, dépasse le budget.
+  const history = fitHistoryToBudget(fullHistory);
+  if (!history) {
+    return Response.json({ error: 'Message trop volumineux. Raccourcissez-le ou ouvrez une nouvelle conversation.' }, { status: 413 });
   }
   const personalInfo = coercePersonalInfo(body.personalInfo);
   const country = coerceCountry(body.country);
