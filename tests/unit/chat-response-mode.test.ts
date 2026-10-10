@@ -93,6 +93,16 @@ describe('mode rapide — une réponse directe, sans recherche', () => {
     expect(responseModeRuntime('fast', 'student').maxOutputTokens).toBeGreaterThanOrEqual(2048);
   });
 
+  it('aucun mode ne coupe une réponse avant 15 000 tokens (décision Hugo, 2026-10)', () => {
+    for (const chatbot of ['public', 'student', 'professional'] as const) {
+      for (const mode of ['fast', 'standard', 'deep'] as const) {
+        const budget = responseModeRuntime(mode, chatbot).maxOutputTokens;
+        // undefined = aucun plafond fixé par le mode (celui du modèle s'applique).
+        if (budget !== undefined) expect(budget).toBeGreaterThanOrEqual(15_000);
+      }
+    }
+  });
+
   it('les autres modes gardent la recherche web (config admin de `chat`)', () => {
     expect(responseModeRuntime('standard', 'student').webSearch).toBeUndefined();
     expect(responseModeRuntime('deep', 'student').webSearch).toBeUndefined();

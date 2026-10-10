@@ -66,6 +66,47 @@ export function sanitizeChatHistory(raw: unknown): ChatHistoryMessage[] {
   return history;
 }
 
+/** Plafonds de l'historique transmis au modèle par requête (ADR-0045, relevés 2026-10). */
+export const CHAT_HISTORY_MAX_MESSAGES = 100;
+export const CHAT_HISTORY_MAX_CHARS = 240_000;
+
+/**
+ * Garde les messages les plus RÉCENTS qui tiennent dans le budget (pur, testé).
+ *
+ * L'ADR-0045 bornait l'historique (100 messages, 120 000 caractères) en REFUSANT la requête
+ * (413 « Conversation trop volumineuse ») : avec les réponses longues du chat (trame
+ * pathologie, ADR-0046 — 8 à 11 000 caractères en pro), une conversation se bloquait après
+ * quelques échanges. La borne de coût par requête est conservée, mais au lieu de refuser on
+ * oublie les échanges les plus anciens : la conversation continue, le modèle garde le fil
+ * récent. L'historique conservé commence toujours par un message utilisateur.
+ *
+ * Renvoie `null` seulement si le dernier message utilisateur, à lui seul (avec ce qui le
+ * suit), dépasse le budget : là, rien d'utile ne peut être transmis.
+ *
+ * ⚠️ Les contrôles qui COMPTENT les messages (essai invité : 1 message) portent sur les
+ * messages bruts du client, jamais sur cet historique découpé — sinon gonfler un vieux
+ * message suffirait à le faire oublier et à contourner le plafond.
+ */
+export function fitHistoryToBudget(
+  history: readonly ChatHistoryMessage[],
+  { maxMessages = CHAT_HISTORY_MAX_MESSAGES, maxChars = CHAT_HISTORY_MAX_CHARS } = {},
+): ChatHistoryMessage[] | null {
+  let start = history.length;
+  let chars = 0;
+  while (start > 0 && history.length - start < maxMessages) {
+    const size = history[start - 1].parts[0].text.length;
+    if (chars + size > maxChars) break;
+    chars += size;
+    start -= 1;
+  }
+  let kept = history.slice(start);
+  // Un historique qui commencerait par une réponse orpheline perdrait sa question : on la retire.
+  const firstUser = kept.findIndex((m) => m.role === 'user');
+  if (firstUser < 0) return null;
+  kept = kept.slice(firstUser);
+  return kept;
+}
+
 /**
  * Consigne quand l'historique cite une pièce jointe que le modèle ne reçoit PAS dans cette
  * requête (pur, testé). Le document n'est jamais conservé (ADR-0034) : il n'est transmis
