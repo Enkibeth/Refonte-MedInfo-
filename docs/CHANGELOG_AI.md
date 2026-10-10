@@ -2,6 +2,23 @@
 
 Journal des modifications par agents IA. Une entrée par PR.
 
+## [2026-10-10] — Claude Code (chat : répondre d'abord, prise de position, trame pathologie)
+
+### Files modified
+- Prompts `src/ai/prompts/public.v3.ts`, `student.v4.ts`, `professional.v2.ts`.
+- Test `tests/unit/chat-prompts-answer-first.test.ts`, ADR-0046, `CLAUDE.md` et ce journal.
+
+### Purpose
+Les chatbots posaient des questions au lieu de répondre (grand public : 100 % des premières
+réponses mesurées = questionnaire seul) et ne tranchaient pas. Réponse de fond dès le premier
+message, questions en fin de réponse, conduite recommandée explicite, trame pathologie
+complète (épidémiologie → prévention).
+
+### Impact réglementaire
+`low` : aucune couche de sécurité retirée (sentinelles, 15/112, pas de diagnostic certain ni de
+posologie grand public). La hiérarchisation des causes côté grand public reste populationnelle ;
+point à réexaminer avec la réintroduction de la sécurité (ADR-0024).
+
 ## [2026-10-08] — Codex (vulnérabilités : API, rôles, RLS et dépendances)
 
 ### Files modified
