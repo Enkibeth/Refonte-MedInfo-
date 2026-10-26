@@ -20,24 +20,25 @@ import { buttonLinkProps } from './interaction';
 import { LandingHeader } from './LandingHeader';
 import { navLinkProps } from './navLink';
 import { SiteFooter } from './SiteFooter';
+import { lx } from './landing/lx';
 import { tokens } from './tokens';
 
 export function ToolPreview({ feature }: { feature: ToolPageId }) {
   const router = useRouter();
   const page = TOOL_PAGES[feature];
   const meta = APP_FEATURES.find((f) => f.id === feature);
-  const tint = featureTint(feature);
   const others = APP_FEATURES.filter((f) => f.id !== feature && f.id !== 'chat');
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <LandingHeader landmark={false} />
-      <View style={styles.page}>
+      {/* Bandeau « moniteur » commun à l'accueil et au dashboard (ADR-0047). */}
+      <View {...lx('ax-night')} style={styles.heroBand}>
         <View style={styles.hero}>
           <View style={styles.eyebrow}>
             {meta ? (
-              <View style={[styles.icon, { backgroundColor: tint.bg }]}>
-                <Icon name={meta.icon} size={tokens.size.iconMd} color={tint.fg} />
+              <View style={[styles.icon, styles.iconNight]}>
+                <Icon name={meta.icon} size={tokens.size.iconMd} color={tokens.colors.night.mint} />
               </View>
             ) : null}
             <Text style={styles.kicker}>Outil MedInfo AI</Text>
@@ -46,7 +47,17 @@ export function ToolPreview({ feature }: { feature: ToolPageId }) {
             {page.title}
           </Text>
           <Text style={styles.lead}>{page.lead}</Text>
+          <View style={styles.actions}>
+            <Link href="/(auth)/sign-in?mode=signup" style={styles.primary} {...buttonLinkProps('light')}>
+              Créer un compte gratuit
+            </Link>
+            <Link href="/(auth)/sign-in" style={styles.secondary} {...buttonLinkProps('light')}>
+              Se connecter
+            </Link>
+          </View>
         </View>
+      </View>
+      <View style={styles.page}>
 
         <View style={styles.card}>
           <Text accessibilityRole="header" aria-level={2} style={styles.cardTitle}>
@@ -67,14 +78,6 @@ export function ToolPreview({ feature }: { feature: ToolPageId }) {
           {page.note ? <Text style={styles.note}>{page.note}</Text> : null}
         </View>
 
-        <View style={styles.actions}>
-          <Link href="/(auth)/sign-in?mode=signup" style={styles.primary} {...buttonLinkProps()}>
-            Créer un compte gratuit
-          </Link>
-          <Link href="/(auth)/sign-in" style={styles.secondary} {...buttonLinkProps()}>
-            Se connecter
-          </Link>
-        </View>
         <Link href="/(chat)/chat" style={styles.textLink}>
           Essayer le chat sans inscription
         </Link>
@@ -126,11 +129,21 @@ const styles = StyleSheet.create({
     maxWidth: tokens.layout.reading,
     alignSelf: 'center',
     paddingHorizontal: tokens.space.lg,
-    paddingTop: tokens.space['3xl'],
+    paddingTop: tokens.space['2xl'],
     paddingBottom: tokens.space['4xl'],
     gap: tokens.space.xl,
   },
-  hero: { gap: tokens.space.md },
+  heroBand: { position: 'relative', backgroundColor: tokens.colors.night.base, overflow: 'hidden' },
+  hero: {
+    width: '100%',
+    maxWidth: tokens.layout.reading,
+    alignSelf: 'center',
+    paddingHorizontal: tokens.space.lg,
+    paddingTop: tokens.space['3xl'],
+    paddingBottom: tokens.space['3xl'],
+    gap: tokens.space.md,
+  },
+  iconNight: { backgroundColor: tokens.colors.night.raised },
   eyebrow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.md },
   icon: {
     width: tokens.size.iconButton,
@@ -140,9 +153,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
-  kicker: { fontFamily: tokens.font.display, color: tokens.colors.textSubtle, ...tokens.type.label },
-  title: { fontFamily: tokens.font.serif, fontWeight: tokens.weight.regular, color: tokens.colors.text, ...tokens.type.display },
-  lead: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, ...tokens.type.bodyLg },
+  kicker: { fontFamily: tokens.font.display, color: tokens.colors.night.muted, ...tokens.type.label },
+  title: { fontFamily: tokens.font.serif, fontWeight: tokens.weight.regular, color: tokens.colors.night.text, ...tokens.type.display },
+  lead: { fontFamily: tokens.font.sans, color: tokens.colors.night.muted, ...tokens.type.bodyLg },
   card: {
     backgroundColor: tokens.colors.surface,
     borderWidth: tokens.border.thin,
@@ -158,7 +171,7 @@ const styles = StyleSheet.create({
   audience: { fontFamily: tokens.font.sans, color: tokens.colors.textSubtle, ...tokens.type.body },
   audienceLabel: { fontWeight: tokens.weight.semibold, color: tokens.colors.text },
   note: { fontFamily: tokens.font.sans, color: tokens.colors.textMuted, ...tokens.type.caption },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.md },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.space.md, marginTop: tokens.space.md },
   primary: {
     minHeight: tokens.size.buttonLg,
     paddingHorizontal: tokens.space.xl,
@@ -181,16 +194,15 @@ const styles = StyleSheet.create({
     paddingVertical: tokens.space.md + 1,
     borderRadius: tokens.radius.md,
     borderWidth: tokens.border.thin,
-    borderColor: tokens.colors.borderControl,
-    backgroundColor: tokens.colors.surface,
-    color: tokens.colors.text,
+    borderColor: tokens.colors.onDarkBorder,
+    backgroundColor: tokens.colors.transparent,
+    color: tokens.colors.night.text,
     fontFamily: tokens.font.display,
     fontWeight: tokens.weight.semibold,
     ...tokens.type.label,
     textAlign: 'center',
     overflow: 'hidden',
     position: 'relative',
-    ...tokens.elevation.control,
   },
   textLink: {
     alignSelf: 'flex-start',

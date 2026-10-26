@@ -10,24 +10,33 @@ function files(directory: string): string[] {
     entry.isDirectory() ? files(join(directory, entry.name)) : [join(directory, entry.name)]);
 }
 
+// Refonte créative 2026-10 (ADR-0047) : l'accueil est composé dans app/index.tsx à partir
+// des sections de src/ui/landing/ (textes dans copy.ts). Les invariants ci-dessous valent
+// pour l'ensemble de ces fichiers.
+const landingFiles = files('src/ui/landing');
+const landing = [home, ...landingFiles.map(read)].join('\n');
+const copy = read('src/ui/landing/copy.ts');
+
 describe('accueil orienté produit, cadre préservé', () => {
   it('met en avant les usages sans recopier le long énoncé juridique', () => {
-    expect(home).toContain('L’IA pour apprendre.');
-    expect(home).toContain('ECOS et révisions');
-    expect(home).not.toContain('INTENDED_PURPOSE');
+    expect(copy).toContain("line1: [['Une', 'question'], ['de', 'santé,']]");
+    expect(copy).toContain("line2: [['trois', 'niveaux'], ['de', 'réponse.']]");
+    expect(copy).toContain('simulation ECOS et révisions');
+    expect(landing).not.toContain('INTENDED_PURPOSE');
     expect(home).toContain('{getAiDisclosure()}');
     expect(home).toContain('<SiteFooter />');
     expect(home).toMatch(/\b15\b.*112/);
+    expect(copy).toMatch(/composez le 15 \(SAMU\) ou le 112/);
     expect(read('app/(legal)/legal.tsx')).toContain('{INTENDED_PURPOSE}');
   });
 
   it('présente le modèle comme un défaut de version, pas comme une garantie de runtime', () => {
-    expect(home).toContain('Le chat fonctionne aujourd’hui avec GPT-6 Luna.');
+    expect(copy).toContain('Le chat fonctionne aujourd’hui avec GPT-6 Luna.');
     expect(read('src/ai/providers/featureModel.ts')).toMatch(/chat:\s*\{ modelId: 'gpt-6-luna'/);
-    expect(home).not.toMatch(/meilleur modèle|tous les derniers modèles|réponses garanties/i);
+    expect(landing).not.toMatch(/meilleur modèle|tous les derniers modèles|réponses garanties/i);
   });
 
-  it('change seulement la photo d’étude ; les deux photos validées sont conservées', () => {
+  it('conserve les photographies validées et documente la photo de bibliothèque réutilisée', () => {
     const native = read('src/ui/LandingPhoto.tsx');
     const web = read('src/ui/LandingPhoto.web.tsx');
     expect(native).toContain('medical-study.jpg');
@@ -36,6 +45,51 @@ describe('accueil orienté produit, cadre préservé', () => {
       expect(native).toContain(`${photo}.jpg`);
       expect(web).toContain(`${photo}-1000.webp`);
     }
+    // Photo « bibliothèque » (Pexels, déjà livrée et licenciée) : onglet Étudiants.
+    expect(native).toContain('study.jpg');
+    expect(web).toContain('study-1000.webp');
+    expect(read('assets/landing/README.md')).toContain('`study*`');
+  });
+});
+
+describe('accueil « Moniteur » : honnêteté des démonstrations (ADR-0047)', () => {
+  it('signale chaque aperçu d’interface comme fictif, à l’écran et aux lecteurs d’écran', () => {
+    const parts = read('src/ui/landing/MockParts.tsx');
+    expect(parts).toContain('>Contenu fictif<');
+    expect(parts).toContain('Aperçu de l’interface, contenu fictif');
+    expect(read('src/ui/landing/Showcase.tsx')).toContain('Les contenus des aperçus sont fictifs.');
+    expect(read('src/ui/landing/ReadingCard.tsx')).toContain('HERO_COPY.cardLabel');
+    expect(copy).toContain('Exemple d’affichage');
+  });
+
+  it('dérive les outils et leurs accès du registre de visibilité, jamais d’une liste recopiée', () => {
+    for (const file of ['AccessMatrix.tsx', 'AudienceSwitcher.tsx']) {
+      expect(read(`src/ui/landing/${file}`), file).toContain('APP_FEATURES');
+    }
+    // Compte connecté : même règle que la navigation (isFeatureVisible) pour lier un outil.
+    expect(home).toContain('isFeatureVisible(feature.id, persona, { isAdmin })');
+  });
+
+  it('n’affiche aucun chiffre d’usage, avis ni badge inventé', () => {
+    expect(landing).not.toMatch(/utilisateurs satisfaits|\d[\d\s]*\s?(utilisateurs|étudiants inscrits|avis)|★|note moyenne|recommandé par/i);
+  });
+
+  it('respecte la typographie française dans les textes de l’accueil', () => {
+    const literals = [...copy.matchAll(/'((?:[^'\\\n]|\\.)*)'/g)].map((m) => m[1]);
+    expect(literals.length).toBeGreaterThan(40);
+    for (const text of literals) {
+      expect(text, text).not.toMatch(/ [:;?!»]|« /);
+    }
+  });
+
+  it('peut figer chaque animation et rend l’état final sous prefers-reduced-motion', () => {
+    const css = read('src/ui/landing/landingCss.ts');
+    expect(css).toContain('[data-mi~="lx-paused"] *');
+    expect(css).toContain('@media (prefers-reduced-motion: reduce)');
+    expect(home).toContain("accessibilityRole=\"button\"");
+    expect(home).toContain('aria-pressed={paused}');
+    // Défilement lié à la position : seulement si l'utilisateur n'a rien demandé.
+    expect(css).toMatch(/@supports \(animation-timeline: view\(\)\) \{\s*@media \(prefers-reduced-motion: no-preference\)/);
   });
 });
 

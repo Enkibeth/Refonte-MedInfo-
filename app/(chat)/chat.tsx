@@ -124,6 +124,8 @@ import { useWindowWidth } from '@/ui/useWindowWidth';
 import { FOCUS_TEXT_SIZE, readChatFocusPref, setChatFocus, useChatFocus } from '@/chat/focusMode';
 import { MarkdownTextSizeContext } from '@/ui/MarkdownRenderer';
 import { ChatMobileHeader } from '@/ui/chat/ChatMobileHeader';
+import { PulseMark } from '@/ui/chat/PulseMark';
+import { lx } from '@/ui/landing/lx';
 
 // Suggestions d'amorce (état vide) : 50 questions par chatbot, rotation 3 par 3
 // toutes les 30 s — voir src/ai/chat/starterSuggestions.ts.
@@ -144,6 +146,12 @@ const EMPTY_TITLE: Record<ChatbotId, string> = {
   public: 'Posez votre question santé',
   student: 'Que voulez-vous réviser aujourd’hui ?',
   professional: 'Quelle est votre question clinique ?',
+};
+/** Couleur d'audience de l'assistant (repère de l'état vide), jamais un statut. */
+const EMPTY_TONE: Record<ChatbotId, string> = {
+  public: tokens.colors.personas.public.accent,
+  student: tokens.colors.personas.student.accent,
+  professional: tokens.colors.personas.pro.accent,
 };
 const EMPTY_TITLE_NAMED: Record<ChatbotId, string> = {
   public: 'comment puis-je vous aider ?',
@@ -1981,7 +1989,13 @@ export default function ChatScreen() {
       >
         {messages.length === 0 && !isLoading ? (
           <Reveal style={styles.emptyState}>
-
+            {/* Repère de l'assistant (ADR-0047) : battement à sa couleur d'audience + son nom. */}
+            <View style={styles.emptyKicker}>
+              <PulseMark color={EMPTY_TONE[chatbot]} />
+              <Text style={[styles.emptyKickerText, { color: EMPTY_TONE[chatbot] }]}>
+                {`Assistant ${meta.label.toLowerCase()}`}
+              </Text>
+            </View>
             <Text style={styles.emptyTitle} accessibilityRole="header" aria-level={2}>
               {personalInfo?.firstName
                 ? `Bonjour ${personalInfo.firstName}, ${EMPTY_TITLE_NAMED[chatbot]}`
@@ -2009,15 +2023,18 @@ export default function ChatScreen() {
               // react-native-web lit `tabIndex` sur Pressable (pas `focusable`).
               tabIndex={-1}
             >
-              {starters.map((s) => (
+              {starters.map((s, i) => (
                 <Touchable
                   key={s}
+                  // Nouvelle suggestion (rotation toutes les 30 s) : entrée échelonnée.
+                  {...lx('ax-in', { ad: String(i + 1) })}
                   style={[styles.starterChip, guestLocked && styles.starterChipDisabled]}
                   onPress={() => void sendText(s)}
                   disabled={guestLocked}
                   accessibilityRole="button"
                   aria-disabled={guestLocked}
                 >
+                  <Text aria-hidden style={[styles.starterIndex, { color: EMPTY_TONE[chatbot] }]}>{String(i + 1).padStart(2, '0')}</Text>
                   <Text style={styles.starterChipText}>{s}</Text>
                   <Icon name="arrowRight" size={tokens.size.iconSm} color={tokens.colors.textMuted} />
                 </Touchable>
@@ -2814,6 +2831,9 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'flex-start',
   },
+  emptyKicker: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm, marginBottom: tokens.space.xs },
+  emptyKickerText: { fontFamily: tokens.font.display, ...tokens.type.label, fontWeight: tokens.weight.semibold },
+  starterIndex: { fontFamily: tokens.font.serif, fontStyle: 'italic', fontSize: 16, lineHeight: 20, minWidth: 20, fontVariant: ['tabular-nums'] },
   emptyIconWrap: {
     width: 56,
     height: 56,

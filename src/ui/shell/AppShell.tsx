@@ -290,6 +290,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           active && styles.navItemActive,
         ]}
       >
+        {/* Repère de la page courante : filet bleu vif au bord (forme + couleur, ADR-0047). */}
+        {active ? <View style={styles.navIndicator} /> : null}
         <View style={[styles.navIcon, active && styles.navIconActive]}>
           <Icon
             name={entry.icon}
@@ -605,13 +607,24 @@ const styles = StyleSheet.create({
   },
   navItemHovered: { backgroundColor: tokens.colors.border },
   navItemActive: { backgroundColor: tokens.colors.accentSurface },
+  // Icône nue au repos : une pastille grise sous chacune des dix entrées faisait une colonne
+  // de petites cartes identiques (audit créatif 2026-10). La pastille marque la page courante.
   navIcon: {
     width: 30,
     height: 30,
     borderRadius: tokens.radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: tokens.colors.border,
+  },
+  navIndicator: {
+    position: 'absolute',
+    left: 0,
+    top: tokens.space.sm,
+    bottom: tokens.space.sm,
+    width: 3,
+    borderTopRightRadius: 2,
+    borderBottomRightRadius: 2,
+    backgroundColor: tokens.colors.accentVivid,
   },
   navIconActive: { backgroundColor: tokens.colors.accentSurface },
   navLabel: {

@@ -61,6 +61,19 @@ const palette = {
   midnightRule: '#4F667D',
   mintLight: '#CDE6D9',
 
+  // Couche expressive « Moniteur » (refonte créative 2026-10, ADR-0047) : bleu nuit de marque
+  // et signaux lumineux d'un moniteur de surveillance. Réservée aux surfaces de présentation
+  // (accueil, hero du dashboard) ; jamais aux zones de lecture médicale.
+  night: '#141E4E', // bleu nuit de marque (= blue950), fond des bandeaux sombres
+  nightDeep: '#0C1438', // profondeur du bas de bandeau, ombres colorées
+  nightRaised: '#1E2A63', // surface surélevée sur la nuit (cartes, aperçus)
+  nightLine: '#34417A', // filets sur la nuit (non interactifs)
+  onNight: '#F4F6FF',
+  onNightMuted: '#BCC5E6', // 9,2:1 sur night
+  signalMint: '#5CE1B0', // tracé ECG, accent principal sur la nuit
+  signalLilac: '#B9A6FF',
+  signalBlue: '#7FB0FF', // liens et accents bleus sur la nuit (le bleu vif y manque de contraste)
+
 } as const;
 
 export const tokens = {
@@ -123,12 +136,33 @@ export const tokens = {
       highlight: palette.mintLight,
     },
 
+    // ── Couche « Moniteur » (ADR-0047) : bandeaux sombres de présentation ──────
+    // Texte toujours en onNight / onNightMuted ; les signaux colorés servent aux tracés,
+    // aux mots accentués des grands titres et aux repères d'audience sur fond sombre.
+    night: {
+      base: palette.night,
+      deep: palette.nightDeep,
+      raised: palette.nightRaised,
+      line: palette.nightLine,
+      text: palette.onNight,
+      muted: palette.onNightMuted,
+      mint: palette.signalMint,
+      lilac: palette.signalLilac,
+      blue: palette.signalBlue,
+    },
+
     // ── Accents par audience (persona) ───────────────────────────────────────
     // Toujours accompagnés du nom et d'une icône ; aucun sens clinique.
     personas: {
       pro: { accent: palette.electric700, soft: palette.blue50 },
       student: { accent: palette.lilac700, soft: palette.lilac50 },
       public: { accent: palette.sage700, soft: palette.sage50 },
+    },
+    // Même repère d'audience, version lumineuse pour les fonds sombres (bandeaux « Moniteur »).
+    personasOnNight: {
+      public: palette.signalMint,
+      student: palette.signalLilac,
+      pro: palette.signalBlue,
     },
 
     // ── Teintes de pastilles par outil (shell 2026-07) ───────────────────────
@@ -191,6 +225,9 @@ export const tokens = {
   },
   // Échelle modulaire (~1.2). Letter-spacing négatif sur les grands titres = rendu « dessiné ».
   type: {
+    // Grand titre de l'accueil (ADR-0047) : 44 px au pré-rendu et sur téléphone, fluide
+    // jusqu'à 88 px sur ordinateur via le CSS de l'accueil (src/ui/landing/landingCss.ts).
+    hero: { fontSize: 44, lineHeight: 46, letterSpacing: -1.2 },
     landing: { fontSize: 60, lineHeight: 68, letterSpacing: -1.2 },
     display: { fontSize: 40, lineHeight: 46, letterSpacing: -0.8 },
     h1: { fontSize: 32, lineHeight: 40, letterSpacing: -0.5 },
