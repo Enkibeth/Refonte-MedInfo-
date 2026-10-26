@@ -1,5 +1,5 @@
 import { FieldInput } from '@/ui/FieldInput';
-import { PageTitle } from '@/ui/PageTitle';
+import { NightBand } from '@/ui/NightBand';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
@@ -46,15 +46,21 @@ export default function ChooseRoleScreen() {
   }
 
   return (
-    <Screen maxWidth={560}>
-      <PageTitle style={styles.title}>Choisis ton rôle</PageTitle>
-      <Text style={styles.body}>
-        Le rôle adapte ton expérience.{persona ? ` Rôle actuel : ${ROLES[persona].label}.` : ''}
-      </Text>
+    <Screen
+      maxWidth={560}
+      band={
+        <NightBand
+          maxWidth={560}
+          kicker="Compte"
+          title="Choisis ton rôle"
+          lead={`Le rôle adapte ton expérience.${persona ? ` Rôle actuel\u00a0: ${ROLES[persona].label}.` : ''}`}
+        />
+      }
+    >
 
       {/* Public */}
-      <Card style={[styles.roleCard, { borderLeftWidth: 3, borderLeftColor: tokens.colors.personas.public.accent }]}>
-        <Text style={styles.roleTitle}>{ROLES.public.label}</Text>
+      <Card style={styles.roleCard}>
+        <RoleHeading label={ROLES.public.label} color={tokens.colors.personas.public.accent} soft={tokens.colors.personas.public.soft} />
         <Text style={styles.roleDesc}>{ROLES.public.description}</Text>
         <Button
           label="Continuer en grand public"
@@ -66,8 +72,8 @@ export default function ChooseRoleScreen() {
       </Card>
 
       {/* Étudiant */}
-      <Card style={[styles.roleCard, { borderLeftWidth: 3, borderLeftColor: tokens.colors.personas.student.accent }]}>
-        <Text style={styles.roleTitle}>{ROLES.student.label}</Text>
+      <Card style={styles.roleCard}>
+        <RoleHeading label={ROLES.student.label} color={tokens.colors.personas.student.accent} soft={tokens.colors.personas.student.soft} />
         <Text style={styles.roleDesc}>{ROLES.student.description}</Text>
         <FieldInput
           accessibilityLabel="Adresse académique confirmée du compte"
@@ -94,8 +100,8 @@ export default function ChooseRoleScreen() {
       </Card>
 
       {/* Professionnel */}
-      <Card style={[styles.roleCard, { borderLeftWidth: 3, borderLeftColor: tokens.colors.personas.pro.accent }]}>
-        <Text style={styles.roleTitle}>{ROLES.professional.label}</Text>
+      <Card style={styles.roleCard}>
+        <RoleHeading label={ROLES.professional.label} color={tokens.colors.personas.pro.accent} soft={tokens.colors.personas.pro.soft} />
         <Text style={styles.roleDesc}>{ROLES.professional.description}</Text>
         <FieldInput
           accessibilityLabel="Numéro RPPS"
@@ -135,23 +141,20 @@ export default function ChooseRoleScreen() {
   );
 }
 
+/** Intitulé d'un rôle : pastille et nom à la couleur d'audience (le filet gauche coloré des
+ *  cartes était un tic de gabarit, audit créatif 2026-10). */
+function RoleHeading({ label, color, soft }: { label: string; color: string; soft: string }) {
+  return (
+    <View style={styles.roleHeading}>
+      <View style={[styles.roleDot, { backgroundColor: soft, borderColor: color }]} />
+      <Text style={[styles.roleTitle, { color }]}>{label}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  title: {
-    fontFamily: tokens.font.serif,
-    color: tokens.colors.text,
-    fontSize: tokens.type.h1.fontSize,
-    lineHeight: tokens.type.h1.lineHeight,
-    letterSpacing: tokens.type.h1.letterSpacing,
-    fontWeight: tokens.weight.semibold,
-    marginBottom: tokens.space.sm,
-  },
-  body: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
-    fontSize: tokens.type.bodyLg.fontSize,
-    lineHeight: tokens.type.bodyLg.lineHeight,
-    marginBottom: tokens.space.sm,
-  },
+  roleHeading: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm },
+  roleDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 3 },
   roleCard: { marginTop: tokens.space.lg, gap: tokens.space.md },
   roleTitle: {
     fontFamily: tokens.font.display,

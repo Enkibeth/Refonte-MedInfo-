@@ -1,4 +1,3 @@
-import { PageTitle } from '@/ui/PageTitle';
 /**
  * Page « Qui sommes-nous » (audit landing 2026-06) — contenu statique public.
  */
@@ -9,6 +8,7 @@ import { PAGE_SEO, breadcrumbJsonLd, organizationJsonLd } from '@/seo/meta';
 import { Button } from '@/ui/Button';
 import { LandingHeader } from '@/ui/LandingHeader';
 import { MainContent } from '@/ui/landmarks';
+import { NightBand } from '@/ui/NightBand';
 import { Icon, type IconName } from '@/ui/icons';
 import { Reveal } from '@/ui/Reveal';
 import { SeoHead } from '@/ui/SeoHead';
@@ -56,68 +56,68 @@ export default function AboutScreen() {
       />
       <LandingHeader />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <MainContent style={styles.inner}>
-          <Reveal>
-            <Text style={styles.eyebrow}>Qui sommes-nous</Text>
-            <PageTitle style={styles.title}>Un projet né pendant les études de médecine</PageTitle>
-          </Reveal>
-          <Reveal delay={tokens.motion.revealStagger}>
-            <Text style={styles.lead}>
-              Créé par Hugo Bettembourg, étudiant en médecine, MedInfo AI part des besoins
-              concrets de la formation médicale : comprendre, réviser, retrouver les références
-              et produire des travaux structurés.
-            </Text>
-            <Text style={styles.paragraph}>
-              Le projet associe des modèles d’IA OpenAI et Anthropic à des outils dédiés :
-              simulation ECOS, planning de révisions, présentations, CV et rédaction d’articles.
-              Le chat fonctionne aujourd’hui avec GPT-6 Luna.
-            </Text>
-            <Text style={styles.paragraph}>
-              Trois assistants s’adressent chacun à un public : le grand public
-              (explications sans jargon, analyse de document médical), les étudiants en santé
-              (référentiels des Collèges EDN/R2C, simulation ECOS, planning de révisions,
-              présentations, CV) et les professionnels (synthèses fondées sur les preuves,
-              compte rendu de consultation dicté).
-            </Text>
-            <Text style={styles.paragraph}>
-              Les assistants peuvent rechercher des références médicales selon le mode choisi.
-              Les documents cités restent accessibles pour poursuivre la lecture : recommandations,
-              référentiels et publications scientifiques.
-            </Text>
-            <Text style={styles.paragraph}>
-              MedInfo AI fournit de l’information médicale générale, jamais un avis médical
-              individuel. En cas d’urgence, composez le 15 ou le 112.
-            </Text>
-          </Reveal>
+        <MainContent style={styles.main}>
+          {/* Bandeau « Moniteur » (ADR-0047). */}
+          <NightBand maxWidth={720} kicker="Qui sommes-nous" title="Un projet né pendant les études de médecine" trace />
+          <View style={styles.inner}>
+            <Reveal delay={tokens.motion.revealStagger}>
+              <Text style={styles.lead}>
+                Créé par Hugo Bettembourg, étudiant en médecine, MedInfo AI part des besoins
+                concrets de la formation médicale : comprendre, réviser, retrouver les références
+                et produire des travaux structurés.
+              </Text>
+              <Text style={styles.paragraph}>
+                Le projet associe des modèles d’IA OpenAI et Anthropic à des outils dédiés :
+                simulation ECOS, planning de révisions, présentations, CV et rédaction d’articles.
+                Le chat fonctionne aujourd’hui avec GPT-6 Luna.
+              </Text>
+              <Text style={styles.paragraph}>
+                Trois assistants s’adressent chacun à un public : le grand public
+                (explications sans jargon, analyse de document médical), les étudiants en santé
+                (référentiels des Collèges EDN/R2C, simulation ECOS, planning de révisions,
+                présentations, CV) et les professionnels (synthèses fondées sur les preuves,
+                compte rendu de consultation dicté).
+              </Text>
+              <Text style={styles.paragraph}>
+                Les assistants peuvent rechercher des références médicales selon le mode choisi.
+                Les documents cités restent accessibles pour poursuivre la lecture : recommandations,
+                référentiels et publications scientifiques.
+              </Text>
+              <Text style={styles.paragraph}>
+                MedInfo AI fournit de l’information médicale générale, jamais un avis médical
+                individuel. En cas d’urgence, composez le 15 ou le 112.
+              </Text>
+            </Reveal>
 
-          <Reveal delay={tokens.motion.revealStagger * 2} style={styles.valuesPanel}>
-            <Text style={styles.valuesTitle}>Nos engagements</Text>
-            {VALUES.map((v, i) => (
-              <View key={v.title} style={[styles.valueRow, i > 0 && styles.valueRowDivided]}>
-                <View style={styles.valueIcon}>
-                  <Icon name={v.icon} size={20} color={tokens.colors.accent} />
+            <Reveal delay={tokens.motion.revealStagger * 2} style={styles.valuesPanel}>
+              <Text style={styles.valuesTitle}>Nos engagements</Text>
+              {VALUES.map((v, i) => (
+                <View key={v.title} style={[styles.valueRow, i > 0 && styles.valueRowDivided]}>
+                  <View style={styles.valueIcon}>
+                    <Icon name={v.icon} size={20} color={tokens.colors.accent} />
+                  </View>
+                  <View style={styles.valueTextBlock}>
+                    <Text style={styles.valueTitle}>{v.title}</Text>
+                    <Text style={styles.valueText}>{v.text}</Text>
+                  </View>
                 </View>
-                <View style={styles.valueTextBlock}>
-                  <Text style={styles.valueTitle}>{v.title}</Text>
-                  <Text style={styles.valueText}>{v.text}</Text>
-                </View>
-              </View>
-            ))}
-          </Reveal>
+              ))}
+            </Reveal>
 
-          <Reveal delay={tokens.motion.revealStagger * 3} style={styles.ctaRow}>
-            <Button
-              label="Essayer le chat"
-              fullWidth={false}
-              onPress={() => router.push('/(chat)/chat')}
-            />
-            <Button
-              label="Nous contacter"
-              variant="secondary"
-              fullWidth={false}
-              onPress={() => router.push('/(marketing)/contact' as never)}
-            />
-          </Reveal>
+            <Reveal delay={tokens.motion.revealStagger * 3} style={styles.ctaRow}>
+              <Button
+                label="Essayer le chat"
+                fullWidth={false}
+                onPress={() => router.push('/(chat)/chat')}
+              />
+              <Button
+                label="Nous contacter"
+                variant="secondary"
+                fullWidth={false}
+                onPress={() => router.push('/(marketing)/contact' as never)}
+              />
+            </Reveal>
+          </View>
         </MainContent>
         <View style={styles.footerSpacer} />
         <SiteFooter />
@@ -131,6 +131,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { flexGrow: 1, alignItems: 'center' },
   footerSpacer: { height: tokens.space['3xl'] },
+  main: { width: '100%', alignItems: 'center' },
   inner: {
     width: '100%',
     maxWidth: 720,

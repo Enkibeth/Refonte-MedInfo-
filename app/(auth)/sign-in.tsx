@@ -1,5 +1,5 @@
 import { FieldInput } from '@/ui/FieldInput';
-import { PageTitle } from '@/ui/PageTitle';
+import { NightBand } from '@/ui/NightBand';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -11,7 +11,6 @@ import { Card } from '@/ui/Card';
 import { useClientState } from '@/ui/hydration';
 import { GoogleIcon, AppleIcon } from '@/ui/icons';
 import { Logo } from '@/ui/Logo';
-import { EcgTrace } from '@/ui/EcgTrace';
 import { Screen } from '@/ui/Screen';
 import { tokens } from '@/ui/tokens';
 
@@ -140,22 +139,27 @@ export default function SignInScreen() {
     mode === 'signin' ? 'Se connecter' : mode === 'signup' ? 'Créer mon compte' : 'Envoyer le lien';
 
   return (
-    <Screen maxWidth={tokens.layout.form}>
-      <View style={styles.logoWrap}>
-        <Logo size="md" />
-      </View>
-      <EcgTrace height={40} />
-
+    <Screen
+      maxWidth={tokens.layout.form}
+      band={
+        // Bandeau « Moniteur » (ADR-0047) : logo en pastille claire, titre du mode, tracé.
+        <NightBand
+          maxWidth={tokens.layout.form}
+          before={<Logo size="sm" tone="light" />}
+          kicker="Espace MedInfo AI"
+          title={title}
+          lead={
+            mode === 'signin'
+              ? 'Connectez-vous avec votre adresse e-mail, ou avec Google ou Apple.'
+              : mode === 'signup'
+                ? 'Choisissez une adresse e-mail et un mot de passe (6 caractères minimum), ou utilisez Google ou Apple.'
+                : 'Saisissez votre adresse e-mail : nous vous enverrons un lien pour définir un nouveau mot de passe.'
+          }
+          trace
+        />
+      }
+    >
       <Card style={styles.formCard}>
-        <PageTitle style={styles.title}>{title}</PageTitle>
-        <Text style={styles.body}>
-          {mode === 'signin'
-            ? 'Connectez-vous avec votre adresse e-mail, ou avec Google ou Apple.'
-            : mode === 'signup'
-              ? 'Choisissez une adresse e-mail et un mot de passe (6 caractères minimum), ou utilisez Google ou Apple.'
-              : 'Saisissez votre adresse e-mail : nous vous enverrons un lien pour définir un nouveau mot de passe.'}
-        </Text>
-
         {user ? (
           <View style={styles.statusBox}>
             <Text style={styles.statusLabel}>Session active</Text>
@@ -316,22 +320,6 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   // Vraie carte (filet + marge intérieure) : sans elles, une dalle blanche collait aux champs.
   formCard: { borderWidth: tokens.border.thin, borderColor: tokens.colors.border, padding: tokens.space.xl },
-  logoWrap: { alignItems: 'flex-start', marginBottom: tokens.space.xl },
-  title: {
-    fontFamily: tokens.font.serif,
-    color: tokens.colors.text,
-    fontSize: tokens.type.h1.fontSize,
-    lineHeight: tokens.type.h1.lineHeight,
-    letterSpacing: tokens.type.h1.letterSpacing,
-    fontWeight: tokens.weight.semibold,
-    marginBottom: tokens.space.sm,
-  },
-  body: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
-    fontSize: tokens.type.body.fontSize,
-    lineHeight: tokens.type.body.lineHeight,
-  },
   oauthRow: { gap: tokens.space.sm, marginTop: tokens.space.xl },
   separatorRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.md, marginVertical: tokens.space.lg },
   separatorLine: { flex: 1, height: 1, backgroundColor: tokens.colors.border },

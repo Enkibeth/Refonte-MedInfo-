@@ -218,5 +218,9 @@ L’identité vient de ce que le logo dessine déjà (croix, tracé ECG, pistes 
 | `MethodSection` | Déroulé des étapes de réponse |
 | `useHeroMotion` | Profondeur au pointeur, suspension hors champ |
 | `PulseMark` (.web) | Battement de l’état vide du chat |
+| `NightBand` (`src/ui/NightBand.tsx`) | Bandeau moniteur de toutes les autres pages : repère, titre de niveau 1, chapeau, `before` (logo en pastille claire, retour), `aside` (menu « Outils »), `compact` (en-tête d’outil), `trace` (tracé lumineux) |
+| `Screen` → `band` | Pose le `NightBand` en pleine largeur au-dessus de la colonne (connexion, mot de passe, compte, rôle, tarifs, informations légales) |
+
+**Couverture (extension du 26 octobre 2026).** Le bandeau moniteur coiffe désormais : l’en-tête desktop des huit outils (`ToolScreenHeader` : Document, Partiels, Révisions, Audio, Présentations, CV, Article, Scores), le dashboard ECOS (en carte, comme la Vue d’ensemble), le panneau d’administration, les pages légales (`LegalScreen`, `legal.tsx`), les pages marketing (À propos, Contact, Blog, article de blog), la 404, la connexion et le mot de passe, le compte, le choix du rôle et les tarifs. Sous 1 024 px, les outils gardent la barre compacte du chat (l’outil occupe tout l’écran). Restent volontairement sobres : le fil du chat, la simulation et l’évaluation ECOS, et l’intérieur des outils autonomes (zones de travail).
 
 Contrôle visuel : `CAPTURE_FULL=1` (page entière), `CAPTURE_MOTION=1` (animations actives) et `CAPTURE_WAIT` dans `scripts/design/capture-ui.mjs`.

@@ -11,7 +11,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/ui/Button';
 import { LandingHeader } from '@/ui/LandingHeader';
 import { MainContent } from '@/ui/landmarks';
-import { PageTitle } from '@/ui/PageTitle';
+import { NightBand } from '@/ui/NightBand';
 import { SeoHead } from '@/ui/SeoHead';
 import { SiteFooter } from '@/ui/SiteFooter';
 import { tokens } from '@/ui/tokens';
@@ -35,40 +35,39 @@ export default function NotFoundScreen() {
       />
       <LandingHeader />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <MainContent style={styles.inner}>
-          <Text style={styles.eyebrow}>Erreur 404</Text>
-          <PageTitle style={styles.title}>Page introuvable.</PageTitle>
-          <Text style={styles.lead}>
-            Cette adresse ne mène à aucune page : le lien est peut-être incomplet, ou la page a été
-            déplacée.
-          </Text>
-          <View style={styles.actions}>
-            <Button label="Retour à l’accueil" onPress={() => router.replace('/')} fullWidth={false} />
-            <Button
-              label="Essayer le chat"
-              variant="ghost"
-              onPress={() => router.push('/(chat)/chat')}
-              fullWidth={false}
-            />
-          </View>
-          <View style={styles.shortcuts}>
-            <Text accessibilityRole="header" aria-level={2} style={styles.shortcutsTitle}>
-              Raccourcis
-            </Text>
-            {SHORTCUTS.map((item) => (
-              <Text
-                key={item.href}
-                {...({ href: item.href } as object)}
-                role="link"
-                onPress={(event) => {
-                  event.preventDefault();
-                  router.push(item.href as never);
-                }}
-                style={styles.shortcut}
-              >
-                {item.label}
+        <MainContent style={styles.main}>
+          {/* Bandeau « Moniteur » (ADR-0047). */}
+          <NightBand maxWidth={720} kicker="Erreur 404" title="Page introuvable."
+            lead={'Cette adresse ne mène à aucune page : le lien est peut-être incomplet, ou la page a été déplacée.'} />
+          <View style={styles.inner}>
+            <View style={styles.actions}>
+              <Button label="Retour à l’accueil" onPress={() => router.replace('/')} fullWidth={false} />
+              <Button
+                label="Essayer le chat"
+                variant="ghost"
+                onPress={() => router.push('/(chat)/chat')}
+                fullWidth={false}
+              />
+            </View>
+            <View style={styles.shortcuts}>
+              <Text accessibilityRole="header" aria-level={2} style={styles.shortcutsTitle}>
+                Raccourcis
               </Text>
-            ))}
+              {SHORTCUTS.map((item) => (
+                <Text
+                  key={item.href}
+                  {...({ href: item.href } as object)}
+                  role="link"
+                  onPress={(event) => {
+                    event.preventDefault();
+                    router.push(item.href as never);
+                  }}
+                  style={styles.shortcut}
+                >
+                  {item.label}
+                </Text>
+              ))}
+            </View>
           </View>
         </MainContent>
         <View style={styles.footerSpacer} />
@@ -82,6 +81,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: tokens.colors.background },
   scroll: { flex: 1 },
   content: { flexGrow: 1, alignItems: 'center' },
+  main: { width: '100%', alignItems: 'center' },
   inner: {
     width: '100%',
     maxWidth: 720,

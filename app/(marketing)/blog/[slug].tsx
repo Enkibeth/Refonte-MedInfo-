@@ -1,7 +1,6 @@
 import { Button } from '@/ui/Button';
 import { Touchable } from '@/ui/Touchable';
 import { useReducedMotion } from '@/ui/useReducedMotion';
-import { PageTitle } from '@/ui/PageTitle';
 /**
  * Article de blog — page publique avec sommaire cliquable (audit landing 2026-06).
  *
@@ -18,6 +17,7 @@ import { splitArticleSections } from '@/blog/toc';
 import { PAGE_SEO, blogPostingJsonLd, breadcrumbJsonLd, lastModified } from '@/seo/meta';
 import { LandingHeader } from '@/ui/LandingHeader';
 import { MainContent } from '@/ui/landmarks';
+import { NightBand } from '@/ui/NightBand';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { Icon } from '@/ui/icons';
 import { SeoHead } from '@/ui/SeoHead';
@@ -45,6 +45,8 @@ export default function BlogArticleScreen() {
 
   const scrollRef = useRef<ScrollView>(null);
   const sectionYRef = useRef<Record<number, number>>({});
+  // Hauteur du bandeau d'article : les positions de section sont relatives à la colonne.
+  const bandHeightRef = useRef(0);
 
   useEffect(() => {
     if (!slug) {
@@ -74,7 +76,7 @@ export default function BlogArticleScreen() {
 
   const scrollToSection = (index: number) => {
     const y = sectionYRef.current[index];
-    if (y != null) scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: !reducedMotion });
+    if (y != null) scrollRef.current?.scrollTo({ y: Math.max(0, bandHeightRef.current + y - 12), animated: !reducedMotion });
   };
 
   return (
@@ -127,85 +129,87 @@ export default function BlogArticleScreen() {
       )}
       <LandingHeader />
       <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.content}>
-        <MainContent style={styles.inner}>
-          <Touchable
-            style={styles.backLink}
-            feedback="link"
-            onPress={() => router.push('/(marketing)/blog' as never)}
-            accessibilityRole="link"
-            accessibilityLabel="Retour au blog"
-          >
-            <View style={{ transform: [{ rotate: '180deg' }] }}>
-              <Icon name="arrowRight" size={14} color={tokens.colors.accentVivid} />
+        <MainContent style={styles.main}>
+          {/* Bandeau « Moniteur » (ADR-0047) : retour, catégorie, titre, chapeau et date. */}
+          {post && !loading && !loadError ? (
+            <View
+              style={styles.bandWrap}
+              onLayout={(ev) => {
+                bandHeightRef.current = ev.nativeEvent.layout.height;
+              }}
+            >
+              <NightBand
+                maxWidth={720}
+                before={<BackLink onPress={() => router.push('/(marketing)/blog' as never)} night />}
+                kicker={post.category ?? 'Blog santé'}
+                title={post.title}
+                lead={post.summary ?? undefined}
+              >
+                <Text style={styles.bandDate}>{formatDate(post.published_at)}</Text>
+              </NightBand>
             </View>
-            <Text style={styles.backLinkText}>Tous les articles</Text>
-          </Touchable>
+          ) : null}
+          <View style={styles.inner}>
+            {post && !loading && !loadError ? null : (
+              <BackLink onPress={() => router.push('/(marketing)/blog' as never)} />
+            )}
 
-          {loading ? (
-            <View style={{ gap: tokens.space.lg }}>
-              <Skeleton height={220} radius={tokens.radius.lg} />
-              <Skeleton height={34} width={'80%'} />
-              <Skeleton height={16} width={'60%'} />
-              <Skeleton height={16} />
-              <Skeleton height={16} />
-            </View>
-          ) : loadError ? <View style={styles.missingCard} accessibilityLiveRegion="polite"><Text style={styles.missingTitle}>L’article n’a pas pu être chargé</Text><Text style={styles.missingText}>Vérifiez votre connexion, puis réessayez.</Text><Button label="Réessayer" variant="secondary" onPress={() => setAttempt(n => n + 1)} /></View> : !post ? (
-            <View style={styles.missingCard}>
-              <Text style={styles.missingTitle}>Article introuvable</Text>
-              <Text style={styles.missingText}>
-                Cet article n’existe pas ou n’est plus publié.
-              </Text>
-            </View>
-          ) : (
-            <>
-              {post.cover_image_url ? (
-                <Image source={{ uri: post.cover_image_url }} style={styles.cover} resizeMode="cover" />
-              ) : null}
+            {loading ? (
+              <View style={{ gap: tokens.space.lg }}>
+                <Skeleton height={220} radius={tokens.radius.lg} />
+                <Skeleton height={34} width={'80%'} />
+                <Skeleton height={16} width={'60%'} />
+                <Skeleton height={16} />
+                <Skeleton height={16} />
+              </View>
+            ) : loadError ? <View style={styles.missingCard} accessibilityLiveRegion="polite"><Text style={styles.missingTitle}>L’article n’a pas pu être chargé</Text><Text style={styles.missingText}>Vérifiez votre connexion, puis réessayez.</Text><Button label="Réessayer" variant="secondary" onPress={() => setAttempt(n => n + 1)} /></View> : !post ? (
+              <View style={styles.missingCard}>
+                <Text style={styles.missingTitle}>Article introuvable</Text>
+                <Text style={styles.missingText}>
+                  Cet article n’existe pas ou n’est plus publié.
+                </Text>
+              </View>
+            ) : (
+              <>
+                {post.cover_image_url ? (
+                  <Image source={{ uri: post.cover_image_url }} style={styles.cover} resizeMode="cover" />
+                ) : null}
 
-              <View style={styles.metaRow}>
-                {post.category ? (
-                  <View style={styles.categoryPill}>
-                    <Text style={styles.categoryText}>{post.category}</Text>
+
+                {tocEntries.length > 1 ? (
+                  <View style={styles.tocCard}>
+                    <Text style={styles.tocTitle}>Sommaire</Text>
+                    {tocEntries.map((e, i) => (
+                      <Touchable
+                        key={e.index}
+                        style={styles.tocRow}
+                        feedback="link"
+                        onPress={() => scrollToSection(e.index)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Aller à la section : ${e.heading}`}
+                      >
+                        <Text style={styles.tocIndex}>{String(i + 1).padStart(2, '0')}</Text>
+                        <Text style={styles.tocText}>{e.heading}</Text>
+                      </Touchable>
+                    ))}
                   </View>
                 ) : null}
-                <Text style={styles.date}>{formatDate(post.published_at)}</Text>
-              </View>
-              <PageTitle style={styles.title}>{post.title}</PageTitle>
-              {post.summary ? <Text style={styles.summary}>{post.summary}</Text> : null}
 
-              {tocEntries.length > 1 ? (
-                <View style={styles.tocCard}>
-                  <Text style={styles.tocTitle}>Sommaire</Text>
-                  {tocEntries.map((e, i) => (
-                    <Touchable
-                      key={e.index}
-                      style={styles.tocRow}
-                      feedback="link"
-                      onPress={() => scrollToSection(e.index)}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Aller à la section : ${e.heading}`}
-                    >
-                      <Text style={styles.tocIndex}>{String(i + 1).padStart(2, '0')}</Text>
-                      <Text style={styles.tocText}>{e.heading}</Text>
-                    </Touchable>
-                  ))}
-                </View>
-              ) : null}
-
-              {sections.map((s, index) => (
-                <View
-                  key={index}
-                  onLayout={(ev) => {
-                    sectionYRef.current[index] = ev.nativeEvent.layout.y;
-                  }}
-                  style={styles.section}
-                >
-                  {s.heading ? <Text style={styles.sectionHeading}>{s.heading}</Text> : null}
-                  {s.markdown ? <MarkdownRenderer text={s.markdown} /> : null}
-                </View>
-              ))}
-            </>
-          )}
+                {sections.map((s, index) => (
+                  <View
+                    key={index}
+                    onLayout={(ev) => {
+                      sectionYRef.current[index] = ev.nativeEvent.layout.y;
+                    }}
+                    style={styles.section}
+                  >
+                    {s.heading ? <Text style={styles.sectionHeading}>{s.heading}</Text> : null}
+                    {s.markdown ? <MarkdownRenderer text={s.markdown} /> : null}
+                  </View>
+                ))}
+              </>
+            )}
+          </View>
         </MainContent>
         <View style={styles.footerSpacer} />
         <SiteFooter />
@@ -214,7 +218,29 @@ export default function BlogArticleScreen() {
   );
 }
 
+/** Retour à la liste des articles ; `night` : sur le bandeau bleu nuit. */
+function BackLink({ onPress, night = false }: { onPress: () => void; night?: boolean }) {
+  return (
+    <Touchable
+      style={styles.backLink}
+      feedback="link"
+      onPress={onPress}
+      accessibilityRole="link"
+      accessibilityLabel="Retour au blog"
+    >
+      <View style={{ transform: [{ rotate: '180deg' }] }}>
+        <Icon name="arrowRight" size={14} color={night ? tokens.colors.night.mint : tokens.colors.accentVivid} />
+      </View>
+      <Text style={[styles.backLinkText, night && styles.backLinkTextNight]}>Tous les articles</Text>
+    </Touchable>
+  );
+}
+
 const styles = StyleSheet.create({
+  main: { width: '100%', alignItems: 'center' },
+  bandWrap: { width: '100%' },
+  bandDate: { fontFamily: tokens.font.sans, color: tokens.colors.night.muted, fontSize: tokens.type.caption.fontSize },
+  backLinkTextNight: { color: tokens.colors.night.text },
   screen: { flex: 1, backgroundColor: tokens.colors.background },
   scroll: { flex: 1 },
   content: { flexGrow: 1, alignItems: 'center' },

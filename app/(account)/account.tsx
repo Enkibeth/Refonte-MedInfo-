@@ -1,4 +1,4 @@
-import { PageTitle } from '@/ui/PageTitle';
+import { NightBand } from '@/ui/NightBand';
 import { Link, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -112,16 +112,19 @@ export default function AccountScreen() {
   }
 
   return (
-    <Screen maxWidth={640}>
-      {!inShell ? (
-        <View style={styles.brandHeader}>
-          <Logo size="sm" />
-        </View>
-      ) : null}
-      <PageTitle style={styles.title}>Mon compte</PageTitle>
-      <Text style={styles.body}>
-        Informations de connexion et préférences associées à ta session MedInfo AI.
-      </Text>
+    <Screen
+      maxWidth={640}
+      band={
+        <NightBand
+          maxWidth={640}
+          before={!inShell ? <Logo size="sm" tone="light" /> : undefined}
+          icon="userRound"
+          kicker="Compte"
+          title="Mon compte"
+          lead="Informations de connexion et préférences associées à ta session MedInfo AI."
+        />
+      }
+    >
 
       <Card style={styles.section}>
         <View style={styles.detailRow}>
@@ -317,22 +320,6 @@ export default function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  brandHeader: { marginBottom: tokens.space.lg },
-  title: {
-    fontFamily: tokens.font.serif,
-    color: tokens.colors.text,
-    fontSize: tokens.type.h1.fontSize,
-    lineHeight: tokens.type.h1.lineHeight,
-    letterSpacing: tokens.type.h1.letterSpacing,
-    fontWeight: tokens.weight.semibold,
-    marginBottom: tokens.space.sm,
-  },
-  body: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
-    fontSize: tokens.type.bodyLg.fontSize,
-    lineHeight: tokens.type.bodyLg.lineHeight,
-  },
   section: { marginTop: tokens.space.lg },
   detailRow: {
     flexDirection: 'row',

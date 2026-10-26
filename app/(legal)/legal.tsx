@@ -1,4 +1,4 @@
-import { PageTitle } from '@/ui/PageTitle';
+import { NightBand } from '@/ui/NightBand';
 import { Link } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -27,7 +27,17 @@ const PENDING = '[À compléter avant lancement]';
 
 export default function LegalScreen() {
   return (
-    <Screen maxWidth={760}>
+    <Screen
+      maxWidth={760}
+      band={
+        <NightBand
+          maxWidth={760}
+          kicker="Informations légales"
+          title="Informations légales"
+          lead={'Mentions légales, finalité du service, statut réglementaire, information sur l’IA et protection des données, conformément à la LCEN (art. 6), au RGPD et à l’EU AI Act.'}
+        />
+      }
+    >
       <SeoHead
         title={PAGE_SEO.legal.title}
         description={PAGE_SEO.legal.description}
@@ -39,14 +49,6 @@ export default function LegalScreen() {
           ]),
         ]}
       />
-      <View style={styles.brandHeader}>
-        <Logo size="sm" />
-      </View>
-      <PageTitle style={styles.title}>Informations légales</PageTitle>
-      <Text style={styles.lead}>
-        Mentions légales, finalité du service, statut réglementaire, information sur l’IA et
-        protection des données, conformément à la LCEN (art. 6), au RGPD et à l’EU AI Act.
-      </Text>
 
       {/* Finalité prévue (intended purpose verbatim — 01_REGULATION §1) */}
       <Card style={styles.section}>

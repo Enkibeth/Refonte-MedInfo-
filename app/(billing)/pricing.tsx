@@ -1,4 +1,4 @@
-import { PageTitle } from '@/ui/PageTitle';
+import { NightBand } from '@/ui/NightBand';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Linking, Platform, StyleSheet, Text, View } from 'react-native';
@@ -83,8 +83,17 @@ export default function PricingScreen() {
           elle partage la navigation des pages publiques. */}
       <LandingHeader />
       <MainContent style={styles.main}>
-      <Screen maxWidth={640}>
-      <PageTitle style={styles.title}>Tarifs</PageTitle>
+      <Screen
+        maxWidth={640}
+        band={
+          <NightBand
+            maxWidth={640}
+            kicker="Offres MedInfo AI"
+            title="Tarifs"
+            lead={'Le premier message est gratuit. Un compte gratuit permet de continuer\u202f; un abonnement lève seulement la limite de messages.'}
+          />
+        }
+      >
 
       <View style={styles.sourcesBox}>
         <View style={styles.sourcesAccent} />
@@ -160,15 +169,6 @@ export default function PricingScreen() {
 const styles = StyleSheet.create({
   main: { flex: 1 },
   screen: { flex: 1, backgroundColor: tokens.colors.background },
-  title: {
-    fontFamily: tokens.font.serif,
-    color: tokens.colors.text,
-    fontSize: tokens.type.h1.fontSize,
-    lineHeight: tokens.type.h1.lineHeight,
-    letterSpacing: tokens.type.h1.letterSpacing,
-    fontWeight: tokens.weight.semibold,
-    marginBottom: tokens.space.lg,
-  },
   sourcesBox: {
     flexDirection: 'row',
     borderRadius: tokens.radius.md,

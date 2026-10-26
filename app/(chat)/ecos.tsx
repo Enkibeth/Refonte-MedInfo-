@@ -31,6 +31,7 @@ import { SeoHead } from '@/ui/SeoHead';
 import { MarkdownRenderer } from '@/ui/MarkdownRenderer';
 import { RoleGate } from '@/ui/RoleGate';
 import { ScreenNavBar } from '@/ui/AppMobileHeader';
+import { NightBand } from '@/ui/NightBand';
 import { DictationButton } from '@/ui/DictationButton';
 import { COMPOSER_ICON_SIZE, composerButtonStyles } from '@/ui/chat/composerButton';
 import { Button } from '@/ui/Button';
@@ -668,15 +669,14 @@ function EcosScreenInner() {
 
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.selectionContent}>
-        <View style={styles.selectionHeader}>
-          <Text style={styles.selectionTitle} accessibilityRole="header" aria-level={1}>
-            Dashboard ECOS
-          </Text>
-          <Text style={styles.selectionSubtitle}>
-            Entraîne-toi sur des stations fictives avec un patient joué par l’IA, suis tes notes
-            et repère les thèmes à retravailler.
-          </Text>
-        </View>
+        {/* Bandeau « Moniteur » (ADR-0047), en carte comme celui de la Vue d’ensemble. */}
+        <NightBand
+          icon="stethoscope"
+          kicker="Étudiants en santé"
+          title="Dashboard ECOS"
+          lead={'Entraîne-toi sur des stations fictives avec un patient joué par l’IA, suis tes notes et repère les thèmes à retravailler.'}
+          style={styles.selectionBand}
+        />
 
         {casesLoading ? (
           <View style={styles.casesState}>
@@ -1130,7 +1130,7 @@ const styles = StyleSheet.create({
   // Selection
   // Colonnes de lecture centrées (~800 px) : cohérentes avec le chat sur desktop.
   selectionContent: { padding: tokens.space.lg, gap: tokens.space.md, width: '100%', maxWidth: tokens.layout.reading, alignSelf: 'center' },
-  selectionHeader: { marginBottom: tokens.space.sm },
+  selectionBand: { borderRadius: tokens.radius.xl + 4, marginBottom: tokens.space.sm },
   selectionTitle: {
     fontFamily: tokens.font.serif,
     color: tokens.colors.text,

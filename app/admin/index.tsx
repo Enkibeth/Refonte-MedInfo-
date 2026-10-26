@@ -34,6 +34,7 @@ import {
 } from '@/admin/cost';
 import { BlogEditorModal } from '@/ui/admin/BlogEditorModal';
 import { Icon, type IconName } from '@/ui/icons';
+import { NightBand } from '@/ui/NightBand';
 import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 import { ProgressSteps } from '@/ui/progress/ProgressSteps';
 import { tokens } from '@/ui/tokens';
@@ -1598,33 +1599,34 @@ export default function AdminScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Header : bandeau bleu nuit sur mobile ; version claire sous le shell desktop
-          (la sidebar + le fil d'Ariane portent déjà la marque et le retour). */}
-      <View style={[styles.header, inShell && styles.headerInShell]}>
-        {!inShell ? (
-          <Touchable
-            onPress={() => router.back()}
-            style={styles.backBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Retour"
-          >
-            <Icon name="arrowLeft" size={tokens.size.iconLg} color={tokens.colors.text} />
-          </Touchable>
-        ) : null}
-        <View>
-          <Text accessibilityRole="header" aria-level={1} style={[styles.headerTitle, inShell && styles.headerTitleInShell]}>
-            Administration
-          </Text>
-          <Text style={[styles.headerSub, inShell && styles.headerSubInShell]}>
-            Configuration des modèles et prompts
-          </Text>
-        </View>
-        <View style={[styles.adminBadge, inShell && styles.adminBadgeInShell]}>
-          <Text style={[styles.adminBadgeText, inShell && styles.adminBadgeTextInShell]}>
-            Admin
-          </Text>
-        </View>
-      </View>
+      {/* En-tête : bandeau « Moniteur » compact (ADR-0047), comme les outils. Hors shell, le
+          bouton Retour s'y pose ; sous le shell desktop, la sidebar porte la navigation. */}
+      <NightBand
+        compact
+        maxWidth={tokens.layout.wide}
+        before={
+          !inShell ? (
+            <Touchable
+              onPress={() => router.back()}
+              feedback="light"
+              style={styles.backBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Retour"
+            >
+              <Icon name="arrowLeft" size={tokens.size.iconLg} color={tokens.colors.night.text} />
+            </Touchable>
+          ) : undefined
+        }
+        icon="settings"
+        kicker="Comptes administrateurs"
+        title="Administration"
+        lead="Configuration des modèles et prompts"
+        aside={
+          <View style={styles.adminBadge}>
+            <Text style={styles.adminBadgeText}>Admin</Text>
+          </View>
+        }
+      />
 
       {/* Tabs */}
       <View style={styles.tabs}>
@@ -1722,11 +1724,10 @@ const styles = StyleSheet.create({
   },
   headerSubInShell: { color: tokens.colors.textMuted },
   adminBadge: {
-    marginLeft: 'auto',
     borderRadius: tokens.radius.pill,
-    backgroundColor: tokens.colors.accentSurface,
+    backgroundColor: tokens.colors.night.raised,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
+    borderColor: tokens.colors.night.line,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.xs,
   },
@@ -1736,7 +1737,7 @@ const styles = StyleSheet.create({
   },
   adminBadgeText: {
     fontFamily: tokens.font.mono,
-    color: tokens.colors.text,
+    color: tokens.colors.night.mint,
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
     letterSpacing: tokens.tracking.caps,

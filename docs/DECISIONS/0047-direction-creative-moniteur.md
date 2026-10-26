@@ -78,6 +78,16 @@ l'instrument que tout étudiant en santé connaît : le moniteur de surveillance
 - Limites : aucune mesure Lighthouse/Core Web Vitals ni appareil réel ; le mouvement est vérifié par captures en
   navigateur Chromium (Playwright), pas sur Safari iOS. Le défilement narratif repose sur IntersectionObserver.
 
+## Addendum 2026-10-26 : extension à toutes les pages et à tous les outils (demande de Hugo)
+
+Composant partagé `NightBand` (`src/ui/NightBand.tsx`) et option `band` de `Screen`. Appliqué à
+l'en-tête desktop des huit outils (`ToolScreenHeader`), au dashboard ECOS, au panneau admin, aux
+pages légales, marketing (dont l'article de blog : retour, catégorie, titre, chapeau, date), à la
+404, à la connexion et au mot de passe, au compte, au choix du rôle (cartes sans filet coloré) et
+aux tarifs. Chaque écran garde UN titre de niveau 1 (vérifié sur 21 écrans × 2 largeurs, visiteur
+et compte connecté) ; axe-core : 0 violation sur les pages converties. Zones de travail et de
+lecture inchangées (fil du chat, simulation ECOS, intérieur des outils autonomes).
+
 ## Suivi
 
 - Validation visuelle par Hugo ; mesure de performance réelle (INP, CLS) après déploiement en recette.
