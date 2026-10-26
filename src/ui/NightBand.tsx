@@ -76,7 +76,7 @@ export function NightBand({
       </View>
       {trace ? (
         <View style={styles.trace}>
-          <EcgTrace height={44} tone="night" />
+          <EcgTrace height={44} tone="night" once />
         </View>
       ) : null}
     </View>

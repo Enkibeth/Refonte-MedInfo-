@@ -87,6 +87,10 @@ pages légales, marketing (dont l'article de blog : retour, catégorie, titre, c
 aux tarifs. Chaque écran garde UN titre de niveau 1 (vérifié sur 21 écrans × 2 largeurs, visiteur
 et compte connecté) ; axe-core : 0 violation sur les pages converties. Zones de travail et de
 lecture inchangées (fil du chat, simulation ECOS, intérieur des outils autonomes).
+Le tracé des bandeaux (pages de contenu et Vue d'ensemble) se dessine une seule fois puis reste
+affiché (`EcgTrace once`) : aucune animation continue hors de l'accueil, qui seul porte « Figer ».
+Repère des outils = leur audience réelle (`src/ui/audienceLabel.ts`) ; l'écran d'accès réservé
+(RoleGate) adopte la même carte.
 
 ## Suivi
 

@@ -511,7 +511,7 @@ export default function DashboardScreen() {
                 />
               </View>
               {/* Tracé ECG animé (signature visuelle, coupé sous prefers-reduced-motion). */}
-              <EcgTrace height={48} tone="night" />
+              <EcgTrace height={48} tone="night" once />
               <View style={styles.tileRow}>
                 {tiles.map((tile) => (
                   <View key={tile.label} style={styles.tile}>
