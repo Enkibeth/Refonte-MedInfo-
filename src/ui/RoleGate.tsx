@@ -23,7 +23,7 @@ import { Button } from '@/ui/Button';
 import { Icon } from '@/ui/icons';
 import { buttonLinkProps } from '@/ui/interaction';
 import { tokens } from '@/ui/tokens';
-import { PageTitle } from '@/ui/PageTitle';
+import { NightBand } from '@/ui/NightBand';
 import { mi } from '@/ui/responsive';
 import { ToolPreview } from '@/ui/ToolPreview';
 import { TOOL_PAGES, type ToolPageId } from '@/seo/toolPages';
@@ -164,29 +164,47 @@ function RoleUnavailable({
 
   return (
     <View style={styles.container}>
-      <View style={styles.card}>
-        <PageTitle>{meta?.label ?? 'Fonctionnalité'}</PageTitle>
-        <Text style={styles.text}>
-          {guest
+      {/* Carte « Moniteur » (ADR-0047) : même bandeau que l'outil auquel elle donne accès. */}
+      <NightBand
+        icon={meta?.icon}
+        kicker={guest ? 'Réservé aux comptes MedInfo AI' : 'Accès selon le rôle vérifié'}
+        title={meta?.label ?? 'Fonctionnalité'}
+        lead={
+          guest
             ? `Cet outil est réservé aux comptes MedInfo AI. Créez un compte gratuit pour y accéder.${meta ? ` ${meta.description}` : ''}`
-            : `Cet outil n’est pas disponible pour le rôle actuel (${roleLabel}).${meta ? ` ${meta.description}` : ''}`}
-        </Text>
-        <Link
-          href={guest ? '/(auth)/sign-in?mode=signup' : '/(account)/choose-role'}
-          style={styles.primaryLink} {...buttonLinkProps()}
-        >
-          {guest ? 'Créer un compte' : 'Changer de rôle'}
-        </Link>
-        <Link href="/(chat)/chat" style={styles.secondaryLink}>
-          Retour au chat
-        </Link>
-      </View>
+            : `Cet outil n’est pas disponible pour le rôle actuel (${roleLabel}).${meta ? ` ${meta.description}` : ''}`
+        }
+        style={styles.gateCard}
+      >
+        <View style={styles.gateActions}>
+          <Link
+            href={guest ? '/(auth)/sign-in?mode=signup' : '/(account)/choose-role'}
+            style={styles.primaryLink} {...buttonLinkProps('light')}
+          >
+            {guest ? 'Créer un compte' : 'Changer de rôle'}
+          </Link>
+          <Link href="/(chat)/chat" style={styles.secondaryLinkNight}>
+            Retour au chat
+          </Link>
+        </View>
+      </NightBand>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
+  gateCard: { maxWidth: tokens.layout.form, alignSelf: 'center', borderRadius: tokens.radius.xl + 4 },
+  gateActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: tokens.space.lg, marginTop: tokens.space.sm },
+  secondaryLinkNight: {
+    minHeight: tokens.size.controlMd,
+    lineHeight: tokens.type.label.lineHeight,
+    paddingVertical: tokens.space.md,
+    fontFamily: tokens.font.sans,
+    color: tokens.colors.night.text,
+    fontWeight: tokens.weight.semibold,
+    fontSize: tokens.type.label.fontSize,
+  },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.colors.background },
   container: {
     flex: 1,
@@ -244,7 +262,6 @@ const styles = StyleSheet.create({
     paddingVertical: tokens.space.md,
     borderRadius: tokens.radius.md,
     overflow: 'hidden',
-    marginTop: tokens.space.sm,
   },
   secondaryLink: {
     minHeight: tokens.size.controlMd,

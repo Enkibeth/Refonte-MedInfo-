@@ -17,6 +17,7 @@ import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { getFeatureMeta, type AppFeatureId } from '@/ai/routing/featureVisibility';
 import { AppMobileHeader } from '@/ui/AppMobileHeader';
+import { audienceLabel } from '@/ui/audienceLabel';
 import { NightBand } from '@/ui/NightBand';
 import { mi } from '@/ui/responsive';
 import { tokens } from '@/ui/tokens';
@@ -26,11 +27,12 @@ import { useWindowWidth } from '@/ui/useWindowWidth';
 export function ToolScreenHeader({ feature, title, children }: { feature: AppFeatureId; title: string; children?: ReactNode }) {
   const width = useWindowWidth();
   const compactBp = tokens.layout.shell;
-  const icon = getFeatureMeta(feature)?.icon;
+  const meta = getFeatureMeta(feature);
+  const icon = meta?.icon;
 
   const bar = <AppMobileHeader title={title} icon={icon} />;
   const full = (
-    <NightBand compact icon={icon} kicker="Outil MedInfo AI" title={title} maxWidth={tokens.layout.wide} aside={<ToolsMenu />}>
+    <NightBand compact icon={icon} kicker={audienceLabel(meta?.personas ?? [])} title={title} maxWidth={tokens.layout.wide} aside={<ToolsMenu />}>
       {children ? <Text style={styles.subtitle}>{children}</Text> : null}
     </NightBand>
   );

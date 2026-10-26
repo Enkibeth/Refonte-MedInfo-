@@ -93,6 +93,22 @@ describe('accueil « Moniteur » : honnêteté des démonstrations (ADR-0047)', 
   });
 });
 
+describe('bandeau « Moniteur » des outils (ADR-0047)', () => {
+  it('annonce l’audience réelle de chaque outil, dérivée du registre', async () => {
+    const src = read('src/ui/ToolScreenHeader.tsx');
+    expect(src).toContain('audienceLabel(meta?.personas ?? [])');
+    expect(src).not.toContain('kicker="Outil MedInfo AI"');
+    const { audienceLabel } = await import('@/ui/audienceLabel');
+    const { APP_FEATURES } = await import('@/ai/routing/featureVisibility');
+    const label = (id: string) => audienceLabel(APP_FEATURES.find((f) => f.id === id)!.personas);
+    expect(label('ecos')).toBe('Outil · Étudiants');
+    expect(label('audio')).toBe('Outil · Professionnels');
+    expect(label('document')).toBe('Outil · Grand public');
+    expect(label('cv-builder')).toBe('Outil · Étudiants et professionnels');
+    expect(audienceLabel([])).toBe('Outil MedInfo AI');
+  });
+});
+
 describe('couverture des fondations du thème', () => {
   it('charge les mêmes polices locales dans Expo web et les quatre outils HTML', () => {
     const root = read('app/+html.tsx');

@@ -3,7 +3,6 @@ import { Link, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Platform,
   StyleSheet,
   Text,
   View,
@@ -20,13 +19,10 @@ import { Card } from '@/ui/Card';
 import { featureTint } from '@/ui/featureChips';
 import { Icon } from '@/ui/icons';
 import { PersonalInfoForm } from '@/ui/PersonalInfoForm';
-import { Logo } from '@/ui/Logo';
 import { Screen } from '@/ui/Screen';
-import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
 import { buttonLinkProps } from '@/ui/interaction';
 import { tokens } from '@/ui/tokens';
 import { Touchable } from '@/ui/Touchable';
-import { useWindowWidth } from '@/ui/useWindowWidth';
 
 /**
  * Compte — email + persona (lue depuis profiles via RLS). UI polie (scaffold Codex
@@ -44,10 +40,8 @@ const VERIFIABLE_PERSONAS: Persona[] = ['public', 'student', 'professional'];
 export default function AccountScreen() {
   const { loading, persona, status, verifiedPersonas, requestRole, signOut, user } = useSession();
   const router = useRouter();
-  const width = useWindowWidth();
   // Sous le shell desktop (sidebar avec logo + fil d'Ariane), l'en-tête de marque
   // local ferait doublon.
-  const inShell = Platform.OS === 'web' && width >= SHELL_BREAKPOINT && !!user;
   const [signingOut, setSigningOut] = useState(false);
   const [switching, setSwitching] = useState<Persona | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -117,9 +111,8 @@ export default function AccountScreen() {
       band={
         <NightBand
           maxWidth={640}
-          before={!inShell ? <Logo size="sm" tone="light" /> : undefined}
           icon="userRound"
-          kicker="Compte"
+          kicker="Espace personnel"
           title="Mon compte"
           lead="Informations de connexion et préférences associées à ta session MedInfo AI."
         />
