@@ -1,4 +1,3 @@
-import { PageTitle } from '@/ui/PageTitle';
 /**
  * Page Contact (audit landing 2026-06) — contenu statique public.
  * Pas de formulaire serveur pour l'instant : contact par e-mail (mailto) +
@@ -10,6 +9,7 @@ import { useRouter } from 'expo-router';
 import { PAGE_SEO, breadcrumbJsonLd, organizationJsonLd } from '@/seo/meta';
 import { LandingHeader } from '@/ui/LandingHeader';
 import { MainContent } from '@/ui/landmarks';
+import { NightBand } from '@/ui/NightBand';
 import { Icon, type IconName } from '@/ui/icons';
 import { Reveal } from '@/ui/Reveal';
 import { SeoHead } from '@/ui/SeoHead';
@@ -68,40 +68,35 @@ export default function ContactScreen() {
       />
       <LandingHeader />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <MainContent style={styles.inner}>
-          <Reveal>
-            <Text style={styles.eyebrow}>Contact</Text>
-            <PageTitle style={styles.title}>Nous contacter</PageTitle>
-            <Text style={styles.lead}>
-              Choisissez ci-dessous le contact adapté à votre demande.
-              En cas d’urgence médicale, composez le 15 (SAMU) ou le 112 : MedInfo AI n’est
-              pas une plateforme d’urgence.
-            </Text>
-          </Reveal>
-
-          {cards.map((c, i) => (
-            <Reveal key={c.title} delay={tokens.motion.revealStagger * (i + 1)}>
-              <View style={styles.card}>
-                <View style={styles.cardIcon}>
-                  <Icon name={c.icon} size={20} color={tokens.colors.accent} />
+        <MainContent style={styles.main}>
+          {/* Bandeau « Moniteur » (ADR-0047). */}
+          <NightBand maxWidth={720} kicker="Contact" title="Nous contacter"
+            lead={'Choisissez ci-dessous le contact adapté à votre demande. En cas d’urgence médicale, composez le 15 (SAMU) ou le 112 : MedInfo AI n’est pas une plateforme d’urgence.'} trace />
+          <View style={styles.inner}>
+            {cards.map((c, i) => (
+              <Reveal key={c.title} delay={tokens.motion.revealStagger * (i + 1)}>
+                <View style={styles.card}>
+                  <View style={styles.cardIcon}>
+                    <Icon name={c.icon} size={20} color={tokens.colors.accent} />
+                  </View>
+                  <View style={styles.cardBody}>
+                    <Text style={styles.cardTitle}>{c.title}</Text>
+                    <Text style={styles.cardText}>{c.text}</Text>
+                    <Touchable
+                      onPress={c.onPress}
+                      accessibilityRole="button"
+                      accessibilityLabel={c.cta}
+                      feedback="link"
+                      style={styles.cardCta}
+                    >
+                      <Text style={styles.cardCtaText}>{c.cta}</Text>
+                      <Icon name="arrowRight" size={14} color={tokens.colors.accentVivid} />
+                    </Touchable>
+                  </View>
                 </View>
-                <View style={styles.cardBody}>
-                  <Text style={styles.cardTitle}>{c.title}</Text>
-                  <Text style={styles.cardText}>{c.text}</Text>
-                  <Touchable
-                    onPress={c.onPress}
-                    accessibilityRole="button"
-                    accessibilityLabel={c.cta}
-                    feedback="link"
-                    style={styles.cardCta}
-                  >
-                    <Text style={styles.cardCtaText}>{c.cta}</Text>
-                    <Icon name="arrowRight" size={14} color={tokens.colors.accentVivid} />
-                  </Touchable>
-                </View>
-              </View>
-            </Reveal>
-          ))}
+              </Reveal>
+            ))}
+          </View>
         </MainContent>
         <View style={styles.footerSpacer} />
         <SiteFooter />
@@ -115,6 +110,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { flexGrow: 1, alignItems: 'center' },
   footerSpacer: { height: tokens.space['3xl'] },
+  main: { width: '100%', alignItems: 'center' },
   inner: {
     width: '100%',
     maxWidth: 720,

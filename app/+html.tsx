@@ -1,5 +1,6 @@
 import { ScrollViewStyleReset } from 'expo-router/html';
 import type { PropsWithChildren } from 'react';
+import { APP_MOTION_CSS } from '@/ui/appMotion';
 import { CHIP_CSS } from '@/ui/Chip';
 import { INTERACTION_CSS } from '@/ui/interaction';
 import { SKIP_LINK_CSS } from '@/ui/landmarks';
@@ -142,9 +143,16 @@ p, [dir="auto"] { text-wrap-style: pretty; }
   stroke-dasharray: 1700;
   animation: medinfo-ecg-draw 9000ms cubic-bezier(0.4, 0, 0.2, 1) 300ms infinite;
 }
+/* Variante « moniteur » sur fond bleu nuit (hero du dashboard, ADR-0047) : tracé lumineux. */
+.medinfo-ecg-night { filter: drop-shadow(0 0 4px rgba(92,225,176,0.55)); }
+/* Bandeaux des pages et du dashboard : tracé dessiné UNE fois puis conservé (aucun mouvement
+   continu sans bouton pour l'arrêter, WCAG 2.2.2) ; seul l'accueil boucle, avec « Figer ». */
+@keyframes medinfo-ecg-once { from { stroke-dashoffset: 1700; } to { stroke-dashoffset: 0; } }
+.medinfo-ecg-path.medinfo-ecg-once { animation: medinfo-ecg-once 2400ms cubic-bezier(0.4, 0, 0.2, 1) 300ms both; }
 
 ${RESPONSIVE_CSS}
 ${INTERACTION_CSS}
+${APP_MOTION_CSS}
 ${CHIP_CSS}
 ${SKIP_LINK_CSS}
 ${SESSION_HINT_CSS}

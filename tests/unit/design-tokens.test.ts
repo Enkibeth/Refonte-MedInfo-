@@ -55,6 +55,20 @@ describe('palette éditoriale vivante', () => {
     }
   });
 
+  it('couche « Moniteur » (ADR-0047) : textes et signaux lisibles sur chaque fond de nuit', () => {
+    const night = tokens.colors.night;
+    for (const surface of [night.base, night.deep, night.raised]) {
+      for (const foreground of [night.text, night.muted, night.mint, night.lilac, night.blue]) {
+        expect(contrast(foreground, surface), `${foreground} sur ${surface}`).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+    for (const color of Object.values(tokens.colors.personasOnNight)) {
+      expect(contrast(color, night.base)).toBeGreaterThanOrEqual(4.5);
+    }
+    // Appel final : texte blanc sur le bleu vif des CTA.
+    expect(contrast(tokens.colors.onAccent, tokens.colors.accentVivid)).toBeGreaterThanOrEqual(4.5);
+  });
+
   it('n’utilise jamais le bleu vif des CTA comme couleur de TEXTE', async () => {
     // Recette 2026-10-02 : accentVivid sur le fond ivoire = 4,46:1 (< 4,5 WCAG AA) pour les
     // libellés 13-14 px. Il reste réservé aux fonds de boutons et aux icônes.

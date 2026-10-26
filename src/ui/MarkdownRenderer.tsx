@@ -301,9 +301,10 @@ function TableBlock({
             key={ri}
             style={[
               tableStyles.row,
-              row.isHeader && tableStyles.headerRow,
               ri > 0 && !row.isHeader && ri % 2 === 0 && tableStyles.evenRow,
               ri < rows.length - 1 && tableStyles.rowBorder,
+              // Après le filet de ligne : l'en-tête garde son filet d'accent.
+              row.isHeader && tableStyles.headerRow,
             ]}
           >
             {Array.from({ length: colCount }).map((_, ci) => (
@@ -583,8 +584,12 @@ const tableStyles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: tokens.colors.surface,
   },
+  // En-tête de lecture (ADR-0047) : encre sur fond bleu brume + filet d'accent, comme un
+  // tableau de revue. L'aplat bleu vif à texte blanc pesait plus que les données qu'il annonçait.
   headerRow: {
-    backgroundColor: tokens.colors.accent,
+    backgroundColor: tokens.colors.surfaceAlt,
+    borderBottomWidth: 2,
+    borderBottomColor: tokens.colors.accent,
   },
   evenRow: {
     backgroundColor: tokens.colors.surfaceAlt,
@@ -610,10 +615,10 @@ const tableStyles = StyleSheet.create({
     lineHeight: 20,
   },
   headerText: {
-    fontFamily: tokens.font.sans,
+    fontFamily: tokens.font.display,
     fontSize: tokens.type.label.fontSize,
     fontWeight: tokens.weight.semibold,
-    color: tokens.colors.onAccent,
+    color: tokens.colors.text,
     lineHeight: 20,
   },
 });

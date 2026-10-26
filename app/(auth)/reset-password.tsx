@@ -1,5 +1,5 @@
 import { FieldInput } from '@/ui/FieldInput';
-import { PageTitle } from '@/ui/PageTitle';
+import { NightBand } from '@/ui/NightBand';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
@@ -48,13 +48,11 @@ export default function ResetPasswordScreen() {
   }
 
   return (
-    <Screen maxWidth={tokens.layout.form}>
-      <View style={styles.logoWrap}>
-        <Logo size="md" />
-      </View>
-
+    <Screen
+      maxWidth={tokens.layout.form}
+      band={<NightBand maxWidth={tokens.layout.form} before={<Logo size="sm" tone="light" />} kicker="Espace MedInfo AI" title="Nouveau mot de passe" />}
+    >
       <Card style={styles.formCard}>
-        <PageTitle style={styles.title}>Nouveau mot de passe</PageTitle>
 
         {done ? (
           <>
@@ -144,16 +142,6 @@ const styles = StyleSheet.create({
     fontWeight: tokens.weight.semibold,
   },
   formCard: { borderWidth: 0, padding: 0 },
-  logoWrap: { alignItems: 'flex-start', marginBottom: tokens.space.xl },
-  title: {
-    fontFamily: tokens.font.serif,
-    color: tokens.colors.text,
-    fontSize: tokens.type.h1.fontSize,
-    lineHeight: tokens.type.h1.lineHeight,
-    letterSpacing: tokens.type.h1.letterSpacing,
-    fontWeight: tokens.weight.semibold,
-    marginBottom: tokens.space.sm,
-  },
   body: {
     fontFamily: tokens.font.sans,
     color: tokens.colors.textMuted,

@@ -141,7 +141,8 @@ try {
       const mobile = width < 700;
       const context = await browser.newContext({
         viewport: { width, height: mobile ? 844 : 900 },
-        reducedMotion: 'reduce',
+        // CAPTURE_MOTION=1 : animations actives (contrôle du mouvement) ; sinon état final figé.
+        reducedMotion: process.env.CAPTURE_MOTION === '1' ? 'no-preference' : 'reduce',
         hasTouch: mobile,
         isMobile: mobile,
       });
@@ -156,10 +157,24 @@ try {
       const page = await context.newPage();
       const errors = [];
       page.on('pageerror', (error) => errors.push(error.message));
+      // Erreurs console, hors requêtes externes volontairement coupées par routeMock.
+      page.on('console', (message) => {
+        if (message.type() === 'error' && !/Failed to load resource|net::ERR_/.test(message.text())) errors.push(`console: ${message.text().slice(0, 200)}`);
+      });
       await page.goto(`http://127.0.0.1:${PORT}${screen.path}`, { waitUntil: 'networkidle' }).catch(() => {});
       await page.evaluate(() => document.fonts.ready);
-      await page.waitForTimeout(600);
+      await page.waitForTimeout(Number(process.env.CAPTURE_WAIT ?? 600));
       const file = path.join(output, `${screen.name}-${width}.png`);
+      // CAPTURE_FULL=1 : page entière (composition de l'accueil), sinon le premier écran seul.
+      // Le défilement est porté par une ScrollView interne (react-native-web) : la fenêtre est
+      // agrandie à la hauteur de son contenu, plafonnée à 14 000 px.
+      if (process.env.CAPTURE_FULL === '1') {
+        const full = await page.evaluate(() => Math.max(...[...document.querySelectorAll('*')]
+          .filter((node) => /(auto|scroll)/.test(getComputedStyle(node).overflowY))
+          .map((node) => node.scrollHeight), document.documentElement.scrollHeight));
+        await page.setViewportSize({ width, height: Math.min(Math.max(full, mobile ? 844 : 900), 14000) });
+        await page.waitForTimeout(400);
+      }
       await page.screenshot({ path: file });
       // Contrôles visibles sans nom accessible ni texte : à corriger (lecteur d'écran muet).
       const unnamed = await page.evaluate(() =>

@@ -1,5 +1,4 @@
 import { Button } from '@/ui/Button';
-import { PageTitle } from '@/ui/PageTitle';
 /**
  * Blog santé — liste publique des articles publiés (audit landing 2026-06).
  * Articles générés par IA depuis le panel admin (/api/admin/blog) puis publiés ;
@@ -13,6 +12,7 @@ import { listPublishedPosts, type BlogPost } from '@/blog/posts';
 import { PAGE_SEO, breadcrumbJsonLd } from '@/seo/meta';
 import { LandingHeader } from '@/ui/LandingHeader';
 import { MainContent } from '@/ui/landmarks';
+import { NightBand } from '@/ui/NightBand';
 import { Reveal } from '@/ui/Reveal';
 import { SeoHead } from '@/ui/SeoHead';
 import { SiteFooter } from '@/ui/SiteFooter';
@@ -62,73 +62,69 @@ export default function BlogScreen() {
       />
       <LandingHeader />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <MainContent style={styles.inner}>
-          <Reveal>
-            <Text style={styles.eyebrow}>Blog</Text>
-            <PageTitle style={styles.title}>Des articles pour comprendre la santé</PageTitle>
-            <Text style={styles.lead}>
-              Prévention, recherche, idées reçues : des articles d’information générale, avec leurs
-              sources. Ils ne remplacent pas un avis médical individuel.
-            </Text>
-          </Reveal>
-
-          {loading ? (
-            <View style={styles.grid}>
-              {[0, 1, 2].map((i) => (
-                <View key={i} style={styles.cell}>
-                  <View style={styles.loadingRow}><Skeleton height={tokens.type.caption.lineHeight} width="30%" /><Skeleton height={tokens.type.h3.lineHeight} width="80%" /><Skeleton height={tokens.type.body.lineHeight} width="95%" /><Skeleton height={tokens.type.body.lineHeight} width="70%" /></View>
-                </View>
-              ))}
-            </View>
-          ) : loadError ? <View style={styles.emptyCard} accessibilityLiveRegion="polite"><Text style={styles.emptyTitle}>Les articles n’ont pas pu être chargés</Text><Text style={styles.emptyText}>Vérifiez votre connexion, puis réessayez.</Text><Button label="Réessayer" variant="secondary" fullWidth={false} onPress={() => setAttempt(n => n + 1)} /></View> : posts.length === 0 ? (
-            <Reveal>
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyTitle}>Les premiers articles arrivent bientôt</Text>
-                <Text style={styles.emptyText}>
-                  En attendant, posez vos questions directement au chat MedInfo AI : le premier
-                  message est sans inscription.
-                </Text>
+        <MainContent style={styles.main}>
+          {/* Bandeau « Moniteur » (ADR-0047). */}
+          <NightBand maxWidth={960} kicker="Blog" title="Des articles pour comprendre la santé"
+            lead={'Prévention, recherche, idées reçues : des articles d’information générale, avec leurs sources. Ils ne remplacent pas un avis médical individuel.'} trace />
+          <View style={styles.inner}>
+            {loading ? (
+              <View style={styles.grid}>
+                {[0, 1, 2].map((i) => (
+                  <View key={i} style={styles.cell}>
+                    <View style={styles.loadingRow}><Skeleton height={tokens.type.caption.lineHeight} width="30%" /><Skeleton height={tokens.type.h3.lineHeight} width="80%" /><Skeleton height={tokens.type.body.lineHeight} width="95%" /><Skeleton height={tokens.type.body.lineHeight} width="70%" /></View>
+                  </View>
+                ))}
               </View>
-            </Reveal>
-          ) : (
-            <View style={styles.grid}>
-              {posts.map((p, i) => (
-                <Reveal key={p.id} delay={tokens.motion.revealStagger * (i % 3)} style={styles.cell}>
-                  <Touchable
-                    style={styles.card}
-                    onPress={() => router.push(`/(marketing)/blog/${p.slug}` as never)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Lire l’article : ${p.title}`}
-                  >
-                    {p.cover_image_url ? (
-                      <Image source={{ uri: p.cover_image_url }} style={styles.cover} resizeMode="cover" />
-                    ) : (
-                      null
-                    )}
-                    <View style={styles.cardBody}>
-                      <View style={styles.metaRow}>
-                        {p.category ? (
-                          <View style={styles.categoryPill}>
-                            <Text style={styles.categoryText}>{p.category}</Text>
-                          </View>
-                        ) : null}
-                        <Text style={styles.date}>{formatDate(p.published_at)}</Text>
-                      </View>
-                      <Text style={styles.cardTitle} numberOfLines={3}>
-                        {p.title}
-                      </Text>
-                      {p.summary ? (
-                        <Text style={styles.cardSummary} numberOfLines={3}>
-                          {p.summary}
+            ) : loadError ? <View style={styles.emptyCard} accessibilityLiveRegion="polite"><Text style={styles.emptyTitle}>Les articles n’ont pas pu être chargés</Text><Text style={styles.emptyText}>Vérifiez votre connexion, puis réessayez.</Text><Button label="Réessayer" variant="secondary" fullWidth={false} onPress={() => setAttempt(n => n + 1)} /></View> : posts.length === 0 ? (
+              <Reveal>
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyTitle}>Les premiers articles arrivent bientôt</Text>
+                  <Text style={styles.emptyText}>
+                    En attendant, posez vos questions directement au chat MedInfo AI : le premier
+                    message est sans inscription.
+                  </Text>
+                </View>
+              </Reveal>
+            ) : (
+              <View style={styles.grid}>
+                {posts.map((p, i) => (
+                  <Reveal key={p.id} delay={tokens.motion.revealStagger * (i % 3)} style={styles.cell}>
+                    <Touchable
+                      style={styles.card}
+                      onPress={() => router.push(`/(marketing)/blog/${p.slug}` as never)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Lire l’article : ${p.title}`}
+                    >
+                      {p.cover_image_url ? (
+                        <Image source={{ uri: p.cover_image_url }} style={styles.cover} resizeMode="cover" />
+                      ) : (
+                        null
+                      )}
+                      <View style={styles.cardBody}>
+                        <View style={styles.metaRow}>
+                          {p.category ? (
+                            <View style={styles.categoryPill}>
+                              <Text style={styles.categoryText}>{p.category}</Text>
+                            </View>
+                          ) : null}
+                          <Text style={styles.date}>{formatDate(p.published_at)}</Text>
+                        </View>
+                        <Text style={styles.cardTitle} numberOfLines={3}>
+                          {p.title}
                         </Text>
-                      ) : null}
-                      <Text style={styles.readMore}>Lire l’article</Text>
-                    </View>
-                  </Touchable>
-                </Reveal>
-              ))}
-            </View>
-          )}
+                        {p.summary ? (
+                          <Text style={styles.cardSummary} numberOfLines={3}>
+                            {p.summary}
+                          </Text>
+                        ) : null}
+                        <Text style={styles.readMore}>Lire l’article</Text>
+                      </View>
+                    </Touchable>
+                  </Reveal>
+                ))}
+              </View>
+            )}
+          </View>
         </MainContent>
         <View style={styles.footerSpacer} />
         <SiteFooter />
@@ -142,6 +138,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { flexGrow: 1, alignItems: 'center' },
   footerSpacer: { height: tokens.space['3xl'] },
+  main: { width: '100%', alignItems: 'center' },
   inner: {
     width: '100%',
     maxWidth: 960,

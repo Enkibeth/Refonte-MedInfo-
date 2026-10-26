@@ -5,8 +5,9 @@
  *   src/ui/AppMobileHeader.tsx).
  *   Ni bouton « Outils », ni paragraphe de présentation, ni barre d'onglets en bas : l'outil
  *   occupe tout l'écran (retour Hugo : le CV ne laissait qu'un « tout petit cadre »).
- * - Ordinateur (≥ 1 024 px) : titre, présentation courte et menu « Outils » (masqué sous le
- *   shell desktop, dont la barre latérale porte la navigation).
+ * - Ordinateur (≥ 1 024 px) : bandeau « Moniteur » compact (ADR-0047, `NightBand`) : icône de
+ *   l'outil, titre, présentation courte et menu « Outils » (masqué sous le shell desktop, dont
+ *   la barre latérale porte la navigation).
  *
  * Web : les deux variantes sont dans le DOM et le CSS choisit selon la largeur (`mi`), comme le
  * reste du pré-rendu (largeur inconnue) ; la variante masquée est hors de l'arbre d'accessibilité.
@@ -16,7 +17,8 @@ import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { getFeatureMeta, type AppFeatureId } from '@/ai/routing/featureVisibility';
 import { AppMobileHeader } from '@/ui/AppMobileHeader';
-import { PageTitle } from '@/ui/PageTitle';
+import { audienceLabel } from '@/ui/audienceLabel';
+import { NightBand } from '@/ui/NightBand';
 import { mi } from '@/ui/responsive';
 import { tokens } from '@/ui/tokens';
 import { ToolsMenu } from '@/ui/ToolsMenu';
@@ -25,17 +27,14 @@ import { useWindowWidth } from '@/ui/useWindowWidth';
 export function ToolScreenHeader({ feature, title, children }: { feature: AppFeatureId; title: string; children?: ReactNode }) {
   const width = useWindowWidth();
   const compactBp = tokens.layout.shell;
-  const icon = getFeatureMeta(feature)?.icon;
+  const meta = getFeatureMeta(feature);
+  const icon = meta?.icon;
 
   const bar = <AppMobileHeader title={title} icon={icon} />;
   const full = (
-    <View style={styles.header}>
-      <View style={styles.headerTop}>
-        <PageTitle style={styles.title}>{title}</PageTitle>
-        <ToolsMenu />
-      </View>
+    <NightBand compact icon={icon} kicker={audienceLabel(meta?.personas ?? [])} title={title} maxWidth={tokens.layout.wide} aside={<ToolsMenu />}>
       {children ? <Text style={styles.subtitle}>{children}</Text> : null}
-    </View>
+    </NightBand>
   );
 
   if (Platform.OS !== 'web') return width < compactBp ? bar : full;
@@ -48,21 +47,10 @@ export function ToolScreenHeader({ feature, title, children }: { feature: AppFea
 }
 
 const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: tokens.space.lg,
-    paddingTop: tokens.space.lg,
-    paddingBottom: tokens.space.md,
-    gap: tokens.space.xs,
-    backgroundColor: tokens.colors.surface,
-    borderBottomWidth: tokens.border.thin,
-    borderColor: tokens.colors.border,
-  },
-  headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: tokens.space.md },
-  title: { flexShrink: 1 },
   subtitle: {
     maxWidth: tokens.layout.measure + 120,
     fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
+    color: tokens.colors.night.muted,
     ...tokens.type.label,
   },
 });

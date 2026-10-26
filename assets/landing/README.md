@@ -1,13 +1,15 @@
 # Photographies de l’accueil
 
-Sélection du 28 septembre 2026, première photo remplacée le 1er octobre 2026.
+Sélection du 28 septembre 2026, première photo remplacée le 1er octobre 2026. Refonte « Moniteur »
+(ADR-0047, 26 octobre 2026) : aucune photo ajoutée ; les quatre fichiers déjà livrés sont tous affichés
+(premier écran : `medical-study` ; onglets des assistants : `sources`, `study`, `work`).
 Photographies réelles d’illustration, sans
 témoignage ni revendication d’utilisation de MedInfo AI par les modèles.
 
 | Fichier | Photographe | Original Pexels |
 |---|---|---|
 | `medical-study*` (accueil actuel) | Gustavo Fring | [Étudiants en médecine partageant leurs notes](https://www.pexels.com/photo/group-of-medical-students-at-the-hallway-sharing-notes-3985154/) |
-| `study*` (ancienne sélection conservée, non affichée) | Yan Krukau | [Étudiants à la bibliothèque](https://www.pexels.com/photo/students-studying-in-a-library-using-laptop-and-books-8199759/) |
+| `study*` (onglet « Étudiants » de l’accueil depuis ADR-0047) | Yan Krukau | [Étudiants à la bibliothèque](https://www.pexels.com/photo/students-studying-in-a-library-using-laptop-and-books-8199759/) |
 | `work*` | Tima Miroshnichenko | [Travail sur tablette au bureau](https://www.pexels.com/photo/a-medical-doctor-working-behind-a-desk-5407215/) |
 | `sources*` | Yan Krukau | [Lecture et prise de notes](https://www.pexels.com/photo/a-person-taking-down-notes-8199654/) |
 

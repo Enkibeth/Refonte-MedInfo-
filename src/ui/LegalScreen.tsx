@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import type { LegalDocument } from '@/compliance/legal';
 import { legalLinks } from '@/compliance/legal';
+import { NightBand } from '@/ui/NightBand';
 import { SeoHead } from '@/ui/SeoHead';
 import { tokens } from '@/ui/tokens';
 
@@ -19,10 +20,11 @@ export function LegalScreen({ document }: { document: LegalDocument }) {
         description={document.intro.length > 160 ? `${document.intro.slice(0, 157)}…` : document.intro}
         path={`/${document.slug}`}
       />
+      {/* Bandeau « Moniteur » (ADR-0047) : repère, titre de niveau 1 et date de mise à jour. */}
+      <NightBand maxWidth={tokens.layout.reading} kicker="Informations légales" title={document.title}>
+        <Text style={styles.updated}>Dernière mise à jour{'\u00a0'}: {document.updatedAt}</Text>
+      </NightBand>
       <View style={styles.card}>
-        <Text style={styles.eyebrow}>Informations légales</Text>
-        <Text role="heading" aria-level={1} style={styles.title}>{document.title}</Text>
-        <Text style={styles.updated}>Dernière mise à jour : {document.updatedAt}</Text>
         <Text style={styles.intro}>{document.intro}</Text>
 
         {document.sections.map((section) => (
@@ -57,7 +59,7 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     alignItems: 'center',
-    padding: tokens.space.xl,
+    paddingBottom: tokens.space.xl,
     backgroundColor: tokens.colors.background,
   },
   card: {
@@ -66,30 +68,11 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     padding: tokens.space.xl,
     backgroundColor: tokens.colors.surface,
-
-  },
-  eyebrow: {
-    fontFamily: tokens.font.sans,
-    color: tokens.colors.accentDeep,
-    fontSize: tokens.type.caption.fontSize,
-    fontWeight: tokens.weight.semibold,
-    textTransform: 'none',
-    marginBottom: tokens.space.md,
-  },
-  title: {
-    fontFamily: tokens.font.serif,
-    color: tokens.colors.text,
-    fontSize: tokens.type.h1.fontSize,
-    lineHeight: tokens.type.h1.lineHeight,
-    letterSpacing: tokens.type.h1.letterSpacing,
-    fontWeight: tokens.weight.regular, // titre de page : même graisse que PageTitle
-    marginBottom: tokens.space.sm,
   },
   updated: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
+    color: tokens.colors.night.muted,
     fontSize: tokens.type.caption.fontSize,
-    marginBottom: tokens.space.lg,
   },
   intro: {
     fontFamily: tokens.font.sans,

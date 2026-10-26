@@ -60,9 +60,17 @@ import { Icon } from '@/ui/icons';
 import { SeoHead } from '@/ui/SeoHead';
 import { ScreenNavBar } from '@/ui/AppMobileHeader';
 import { SHELL_BREAKPOINT } from '@/ui/shell/AppShell';
+import { lx } from '@/ui/landing/lx';
 import { Skeleton } from '@/ui/Skeleton';
 import { tokens } from '@/ui/tokens';
 import { useWindowWidth } from '@/ui/useWindowWidth';
+
+/** Repères d'audience des trois chatbots (couleur + nom, jamais un statut). */
+const CHATBOT_TONE: Record<ChatbotId, { accent: string; soft: string }> = {
+  public: tokens.colors.personas.public,
+  student: tokens.colors.personas.student,
+  professional: tokens.colors.personas.pro,
+};
 
 const EXAM_LABELS: Record<ExamType, string> = {
   pass_las: 'le PASS/LAS',
@@ -478,7 +486,7 @@ export default function DashboardScreen() {
           {/* ── Colonne principale ── */}
           <View style={styles.mainColumn}>
             {/* Hero « Qu’est-ce qui compte aujourd’hui ? » */}
-            <View style={styles.hero}>
+            <View {...lx(['ax-night', 'ax-in'], { ad: '0' })} style={styles.hero}>
               <View style={styles.greetingPill}>
                 <Text style={styles.greetingText}>{greeting}</Text>
               </View>
@@ -497,13 +505,13 @@ export default function DashboardScreen() {
                 />
                 <Button
                   label={secondaryCta.label}
-                  variant="secondary"
+                  variant="outlineLight"
                   fullWidth={width < tokens.layout.compact}
                   onPress={() => router.push(secondaryCta.route as never)}
                 />
               </View>
               {/* Tracé ECG animé (signature visuelle, coupé sous prefers-reduced-motion). */}
-              <EcgTrace height={48} />
+              <EcgTrace height={48} tone="night" once />
               <View style={styles.tileRow}>
                 {tiles.map((tile) => (
                   <View key={tile.label} style={styles.tile}>
@@ -517,7 +525,7 @@ export default function DashboardScreen() {
             </View>
 
             {/* Grille des outils du rôle */}
-            <View style={styles.toolsHead}>
+            <View {...lx('ax-in', { ad: '2' })} style={styles.toolsHead}>
               <Text style={styles.sectionTitle} accessibilityRole="header" aria-level={2}>
                 Mes outils
               </Text>
@@ -525,38 +533,56 @@ export default function DashboardScreen() {
                 Les outils disponibles avec ton profil.
               </Text>
             </View>
-            {/* Accès direct aux 3 chatbots (comptes étudiant/pro/admin) — le
-                deep-link ?bot= est géré par app/(chat)/chat.tsx, autorisation
-                réelle inchangée côté serveur (allowedChatbotsFor). */}
-            {canSwitchChatbots ? (
-              <View style={styles.chatbotRow}>
-                {(['public', 'student', 'professional'] as ChatbotId[]).map((id) => {
-                  const meta = CHATBOT_META[id];
-                  return (
-                    <Pressable
-                      key={id}
-                      onPress={() => router.push(`/(chat)/chat?bot=${id}` as never)}
-                      accessibilityRole="link"
-                      accessibilityLabel={`Ouvrir le chat ${meta.label}`}
-                      style={({ hovered }: { hovered?: boolean }) => [
-                        styles.chatbotChip,
-                        hovered && styles.chatbotChipHovered,
-                      ]}
-                    >
-                      <Icon name={meta.icon} size={15} color={tokens.colors.accentDeep} />
-                      <Text style={styles.chatbotChipText}>Chat {meta.shortLabel.toLowerCase()}</Text>
-                      <Icon name="arrowRight" size={13} color={tokens.colors.textMuted} />
-                    </Pressable>
-                  );
-                })}
-              </View>
-            ) : null}
-            <View style={styles.toolsGrid}>
-              {tools.map((tool) => {
+            <View {...lx('ax-in', { ad: '3' })} style={styles.toolsGrid}>
+              {/* Chat des comptes étudiant/pro/admin : une carte large qui porte l'accès direct
+                  aux trois chatbots (le deep-link ?bot= est géré par app/(chat)/chat.tsx,
+                  autorisation réelle inchangée côté serveur, allowedChatbotsFor). Les trois
+                  puces séparées doublaient la carte « Chat » de la grille. */}
+              {canSwitchChatbots && tools.some((tool) => tool.id === 'chat') ? (
+                <View style={[styles.toolCard, styles.chatCard]}>
+                  <View style={[styles.toolChip, { backgroundColor: featureTint('chat').bg }]}>
+                    <Icon name="messageCircle" size={20} color={featureTint('chat').fg} />
+                  </View>
+                  <View style={styles.toolText}>
+                    <Text style={styles.toolTitle}>Chat</Text>
+                    <Text style={styles.toolDescription}>Trois assistants, un niveau de lecture chacun.</Text>
+                    <View style={styles.chatbotRow}>
+                      {(['public', 'student', 'professional'] as ChatbotId[]).map((id) => {
+                        const meta = CHATBOT_META[id];
+                        const tone = CHATBOT_TONE[id];
+                        return (
+                          <Pressable
+                            key={id}
+                            {...lx('ax-lift')}
+                            onPress={() => router.push(`/(chat)/chat?bot=${id}` as never)}
+                            accessibilityRole="link"
+                            accessibilityLabel={`Chat ${meta.shortLabel.toLowerCase()}, ouvrir`}
+                            style={({ hovered }: { hovered?: boolean }) => [
+                              styles.chatbotChip,
+                              { backgroundColor: tone.soft },
+                              hovered && { borderColor: tone.accent },
+                            ]}
+                          >
+                            <Icon name={meta.icon} size={15} color={tone.accent} />
+                            <Text style={[styles.chatbotChipText, { color: tone.accent }]}>Chat {meta.shortLabel.toLowerCase()}</Text>
+                            <View {...lx('ax-arrow')}>
+                              <Icon name="arrowRight" size={13} color={tone.accent} />
+                            </View>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                </View>
+              ) : null}
+              {tools
+                .filter((tool) => !(canSwitchChatbots && tool.id === 'chat'))
+                .map((tool) => {
                 const tint = featureTint(tool.id);
                 return (
                   <Pressable
                     key={tool.id}
+                    {...lx('ax-lift')}
                     onPress={() => router.push(tool.route as never)}
                     accessibilityRole="link"
                     accessibilityLabel={tool.label}
@@ -574,6 +600,9 @@ export default function DashboardScreen() {
                         {tool.description}
                       </Text>
                     </View>
+                    <View {...lx('ax-arrow')} style={styles.toolArrow}>
+                      <Icon name="arrowRight" size={15} color={tint.fg} />
+                    </View>
                   </Pressable>
                 );
               })}
@@ -583,7 +612,7 @@ export default function DashboardScreen() {
           {/* ── Rail droit ── */}
           <View style={[styles.rail, wide && styles.railWide]}>
             {snapshot && nextExam ? (
-              <View style={styles.railCard}>
+              <View {...lx('ax-in', { ad: '2' })} style={styles.railCard}>
                 <View style={styles.railPill}>
                   <Text style={styles.railPillText}>Prochain objectif</Text>
                 </View>
@@ -612,7 +641,7 @@ export default function DashboardScreen() {
                 />
               </View>
             ) : (
-              <View style={styles.railCard}>
+              <View {...lx('ax-in', { ad: '2' })} style={styles.railCard}>
                 <View style={styles.railPill}>
                   <Text style={styles.railPillText}>Raccourcis</Text>
                 </View>
@@ -659,7 +688,7 @@ export default function DashboardScreen() {
               </View>
             )}
 
-            <View style={styles.railCard}>
+            <View {...lx('ax-in', { ad: '3' })} style={styles.railCard}>
               <Text style={styles.railTitle} accessibilityRole="header" aria-level={2}>
                 Activité récente
               </Text>
@@ -680,6 +709,7 @@ export default function DashboardScreen() {
                   return (
                     <Pressable
                       key={entry.key}
+                      {...lx('ax-in', { ad: String(Math.min(4 + i, 15)) })}
                       onPress={() => router.push(entry.route as never)}
                       accessibilityRole="link"
                       style={({ hovered }: { hovered?: boolean }) => [
@@ -732,32 +762,31 @@ const styles = StyleSheet.create({
   mainColumn: { flex: 1, minWidth: 0, gap: tokens.space.lg },
 
   // ── Hero ──
+  // Bandeau « moniteur » (ADR-0047) : bleu nuit, papier millimétré et halo posés par le CSS
+  // `ax-night` (src/ui/appMotion.ts) ; le fond plein reste la valeur native.
   hero: {
-    backgroundColor: tokens.colors.surface,
-    borderBottomWidth: tokens.border.thin,
-    borderBottomColor: tokens.colors.border,
-    borderRadius: tokens.radius.xl,
+    backgroundColor: tokens.colors.night.base,
+    borderRadius: tokens.radius.xl + 4,
     padding: tokens.space.xl,
     gap: tokens.space.md,
     overflow: 'hidden',
-
   },
   greetingPill: {
     alignSelf: 'flex-start',
-    backgroundColor: tokens.colors.surfaceAlt,
+    backgroundColor: tokens.colors.night.raised,
     borderRadius: tokens.radius.pill,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.xs,
   },
   greetingText: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
+    color: tokens.colors.night.muted,
     fontSize: tokens.type.caption.fontSize,
     fontWeight: tokens.weight.semibold,
   },
   heroTitle: {
     fontFamily: tokens.font.serif,
-    color: tokens.colors.text,
+    color: tokens.colors.night.text,
     fontSize: tokens.type.h1.fontSize,
     lineHeight: tokens.type.h1.lineHeight,
     letterSpacing: tokens.type.h1.letterSpacing,
@@ -766,7 +795,7 @@ const styles = StyleSheet.create({
   },
   heroSubtitle: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
+    color: tokens.colors.night.muted,
     fontSize: tokens.type.body.fontSize,
     lineHeight: tokens.type.body.lineHeight,
     maxWidth: tokens.layout.form,
@@ -787,9 +816,9 @@ const styles = StyleSheet.create({
   tile: {
     flexGrow: 1,
     flexBasis: 140,
-    backgroundColor: tokens.colors.surfaceAlt,
+    backgroundColor: 'rgba(30,42,99,0.72)',
     borderWidth: 1,
-    borderColor: tokens.colors.border,
+    borderColor: tokens.colors.night.line,
     borderRadius: tokens.radius.lg,
     paddingHorizontal: tokens.space.lg,
     paddingVertical: tokens.space.md,
@@ -797,14 +826,14 @@ const styles = StyleSheet.create({
   },
   tileLabel: {
     fontFamily: tokens.font.sans,
-    color: tokens.colors.textMuted,
+    color: tokens.colors.night.muted,
     fontSize: tokens.type.micro.fontSize,
     fontWeight: tokens.weight.bold,
     textTransform: 'none',
   },
   tileValue: {
     fontFamily: tokens.font.display,
-    color: tokens.colors.text,
+    color: tokens.colors.night.text,
     fontSize: tokens.type.h2.fontSize,
     lineHeight: tokens.type.h2.lineHeight,
     fontWeight: tokens.weight.bold,
@@ -833,28 +862,24 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: tokens.space.md,
   },
-  // Rangée d'accès direct aux 3 chatbots (étudiant / pro / admin).
+  // Accès direct aux 3 chatbots (étudiant / pro / admin), dans la carte « Chat ».
   chatbotRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: tokens.space.sm,
+    marginTop: tokens.space.sm,
   },
+  chatCard: { flexBasis: '100%' },
   chatbotChip: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.sm,
     borderRadius: tokens.radius.pill,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
+    borderColor: tokens.colors.transparent,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.sm,
-    ...tokens.elevation.sm,
     ...tokens.motion.transitionWeb,
-  },
-  chatbotChipHovered: {
-    borderColor: tokens.colors.borderStrong,
-    ...tokens.elevation.md,
   },
   chatbotChipText: {
     fontFamily: tokens.font.sans,
@@ -890,6 +915,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   toolText: { flex: 1, minWidth: 0, gap: 2 },
+  toolArrow: { alignSelf: 'center', paddingLeft: tokens.space.xs },
   toolTitle: {
     fontFamily: tokens.font.display,
     color: tokens.colors.text,
