@@ -41,6 +41,9 @@ const COMPACT = {
 function Drawing({ shape }: { shape: typeof WIDE }) {
   return (
     <svg viewBox={shape.viewBox} preserveAspectRatio="xMidYMid meet" focusable="false" style={svgStyle}>
+      {/* Halo dessiné (trait large translucide) plutôt qu'un filtre CSS : un drop-shadow sur une
+          couche animée la repeignait à chaque image (≈ 42 i/s mesurées en rendu logiciel, 59 sans). */}
+      <path d={shape.d} fill="none" stroke={tokens.colors.night.mint} strokeOpacity={0.16} strokeWidth={7} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
       <path d={shape.d} fill="none" stroke={tokens.colors.night.mint} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
       {shape.nodes.map((node) => (
         <g key={node.y}>

@@ -77,7 +77,7 @@ export function MockFrame({
     <View
       {...lx('lx-mock', { on: on ? '1' : '0' })}
       accessibilityRole="image"
-      accessibilityLabel={`Aperçu de l’interface, contenu fictif : ${description}`}
+      accessibilityLabel={`Aperçu de l’interface, contenu fictif : ${description}`}
       style={[styles.frame, night && styles.frameNight, style]}
     >
       <View style={[styles.frameBar, night && styles.frameBarNight]}>

@@ -65,6 +65,13 @@ import { Skeleton } from '@/ui/Skeleton';
 import { tokens } from '@/ui/tokens';
 import { useWindowWidth } from '@/ui/useWindowWidth';
 
+/** Repères d'audience des trois chatbots (couleur + nom, jamais un statut). */
+const CHATBOT_TONE: Record<ChatbotId, { accent: string; soft: string }> = {
+  public: tokens.colors.personas.public,
+  student: tokens.colors.personas.student,
+  professional: tokens.colors.personas.pro,
+};
+
 const EXAM_LABELS: Record<ExamType, string> = {
   pass_las: 'le PASS/LAS',
   dfgsm: 'le DFGSM',
@@ -526,39 +533,56 @@ export default function DashboardScreen() {
                 Les outils disponibles avec ton profil.
               </Text>
             </View>
-            {/* Accès direct aux 3 chatbots (comptes étudiant/pro/admin) — le
-                deep-link ?bot= est géré par app/(chat)/chat.tsx, autorisation
-                réelle inchangée côté serveur (allowedChatbotsFor). */}
-            {canSwitchChatbots ? (
-              <View {...lx('ax-in', { ad: '3' })} style={styles.chatbotRow}>
-                {(['public', 'student', 'professional'] as ChatbotId[]).map((id) => {
-                  const meta = CHATBOT_META[id];
-                  return (
-                    <Pressable
-                      key={id}
-                      onPress={() => router.push(`/(chat)/chat?bot=${id}` as never)}
-                      accessibilityRole="link"
-                      accessibilityLabel={`Ouvrir le chat ${meta.label}`}
-                      style={({ hovered }: { hovered?: boolean }) => [
-                        styles.chatbotChip,
-                        hovered && styles.chatbotChipHovered,
-                      ]}
-                    >
-                      <Icon name={meta.icon} size={15} color={tokens.colors.accentDeep} />
-                      <Text style={styles.chatbotChipText}>Chat {meta.shortLabel.toLowerCase()}</Text>
-                      <Icon name="arrowRight" size={13} color={tokens.colors.textMuted} />
-                    </Pressable>
-                  );
-                })}
-              </View>
-            ) : null}
-            <View style={styles.toolsGrid}>
-              {tools.map((tool, index) => {
+            <View {...lx('ax-in', { ad: '3' })} style={styles.toolsGrid}>
+              {/* Chat des comptes étudiant/pro/admin : une carte large qui porte l'accès direct
+                  aux trois chatbots (le deep-link ?bot= est géré par app/(chat)/chat.tsx,
+                  autorisation réelle inchangée côté serveur, allowedChatbotsFor). Les trois
+                  puces séparées doublaient la carte « Chat » de la grille. */}
+              {canSwitchChatbots && tools.some((tool) => tool.id === 'chat') ? (
+                <View style={[styles.toolCard, styles.chatCard]}>
+                  <View style={[styles.toolChip, { backgroundColor: featureTint('chat').bg }]}>
+                    <Icon name="messageCircle" size={20} color={featureTint('chat').fg} />
+                  </View>
+                  <View style={styles.toolText}>
+                    <Text style={styles.toolTitle}>Chat</Text>
+                    <Text style={styles.toolDescription}>Trois assistants, un niveau de lecture chacun.</Text>
+                    <View style={styles.chatbotRow}>
+                      {(['public', 'student', 'professional'] as ChatbotId[]).map((id) => {
+                        const meta = CHATBOT_META[id];
+                        const tone = CHATBOT_TONE[id];
+                        return (
+                          <Pressable
+                            key={id}
+                            {...lx('ax-lift')}
+                            onPress={() => router.push(`/(chat)/chat?bot=${id}` as never)}
+                            accessibilityRole="link"
+                            accessibilityLabel={`Chat ${meta.shortLabel.toLowerCase()}, ouvrir`}
+                            style={({ hovered }: { hovered?: boolean }) => [
+                              styles.chatbotChip,
+                              { backgroundColor: tone.soft },
+                              hovered && { borderColor: tone.accent },
+                            ]}
+                          >
+                            <Icon name={meta.icon} size={15} color={tone.accent} />
+                            <Text style={[styles.chatbotChipText, { color: tone.accent }]}>Chat {meta.shortLabel.toLowerCase()}</Text>
+                            <View {...lx('ax-arrow')}>
+                              <Icon name="arrowRight" size={13} color={tone.accent} />
+                            </View>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                </View>
+              ) : null}
+              {tools
+                .filter((tool) => !(canSwitchChatbots && tool.id === 'chat'))
+                .map((tool) => {
                 const tint = featureTint(tool.id);
                 return (
                   <Pressable
                     key={tool.id}
-                    {...lx(['ax-lift', 'ax-in'], { ad: String(Math.min(4 + index, 15)) })}
+                    {...lx('ax-lift')}
                     onPress={() => router.push(tool.route as never)}
                     accessibilityRole="link"
                     accessibilityLabel={tool.label}
@@ -838,28 +862,24 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: tokens.space.md,
   },
-  // Rangée d'accès direct aux 3 chatbots (étudiant / pro / admin).
+  // Accès direct aux 3 chatbots (étudiant / pro / admin), dans la carte « Chat ».
   chatbotRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: tokens.space.sm,
+    marginTop: tokens.space.sm,
   },
+  chatCard: { flexBasis: '100%' },
   chatbotChip: { minHeight: tokens.size.controlMd,
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.space.sm,
     borderRadius: tokens.radius.pill,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surface,
+    borderColor: tokens.colors.transparent,
     paddingHorizontal: tokens.space.md,
     paddingVertical: tokens.space.sm,
-    ...tokens.elevation.sm,
     ...tokens.motion.transitionWeb,
-  },
-  chatbotChipHovered: {
-    borderColor: tokens.colors.borderStrong,
-    ...tokens.elevation.md,
   },
   chatbotChipText: {
     fontFamily: tokens.font.sans,

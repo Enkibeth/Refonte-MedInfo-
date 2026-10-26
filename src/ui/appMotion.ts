@@ -47,6 +47,8 @@ ${ranks}
   mask-image: radial-gradient(ellipse 70% 90% at 70% 20%, #000 10%, transparent 75%);
 }
 [data-mi~="ax-night"] > * { position: relative; }
+/* Focus clavier sur le bandeau : anneau clair (le bleu d'accent y passe sous 3:1). */
+[data-mi~="ax-night"] :focus-visible { outline-color: ${n.text} !important; }
 /* Battement de l'état vide du chat (src/ui/chat/PulseMark.web.tsx). */
 .medinfo-pulse { stroke-dasharray: 80; animation: ax-pulse 1400ms cubic-bezier(.45,0,.2,1) 200ms both; }
 @keyframes ax-pulse { from { stroke-dashoffset: 80; } to { stroke-dashoffset: 0; } }

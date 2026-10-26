@@ -26,7 +26,7 @@ export function ReadingCard() {
     <View
       {...lx('lx-card')}
       accessibilityRole="image"
-      accessibilityLabel="Exemple d’affichage : la même question sur l’hypertension, expliquée pour le grand public, pour les étudiants et pour les professionnels."
+      accessibilityLabel="Exemple d’affichage : la même question sur l’hypertension, expliquée pour le grand public, pour les étudiants et pour les professionnels."
       style={styles.card}
     >
       <View style={styles.top}>

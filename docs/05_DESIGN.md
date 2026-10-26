@@ -1,11 +1,13 @@
 # MedInfo AI — Design System v2
 
-Version 2.4, 4 octobre 2026 (écriture, typographie, navigation mobile sans barre du bas, §13). Direction A « Bureau de référence », enrichie à la demande de Hugo (« trop blanc et uniformisé »), avec un accueil davantage orienté produit.
-Source exécutable : `src/ui/tokens.ts`. Décisions : ADR-0038, ADR-0040, ADR-0041 et ADR-0043. Web prioritaire ; variantes natives conservées.
+Version 3.0, 26 octobre 2026 (direction créative « Moniteur », §14). Direction A « Bureau de référence » pour les zones de lecture et de travail ; couche expressive « Moniteur » pour les surfaces de présentation (accueil, bandeaux de l’espace connecté, pages d’outil publiques).
+Source exécutable : `src/ui/tokens.ts`. Décisions : ADR-0038, ADR-0040, ADR-0041, ADR-0043 et ADR-0047. Web prioritaire ; variantes natives conservées.
 
 ## 1. Principes
 
-Une interface de lecture et de travail, plus chaleureuse. Papier ivoire, bleu brume, encre nette, bleu vif pour agir. Des touches sauge, lilas et argile servent de repères ; le blanc reste réservé aux surfaces de lecture et de travail. La composition éditoriale alterne sections claires et section sources bleu nuit. Ni dégradé décoratif, ni halo, ni verre, ni emoji/icône étincelle, ni grille uniforme de cartes. Les références, dates et niveaux de preuve sont ceux effectivement disponibles ; aucune garantie de vérification universelle.
+Une interface de lecture et de travail, plus chaleureuse. Papier ivoire, bleu brume, encre nette, bleu vif pour agir. Des touches sauge, lilas et argile servent de repères ; le blanc reste réservé aux surfaces de lecture et de travail. La composition éditoriale alterne sections claires et bandeaux bleu nuit. Ni verre, ni emoji/icône étincelle, ni grille uniforme de cartes. Les références, dates et niveaux de preuve sont ceux effectivement disponibles ; aucune garantie de vérification universelle.
+
+**Deux registres (ADR-0047).** La *lecture* (réponses du chat, articles, formulaires, outils) reste sobre : surfaces claires, aucun halo, aucun mouvement continu. La *présentation* (accueil, bandeau de la Vue d’ensemble, pages d’outil publiques) adopte la couche « Moniteur » (§14) : bleu nuit, papier millimétré d’ECG, halos bleus localisés, tracés lumineux, mouvement orchestré. Un dégradé ou un halo n’y est permis que localisé et motivé (profondeur derrière un objet, signal), jamais comme fond uniforme ni en dégradé violet-bleu.
 
 ## 2. Tokens sémantiques
 
@@ -121,7 +123,7 @@ Limites : le flux courant désactive les parts de source par défaut (`sendSourc
 
 ## 7. Mouvement et accessibilité
 
-Transitions fonctionnelles 120–320 ms, ease-out, aucun rebond. Reveal est statique par défaut ; une animation exige une intention explicite. Une View sentinelle reste nécessaire pour IntersectionObserver web, distincte d’Animated.View.
+Transitions fonctionnelles 120–320 ms, ease-out, aucun rebond. Reveal est statique par défaut ; une animation exige une intention explicite. Une View sentinelle reste nécessaire pour IntersectionObserver web, distincte d’Animated.View. Les surfaces de présentation peuvent porter un mouvement orchestré plus long (révélations 0,7–1,4 s, boucles lentes) aux conditions du §14 : `transform`/`opacity` en boucle, état final lisible, bouton « Figer », suspension hors champ.
 
 Focus visible 2 px, décalé de 3 px ; navigation clavier complète. Contraste visé 4,5:1 texte et 3:1 limites de contrôle. Les séparateurs décoratifs ne sont pas des limites interactives. Icônes de la famille existante via `iconPaths.ts` et `icons.web.tsx`. Aucun ajout de dépendance de production.
 
@@ -188,3 +190,33 @@ Les 26 pages applicatives consomment les tokens directement ou via `LegalScreen`
 | `NavigationSheet`, `MobileSheet`, `MenuSection`, `MenuRow` | Feuille en bas d’écran, identique au menu du chat |
 
 **Visiteurs.** Une page d’outil montre à un visiteur non connecté sa présentation publique (`src/ui/ToolPreview.tsx`, contenu `src/seo/toolPages.ts`) : en-tête et pied du site, ce que fait l’outil, pour qui, comment y accéder. Elle est rendue dès le pré-rendu ; un navigateur qui avait une session voit l’indicateur de chargement à la place (`src/ui/sessionHint.ts`).
+
+## 14. Direction « Moniteur » (ADR-0047)
+
+L’identité vient de ce que le logo dessine déjà (croix, tracé ECG, pistes terminées par des nœuds) et de l’instrument que tout étudiant en santé connaît : le moniteur de surveillance et son papier millimétré.
+
+**Tokens.** `colors.night` (base #141E4E, deep #0C1438, raised #1E2A63, line #34417A, text #F4F6FF, muted #BCC5E6, signaux mint #5CE1B0, lilac #B9A6FF, blue #7FB0FF) et `personasOnNight` (repère d’audience sur fond sombre : menthe public, lilas étudiant, bleu pro). Texte toujours en `night.text`/`night.muted` ; les signaux servent aux tracés, aux mots accentués des grands titres et aux repères. Contrastes ≥ 4,5:1 testés. `type.hero` : 44/46 au pré-rendu, fluide jusqu’à 96 px par le CSS de l’accueil.
+
+**Motifs.** Papier millimétré (1 mm = 8 px, 5 mm = 40 px), toujours masqué en dégradé radial. Tracé balayé : nouvelle courbe derrière une barre lumineuse, ancienne effacée devant elle. Ramification en trois pistes à nœuds (trois assistants). Révélation d’image par barre de balayage. Numéros de section et d’items en Source Serif 4 italique (« 01 · Trois assistants »).
+
+**Accueil** (`app/index.tsx`, sections `src/ui/landing/`, textes `copy.ts`, CSS `landingCss.ts` injecté par `LandingStyle`) : premier écran moniteur, trois assistants (onglets ARIA), défilement narratif à écran collant, matrice outils × profils, méthode, FAQ, appel final bleu électrique. Les styles JS valent la variante compacte (pré-rendu), le CSS porte les plages ≥ 640/768/1024 et tout le mouvement.
+
+**Aperçus d’interface.** Démonstrations aux contenus fictifs, construites avec les libellés et badges réels (`SourceBadgePill`), signalées « Contenu fictif » dans le cadre et décrites aux lecteurs d’écran (`role="img"`). Une valeur d’exemple (note ECOS, charge de travail) n’existe qu’à l’intérieur d’un cadre signalé. Jamais de chiffre d’usage, d’avis ni de badge de validation.
+
+**Mouvement.** Boucles en `transform`/`opacity` (et `clip-path` pour le balayage) ; chaque état final est lisible ; sous prefers-reduced-motion, tout est affiché à sa place et le bouton « Figer » disparaît ; ailleurs, « Figer » suspend toute animation de la page (WCAG 2.2.2). Animations du premier écran suspendues hors champ (`data-off`), aperçus joués à leur entrée (IntersectionObserver). Profondeur au pointeur réservée à la souris. Détails liés au défilement (`animation-timeline: view()`) seulement si le navigateur les connaît et sans préférence de réduction.
+
+**Espace connecté** (`src/ui/appMotion.ts`, dans le `<head>`) : `ax-night` (bandeau moniteur), `ax-in` (entrée échelonnée, `data-ad`), `ax-lift`/`ax-arrow` (relief au survol). Usage : bandeau et blocs de la Vue d’ensemble, résultats qui arrivent (activité récente, suggestions du chat), cartes d’outils. Pas d’entrée animée sur chaque carte d’une grille.
+
+| Brique | Rôle |
+|---|---|
+| `lx(names, data?)` (`src/ui/landing/lx.ts`) | `data-mi` + attributs d’état `data-*` (web) |
+| `HeroTrace` (.web) | Tracé du moniteur, deux dessins (≥ 768 / < 768) |
+| `ReadingCard` | Carte « trois lectures » du premier écran |
+| `AudienceSwitcher`, `SectionLabel` | Trois assistants ; repère de section numéroté |
+| `Showcase`, `ProductMocks`, `MockParts` | Défilement narratif et aperçus fictifs |
+| `AccessMatrix` | Outils × profils, dérivé d’`APP_FEATURES` |
+| `MethodSection` | Déroulé des étapes de réponse |
+| `useHeroMotion` | Profondeur au pointeur, suspension hors champ |
+| `PulseMark` (.web) | Battement de l’état vide du chat |
+
+Contrôle visuel : `CAPTURE_FULL=1` (page entière), `CAPTURE_MOTION=1` (animations actives) et `CAPTURE_WAIT` dans `scripts/design/capture-ui.mjs`.

@@ -83,7 +83,6 @@ ${from(640)} {
 
 /* Tracé du moniteur : nouvelle courbe derrière la barre de balayage, ancienne devant elle. */
 [data-mi~="lx-trace"] { overflow: hidden; }
-[data-mi~="lx-trace-new"] svg, [data-mi~="lx-trace-old"] svg { filter: drop-shadow(0 0 5px ${mint(0.5)}); }
 [data-mi~="lx-trace-new"] { animation: lx-trace-new 5600ms linear infinite; }
 @keyframes lx-trace-new { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 [data-mi~="lx-trace-old"] { opacity: 0; animation: lx-trace-old 5600ms linear 5600ms infinite; animation-fill-mode: none; }
@@ -139,12 +138,21 @@ ${from(640)} {
   [data-mi~="lx-card-slot"] { position: absolute !important; left: 0; bottom: 0; width: 360px; margin-top: 0 !important; padding: 0 !important; }
 }
 ${from(1024)} {
-  [data-mi~="lx-hero"] { padding-top: ${tokens.space['3xl']}px !important; padding-bottom: 0 !important; }
+  [data-mi~="lx-hero"] { padding-top: ${tokens.space['3xl']}px !important; padding-bottom: ${tokens.space['4xl']}px !important; }
   [data-mi~="lx-hero-row"] { flex-direction: row !important; align-items: flex-start !important; column-gap: ${tokens.space['4xl']}px !important; }
-  [data-mi~="lx-hero-copy"] { flex: 0 0 38% !important; padding-bottom: 112px !important; }
-  [data-mi~="lx-hero-visual"] { flex: 1 1 0% !important; margin-bottom: -168px !important; }
-  [data-mi~="lx-card-slot"] { position: absolute !important; left: -40px; top: 64px; width: 372px; margin-top: 0 !important; padding: 0 !important; }
+  [data-mi~="lx-hero-copy"] { flex: 0 0 38% !important; }
+  /* La photographie monte sur le tracé (qui passe derrière elle) ; la carte se pose en bas
+     à gauche, sur les mains, jamais sur les visages. */
+  [data-mi~="lx-hero-visual"] { flex: 1 1 0% !important; margin-top: -104px !important; }
+  [data-mi~="lx-hero-visual"] [data-mi~="lx-sweep"] > :first-child { aspect-ratio: 3 / 2 !important; }
+  [data-mi~="lx-card-slot"] { position: absolute !important; left: -44px; bottom: 36px; width: 372px; margin-top: 0 !important; padding: 0 !important; }
   [data-mi~="lx-trace-band"] { margin-top: ${tokens.space['2xl']}px !important; margin-bottom: ${tokens.space['2xl']}px !important; }
+}
+
+/* Petit ordinateur : la photo reste sous le tracé (sinon elle masque les trois nœuds). */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  [data-mi~="lx-hero-copy"] { flex: 0 0 42% !important; }
+  [data-mi~="lx-hero-visual"] { margin-top: -16px !important; }
 }
 
 /* ── 2. Trois assistants ──────────────────────────────────────────────────── */
@@ -157,7 +165,7 @@ ${from(1024)} {
 @keyframes lx-wipe-down { from { clip-path: inset(0 0 100% 0 round 20px); } to { clip-path: inset(0 0 0 0 round 20px); } }
 [data-mi~="lx-panel-mock"] { animation: lx-card-in 800ms ${EASE_OUT} 220ms both; }
 ${from(1024)} {
-  [data-mi~="lx-aud"] { padding-top: 232px !important; padding-bottom: ${tokens.space['4xl'] + tokens.space.xl}px !important; }
+  [data-mi~="lx-aud"] { padding-top: ${tokens.space['4xl'] + tokens.space['2xl']}px !important; padding-bottom: ${tokens.space['4xl'] + tokens.space.xl}px !important; }
   [data-mi~="lx-aud-head"] { flex-direction: row !important; align-items: flex-end !important; justify-content: space-between !important; column-gap: ${tokens.space['3xl']}px !important; }
   [data-mi~="lx-tabs"] { align-self: auto !important; width: 520px !important; flex-shrink: 0 !important; }
   [data-mi~="lx-panel"] { flex-direction: row !important; align-items: center !important; column-gap: ${tokens.space['4xl']}px !important; }
@@ -195,6 +203,19 @@ ${from(1024)} {
 [data-mi~="lx-stage-mock"] { animation: lx-stage-in 640ms ${EASE_OUT} both; transform-origin: 50% 0; }
 @keyframes lx-stage-in { from { opacity: 0; transform: perspective(1200px) translate3d(0, 26px, 0) rotateX(7deg); } to { opacity: 1; transform: none; } }
 [data-mi~="lx-stage-dot"] { transition: width 420ms ${EASE_OUT}, background-color 420ms ease; }
+${below(1024)} {
+  [data-mi~="lx-chapters"] {
+    flex-direction: row !important; align-items: stretch !important; column-gap: ${tokens.space.lg}px !important; row-gap: 0 !important;
+    overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none;
+    margin-left: -${tokens.space.lg}px; margin-right: -${tokens.space.lg}px; padding: 4px ${tokens.space.lg}px ${tokens.space.md}px;
+    scroll-padding-left: ${tokens.space.lg}px;
+  }
+  [data-mi~="lx-chapters"]::-webkit-scrollbar { display: none; }
+  [data-mi~="lx-chap"] { flex: 0 0 min(86%, 440px) !important; scroll-snap-align: start; }
+}
+@media (min-width: 640px) and (max-width: 1023px) {
+  [data-mi~="lx-chapters"] { margin-left: -${tokens.space.xl}px; margin-right: -${tokens.space.xl}px; padding-left: ${tokens.space.xl}px; padding-right: ${tokens.space.xl}px; scroll-padding-left: ${tokens.space.xl}px; }
+}
 ${from(1024)} {
   [data-mi~="lx-show"] { padding-top: ${tokens.space['4xl'] + tokens.space.lg}px !important; padding-bottom: ${tokens.space['4xl']}px !important; }
   [data-mi~="lx-show-body"] { flex-direction: row !important; align-items: stretch !important; column-gap: ${tokens.space['4xl']}px !important; }
@@ -270,6 +291,9 @@ ${from(1024)} {
     [data-mi~="lx-closing-title"] { animation: lx-k-rise linear both; animation-timeline: view(); animation-range: entry 10% cover 35%; }
   }
 }
+
+/* ── Focus clavier sur fond sombre : l'anneau bleu (#0052D6) n'y atteint pas 3:1. ── */
+[data-mi~="lx-hero"] :focus-visible, [data-mi~="lx-method"] :focus-visible, [data-mi~="lx-closing"] :focus-visible { outline-color: ${n.text} !important; }
 
 /* ── Figer / réduction des animations ─────────────────────────────────────── */
 [data-mi~="lx-paused"] *, [data-mi~="lx-paused"] *::before, [data-mi~="lx-paused"] *::after { animation-play-state: paused !important; }

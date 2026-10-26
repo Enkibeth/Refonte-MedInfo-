@@ -67,7 +67,7 @@ const ECOS_GRID = ['Caractériser la douleur', 'Rechercher les facteurs de risqu
 
 function EcosMock({ on }: { on: boolean }) {
   return (
-    <MockFrame on={on} icon="stethoscope" title="ECOS · Douleur thoracique" description="une station ECOS fictive : dialogue avec le patient simulé, grille d’évaluation cochée et note sur 20.">
+    <MockFrame on={on} icon="stethoscope" title="ECOS · Douleur thoracique" description="une station ECOS fictive : dialogue avec le patient simulé, grille d’évaluation cochée et note sur 20.">
       <View style={styles.ecosHead}>
         <View style={styles.flex}>
           <Tag label="CAS FICTIF" fg={tokens.colors.personas.student.accent} bg={tokens.colors.personas.student.soft} />
@@ -117,7 +117,7 @@ const QCM_OPTIONS: [letter: string, text: string, correct: boolean][] = [
 
 function QcmMock({ on }: { on: boolean }) {
   return (
-    <MockFrame on={on} icon="graduationCap" title="QCM type EDN" description="un QCM type EDN sur le score de Glasgow : propositions cochées puis corrigées, notées selon le barème des discordances.">
+    <MockFrame on={on} icon="graduationCap" title="QCM type EDN" description="un QCM type EDN sur le score de Glasgow : propositions cochées puis corrigées, notées selon le barème des discordances.">
       <View style={styles.qcmHead}>
         <Tag label="QCM" fg={tokens.colors.personas.student.accent} bg={tokens.colors.personas.student.soft} />
         <Text style={styles.qcmHint}>Plusieurs réponses possibles</Text>
@@ -154,7 +154,7 @@ function QcmMock({ on }: { on: boolean }) {
 // ── Présentations ─────────────────────────────────────────────────────────────
 function SlidesMock({ on }: { on: boolean }) {
   return (
-    <MockFrame on={on} icon="presentation" title="Présentations · Staff du jeudi" description="l’éditeur de présentations : vignettes des diapositives générées, diapositive en cours et export PPTX.">
+    <MockFrame on={on} icon="presentation" title="Présentations · Staff du jeudi" description="l’éditeur de présentations : vignettes des diapositives générées, diapositive en cours et export PPTX.">
       <View style={styles.slidesRow}>
         <View style={styles.thumbs}>
           {[0, 1, 2, 3].map((i) => (
@@ -200,7 +200,7 @@ const WEEK: [day: string, load: number][] = [['L', 70], ['M', 85], ['M', 60], ['
 
 function OverviewMock({ on }: { on: boolean }) {
   return (
-    <MockFrame on={on} icon="calendarCheck" title="Vue d’ensemble · Révisions" description="la vue d’ensemble étudiante : charge prévue, risque du planning, prochain examen et charge de la semaine.">
+    <MockFrame on={on} icon="calendarCheck" title="Vue d’ensemble · Révisions" description="la vue d’ensemble étudiante : charge prévue, risque du planning, prochain examen et charge de la semaine.">
       <View style={styles.tiles}>
         {[
           ['Charge prévue', '3 h 30'],

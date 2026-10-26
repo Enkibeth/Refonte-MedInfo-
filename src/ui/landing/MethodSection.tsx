@@ -32,33 +32,40 @@ export function MethodSection() {
             <Text style={styles.body}>
               Pendant la rédaction, le chat affiche son déroulé : la réflexion résumée, les recherches lancées avec leurs requêtes exactes, les sites consultés, puis la rédaction. Le déroulé se replie au-dessus de la réponse dès le premier mot.
             </Text>
-            <View
-              ref={ref}
-              {...lx('lx-timeline', { on: inView ? '1' : '0' })}
-              accessibilityRole="image"
-              accessibilityLabel="Illustration du déroulé des étapes : analyse de la question, recherches effectuées, domaines consultés, rédaction."
-              style={styles.timeline}
-            >
-              <View {...lx('lx-tl-track')} style={styles.track}>
-                <View {...lx('lx-tl-fill')} style={styles.trackFill} />
+            <View style={styles.panel}>
+              <View style={styles.panelHead}>
+                <Icon name="activity" size={14} color={tokens.colors.night.mint} />
+                <Text style={styles.panelTitle}>Étapes</Text>
+                <Text style={styles.panelTag}>Exemple</Text>
               </View>
-              {METHOD_STEPS.map((step, i) => (
-                <View key={step.title} {...lx('lx-tl-step', { s: String(i + 1) })} style={styles.step}>
-                  <View {...lx('lx-tl-node')} style={styles.node}>
-                    <View style={styles.nodeCore} />
-                  </View>
-                  <View style={styles.stepText}>
-                    <Text style={styles.stepTitle}>{step.title}</Text>
-                    <Text style={styles.stepDetail}>{step.detail}</Text>
-                    {i === 1 ? (
-                      <View style={styles.query}>
-                        <Icon name="search" size={12} color={tokens.colors.night.mint} />
-                        <Text style={styles.queryText} numberOfLines={1}>hypertension artérielle recommandations HAS</Text>
-                      </View>
-                    ) : null}
-                  </View>
+              <View
+                ref={ref}
+                {...lx('lx-timeline', { on: inView ? '1' : '0' })}
+                accessibilityRole="image"
+                accessibilityLabel="Illustration du déroulé des étapes : analyse de la question, recherches effectuées, domaines consultés, rédaction."
+                style={styles.timeline}
+              >
+                <View {...lx('lx-tl-track')} style={styles.track}>
+                  <View {...lx('lx-tl-fill')} style={styles.trackFill} />
                 </View>
-              ))}
+                {METHOD_STEPS.map((step, i) => (
+                  <View key={step.title} {...lx('lx-tl-step', { s: String(i + 1) })} style={styles.step}>
+                    <View {...lx('lx-tl-node')} style={styles.node}>
+                      <View style={styles.nodeCore} />
+                    </View>
+                    <View style={styles.stepText}>
+                      <Text style={styles.stepTitle}>{step.title}</Text>
+                      <Text style={styles.stepDetail}>{step.detail}</Text>
+                      {i === 1 ? (
+                        <View style={styles.query}>
+                          <Icon name="search" size={12} color={tokens.colors.night.mint} />
+                          <Text style={styles.queryText} numberOfLines={1}>hypertension artérielle recommandations HAS</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  </View>
+                ))}
+              </View>
             </View>
           </View>
           <View style={styles.right}>
@@ -94,7 +101,11 @@ const styles = StyleSheet.create({
   title: { fontFamily: tokens.font.serif, color: tokens.colors.night.text, ...tokens.type.display, fontWeight: tokens.weight.regular },
   titleAccent: { fontStyle: 'italic', color: tokens.colors.night.mint },
   body: { fontFamily: tokens.font.sans, color: tokens.colors.night.muted, ...tokens.type.body, maxWidth: tokens.layout.measure },
-  timeline: { marginTop: tokens.space.md, gap: tokens.space.lg, paddingLeft: 4 },
+  panel: { marginTop: tokens.space.md, padding: tokens.space.lg, gap: tokens.space.lg, borderRadius: tokens.radius.xl + 2, borderWidth: tokens.border.thin, borderColor: tokens.colors.night.line, backgroundColor: 'rgba(12,20,56,0.55)', maxWidth: 520 },
+  panelHead: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm, paddingBottom: tokens.space.md, borderBottomWidth: tokens.border.thin, borderBottomColor: tokens.colors.night.line },
+  panelTitle: { flex: 1, fontFamily: tokens.font.display, color: tokens.colors.night.text, ...tokens.type.caption, fontWeight: tokens.weight.semibold },
+  panelTag: { fontFamily: tokens.font.sans, color: tokens.colors.night.muted, ...tokens.type.micro },
+  timeline: { gap: tokens.space.lg, paddingLeft: 4 },
   track: { position: 'absolute', left: 14, top: 12, bottom: 18, width: 2, backgroundColor: tokens.colors.night.line, borderRadius: 1, overflow: 'hidden' },
   trackFill: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: tokens.colors.night.mint },
   step: { flexDirection: 'row', gap: tokens.space.md, alignItems: 'flex-start' },

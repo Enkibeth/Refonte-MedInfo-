@@ -13,7 +13,8 @@ import { SHOWCASE_MOCKS } from './ProductMocks';
  * « Au-delà du chat » (ADR-0047) : défilement narratif ponctuel. Sur ordinateur, les chapitres
  * défilent à gauche et un écran collant, à droite, montre l'aperçu du chapitre en cours ;
  * l'aperçu change quand un chapitre passe le milieu de la fenêtre. Sous 1 024 px, chaque
- * chapitre porte son propre aperçu, joué à son entrée dans la fenêtre.
+ * chapitre porte son propre aperçu, joué à son entrée dans la fenêtre, et les chapitres
+ * forment un carrousel horizontal à aimantation (la page mobile restait sinon très longue).
  *
  * Les deux mises en page sont dans le DOM et le CSS choisit (pré-rendu sans fenêtre) ; les
  * aperçus sont des images décrites, la lecture d'écran ne les rencontre qu'une fois.
@@ -56,7 +57,15 @@ export function Showcase() {
           </Text>
         </View>
         <View {...lx('lx-show-body')} style={styles.body}>
-          <View {...lx('lx-chapters')} style={styles.chapters}>
+          {/* Sous 1 024 px : carrousel horizontal à aimantation (CSS), focalisable pour le défiler
+              au clavier ; au-delà, colonne de chapitres face à l'écran collant. */}
+          <View
+            {...lx('lx-chapters')}
+            role="region"
+            aria-label="Cinq écrans de MedInfo AI"
+            {...(Platform.OS === 'web' ? { tabIndex: 0 } : null)}
+            style={styles.chapters}
+          >
             {SHOWCASE.map((chapter) => (
               <Chapter
                 key={chapter.id}
