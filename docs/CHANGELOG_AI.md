@@ -2,6 +2,23 @@
 
 Journal des modifications par agents IA. Une entrée par PR.
 
+## [2026-10-31] — Codex (correctifs des dépendances signalées par Hostinger)
+
+- **Fichiers** : `package.json`, `package-lock.json`, `tests/unit/expo-cli-zod-compat.test.ts`,
+  `docs/SECURITY_DEPENDENCIES_2026-10-31.md` et ce journal.
+- **But** : compléter la PR Hostinger #177, qui ne mettait à jour que le manifeste Zod,
+  par un lockfile reproductible et les correctifs des dépendances transitives.
+  Zod 4.6.7 (application et CLI Expo), decode-uri-component 0.5.1, Undici 6.29.1,
+  Vite 8.3.5, Vitest/@vitest/mocker 4.1.12, node-forge 1.4.2.
+- **Compatibilité** : override Zod limité à `@expo/cli`, dont les deux consommateurs
+  DevTools utilisent les API communes v3/v4 ; tests des vrais schémas Expo, validation
+  des commandes MCP et conversion JSON Schema. Aucun import réécrit dans node_modules.
+- **Impact réglementaire** : `none` ; dépendances et tests uniquement.
+- **Limite** : `deepmerge` 4.3.1 reste signalé faible, sans version corrigée publiée.
+  Voir le rapport pour l'arbre d'exposition ; aucune exclusion d'audit ajoutée.
+- **Rollback** : revert de la PR #177 puis reconstruction Hostinger de `main`.
+
+
 ## [2026-10-10] — Claude Code (chat : budget de réponse 16 000 tokens, historique découpé au lieu de refusé)
 
 ### Files modified
